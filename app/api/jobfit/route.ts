@@ -1,104 +1,103 @@
 import OpenAI from "openai";
 
-export const runtime = "nodejs";
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
 
 export async function POST(req: Request) {
   try {
-    // Read API key at request-time (prevents import-time crashes)
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return Response.json(
-        {
-          error: "Missing OPENAI_API_KEY",
-          fix: "Create C:\\Users\\perig\\wrnsignal-api\\.env.local with: OPENAI_API_KEY=sk-... then restart npm run dev",
-        },
-        { status: 500 }
-      );
-    }
-
-    // Create client only after we know apiKey exists
-    const client = new OpenAI({ apiKey });
-
-    // Parse request body
-    const body = await req.json().catch(() => ({} as any));
-    const profile = String(body?.profile ?? "").trim();
-    const job = String(body?.job ?? "").trim();
+    const body = await req.json();
+    const profile = body?.profile;
+    const job = body?.job;
 
     if (!profile || !job) {
       return Response.json(
-        { error: "Missing required fields: profile, job" },
-        { status: 400 }
+        { error: "Missing profile or job input" },
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    // Prompt (forces JSON-only output)
-    const prompt = `
-You are WRNSignal JobFit. You are a decision system, not a coach.
+    const systemPrompt = `
+You are WRNSignal JobFit.
 
-Rules:
-- Score 0–100
-- 75+ = Apply
-- 60–74 = Review carefully
-- <60 = Pass
-- Never invent experience or intent
-- Be conservative with missing data
-Return ONLY valid JSON (no code fences, no markdown, no commentary).
+Return ONLY valid JSON.
+No markdown. No commentary.
 
-Output JSON keys (exact):
-module, decision, icon, score, why, risk_flags, next_step
+Schema:
+{
+  "decision": "Apply" | "Review carefully" | "Pass",
+  "icon": "✅" | "⚠️" | "⛔",
+  "score": number,
+  "why": string[],
+  "risk_flags": string[],
+  "next_step": string
+}
+`;
 
-Decision/icon mapping:
-Apply => ✅
-Review carefully => ⚠️
-Pass => ⛔
-
-module must be "jobfit".
-score must be an integer 0–100.
-why must be an array of 3–8 short bullet strings.
-risk_flags must be an array (can be empty).
-next_step must be a short string telling the user what to do next.
-
-PROFILE:
+    const userPrompt = `
+CLIENT PROFILE:
 ${profile}
 
 JOB DESCRIPTION:
 ${job}
-`.trim();
 
-    // Call OpenAI Responses API
-    const resp = await client.responses.create({
-      model: "gpt-4o-mini",
-      input: prompt,
+Evaluate JobFit.
+`;
+
+    const response = await client.responses.create({
+      model: "gpt-4.1-mini",
+      input: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: userPrompt,
+        },
+      ],
+      temperature: 0,
     });
 
-    const text = resp.output_text ?? "";
-    if (!text) {
+    let text = response.output_text || "";
+
+    // Defensive cleanup in case the model wraps JSON
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
       return Response.json(
-        { error: "Empty model response (output_text was blank)." },
-        { status: 502 }
+        { error: "Invalid model JSON", raw_output: text },
+        { status: 500, headers: corsHeaders }
       );
     }
 
-    // Clean common Markdown code fences just in case the model ignores instructions
-    const cleaned = text
-      .trim()
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```$/i, "")
-      .trim();
-
-    // Parse JSON, or return raw output if parsing fails
-    try {
-      const parsed = JSON.parse(cleaned);
-      return Response.json(parsed, { status: 200 });
-    } catch {
-      return Response.json({ raw_output: text }, { status: 200 });
-    }
+    return Response.json(parsed, {
+      status: 200,
+      headers: corsHeaders,
+    });
   } catch (err: any) {
-    console.error("JOBFIT ERROR:", err);
     return Response.json(
-      { error: "JobFit failed", detail: err?.message ?? String(err) },
-      { status: 500 }
+      {
+        error: "JobFit failed",
+        detail: err?.message || "Unknown error",
+      },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
