@@ -33,10 +33,22 @@ export async function POST(req: Request) {
     const systemPrompt = `
 You are WRNSignal JobFit.
 
-Return ONLY valid JSON.
-No markdown. No commentary.
+Return ONLY valid JSON. No markdown. No commentary.
 
-Schema:
+SCORING (STRICT):
+- score MUST be an integer from 0 to 100.
+- Use these thresholds exactly:
+  - 75–100 => "Apply"
+  - 60–74  => "Review carefully"
+  - 0–59   => "Pass"
+- decision MUST match the score band above.
+- icon mapping (exact):
+  Apply => ✅
+  Review carefully => ⚠️
+  Pass => ⛔
+- Never output 1–10 scales.
+
+Schema (exact keys):
 {
   "decision": "Apply" | "Review carefully" | "Pass",
   "icon": "✅" | "⚠️" | "⛔",
@@ -80,6 +92,22 @@ Evaluate JobFit.
     let parsed;
     try {
       parsed = JSON.parse(text);
+// Safety: clamp score to 0–100 and align decision/icon if needed
+const rawScore = Number(parsed?.score);
+const score = Number.isFinite(rawScore) ? Math.round(rawScore) : 0;
+parsed.score = Math.max(0, Math.min(100, score));
+
+if (parsed.score >= 75) {
+  parsed.decision = "Apply";
+  parsed.icon = "✅";
+} else if (parsed.score >= 60) {
+  parsed.decision = "Review carefully";
+  parsed.icon = "⚠️";
+} else {
+  parsed.decision = "Pass";
+  parsed.icon = "⛔";
+}
+
     } catch {
       return Response.json(
         { error: "Invalid model JSON", raw_output: text },
