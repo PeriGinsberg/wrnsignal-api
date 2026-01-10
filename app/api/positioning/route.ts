@@ -29,40 +29,36 @@ Output requirements:
   - rationale: one sentence explaining why this improves ATS match + recruiter scan
 
 Intro requirement (must appear every time, use this exact 3-line template in this order):
-1) "Built to pass ATS keyword screens and the recruiter 7-second test."
-2) "These edits align your existing bullets to the job description language while staying strictly factual."
-3) "They are minor cut/paste tweaks, not a full resume rewrite."
+1) Built to pass ATS keyword screens and the recruiter 7-second test.
+2) These edits align your existing bullets to the job description language while staying strictly factual.
+3) They are minor cut/paste tweaks, not a full resume rewrite.
 
 Strict JSON only. No markdown. No extra keys.
 `.trim();
 
 const SCHEMA = {
-  name: "wrnsignal_positioning",
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    properties: {
-      intro: { type: "string" },
-      bullets: {
-        type: "array",
-        minItems: 5,
-        maxItems: 10,
-        items: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            before: { type: "string" },
-            after: { type: "string" },
-            rationale: { type: "string" },
-          },
-          required: ["before", "after", "rationale"],
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    intro: { type: "string" },
+    bullets: {
+      type: "array",
+      minItems: 5,
+      maxItems: 10,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          before: { type: "string" },
+          after: { type: "string" },
+          rationale: { type: "string" },
         },
+        required: ["before", "after", "rationale"],
       },
     },
-    required: ["intro", "bullets"],
   },
-  strict: true,
-};
+  required: ["intro", "bullets"],
+} as const;
 
 export async function POST(req: Request) {
   try {
@@ -71,10 +67,7 @@ export async function POST(req: Request) {
     const job = String(body?.job ?? "").trim();
 
     if (!profile || !job) {
-      return NextResponse.json(
-        { error: "Missing profile or job" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing profile or job" }, { status: 400 });
     }
 
     const userPrompt = `
@@ -97,14 +90,19 @@ REMINDERS:
 `.trim();
 
     const resp = await client.responses.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-4o-mini",
       input: [
         { role: "system", content: SYSTEM },
         { role: "user", content: userPrompt },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: SCHEMA as any,
+      // ✅ Correct way to request structured JSON in the Responses API
+      text: {
+        format: {
+          type: "json_schema",
+          name: "wrnsignal_positioning",
+          strict: true,
+          schema: SCHEMA,
+        },
       },
     });
 
@@ -127,10 +125,7 @@ REMINDERS:
     return NextResponse.json(parsed, { status: 200 });
   } catch (e: any) {
     return NextResponse.json(
-      {
-        error: "Positioning failed",
-        detail: e?.message ?? String(e),
-      },
+      { error: "Positioning failed", detail: e?.message ?? String(e) },
       { status: 500 }
     );
   }
