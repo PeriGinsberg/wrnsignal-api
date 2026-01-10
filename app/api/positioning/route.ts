@@ -1,12 +1,3 @@
-import OpenAI from "openai";
-import { NextResponse } from "next/server";
-
-export const runtime = "nodejs";
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 const SYSTEM = `
 You are WRNSignal — Positioning.
 
@@ -19,87 +10,27 @@ Non-negotiables:
 - Optimize for ATS keyword matching AND recruiter 7-second scan clarity.
 - Mirror job description language only when truthful.
 - No fluff. No generic traits.
-- Early-career candidates do not need identical prior roles.
 
-Output rules:
-- Return 5–10 bullet edits.
-- Each edit must include:
-  before: original bullet
-  after: revised bullet aligned to job language
-  rationale: one sentence explaining ATS + recruiter benefit
-
-Intro (must appear every time, exactly 3 lines):
-Built to pass ATS keyword screens and the recruiter 7-second test.
-These edits align your existing bullets to the job description language while staying strictly factual.
-They are minor cut/paste tweaks, not a full resume rewrite.
-
-Return ONLY valid JSON. No markdown. No extra commentary.
-`.trim();
-
-// --- CORS (Framer -> Vercel API) ---
-function corsHeaders(origin: string | null) {
-  // You can lock this down later to your Framer domain.
-  const allowOrigin = origin ?? "*";
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
-  };
+Return ONLY valid JSON in EXACTLY this shape (no other keys):
+{
+  "intro": "three lines",
+  "bullets": [
+    { "before": "...", "after": "...", "rationale": "..." }
+  ]
 }
 
-export async function OPTIONS(req: Request) {
-  // Preflight request
-  return new NextResponse(null, { status: 204, headers: corsHeaders(req.headers.get("origin")) });
-}
-
-export async function POST(req: Request) {
-  const headers = corsHeaders(req.headers.get("origin"));
-
-  try {
-    const body = await req.json();
-    const profile = String(body?.profile ?? "").trim();
-    const job = String(body?.job ?? "").trim();
-
-    if (!profile || !job) {
-      return NextResponse.json({ error: "Missing profile or job" }, { status: 400, headers });
-    }
-
-    const userPrompt = `
-CLIENT PROFILE / RESUME:
-${profile}
-
-JOB DESCRIPTION:
-${job}
-
-Generate Positioning output following all rules above.
+Rules:
+- intro must be EXACTLY 3 lines, in this order:
+  1) Built to pass ATS keyword screens and the recruiter 7-second test.
+  2) These edits align your existing bullets to the job description language while staying strictly factual.
+  3) They are minor cut/paste tweaks, not a full resume rewrite.
+- bullets must contain 5–10 items.
+- Use key name "bullets" (NOT edits, NOT changes).
+- Return ONLY JSON. No markdown. No commentary.
 `.trim();
-
-    const resp = await client.responses.create({
-      model: "gpt-4o-mini",
-      input: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: userPrompt },
-      ],
-    });
-
-    const text = resp.output_text;
-
-    let parsed: any;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return NextResponse.json(
-        { error: "Positioning failed", detail: "Model did not return valid JSON", raw_output: text },
-        { status: 500, headers }
-      );
-    }
-
-    return NextResponse.json(parsed, { status: 200, headers });
-  } catch (e: any) {
-    return NextResponse.json(
-      { error: "Positioning failed", detail: e?.message ?? String(e) },
-      { status: 500, headers }
-    );
-  }
+parsed = JSON.parse(text);
+// Normalize legacy key if model returns "edits"
+if (!parsed?.bullets && Array.isArray(parsed?.edits)) {
+  parsed.bullets = parsed.edits;
+  delete parsed.edits;
 }
