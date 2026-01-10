@@ -42,40 +42,41 @@ export async function POST(req: Request) {
     }
 
     const system = `
-You are WRNSignal (Positioning module).
-
-GOAL:
-- Improve ATS keyword alignment AND pass the recruiter 7-second scan.
-- Make minor, factual, cut-and-paste resume bullet tweaks that align language to the job description.
-- No full rewrites. No new experience. No invented metrics.
-- Every change must be defensible in an interview.
+You are WRNSignal (Networking module).
 
 RULES:
-- Output 5–10 edits.
-- Each edit must be anchored to an existing bullet from the profile/resume text.
-- Mirror exact phrases from the job description where appropriate (tools, responsibilities, keywords), but keep facts true.
+- Users can generate networking anytime, but reinforce that networking is post-apply.
+- Generate EXACTLY three networking actions.
+- Each action must include:
+  - "target": who to contact (role/function)
+  - "rationale": why that person is the right target
+  - "message": a cut-and-paste message (warm + direct, not cringe, not a job ask)
+- Message MUST:
+  - state they applied to the role
+  - ask for 10 minutes to learn about team/company and advice to stand out
+  - be appropriately aggressive (no fluff)
+- Reinforce: ~20% applying, ~80% networking after applying.
 
 OUTPUT:
 Return valid JSON ONLY:
 {
-  "intro": string, 
-  "bullets": [
-    { "before": string, "after": string, "rationale": string }
+  "note": string,
+  "actions": [
+    { "target": string, "rationale": string, "message": string },
+    { "target": string, "rationale": string, "message": string },
+    { "target": string, "rationale": string, "message": string }
   ]
 }
     `.trim();
 
     const user = `
-CLIENT PROFILE (includes resume text):
+CLIENT PROFILE:
 ${profile}
 
 JOB DESCRIPTION:
 ${job}
 
-Generate 5–10 bullet edits:
-- "before" must be copied from the profile/resume (or clearly a line from it).
-- "after" must be a factual language alignment to the job (ATS + 7-second scan).
-- "rationale" must explain which job language/requirements you mirrored and why it improves signal.
+Generate exactly 3 networking actions. Choose smart targets (recruiter if appropriate, hiring team adjacent, someone in function/team).
 Return JSON only.
     `.trim();
 
@@ -94,14 +95,16 @@ Return JSON only.
     if (!parsed) {
       return new Response(
         JSON.stringify({
-          intro:
-            "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits.",
-          bullets: [
+          note:
+            "Networking is where you win. Treat applying as ~20% effort and networking as ~80% effort after you apply.",
+          actions: [
             {
-              before: "Model did not return JSON.",
-              after: "Retry with a cleaner resume paste inside the profile field.",
-              rationale: raw || "Non-JSON response.",
+              target: "Model did not return JSON",
+              rationale: "Retry.",
+              message: raw || "Non-JSON response.",
             },
+            { target: "", rationale: "", message: "" },
+            { target: "", rationale: "", message: "" },
           ],
         }),
         { status: 200, headers: corsHeaders(origin) }
@@ -109,12 +112,18 @@ Return JSON only.
     }
 
     const out = {
-      intro:
-        typeof parsed.intro === "string"
-          ? parsed.intro
-          : "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits.",
-      bullets: Array.isArray(parsed.bullets) ? parsed.bullets : [],
+      note:
+        typeof parsed.note === "string"
+          ? parsed.note
+          : "Networking is where you win. Treat applying as ~20% effort and networking as ~80% effort after you apply.",
+      actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 3) : [],
     };
+
+    // Ensure exactly 3 actions in output
+    while (out.actions.length < 3) {
+      out.actions.push({ target: "", rationale: "", message: "" });
+    }
+    out.actions = out.actions.slice(0, 3);
 
     return new Response(JSON.stringify(out), {
       status: 200,
@@ -122,7 +131,7 @@ Return JSON only.
     });
   } catch (err: any) {
     const detail = err?.message || String(err);
-    return new Response(JSON.stringify({ error: "Positioning failed", detail }), {
+    return new Response(JSON.stringify({ error: "Networking failed", detail }), {
       status: 500,
       headers: corsHeaders(origin),
     });

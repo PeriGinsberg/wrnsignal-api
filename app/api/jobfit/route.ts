@@ -1,178 +1,170 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+export const runtime = "nodejs";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+function corsHeaders(origin: string | null) {
+  const allowOrigin = origin || "*";
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+export async function OPTIONS(req: Request) {
+  const origin = req.headers.get("origin");
+  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+}
+
+function safeJsonParse(raw: string) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function clampScore(n: any) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return 0;
+  return Math.max(0, Math.min(100, Math.round(x)));
+}
+
+function iconForDecision(decision: string) {
+  const d = (decision || "").toLowerCase().trim();
+  if (d === "apply") return "✅";
+  if (d === "review carefully") return "⚠️";
+  if (d === "pass") return "⛔";
+  // fallback
+  return "⚠️";
 }
 
 export async function POST(req: Request) {
+  const origin = req.headers.get("origin");
+
   try {
-    const body = await req.json();
-    const profile = body?.profile;
-    const job = body?.job;
+    const { profile, job } = await req.json();
 
     if (!profile || !job) {
-      return Response.json(
-        { error: "Missing profile or job input" },
-        { status: 400, headers: corsHeaders }
+      return new Response(
+        JSON.stringify({ error: "Missing profile or job" }),
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
-    const systemPrompt = `
-You are WRNSignal JobFit — a job search decision system.
+    const system = `
+You are WRNSignal, a job search decision system by Workforce Ready Now.
 
-ROLE
-- You are not a coach, brainstorming partner, or motivational tool.
-- Your job is to decide whether the user should apply to ONE job.
-- Optimize for decision clarity, time protection, and execution speed.
+ROLE:
+- You decide whether to Apply, Review carefully, or Pass for ONE job description at a time.
+- You do not motivate, reassure, or inflate outcomes.
+- Passing is framed as time protection.
 
-NON-NEGOTIABLE WORKFLOW
-- Perform JobFit only.
-- Do not generate Positioning, Cover Letters, or Networking.
-- If the decision is not Apply, do not advance beyond a short next_step.
+STRICT WORKFLOW:
+- JobFit always comes first.
+- You must make a decision before any resume/positioning/cover letter/networking guidance.
 
-EVIDENCE RULES
-- Do not fabricate, infer, or exaggerate experience, intent, or skills.
-- Missing information is neutral; flag uncertainty and proceed conservatively.
-- Early-career candidates are evaluated on skill adjacency and learning exposure.
-- Generic traits (communication, leadership, work ethic, fast learner) are invalid justification.
+EVALUATION CONTEXT:
+- Users are early-career. Do not require identical prior role.
+- Evaluate: directional interest, skill adjacency, environment match, learning exposure, signal-building potential.
+- Never use generic traits (hard worker, fast learner, leadership) as justification.
 
-SIGNAL HIERARCHY (STRICT)
-1) Explicit user-stated interests and exclusions
-2) Target roles, industries, environments
+SIGNAL HIERARCHY (STRICT ORDER):
+1) Explicit user interests/exclusions
+2) Target roles/industries/environments
 3) Confirmed past experience
-4) Skill adjacency and comparable responsibility
+4) Skill adjacency/comparable responsibility
 5) Job description requirements
-Experience may NOT override stated interests or exclusions.
 
-HARD STOPS (AUTO-PASS OR SCORE CAP)
-If present, you must either return Pass or cap score at 59:
-- Explicitly excluded role or industry
-- Location conflict (if stated)
-- Work authorization conflict (if stated)
-- Required license/certification the user does not have
-- Required schedule or physical demands the user cannot meet
+SCORING:
+- Score 0–100.
+- >=75 Apply
+- 60–74 Review carefully
+- <60 Pass
+- Explicit exclusions must trigger Pass or cap score <60.
 
-JOBFIT SCORING (STRICT)
-- score MUST be an integer from 0 to 100.
-- Thresholds:
-  - 75–100 => Apply
-  - 60–74  => Review carefully
-  - 0–59   => Pass
-- decision MUST match the score band.
-- icon mapping (exact):
-  Apply => ✅
-  Review carefully => ⚠️
-  Pass => ⛔
-- Never use 1–10 scales.
+DECISION ICON (STRICT):
+- Apply → ✅
+- Review carefully → ⚠️
+- Pass → ⛔
+Use the icon exactly once, only next to the decision label.
 
-WHAT TO EVALUATE
-- Role and responsibility alignment
-- Skill adjacency and transferable tasks
-- Environment and industry fit
-- Resume signal and learning exposure
-- MUST-HAVES vs NICE-TO-HAVES
-- Risk from missing or weak requirements
-
-OUTPUT FORMAT
-Return ONLY valid JSON. No markdown. No commentary.
-
-Schema (exact):
+OUTPUT:
+Return valid JSON ONLY with this schema:
 {
-  "decision": "Apply" | "Review carefully" | "Pass",
-  "icon": "✅" | "⚠️" | "⛔",
+  "decision": "Apply"|"Review carefully"|"Pass",
+  "icon": "✅"|"⚠️"|"⛔",
   "score": number,
-  "why": string[],
-  "risk_flags": string[],
-  "next_step": string
+  "bullets": string[],        // 4–8 concise reasons grounded in profile + job
+  "risk_flags": string[],     // 0–6, include uncertainty/missing info risks
+  "next_step": string         // single concrete instruction
 }
+    `.trim();
 
-CONTENT RULES
-- why: 3–6 concrete bullets tied to real requirements.
-- risk_flags: 0–5 specific gaps or uncertainties.
-- next_step: one execution-oriented sentence.
-`;
-
-    const userPrompt = `
-Evaluate JobFit for ONE role using the system rules.
-
-CLIENT PROFILE (may include intake form + resume):
+    const user = `
+CLIENT PROFILE:
 ${profile}
 
-JOB DESCRIPTION (full posting):
+JOB DESCRIPTION:
 ${job}
 
-REQUIRED PROCESS
-1) Identify user interests and exclusions.
-2) Identify job MUST-HAVES vs NICE-TO-HAVES.
-3) Compare confirmed experience and skills to core responsibilities.
-4) Assign score and decision using strict thresholds.
-5) Populate why, risk_flags, and next_step.
-
+Make a JobFit decision. If profile/job content is placeholder or missing details, score should be low and risk_flags should say what is missing.
 Return JSON only.
-`;
+    `.trim();
 
-    const response = await client.responses.create({
+    const resp = await client.responses.create({
       model: "gpt-4.1-mini",
       input: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: system },
+        { role: "user", content: user },
       ],
-      temperature: 0,
     });
 
-    let text = response.output_text || "";
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    // @ts-ignore
+    const raw = (resp as any).output_text || "";
+    const parsed = safeJsonParse(raw);
 
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return Response.json(
-        { error: "Invalid model JSON", raw_output: text },
-        { status: 500, headers: corsHeaders }
+    if (!parsed) {
+      // Fallback: return raw text so UI still shows something
+      return new Response(
+        JSON.stringify({
+          decision: "Review carefully",
+          icon: "⚠️",
+          score: 60,
+          bullets: ["Model did not return JSON.", "Review output manually."],
+          risk_flags: ["Non-JSON response"],
+          next_step: raw || "Retry with full profile + job description.",
+        }),
+        { status: 200, headers: corsHeaders(origin) }
       );
     }
 
-    // Enforce score range and decision consistency
-    const rawScore = Number(parsed?.score);
-    const score = Number.isFinite(rawScore) ? Math.round(rawScore) : 0;
-    parsed.score = Math.max(0, Math.min(100, score));
+    const decision = parsed.decision || "Review carefully";
+    const score = clampScore(parsed.score);
+    const icon = iconForDecision(decision);
 
-    if (parsed.score >= 75) {
-      parsed.decision = "Apply";
-      parsed.icon = "✅";
-    } else if (parsed.score >= 60) {
-      parsed.decision = "Review carefully";
-      parsed.icon = "⚠️";
-    } else {
-      parsed.decision = "Pass";
-      parsed.icon = "⛔";
-    }
+    const out = {
+      decision,
+      icon,
+      score,
+      bullets: Array.isArray(parsed.bullets) ? parsed.bullets : [],
+      risk_flags: Array.isArray(parsed.risk_flags) ? parsed.risk_flags : [],
+      next_step: typeof parsed.next_step === "string" ? parsed.next_step : "",
+    };
 
-    return Response.json(parsed, {
+    return new Response(JSON.stringify(out), {
       status: 200,
-      headers: corsHeaders,
+      headers: corsHeaders(origin),
     });
   } catch (err: any) {
-    return Response.json(
-      {
-        error: "JobFit failed",
-        detail: err?.message || "Unknown error",
-      },
-      { status: 500, headers: corsHeaders }
-    );
+    const detail = err?.message || String(err);
+    return new Response(JSON.stringify({ error: "JobFit failed", detail }), {
+      status: 500,
+      headers: corsHeaders(origin),
+    });
   }
 }
