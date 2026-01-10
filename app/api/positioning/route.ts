@@ -36,17 +36,33 @@ They are minor cut/paste tweaks, not a full resume rewrite.
 Return ONLY valid JSON. No markdown. No extra commentary.
 `.trim();
 
+// --- CORS (Framer -> Vercel API) ---
+function corsHeaders(origin: string | null) {
+  // You can lock this down later to your Framer domain.
+  const allowOrigin = origin ?? "*";
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+export async function OPTIONS(req: Request) {
+  // Preflight request
+  return new NextResponse(null, { status: 204, headers: corsHeaders(req.headers.get("origin")) });
+}
+
 export async function POST(req: Request) {
+  const headers = corsHeaders(req.headers.get("origin"));
+
   try {
     const body = await req.json();
     const profile = String(body?.profile ?? "").trim();
     const job = String(body?.job ?? "").trim();
 
     if (!profile || !job) {
-      return NextResponse.json(
-        { error: "Missing profile or job" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing profile or job" }, { status: 400, headers });
     }
 
     const userPrompt = `
@@ -69,26 +85,21 @@ Generate Positioning output following all rules above.
 
     const text = resp.output_text;
 
-    let parsed;
+    let parsed: any;
     try {
       parsed = JSON.parse(text);
     } catch {
       return NextResponse.json(
-        {
-          error: "Positioning failed",
-          detail: "Model did not return valid JSON",
-          raw_output: text,
-        },
-        { status: 500 }
+        { error: "Positioning failed", detail: "Model did not return valid JSON", raw_output: text },
+        { status: 500, headers }
       );
     }
 
-    return NextResponse.json(parsed, { status: 200 });
-
+    return NextResponse.json(parsed, { status: 200, headers });
   } catch (e: any) {
     return NextResponse.json(
       { error: "Positioning failed", detail: e?.message ?? String(e) },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
