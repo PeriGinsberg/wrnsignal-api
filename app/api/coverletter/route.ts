@@ -1,197 +1,252 @@
-import OpenAI from "openai";
+import OpenAI from "openai"
 
-export const runtime = "nodejs"; // important for OpenAI in Next routes
+export const runtime = "nodejs" // required for OpenAI in Next.js route handlers
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
+})
 
+/* -------------------- CORS -------------------- */
 function corsHeaders(origin: string | null) {
-  // Allow Framer + local dev; tighten later if needed
-  const allowOrigin = origin || "*";
+  // Allow Framer + local dev; tighten later if you want.
+  const allowOrigin = origin || "*"
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
-  };
+  }
 }
 
 // Preflight
 export async function OPTIONS(req: Request) {
-  const origin = req.headers.get("origin");
-  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  const origin = req.headers.get("origin")
+  return new Response(null, { status: 204, headers: corsHeaders(origin) })
 }
 
-export async function POST(req: Request) {
-  const origin = req.headers.get("origin");
+/* -------------------- HELPERS -------------------- */
+type Signal = "required" | "unclear" | "not_required"
+
+function safeTrim(s: any) {
+  return typeof s === "string" ? s.trim() : ""
+}
+
+/**
+ * Lightweight deterministic signal detector.
+ * We still ask the model to align language + write the letter,
+ * but we don't rely on the model for "required" vs "not required".
+ */
+function detectCoverLetterSignal(jobText: string): Signal {
+  const t = (jobText || "").toLowerCase()
+
+  // Strong "required" cues
+  const requiredPhrases = [
+    "cover letter required",
+    "cover letter is required",
+    "must include a cover letter",
+    "include a cover letter",
+    "submit a cover letter",
+    "upload a cover letter",
+    "attach a cover letter",
+    "please provide a cover letter",
+  ]
+
+  // Strong "not required/optional" cues
+  const notRequiredPhrases = [
+    "cover letter optional",
+    "cover letter is optional",
+    "no cover letter required",
+    "cover letter not required",
+    "cover letter not necessary",
+    "do not submit a cover letter",
+  ]
+
+  if (notRequiredPhrases.some((p) => t.includes(p))) return "not_required"
+  if (requiredPhrases.some((p) => t.includes(p))) return "required"
+
+  // Common “application materials” phrasing can be ambiguous
+  // (eg, "resume and cover letter" listed but not clearly required)
+  const ambiguousPhrases = [
+    "resume and cover letter",
+    "cv and cover letter",
+    "application materials",
+    "application package",
+  ]
+
+  if (ambiguousPhrases.some((p) => t.includes(p))) return "unclear"
+
+  return "unclear"
+}
+
+/**
+ * Attempts to parse JSON strictly. If model returns extra text,
+ * tries to extract first JSON object block.
+ */
+function parseModelJson(raw: string) {
+  const t = safeTrim(raw)
+  if (!t) return null
 
   try {
-    const body = await req.json();
-
-    /**
-     * Expected payload (minimum):
-     *  - profile: string (resume/profile text)
-     *  - job: string (job description text)
-     *
-     * Optional (recommended):
-     *  - companyName: string
-     *  - positionTitle: string
-     *  - date: string (e.g., "January 11, 2026")
-     *
-     * If optional fields are missing, the model will use placeholders.
-     */
-    const {
-      profile,
-      job,
-      companyName = "[Company Name]",
-      positionTitle = "[Position Title]",
-      date = "[Month Day, Year]",
-    } = body ?? {};
-
-    if (!profile || !job) {
-      return new Response(JSON.stringify({ error: "Missing profile or job" }), {
-        status: 400,
-        headers: corsHeaders(origin),
-      });
+    return JSON.parse(t)
+  } catch {
+    // Try to extract first {...} block
+    const firstBrace = t.indexOf("{")
+    const lastBrace = t.lastIndexOf("}")
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const candidate = t.slice(firstBrace, lastBrace + 1)
+      try {
+        return JSON.parse(candidate)
+      } catch {
+        return null
+      }
     }
-
-    /**
-     * COVER LETTER RULES (formalized)
-     * - NO invented experience. Use only info from profile/resume and job post.
-     * - Story-first. Do NOT regurgitate the resume bullet-by-bullet.
-     * - Must include a header at the very top (do not repeat candidate name/contact info).
-     * - Structure:
-     *   1) Intro paragraph: story + motivation + why this field/role
-     *   2) Alignment paragraph: connect education/skills/experience to company/opportunity (templated)
-     *   3) Team-member paragraph: the kind of person/worker they get (reliability, coachability, composure, etc.)
-     *   4) Thank-you paragraph: appreciation + restate interest + excitement to learn more
-     * - Keep it professional, human, and confident. No apologies.
-     * - Avoid em dashes.
-     * - Keep concise (target ~220–350 words unless the job clearly demands more).
-     */
-
-    const system = `
-You are WRNSignal. You write story-first cover letters for early-career candidates.
-Follow the cover letter rules exactly.
-
-NON-NEGOTIABLES:
-- Use ONLY information from the PROFILE. Do not invent experience, credentials, or claims.
-- Do not repeat the candidate’s name or contact info (assume it already exists in the document header).
-- Avoid em dashes. Use commas or parentheses instead.
-- Write in a professional, grounded tone. No fluff. No cringe. No corporate buzzword soup.
-- Do not mention these rules.
-
-FORMAT REQUIREMENTS:
-- The letter MUST begin with this exact header format (4 lines), using the provided values:
-  Date: <DATE>
-  Hiring Team
-  <COMPANY NAME>
-  Re: Application for <POSITION TITLE>
-
-- After the header, include exactly 4 paragraphs in this order:
-  1) Intro paragraph: story, motivation, why this field/role.
-  2) Alignment paragraph: connect skills, interests, education, and experience to this company/opportunity. Templated but specific.
-  3) Team-member paragraph: describe what kind of person/worker they get (reliability, composure, coachability, confidentiality, etc.), grounded in PROFILE.
-  4) Thank-you paragraph: thank you + restate interest + excitement to learn more.
-
-OUTPUT REQUIREMENTS:
-Return ONLY valid JSON matching:
-{
-  "signal": "required" | "unclear" | "not_required",
-  "note": string,
-  "letter": string
+    return null
+  }
 }
 
-- "letter" must contain the header + 4 paragraphs, with blank lines between paragraphs.
-- "signal" should be:
-  - "not_required" if the job explicitly says no cover letter is needed
-  - "required" if the job requests or strongly implies a cover letter
-  - "unclear" otherwise
-- "note" should be 1–2 short sentences about fit and what the letter emphasizes, grounded in PROFILE + JOB.
-`.trim();
+/**
+ * Ensures the response matches the API contract and is always usable.
+ */
+function normalizeResponse(
+  detectedSignal: Signal,
+  parsed: any,
+  fallbackLetter: string
+) {
+  const signal: Signal =
+    parsed?.signal === "required" ||
+    parsed?.signal === "unclear" ||
+    parsed?.signal === "not_required"
+      ? parsed.signal
+      : detectedSignal
 
-    const user = `
-DATE: ${date}
-COMPANY NAME: ${companyName}
-POSITION TITLE: ${positionTitle}
+  const note =
+    typeof parsed?.note === "string" && parsed.note.trim().length > 0
+      ? parsed.note.trim()
+      : "Not recommended unless a cover letter is explicitly required. If required, use this as a clean, factual attachment aligned to the job language."
 
-PROFILE:
-${profile}
+  const letter =
+    typeof parsed?.letter === "string" && parsed.letter.trim().length > 0
+      ? parsed.letter.trim()
+      : safeTrim(fallbackLetter)
 
-JOB:
-${job}
-`.trim();
+  return { signal, note, letter }
+}
 
-    // Prefer structured output when available. If the SDK/model ignores response_format,
-    // the JSON parse fallback below still works.
+/* -------------------- ROUTE -------------------- */
+export async function POST(req: Request) {
+  const origin = req.headers.get("origin")
+
+  try {
+    const body = await req.json()
+    const profile = safeTrim(body?.profile)
+    const job = safeTrim(body?.job)
+
+    if (!profile || !job) {
+      return new Response(
+        JSON.stringify({ error: "Missing profile or job" }),
+        { status: 400, headers: corsHeaders(origin) }
+      )
+    }
+
+    const detectedSignal = detectCoverLetterSignal(job)
+
+    /**
+     * COVER LETTER RULES (FORMALIZED):
+     * - Output is a concise, factual cover letter.
+     * - Must align to job language (keywords, responsibilities, functions).
+     * - Must only use information in the profile. No invented experience.
+     * - No fluffy enthusiasm, no generic "passionate/excited" filler.
+     * - Tone: direct, competent, recruiter-readable.
+     * - Structure must match the preferred template:
+     *   [Date]
+     *   Hiring Team
+     *   [Company Name]
+     *   Re: Application for [Position Title]
+     *   Dear Hiring Team,
+     *   (3–4 short paragraphs)
+     *   Sincerely,
+     *   [Candidate Name]
+     *
+     * Also:
+     * - We ALWAYS allow generation, but we include a note that it's not recommended unless required.
+     * - Return JSON only.
+     */
+    const system = [
+      "You are WRNSignal.",
+      "You generate a concise, factual cover letter aligned to the job language using ONLY information from the profile.",
+      "You do not invent, assume, or embellish experience, skills, outcomes, metrics, or intent.",
+      "You do not use generic enthusiasm, filler, motivational language, or salesy claims.",
+      "You keep sentences short, concrete, and recruiter-readable.",
+      "You mirror wording from the job description where it is factually supported by the profile.",
+      "You MUST follow this letter format exactly:",
+      "[Date]",
+      "Hiring Team",
+      "[Company Name]",
+      "Re: Application for [Position Title]",
+      "Dear Hiring Team,",
+      "(3–4 short paragraphs, tight and factual, aligned to the job language)",
+      "Sincerely,",
+      "[Candidate Name]",
+      "",
+      "You must return JSON ONLY. No markdown. No commentary.",
+      'JSON shape: {"signal":"required|unclear|not_required","note":"...", "letter":"..."}',
+      "",
+      "Signal guidance:",
+      "- Use 'required' only if the job explicitly states a cover letter is required.",
+      "- Use 'not_required' only if the job explicitly states a cover letter is optional/not required.",
+      "- Otherwise use 'unclear'.",
+      "",
+      "Note guidance:",
+      "Always include: it is not recommended to spend time on a cover letter unless explicitly required, but the user can generate one anyway.",
+    ].join("\n")
+
+    const user = [
+      "PROFILE:",
+      profile,
+      "",
+      "JOB:",
+      job,
+      "",
+      `Detected signal (use as a hint, not gospel): ${detectedSignal}`,
+      "",
+      "Write a cover letter that is factual and tightly aligned to the job language.",
+      "If company name, title, date, or candidate name are missing, keep the placeholders [Company Name], [Position Title], [Date], [Candidate Name].",
+      "Do NOT add any details not present in the profile.",
+      "Return JSON only in the required shape.",
+    ].join("\n")
+
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
       input: [
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-      // @ts-ignore - response_format is supported by the Responses API in newer SDKs
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "cover_letter_output",
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              signal: {
-                type: "string",
-                enum: ["required", "unclear", "not_required"],
-              },
-              note: { type: "string" },
-              letter: { type: "string" },
-            },
-            required: ["signal", "note", "letter"],
-          },
-        },
-      },
-    });
+    })
 
+    // OpenAI SDK output text handling (covers common variants)
     const raw =
       // @ts-ignore
       response.output_text ||
-      // fallback if your SDK returns differently
-      (response as any).output?.[0]?.content?.[0]?.text ||
-      "";
+      // fallback variants
+      (response as any)?.output?.[0]?.content?.[0]?.text ||
+      ""
 
-    // Attempt JSON parse; if it fails, still return something readable
-    let parsed: any;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = {
-        signal: "unclear",
-        note: "Model did not return JSON. Returned raw text in letter.",
-        letter: raw,
-      };
-    }
+    const parsed = parseModelJson(raw)
+    const normalized = normalizeResponse(detectedSignal, parsed, raw)
 
-    // Lightweight guardrails in case the model drifts
-    if (typeof parsed?.letter === "string") {
-      // Ensure header presence (best-effort). Do not mutate content beyond adding missing header.
-      const headerStart = `Date:`;
-      if (!parsed.letter.trim().startsWith(headerStart)) {
-        const header = `Date: ${date}\nHiring Team\n${companyName}\nRe: Application for ${positionTitle}\n\n`;
-        parsed.letter = header + parsed.letter.trim();
-      }
-    }
+    // Force our detected signal if you want hard deterministic behavior:
+    // normalized.signal = detectedSignal
 
-    return new Response(JSON.stringify(parsed), {
+    return new Response(JSON.stringify(normalized), {
       status: 200,
       headers: corsHeaders(origin),
-    });
+    })
   } catch (err: any) {
-    const detail = err?.message || String(err);
+    const detail = err?.message || String(err)
     return new Response(
       JSON.stringify({ error: "CoverLetter failed", detail }),
       { status: 500, headers: corsHeaders(origin) }
-    );
+    )
   }
 }
