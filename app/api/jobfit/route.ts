@@ -1,59 +1,65 @@
-import OpenAI from "openai";
+import { getAuthedProfileText } from "../_lib/authProfile"
+import OpenAI from "openai"
 
-export const runtime = "nodejs";
+export const runtime = "nodejs"
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 function corsHeaders(origin: string | null) {
-  const allowOrigin = origin || "*";
+  const allowOrigin = origin || "*"
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
-  };
+  }
 }
 
 export async function OPTIONS(req: Request) {
-  const origin = req.headers.get("origin");
-  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  const origin = req.headers.get("origin")
+  return new Response(null, { status: 204, headers: corsHeaders(origin) })
 }
 
 function safeJsonParse(raw: string) {
   try {
-    return JSON.parse(raw);
+    return JSON.parse(raw)
   } catch {
-    return null;
+    return null
   }
 }
 
 function clampScore(n: any) {
-  const x = Number(n);
-  if (!Number.isFinite(x)) return 0;
-  return Math.max(0, Math.min(100, Math.round(x)));
+  const x = Number(n)
+  if (!Number.isFinite(x)) return 0
+  return Math.max(0, Math.min(100, Math.round(x)))
 }
 
 function iconForDecision(decision: string) {
-  const d = (decision || "").toLowerCase().trim();
-  if (d === "apply") return "✅";
-  if (d === "review carefully") return "⚠️";
-  if (d === "pass") return "⛔";
-  // fallback
-  return "⚠️";
+  const d = (decision || "").toLowerCase().trim()
+  if (d === "apply") return "✅"
+  if (d === "review carefully") return "⚠️"
+  if (d === "pass") return "⛔"
+  return "⚠️"
 }
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin");
+  const origin = req.headers.get("origin")
 
   try {
-    const { profile, job } = await req.json();
+    // ✅ NEW: auth + server-side stored profile
+    const { profileText } = await getAuthedProfileText(req)
+    const profile = profileText
 
-    if (!profile || !job) {
-      return new Response(
-        JSON.stringify({ error: "Missing profile or job" }),
-        { status: 400, headers: corsHeaders(origin) }
-      );
+    // ✅ CHANGED: client now sends only { job }
+    const body = await req.json()
+    const job = String(body?.job || "").trim()
+
+    if (!job) {
+      return new Response(JSON.stringify({ error: "Missing job" }), {
+        status: 400,
+        headers: corsHeaders(origin),
+      })
     }
 
     const system = `
@@ -103,7 +109,7 @@ Return valid JSON ONLY with this schema:
   "risk_flags": string[],     // 0–6, include uncertainty/missing info risks
   "next_step": string         // single concrete instruction
 }
-    `.trim();
+    `.trim()
 
     const user = `
 CLIENT PROFILE:
@@ -114,7 +120,7 @@ ${job}
 
 Make a JobFit decision. If profile/job content is placeholder or missing details, score should be low and risk_flags should say what is missing.
 Return JSON only.
-    `.trim();
+    `.trim()
 
     const resp = await client.responses.create({
       model: "gpt-4.1-mini",
@@ -122,14 +128,13 @@ Return JSON only.
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-    });
+    })
 
     // @ts-ignore
-    const raw = (resp as any).output_text || "";
-    const parsed = safeJsonParse(raw);
+    const raw = (resp as any).output_text || ""
+    const parsed = safeJsonParse(raw)
 
     if (!parsed) {
-      // Fallback: return raw text so UI still shows something
       return new Response(
         JSON.stringify({
           decision: "Review carefully",
@@ -140,12 +145,12 @@ Return JSON only.
           next_step: raw || "Retry with full profile + job description.",
         }),
         { status: 200, headers: corsHeaders(origin) }
-      );
+      )
     }
 
-    const decision = parsed.decision || "Review carefully";
-    const score = clampScore(parsed.score);
-    const icon = iconForDecision(decision);
+    const decision = parsed.decision || "Review carefully"
+    const score = clampScore(parsed.score)
+    const icon = iconForDecision(decision)
 
     const out = {
       decision,
@@ -154,17 +159,26 @@ Return JSON only.
       bullets: Array.isArray(parsed.bullets) ? parsed.bullets : [],
       risk_flags: Array.isArray(parsed.risk_flags) ? parsed.risk_flags : [],
       next_step: typeof parsed.next_step === "string" ? parsed.next_step : "",
-    };
+    }
 
     return new Response(JSON.stringify(out), {
       status: 200,
       headers: corsHeaders(origin),
-    });
+    })
   } catch (err: any) {
-    const detail = err?.message || String(err);
+    const detail = err?.message || String(err)
+
+    // ✅ NEW: return correct status codes for auth/profile failures
+    const lower = String(detail).toLowerCase()
+    const status =
+      lower.includes("unauthorized") ? 401 :
+      lower.includes("profile not found") ? 404 :
+      lower.includes("access disabled") ? 403 :
+      500
+
     return new Response(JSON.stringify({ error: "JobFit failed", detail }), {
-      status: 500,
+      status,
       headers: corsHeaders(origin),
-    });
+    })
   }
 }
