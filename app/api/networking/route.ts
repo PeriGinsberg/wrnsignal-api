@@ -1,44 +1,51 @@
-import OpenAI from "openai";
+import { getAuthedProfileText } from "../_lib/authProfile"
+import OpenAI from "openai"
 
-export const runtime = "nodejs";
+export const runtime = "nodejs"
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 function corsHeaders(origin: string | null) {
-  const allowOrigin = origin || "*";
+  const allowOrigin = origin || "*"
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
-  };
+  }
 }
 
 export async function OPTIONS(req: Request) {
-  const origin = req.headers.get("origin");
-  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  const origin = req.headers.get("origin")
+  return new Response(null, { status: 204, headers: corsHeaders(origin) })
 }
 
 function safeJsonParse(raw: string) {
   try {
-    return JSON.parse(raw);
+    return JSON.parse(raw)
   } catch {
-    return null;
+    return null
   }
 }
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin");
+  const origin = req.headers.get("origin")
 
   try {
-    const { profile, job } = await req.json();
+    // ✅ Auth + stored profile (server-side)
+    const { profileText } = await getAuthedProfileText(req)
+    const profile = profileText
 
-    if (!profile || !job) {
-      return new Response(
-        JSON.stringify({ error: "Missing profile or job" }),
-        { status: 400, headers: corsHeaders(origin) }
-      );
+    // ✅ Client sends only { job }
+    const body = await req.json()
+    const job = String(body?.job || "").trim()
+
+    if (!job) {
+      return new Response(JSON.stringify({ error: "Missing job" }), {
+        status: 400,
+        headers: corsHeaders(origin),
+      })
     }
 
     const system = `
@@ -67,7 +74,7 @@ Return valid JSON ONLY:
     { "target": string, "rationale": string, "message": string }
   ]
 }
-    `.trim();
+    `.trim()
 
     const user = `
 CLIENT PROFILE:
@@ -78,7 +85,7 @@ ${job}
 
 Generate exactly 3 networking actions. Choose smart targets (recruiter if appropriate, hiring team adjacent, someone in function/team).
 Return JSON only.
-    `.trim();
+    `.trim()
 
     const resp = await client.responses.create({
       model: "gpt-4.1-mini",
@@ -86,11 +93,11 @@ Return JSON only.
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-    });
+    })
 
     // @ts-ignore
-    const raw = (resp as any).output_text || "";
-    const parsed = safeJsonParse(raw);
+    const raw = (resp as any).output_text || ""
+    const parsed = safeJsonParse(raw)
 
     if (!parsed) {
       return new Response(
@@ -108,32 +115,43 @@ Return JSON only.
           ],
         }),
         { status: 200, headers: corsHeaders(origin) }
-      );
+      )
     }
 
-    const out = {
+    const out: any = {
       note:
         typeof parsed.note === "string"
           ? parsed.note
           : "Networking is where you win. Treat applying as ~20% effort and networking as ~80% effort after you apply.",
       actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 3) : [],
-    };
+    }
 
     // Ensure exactly 3 actions in output
     while (out.actions.length < 3) {
-      out.actions.push({ target: "", rationale: "", message: "" });
+      out.actions.push({ target: "", rationale: "", message: "" })
     }
-    out.actions = out.actions.slice(0, 3);
+    out.actions = out.actions.slice(0, 3)
 
     return new Response(JSON.stringify(out), {
       status: 200,
       headers: corsHeaders(origin),
-    });
+    })
   } catch (err: any) {
-    const detail = err?.message || String(err);
+    const detail = err?.message || String(err)
+
+    const lower = String(detail).toLowerCase()
+    const status =
+      lower.includes("unauthorized")
+        ? 401
+        : lower.includes("profile not found")
+          ? 404
+          : lower.includes("access disabled")
+            ? 403
+            : 500
+
     return new Response(JSON.stringify({ error: "Networking failed", detail }), {
-      status: 500,
+      status,
       headers: corsHeaders(origin),
-    });
+    })
   }
 }

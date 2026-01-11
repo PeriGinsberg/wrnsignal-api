@@ -1,3 +1,4 @@
+import { getAuthedProfileText } from "../_lib/authProfile"
 import OpenAI from "openai"
 
 export const runtime = "nodejs"
@@ -7,7 +8,6 @@ const client = new OpenAI({
 })
 
 function corsHeaders(origin: string | null) {
-  // Allow Framer + local dev; tighten later if you want
   const allowOrigin = origin || "*"
   return {
     "Content-Type": "application/json",
@@ -35,10 +35,16 @@ export async function POST(req: Request) {
   })
 
   try {
-    const { profile, job } = await req.json()
+    // ✅ Auth + stored profile (server-side)
+    const { profileText } = await getAuthedProfileText(req)
+    const profile = profileText
 
-    if (!profile || !job) {
-      return new Response(JSON.stringify({ error: "Missing profile or job" }), {
+    // ✅ Client sends only { job }
+    const body = await req.json()
+    const job = String(body?.job || "").trim()
+
+    if (!job) {
+      return new Response(JSON.stringify({ error: "Missing job" }), {
         status: 400,
         headers: corsHeaders(origin),
       })
@@ -94,7 +100,7 @@ SIGNAL RULES:
 - If the JOB explicitly says no cover letter needed, signal = "not_required".
 - Otherwise signal = "unclear".
 - Keep note short. If unclear, say "Not specified in posting."
-`
+    `.trim()
 
     const user = `
 PROFILE:
@@ -102,7 +108,7 @@ ${profile}
 
 JOB:
 ${job}
-`
+    `.trim()
 
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
@@ -112,7 +118,6 @@ ${job}
       ],
     })
 
-    // The OpenAI SDK returns output_text in many cases; keep a safe fallback.
     const raw =
       // @ts-ignore
       response.output_text ||
@@ -130,10 +135,14 @@ ${job}
       }
     }
 
-    // Defensive cleanup: ensure required keys exist
     if (!parsed || typeof parsed !== "object") {
-      parsed = { signal: "unclear", note: "Invalid model output.", letter: raw }
+      parsed = {
+        signal: "unclear",
+        note: "Invalid model output.",
+        letter: raw,
+      }
     }
+
     if (!parsed.signal) parsed.signal = "unclear"
     if (!parsed.note) parsed.note = ""
     if (!parsed.letter) parsed.letter = ""
@@ -144,9 +153,23 @@ ${job}
     })
   } catch (err: any) {
     const detail = err?.message || String(err)
-    return new Response(JSON.stringify({ error: "CoverLetter failed", detail }), {
-      status: 500,
-      headers: corsHeaders(origin),
-    })
+
+    const lower = String(detail).toLowerCase()
+    const status =
+      lower.includes("unauthorized")
+        ? 401
+        : lower.includes("profile not found")
+          ? 404
+          : lower.includes("access disabled")
+            ? 403
+            : 500
+
+    return new Response(
+      JSON.stringify({ error: "CoverLetter failed", detail }),
+      {
+        status,
+        headers: corsHeaders(origin),
+      }
+    )
   }
 }
