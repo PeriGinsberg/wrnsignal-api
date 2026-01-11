@@ -14,7 +14,12 @@ function getEnv() {
   }
 }
 
-export async function getAuthedEmailFromRequest(req: Request): Promise<string> {
+type AuthedUser = {
+  id: string
+  email: string
+}
+
+export async function getAuthedUserFromRequest(req: Request): Promise<AuthedUser> {
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = getEnv()
 
   const auth = req.headers.get("authorization") || ""
@@ -30,14 +35,18 @@ export async function getAuthedEmailFromRequest(req: Request): Promise<string> {
   })
 
   const { data, error } = await supabaseUserClient.auth.getUser()
-  if (error || !data?.user?.email) {
+
+  const userId = data?.user?.id
+  const email = data?.user?.email
+
+  if (error || !userId || !email) {
     throw new Error("Unauthorized: invalid session")
   }
 
-  return data.user.email.toLowerCase()
+  return { id: userId, email: email.toLowerCase() }
 }
 
-export async function getProfileTextByEmail(email: string): Promise<string> {
+export async function getProfileTextByUserId(userId: string): Promise<string> {
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = getEnv()
 
   const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -47,15 +56,21 @@ export async function getProfileTextByEmail(email: string): Promise<string> {
   const { data, error } = await supabaseAdmin
     .from("client_profiles")
     .select("profile_text, active")
-    .eq("email", email.toLowerCase())
-    .single()
+    .eq("user_id", userId)
+    .maybeSingle()
 
-  if (error || !data) {
-    throw new Error("Profile not found for this email.")
+  if (error) {
+    throw new Error("Profile lookup failed.")
   }
+
+  if (!data) {
+    throw new Error("Profile not found for this user.")
+  }
+
   if (data.active === false) {
     throw new Error("Access disabled.")
   }
+
   if (!data.profile_text || !data.profile_text.trim()) {
     throw new Error("Profile is empty.")
   }
@@ -67,7 +82,7 @@ export async function getAuthedProfileText(req: Request): Promise<{
   email: string
   profileText: string
 }> {
-  const email = await getAuthedEmailFromRequest(req)
-  const profileText = await getProfileTextByEmail(email)
-  return { email, profileText }
+  const user = await getAuthedUserFromRequest(req)
+  const profileText = await getProfileTextByUserId(user.id)
+  return { email: user.email, profileText }
 }
