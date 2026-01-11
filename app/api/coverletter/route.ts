@@ -50,6 +50,13 @@ function pickLineValue(profile: string, label: string) {
   return ""
 }
 
+const today = new Date().toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+})
+
+
 function detectCompanyFromJob(job: string) {
   // Heuristic: look for a strong brand mention in first ~20 lines
   const lines = job.split(/\r?\n/).slice(0, 25).map((l) => l.trim()).filter(Boolean)
@@ -142,6 +149,8 @@ export async function POST(req: Request) {
       "- Use ONLY information contained in the PROFILE. Never invent, assume, or embellish experience, metrics, tools, or outcomes.",
       "- Do NOT restate the job description. Do NOT summarize responsibilities back to the reader.",
       "- You may mirror at most 6 short phrases from the job posting total (keywords/values only). No copy-paste blocks.",
+"- Never use dashes or hyphens of any kind. This includes hyphens, en dashes, em dashes, or dash-based punctuation. Rewrite sentences to avoid them entirely.",
+
       "- No filler or generic enthusiasm. Avoid: excited, passionate, thrilled, dream job, perfect fit.",
       "- Keep sentences concrete and specific. No fluffy claims.",
       "",
