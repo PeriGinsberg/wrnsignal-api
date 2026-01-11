@@ -35,23 +35,27 @@ function clampScore(n: any) {
   return Math.max(0, Math.min(100, Math.round(x)))
 }
 
+function normalizeDecision(decision: string, score: number) {
+  if (score >= 75) return "Apply"
+  if (score >= 60) return "Review carefully"
+  return "Pass"
+}
+
 function iconForDecision(decision: string) {
-  const d = (decision || "").toLowerCase().trim()
+  const d = (decision || "").toLowerCase()
   if (d === "apply") return "✅"
   if (d === "review carefully") return "⚠️"
-  if (d === "pass") return "⛔"
-  return "⚠️"
+  return "⛔"
 }
 
 export async function POST(req: Request) {
   const origin = req.headers.get("origin")
 
   try {
-    // ✅ NEW: auth + server-side stored profile
+    // Auth + stored profile
     const { profileText } = await getAuthedProfileText(req)
     const profile = profileText
 
-    // ✅ CHANGED: client now sends only { job }
     const body = await req.json()
     const job = String(body?.job || "").trim()
 
@@ -66,48 +70,53 @@ export async function POST(req: Request) {
 You are WRNSignal, a job search decision system by Workforce Ready Now.
 
 ROLE:
-- You decide whether to Apply, Review carefully, or Pass for ONE job description at a time.
-- You do not motivate, reassure, or inflate outcomes.
-- Passing is framed as time protection.
+- Decide Apply, Review carefully, or Pass for ONE job.
+- Passing is framed as time protection, not rejection.
+- Do not motivate, reassure, or soften decisions.
 
 STRICT WORKFLOW:
 - JobFit always comes first.
-- You must make a decision before any resume/positioning/cover letter/networking guidance.
+- No resume, cover letter, or networking guidance before a decision.
 
 EVALUATION CONTEXT:
-- Users are early-career. Do not require identical prior role.
-- Evaluate: directional interest, skill adjacency, environment match, learning exposure, signal-building potential.
-- Never use generic traits (hard worker, fast learner, leadership) as justification.
+- Early career candidates.
+- Do NOT require identical prior role.
+- Prioritize signal-building potential and realistic conversion odds.
 
 SIGNAL HIERARCHY (STRICT ORDER):
-1) Explicit user interests/exclusions
-2) Target roles/industries/environments
+1) Explicit user interests and exclusions
+2) Target roles, industries, environments
 3) Confirmed past experience
-4) Skill adjacency/comparable responsibility
+4) Skill adjacency and comparable responsibility
 5) Job description requirements
 
+HARD RULES:
+- If the profile explicitly excludes this role, industry, or environment:
+  - Decision MUST be Pass
+  - Score MUST be below 60
+- Apply requires strong alignment AND credible signal.
+- Review carefully is for stretch roles with realistic upside.
+
 SCORING:
-- Score 0–100.
+- 0–100 scale
 - >=75 Apply
 - 60–74 Review carefully
 - <60 Pass
-- Explicit exclusions must trigger Pass or cap score <60.
 
-DECISION ICON (STRICT):
-- Apply → ✅
-- Review carefully → ⚠️
-- Pass → ⛔
-Use the icon exactly once, only next to the decision label.
+OUTPUT REQUIREMENTS:
+- Reasons must be specific and grounded in profile + job.
+- Do NOT use generic traits (hard worker, fast learner, leadership).
+- Risk flags MUST call out missing info, competition level, or misalignment.
 
 OUTPUT:
-Return valid JSON ONLY with this schema:
+Return valid JSON ONLY:
 {
-  "decision": "Apply"|"Review carefully"|"Pass",
-  "icon": "✅"|"⚠️"|"⛔",
+  "decision": "Apply" | "Review carefully" | "Pass",
+  "icon": "✅" | "⚠️" | "⛔",
   "score": number,
-  "bullets": string[],        // 4–8 concise reasons grounded in profile + job
-  "risk_flags": string[],     // 0–6, include uncertainty/missing info risks
-  "next_step": string         // single concrete instruction
+  "bullets": string[],
+  "risk_flags": string[],
+  "next_step": string
 }
     `.trim()
 
@@ -118,7 +127,8 @@ ${profile}
 JOB DESCRIPTION:
 ${job}
 
-Make a JobFit decision. If profile/job content is placeholder or missing details, score should be low and risk_flags should say what is missing.
+Make a JobFit decision.
+If information is missing or unclear, reflect that in risk_flags and score.
 Return JSON only.
     `.trim()
 
@@ -140,25 +150,43 @@ Return JSON only.
           decision: "Review carefully",
           icon: "⚠️",
           score: 60,
-          bullets: ["Model did not return JSON.", "Review output manually."],
-          risk_flags: ["Non-JSON response"],
-          next_step: raw || "Retry with full profile + job description.",
+          bullets: [
+            "Model did not return structured output.",
+            "Decision requires manual review.",
+          ],
+          risk_flags: ["Non-JSON model response"],
+          next_step: "Retry with the same job description.",
         }),
         { status: 200, headers: corsHeaders(origin) }
       )
     }
 
-    const decision = parsed.decision || "Review carefully"
-    const score = clampScore(parsed.score)
-    const icon = iconForDecision(decision)
+    let score = clampScore(parsed.score)
+    let decision = normalizeDecision(parsed.decision, score)
+
+    // Enforce exclusion logic
+    if (
+      Array.isArray(parsed.risk_flags) &&
+      parsed.risk_flags.some((r: string) =>
+        r.toLowerCase().includes("explicit exclusion")
+      )
+    ) {
+      score = Math.min(score, 59)
+      decision = "Pass"
+    }
 
     const out = {
       decision,
-      icon,
+      icon: iconForDecision(decision),
       score,
-      bullets: Array.isArray(parsed.bullets) ? parsed.bullets : [],
-      risk_flags: Array.isArray(parsed.risk_flags) ? parsed.risk_flags : [],
-      next_step: typeof parsed.next_step === "string" ? parsed.next_step : "",
+      bullets: Array.isArray(parsed.bullets) ? parsed.bullets.slice(0, 8) : [],
+      risk_flags: Array.isArray(parsed.risk_flags)
+        ? parsed.risk_flags.slice(0, 6)
+        : [],
+      next_step:
+        typeof parsed.next_step === "string"
+          ? parsed.next_step
+          : "Move on to the next opportunity.",
     }
 
     return new Response(JSON.stringify(out), {
@@ -167,9 +195,8 @@ Return JSON only.
     })
   } catch (err: any) {
     const detail = err?.message || String(err)
+    const lower = detail.toLowerCase()
 
-    // ✅ NEW: return correct status codes for auth/profile failures
-    const lower = String(detail).toLowerCase()
     const status =
       lower.includes("unauthorized") ? 401 :
       lower.includes("profile not found") ? 404 :
