@@ -6,11 +6,17 @@ function requireEnv(name: string): string {
   return v
 }
 
-const SUPABASE_URL = requireEnv("SUPABASE_URL")
-const SUPABASE_ANON_KEY = requireEnv("SUPABASE_ANON_KEY")
-const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY")
+function getEnv() {
+  return {
+    SUPABASE_URL: requireEnv("SUPABASE_URL"),
+    SUPABASE_ANON_KEY: requireEnv("SUPABASE_ANON_KEY"),
+    SUPABASE_SERVICE_ROLE_KEY: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  }
+}
 
 export async function getAuthedEmailFromRequest(req: Request): Promise<string> {
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = getEnv()
+
   const auth = req.headers.get("authorization") || ""
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : ""
 
@@ -24,7 +30,6 @@ export async function getAuthedEmailFromRequest(req: Request): Promise<string> {
   })
 
   const { data, error } = await supabaseUserClient.auth.getUser()
-
   if (error || !data?.user?.email) {
     throw new Error("Unauthorized: invalid session")
   }
@@ -33,13 +38,11 @@ export async function getAuthedEmailFromRequest(req: Request): Promise<string> {
 }
 
 export async function getProfileTextByEmail(email: string): Promise<string> {
-  const supabaseAdmin = createClient(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-    }
-  )
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = getEnv()
+
+  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 
   const { data, error } = await supabaseAdmin
     .from("client_profiles")
@@ -50,11 +53,9 @@ export async function getProfileTextByEmail(email: string): Promise<string> {
   if (error || !data) {
     throw new Error("Profile not found for this email.")
   }
-
   if (data.active === false) {
     throw new Error("Access disabled.")
   }
-
   if (!data.profile_text || !data.profile_text.trim()) {
     throw new Error("Profile is empty.")
   }
