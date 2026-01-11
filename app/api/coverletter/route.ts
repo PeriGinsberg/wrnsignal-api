@@ -50,12 +50,6 @@ function pickLineValue(profile: string, label: string) {
   return ""
 }
 
-const today = new Date().toLocaleDateString("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-})
-
 
 function detectCompanyFromJob(job: string) {
   // Heuristic: look for a strong brand mention in first ~20 lines
@@ -107,6 +101,11 @@ async function readBody(req: Request) {
 
 export async function POST(req: Request) {
   const origin = req.headers.get("origin")
+const today = new Date().toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+})
 
   try {
     const body = await readBody(req)
@@ -141,65 +140,45 @@ export async function POST(req: Request) {
     const roleHint = detectRoleFromJob(job)
     const signal = detectCoverLetterSignal(job)
 
-    const system = [
-      "You are WRNSignal.",
-      "You generate a high-caliber, recruiter-ready cover letter that reads like a strong human wrote it.",
-      "",
-      "Non-negotiables:",
-      "- Use ONLY information contained in the PROFILE. Never invent, assume, or embellish experience, metrics, tools, or outcomes.",
-      "- Do NOT restate the job description. Do NOT summarize responsibilities back to the reader.",
-      "- You may mirror at most 6 short phrases from the job posting total (keywords/values only). No copy-paste blocks.",
-"- Never use dashes or hyphens of any kind. This includes hyphens, en dashes, em dashes, or dash-based punctuation. Rewrite sentences to avoid them entirely.",
+   const system = `
+You are WRNSignal.
 
-      "- No filler or generic enthusiasm. Avoid: excited, passionate, thrilled, dream job, perfect fit.",
-      "- Keep sentences concrete and specific. No fluffy claims.",
-      "",
-      "Required structure (must follow):",
-      "1) Hook paragraph (2–4 sentences): Start with a role-relevant insight about what matters in this work, then tie it to why the candidate is drawn to this kind of work.",
-      "2) Proof paragraph #1: One specific experience example (what happened + what they did + what it shows).",
-      "3) Proof paragraph #2: One additional example from a different setting (no list of roles; go deeper, not wider).",
-      "4) Motivation + intent paragraph: Explain WHY this role/company makes sense based on the candidate’s stated goals (use MLB/pro sports intent if present).",
-      "5) Logistics paragraph: Include ONLY if the profile includes availability, relocation, schedule, or constraints. Keep it short and matter-of-fact.",
-      "Close (1–2 sentences): Direct and professional. No fluff.",
-      "",
-"Use the tone of the provided writing sample if present: direct, controlled, confident.",
-      "Style rules:",
-      "- Do NOT start with: 'I recently graduated…' or a resume summary.",
-      "- Favor short paragraphs. Make it skimmable.",
-      "- Keep total length 220–380 words.",
-      "",
-      "Format (exact lines):",
-      "[Date]",
-      "Hiring Team",
-      "[Company Name]",
-      "Re: Application for [Position Title]",
-      "Dear Hiring Team,",
-      "(paragraphs)",
-      "Sincerely,",
-      "[Candidate Name]",
-      "",
-      "Placeholder rule:",
-      "- If [Company Name] or [Position Title] are not confidently known, keep placeholders exactly.",
-      "- If Candidate Name is missing, use [Candidate Name].",
-      "",
-      "Return JSON ONLY (no markdown):",
-      '{"signal":"required|unclear|not_required","note":"...", "letter":"..."}',
-      "",
-      "Note field rule (always include this sentence verbatim):",
-      "Cover letters are not recommended unless explicitly required, but this is provided if the user wants to submit one.",
-    ].join("\n")
+NON NEGOTIABLE RULES:
+- Never use dashes or hyphens.
+- Do not invent experience.
+- Do not repeat the job description.
+- Write with narrative flow and intent.
+- Explain WHY the candidate wants this role.
 
-    // Give the model structured “intent signals” so it can write a real “why”
-    const intentSignals = [
-      `Candidate Name: ${candidateName || "[Candidate Name]"}`,
-      `Targeting: ${targeting || "(missing)"}`,
-      `Do Not Want: ${dontWant || "(missing)"}`,
-      `Location: ${location || "(missing)"}`,
-      `Start Timeline: ${timeline || "(missing)"}`,
-      `Strengths: ${strengths || "(missing)"}`,
-      `Concern: ${concern || "(missing)"}`,
-      `Other Constraints: ${other || "(missing)"}`,
-    ].join("\n")
+DATE RULE:
+- The cover letter MUST begin with the system date shown below.
+- Use it exactly as written.
+- Do not reformat or omit it.
+
+SYSTEM DATE:
+${today}
+
+FORMAT (MANDATORY):
+Line 1: SYSTEM DATE
+Line 2: Hiring Team
+Line 3: Company name if available
+Line 4: Re: Application for Position Title
+Line 5: Dear Hiring Team,
+
+CONTENT:
+- Paragraph 1: Story and motivation
+- Paragraph 2: Evidence of fit
+- Paragraph 3: Commitment and intent
+
+OUTPUT:
+Return valid JSON only:
+{
+  "signal": "required | unclear | not_required",
+  "note": "",
+  "letter": "FULL LETTER TEXT"
+}
+`
+
 
     const user = [
       "PROFILE (verbatim):",
