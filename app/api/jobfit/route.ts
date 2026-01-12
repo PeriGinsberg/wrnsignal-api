@@ -35,10 +35,13 @@ function clampScore(n: any) {
   return Math.max(0, Math.min(100, Math.round(x)))
 }
 
-function normalizeDecision(decision: string, score: number) {
-  if (score >= 75) return "Apply"
-  if (score >= 60) return "Review carefully"
-  return "Pass"
+function normalizeModelDecision(d: any): "Apply" | "Review carefully" | "Pass" {
+  const s = String(d || "").trim().toLowerCase()
+  if (s === "apply") return "Apply"
+  if (s === "review carefully" || s === "review") return "Review carefully"
+  if (s === "pass") return "Pass"
+  // fallback: if model returns something weird, default to Review carefully
+  return "Review carefully"
 }
 
 function iconForDecision(decision: string) {
@@ -46,6 +49,13 @@ function iconForDecision(decision: string) {
   if (d === "apply") return "✅"
   if (d === "review carefully") return "⚠️"
   return "⛔"
+}
+
+function enforceScoreBand(decision: "Apply" | "Review carefully" | "Pass", score: number) {
+  // Keep decision as source of truth; only nudge score into the band so UI stays consistent.
+  if (decision === "Apply") return Math.max(score, 75)
+  if (decision === "Review carefully") return Math.min(Math.max(score, 60), 74)
+  return Math.min(score, 59)
 }
 
 export async function POST(req: Request) {
@@ -92,16 +102,18 @@ SIGNAL HIERARCHY (STRICT ORDER):
 
 HARD RULES:
 - If the profile explicitly excludes this role, industry, or environment:
-  - Decision MUST be Pass
-  - Score MUST be below 60
+  - decision MUST be Pass
+  - score MUST be below 60
+  - include a risk_flag containing the exact phrase: "explicit exclusion"
 - Apply requires strong alignment AND credible signal.
 - Review carefully is for stretch roles with realistic upside.
 
 SCORING:
 - 0–100 scale
-- >=75 Apply
-- 60–74 Review carefully
-- <60 Pass
+- Apply band: 75–100
+- Review carefully band: 60–74
+- Pass band: 0–59
+- Score must match the decision band.
 
 OUTPUT REQUIREMENTS:
 - Reasons must be specific and grounded in profile + job.
@@ -161,28 +173,26 @@ Return JSON only.
       )
     }
 
+    const decision = normalizeModelDecision(parsed.decision)
     let score = clampScore(parsed.score)
-    let decision = normalizeDecision(parsed.decision, score)
 
-    // Enforce exclusion logic
-    if (
-      Array.isArray(parsed.risk_flags) &&
-      parsed.risk_flags.some((r: string) =>
-        r.toLowerCase().includes("explicit exclusion")
-      )
-    ) {
-      score = Math.min(score, 59)
-      decision = "Pass"
-    }
+    // If model flagged explicit exclusion, force Pass band
+    const riskFlags = Array.isArray(parsed.risk_flags) ? parsed.risk_flags : []
+    const hasExplicitExclusion = riskFlags.some((r: any) =>
+      String(r || "").toLowerCase().includes("explicit exclusion")
+    )
+
+    let finalDecision: "Apply" | "Review carefully" | "Pass" = decision
+    if (hasExplicitExclusion) finalDecision = "Pass"
+
+    score = enforceScoreBand(finalDecision, score)
 
     const out = {
-      decision,
-      icon: iconForDecision(decision),
+      decision: finalDecision,
+      icon: iconForDecision(finalDecision),
       score,
       bullets: Array.isArray(parsed.bullets) ? parsed.bullets.slice(0, 8) : [],
-      risk_flags: Array.isArray(parsed.risk_flags)
-        ? parsed.risk_flags.slice(0, 6)
-        : [],
+      risk_flags: riskFlags.slice(0, 6),
       next_step:
         typeof parsed.next_step === "string"
           ? parsed.next_step
@@ -195,7 +205,7 @@ Return JSON only.
     })
   } catch (err: any) {
     const detail = err?.message || String(err)
-    const lower = detail.toLowerCase()
+    const lower = String(detail).toLowerCase()
 
     const status =
       lower.includes("unauthorized") ? 401 :
