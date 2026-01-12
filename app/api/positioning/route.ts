@@ -29,6 +29,74 @@ function safeJsonParse(raw: string) {
   }
 }
 
+function norm(s: string) {
+  return String(s || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .trim()
+}
+
+function exactSubstring(haystack: string, needle: string) {
+  const h = norm(haystack)
+  const n = norm(needle)
+  if (!n) return false
+  return h.includes(n)
+}
+
+/**
+ * Conservative hallucination guard:
+ * We allow keyword alignment, but we reject edits that introduce strong new-claim verbs
+ * unless that same verb already appears in the "before" bullet.
+ *
+ * This is intentionally strict.
+ */
+function introducesNewClaims(before: string, after: string) {
+  const b = norm(before).toLowerCase()
+  const a = norm(after).toLowerCase()
+
+  // Strong claim words that often signal fabrication when newly introduced
+  const claimWords = [
+    "managed",
+    "led",
+    "owned",
+    "launched",
+    "built",
+    "designed",
+    "developed",
+    "implemented",
+    "architected",
+    "negotiated",
+    "closed",
+    "increased",
+    "decreased",
+    "reduced",
+    "improved",
+    "generated",
+    "delivered",
+    "created",
+    "produced",
+    "drove",
+    "scaled",
+    "automated",
+    "optimized",
+    "secured",
+    "won",
+    "achieved",
+    "grew",
+    "boosted",
+    "transformed",
+  ]
+
+  // If after adds a claim verb not present in before, reject
+  for (const w of claimWords) {
+    const inAfter = a.includes(`${w} `) || a.includes(` ${w} `)
+    const inBefore = b.includes(`${w} `) || b.includes(` ${w} `)
+    if (inAfter && !inBefore) return true
+  }
+
+  return false
+}
+
 export async function POST(req: Request) {
   const origin = req.headers.get("origin")
 
@@ -51,38 +119,57 @@ export async function POST(req: Request) {
     const system = `
 You are WRNSignal (Positioning module).
 
-GOAL:
-- Improve ATS keyword alignment AND pass the recruiter 7-second scan.
-- Make minor, factual, cut-and-paste resume bullet tweaks that align language to the job description.
-- No full rewrites. No new experience. No invented metrics.
-- Every change must be defensible in an interview.
+YOUR JOB:
+Generate 5–10 resume bullet edits that improve ATS alignment and pass the recruiter 7-second scan.
 
-RULES:
-- Output 5–10 edits.
-- Each edit must be anchored to an existing bullet from the profile/resume text.
-- Mirror exact phrases from the job description where appropriate (tools, responsibilities, keywords), but keep facts true.
+ABSOLUTE TRUTH RULES (NON NEGOTIABLE):
+1) You may ONLY edit bullets that already exist in the provided resume text.
+2) "before" MUST be an exact, verbatim copy of a bullet line from the resume. Do not paraphrase. Do not merge bullets. Do not shorten.
+3) "after" MUST preserve the original factual meaning. You may reword for clarity and keyword alignment, but you may NOT add:
+   - new responsibilities
+   - new industries or domains
+   - new tools
+   - new metrics or outcomes
+   - new scope (team size, budgets, scale, seniority)
+4) You are allowed to add a keyword ONLY if it is clearly implied by the existing "before" bullet.
+   If it is not implied, do NOT add it.
+5) Evidence is mandatory:
+   - Include "evidence" as a short direct quote copied verbatim from the resume/profile that proves the "after" is factual.
+   - Evidence must be text that appears in the profile. If you cannot provide evidence, do not include that edit.
+
+JOB TITLE TAGGING:
+- Include "job_title" for each edit. It must be the role title from the resume section where the "before" bullet came from.
+- If you cannot confidently identify the job title, use "Unknown".
+
+STYLE:
+- Make edits cut-and-paste ready.
+- Keep edits tight.
+- Mirror exact job description language when it does not change facts.
 
 OUTPUT:
 Return valid JSON ONLY:
 {
-  "intro": string, 
+  "intro": string,
   "bullets": [
-    { "before": string, "after": string, "rationale": string }
+    {
+      "job_title": string,
+      "before": string,
+      "after": string,
+      "rationale": string,
+      "evidence": string
+    }
   ]
 }
     `.trim()
 
     const user = `
-CLIENT PROFILE (includes resume text):
+PROFILE (includes resume text):
 ${profile}
 
 JOB DESCRIPTION:
 ${job}
 
-Generate 5–10 bullet edits:
-- "before" must be copied from the profile/resume (or clearly a line from it).
-- "after" must be a factual language alignment to the job (ATS + 7-second scan).
-- "rationale" must explain which job language/requirements you mirrored and why it improves signal.
+Generate 5–10 bullet edits under the Truth Rules.
 Return JSON only.
     `.trim()
 
@@ -105,9 +192,11 @@ Return JSON only.
             "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits.",
           bullets: [
             {
+              job_title: "Unknown",
               before: "Model did not return JSON.",
-              after: "Retry with a cleaner resume paste inside the profile field.",
+              after: "Retry. If this repeats, shorten the job description and try again.",
               rationale: raw || "Non-JSON response.",
+              evidence: "",
             },
           ],
         }),
@@ -115,13 +204,55 @@ Return JSON only.
       )
     }
 
-    const out = {
-      intro:
-        typeof parsed.intro === "string"
-          ? parsed.intro
-          : "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits.",
-      bullets: Array.isArray(parsed.bullets) ? parsed.bullets : [],
+    const intro =
+      typeof parsed.intro === "string" && parsed.intro.trim()
+        ? parsed.intro.trim()
+        : "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits."
+
+    const bulletsRaw = Array.isArray(parsed.bullets) ? parsed.bullets : []
+
+    // Normalize + enforce truth constraints server-side
+    const cleaned = bulletsRaw
+      .map((b: any) => ({
+        job_title:
+          typeof b?.job_title === "string" && b.job_title.trim()
+            ? b.job_title.trim()
+            : "Unknown",
+        before: typeof b?.before === "string" ? b.before : "",
+        after: typeof b?.after === "string" ? b.after : "",
+        rationale: typeof b?.rationale === "string" ? b.rationale : "",
+        evidence: typeof b?.evidence === "string" ? b.evidence : "",
+      }))
+      .filter((b: any) => {
+        // must have fields
+        if (!norm(b.before) || !norm(b.after) || !norm(b.rationale)) return false
+
+        // "before" must be copied from profile
+        if (!exactSubstring(profile, b.before)) return false
+
+        // evidence must be copied from profile
+        if (!norm(b.evidence) || !exactSubstring(profile, b.evidence)) return false
+
+        // must not introduce strong new claims
+        if (introducesNewClaims(b.before, b.after)) return false
+
+        return true
+      })
+      .slice(0, 10)
+
+    // If we filtered too hard, return a safe response instead of hallucinating
+    if (cleaned.length === 0) {
+      return new Response(
+        JSON.stringify({
+          intro:
+            "I could not produce safe edits without risking fabrication. Your resume bullets may be too vague to support keyword alignment without adding claims.",
+          bullets: [],
+        }),
+        { status: 200, headers: corsHeaders(origin) }
+      )
     }
+
+    const out = { intro, bullets: cleaned }
 
     return new Response(JSON.stringify(out), {
       status: 200,
@@ -131,21 +262,17 @@ Return JSON only.
     const detail = err?.message || String(err)
 
     const lower = String(detail).toLowerCase()
-    const status =
-      lower.includes("unauthorized")
-        ? 401
-        : lower.includes("profile not found")
-          ? 404
-          : lower.includes("access disabled")
-            ? 403
-            : 500
+    const status = lower.includes("unauthorized")
+      ? 401
+      : lower.includes("profile not found")
+        ? 404
+        : lower.includes("access disabled")
+          ? 403
+          : 500
 
-    return new Response(
-      JSON.stringify({ error: "Positioning failed", detail }),
-      {
-        status,
-        headers: corsHeaders(origin),
-      }
-    )
+    return new Response(JSON.stringify({ error: "Positioning failed", detail }), {
+      status,
+      headers: corsHeaders(origin),
+    })
   }
 }
