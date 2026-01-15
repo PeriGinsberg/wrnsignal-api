@@ -24,6 +24,50 @@ export async function OPTIONS(req: Request) {
   return new Response(null, { status: 204, headers: corsHeaders(origin) })
 }
 
+/**
+ * Extract contact info from stored profile text.
+ * Supports lines like:
+ * Full Name: Jane Doe
+ * Phone: 555-555-5555
+ * Email: jane@domain.com
+ * Email Address: jane@domain.com
+ */
+function extractContact(profileText: string) {
+  const text = String(profileText || "")
+
+  const pick = (re: RegExp) => {
+    const m = text.match(re)
+    return m ? String(m[1]).trim() : ""
+  }
+
+  const fullName =
+    pick(/^\s*(?:full\s*name|name|candidate\s*name)\s*[:\-]\s*(.+)\s*$/im) || ""
+
+  const phone =
+    pick(/^\s*(?:phone|phone number|mobile)\s*[:\-]\s*(.+)\s*$/im) || ""
+
+  const email =
+    pick(/^\s*(?:email|email address)\s*[:\-]\s*(.+)\s*$/im) || ""
+
+  return { fullName, phone, email }
+}
+
+function buildSignature(contact: { fullName: string; phone: string; email: string }) {
+  const parts = [contact.phone, contact.email].filter(Boolean).join(" | ")
+  const lines = ["Sincerely,", contact.fullName || "", parts || ""].filter(Boolean)
+  return lines.join("\n")
+}
+
+function ensureSignature(letter: string, signature: string) {
+  const l = String(letter || "").trim()
+  if (!signature) return l
+
+  // If the letter already contains a "Sincerely," line, assume signature exists.
+  if (/^\s*sincerely,\s*$/im.test(l)) return l
+
+  return l ? `${l}\n\n${signature}` : signature
+}
+
 export async function POST(req: Request) {
   const origin = req.headers.get("origin")
 
@@ -38,6 +82,10 @@ export async function POST(req: Request) {
     // ✅ Auth + stored profile (server-side)
     const { profileText } = await getAuthedProfileText(req)
     const profile = profileText
+
+    // ✅ Extract contact info and build signature (server enforced)
+    const contact = extractContact(profile)
+    const signature = buildSignature(contact)
 
     // ✅ Client sends only { job }
     const body = await req.json()
@@ -86,6 +134,19 @@ Paragraph 1: Story and motivation. Why this role. Why now. One clear point of vi
 Paragraph 2: Evidence. Pick 2 to 3 experiences from the PROFILE that prove fit for the role. Use specific details from the PROFILE.
 Paragraph 3: Intent. Reliability, availability, and seriousness. If the PROFILE states willingness to relocate or immediate start, include it.
 Optional Paragraph 4: One sentence close that reinforces fit and asks for next step.
+
+CONTACT INFO (MANDATORY):
+- Use the exact contact info below in the signature block.
+- Do not change the phone or email formatting.
+Full Name: ${contact.fullName || "NOT PROVIDED"}
+Phone: ${contact.phone || "NOT PROVIDED"}
+Email: ${contact.email || "NOT PROVIDED"}
+
+SIGNATURE BLOCK (MANDATORY):
+End the letter with exactly this structure:
+Sincerely,
+${contact.fullName || "[Full Name]"}
+${[contact.phone, contact.email].filter(Boolean).join(" | ") || "[Phone Number] | [Email Address]"}
 
 OUTPUT REQUIREMENTS:
 Return valid JSON only in this format:
@@ -147,6 +208,9 @@ ${job}
     if (!parsed.note) parsed.note = ""
     if (!parsed.letter) parsed.letter = ""
 
+    // ✅ Server-enforce signature presence (so it never gets “ignored”)
+    parsed.letter = ensureSignature(parsed.letter, signature)
+
     return new Response(JSON.stringify(parsed), {
       status: 200,
       headers: corsHeaders(origin),
@@ -164,12 +228,9 @@ ${job}
             ? 403
             : 500
 
-    return new Response(
-      JSON.stringify({ error: "CoverLetter failed", detail }),
-      {
-        status,
-        headers: corsHeaders(origin),
-      }
-    )
+    return new Response(JSON.stringify({ error: "CoverLetter failed", detail }), {
+      status,
+      headers: corsHeaders(origin),
+    })
   }
 }
