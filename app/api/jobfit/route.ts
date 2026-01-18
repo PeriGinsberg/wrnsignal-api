@@ -38,14 +38,6 @@ function clampScore(n: any) {
 /** Locked decision vocabulary */
 type Decision = "Apply" | "Review carefully" | "Pass"
 
-function normalizeDecision(d: any): Decision {
-  const s = String(d || "").trim().toLowerCase()
-  if (s === "apply") return "Apply"
-  if (s === "review carefully" || s === "review") return "Review carefully"
-  if (s === "pass") return "Pass"
-  return "Review carefully"
-}
-
 function iconForDecision(decision: Decision) {
   if (decision === "Apply") return "✅"
   if (decision === "Review carefully") return "⚠️"
@@ -62,7 +54,13 @@ function enforceScoreBand(decision: Decision, score: number) {
 /**
  * Extractor schema (model output). Model does NOT decide.
  */
-type RequirementType = "technical" | "credential" | "years" | "field_of_study" | "other"
+type RequirementType =
+  | "technical"
+  | "credential"
+  | "years"
+  | "field_of_study"
+  | "other"
+
 type Status = "present" | "missing" | "unclear"
 type Strength3 = "strong" | "moderate" | "weak"
 type ExperienceStrength = "strong" | "moderate" | "limited"
@@ -85,7 +83,28 @@ type Extracted = {
     goal_alignment: Strength3
   }
   experience_strength: ExperienceStrength
-  explicit_exclusions: string[]
+
+  /**
+   * FIX: Exclusions are NOT a gate by mere existence.
+   * The model must decide if the profile exclusions CONFLICT with THIS job.
+   */
+  explicit_exclusion_conflict: {
+    conflict: boolean
+    reason: string
+    profile_evidence: string
+    job_evidence: string
+  }
+}
+
+/**
+ * Helpers
+ */
+function asArray<T>(v: any): T[] {
+  return Array.isArray(v) ? v : []
+}
+
+function asString(v: any, fallback = ""): string {
+  return typeof v === "string" ? v : fallback
 }
 
 /**
@@ -101,17 +120,21 @@ function decideJobFit(x: Extracted): {
   const risk_flags: string[] = []
   const bullets: string[] = []
 
-  const hard = Array.isArray(x?.hard_requirements) ? x.hard_requirements : []
-  const soft = Array.isArray(x?.soft_requirements) ? x.soft_requirements : []
-  const exclusions = Array.isArray(x?.explicit_exclusions) ? x.explicit_exclusions : []
-
+  const hard = asArray<Extracted["hard_requirements"][number]>(x?.hard_requirements)
+  const soft = asArray<Extracted["soft_requirements"][number]>(x?.soft_requirements)
   const align = x?.alignment_signals || ({} as any)
   const expStrength: ExperienceStrength = x?.experience_strength || "limited"
 
-  const hasExplicitExclusion = exclusions.length > 0
-  if (hasExplicitExclusion) {
+  // ------------------------
+  // 1) Explicit exclusion CONFLICT gate (FIXED)
+  // ------------------------
+  const ex = x?.explicit_exclusion_conflict
+  const hasExConflict = !!ex?.conflict
+
+  if (hasExConflict) {
     risk_flags.push("explicit exclusion")
-    bullets.push("Profile explicitly excludes this role/industry/environment.")
+    const reason = asString(ex?.reason, "Profile explicitly excludes this role/industry/environment.")
+    bullets.push(reason)
     return {
       decision: "Pass",
       risk_flags,
@@ -121,13 +144,19 @@ function decideJobFit(x: Extracted): {
     }
   }
 
-  // Credential gate: graduate/specific certifications (hard requirement) => PASS if missing/unclear
-  const credentialMissing = hard.some(
-    (r) =>
-      r?.type === "credential" &&
-      (r?.status === "missing" || r?.status === "unclear") &&
-      /mba|cpa|rn|license|certification|clearance|security/i.test(r?.requirement || "")
-  )
+  // ------------------------
+  // 2) Credential gate (hard requirement) => PASS if missing/unclear
+  //    This is intentionally strict only for graduate/specific credentials
+  // ------------------------
+  const credentialMissing = hard.some((r) => {
+    const req = String(r?.requirement || "")
+    const isCred = r?.type === "credential"
+    const miss = r?.status === "missing" || r?.status === "unclear"
+    const isGraduateOrSpecific =
+      /mba|cpa|rn|license|certification|clearance|security/i.test(req)
+    return isCred && miss && isGraduateOrSpecific
+  })
+
   if (credentialMissing) {
     risk_flags.push("required credential not shown")
     bullets.push("This role lists a specific credential/graduate requirement not shown in your profile.")
@@ -135,15 +164,18 @@ function decideJobFit(x: Extracted): {
       decision: "Pass",
       risk_flags,
       bullets,
-      next_step: "Protect your time. Prioritize roles where requirements match what you can clearly show.",
+      next_step: "Protect your time. Prioritize roles where hard requirements match what you can clearly show.",
       score: 45,
     }
   }
 
-  // Hard technical/system skills missing or unclear => REVIEW
+  // ------------------------
+  // 3) Hard technical/system skills missing or unclear => REVIEW
+  // ------------------------
   const missingTech = hard.filter(
     (r) => r?.type === "technical" && (r?.status === "missing" || r?.status === "unclear")
   )
+
   if (missingTech.length > 0) {
     for (const r of missingTech.slice(0, 4)) {
       const req = String(r?.requirement || "").trim()
@@ -152,8 +184,13 @@ function decideJobFit(x: Extracted): {
     }
   }
 
-  // Years requirement > profile => REVIEW (with offset note if strong experience)
-  const yearsGap = hard.some((r) => r?.type === "years" && (r?.status === "missing" || r?.status === "unclear"))
+  // ------------------------
+  // 4) Years requirement gap => REVIEW (with offset note if strong experience)
+  // ------------------------
+  const yearsGap = hard.some(
+    (r) => r?.type === "years" && (r?.status === "missing" || r?.status === "unclear")
+  )
+
   if (yearsGap) {
     risk_flags.push("Years requirement may be a stretch.")
     if (expStrength === "strong") {
@@ -163,16 +200,23 @@ function decideJobFit(x: Extracted): {
     }
   }
 
-  // Field of study required but not shown => REVIEW
+  // ------------------------
+  // 5) Field of study required but not shown => REVIEW
+  // ------------------------
   const fieldGap = hard.some(
     (r) => r?.type === "field_of_study" && (r?.status === "missing" || r?.status === "unclear")
   )
+
   if (fieldGap) {
     risk_flags.push("Field of study requirement not shown explicitly.")
   }
 
-  // Soft requirements: tie-breaker. Mention only if many stack up AND strengths do not outweigh.
+  // ------------------------
+  // 6) Soft requirements: tie-breaker (B)
+  //    Only ignore if other strengths outweigh gaps.
+  // ------------------------
   const softGaps = soft.filter((r) => r?.status === "missing" || r?.status === "unclear").length
+
   const strengthsOutweigh =
     align?.goal_alignment === "strong" ||
     align?.role_alignment === "strong" ||
@@ -182,7 +226,9 @@ function decideJobFit(x: Extracted): {
     risk_flags.push("Multiple soft-skill requirements are not clearly supported by the resume/profile.")
   }
 
-  // Determine base alignment
+  // ------------------------
+  // 7) Apply / Review / Pass (deterministic)
+  // ------------------------
   const goal = align?.goal_alignment || "weak"
   const role = align?.role_alignment || "weak"
   const industry = align?.industry_alignment || "weak"
@@ -190,22 +236,18 @@ function decideJobFit(x: Extracted): {
 
   const anyHardReviewTriggers = missingTech.length > 0 || yearsGap || fieldGap
 
-  // Decision rules (deterministic)
-  let decision: Decision = "Review carefully"
-
   const strongUpside =
-    goal === "strong" ||
-    role === "strong" ||
-    industry === "strong" ||
-    env === "strong"
+    goal === "strong" || role === "strong" || industry === "strong" || env === "strong"
 
   const moderateOrBetterGoal = goal === "strong" || goal === "moderate"
+
+  let decision: Decision = "Review carefully"
 
   if (anyHardReviewTriggers) {
     decision = "Review carefully"
   } else {
-    // No hard review triggers. Apply allowed with upside even with some gaps (your philosophy),
-    // but still requires at least moderate goal alignment.
+    // Apply allowed if upside is strong, even with some gaps (your philosophy),
+    // but requires at least moderate goal alignment.
     if (moderateOrBetterGoal && strongUpside) {
       decision = "Apply"
     } else if (moderateOrBetterGoal) {
@@ -216,29 +258,32 @@ function decideJobFit(x: Extracted): {
     }
   }
 
-  // Score (derived, not causal). Keep simple and stable.
+  // ------------------------
+  // 8) Score derived (stable)
+  // ------------------------
   let score = 60
   if (decision === "Apply") score = 80
   if (decision === "Pass") score = 50
 
-  // Bullets: grounded, non-motivational.
+  // ------------------------
+  // 9) Bullets + next step (grounded, blunt)
+  // ------------------------
   if (decision === "Apply") {
     bullets.push("Alignment is strong enough that applying is a reasonable use of time.")
     if (softGaps > 0) bullets.push("You may still need to strengthen how you signal fit on the resume.")
-    if (expStrength === "limited") bullets.push("Expect this to be more competitive. Use networking immediately after applying.")
+    if (expStrength === "limited") bullets.push("Expect competition. Apply, then network immediately.")
   } else if (decision === "Review carefully") {
     bullets.push("This is a stretch or has missing signals that could change the outcome.")
     if (missingTech.length > 0) bullets.push("If you have the missing technical/system skills, add them to the resume before applying.")
-    if (yearsGap) bullets.push("Years requirement is a risk. Proceed only if the role builds clear signal for your goals.")
+    if (yearsGap) bullets.push("Years requirement is a risk. Proceed only if this role builds clear signal for your goals.")
   } else {
     bullets.push("This role is not a good use of time given your stated goals and/or constraints.")
     bullets.push("Passing here protects your effort for higher-conversion opportunities.")
   }
 
-  // Next step (concrete)
   let next_step = "Move on to the next opportunity."
   if (decision === "Apply") {
-    next_step = "Apply, then immediately run Positioning and Networking to improve your competitiveness."
+    next_step = "Apply, then run Positioning and Networking immediately."
   } else if (decision === "Review carefully") {
     next_step = "Decide if you can close the gaps quickly. If yes, update the resume signals, then re-run Job Fit."
   } else {
@@ -247,7 +292,6 @@ function decideJobFit(x: Extracted): {
 
   score = enforceScoreBand(decision, clampScore(score))
 
-  // Trim for UI
   return {
     decision,
     risk_flags: risk_flags.slice(0, 6),
@@ -291,6 +335,7 @@ DO NOT:
 
 You are evaluating EARLY-CAREER candidates.
 Lack of experience is normal and should NOT be penalized.
+
 Only flag issues when information is missing or unclear in a way that affects safe evaluation.
 
 CLASSIFICATION RULES
@@ -313,7 +358,7 @@ Assign a status:
 - unclear → not mentioned or ambiguous in the profile
 
 IMPORTANT:
-- If a required technical or system skill is unclear, treat it as missing.
+- If a required technical or system skill is unclear, treat it as unclear (do not assume present).
 - Do NOT infer skills from job titles alone.
 - Do NOT infer experience depth beyond what is stated.
 
@@ -335,8 +380,18 @@ Dimensions:
 Assess overall experience strength WITHOUT judging merit.
 Classify as: strong | moderate | limited.
 
-5) EXPLICIT EXCLUSIONS
-List only exclusions clearly stated by the user.
+5) EXPLICIT EXCLUSION CONFLICT (IMPORTANT)
+Many profiles contain preferences or exclusions. DO NOT treat the mere existence of exclusions as a blocker.
+You must decide whether the profile explicitly EXCLUDES THIS JOB.
+
+Return:
+- conflict: true only if the job clearly violates an explicit exclusion in the profile.
+- conflict: false if the job does not violate exclusions (including when the job matches a stated preference).
+
+Include:
+- reason: one sentence explaining the conflict or lack of conflict
+- profile_evidence: short quote from profile that states the exclusion
+- job_evidence: short quote from the job that triggers the conflict (or confirms it does not conflict)
 
 OUTPUT FORMAT
 Return VALID JSON ONLY.
@@ -364,9 +419,12 @@ Do not include explanations outside the schema.
     "goal_alignment": "strong | moderate | weak"
   },
   "experience_strength": "strong | moderate | limited",
-  "explicit_exclusions": [
-    "string"
-  ]
+  "explicit_exclusion_conflict": {
+    "conflict": boolean,
+    "reason": "string",
+    "profile_evidence": "string",
+    "job_evidence": "string"
+  }
 }
     `.trim()
 
@@ -395,7 +453,6 @@ Extract and classify. Return JSON only.
     const parsed = safeJsonParse(raw)
 
     if (!parsed) {
-      // Fail-safe: stable, conservative
       const out = {
         decision: "Review carefully" as Decision,
         icon: "⚠️",
@@ -407,33 +464,41 @@ Extract and classify. Return JSON only.
         risk_flags: ["Non-JSON model response"],
         next_step: "Retry with the same job description.",
       }
-      return new Response(JSON.stringify(out), { status: 200, headers: corsHeaders(origin) })
+      return new Response(JSON.stringify(out), {
+        status: 200,
+        headers: corsHeaders(origin),
+      })
     }
 
-    // Basic shape coerce
     const extracted: Extracted = {
-      hard_requirements: Array.isArray(parsed.hard_requirements) ? parsed.hard_requirements : [],
-      soft_requirements: Array.isArray(parsed.soft_requirements) ? parsed.soft_requirements : [],
-      alignment_signals: parsed.alignment_signals || {
-        role_alignment: "weak",
-        industry_alignment: "weak",
-        environment_alignment: "weak",
-        goal_alignment: "weak",
-      },
+      hard_requirements: asArray(parsed.hard_requirements),
+      soft_requirements: asArray(parsed.soft_requirements),
+      alignment_signals:
+        parsed.alignment_signals || {
+          role_alignment: "weak",
+          industry_alignment: "weak",
+          environment_alignment: "weak",
+          goal_alignment: "weak",
+        },
       experience_strength: parsed.experience_strength || "limited",
-      explicit_exclusions: Array.isArray(parsed.explicit_exclusions) ? parsed.explicit_exclusions : [],
+      explicit_exclusion_conflict: parsed.explicit_exclusion_conflict || {
+        conflict: false,
+        reason: "",
+        profile_evidence: "",
+        job_evidence: "",
+      },
     }
 
-    const decisionPack = decideJobFit(extracted)
+    const pack = decideJobFit(extracted)
 
     const out = {
-      decision: decisionPack.decision,
-      icon: iconForDecision(decisionPack.decision),
-      score: enforceScoreBand(decisionPack.decision, decisionPack.score),
-      bullets: decisionPack.bullets,
-      risk_flags: decisionPack.risk_flags,
-      next_step: decisionPack.next_step,
-      // Optional: include extractor data for debugging during Phase 1
+      decision: pack.decision,
+      icon: iconForDecision(pack.decision),
+      score: enforceScoreBand(pack.decision, pack.score),
+      bullets: pack.bullets,
+      risk_flags: pack.risk_flags,
+      next_step: pack.next_step,
+      // Optional for Phase 1 debugging:
       // extracted,
     }
 
@@ -446,10 +511,13 @@ Extract and classify. Return JSON only.
     const lower = String(detail).toLowerCase()
 
     const status =
-      lower.includes("unauthorized") ? 401 :
-      lower.includes("profile not found") ? 404 :
-      lower.includes("access disabled") ? 403 :
-      500
+      lower.includes("unauthorized")
+        ? 401
+        : lower.includes("profile not found")
+        ? 404
+        : lower.includes("access disabled")
+        ? 403
+        : 500
 
     return new Response(JSON.stringify({ error: "JobFit failed", detail }), {
       status,
