@@ -1,5 +1,6 @@
 import { getAuthedProfileText } from "../_lib/authProfile";
-import { runJobFit } from "../../../_lib/jobfitEvaluator";
+import { runJobFit } from "../_lib/jobfitEvaluator";
+
 
 
 export const runtime = "nodejs";

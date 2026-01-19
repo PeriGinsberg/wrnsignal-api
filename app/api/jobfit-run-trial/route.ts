@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { runJobFit } from "../../../_lib/jobfitEvaluator";
+import { runJobFit } from "../_lib/jobfitEvaluator";
+
 
 
 export const runtime = "nodejs";
