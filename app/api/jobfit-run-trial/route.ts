@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { runJobFit } from "@/lib/jobfitEvaluator";
 
 export const runtime = "nodejs";
 
@@ -17,8 +18,7 @@ export async function OPTIONS() {
 
 export async function POST(req: Request) {
   try {
-    // Optional: simple protection (recommended).
-    // If JOBFIT_INGEST_KEY is set in Vercel, require it.
+    // Optional protection
     const expectedKey = process.env.JOBFIT_INGEST_KEY;
     if (expectedKey) {
       const got = req.headers.get("x-jobfit-key");
@@ -79,7 +79,43 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Decrement credits (atomic-ish approach)
+    // 2) Load profile data for evaluator context
+    const { data: profile, error: profErr } = await supabase
+      .from("jobfit_profiles")
+      .select("target_roles,target_locations,timeline,resume_text")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profErr) {
+      return NextResponse.json(
+        { ok: false, error: profErr.message },
+        { status: 500, headers: corsHeaders() }
+      );
+    }
+    if (!profile) {
+      return NextResponse.json(
+        { ok: false, error: "missing_profile" },
+        { status: 400, headers: corsHeaders() }
+      );
+    }
+
+    const profileText = `
+Email: ${email}
+Target Roles: ${profile.target_roles ?? ""}
+Preferred Locations: ${profile.target_locations ?? ""}
+Timeline: ${profile.timeline ?? ""}
+
+Resume Text:
+${profile.resume_text ?? ""}
+`.trim();
+
+    // 3) Run Job Fit (shared evaluator)
+    const result = await runJobFit({
+      profileText,
+      jobText: job_description,
+    });
+
+    // 4) Decrement credits AFTER successful evaluation
     const newCredits = user.credits_remaining - 1;
     const { error: creditErr } = await supabase
       .from("jobfit_users")
@@ -92,15 +128,6 @@ export async function POST(req: Request) {
         { status: 500, headers: corsHeaders() }
       );
     }
-
-    // 3) Run the SAME Job Fit logic you use today.
-    // For now we’ll return a placeholder until you paste in your existing jobfit logic call.
-    // Replace this block with your actual evaluation function call.
-    const result = {
-      decision: "review",
-      score: 0,
-      note: "Wire this to your existing /api/jobfit logic next.",
-    };
 
     return NextResponse.json(
       { ok: true, credits_remaining: newCredits, result },
