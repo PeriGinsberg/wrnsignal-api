@@ -59,33 +59,19 @@ function ensureArrayOfStrings(x: any, max: number) {
     .slice(0, max);
 }
 
-function isRelocationFlexible(profileText: string) {
-  const t = (profileText || "").toLowerCase();
-  return (
-    t.includes("anywhere") ||
-    t.includes("open to relocate") ||
-    t.includes("willing to relocate") ||
-    t.includes("willing to move") ||
-    t.includes("open to moving") ||
-    t.includes("relocate anywhere") ||
-    t.includes("can relocate") ||
-    t.includes("will relocate")
-  );
-}
-
-function stripLocationRisksIfMobile(riskFlags: string[], profileText: string) {
-  if (!isRelocationFlexible(profileText)) return riskFlags;
-
+function stripLocationRisks(riskFlags: string[]) {
   return riskFlags.filter((r) => {
     const s = r.toLowerCase();
     return !(
       s.includes("location mismatch") ||
       s.includes("not local") ||
-      s.includes("commuting distance") ||
+      s.includes("commuting") ||
+      s.includes("commute") ||
       s.includes("local presence required") ||
       s.includes("onsite presence required") ||
-      s.includes("hybrid requires local") ||
-      s.includes("must be local")
+      s.includes("hybrid location requirement") ||
+      s.includes("must be local") ||
+      s.includes("within commuting distance")
     );
   });
 }
@@ -162,7 +148,7 @@ SENIORITY REQUIREMENTS:
 - "3+ years required" is common HR boilerplate for early-career roles:
   - It must NEVER force a Pass
   - It must NOT force Review by itself
-  - It should always be listed as a risk flag
+  - It should always be listed as a risk flag (not a primary reason bullet)
   - When present, note that internships, project work, and comparable responsibilities may substitute for years of experience
 - "5+ years required":
   - Pass unless the resume clearly demonstrates equivalent senior-level scope
@@ -184,18 +170,22 @@ INTERNSHIP RULE:
 - If an internship restricts juniors/seniors and the candidate is a sophomore -> Pass with a clear flag
 
 LOCATION / WORK MODE:
-MOBILITY / RELOCATION OVERRIDE:
-- If the profile states the candidate will work anywhere, is open to relocate, or is willing to move:
-  - Do NOT treat location as a risk
-  - Do NOT treat hybrid local presence as a problem
-  - Assume the candidate can relocate to the job location
-- Only treat location as a risk if the profile explicitly restricts geography (examples: "NYC only", "must be Orlando", "no relocation", "remote only")
+
+LOCATION CONSTRAINT DETECTION (STRICT):
+- Do NOT infer a location restriction from "plans" (example: "planning to move to Orlando" is NOT a restriction).
+- Only treat location as constrained if the profile explicitly says:
+  "only", "must", "cannot relocate", "no relocation", "remote only", or lists a fixed city requirement.
+- If location flexibility is unclear, assume the candidate CAN relocate and do NOT raise commuting or local presence as a risk.
+- You MUST output a boolean field: "location_flexible"
+  - true if the candidate can relocate / is flexible / not restricted
+  - false only if the profile explicitly restricts location
 
 - Remote when candidate prefers in-person -> risk flag only (unless explicitly excluded)
 
 COMPETITION:
 - High competition must be flagged when relevant
 - Competition alone must NEVER force Review or Pass
+- Do not describe competition as a consequence of a seniority gap (do not restate missing qualifications as "competition")
 - Only treat competition as decisive if the role clearly requires pedigree the candidate does not have
 
 COMPENSATION / UNPAID:
@@ -231,7 +221,8 @@ Return valid JSON ONLY with this structure:
   "score": number,
   "bullets": string[],
   "risk_flags": string[],
-  "next_step": string
+  "next_step": string,
+  "location_flexible": boolean
 }
 
 BULLETS:
@@ -283,6 +274,7 @@ Return JSON only.
       ],
       risk_flags: ["Non-JSON model response"],
       next_step: "Retry with the same job description.",
+      location_flexible: true,
     };
   }
 
@@ -290,12 +282,16 @@ Return JSON only.
   let score = clampScore(parsed.score);
 
   const bullets = ensureArrayOfStrings(parsed.bullets, 8);
-
-  // Pull risk flags first so we can enforce logic
   let riskFlags = ensureArrayOfStrings(parsed.risk_flags, 10);
 
-  // Mobility override: remove location-based risks if candidate is flexible
-  riskFlags = stripLocationRisksIfMobile(riskFlags, profileText);
+  // Default to true unless the model explicitly says false
+  const locationFlexible =
+    typeof parsed.location_flexible === "boolean" ? parsed.location_flexible : true;
+
+  // If location is flexible, strip commute/local/location risks
+  if (locationFlexible) {
+    riskFlags = stripLocationRisks(riskFlags);
+  }
 
   // Explicit exclusion enforcement (based on required phrase in risk_flags)
   const hasExplicitExclusion = riskFlags.some((r) =>
@@ -305,8 +301,7 @@ Return JSON only.
     decision = "Pass";
   }
 
-  // 3+ years rule safety net: if model tried to make this a Pass driver, do not allow it
-  // (3+ years should be a flag only, not a reason to force Pass)
+  // 3+ years rule safety net: never allow Pass solely due to 3+ years (unless explicit exclusion)
   if (decision === "Pass" && !hasExplicitExclusion && containsThreePlusYearsFlag(riskFlags)) {
     decision = "Review";
   }
@@ -316,10 +311,8 @@ Return JSON only.
     decision = "Review";
   }
 
-  // Enforce score bands after decision rules
   score = enforceScoreBand(decision, score);
 
-  // Final trim of risk flags for UI
   riskFlags = riskFlags.slice(0, 6);
 
   const next_step =
@@ -338,5 +331,6 @@ Return JSON only.
     bullets,
     risk_flags: riskFlags,
     next_step,
+    location_flexible: locationFlexible,
   };
 }
