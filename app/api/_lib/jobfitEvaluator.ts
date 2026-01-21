@@ -3,6 +3,7 @@ import OpenAI from "openai";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 type Decision = "Apply" | "Review" | "Pass";
+type LocationConstraint = "constrained" | "not_constrained" | "unclear";
 
 function extractJsonObject(raw: string) {
   if (!raw) return null;
@@ -59,18 +60,24 @@ function ensureArrayOfStrings(x: any, max: number) {
     .slice(0, max);
 }
 
-function stripLocationRisks(riskFlags: string[]) {
-  return riskFlags.filter((r) => {
-    const s = r.toLowerCase();
+// If location is not explicitly constrained, we strip commuting/local-presence/location-mismatch language.
+// This enforces your rule: do not infer commute risk from "plans."
+function stripLocationLanguage(items: string[]) {
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase();
     return !(
-      s.includes("location mismatch") ||
-      s.includes("not local") ||
-      s.includes("commuting") ||
       s.includes("commute") ||
-      s.includes("local presence required") ||
+      s.includes("commuting") ||
+      s.includes("reasonable commuting distance") ||
+      s.includes("miles away") ||
+      s.includes("mile away") ||
+      s.includes("distance") ||
+      s.includes("not local") ||
+      s.includes("local presence") ||
+      s.includes("must be local") ||
       s.includes("onsite presence required") ||
       s.includes("hybrid location requirement") ||
-      s.includes("must be local") ||
+      s.includes("location mismatch") ||
       s.includes("within commuting distance")
     );
   });
@@ -86,6 +93,14 @@ function containsThreePlusYearsFlag(riskFlags: string[]) {
       s.includes("minimum 3 years")
     );
   });
+}
+
+function normalizeLocationConstraint(x: any): LocationConstraint {
+  const s = String(x || "").trim().toLowerCase();
+  if (s === "constrained") return "constrained";
+  if (s === "not_constrained" || s === "not constrained") return "not_constrained";
+  if (s === "unclear") return "unclear";
+  return "unclear";
 }
 
 export async function runJobFit({
@@ -106,10 +121,10 @@ DO NOT:
 - Motivate, reassure, or soften outcomes
 - Provide resume, cover letter, or networking advice
 - Use generic traits (hard worker, fast learner, leadership)
-- Add headings outside JSON (no WHY, RISKS, NEXT STEPS text blocks)
+- Output headings or formatted sections outside JSON (no WHY, RISKS, NEXT STEPS)
 
 DECISIONS:
-Return only one decision:
+Return only one:
 - Apply
 - Review
 - Pass
@@ -121,11 +136,11 @@ CORE PHILOSOPHY:
 - Pass means effort is unlikely to convert into an interview or builds wrong signal
 
 EVALUATION CONTEXT:
-- This is for students and new graduates
-- Internships and entry-level roles do NOT require identical prior experience
+- Students and new grads
+- Internships/entry-level roles do NOT require identical prior experience
 - Transferable skills and adjacent experience matter
 - Duties override titles
-- Function alignment can outweigh industry alignment
+- Function match can outweigh industry match
 
 SIGNAL HIERARCHY (STRICT ORDER):
 1) Explicit user interests and exclusions
@@ -148,7 +163,8 @@ SENIORITY REQUIREMENTS:
 - "3+ years required" is common HR boilerplate for early-career roles:
   - It must NEVER force a Pass
   - It must NOT force Review by itself
-  - It should always be listed as a risk flag (not a primary reason bullet)
+  - It should always be listed as a risk flag
+  - Put it in risk_flags, not as a primary reason bullet
   - When present, note that internships, project work, and comparable responsibilities may substitute for years of experience
 - "5+ years required":
   - Pass unless the resume clearly demonstrates equivalent senior-level scope
@@ -169,17 +185,24 @@ LICENSING / CERTIFICATIONS:
 INTERNSHIP RULE:
 - If an internship restricts juniors/seniors and the candidate is a sophomore -> Pass with a clear flag
 
-LOCATION / WORK MODE:
+LOCATION / WORK MODE (STRICT):
+You MUST output "location_constraint" as one of:
+- "constrained"
+- "not_constrained"
+- "unclear"
 
-LOCATION CONSTRAINT DETECTION (STRICT):
-- Do NOT infer a location restriction from "plans" (example: "planning to move to Orlando" is NOT a restriction).
-- Only treat location as constrained if the profile explicitly says:
-  "only", "must", "cannot relocate", "no relocation", "remote only", or lists a fixed city requirement.
-- If location flexibility is unclear, assume the candidate CAN relocate and do NOT raise commuting or local presence as a risk.
-- You MUST output a boolean field: "location_flexible"
-  - true if the candidate can relocate / is flexible / not restricted
-  - false only if the profile explicitly restricts location
+Rules for setting location_constraint:
+- "constrained" ONLY if the profile explicitly restricts location or relocation
+  Examples: "NYC only", "must be Orlando", "no relocation", "remote only"
+- "not_constrained" if the profile indicates flexibility or openness to relocate
+- "unclear" if it is not stated either way
 
+IMPORTANT:
+- If location_constraint is "unclear", treat it as NOT constrained.
+- If location is not explicitly constrained, you MUST NOT mention commuting distance, miles, commuting acceptability, "reasonable commuting distance", or local presence as a risk or bullet.
+- Do NOT infer location constraints from "plans" (example: "planning to move to Orlando" is NOT a constraint).
+
+Remote preference:
 - Remote when candidate prefers in-person -> risk flag only (unless explicitly excluded)
 
 COMPETITION:
@@ -211,10 +234,10 @@ SCORING:
 - Review: 60–74
 - Pass: 0–59
 - Score must match the decision band
-- Score should reflect alignment, signal credibility, requirements realism, and interview conversion likelihood
+- Score reflects alignment, signal credibility, requirements realism, and interview conversion likelihood
 
 OUTPUT REQUIREMENTS:
-Return valid JSON ONLY with this structure:
+Return valid JSON ONLY:
 
 {
   "decision": "Apply" | "Review" | "Pass",
@@ -222,13 +245,13 @@ Return valid JSON ONLY with this structure:
   "bullets": string[],
   "risk_flags": string[],
   "next_step": string,
-  "location_flexible": boolean
+  "location_constraint": "constrained" | "not_constrained" | "unclear"
 }
 
 BULLETS:
-- Specific and grounded in profile and job description
+- Specific and grounded in profile and job
 - Written as potential interview talking points
-- Mix of fit and caution where appropriate
+- Mix of fit and caution
 
 NEXT STEP:
 - Apply -> clear action
@@ -274,23 +297,25 @@ Return JSON only.
       ],
       risk_flags: ["Non-JSON model response"],
       next_step: "Retry with the same job description.",
-      location_flexible: true,
+      location_constraint: "unclear" as LocationConstraint,
     };
   }
 
   let decision = normalizeDecision(parsed.decision);
   let score = clampScore(parsed.score);
 
-  const bullets = ensureArrayOfStrings(parsed.bullets, 8);
-  let riskFlags = ensureArrayOfStrings(parsed.risk_flags, 10);
+  let bullets = ensureArrayOfStrings(parsed.bullets, 10);
+  let riskFlags = ensureArrayOfStrings(parsed.risk_flags, 12);
 
-  // Default to true unless the model explicitly says false
-  const locationFlexible =
-    typeof parsed.location_flexible === "boolean" ? parsed.location_flexible : true;
+  const loc = normalizeLocationConstraint(parsed.location_constraint);
 
-  // If location is flexible, strip commute/local/location risks
-  if (locationFlexible) {
-    riskFlags = stripLocationRisks(riskFlags);
+  // Treat unclear as not constrained (your rule)
+  const treatAsConstrained = loc === "constrained";
+
+  // If not constrained, strip location/commute language from BOTH bullets and risk flags
+  if (!treatAsConstrained) {
+    bullets = stripLocationLanguage(bullets);
+    riskFlags = stripLocationLanguage(riskFlags);
   }
 
   // Explicit exclusion enforcement (based on required phrase in risk_flags)
@@ -301,7 +326,7 @@ Return JSON only.
     decision = "Pass";
   }
 
-  // 3+ years rule safety net: never allow Pass solely due to 3+ years (unless explicit exclusion)
+  // 3+ years safety net: never allow Pass solely due to 3+ years (unless explicit exclusion)
   if (decision === "Pass" && !hasExplicitExclusion && containsThreePlusYearsFlag(riskFlags)) {
     decision = "Review";
   }
@@ -311,8 +336,11 @@ Return JSON only.
     decision = "Review";
   }
 
+  // Enforce score bands
   score = enforceScoreBand(decision, score);
 
+  // Final trims for UI
+  bullets = bullets.slice(0, 8);
   riskFlags = riskFlags.slice(0, 6);
 
   const next_step =
@@ -331,6 +359,6 @@ Return JSON only.
     bullets,
     risk_flags: riskFlags,
     next_step,
-    location_flexible: locationFlexible,
+    location_constraint: loc,
   };
 }
