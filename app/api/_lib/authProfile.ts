@@ -1,5 +1,15 @@
 import { createClient } from "@supabase/supabase-js"
 
+/**
+ * authProfile.ts (or ../_lib/authProfile.ts)
+ *
+ * GOALS:
+ * 1) Never hard-crash if optional columns do not exist in client_profiles.
+ * 2) Stop "Profile not found" by auto-creating a stub client_profiles row on first login.
+ * 3) Race-safe linking: attach user_id only if null.
+ * 4) Build a usable profileText even if profile_text is null.
+ */
+
 function requireEnv(name: string): string {
   const v = process.env[name]
   if (!v) throw new Error(`Missing env var: ${name}`)
@@ -11,6 +21,10 @@ const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY")
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+function corsSafeLower(s: any) {
+  return String(s || "").trim().toLowerCase()
+}
+
 function getBearerToken(req: Request): string {
   const auth = req.headers.get("authorization") || ""
   const m = auth.match(/^Bearer\s+(.+)$/i)
@@ -18,82 +32,160 @@ function getBearerToken(req: Request): string {
   return m[1]
 }
 
-type ClientProfileCoreRow = {
+type ClientProfileRow = {
   id: string
   email: string | null
   user_id: string | null
   profile_text: string | null
+
+  // Optional columns (may or may not exist in DB)
+  name?: string | null
+  target_roles?: string | null
+  target_locations?: string | null
+  preferred_locations?: string | null
+  timeline?: string | null
+  resume_text?: string | null
+  job_type?: string | null
 }
 
-/**
- * Builds a minimal fallback profile text when profile_text is missing.
- * This avoids schema dependency on optional columns like name/job_type/etc.
- */
-function buildMinimalProfileText(row: ClientProfileCoreRow, fallbackEmail: string) {
-  const email = String(row.email || fallbackEmail).trim().toLowerCase()
+const SELECT_MIN =
+  "id,email,user_id,profile_text" as const
 
+// If any of these do NOT exist in the DB, PostgREST throws.
+// We handle that by trying SELECT_FULL and falling back to SELECT_MIN automatically.
+const SELECT_FULL =
+  "id,email,user_id,profile_text,name,target_roles,target_locations,preferred_locations,timeline,resume_text,job_type" as const
+
+async function safeSelectSingle<T>(
+  queryFn: (selectList: string) => Promise<{ data: any; error: any }>,
+  allowFull = true
+): Promise<T | null> {
+  // Try FULL first (if enabled), then fall back to MIN if FULL explodes due to missing columns
+  if (allowFull) {
+    const full = await queryFn(SELECT_FULL)
+    if (!full.error) return (full.data as T) ?? null
+
+    // If it's a missing column error, fall through to minimal
+    const msg = String(full.error?.message || "")
+    const isMissingColumn =
+      msg.includes("does not exist") || msg.includes("column") || msg.includes("schema cache")
+
+    if (!isMissingColumn) {
+      // Some other real error, surface it
+      throw new Error(full.error.message || "Database error")
+    }
+  }
+
+  const min = await queryFn(SELECT_MIN)
+  if (min.error) throw new Error(min.error.message || "Database error")
+  return (min.data as T) ?? null
+}
+
+function buildProfileTextFromRow(row: ClientProfileRow, fallbackEmail: string) {
+  const email = String(row.email || fallbackEmail).trim()
+  const name = row.name ? String(row.name).trim() : ""
+  const jobType = row.job_type ? String(row.job_type).trim() : ""
+  const targetRoles = row.target_roles ? String(row.target_roles).trim() : ""
+
+  const locationsRaw = row.target_locations ?? row.preferred_locations
+  const locations = locationsRaw ? String(locationsRaw).trim() : ""
+
+  const timeline = row.timeline ? String(row.timeline).trim() : ""
+  const resumeText = row.resume_text ? String(row.resume_text).trim() : ""
+
+  // Keep output stable even if optional fields are missing
   return `
 Email: ${email}
+Name: ${name}
+Job Type: ${jobType}
+Target Roles: ${targetRoles}
+Preferred Locations: ${locations}
+Timeline: ${timeline}
 
-Profile:
-(No profile_text found yet. Please re-submit intake or contact support.)
+Resume Text:
+${resumeText}
 `.trim()
 }
 
-async function fetchProfileByUserId(userId: string): Promise<ClientProfileCoreRow | null> {
-  const { data, error } = await supabaseAdmin
-    .from("client_profiles")
-    .select("id,email,user_id,profile_text")
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  if (error) throw new Error(error.message)
-  return (data as any) ?? null
+async function fetchProfileByUserId(userId: string): Promise<ClientProfileRow | null> {
+  return safeSelectSingle<ClientProfileRow>((selectList) => {
+    return supabaseAdmin
+      .from("client_profiles")
+      .select(selectList)
+      .eq("user_id", userId)
+      .maybeSingle()
+  })
 }
 
-async function fetchProfileByEmail(email: string): Promise<ClientProfileCoreRow | null> {
-  const normalized = String(email || "").trim().toLowerCase()
-
-  const { data, error } = await supabaseAdmin
-    .from("client_profiles")
-    .select("id,email,user_id,profile_text")
-    .ilike("email", normalized)
-    .maybeSingle()
-
-  if (error) throw new Error(error.message)
-  return (data as any) ?? null
+async function fetchProfileByEmail(email: string): Promise<ClientProfileRow | null> {
+  const e = corsSafeLower(email)
+  return safeSelectSingle<ClientProfileRow>((selectList) => {
+    return supabaseAdmin
+      .from("client_profiles")
+      .select(selectList)
+      .ilike("email", e)
+      .maybeSingle()
+  })
 }
 
-/**
- * Attach profile row to auth user id.
- * Race-safe: only attaches if user_id is NULL.
- */
-async function attachProfileToUser(profileId: string, userId: string): Promise<ClientProfileCoreRow | null> {
-  const { data, error } = await supabaseAdmin
-    .from("client_profiles")
-    .update({ user_id: userId })
-    .eq("id", profileId)
-    .is("user_id", null)
-    .select("id,email,user_id,profile_text")
-    .maybeSingle()
+async function attachProfileToUser(profileId: string, userId: string): Promise<ClientProfileRow | null> {
+  // Race-safe: only attach if user_id is null
+  const attached = await safeSelectSingle<ClientProfileRow>(
+    (selectList) => {
+      return supabaseAdmin
+        .from("client_profiles")
+        .update({ user_id: userId })
+        .eq("id", profileId)
+        .is("user_id", null)
+        .select(selectList)
+        .maybeSingle()
+    },
+    true
+  )
 
-  if (error) throw new Error(error.message)
-  return (data as any) ?? null
+  return attached
 }
 
-/**
- * Backfill profile_text for stability (optional).
- * If this fails, do not block the user.
- */
 async function persistProfileText(profileId: string, profileText: string) {
+  // Do not break the user flow if this fails
   const { error } = await supabaseAdmin
     .from("client_profiles")
     .update({ profile_text: profileText })
     .eq("id", profileId)
 
-  if (error) {
-    return
+  if (error) return
+}
+
+async function createStubProfile(email: string, userId: string): Promise<ClientProfileRow> {
+  // This prevents "Profile not found" for paid users who authenticated
+  // but do not have a client_profiles row yet.
+  //
+  // Requires a unique constraint on email for best behavior, but will still work without it.
+  const e = corsSafeLower(email)
+
+  // Try upsert if email is unique. If it errors, fall back to insert.
+  const upsertAttempt = await supabaseAdmin
+    .from("client_profiles")
+    .upsert({ email: e, user_id: userId }, { onConflict: "email" })
+    .select(SELECT_MIN)
+    .maybeSingle()
+
+  if (!upsertAttempt.error && upsertAttempt.data) {
+    return upsertAttempt.data as ClientProfileRow
   }
+
+  // Fallback insert (in case onConflict fails because constraint not present)
+  const insertAttempt = await supabaseAdmin
+    .from("client_profiles")
+    .insert({ email: e, user_id: userId })
+    .select(SELECT_MIN)
+    .maybeSingle()
+
+  if (insertAttempt.error || !insertAttempt.data) {
+    throw new Error(insertAttempt.error?.message || "Failed to create profile")
+  }
+
+  return insertAttempt.data as ClientProfileRow
 }
 
 export async function getAuthedProfileText(req: Request): Promise<{
@@ -103,22 +195,21 @@ export async function getAuthedProfileText(req: Request): Promise<{
 }> {
   const token = getBearerToken(req)
 
-  // 1) Validate token and get the auth user
+  // 1) Validate token and get user
   const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token)
   if (userErr || !userData?.user) throw new Error("Unauthorized: invalid token")
 
-  const userId = userData.user.id
-  const email = String(userData.user.email || "").trim().toLowerCase()
+  const userId = String(userData.user.id)
+  const email = corsSafeLower(userData.user.email)
   if (!email) throw new Error("Unauthorized: email missing on user")
 
-  // 2) First try: profile already attached to user_id
+  // 2) Prefer fetch by user_id
   const byId = await fetchProfileByUserId(userId)
   if (byId) {
     const profileText =
       (byId.profile_text && String(byId.profile_text).trim()) ||
-      buildMinimalProfileText(byId, email)
+      buildProfileTextFromRow(byId, email)
 
-    // Optional: backfill missing profile_text
     if (!byId.profile_text && profileText) {
       await persistProfileText(byId.id, profileText)
     }
@@ -126,26 +217,28 @@ export async function getAuthedProfileText(req: Request): Promise<{
     return { userId, email, profileText }
   }
 
-  // 3) Fallback: find profile by email (intake-created row)
-  const byEmail = await fetchProfileByEmail(email)
+  // 3) Fallback: fetch by email
+  let byEmail = await fetchProfileByEmail(email)
+
+  // 3b) If nothing exists, create it now (this is the key to eliminating manual fixes)
   if (!byEmail) {
-    throw new Error("Profile not found")
+    byEmail = await createStubProfile(email, userId)
   }
 
-  // 4) If profile is already attached to a different auth user, block
+  // 4) If already attached to another user, block
   if (byEmail.user_id && String(byEmail.user_id) !== String(userId)) {
     throw new Error("Access disabled")
   }
 
-  // 5) Attach user_id (race-safe). Update by id, not email.
+  // 5) Attach user_id if needed (race-safe)
   const attached = await attachProfileToUser(byEmail.id, userId)
 
-  // If attach did nothing because another request attached first, refetch by user_id
+  // If attach did nothing (already attached by another request), refetch by user_id
   const finalRow = attached ?? (await fetchProfileByUserId(userId)) ?? byEmail
 
   const profileText =
     (finalRow.profile_text && String(finalRow.profile_text).trim()) ||
-    buildMinimalProfileText(finalRow, email)
+    buildProfileTextFromRow(finalRow, email)
 
   if (!finalRow.profile_text && profileText) {
     await persistProfileText(finalRow.id, profileText)
