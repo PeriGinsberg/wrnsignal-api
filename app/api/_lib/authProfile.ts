@@ -8,6 +8,11 @@ import { createClient } from "@supabase/supabase-js"
  * 2) Stop "Profile not found" by auto-creating a stub client_profiles row on first login.
  * 3) Race-safe linking: attach user_id only if null.
  * 4) Build a usable profileText even if profile_text is null.
+ *
+ * FIX:
+ * - safeSelectSingle now accepts a query function that returns a Supabase PostgrestBuilder
+ *   (thenable) OR a real Promise, so Next build type checking does not fail.
+ * - All call sites now use async/await so the return type is an actual Promise result.
  */
 
 function requireEnv(name: string): string {
@@ -48,16 +53,24 @@ type ClientProfileRow = {
   job_type?: string | null
 }
 
-const SELECT_MIN =
-  "id,email,user_id,profile_text" as const
+const SELECT_MIN = "id,email,user_id,profile_text" as const
 
 // If any of these do NOT exist in the DB, PostgREST throws.
 // We handle that by trying SELECT_FULL and falling back to SELECT_MIN automatically.
 const SELECT_FULL =
   "id,email,user_id,profile_text,name,target_roles,target_locations,preferred_locations,timeline,resume_text,job_type" as const
 
+type SelectResult = { data: any; error: any }
+
+/**
+ * Accept a query function that returns either:
+ * - A Promise<{data,error}>
+ * - A Supabase PostgrestBuilder (thenable) that resolves to {data,error}
+ *
+ * We always await the returned value.
+ */
 async function safeSelectSingle<T>(
-  queryFn: (selectList: string) => Promise<{ data: any; error: any }>,
+  queryFn: (selectList: string) => PromiseLike<SelectResult>,
   allowFull = true
 ): Promise<T | null> {
   // Try FULL first (if enabled), then fall back to MIN if FULL explodes due to missing columns
@@ -71,7 +84,6 @@ async function safeSelectSingle<T>(
       msg.includes("does not exist") || msg.includes("column") || msg.includes("schema cache")
 
     if (!isMissingColumn) {
-      // Some other real error, surface it
       throw new Error(full.error.message || "Database error")
     }
   }
@@ -108,8 +120,8 @@ ${resumeText}
 }
 
 async function fetchProfileByUserId(userId: string): Promise<ClientProfileRow | null> {
-  return safeSelectSingle<ClientProfileRow>((selectList) => {
-    return supabaseAdmin
+  return safeSelectSingle<ClientProfileRow>(async (selectList) => {
+    return await supabaseAdmin
       .from("client_profiles")
       .select(selectList)
       .eq("user_id", userId)
@@ -119,8 +131,8 @@ async function fetchProfileByUserId(userId: string): Promise<ClientProfileRow | 
 
 async function fetchProfileByEmail(email: string): Promise<ClientProfileRow | null> {
   const e = corsSafeLower(email)
-  return safeSelectSingle<ClientProfileRow>((selectList) => {
-    return supabaseAdmin
+  return safeSelectSingle<ClientProfileRow>(async (selectList) => {
+    return await supabaseAdmin
       .from("client_profiles")
       .select(selectList)
       .ilike("email", e)
@@ -131,8 +143,8 @@ async function fetchProfileByEmail(email: string): Promise<ClientProfileRow | nu
 async function attachProfileToUser(profileId: string, userId: string): Promise<ClientProfileRow | null> {
   // Race-safe: only attach if user_id is null
   const attached = await safeSelectSingle<ClientProfileRow>(
-    (selectList) => {
-      return supabaseAdmin
+    async (selectList) => {
+      return await supabaseAdmin
         .from("client_profiles")
         .update({ user_id: userId })
         .eq("id", profileId)
