@@ -5,6 +5,8 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 type Decision = "Apply" | "Review" | "Pass";
 type LocationConstraint = "constrained" | "not_constrained" | "unclear";
 
+/* ----------------------- helpers ----------------------- */
+
 function extractJsonObject(raw: string) {
   if (!raw) return null;
 
@@ -78,6 +80,8 @@ function stripLocationLanguage(items: string[]) {
       s.includes("onsite presence required") ||
       s.includes("hybrid location requirement") ||
       s.includes("location mismatch") ||
+      s.includes("location preference mismatch") ||
+      s.includes("location preference") ||
       s.includes("within commuting distance")
     );
   });
@@ -102,6 +106,40 @@ function normalizeLocationConstraint(x: any): LocationConstraint {
   if (s === "unclear") return "unclear";
   return "unclear";
 }
+
+/**
+ * Hard-pass signals.
+ * These make Review -> Pass possible when the content clearly indicates low interview-conversion likelihood.
+ * Keep this conservative: require 2+ signals.
+ */
+function hasHardPassSignals(riskFlags: string[], bullets: string[]) {
+  const all = [...riskFlags, ...bullets].map((x) => (x || "").toLowerCase());
+
+  const noRelevantSales =
+    all.some((x) => x.includes("no relevant") && x.includes("sales")) ||
+    all.some((x) => x.includes("no relevant sales experience"));
+
+  const missingNetworkTarget =
+    all.some((x) => x.includes("network")) &&
+    all.some((x) => x.includes("absence") || x.includes("missing") || x.includes("required"));
+
+  const functionMismatch =
+    all.some((x) => x.includes("function mismatch")) ||
+    all.some((x) => x.includes("not aligned") && (x.includes("role") || x.includes("position"))) ||
+    all.some((x) => x.includes("sales manager") && x.includes("not"));
+
+  const clearlySenior =
+    all.some((x) => x.includes("5+ years")) ||
+    all.some((x) => x.includes("senior-level scope")) ||
+    all.some((x) => x.includes("requires an existing") && x.includes("network"));
+
+  const signals = [noRelevantSales, missingNetworkTarget, functionMismatch, clearlySenior].filter(Boolean)
+    .length;
+
+  return signals >= 2;
+}
+
+/* ----------------------- main ----------------------- */
 
 export async function runJobFit({
   profileText,
@@ -291,16 +329,14 @@ Return JSON only.
       decision: "Review" as Decision,
       icon: "⚠️",
       score: 60,
-      bullets: [
-        "Model did not return structured JSON.",
-        "Decision requires manual review.",
-      ],
+      bullets: ["Model did not return structured JSON.", "Decision requires manual review."],
       risk_flags: ["Non-JSON model response"],
       next_step: "Retry with the same job description.",
       location_constraint: "unclear" as LocationConstraint,
     };
   }
 
+  // Parse raw fields
   let decision = normalizeDecision(parsed.decision);
   let score = clampScore(parsed.score);
 
@@ -326,9 +362,23 @@ Return JSON only.
     decision = "Pass";
   }
 
+  // Score sanity rule: Review is not allowed under 60. If score < 60, force Pass (unless Apply).
+  if (decision === "Review" && score < 60) {
+    decision = "Pass";
+  }
+
   // 3+ years safety net: never allow Pass solely due to 3+ years (unless explicit exclusion)
-  if (decision === "Pass" && !hasExplicitExclusion && containsThreePlusYearsFlag(riskFlags)) {
+  if (
+    decision === "Pass" &&
+    !hasExplicitExclusion &&
+    containsThreePlusYearsFlag(riskFlags)
+  ) {
     decision = "Review";
+  }
+
+  // Deterministic hard-pass signals (prevents "Review" when content is clearly "Pass")
+  if (!hasExplicitExclusion && decision !== "Apply" && hasHardPassSignals(riskFlags, bullets)) {
+    decision = "Pass";
   }
 
   // 5+ risk flags -> Review (unless explicit exclusion forced Pass)
@@ -336,7 +386,7 @@ Return JSON only.
     decision = "Review";
   }
 
-  // Enforce score bands
+  // Enforce score bands LAST (after decision correction)
   score = enforceScoreBand(decision, score);
 
   // Final trims for UI
