@@ -32,6 +32,10 @@ function normalizeSignal(v: any): "strong" | "mixed" | "weak" {
   return v === "strong" || v === "mixed" || v === "weak" ? v : "mixed"
 }
 
+function isNonEmptyString(x: any): x is string {
+  return typeof x === "string" && x.trim().length > 0
+}
+
 export async function OPTIONS(req: Request) {
   const origin = req.headers.get("origin")
   return new Response(null, { status: 204, headers: corsHeaders(origin) })
@@ -59,48 +63,65 @@ export async function POST(req: Request) {
     const system = `
 You are SIGNAL by Workforce Ready Now (Positioning module).
 
-MISSION:
-Only recommend HIGH-IMPACT resume changes that strengthen the hiring signal for THIS job.
-If an edit does not clearly improve keyword alignment OR signal strength, do not suggest it.
+NON-NEGOTIABLE PRINCIPLE:
+Only suggest changes that clearly improve hiring signal for THIS job.
+If the best answer is "no changes needed", say so.
 
-WHAT "HIGH-IMPACT" MEANS (must meet at least one):
-1) Keyword Alignment: Mirrors a job description keyword or phrase AND the resume already supports it factually.
-2) Stronger Signal: Increases clarity of scope, ownership, outcome, or stakeholder without adding new facts.
-3) 7-Second Scan: Front-loads the right nouns and verbs so a recruiter instantly understands relevance.
+PRIMARY QUESTION:
+"Should I apply, and if yes, how do I compete?"
+Your edits must make that answer more obvious in a 7-second scan and/or ATS scan.
+
+HIGH-IMPACT FILTER (HARD GATE):
+A bullet edit is allowed ONLY if it satisfies BOTH:
+A) Keyword Match: It explicitly adds or foregrounds a job-relevant keyword/phrase that appears in the job description,
+   AND the resume text already supports it factually.
+B) Signal Lift: It materially increases clarity of what was done (scope, deliverable, stakeholder, measurable output, ownership),
+   not just readability.
+
+If A or B is not met, DO NOT propose the edit.
+
+BANNED / AUTO-REJECT PHRASES (unless quoted verbatim from resume evidence):
+- "contributing to"
+- "helped drive"
+- "supported growth"
+- "ensure smooth execution"
+- "drive partnership opportunities"
+- "fan engagement"
+- "successful activation"
+These are usually vague. Use concrete nouns + actions instead.
 
 DO NOT DO:
-- Grammar cleanup, style tweaks, synonyms for their own sake.
-- Edits just to make edits.
-- Any change that cannot be defended in an interview.
+- Grammar cleanup, synonym swaps, or re-ordering that does not pass the High-Impact Filter.
+- Adding generic fluff outcomes not stated in resume text.
+- Adding collaboration, leadership, cross-functional language unless resume text explicitly supports it.
 
 ANTI-FABRICATION RULES (ABSOLUTE):
 - You may only rewrite a bullet by rephrasing what is already explicitly stated in that bullet or its immediate nearby context.
-- You may mirror job keywords ONLY if the original resume text already supports them.
-- If a tool, domain, industry, methodology, or responsibility is not present in the resume text, you must NOT add it.
+- You may mirror job keywords ONLY if the resume already supports them.
+- If a tool, domain, industry, method, or responsibility is not present in the resume text, you must NOT add it.
 - Never change the function or industry of a role.
 - If a bullet is too vague to safely align, skip it.
 
-EVIDENCE REQUIREMENT:
-For every suggested edit:
-- Provide an evidence quote copied verbatim from the resume text that proves the edit is factual.
-- If you cannot quote evidence, do not include the edit.
+EVIDENCE REQUIREMENT (STRICT):
+For every suggested change, provide:
+- evidence: an exact quote copied verbatim from the resume text that proves the added/foregrounded keyword is factual.
+If you cannot quote evidence, do not include the change.
 
-SUMMARY STATEMENT LOGIC:
+SUMMARY STATEMENT LOGIC (STRICT + SELECTIVE):
 1) Detect whether a summary/profile statement exists near the top of the resume.
-2) If it exists:
-   - Decide whether it aligns with the job’s core target keywords and role type.
-   - If misaligned, suggest a factual revision with evidence quotes.
-   - If aligned, keep it and do not suggest changes.
-3) If it does NOT exist:
-   - Decide if a summary is needed.
-   - Only recommend creating one if the overall signal is mixed or weak and the reader would not immediately understand fit.
-   - If signal is strong, explicitly say summary is not needed.
+   A "summary" is 1–4 lines that describe target role, domain, and strengths (not education or a section header).
+2) If summary exists:
+   - If it already matches the job's role type + 2–4 core keywords, status = "keep" and do not rewrite.
+   - If it is misaligned, status = "revise" and propose ONE revised summary that is factual and keyword-aligned.
+3) If summary does NOT exist:
+   - Only recommend creating one if overall_signal is "mixed" or "weak" AND the top of the resume would not clearly signal fit in 7 seconds.
+   - If overall_signal is "strong", status = "keep" and explicitly say summary is not needed.
 
 OUTPUT RULES:
-- Output 0–8 bullet edits. Fewer is better. Quality over quantity.
-- It is acceptable to return zero bullet edits if the resume is already strongly aligned.
+- Output 0–6 bullet edits total. Fewer is better. Quality over quantity.
+- Returning zero bullet edits is a valid and often correct outcome.
 
-Return valid JSON ONLY with this shape:
+Return VALID JSON ONLY with this exact shape:
 {
   "intro": string,
   "summary": {
@@ -135,16 +156,21 @@ JOB DESCRIPTION:
 ${job}
 
 TASK:
-1) Evaluate overall fit signal for this job (strong, mixed, weak).
-2) Apply summary statement logic:
-   - If summary exists, keep or revise based on alignment.
-   - If no summary exists, only create one if signal is mixed or weak.
-3) Suggest ONLY high-impact bullet edits.
-   - Zero edits is acceptable if nothing meaningful improves alignment or signal.
+Step 1) Extract the 5–10 most important job keywords/phrases that indicate fit (do NOT output this list; use it internally).
+Step 2) Decide overall_signal: strong / mixed / weak based on whether the resume already signals those keywords clearly.
+Step 3) Summary logic:
+  - If summary exists and aligned: keep (no rewrite).
+  - If summary exists and misaligned: revise (one factual rewrite).
+  - If no summary exists: only create if signal is mixed/weak and the top of the resume will not pass a 7-second scan.
+Step 4) Bullet edits:
+  - Apply the High-Impact Filter (must pass A and B) for each proposed edit.
+  - If an edit is just polish, skip it.
+  - Avoid vague outcome claims. Prefer concrete nouns and actions already present in resume text.
 
 Hard rules:
 - "before" must be copied verbatim from the resume text.
-- "after" must be a safe rephrase that mirrors job language ONLY when supported by the original bullet.
+- "after" must be a safe rephrase that foregrounds job keywords ONLY when supported by resume evidence.
+- Do NOT add: growth, cross-functional, execution quality, engagement, activation success unless explicitly supported by resume evidence.
 - "job_title" must be the role heading the bullet belongs to; if unknown use "Unknown role".
 - "evidence" must be a direct quote from resume text proving the edit is factual.
 Return JSON only. No markdown. No commentary.
@@ -167,12 +193,13 @@ Return JSON only. No markdown. No commentary.
       return new Response(
         JSON.stringify({
           intro:
-            "Intent: strengthen resume signal for this job using only high-impact, fully factual edits (or none if already aligned).",
+            "Intent: strengthen resume signal for this job using only high-impact, fully factual changes (or none if already aligned).",
           summary: {
             status: "keep",
             before: null,
             after: null,
-            rationale: "Model did not return JSON. Retry after refreshing and ensuring the job description is fully pasted.",
+            rationale:
+              "Model did not return JSON. Retry after refreshing and ensuring the job description is fully pasted.",
             evidence: [],
           },
           bullets: [],
@@ -186,21 +213,22 @@ Return JSON only. No markdown. No commentary.
       )
     }
 
-    const intro =
-      typeof parsed.intro === "string"
-        ? parsed.intro
-        : "Intent: strengthen resume signal for this job using only high-impact, fully factual edits (or none if already aligned)."
+    const intro = isNonEmptyString(parsed.intro)
+      ? parsed.intro
+      : "Intent: strengthen resume signal for this job using only high-impact, fully factual changes (or none if already aligned)."
 
     // Normalize summary object
     const summary =
       parsed?.summary && typeof parsed.summary === "object"
         ? {
             status: normalizeSummaryStatus(parsed.summary.status),
-            before: typeof parsed.summary.before === "string" ? parsed.summary.before : null,
-            after: typeof parsed.summary.after === "string" ? parsed.summary.after : null,
-            rationale: typeof parsed.summary.rationale === "string" ? parsed.summary.rationale : "",
+            before: isNonEmptyString(parsed.summary.before) ? parsed.summary.before : null,
+            after: isNonEmptyString(parsed.summary.after) ? parsed.summary.after : null,
+            rationale: isNonEmptyString(parsed.summary.rationale) ? parsed.summary.rationale : "",
             evidence: Array.isArray(parsed.summary.evidence)
-              ? parsed.summary.evidence.filter((x: any) => typeof x === "string" && x.trim())
+              ? parsed.summary.evidence
+                  .filter((x: any) => isNonEmptyString(x))
+                  .map((s: string) => s.trim())
               : [],
           }
         : {
@@ -215,13 +243,12 @@ Return JSON only. No markdown. No commentary.
     const bulletsRaw = Array.isArray(parsed.bullets) ? parsed.bullets : []
     const bullets = bulletsRaw
       .map((b: any) => ({
-        job_title: typeof b?.job_title === "string" && b.job_title.trim() ? b.job_title : "Unknown role",
-        before: typeof b?.before === "string" ? b.before : "",
-        after: typeof b?.after === "string" ? b.after : "",
-        rationale: typeof b?.rationale === "string" ? b.rationale : "",
-        evidence: typeof b?.evidence === "string" ? b.evidence : "",
+        job_title: isNonEmptyString(b?.job_title) ? b.job_title.trim() : "Unknown role",
+        before: isNonEmptyString(b?.before) ? b.before : "",
+        after: isNonEmptyString(b?.after) ? b.after : "",
+        rationale: isNonEmptyString(b?.rationale) ? b.rationale : "",
+        evidence: isNonEmptyString(b?.evidence) ? b.evidence : "",
       }))
-      // require evidence and verbatim before/after exist
       .filter((b: any) => b.before && b.after && b.evidence)
 
     // Normalize decision object
@@ -229,7 +256,7 @@ Return JSON only. No markdown. No commentary.
       parsed?.decision && typeof parsed.decision === "object"
         ? {
             overall_signal: normalizeSignal(parsed.decision.overall_signal),
-            why: typeof parsed.decision.why === "string" ? parsed.decision.why : "",
+            why: isNonEmptyString(parsed.decision.why) ? parsed.decision.why : "",
             no_edits_needed: Boolean(parsed.decision.no_edits_needed),
           }
         : {
@@ -238,12 +265,12 @@ Return JSON only. No markdown. No commentary.
             no_edits_needed: bullets.length === 0 && summary.status !== "revise" && summary.status !== "create",
           }
 
-    // If the model forgot to set no_edits_needed but we have none, set it
+    const inferredNoEditsNeeded =
+      bullets.length === 0 && summary.status !== "revise" && summary.status !== "create"
+
     const decisionFinal = {
       ...decision,
-      no_edits_needed:
-        decision.no_edits_needed ||
-        (bullets.length === 0 && summary.status !== "revise" && summary.status !== "create"),
+      no_edits_needed: decision.no_edits_needed || inferredNoEditsNeeded,
     }
 
     return new Response(JSON.stringify({ intro, summary, bullets, decision: decisionFinal }), {
