@@ -24,6 +24,14 @@ function safeJsonParse(raw: string) {
   }
 }
 
+function normalizeSummaryStatus(v: any): "keep" | "revise" | "create" {
+  return v === "keep" || v === "revise" || v === "create" ? v : "keep"
+}
+
+function normalizeSignal(v: any): "strong" | "mixed" | "weak" {
+  return v === "strong" || v === "mixed" || v === "weak" ? v : "mixed"
+}
+
 export async function OPTIONS(req: Request) {
   const origin = req.headers.get("origin")
   return new Response(null, { status: 204, headers: corsHeaders(origin) })
@@ -49,38 +57,59 @@ export async function POST(req: Request) {
     }
 
     const system = `
-You are WRNSignal (Positioning module).
+You are SIGNAL by Workforce Ready Now (Positioning module).
 
-GOAL:
-- Improve ATS keyword alignment AND pass the recruiter 7-second scan.
-- Make minor, factual, cut-and-paste resume bullet tweaks that align language to the job description.
-- No full rewrites. No invented experience. No invented tools. No invented scope. No invented industry.
-- Every change must be defensible in an interview.
+MISSION:
+Only recommend HIGH-IMPACT resume changes that strengthen the hiring signal for THIS job.
+If an edit does not clearly improve keyword alignment OR signal strength, do not suggest it.
 
-ANTI FABRICATION RULES (ABSOLUTE):
-- You may only rewrite a bullet by REPHRASING what is already explicitly stated in that bullet or its immediate nearby context.
-- You may mirror keywords from the job description ONLY if the original bullet already supports them.
-- If the job description mentions a tool, domain, or industry that does not appear in the resume text, you must NOT add it.
-- You must never change the industry or function of a role. Example: legal work may not become entertainment. Finance may not become marketing.
-- If the resume bullet is too vague to safely align, you must SKIP it.
+WHAT "HIGH-IMPACT" MEANS (must meet at least one):
+1) Keyword Alignment: Mirrors a job description keyword or phrase AND the resume already supports it factually.
+2) Stronger Signal: Increases clarity of scope, ownership, outcome, or stakeholder without adding new facts.
+3) 7-Second Scan: Front-loads the right nouns and verbs so a recruiter instantly understands relevance.
+
+DO NOT DO:
+- Grammar cleanup, style tweaks, synonyms for their own sake.
+- Edits just to make edits.
+- Any change that cannot be defended in an interview.
+
+ANTI-FABRICATION RULES (ABSOLUTE):
+- You may only rewrite a bullet by rephrasing what is already explicitly stated in that bullet or its immediate nearby context.
+- You may mirror job keywords ONLY if the original resume text already supports them.
+- If a tool, domain, industry, methodology, or responsibility is not present in the resume text, you must NOT add it.
+- Never change the function or industry of a role.
+- If a bullet is too vague to safely align, skip it.
 
 EVIDENCE REQUIREMENT:
 For every suggested edit:
-- You must provide an "evidence" field that quotes an exact phrase from the profile/resume text proving the edit is factual.
+- Provide an evidence quote copied verbatim from the resume text that proves the edit is factual.
 - If you cannot quote evidence, do not include the edit.
 
-JOB TITLE REQUIREMENT:
-- Each edit must include a "job_title" field corresponding to the role the bullet came from.
-- If you cannot confidently identify the job title from the resume section, use "Unknown role" and keep the edit conservative.
+SUMMARY STATEMENT LOGIC:
+1) Detect whether a summary/profile statement exists near the top of the resume.
+2) If it exists:
+   - Decide whether it aligns with the job’s core target keywords and role type.
+   - If misaligned, suggest a factual revision with evidence quotes.
+   - If aligned, keep it and do not suggest changes.
+3) If it does NOT exist:
+   - Decide if a summary is needed.
+   - Only recommend creating one if the overall signal is mixed or weak and the reader would not immediately understand fit.
+   - If signal is strong, explicitly say summary is not needed.
 
-OUTPUT SIZE:
-- Output 5–10 edits if possible.
-- If you cannot produce at least 3 safe edits without risking fabrication, output fewer. Quality over quantity.
+OUTPUT RULES:
+- Output 0–8 bullet edits. Fewer is better. Quality over quantity.
+- It is acceptable to return zero bullet edits if the resume is already strongly aligned.
 
-OUTPUT:
-Return valid JSON ONLY:
+Return valid JSON ONLY with this shape:
 {
   "intro": string,
+  "summary": {
+    "status": "keep"|"revise"|"create",
+    "before": string|null,
+    "after": string|null,
+    "rationale": string,
+    "evidence": string[]
+  },
   "bullets": [
     {
       "job_title": string,
@@ -89,7 +118,12 @@ Return valid JSON ONLY:
       "rationale": string,
       "evidence": string
     }
-  ]
+  ],
+  "decision": {
+    "overall_signal": "strong"|"mixed"|"weak",
+    "why": string,
+    "no_edits_needed": boolean
+  }
 }
     `.trim()
 
@@ -100,14 +134,20 @@ ${profile}
 JOB DESCRIPTION:
 ${job}
 
-Generate resume bullet edits that are strictly factual.
+TASK:
+1) Evaluate overall fit signal for this job (strong, mixed, weak).
+2) Apply summary statement logic:
+   - If summary exists, keep or revise based on alignment.
+   - If no summary exists, only create one if signal is mixed or weak.
+3) Suggest ONLY high-impact bullet edits.
+   - Zero edits is acceptable if nothing meaningful improves alignment or signal.
 
-Rules recap:
+Hard rules:
 - "before" must be copied verbatim from the resume text.
 - "after" must be a safe rephrase that mirrors job language ONLY when supported by the original bullet.
-- "job_title" must be the role heading the bullet belongs to.
-- "evidence" must be a direct quote from the resume text proving the edit is factual.
-Return JSON only.
+- "job_title" must be the role heading the bullet belongs to; if unknown use "Unknown role".
+- "evidence" must be a direct quote from resume text proving the edit is factual.
+Return JSON only. No markdown. No commentary.
     `.trim()
 
     const resp = await client.responses.create({
@@ -122,20 +162,25 @@ Return JSON only.
     const raw = (resp as any).output_text || ""
     const parsed = safeJsonParse(raw)
 
+    // Fallback if non-JSON
     if (!parsed) {
       return new Response(
         JSON.stringify({
           intro:
-            "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits.",
-          bullets: [
-            {
-              job_title: "Unknown role",
-              before: "Model did not return JSON.",
-              after: "Retry after refreshing and ensuring the job description is fully pasted.",
-              rationale: raw || "Non-JSON response.",
-              evidence: "No evidence provided.",
-            },
-          ],
+            "Intent: strengthen resume signal for this job using only high-impact, fully factual edits (or none if already aligned).",
+          summary: {
+            status: "keep",
+            before: null,
+            after: null,
+            rationale: "Model did not return JSON. Retry after refreshing and ensuring the job description is fully pasted.",
+            evidence: [],
+          },
+          bullets: [],
+          decision: {
+            overall_signal: "mixed",
+            why: raw || "Non-JSON response.",
+            no_edits_needed: false,
+          },
         }),
         { status: 200, headers: corsHeaders(origin) }
       )
@@ -144,22 +189,64 @@ Return JSON only.
     const intro =
       typeof parsed.intro === "string"
         ? parsed.intro
-        : "Intent: improve ATS keyword alignment and pass the recruiter 7-second scan using minor factual edits."
+        : "Intent: strengthen resume signal for this job using only high-impact, fully factual edits (or none if already aligned)."
 
-    const bullets = Array.isArray(parsed.bullets) ? parsed.bullets : []
+    // Normalize summary object
+    const summary =
+      parsed?.summary && typeof parsed.summary === "object"
+        ? {
+            status: normalizeSummaryStatus(parsed.summary.status),
+            before: typeof parsed.summary.before === "string" ? parsed.summary.before : null,
+            after: typeof parsed.summary.after === "string" ? parsed.summary.after : null,
+            rationale: typeof parsed.summary.rationale === "string" ? parsed.summary.rationale : "",
+            evidence: Array.isArray(parsed.summary.evidence)
+              ? parsed.summary.evidence.filter((x: any) => typeof x === "string" && x.trim())
+              : [],
+          }
+        : {
+            status: "keep" as const,
+            before: null,
+            after: null,
+            rationale: "",
+            evidence: [],
+          }
 
-    // Final safety normalization: ensure fields exist, and strip obviously unsafe items
-    const normalized = bullets
+    // Normalize bullets array
+    const bulletsRaw = Array.isArray(parsed.bullets) ? parsed.bullets : []
+    const bullets = bulletsRaw
       .map((b: any) => ({
-        job_title: typeof b?.job_title === "string" ? b.job_title : "Unknown role",
+        job_title: typeof b?.job_title === "string" && b.job_title.trim() ? b.job_title : "Unknown role",
         before: typeof b?.before === "string" ? b.before : "",
         after: typeof b?.after === "string" ? b.after : "",
         rationale: typeof b?.rationale === "string" ? b.rationale : "",
         evidence: typeof b?.evidence === "string" ? b.evidence : "",
       }))
-      .filter((b: any) => b.before && b.after && b.evidence) // require evidence present
+      // require evidence and verbatim before/after exist
+      .filter((b: any) => b.before && b.after && b.evidence)
 
-    return new Response(JSON.stringify({ intro, bullets: normalized }), {
+    // Normalize decision object
+    const decision =
+      parsed?.decision && typeof parsed.decision === "object"
+        ? {
+            overall_signal: normalizeSignal(parsed.decision.overall_signal),
+            why: typeof parsed.decision.why === "string" ? parsed.decision.why : "",
+            no_edits_needed: Boolean(parsed.decision.no_edits_needed),
+          }
+        : {
+            overall_signal: "mixed" as const,
+            why: "",
+            no_edits_needed: bullets.length === 0 && summary.status !== "revise" && summary.status !== "create",
+          }
+
+    // If the model forgot to set no_edits_needed but we have none, set it
+    const decisionFinal = {
+      ...decision,
+      no_edits_needed:
+        decision.no_edits_needed ||
+        (bullets.length === 0 && summary.status !== "revise" && summary.status !== "create"),
+    }
+
+    return new Response(JSON.stringify({ intro, summary, bullets, decision: decisionFinal }), {
       status: 200,
       headers: corsHeaders(origin),
     })
