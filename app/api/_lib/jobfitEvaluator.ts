@@ -87,6 +87,19 @@ function stripLocationLanguage(items: string[]) {
   });
 }
 
+function stripTimelineLanguage(items: string[]) {
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase();
+    // remove “timeline aligns / graduation dates align” type hallucinations when we override eligibility
+    return !(
+      (s.includes("timeline") && s.includes("align")) ||
+      (s.includes("graduation") && s.includes("align")) ||
+      (s.includes("graduation date") && s.includes("align")) ||
+      (s.includes("program requirements") && s.includes("align"))
+    );
+  });
+}
+
 function containsThreePlusYearsFlag(riskFlags: string[]) {
   return riskFlags.some((r) => {
     const s = r.toLowerCase();
@@ -97,6 +110,19 @@ function containsThreePlusYearsFlag(riskFlags: string[]) {
       s.includes("minimum 3 years")
     );
   });
+}
+
+function jdMentionsThreePlusYears(jobText: string) {
+  const t = (jobText || "").toLowerCase();
+  return (
+    t.includes("3+ years") ||
+    t.includes("3 years") ||
+    t.includes("three years") ||
+    t.includes("minimum 3 years") ||
+    // slightly looser patterns
+    /\b3\+\s*year/.test(t) ||
+    /\b3\s*years?\b/.test(t)
+  );
 }
 
 function normalizeLocationConstraint(x: any): LocationConstraint {
@@ -137,6 +163,125 @@ function hasHardPassSignals(riskFlags: string[], bullets: string[]) {
     .length;
 
   return signals >= 2;
+}
+
+/* ----------------------- deterministic date parsing (eligibility) ----------------------- */
+
+type YM = { year: number; month: number }; // month 1-12
+
+const MONTHS: Record<string, number> = {
+  jan: 1,
+  january: 1,
+  feb: 2,
+  february: 2,
+  mar: 3,
+  march: 3,
+  apr: 4,
+  april: 4,
+  may: 5,
+  jun: 6,
+  june: 6,
+  jul: 7,
+  july: 7,
+  aug: 8,
+  august: 8,
+  sep: 9,
+  sept: 9,
+  september: 9,
+  oct: 10,
+  october: 10,
+  nov: 11,
+  november: 11,
+  dec: 12,
+  december: 12,
+};
+
+function ymToIndex(ym: YM) {
+  // comparable integer where month ordering works
+  return ym.year * 12 + (ym.month - 1);
+}
+
+function parseMonthYear(s: string): YM | null {
+  const t = (s || "").trim().toLowerCase();
+  // match "December 2027" or "Dec 2027"
+  const m = t.match(
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]{0,10}\b(20\d{2})\b/
+  );
+  if (!m) return null;
+
+  const month = MONTHS[m[1]];
+  const year = Number(m[2]);
+  if (!month || !Number.isFinite(year)) return null;
+  return { year, month };
+}
+
+function extractGradWindow(jobText: string): { start: YM; end: YM } | null {
+  const t = (jobText || "").replace(/\u202f/g, " "); // narrow no-break space -> space
+  // Common UBS-style phrasing:
+  // "expected to graduate between December 2027 and June 2028"
+  const m = t.match(/expected to graduate between([\s\S]{0,80})/i);
+  if (!m) return null;
+
+  const fragment = m[1].slice(0, 120); // keep it bounded
+  // Try to find two month-year pairs in that fragment
+  const pairs = fragment.match(
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]{0,10}\b(20\d{2})\b/gi
+  );
+
+  if (!pairs || pairs.length < 2) return null;
+
+  const start = parseMonthYear(pairs[0]);
+  const end = parseMonthYear(pairs[1]);
+  if (!start || !end) return null;
+
+  // Sanity: if reversed, swap
+  if (ymToIndex(start) > ymToIndex(end)) return { start: end, end: start };
+  return { start, end };
+}
+
+function extractCandidateGrad(profileText: string): YM | null {
+  const t = (profileText || "").replace(/\u202f/g, " ");
+
+  // Priority 1: explicit month/year
+  const explicit = parseMonthYear(t);
+  if (explicit) return explicit;
+
+  // Priority 2: "Class of 2027"
+  const m = t.match(/\bclass of\s*(20\d{2})\b/i);
+  if (m) {
+    const year = Number(m[1]);
+    if (Number.isFinite(year)) {
+      // Default assumption: typical spring graduation (May)
+      return { year, month: 5 };
+    }
+  }
+
+  // Priority 3: "graduating 2027" or "expected graduation 2027"
+  const y = t.match(/\b(graduate|graduating|graduation)\b[^\d]{0,20}\b(20\d{2})\b/i);
+  if (y) {
+    const year = Number(y[2]);
+    if (Number.isFinite(year)) return { year, month: 5 };
+  }
+
+  return null;
+}
+
+function formatYM(ym: YM) {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  return `${monthNames[ym.month - 1]} ${ym.year}`;
 }
 
 /* ----------------------- main ----------------------- */
@@ -189,6 +334,12 @@ SIGNAL HIERARCHY (STRICT ORDER):
 
 HARD LOGIC RULES:
 
+EVIDENCE DISCIPLINE (IMPORTANT):
+- Every bullet and risk_flag MUST be grounded in the provided job description and/or the provided profile.
+- Do NOT invent requirements that are not present in the job description.
+- If you mention "X years required", it must appear in the job description.
+- If eligibility is unclear, say so explicitly as a risk flag (example: "graduation window unclear").
+
 EXPLICIT EXCLUSIONS:
 If the profile explicitly excluded this role type, industry, location, work mode, or compensation structure:
 - Decision MUST be Pass
@@ -211,6 +362,11 @@ SENIORITY REQUIREMENTS:
   - must force a decision (usually Pass for undergraduates)
 - "MBA preferred":
   - risk flag only
+
+INTERNSHIP ELIGIBILITY (IMPORTANT):
+- If the job description specifies an explicit graduation window (example: "graduate between Dec 2027 and Jun 2028"):
+  - Treat being outside that window as a major eligibility risk.
+  - If clearly outside the window, decision should usually be Pass due to ineligibility.
 
 AUTHORIZATION / CLEARANCE:
 - Missing work authorization or clearance -> Review unless another Pass reason exists
@@ -354,6 +510,48 @@ Return JSON only.
     riskFlags = stripLocationLanguage(riskFlags);
   }
 
+  // -----------------------
+  // Fix #1: Remove “3+ years” risk if JD doesn't actually mention it (contamination)
+  // -----------------------
+  if (containsThreePlusYearsFlag(riskFlags) && !jdMentionsThreePlusYears(jobText)) {
+    riskFlags = riskFlags.filter((r) => !containsThreePlusYearsFlag([r]));
+  }
+
+  // -----------------------
+  // Fix #2: Deterministic graduation-window eligibility enforcement (prevents false “timeline aligns”)
+  // -----------------------
+  const gradWindow = extractGradWindow(jobText);
+  const candGrad = extractCandidateGrad(profileText);
+
+  if (gradWindow) {
+    if (!candGrad) {
+      // eligibility unknown -> must be flagged
+      riskFlags.unshift("graduation window unclear (candidate graduation date not found)");
+    } else {
+      const candIdx = ymToIndex(candGrad);
+      const startIdx = ymToIndex(gradWindow.start);
+      const endIdx = ymToIndex(gradWindow.end);
+
+      const clearlyOutside = candIdx < startIdx || candIdx > endIdx;
+
+      if (clearlyOutside) {
+        // remove any hallucinated alignment bullets
+        bullets = stripTimelineLanguage(bullets);
+
+        // add a specific, grounded risk flag
+        riskFlags.unshift(
+          `graduation window mismatch (job requires ${formatYM(gradWindow.start)}–${formatYM(
+            gradWindow.end
+          )}; candidate appears to graduate ${formatYM(candGrad)})`
+        );
+
+        // Treat as ineligible: force Pass unless explicit exclusion already handled below
+        decision = "Pass";
+        score = Math.min(score, 59);
+      }
+    }
+  }
+
   // Explicit exclusion enforcement (based on required phrase in risk_flags)
   const hasExplicitExclusion = riskFlags.some((r) =>
     r.toLowerCase().includes("explicit exclusion")
@@ -368,6 +566,7 @@ Return JSON only.
   }
 
   // 3+ years safety net: never allow Pass solely due to 3+ years (unless explicit exclusion)
+  // (This remains, but now it's less likely to trigger because we filtered contamination above.)
   if (
     decision === "Pass" &&
     !hasExplicitExclusion &&
@@ -382,6 +581,7 @@ Return JSON only.
   }
 
   // 5+ risk flags -> Review (unless explicit exclusion forced Pass)
+  // NOTE: keep Pass as Pass even if risk flags are high.
   if (decision !== "Pass" && riskFlags.length >= 5) {
     decision = "Review";
   }
