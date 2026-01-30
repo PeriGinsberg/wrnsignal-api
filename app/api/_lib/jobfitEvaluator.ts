@@ -62,8 +62,9 @@ function ensureArrayOfStrings(x: any, max: number) {
     .slice(0, max);
 }
 
-// If location is not explicitly constrained, we strip commuting/local-presence/location-mismatch language.
-// This enforces your rule: do not infer commute risk from "plans."
+/* ----------------------- content hygiene filters ----------------------- */
+
+// location/commute scrub (your rule)
 function stripLocationLanguage(items: string[]) {
   return items.filter((s0) => {
     const s = (s0 || "").toLowerCase();
@@ -87,10 +88,10 @@ function stripLocationLanguage(items: string[]) {
   });
 }
 
+// remove “timeline aligns / graduation aligns” hallucination phrasing
 function stripTimelineLanguage(items: string[]) {
   return items.filter((s0) => {
     const s = (s0 || "").toLowerCase();
-    // remove “timeline aligns / graduation dates align” type hallucinations when we override eligibility
     return !(
       (s.includes("timeline") && s.includes("align")) ||
       (s.includes("graduation") && s.includes("align")) ||
@@ -99,6 +100,58 @@ function stripTimelineLanguage(items: string[]) {
     );
   });
 }
+
+// remove “non-risk” risk flags that are actually validations/checkmarks
+function stripNonRiskRiskFlags(items: string[]) {
+  const badPhrases = [
+    "no eligibility issue",
+    "no eligibility issues",
+    "no issues",
+    "no issue",
+    "matches the program requirement",
+    "matches the requirement",
+    "satisfying this",
+    "satisfies this",
+    "satisfies the requirement",
+    "aligned",
+    "assumed",
+    "no risk flagged",
+    "no indication",
+    "so aligned",
+    "cleared due to",
+    "does not involve sales",
+    "so this is fine",
+  ];
+
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase();
+    return !badPhrases.some((p) => s.includes(p));
+  });
+}
+
+// remove coaching/advice leakage (your system rules)
+function stripAdviceLanguage(items: string[]) {
+  const bad = [
+    "highlight",
+    "tailor",
+    "your application",
+    "application materials",
+    "resume",
+    "cover letter",
+    "networking",
+    "reach out",
+    "informational interview",
+    "branding",
+    "pitch yourself",
+  ];
+
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase();
+    return !bad.some((b) => s.includes(b));
+  });
+}
+
+/* ----------------------- 3+ years contamination ----------------------- */
 
 function containsThreePlusYearsFlag(riskFlags: string[]) {
   return riskFlags.some((r) => {
@@ -116,14 +169,14 @@ function jdMentionsThreePlusYears(jobText: string) {
   const t = (jobText || "").toLowerCase();
   return (
     t.includes("3+ years") ||
-    t.includes("3 years") ||
     t.includes("three years") ||
     t.includes("minimum 3 years") ||
-    // slightly looser patterns
     /\b3\+\s*year/.test(t) ||
     /\b3\s*years?\b/.test(t)
   );
 }
+
+/* ----------------------- location constraint ----------------------- */
 
 function normalizeLocationConstraint(x: any): LocationConstraint {
   const s = String(x || "").trim().toLowerCase();
@@ -133,11 +186,8 @@ function normalizeLocationConstraint(x: any): LocationConstraint {
   return "unclear";
 }
 
-/**
- * Hard-pass signals.
- * These make Review -> Pass possible when the content clearly indicates low interview-conversion likelihood.
- * Keep this conservative: require 2+ signals.
- */
+/* ----------------------- hard-pass signals ----------------------- */
+
 function hasHardPassSignals(riskFlags: string[], bullets: string[]) {
   const all = [...riskFlags, ...bullets].map((x) => (x || "").toLowerCase());
 
@@ -151,13 +201,12 @@ function hasHardPassSignals(riskFlags: string[], bullets: string[]) {
 
   const functionMismatch =
     all.some((x) => x.includes("function mismatch")) ||
-    all.some((x) => x.includes("not aligned") && (x.includes("role") || x.includes("position"))) ||
-    all.some((x) => x.includes("sales manager") && x.includes("not"));
+    all.some((x) => x.includes("not aligned") && (x.includes("role") || x.includes("position")));
 
   const clearlySenior =
     all.some((x) => x.includes("5+ years")) ||
     all.some((x) => x.includes("senior-level scope")) ||
-    all.some((x) => x.includes("requires an existing") && x.includes("network"));
+    all.some((x) => x.includes("mba required"));
 
   const signals = [noRelevantSales, missingNetworkTarget, functionMismatch, clearlySenior].filter(Boolean)
     .length;
@@ -197,13 +246,11 @@ const MONTHS: Record<string, number> = {
 };
 
 function ymToIndex(ym: YM) {
-  // comparable integer where month ordering works
   return ym.year * 12 + (ym.month - 1);
 }
 
 function parseMonthYear(s: string): YM | null {
   const t = (s || "").trim().toLowerCase();
-  // match "December 2027" or "Dec 2027"
   const m = t.match(
     /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]{0,10}\b(20\d{2})\b/
   );
@@ -216,25 +263,21 @@ function parseMonthYear(s: string): YM | null {
 }
 
 function extractGradWindow(jobText: string): { start: YM; end: YM } | null {
-  const t = (jobText || "").replace(/\u202f/g, " "); // narrow no-break space -> space
-  // Common UBS-style phrasing:
-  // "expected to graduate between December 2027 and June 2028"
-  const m = t.match(/expected to graduate between([\s\S]{0,80})/i);
+  const t = (jobText || "").replace(/\u202f/g, " ");
+  const m = t.match(/expected graduation between([\s\S]{0,120})/i) || t.match(/expected to graduate between([\s\S]{0,120})/i);
   if (!m) return null;
 
-  const fragment = m[1].slice(0, 120); // keep it bounded
-  // Try to find two month-year pairs in that fragment
+  const fragment = m[1].slice(0, 180);
+
   const pairs = fragment.match(
     /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]{0,10}\b(20\d{2})\b/gi
   );
-
   if (!pairs || pairs.length < 2) return null;
 
   const start = parseMonthYear(pairs[0]);
   const end = parseMonthYear(pairs[1]);
   if (!start || !end) return null;
 
-  // Sanity: if reversed, swap
   if (ymToIndex(start) > ymToIndex(end)) return { start: end, end: start };
   return { start, end };
 }
@@ -242,21 +285,15 @@ function extractGradWindow(jobText: string): { start: YM; end: YM } | null {
 function extractCandidateGrad(profileText: string): YM | null {
   const t = (profileText || "").replace(/\u202f/g, " ");
 
-  // Priority 1: explicit month/year
   const explicit = parseMonthYear(t);
   if (explicit) return explicit;
 
-  // Priority 2: "Class of 2027"
-  const m = t.match(/\bclass of\s*(20\d{2})\b/i);
-  if (m) {
-    const year = Number(m[1]);
-    if (Number.isFinite(year)) {
-      // Default assumption: typical spring graduation (May)
-      return { year, month: 5 };
-    }
+  const classOf = t.match(/\bclass of\s*(20\d{2})\b/i);
+  if (classOf) {
+    const year = Number(classOf[1]);
+    if (Number.isFinite(year)) return { year, month: 5 };
   }
 
-  // Priority 3: "graduating 2027" or "expected graduation 2027"
   const y = t.match(/\b(graduate|graduating|graduation)\b[^\d]{0,20}\b(20\d{2})\b/i);
   if (y) {
     const year = Number(y[2]);
@@ -284,6 +321,44 @@ function formatYM(ym: YM) {
   return `${monthNames[ym.month - 1]} ${ym.year}`;
 }
 
+/* ----------------------- “meaningful risk” enforcement ----------------------- */
+
+function isMeaningfulRisk(r: string) {
+  const s = (r || "").toLowerCase();
+
+  // checkmark language is not a risk
+  if (
+    s.includes("no issue") ||
+    s.includes("no issues") ||
+    s.includes("no eligibility") ||
+    s.includes("matches") ||
+    s.includes("satisfies") ||
+    s.includes("aligned") ||
+    s.includes("assumed")
+  ) return false;
+
+  const cues = [
+    "unclear",
+    "missing",
+    "gap",
+    "limited",
+    "concern",
+    "risk",
+    "lack",
+    "mismatch",
+    "outside",
+    "requires",
+    "preferred",
+    "competitive",
+  ];
+
+  return cues.some((c) => s.includes(c));
+}
+
+function countMeaningfulRisks(riskFlags: string[]) {
+  return riskFlags.filter(isMeaningfulRisk).length;
+}
+
 /* ----------------------- main ----------------------- */
 
 export async function runJobFit({
@@ -296,164 +371,22 @@ export async function runJobFit({
   const system = `
 You are WRNSignal, a job evaluation decision system by Workforce Ready Now.
 
-Your job is to evaluate whether ONE job is worth applying to for an early-career candidate (students and new grads), using probability of interview as the primary objective.
+Evaluate whether ONE job is worth applying to for an early-career candidate.
 
-You must think like a decision system, not a coach.
-
-DO NOT:
-- Motivate, reassure, or soften outcomes
-- Provide resume, cover letter, or networking advice
-- Use generic traits (hard worker, fast learner, leadership)
-- Output headings or formatted sections outside JSON (no WHY, RISKS, NEXT STEPS)
-
-DECISIONS:
-Return only one:
-- Apply
-- Review
-- Pass
-
-CORE PHILOSOPHY:
-- Passing is time protection, not rejection
-- Apply means directionally aligned with credible signal for interview conversion
-- Review means possible, but meaningful risks or unknowns
-- Pass means effort is unlikely to convert into an interview or builds wrong signal
-
-EVALUATION CONTEXT:
-- Students and new grads
-- Internships/entry-level roles do NOT require identical prior experience
-- Transferable skills and adjacent experience matter
-- Duties override titles
-- Function match can outweigh industry match
-
-SIGNAL HIERARCHY (STRICT ORDER):
-1) Explicit user interests and exclusions
-2) Target role and function alignment
-3) Demonstrated experience and responsibilities
-4) Skill adjacency and transferability
-5) Requirements realism for early career
-
-HARD LOGIC RULES:
-
-EVIDENCE DISCIPLINE (IMPORTANT):
-- Every bullet and risk_flag MUST be grounded in the provided job description and/or the provided profile.
-- Do NOT invent requirements that are not present in the job description.
-- If you mention "X years required", it must appear in the job description.
-- If eligibility is unclear, say so explicitly as a risk flag (example: "graduation window unclear").
-
-EXPLICIT EXCLUSIONS:
-If the profile explicitly excluded this role type, industry, location, work mode, or compensation structure:
-- Decision MUST be Pass
-- Score MUST be below 60
-- risk_flags MUST include the exact phrase: "explicit exclusion"
-- Also note if the job itself would otherwise be a strong fit so the user can reconsider
-Only use "explicit exclusion" if the profile clearly and directly excludes something. Do not treat mild preferences as exclusions.
-
-SENIORITY REQUIREMENTS:
-- "3+ years required" is common HR boilerplate for early-career roles:
-  - It must NEVER force a Pass
-  - It must NOT force Review by itself
-  - It should always be listed as a risk flag
-  - Put it in risk_flags, not as a primary reason bullet
-  - When present, note that internships, project work, and comparable responsibilities may substitute for years of experience
-- "5+ years required":
-  - Pass unless the resume clearly demonstrates equivalent senior-level scope
-- Duties override titles
-- "MBA required":
-  - must force a decision (usually Pass for undergraduates)
-- "MBA preferred":
-  - risk flag only
-
-INTERNSHIP ELIGIBILITY (IMPORTANT):
-- If the job description specifies an explicit graduation window (example: "graduate between Dec 2027 and Jun 2028"):
-  - Treat being outside that window as a major eligibility risk.
-  - If clearly outside the window, decision should usually be Pass due to ineligibility.
-
-AUTHORIZATION / CLEARANCE:
-- Missing work authorization or clearance -> Review unless another Pass reason exists
-
-LICENSING / CERTIFICATIONS:
-- Required and already held -> normal evaluation
-- Easily attainable quickly -> Review
-- Not attainable in time -> Pass
-
-INTERNSHIP RULE:
-- If an internship restricts juniors/seniors and the candidate is a sophomore -> Pass with a clear flag
-
-LOCATION / WORK MODE (STRICT):
-You MUST output "location_constraint" as one of:
-- "constrained"
-- "not_constrained"
-- "unclear"
-
-Rules for setting location_constraint:
-- "constrained" ONLY if the profile explicitly restricts location or relocation
-  Examples: "NYC only", "must be Orlando", "no relocation", "remote only"
-- "not_constrained" if the profile indicates flexibility or openness to relocate
-- "unclear" if it is not stated either way
-
-IMPORTANT:
-- If location_constraint is "unclear", treat it as NOT constrained.
-- If location is not explicitly constrained, you MUST NOT mention commuting distance, miles, commuting acceptability, "reasonable commuting distance", or local presence as a risk or bullet.
-- Do NOT infer location constraints from "plans" (example: "planning to move to Orlando" is NOT a constraint).
-
-Remote preference:
-- Remote when candidate prefers in-person -> risk flag only (unless explicitly excluded)
-
-COMPETITION:
-- High competition must be flagged when relevant
-- Competition alone must NEVER force Review or Pass
-- Do not describe competition as a consequence of a seniority gap (do not restate missing qualifications as "competition")
-- Only treat competition as decisive if the role clearly requires pedigree the candidate does not have
-
-COMPENSATION / UNPAID:
-- Commission-only or unpaid roles are NOT automatic Pass unless explicitly excluded
-- These should be raised as risk flags only
-
-INDUSTRY & BRAND:
-- Industry mismatch should be flagged but does not force Review or Pass
-- Brand-name companies can be a slight upside if relevant
-- Pedigree schools and programs may receive a slight upside
-- Super-pedigree roles with an average profile may justify Pass due to effort vs payoff
-
-MIXED OR UNCLEAR ROLES:
-- Mixed-function roles or vague responsibilities -> Review and flag clearly
-
-RISK FLAGS:
-- Risk flags provide context but do not decide outcomes by themselves
-- If 5 or more meaningful risk flags exist, the decision should be Review (unless explicit exclusion forced Pass)
-
-SCORING:
-- 0–100 scale
-- Apply: 75–100
-- Review: 60–74
-- Pass: 0–59
-- Score must match the decision band
-- Score reflects alignment, signal credibility, requirements realism, and interview conversion likelihood
-
-OUTPUT REQUIREMENTS:
-Return valid JSON ONLY:
-
+Return JSON only:
 {
   "decision": "Apply" | "Review" | "Pass",
   "score": number,
   "bullets": string[],
   "risk_flags": string[],
-  "next_step": string,
   "location_constraint": "constrained" | "not_constrained" | "unclear"
 }
 
-BULLETS:
-- Specific and grounded in profile and job
-- Written as potential interview talking points
-- Mix of fit and caution
-
-NEXT STEP:
-- Apply -> clear action
-- Review -> instruct the user to review the risk flags carefully before proceeding (micro-checks allowed)
-- Pass -> include this exact sentence:
-  "It is recommended that you do not apply and focus your attention on more aligned positions."
-
-Return JSON only. No extra text.
+Rules:
+- Bullets and risk_flags must be specific and grounded in the provided profile and job.
+- risk_flags must be actual risks/unknowns, not confirmations or “no issue” statements.
+- Do NOT provide resume/cover letter/networking advice.
+- location_constraint rules as previously described.
   `.trim();
 
   const user = `
@@ -464,7 +397,6 @@ JOB DESCRIPTION:
 ${jobText}
 
 Make a JobFit decision.
-If information is missing or unclear, reflect that in risk_flags and score.
 Return JSON only.
   `.trim();
 
@@ -487,12 +419,12 @@ Return JSON only.
       score: 60,
       bullets: ["Model did not return structured JSON.", "Decision requires manual review."],
       risk_flags: ["Non-JSON model response"],
-      next_step: "Retry with the same job description.",
+      next_step: "Review the risk flags carefully before proceeding.",
       location_constraint: "unclear" as LocationConstraint,
     };
   }
 
-  // Parse raw fields
+  // Parse fields
   let decision = normalizeDecision(parsed.decision);
   let score = clampScore(parsed.score);
 
@@ -501,102 +433,100 @@ Return JSON only.
 
   const loc = normalizeLocationConstraint(parsed.location_constraint);
 
-  // Treat unclear as not constrained (your rule)
+  // Treat unclear as NOT constrained (your rule)
   const treatAsConstrained = loc === "constrained";
 
-  // If not constrained, strip location/commute language from BOTH bullets and risk flags
+  // If not constrained, strip commute/local-presence language
   if (!treatAsConstrained) {
     bullets = stripLocationLanguage(bullets);
     riskFlags = stripLocationLanguage(riskFlags);
   }
 
-  // -----------------------
-  // Fix #1: Remove “3+ years” risk if JD doesn't actually mention it (contamination)
-  // -----------------------
+  // Strip coaching/advice leakage everywhere
+  bullets = stripAdviceLanguage(bullets);
+  riskFlags = stripAdviceLanguage(riskFlags);
+
+  // Strip “non-risk” risk flags
+  riskFlags = stripNonRiskRiskFlags(riskFlags);
+
+  // Remove “3+ years” risk if JD doesn't mention it
   if (containsThreePlusYearsFlag(riskFlags) && !jdMentionsThreePlusYears(jobText)) {
     riskFlags = riskFlags.filter((r) => !containsThreePlusYearsFlag([r]));
   }
 
-  // -----------------------
-  // Fix #2: Deterministic graduation-window eligibility enforcement (prevents false “timeline aligns”)
-  // -----------------------
+  // Deterministic graduation-window eligibility enforcement
   const gradWindow = extractGradWindow(jobText);
   const candGrad = extractCandidateGrad(profileText);
 
   if (gradWindow) {
     if (!candGrad) {
-      // eligibility unknown -> must be flagged
       riskFlags.unshift("graduation window unclear (candidate graduation date not found)");
     } else {
       const candIdx = ymToIndex(candGrad);
       const startIdx = ymToIndex(gradWindow.start);
       const endIdx = ymToIndex(gradWindow.end);
 
-      const clearlyOutside = candIdx < startIdx || candIdx > endIdx;
+      const outside = candIdx < startIdx || candIdx > endIdx;
 
-      if (clearlyOutside) {
-        // remove any hallucinated alignment bullets
+      if (outside) {
         bullets = stripTimelineLanguage(bullets);
-
-        // add a specific, grounded risk flag
         riskFlags.unshift(
           `graduation window mismatch (job requires ${formatYM(gradWindow.start)}–${formatYM(
             gradWindow.end
           )}; candidate appears to graduate ${formatYM(candGrad)})`
         );
 
-        // Treat as ineligible: force Pass unless explicit exclusion already handled below
         decision = "Pass";
         score = Math.min(score, 59);
       }
     }
   }
 
-  // Explicit exclusion enforcement (based on required phrase in risk_flags)
-  const hasExplicitExclusion = riskFlags.some((r) =>
-    r.toLowerCase().includes("explicit exclusion")
-  );
-  if (hasExplicitExclusion) {
-    decision = "Pass";
-  }
+  // Explicit exclusion enforcement
+  const hasExplicitExclusion = riskFlags.some((r) => r.toLowerCase().includes("explicit exclusion"));
+  if (hasExplicitExclusion) decision = "Pass";
 
-  // Score sanity rule: Review is not allowed under 60. If score < 60, force Pass (unless Apply).
-  if (decision === "Review" && score < 60) {
-    decision = "Pass";
-  }
+  // Score sanity: Review not allowed < 60
+  if (decision === "Review" && score < 60) decision = "Pass";
 
-  // 3+ years safety net: never allow Pass solely due to 3+ years (unless explicit exclusion)
-  // (This remains, but now it's less likely to trigger because we filtered contamination above.)
-  if (
-    decision === "Pass" &&
-    !hasExplicitExclusion &&
-    containsThreePlusYearsFlag(riskFlags)
-  ) {
+  // 3+ years safety net: never allow Pass solely due to 3+ years
+  if (decision === "Pass" && !hasExplicitExclusion && containsThreePlusYearsFlag(riskFlags)) {
     decision = "Review";
   }
 
-  // Deterministic hard-pass signals (prevents "Review" when content is clearly "Pass")
+  // Hard-pass signals
   if (!hasExplicitExclusion && decision !== "Apply" && hasHardPassSignals(riskFlags, bullets)) {
     decision = "Pass";
   }
 
-  // 5+ risk flags -> Review (unless explicit exclusion forced Pass)
-  // NOTE: keep Pass as Pass even if risk flags are high.
+  // Meaningful-risk enforcement:
+  // If the model said Review but there aren't real risks, upgrade to Apply.
+  const meaningfulRiskCount = countMeaningfulRisks(riskFlags);
+
+  if (!hasExplicitExclusion && decision === "Review" && meaningfulRiskCount <= 1) {
+    decision = "Apply";
+  }
+
+  // If score is already strong, don't allow Review unless there are multiple meaningful risks.
+  if (!hasExplicitExclusion && decision === "Review" && score >= 75 && meaningfulRiskCount <= 2) {
+    decision = "Apply";
+  }
+
+  // 5+ risk flags -> Review (unless Pass)
   if (decision !== "Pass" && riskFlags.length >= 5) {
     decision = "Review";
   }
 
-  // Enforce score bands LAST (after decision correction)
+  // Enforce score bands LAST
   score = enforceScoreBand(decision, score);
 
   // Final trims for UI
   bullets = bullets.slice(0, 8);
   riskFlags = riskFlags.slice(0, 6);
 
+  // Deterministic next step (no model leakage)
   const next_step =
-    typeof parsed.next_step === "string" && parsed.next_step.trim()
-      ? parsed.next_step.trim()
-      : decision === "Pass"
+    decision === "Pass"
       ? "It is recommended that you do not apply and focus your attention on more aligned positions."
       : decision === "Review"
       ? "Review the risk flags carefully before proceeding."
