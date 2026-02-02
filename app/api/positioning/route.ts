@@ -40,6 +40,18 @@ function asStringArray(v: any): string[] {
   return Array.isArray(v) ? v.filter(isNonEmptyString).map((s: string) => s.trim()) : []
 }
 
+/**
+ * Accepts either a string OR an array of strings and returns a single string.
+ * This prevents "evidence" arrays from getting dropped by downstream filters.
+ */
+function asStringOrJoin(v: any, fallback = ""): string {
+  if (Array.isArray(v)) {
+    const parts = v.filter(isNonEmptyString).map((s: string) => s.trim())
+    return parts.length ? parts.join(" | ") : fallback
+  }
+  return asString(v, fallback)
+}
+
 function normalizeSummaryStatus(v: any): "keep" | "revise" | "create" {
   return v === "keep" || v === "revise" || v === "create" ? v : "keep"
 }
@@ -143,6 +155,9 @@ SUMMARY STATEMENT LOGIC (STRICT + SELECTIVE):
 3) If summary does NOT exist:
    - Recommend "create" only if overall_signal is "mixed" or "weak" AND the top of the resume will not pass a 7-second scan.
    - If overall_signal is "strong", status="keep" and explicitly say summary is not needed.
+
+IMPORTANT TYPE RULE:
+- In bullet_edits, "evidence" must be ONE single verbatim quote string from the resume (not an array).
 
 OUTPUT RULES:
 - Return 0–6 bullet edits total. Fewer is better.
@@ -281,6 +296,11 @@ Return JSON only. No markdown. No extra text.
       )
     }
 
+    // ---- Debug: confirm whether model produced bullet edits but parsing/filtering removed them.
+    // Remove these logs after confirming the fix in production.
+    const rawBulletEdits = Array.isArray(parsed?.bullet_edits) ? parsed.bullet_edits : []
+    console.log("Positioning raw bullet_edits:", JSON.stringify(rawBulletEdits, null, 2))
+
     const branchRaw = parsed?.branch && typeof parsed.branch === "object" ? parsed.branch : {}
     const branch = {
       target_branch: asString(branchRaw?.target_branch, "unclear"),
@@ -312,20 +332,25 @@ Return JSON only. No markdown. No extra text.
       what_to_do_next: asStringArray(summaryRaw?.what_to_do_next),
     }
 
-    const bulletEditsRaw = Array.isArray(parsed?.bullet_edits) ? parsed.bullet_edits : []
+    const bulletEditsRaw = rawBulletEdits
     const bullet_edits = bulletEditsRaw
       .map((b: any) => ({
         job_title: asString(b?.job_title, "Unknown role"),
         before: asString(b?.before, ""),
         after: asString(b?.after, ""),
         why: asString(b?.why, ""),
-        evidence: asString(b?.evidence, ""),
+        // Accept string OR string[] so we don't drop edits when the model returns an array.
+        evidence: asStringOrJoin(b?.evidence, ""),
         copy_paste_tip: asString(b?.copy_paste_tip, "Copy the After version into your resume."),
       }))
       .filter((b: any) => b.before && b.after && b.evidence)
 
+    console.log("Positioning bullet_edits kept:", bullet_edits.length)
+
     const compRaw =
-      parsed?.competitiveness && typeof parsed.competitiveness === "object" ? parsed.competitiveness : {}
+      parsed?.competitiveness && typeof parsed.competitiveness === "object"
+        ? parsed.competitiveness
+        : {}
 
     const inferredNoEditsNeeded =
       bullet_edits.length === 0 && summary.status !== "revise" && summary.status !== "create"
