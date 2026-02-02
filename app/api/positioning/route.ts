@@ -40,34 +40,14 @@ function asStringArray(v: any): string[] {
   return Array.isArray(v) ? v.filter(isNonEmptyString).map((s: string) => s.trim()) : []
 }
 
-/**
- * Accepts either a string OR an array of strings and returns a single string.
- * This prevents "evidence" arrays from getting dropped by downstream filters.
- */
-function asStringOrJoin(v: any, fallback = ""): string {
-  if (Array.isArray(v)) {
-    const parts = v.filter(isNonEmptyString).map((s: string) => s.trim())
-    return parts.length ? parts.join(" | ") : fallback
-  }
-  return asString(v, fallback)
-}
-
-function normalizeSummaryStatus(v: any): "keep" | "revise" | "create" {
-  return v === "keep" || v === "revise" || v === "create" ? v : "keep"
-}
-
-function normalizeSignal(v: any): "strong" | "mixed" | "weak" {
-  return v === "strong" || v === "mixed" || v === "weak" ? v : "mixed"
-}
-
-type RolePick = {
+type ArrangePick = {
   role: string
   why: string
-  evidence: string[]
+  evidence: string[] // still quotes from resume
   action: string
 }
 
-function normalizeRolePickArray(arr: any): RolePick[] {
+function normalizeArrangePickArray(arr: any): ArrangePick[] {
   if (!Array.isArray(arr)) return []
   return arr
     .map((x: any) => ({
@@ -76,7 +56,28 @@ function normalizeRolePickArray(arr: any): RolePick[] {
       evidence: asStringArray(x?.evidence),
       action: asString(x?.action, ""),
     }))
-    .filter((x: RolePick) => x.role && (x.why || x.action))
+    .filter((x: ArrangePick) => x.role && (x.why || x.action))
+}
+
+type BulletEdit = {
+  job_title: string
+  before: string
+  after: string
+  why: string
+  evidence: string
+}
+
+function normalizeBulletEdits(arr: any): BulletEdit[] {
+  if (!Array.isArray(arr)) return []
+  return arr
+    .map((b: any) => ({
+      job_title: asString(b?.job_title, "Unknown role"),
+      before: asString(b?.before, ""),
+      after: asString(b?.after, ""),
+      why: asString(b?.why, ""),
+      evidence: asString(b?.evidence, ""),
+    }))
+    .filter((b: BulletEdit) => b.before && b.after && b.evidence)
 }
 
 export async function OPTIONS(req: Request) {
@@ -107,116 +108,79 @@ You are WRNSignal by Workforce Ready Now (Positioning module).
 IMPORTANT PRODUCT RULE:
 Job Fit is the ONLY module allowed to recommend Apply / Apply with caution / Do not apply.
 You MUST NOT output any apply recommendation.
-Your job is: "If the student is applying, how do they compete with clearer positioning?"
 
 STUDENT UX GOAL:
 Make this so clear that a college student can take action immediately.
-Short sentences. No buzzwords. No cringe.
-
-NON-NEGOTIABLE PRINCIPLE:
-Only suggest changes that clearly improve hiring signal for THIS job.
-If the best answer is "no changes needed", say so.
+Short sentences. No buzzwords. No cringe. Not nit picky.
 
 ANTI-FABRICATION (ABSOLUTE):
 - Use ONLY facts present in the resume text.
-- Mirror job keywords ONLY if the resume already supports them.
+- Mirror job keywords ONLY if the resume already supports them factually.
 - Never invent tools, metrics, stakeholders, industries, responsibilities, or outcomes.
 - Never change the function or industry of a role.
 - If something is too vague to safely align, skip it.
 
 EVIDENCE REQUIREMENT (STRICT):
-For every recommendation (branch, emphasis, summary, bullet edits),
+For every recommendation (role angle, ordering, summary, bullet edits),
 include evidence as exact quotes copied verbatim from the resume text.
-If you cannot quote evidence, do not include it.
+If you cannot quote evidence, do not include the recommendation.
 
 HIGH-IMPACT FILTER (HARD GATE) FOR BULLET EDITS:
-A bullet edit is allowed ONLY if it satisfies BOTH:
-A) Keyword Match: It explicitly adds or foregrounds a job-relevant keyword/phrase that appears in the job description,
+Only propose a bullet edit if:
+A) Keyword Match: it adds or foregrounds a job-relevant keyword/phrase that appears in the job description,
    AND the resume already supports it factually.
-B) Signal Lift: It materially increases clarity of what was done (scope, deliverable, stakeholder, measurable output, ownership),
-   not just readability.
-
+B) Signal Lift: it materially increases clarity (scope, deliverable, stakeholder, measurable output, ownership).
 If A or B is not met, DO NOT propose the edit.
 
-BANNED VAGUE PHRASES (unless quoted verbatim from resume evidence):
-- "contributing to"
-- "helped drive"
-- "supported growth"
-- "ensure smooth execution"
-- "drive partnership opportunities"
-- "fan engagement"
-- "successful activation"
-
-SUMMARY STATEMENT LOGIC (STRICT + SELECTIVE):
-1) Detect whether a summary exists near the top of the resume.
-2) If summary exists:
-   - If it matches the job's role type + 2–4 core keywords: status="keep" and do not rewrite.
-   - If misaligned: status="revise" and propose ONE revised summary (factual).
-3) If summary does NOT exist:
-   - Recommend "create" only if overall_signal is "mixed" or "weak" AND the top of the resume will not pass a 7-second scan.
-   - If overall_signal is "strong", status="keep" and explicitly say summary is not needed.
-
-IMPORTANT TYPE RULE:
-- In bullet_edits, "evidence" must be ONE single verbatim quote string from the resume (not an array).
+SUMMARY STATEMENT LOGIC:
+- Detect if a summary exists near the top of the resume.
+- Return need_summary as YES/NO.
+- YES when: summary is missing AND overall signal is mixed/weak OR the top of the resume will not pass a 7-second scan.
+- YES also when: summary exists but is misaligned with the job (recommend revising).
+- NO when: summary exists and is aligned, OR overall signal is strong and the top passes a 7-second scan.
+- If NO because summary exists and is aligned, then return sentence saying existing summary is strong.
+If YES, include one recommended summary (factual). If NO, do not write a new summary.
 
 OUTPUT RULES:
-- Return 0–6 bullet edits total. Fewer is better.
-- Returning zero bullet edits is valid and often correct.
-- DO NOT output apply/do-not-apply recommendations.
+- Return 3–6 bullet edits total when edits are needed. Minimum 3 if any are recommended.
+- If truly no edits are needed, return an empty bullet_edits array.
+- Do NOT include: Do This Next, Show Proof, Quick Checklist, Competitiveness Check, Next Steps.
+- Do NOT output any buttons or UI instructions like "Copy".
 
 Return VALID JSON ONLY with this exact shape:
 {
   "student_intro": string,
 
-  "branch": {
-    "target_branch": string,
-    "alt_branches": string[],
-    "why_this_branch": string,
-    "evidence": string[],
-    "what_to_do_next": string[]
-  },
-
-  "emphasis_plan": {
-    "lead_with": [
-      { "role": string, "why": string, "evidence": string[], "action": string }
-    ],
-    "support_with": [
-      { "role": string, "why": string, "evidence": string[], "action": string }
-    ],
-    "deemphasize": [
-      { "role": string, "why": string, "evidence": string[], "action": string }
-    ],
-    "top_keywords_to_surface": string[],
-    "section_order_suggestion": string[],
-    "quick_checklist": string[]
-  },
-
-  "summary": {
-    "status": "keep"|"revise"|"create",
-    "before": string|null,
-    "after": string|null,
+  "role_angle": {
+    "label": string,
     "why": string,
-    "evidence": string[],
-    "what_to_do_next": string[]
+    "evidence": string[]
   },
 
-  "bullet_edits": [
+  "arrange_resume": {
+    "intro": string,
+    "lead_with": [{ "role": string, "why": string, "evidence": string[], "action": string }],
+    "support_with": [{ "role": string, "why": string, "evidence": string[], "action": string }],
+    "then_include": [{ "role": string, "why": string, "evidence": string[], "action": string }],
+    "de_emphasize": [{ "role": string, "why": string, "evidence": string[], "action": string }]
+  },
+
+  "summary_statement": {
+    "need_summary": "YES" | "NO",
+    "why": string,
+    "recommended_summary": string | null,
+    "evidence": string[]
+  },
+
+  "resume_bullet_edits": [
     {
       "job_title": string,
       "before": string,
       "after": string,
       "why": string,
-      "evidence": string,
-      "copy_paste_tip": string
+      "evidence": string
     }
-  ],
-
-  "competitiveness": {
-    "overall_signal": "strong"|"mixed"|"weak",
-    "what_this_means": string,
-    "no_edits_needed": boolean,
-    "next_steps": string[]
-  }
+  ]
 }
     `.trim()
 
@@ -228,13 +192,14 @@ JOB DESCRIPTION (verbatim):
 ${job}
 
 TASK (do in order):
-1) Pick ONE target_branch for this job (branch under the umbrella). Add 0–2 alt branches if truly plausible.
-2) Build an emphasis plan for that branch: lead_with, support_with, deemphasize.
-3) Decide competitiveness overall_signal: strong / mixed / weak based on whether the resume signals the job's core keywords clearly.
-4) Apply summary logic (strict).
-5) Bullet edits (0–6 max). Must pass High-Impact Filter A + B. "before" copied verbatim. "after" safe and factual. Provide evidence quotes.
-6) Return a competitiveness section that explains what the signal means and gives a short checklist.
-7) IMPORTANT: Do NOT recommend Apply/Do not apply.
+1) Identify the best Role Angle label (2–5 words) for how this resume should be read for this job.
+2) Explain why in 1–2 sentences and include supporting resume evidence quotes.
+3) Provide How to Arrange Your Resume:
+   - Include the sentence: "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience."
+   - Make clear this is reordering existing facts, not rewriting them.
+   - Output Lead With (1), Support With (1–2), Then Include (0–2), De-emphasize (0–1) if applicable.
+4) Summary Statement: return need_summary YES/NO and explain why. If YES, give one recommended summary and cite evidence.
+5) Resume Bullet Edits: 3–6 edits when needed. Minimum 3 if you recommend any. Each edit must pass the High-Impact Filter and include a single verbatim evidence quote.
 
 Return JSON only. No markdown. No extra text.
     `.trim()
@@ -257,137 +222,92 @@ Return JSON only. No markdown. No extra text.
           student_intro:
             "I could not generate your positioning plan because the model did not return valid JSON. Paste the full job description again and retry.",
 
-          branch: {
-            target_branch: "unclear",
-            alt_branches: [],
-            why_this_branch: raw || "Non-JSON response.",
+          role_angle: {
+            label: "Unclear",
+            why: raw || "Non-JSON response.",
             evidence: [],
-            what_to_do_next: ["Paste the full job description (not a link).", "Retry Positioning."],
           },
 
-          emphasis_plan: {
+          arrange_resume: {
+            intro:
+              "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience. This is about reordering your resume facts, not rewriting them.",
             lead_with: [],
             support_with: [],
-            deemphasize: [],
-            top_keywords_to_surface: [],
-            section_order_suggestion: [],
-            quick_checklist: [],
+            then_include: [],
+            de_emphasize: [],
           },
 
-          summary: {
-            status: "keep",
-            before: null,
-            after: null,
+          summary_statement: {
+            need_summary: "YES",
             why: "No summary recommendation due to invalid model output.",
+            recommended_summary: null,
             evidence: [],
-            what_to_do_next: [],
           },
 
-          bullet_edits: [],
-
-          competitiveness: {
-            overall_signal: "mixed",
-            what_this_means: raw || "Non-JSON response.",
-            no_edits_needed: false,
-            next_steps: ["Retry with the full job description pasted in."],
-          },
+          resume_bullet_edits: [],
         }),
         { status: 200, headers: corsHeaders(origin) }
       )
     }
 
-    // ---- Debug: confirm whether model produced bullet edits but parsing/filtering removed them.
-    // Remove these logs after confirming the fix in production.
-    const rawBulletEdits = Array.isArray(parsed?.bullet_edits) ? parsed.bullet_edits : []
-    console.log("Positioning raw bullet_edits:", JSON.stringify(rawBulletEdits, null, 2))
-
-    const branchRaw = parsed?.branch && typeof parsed.branch === "object" ? parsed.branch : {}
-    const branch = {
-      target_branch: asString(branchRaw?.target_branch, "unclear"),
-      alt_branches: asStringArray(branchRaw?.alt_branches),
-      why_this_branch: asString(branchRaw?.why_this_branch, ""),
-      evidence: asStringArray(branchRaw?.evidence),
-      what_to_do_next: asStringArray(branchRaw?.what_to_do_next),
-    }
-
-    const emphasisRaw =
-      parsed?.emphasis_plan && typeof parsed.emphasis_plan === "object" ? parsed.emphasis_plan : {}
-
-    const emphasis_plan = {
-      lead_with: normalizeRolePickArray(emphasisRaw?.lead_with),
-      support_with: normalizeRolePickArray(emphasisRaw?.support_with),
-      deemphasize: normalizeRolePickArray(emphasisRaw?.deemphasize),
-      top_keywords_to_surface: asStringArray(emphasisRaw?.top_keywords_to_surface),
-      section_order_suggestion: asStringArray(emphasisRaw?.section_order_suggestion),
-      quick_checklist: asStringArray(emphasisRaw?.quick_checklist),
-    }
-
-    const summaryRaw = parsed?.summary && typeof parsed.summary === "object" ? parsed.summary : {}
-    const summary = {
-      status: normalizeSummaryStatus(summaryRaw?.status),
-      before: isNonEmptyString(summaryRaw?.before) ? summaryRaw.before : null,
-      after: isNonEmptyString(summaryRaw?.after) ? summaryRaw.after : null,
-      why: asString(summaryRaw?.why, ""),
-      evidence: asStringArray(summaryRaw?.evidence),
-      what_to_do_next: asStringArray(summaryRaw?.what_to_do_next),
-    }
-
-    const bulletEditsRaw = rawBulletEdits
-    const bullet_edits = bulletEditsRaw
-      .map((b: any) => ({
-        job_title: asString(b?.job_title, "Unknown role"),
-        before: asString(b?.before, ""),
-        after: asString(b?.after, ""),
-        why: asString(b?.why, ""),
-        // Accept string OR string[] so we don't drop edits when the model returns an array.
-        evidence: asStringOrJoin(b?.evidence, ""),
-        copy_paste_tip: asString(b?.copy_paste_tip, "Copy the After version into your resume."),
-      }))
-      .filter((b: any) => b.before && b.after && b.evidence)
-
-    console.log("Positioning bullet_edits kept:", bullet_edits.length)
-
-    const compRaw =
-      parsed?.competitiveness && typeof parsed.competitiveness === "object"
-        ? parsed.competitiveness
-        : {}
-
-    const inferredNoEditsNeeded =
-      bullet_edits.length === 0 && summary.status !== "revise" && summary.status !== "create"
-
-    const competitiveness = {
-      overall_signal: normalizeSignal(compRaw?.overall_signal),
-      what_this_means: asString(compRaw?.what_this_means, ""),
-      no_edits_needed: asBool(compRaw?.no_edits_needed, inferredNoEditsNeeded) || inferredNoEditsNeeded,
-      next_steps: asStringArray(compRaw?.next_steps),
-    }
-
+    // Normalize
     const student_intro = asString(
       parsed?.student_intro,
       "Here is the clearest way to position your resume for this job, with only factual, high-impact changes."
     )
 
-    const compNextStepsFallback =
-      competitiveness.next_steps.length > 0
-        ? competitiveness.next_steps
-        : competitiveness.no_edits_needed
-          ? ["You do not need edits for this job. Keep your resume as-is for this application."]
-          : ["Follow the emphasis plan first.", "Then apply the copy paste edits.", "Re-run Positioning after updates."]
+    const roleRaw = parsed?.role_angle && typeof parsed.role_angle === "object" ? parsed.role_angle : {}
+    const role_angle = {
+      label: asString(roleRaw?.label, "Unclear"),
+      why: asString(roleRaw?.why, ""),
+      evidence: asStringArray(roleRaw?.evidence),
+    }
+
+    const arrangeRaw =
+      parsed?.arrange_resume && typeof parsed.arrange_resume === "object" ? parsed.arrange_resume : {}
+
+    const arrange_resume = {
+      intro: asString(
+        arrangeRaw?.intro,
+        "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience. This is about reordering your resume facts, not rewriting them."
+      ),
+      lead_with: normalizeArrangePickArray(arrangeRaw?.lead_with),
+      support_with: normalizeArrangePickArray(arrangeRaw?.support_with),
+      then_include: normalizeArrangePickArray(arrangeRaw?.then_include),
+      de_emphasize: normalizeArrangePickArray(arrangeRaw?.de_emphasize),
+    }
+
+    const summaryRaw =
+      parsed?.summary_statement && typeof parsed.summary_statement === "object" ? parsed.summary_statement : {}
+
+    const need_summary = summaryRaw?.need_summary === "YES" || summaryRaw?.need_summary === "NO" ? summaryRaw.need_summary : "NO"
+
+    const summary_statement = {
+      need_summary,
+      why: asString(summaryRaw?.why, ""),
+      recommended_summary: isNonEmptyString(summaryRaw?.recommended_summary) ? summaryRaw.recommended_summary : null,
+      evidence: asStringArray(summaryRaw?.evidence),
+    }
+
+    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
+
+    // Enforce your "minimum 3 when any are recommended" rule without getting nitpicky:
+    // If the model returned 1–2, keep them but request 3+ via prompt next time.
+    // We will not auto-generate edits here to avoid fabrication risk.
+    // (If you want, we can do an automatic "retry with constraint" on 1–2 edits.)
 
     return new Response(
       JSON.stringify({
         student_intro,
-        branch,
-        emphasis_plan,
-        summary,
-        bullet_edits,
-        competitiveness: { ...competitiveness, next_steps: compNextStepsFallback },
+        role_angle,
+        arrange_resume,
+        summary_statement,
+        resume_bullet_edits,
       }),
       { status: 200, headers: corsHeaders(origin) }
     )
   } catch (err: any) {
     const detail = err?.message || String(err)
-
     const lower = String(detail).toLowerCase()
     const status =
       lower.includes("unauthorized")
