@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
-import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
+import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
 
@@ -132,3 +132,6 @@ export async function POST(req: Request) {
     return withCorsJson(req, { ok: false, error: err?.message || String(err) }, 500)
   }
 }
+
+
+

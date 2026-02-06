@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 
 function parseAllowedOrigins() {
   return (process.env.ALLOWED_ORIGINS || "")

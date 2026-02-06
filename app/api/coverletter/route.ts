@@ -1,6 +1,6 @@
 import OpenAI from "openai"
 import { getAuthedProfileText } from "../_lib/authProfile"
-import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
+import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
 
@@ -111,3 +111,6 @@ Return JSON only. No markdown. No commentary.
     return withCorsJson(req, { error: "Coverletter failed", detail }, status)
   }
 }
+
+
+

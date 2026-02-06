@@ -1,6 +1,6 @@
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
-import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
+import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
 
@@ -46,3 +46,6 @@ export async function POST(req: Request) {
     return withCorsJson(req, { error: "JobFit failed", detail }, status)
   }
 }
+
+
+

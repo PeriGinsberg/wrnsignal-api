@@ -1,6 +1,6 @@
 import { getAuthedProfileText } from "../_lib/authProfile"
 import OpenAI from "openai"
-import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
+import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
 
@@ -134,3 +134,6 @@ Return JSON only.
     return withCorsJson(req, { error: "Networking failed", detail }, status)
   }
 }
+
+
+
