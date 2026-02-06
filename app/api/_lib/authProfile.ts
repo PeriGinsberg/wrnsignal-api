@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+﻿import { createClient } from "@supabase/supabase-js"
 
 /**
  * authProfile.ts (or ../_lib/authProfile.ts)
@@ -154,7 +154,8 @@ async function attachProfileToUser(profileId: string, userId: string): Promise<C
   // Race-safe: only attach if user_id is null
   const attached = await safeSelectSingle<ClientProfileRow>(
     async (selectList) => {
-      return await supabaseAdmin
+      const supabaseAny = supabaseAdmin as any
+      return await supabaseAny
         .from("client_profiles")
         .update({ user_id: userId })
         .eq("id", profileId)
@@ -171,7 +172,7 @@ async function attachProfileToUser(profileId: string, userId: string): Promise<C
 async function persistProfileText(profileId: string, profileText: string) {
   // Do not break the user flow if this fails
   const supabaseAdmin = getSupabaseAdmin()
-  const { error } = await supabaseAdmin
+  const { error } = await (supabaseAdmin as any)
     .from("client_profiles")
     .update({ profile_text: profileText })
     .eq("id", profileId)
@@ -189,7 +190,7 @@ async function createStubProfile(email: string, userId: string): Promise<ClientP
   const e = corsSafeLower(email)
 
   // Try upsert if email is unique. If it errors, fall back to insert.
-  const upsertAttempt = await supabaseAdmin
+  const upsertAttempt = await (supabaseAdmin as any)
     .from("client_profiles")
     .upsert({ email: e, user_id: userId }, { onConflict: "email" })
     .select(SELECT_MIN)
@@ -200,7 +201,7 @@ async function createStubProfile(email: string, userId: string): Promise<ClientP
   }
 
   // Fallback insert (in case onConflict fails because constraint not present)
-  const insertAttempt = await supabaseAdmin
+  const insertAttempt = await (supabaseAdmin as any)
     .from("client_profiles")
     .insert({ email: e, user_id: userId })
     .select(SELECT_MIN)
@@ -272,3 +273,9 @@ export async function getAuthedProfileText(req: Request): Promise<{
 
   return { userId, email, profileText }
 }
+
+
+
+
+
+
