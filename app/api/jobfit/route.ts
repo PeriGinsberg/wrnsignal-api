@@ -1,6 +1,6 @@
-import { getAuthedProfileText } from "../_lib/authProfile"
-import { runJobFit } from "../_lib/jobfitEvaluator"
-import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { getAuthedProfileText } from "../../_lib/authProfile"
+import { runJobFit } from "../../_lib/jobfitEvaluator"
+import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 
 export const runtime = "nodejs"
 
