@@ -1,18 +1,10 @@
-import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
 
 export const runtime = "nodejs"
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, x-jobfit-key",
-  }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() })
+export async function OPTIONS(req: Request) {
+  return corsOptionsResponse(req.headers.get("origin"))
 }
 
 function normalizeJobType(raw: any): "internship" | "full_time" | "" {
@@ -53,10 +45,7 @@ export async function POST(req: Request) {
     if (expectedKey) {
       const got = req.headers.get("x-jobfit-key")
       if (got !== expectedKey) {
-        return NextResponse.json(
-          { ok: false, error: "unauthorized" },
-          { status: 401, headers: corsHeaders() }
-        )
+        return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
       }
     }
 
@@ -72,41 +61,23 @@ export async function POST(req: Request) {
     const resume_text = String(body.resume_text ?? "").trim()
 
     // Required fields (match your UI)
-    if (!name) {
-      return NextResponse.json(
-        { ok: false, error: "missing_name" },
-        { status: 400, headers: corsHeaders() }
-      )
-    }
-    if (!email) {
-      return NextResponse.json(
-        { ok: false, error: "missing_email" },
-        { status: 400, headers: corsHeaders() }
-      )
-    }
-    if (!job_type) {
-      return NextResponse.json(
-        { ok: false, error: "missing_job_type" },
-        { status: 400, headers: corsHeaders() }
-      )
-    }
-    if (!resume_text) {
-      return NextResponse.json(
-        { ok: false, error: "missing_resume_text" },
-        { status: 400, headers: corsHeaders() }
-      )
-    }
-    if (!target_roles) {
-      return NextResponse.json(
-        { ok: false, error: "missing_target_roles" },
-        { status: 400, headers: corsHeaders() }
+    if (!name) return withCorsJson(req, { ok: false, error: "missing_name" }, 400)
+    if (!email) return withCorsJson(req, { ok: false, error: "missing_email" }, 400)
+    if (!job_type) return withCorsJson(req, { ok: false, error: "missing_job_type" }, 400)
+    if (!resume_text) return withCorsJson(req, { ok: false, error: "missing_resume_text" }, 400)
+    if (!target_roles) return withCorsJson(req, { ok: false, error: "missing_target_roles" }, 400)
+
+    const supabaseUrl = process.env.SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !serviceRoleKey) {
+      return withCorsJson(
+        req,
+        { ok: false, error: "server_misconfigured", detail: "Missing Supabase env vars" },
+        500
       )
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // 1) Upsert user by email
     const { data: user, error: userErr } = await supabase
@@ -116,10 +87,7 @@ export async function POST(req: Request) {
       .single()
 
     if (userErr) {
-      return NextResponse.json(
-        { ok: false, error: userErr.message },
-        { status: 500, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: userErr.message }, 500)
     }
 
     // 2) Build combined profile text for model quality
@@ -152,20 +120,15 @@ export async function POST(req: Request) {
       )
 
     if (profErr) {
-      return NextResponse.json(
-        { ok: false, error: profErr.message },
-        { status: 500, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: profErr.message }, 500)
     }
 
-    return NextResponse.json(
+    return withCorsJson(
+      req,
       { ok: true, user_id: user.id, credits_remaining: user.credits_remaining },
-      { status: 200, headers: corsHeaders() }
+      200
     )
   } catch (err: any) {
-    return NextResponse.json(
-      { ok: false, error: err?.message || String(err) },
-      { status: 500, headers: corsHeaders() }
-    )
+    return withCorsJson(req, { ok: false, error: err?.message || String(err) }, 500)
   }
 }

@@ -1,25 +1,10 @@
 import { getAuthedProfileText } from "../_lib/authProfile"
 import OpenAI from "openai"
+import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
 
 export const runtime = "nodejs"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
-function corsHeaders(origin: string | null) {
-  const allowOrigin = origin || "*"
-  return {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Max-Age": "86400",
-  }
-}
-
-export async function OPTIONS(req: Request) {
-  const origin = req.headers.get("origin")
-  return new Response(null, { status: 204, headers: corsHeaders(origin) })
-}
 
 function safeJsonParse(raw: string) {
   try {
@@ -29,9 +14,11 @@ function safeJsonParse(raw: string) {
   }
 }
 
-export async function POST(req: Request) {
-  const origin = req.headers.get("origin")
+export async function OPTIONS(req: Request) {
+  return corsOptionsResponse(req.headers.get("origin"))
+}
 
+export async function POST(req: Request) {
   try {
     // ✅ Auth + stored profile (server-side)
     const { profileText } = await getAuthedProfileText(req)
@@ -42,10 +29,7 @@ export async function POST(req: Request) {
     const job = String(body?.job || "").trim()
 
     if (!job) {
-      return new Response(JSON.stringify({ error: "Missing job" }), {
-        status: 400,
-        headers: corsHeaders(origin),
-      })
+      return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
     const system = `
@@ -100,8 +84,9 @@ Return JSON only.
     const parsed = safeJsonParse(raw)
 
     if (!parsed) {
-      return new Response(
-        JSON.stringify({
+      return withCorsJson(
+        req,
+        {
           note:
             "Networking is where you win. Treat applying as ~20% effort and networking as ~80% effort after you apply.",
           actions: [
@@ -113,17 +98,17 @@ Return JSON only.
             { target: "", rationale: "", message: "" },
             { target: "", rationale: "", message: "" },
           ],
-        }),
-        { status: 200, headers: corsHeaders(origin) }
+        },
+        200
       )
     }
 
     const out: any = {
       note:
-        typeof parsed.note === "string"
-          ? parsed.note
+        typeof (parsed as any).note === "string"
+          ? String((parsed as any).note)
           : "Networking is where you win. Treat applying as ~20% effort and networking as ~80% effort after you apply.",
-      actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 3) : [],
+      actions: Array.isArray((parsed as any).actions) ? (parsed as any).actions.slice(0, 3) : [],
     }
 
     // Ensure exactly 3 actions in output
@@ -132,10 +117,7 @@ Return JSON only.
     }
     out.actions = out.actions.slice(0, 3)
 
-    return new Response(JSON.stringify(out), {
-      status: 200,
-      headers: corsHeaders(origin),
-    })
+    return withCorsJson(req, out, 200)
   } catch (err: any) {
     const detail = err?.message || String(err)
 
@@ -149,9 +131,6 @@ Return JSON only.
             ? 403
             : 500
 
-    return new Response(JSON.stringify({ error: "Networking failed", detail }), {
-      status,
-      headers: corsHeaders(origin),
-    })
+    return withCorsJson(req, { error: "Networking failed", detail }, status)
   }
 }

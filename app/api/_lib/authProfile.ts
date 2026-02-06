@@ -9,10 +9,9 @@ import { createClient } from "@supabase/supabase-js"
  * 3) Race-safe linking: attach user_id only if null.
  * 4) Build a usable profileText even if profile_text is null.
  *
- * FIX:
- * - safeSelectSingle now accepts a query function that returns a Supabase PostgrestBuilder
- *   (thenable) OR a real Promise, so Next build type checking does not fail.
- * - All call sites now use async/await so the return type is an actual Promise result.
+ * KEY CHANGE IN THIS REWRITE:
+ * - No env var reads and no Supabase client creation at module import time.
+ *   We lazy-init the admin client to avoid crashing routes/edge cases when env is misconfigured.
  */
 
 function requireEnv(name: string): string {
@@ -21,10 +20,17 @@ function requireEnv(name: string): string {
   return v
 }
 
-const SUPABASE_URL = requireEnv("SUPABASE_URL")
-const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY")
+let _supabaseAdmin: ReturnType<typeof createClient> | null = null
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+function getSupabaseAdmin() {
+  if (_supabaseAdmin) return _supabaseAdmin
+
+  const SUPABASE_URL = requireEnv("SUPABASE_URL")
+  const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY")
+
+  _supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  return _supabaseAdmin
+}
 
 function corsSafeLower(s: any) {
   return String(s || "").trim().toLowerCase()
@@ -81,7 +87,7 @@ async function safeSelectSingle<T>(
     // If it's a missing column error, fall through to minimal
     const msg = String(full.error?.message || "")
     const isMissingColumn =
-      msg.includes("does not exist") || msg.includes("column") || msg.includes("schema cache")
+      msg.includes("does not exist") || msg.includes("schema cache") || msg.includes("column")
 
     if (!isMissingColumn) {
       throw new Error(full.error.message || "Database error")
@@ -120,6 +126,7 @@ ${resumeText}
 }
 
 async function fetchProfileByUserId(userId: string): Promise<ClientProfileRow | null> {
+  const supabaseAdmin = getSupabaseAdmin()
   return safeSelectSingle<ClientProfileRow>(async (selectList) => {
     return await supabaseAdmin
       .from("client_profiles")
@@ -130,6 +137,7 @@ async function fetchProfileByUserId(userId: string): Promise<ClientProfileRow | 
 }
 
 async function fetchProfileByEmail(email: string): Promise<ClientProfileRow | null> {
+  const supabaseAdmin = getSupabaseAdmin()
   const e = corsSafeLower(email)
   return safeSelectSingle<ClientProfileRow>(async (selectList) => {
     return await supabaseAdmin
@@ -141,6 +149,8 @@ async function fetchProfileByEmail(email: string): Promise<ClientProfileRow | nu
 }
 
 async function attachProfileToUser(profileId: string, userId: string): Promise<ClientProfileRow | null> {
+  const supabaseAdmin = getSupabaseAdmin()
+
   // Race-safe: only attach if user_id is null
   const attached = await safeSelectSingle<ClientProfileRow>(
     async (selectList) => {
@@ -160,6 +170,7 @@ async function attachProfileToUser(profileId: string, userId: string): Promise<C
 
 async function persistProfileText(profileId: string, profileText: string) {
   // Do not break the user flow if this fails
+  const supabaseAdmin = getSupabaseAdmin()
   const { error } = await supabaseAdmin
     .from("client_profiles")
     .update({ profile_text: profileText })
@@ -169,6 +180,8 @@ async function persistProfileText(profileId: string, profileText: string) {
 }
 
 async function createStubProfile(email: string, userId: string): Promise<ClientProfileRow> {
+  const supabaseAdmin = getSupabaseAdmin()
+
   // This prevents "Profile not found" for paid users who authenticated
   // but do not have a client_profiles row yet.
   //
@@ -208,6 +221,7 @@ export async function getAuthedProfileText(req: Request): Promise<{
   const token = getBearerToken(req)
 
   // 1) Validate token and get user
+  const supabaseAdmin = getSupabaseAdmin()
   const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token)
   if (userErr || !userData?.user) throw new Error("Unauthorized: invalid token")
 

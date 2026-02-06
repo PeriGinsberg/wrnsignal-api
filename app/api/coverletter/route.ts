@@ -1,20 +1,10 @@
 import OpenAI from "openai"
 import { getAuthedProfileText } from "../_lib/authProfile"
+import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
 
 export const runtime = "nodejs"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
-function corsHeaders(origin: string | null) {
-  const allowOrigin = origin || "*"
-  return {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Max-Age": "86400",
-  }
-}
 
 function safeJsonParse(raw: string) {
   try {
@@ -29,13 +19,10 @@ function isNonEmptyString(x: any): x is string {
 }
 
 export async function OPTIONS(req: Request) {
-  const origin = req.headers.get("origin")
-  return new Response(null, { status: 204, headers: corsHeaders(origin) })
+  return corsOptionsResponse(req.headers.get("origin"))
 }
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin")
-
   try {
     // Auth + stored profile (server-side)
     const { profileText } = await getAuthedProfileText(req)
@@ -46,10 +33,7 @@ export async function POST(req: Request) {
     const job = String(body?.job || "").trim()
 
     if (!job) {
-      return new Response(JSON.stringify({ error: "Missing job" }), {
-        status: 400,
-        headers: corsHeaders(origin),
-      })
+      return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
     const system = `
@@ -106,14 +90,11 @@ Return JSON only. No markdown. No commentary.
 
     // If the model fails to return JSON, fall back to treating raw as the letter
     const letter =
-      parsed && typeof parsed === "object" && isNonEmptyString(parsed.letter)
-        ? parsed.letter.trim()
-        : raw.trim()
+      parsed && typeof parsed === "object" && isNonEmptyString((parsed as any).letter)
+        ? String((parsed as any).letter).trim()
+        : String(raw || "").trim()
 
-    return new Response(JSON.stringify({ letter }), {
-      status: 200,
-      headers: corsHeaders(origin),
-    })
+    return withCorsJson(req, { letter }, 200)
   } catch (err: any) {
     const detail = err?.message || String(err)
 
@@ -127,9 +108,6 @@ Return JSON only. No markdown. No commentary.
             ? 403
             : 500
 
-    return new Response(JSON.stringify({ error: "Coverletter failed", detail }), {
-      status,
-      headers: corsHeaders(origin),
-    })
+    return withCorsJson(req, { error: "Coverletter failed", detail }, status)
   }
 }

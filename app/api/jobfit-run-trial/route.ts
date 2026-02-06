@@ -1,19 +1,11 @@
-import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
+import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
 
 export const runtime = "nodejs"
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, x-jobfit-key",
-  }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() })
+export async function OPTIONS(req: Request) {
+  return corsOptionsResponse(req.headers.get("origin"))
 }
 
 function jobTypeLabel(jobType: string | null | undefined) {
@@ -56,10 +48,7 @@ export async function POST(req: Request) {
     if (expectedKey) {
       const got = req.headers.get("x-jobfit-key")
       if (got !== expectedKey) {
-        return NextResponse.json(
-          { ok: false, error: "unauthorized" },
-          { status: 401, headers: corsHeaders() }
-        )
+        return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
       }
     }
 
@@ -69,22 +58,23 @@ export async function POST(req: Request) {
     const job_description = String(body.job_description ?? "").trim()
 
     if (!email) {
-      return NextResponse.json(
-        { ok: false, error: "missing_email" },
-        { status: 400, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: "missing_email" }, 400)
     }
     if (!job_description) {
-      return NextResponse.json(
-        { ok: false, error: "missing_job_description" },
-        { status: 400, headers: corsHeaders() }
+      return withCorsJson(req, { ok: false, error: "missing_job_description" }, 400)
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !serviceRoleKey) {
+      return withCorsJson(
+        req,
+        { ok: false, error: "server_misconfigured", detail: "Missing Supabase env vars" },
+        500
       )
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // 1) Load trial user + credits
     const { data: user, error: userErr } = await supabase
@@ -94,22 +84,13 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (userErr) {
-      return NextResponse.json(
-        { ok: false, error: userErr.message },
-        { status: 500, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: userErr.message }, 500)
     }
     if (!user) {
-      return NextResponse.json(
-        { ok: false, error: "no_profile_found" },
-        { status: 404, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: "no_profile_found" }, 404)
     }
     if ((user.credits_remaining ?? 0) <= 0) {
-      return NextResponse.json(
-        { ok: false, error: "out_of_credits" },
-        { status: 402, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: "out_of_credits" }, 402)
     }
 
     // 2) Load profile data for evaluator context
@@ -121,16 +102,10 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (profErr) {
-      return NextResponse.json(
-        { ok: false, error: profErr.message },
-        { status: 500, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: profErr.message }, 500)
     }
     if (!profile) {
-      return NextResponse.json(
-        { ok: false, error: "missing_profile" },
-        { status: 400, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: "missing_profile" }, 400)
     }
 
     const profileText =
@@ -159,20 +134,11 @@ export async function POST(req: Request) {
       .eq("id", user.id)
 
     if (creditErr) {
-      return NextResponse.json(
-        { ok: false, error: creditErr.message },
-        { status: 500, headers: corsHeaders() }
-      )
+      return withCorsJson(req, { ok: false, error: creditErr.message }, 500)
     }
 
-    return NextResponse.json(
-      { ok: true, credits_remaining: newCredits, result },
-      { status: 200, headers: corsHeaders() }
-    )
+    return withCorsJson(req, { ok: true, credits_remaining: newCredits, result }, 200)
   } catch (err: any) {
-    return NextResponse.json(
-      { ok: false, error: err?.message || String(err) },
-      { status: 500, headers: corsHeaders() }
-    )
+    return withCorsJson(req, { ok: false, error: err?.message || String(err) }, 500)
   }
 }

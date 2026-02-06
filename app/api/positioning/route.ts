@@ -1,20 +1,10 @@
 import OpenAI from "openai"
 import { getAuthedProfileText } from "../_lib/authProfile"
+import { corsOptionsResponse, withCorsJson } from "@/app/_lib/cors"
 
 export const runtime = "nodejs"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
-function corsHeaders(origin: string | null) {
-  const allowOrigin = origin || "*"
-  return {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Max-Age": "86400",
-  }
-}
 
 function safeJsonParse(raw: string) {
   try {
@@ -32,10 +22,6 @@ function asString(x: any, fallback = ""): string {
   return isNonEmptyString(x) ? x.trim() : fallback
 }
 
-function asBool(x: any, fallback = false): boolean {
-  return typeof x === "boolean" ? x : fallback
-}
-
 function asStringArray(v: any): string[] {
   return Array.isArray(v) ? v.filter(isNonEmptyString).map((s: string) => s.trim()) : []
 }
@@ -43,7 +29,7 @@ function asStringArray(v: any): string[] {
 type ArrangePick = {
   role: string
   why: string
-  evidence: string[] // still quotes from resume
+  evidence: string[]
   action: string
 }
 
@@ -81,13 +67,10 @@ function normalizeBulletEdits(arr: any): BulletEdit[] {
 }
 
 export async function OPTIONS(req: Request) {
-  const origin = req.headers.get("origin")
-  return new Response(null, { status: 204, headers: corsHeaders(origin) })
+  return corsOptionsResponse(req.headers.get("origin"))
 }
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin")
-
   try {
     const { profileText } = await getAuthedProfileText(req)
     const profile = profileText
@@ -96,10 +79,7 @@ export async function POST(req: Request) {
     const job = String(body?.job || "").trim()
 
     if (!job) {
-      return new Response(JSON.stringify({ error: "Missing job" }), {
-        status: 400,
-        headers: corsHeaders(origin),
-      })
+      return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
     const system = `
@@ -217,8 +197,9 @@ Return JSON only. No markdown. No extra text.
     const parsed = safeJsonParse(raw)
 
     if (!parsed) {
-      return new Response(
-        JSON.stringify({
+      return withCorsJson(
+        req,
+        {
           student_intro:
             "I could not generate your positioning plan because the model did not return valid JSON. Paste the full job description again and retry.",
 
@@ -245,8 +226,8 @@ Return JSON only. No markdown. No extra text.
           },
 
           resume_bullet_edits: [],
-        }),
-        { status: 200, headers: corsHeaders(origin) }
+        },
+        200
       )
     }
 
@@ -280,7 +261,8 @@ Return JSON only. No markdown. No extra text.
     const summaryRaw =
       parsed?.summary_statement && typeof parsed.summary_statement === "object" ? parsed.summary_statement : {}
 
-    const need_summary = summaryRaw?.need_summary === "YES" || summaryRaw?.need_summary === "NO" ? summaryRaw.need_summary : "NO"
+    const need_summary =
+      summaryRaw?.need_summary === "YES" || summaryRaw?.need_summary === "NO" ? summaryRaw.need_summary : "NO"
 
     const summary_statement = {
       need_summary,
@@ -291,20 +273,16 @@ Return JSON only. No markdown. No extra text.
 
     const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
 
-    // Enforce your "minimum 3 when any are recommended" rule without getting nitpicky:
-    // If the model returned 1–2, keep them but request 3+ via prompt next time.
-    // We will not auto-generate edits here to avoid fabrication risk.
-    // (If you want, we can do an automatic "retry with constraint" on 1–2 edits.)
-
-    return new Response(
-      JSON.stringify({
+    return withCorsJson(
+      req,
+      {
         student_intro,
         role_angle,
         arrange_resume,
         summary_statement,
         resume_bullet_edits,
-      }),
-      { status: 200, headers: corsHeaders(origin) }
+      },
+      200
     )
   } catch (err: any) {
     const detail = err?.message || String(err)
@@ -318,9 +296,6 @@ Return JSON only. No markdown. No extra text.
             ? 403
             : 500
 
-    return new Response(JSON.stringify({ error: "Positioning failed", detail }), {
-      status,
-      headers: corsHeaders(origin),
-    })
+    return withCorsJson(req, { error: "Positioning failed", detail }, status)
   }
 }
