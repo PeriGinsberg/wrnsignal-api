@@ -1,10 +1,76 @@
+import crypto from "crypto"
 import OpenAI from "openai"
+import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+const MISSING = "__MISSING__"
+const POSITIONING_PROMPT_VERSION = "positioning_v1_2026_02_07"
+const MODEL_ID = "current"
+
+// Supabase (mirrors JobFit pattern)
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function requireEnv(name: string, v?: string) {
+  if (!v) throw new Error(`Missing server env: ${name}`)
+  return v
+}
+
+const supabaseAdmin = createClient(
+  requireEnv("SUPABASE_URL", SUPABASE_URL),
+  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
+
+/**
+ * Normalize values for deterministic fingerprinting (copied from JobFit)
+ */
+function normalize(value: any): any {
+  if (typeof value === "string") {
+    const cleaned = value.trim()
+    if (cleaned === "") return MISSING
+    return cleaned.toLowerCase().replace(/\s+/g, " ")
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalize).sort()
+  }
+
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc: any, key) => {
+        const v = value[key]
+        if (v !== null && v !== undefined) {
+          acc[key] = normalize(v)
+        }
+        return acc
+      }, {})
+  }
+
+  return value
+}
+
+/**
+ * Build Positioning fingerprint
+ */
+function buildPositioningFingerprint(payload: any) {
+  const normalized = normalize(payload)
+  const canonical = JSON.stringify(normalized)
+
+  const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
+
+  const fingerprint_code =
+    "PO-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
+
+  return { fingerprint_hash, fingerprint_code }
+}
 
 function safeJsonParse(raw: string) {
   try {
@@ -66,20 +132,64 @@ function normalizeBulletEdits(arr: any): BulletEdit[] {
     .filter((b: BulletEdit) => b.before && b.after && b.evidence)
 }
 
+/**
+ * CORS preflight
+ */
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
+/**
+ * Positioning with caching by fingerprint (mirrors JobFit behavior)
+ */
 export async function POST(req: Request) {
   try {
-    const { profileText } = await getAuthedProfileText(req)
-    const profile = profileText
+    // Auth + stored profile (server-side, user-bound)
+    const { profileId, profileText } = await getAuthedProfileText(req)
 
     const body = await req.json()
     const job = String(body?.job || "").trim()
 
     if (!job) {
       return withCorsJson(req, { error: "Missing job" }, 400)
+    }
+
+    // Fingerprint inputs used for evaluation (job + profile + system pins)
+    const fingerprintPayload = {
+      job: { text: job || MISSING },
+      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      system: {
+        positioning_prompt_version: POSITIONING_PROMPT_VERSION,
+        model_id: MODEL_ID,
+      },
+    }
+
+    const { fingerprint_hash, fingerprint_code } = buildPositioningFingerprint(fingerprintPayload)
+
+    // 1) Lookup existing run
+    const { data: existingRun, error: findErr } = await supabaseAdmin
+      .from("positioning_runs")
+      .select("result_json, fingerprint_code, fingerprint_hash, created_at")
+      .eq("client_profile_id", profileId)
+      .eq("fingerprint_hash", fingerprint_hash)
+      .maybeSingle()
+
+    if (findErr) {
+      // If lookup fails, proceed with a fresh run (do not block user).
+      console.warn("positioning_runs lookup failed:", findErr.message)
+    }
+
+    if (existingRun?.result_json) {
+      return withCorsJson(
+        req,
+        {
+          ...(existingRun.result_json as any),
+          fingerprint_code,
+          fingerprint_hash,
+          reused: true,
+        },
+        200
+      )
     }
 
     const system = `
@@ -166,7 +276,7 @@ Return VALID JSON ONLY with this exact shape:
 
     const user = `
 RESUME (verbatim):
-${profile}
+${profileText}
 
 JOB DESCRIPTION (verbatim):
 ${job}
@@ -196,6 +306,7 @@ Return JSON only. No markdown. No extra text.
     const raw = (resp as any).output_text || ""
     const parsed = safeJsonParse(raw)
 
+    // If model fails to return valid JSON, return safe fallback (do not cache)
     if (!parsed) {
       return withCorsJson(
         req,
@@ -226,12 +337,16 @@ Return JSON only. No markdown. No extra text.
           },
 
           resume_bullet_edits: [],
+
+          fingerprint_code,
+          fingerprint_hash,
+          reused: false,
         },
         200
       )
     }
 
-    // Normalize
+    // Normalize model output into our expected schema
     const student_intro = asString(
       parsed?.student_intro,
       "Here is the clearest way to position your resume for this job, with only factual, high-impact changes."
@@ -273,32 +388,48 @@ Return JSON only. No markdown. No extra text.
 
     const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
 
+    const finalResult = {
+      student_intro,
+      role_angle,
+      arrange_resume,
+      summary_statement,
+      resume_bullet_edits,
+    }
+
+    // Store result (best effort). Cache only valid parsed + normalized output.
+    const { error: insertErr } = await supabaseAdmin.from("positioning_runs").insert({
+      client_profile_id: profileId,
+      job_url: null,
+      fingerprint_hash,
+      fingerprint_code,
+      result_json: finalResult,
+    })
+
+    if (insertErr) {
+      console.warn("positioning_runs insert failed:", insertErr.message)
+    }
+
     return withCorsJson(
       req,
       {
-        student_intro,
-        role_angle,
-        arrange_resume,
-        summary_statement,
-        resume_bullet_edits,
+        ...finalResult,
+        fingerprint_code,
+        fingerprint_hash,
+        reused: false,
       },
       200
     )
   } catch (err: any) {
     const detail = err?.message || String(err)
     const lower = String(detail).toLowerCase()
-    const status =
-      lower.includes("unauthorized")
-        ? 401
-        : lower.includes("profile not found")
-          ? 404
-          : lower.includes("access disabled")
-            ? 403
-            : 500
+    const status = lower.includes("unauthorized")
+      ? 401
+      : lower.includes("profile not found")
+        ? 404
+        : lower.includes("access disabled")
+          ? 403
+          : 500
 
     return withCorsJson(req, { error: "Positioning failed", detail }, status)
   }
 }
-
-
-
