@@ -7,6 +7,8 @@ import { runJobFit } from "../_lib/jobfitEvaluator"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
 
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
@@ -105,17 +107,15 @@ export async function POST(req: Request) {
       profileText,
       jobText,
     })
-
-    // Return JobFit result + fingerprint
-    return withCorsJson(
-      req,
-      {
-        ...result,
-        fingerprint_code,
-      },
-      200
-    )
-  } catch (err: any) {
+return withCorsJson(
+  req,
+  {
+    ...result,
+    fingerprint_code,
+    __debug_jobfit_route: "v1_fingerprint_enabled",
+  },
+  200
+)  } catch (err: any) {
     const detail = err?.message || String(err)
     const lower = detail.toLowerCase()
 
