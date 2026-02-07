@@ -1,14 +1,10 @@
-/**
- * Jobfit Function
- */
 import crypto from "crypto"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
-import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { corsOptionsResponse } from "../_lib/cors"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
 
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
@@ -19,6 +15,22 @@ const MODEL_ID = "current"
  */
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
+}
+
+/**
+ * Basic CORS JSON responder (bypasses withCorsJson to avoid stripping/wrapping)
+ */
+function corsJson(req: Request, body: any, status = 200) {
+  const origin = req.headers.get("origin") || "*"
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  })
 }
 
 /**
@@ -63,29 +75,27 @@ function buildJobFitFingerprint(payload: any) {
     .digest("hex")
 
   const fingerprint_code =
-    "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16)
-      .toString(36)
-      .toUpperCase()
+    "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
 
   return { fingerprint_hash, fingerprint_code }
 }
 
 /**
- * Run JobFit for an authenticated user
+ * Run JobFit for an authenticated user.
  */
 export async function POST(req: Request) {
   try {
-    // Auth + stored profile (user-bound, server-side)
+    // Auth + stored profile (server-side, user-bound)
     const { profileText } = await getAuthedProfileText(req)
 
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
 
     if (!jobText) {
-      return withCorsJson(req, { error: "Missing job" }, 400)
+      return corsJson(req, { error: "Missing job" }, 400)
     }
 
-    // Build fingerprint payload (evaluation inputs only)
+    // Fingerprint inputs used for evaluation (job + profile + system pins)
     const fingerprintPayload = {
       job: {
         text: jobText || MISSING,
@@ -99,7 +109,7 @@ export async function POST(req: Request) {
       },
     }
 
-    const { fingerprint_code } =
+    const { fingerprint_hash, fingerprint_code } =
       buildJobFitFingerprint(fingerprintPayload)
 
     // Run JobFit (behavior unchanged)
@@ -107,17 +117,17 @@ export async function POST(req: Request) {
       profileText,
       jobText,
     })
-return withCorsJson(
-  req,
-  {
-    ...result,
-    fingerprint_code,
-    __debug_jobfit_route: "v1_fingerprint_enabled",
-  },
-  200
-)  } catch (err: any) {
+
+    // Return result + fingerprint (explicit, guaranteed)
+    return corsJson(req, {
+      ...result,
+      fingerprint_code,
+      fingerprint_hash,
+      __debug_jobfit_route: "v1_fingerprint_enabled",
+    })
+  } catch (err: any) {
     const detail = err?.message || String(err)
-    const lower = detail.toLowerCase()
+    const lower = String(detail).toLowerCase()
 
     const status =
       lower.includes("unauthorized") ? 401 :
@@ -125,6 +135,6 @@ return withCorsJson(
       lower.includes("access disabled") ? 403 :
       500
 
-    return withCorsJson(req, { error: "JobFit failed", detail }, status)
+    return corsJson(req, { error: "JobFit failed", detail }, status)
   }
 }
