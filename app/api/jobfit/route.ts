@@ -1,5 +1,6 @@
-// TEMP: fingerprint debug change
-
+/**
+ * Jobfit Function
+ */
 import crypto from "crypto"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
@@ -9,10 +10,10 @@ export const runtime = "nodejs"
 
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
+const MODEL_ID = "current"
 
 /**
  * CORS preflight
- * This must return 204 with the correct headers (no redirects).
  */
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
@@ -54,26 +55,25 @@ function buildJobFitFingerprint(payload: any) {
   const normalized = normalize(payload)
   const canonical = JSON.stringify(normalized)
 
-  const hash = crypto
+  const fingerprint_hash = crypto
     .createHash("sha256")
     .update(canonical)
     .digest("hex")
 
-  const code =
-    "JF-" + parseInt(hash.slice(0, 10), 16).toString(36).toUpperCase()
+  const fingerprint_code =
+    "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16)
+      .toString(36)
+      .toUpperCase()
 
-  return {
-    fingerprint_hash: hash,
-    fingerprint_code: code,
-  }
+  return { fingerprint_hash, fingerprint_code }
 }
 
 /**
- * Run JobFit for an authenticated user.
+ * Run JobFit for an authenticated user
  */
 export async function POST(req: Request) {
   try {
-    // Auth + stored profile
+    // Auth + stored profile (user-bound, server-side)
     const { profileText } = await getAuthedProfileText(req)
 
     const body = await req.json()
@@ -83,40 +83,41 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
-    // --- NEW: build fingerprint payload ---
+    // Build fingerprint payload (evaluation inputs only)
     const fingerprintPayload = {
       job: {
         text: jobText || MISSING,
       },
       profile: {
-        profile_text: profileText || MISSING,
+        text: profileText || MISSING,
       },
       system: {
         jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
-        model_id: "current", // replace with real model id if you expose it
+        model_id: MODEL_ID,
       },
     }
 
     const { fingerprint_code } =
       buildJobFitFingerprint(fingerprintPayload)
-    // --- END fingerprint ---
 
-    const out = await runJobFit({
+    // Run JobFit (behavior unchanged)
+    const result = await runJobFit({
       profileText,
       jobText,
     })
 
+    // Return JobFit result + fingerprint
     return withCorsJson(
       req,
       {
-        ...out,
+        ...result,
         fingerprint_code,
       },
       200
     )
   } catch (err: any) {
     const detail = err?.message || String(err)
-    const lower = String(detail).toLowerCase()
+    const lower = detail.toLowerCase()
 
     const status =
       lower.includes("unauthorized") ? 401 :

@@ -1,4 +1,4 @@
-cat > wrnsignal-api/app/_lib/authProfile.ts << 'EOF'
+
 import { createClient } from "@supabase/supabase-js"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -39,9 +39,10 @@ async function getAuthedUser(req: Request) {
 
 type ClientProfileRow = {
   id: string
-  user_id: string | null
   email: string | null
+  user_id: string | null
   profile_text: string | null
+  risk_overrides?: any
 }
 
 /**
@@ -82,4 +83,4 @@ export async function getAuthedProfileText(req: Request): Promise<{ profileText:
 
   return { profileText: existing.profile_text || "" }
 }
-EOF
+

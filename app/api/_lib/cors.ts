@@ -1,4 +1,3 @@
-cat > wrnsignal-api/app/_lib/cors.ts << 'EOF'
 type CorsConfig = {
   allowOrigins?: string[]
   allowMethods?: string[]
@@ -55,4 +54,4 @@ export function withCorsJson(req: Request, data: any, status = 200, cfg?: CorsCo
   headers.set("Content-Type", "application/json; charset=utf-8")
   return new Response(JSON.stringify(data), { status, headers })
 }
-EOF
+
