@@ -263,6 +263,11 @@ KEYWORD STRICTNESS RULE:
   “effective,” “support,” “requirements,” “customers,” “stakeholders,” or similar.
 - If only vague wording can be added, return no edit.
 
+REDUNDANCY RULE (CONDITIONAL):
+- Do NOT rewrite a bullet if the change only restates what the bullet already clearly communicates.
+- An exception is allowed ONLY when the rewrite introduces an exact, job-relevant keyword or phrase that appears in the job description.
+- If the added wording does not improve keyword visibility or introduce a concrete noun, return no edit.
+- When in doubt, return no edit.
 
 WHY THIS MATTERS RULE:
 - Write exactly ONE short sentence.
@@ -274,10 +279,15 @@ WORDING CONSTRAINT:
 Do not introduce abstract tool phrases like “data analytics tools,” “analytical tools,” or “research tools.”
 If a specific tool is not named in the resume, describe the activity plainly (e.g., “analyzing data in Excel”).
 
+
+
+
 OUTPUT RULES FOR BULLET EDITS:
 - Return 0 bullet edits if none are needed.
 - If edits are needed, return 1–6 high-impact edits.
 - Do not pad the list to reach a minimum.
+
+
 
 Return VALID JSON ONLY with this exact shape:
 {
