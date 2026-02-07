@@ -129,7 +129,7 @@ function normalizeBulletEdits(arr: any): BulletEdit[] {
       why: asString(b?.why, ""),
       evidence: asString(b?.evidence, ""),
     }))
-    .filter((b: BulletEdit) => b.before && b.after && b.evidence)
+    .filter((b: BulletEdit) => b.before && b.after && b.evidence && b.evidence === b.before)
 }
 
 /**
@@ -148,15 +148,15 @@ export async function POST(req: Request) {
     const { profileId, profileText } = await getAuthedProfileText(req)
 
     const body = await req.json()
-    const job = String(body?.job || "").trim()
+    const jobText = String(body?.job || "").trim()
 
-    if (!job) {
+    if (!jobText) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
     // Fingerprint inputs used for evaluation (job + profile + system pins)
     const fingerprintPayload = {
-      job: { text: job || MISSING },
+      job: { text: jobText || MISSING },
       profile: { id: profileId || MISSING, text: profileText || MISSING },
       system: {
         positioning_prompt_version: POSITIONING_PROMPT_VERSION,
@@ -215,13 +215,6 @@ For every recommendation (role angle, ordering, summary, bullet edits),
 include evidence as exact quotes copied verbatim from the resume text.
 If you cannot quote evidence, do not include the recommendation.
 
-HIGH-IMPACT FILTER (HARD GATE) FOR BULLET EDITS:
-Only propose a bullet edit if:
-A) Keyword Match: it adds or foregrounds a job-relevant keyword/phrase that appears in the job description,
-   AND the resume already supports it factually.
-B) Signal Lift: it materially increases clarity (scope, deliverable, stakeholder, measurable output, ownership).
-If A or B is not met, DO NOT propose the edit.
-
 SUMMARY STATEMENT LOGIC:
 - Detect if a summary exists near the top of the resume.
 - Return need_summary as YES/NO.
@@ -231,11 +224,39 @@ SUMMARY STATEMENT LOGIC:
 - If NO because summary exists and is aligned, then return sentence saying existing summary is strong.
 If YES, include one recommended summary (factual). If NO, do not write a new summary.
 
+BULLET EDITS: WHAT COUNTS AS "NEEDED"
+A bullet edit is needed only when it creates a clear, job-relevant signal lift.
+If an edit would be stylistic, nit picky, or interchangeable wording, it is NOT needed.
+
+BULLET EDIT ELIGIBILITY TEST (MUST PASS)
+You may propose a bullet edit only if ALL conditions are true:
+1) Anchored: the "before" text is copied verbatim from the resume (exact characters).
+2) Truth-preserving: the "after" text does not add any new facts. It can only reorder, clarify, or foreground facts already stated.
+3) Job-relevant: the edit increases alignment to the job description by doing at least ONE:
+   A) Adds a keyword/phrase that appears in the job description AND is already supported by the resume facts, OR
+   B) Moves an already-supported job-relevant keyword earlier or makes it more explicit.
+4) Material lift: the edit clearly improves at least ONE of these using existing resume facts only:
+   - scope (what you owned)
+   - output (what you delivered)
+   - method (how you did it)
+   - stakeholder (who it served)
+   - measure (numbers already present)
+
+If ANY condition fails, DO NOT propose the edit.
+
+EVIDENCE RULE FOR BULLET EDITS (STRICT)
+For every bullet edit:
+- evidence MUST equal the exact "before" bullet text (verbatim).
+- If you cannot do that, do not include the edit.
+
 OUTPUT RULES:
-- Return 3–6 bullet edits total when edits are needed. Minimum 3 if any are recommended.
-- If truly no edits are needed, return an empty bullet_edits array.
-- Do NOT include: Do This Next, Show Proof, Quick Checklist, Competitiveness Check, Next Steps.
-- Do NOT output any buttons or UI instructions like "Copy".
+- Return 0 bullet edits if none are needed.
+- If edits are needed, return 1–6 high-impact edits.
+- Do not pad the list to reach a minimum.
+
+DO NOT INCLUDE:
+- Do This Next, Show Proof, Quick Checklist, Competitiveness Check, Next Steps.
+- Buttons or UI instructions like "Copy".
 
 Return VALID JSON ONLY with this exact shape:
 {
@@ -279,10 +300,10 @@ RESUME (verbatim):
 ${profileText}
 
 JOB DESCRIPTION (verbatim):
-${job}
+${jobText}
 
 TASK (do in order):
-1) 1) ROLE ANGLE (DETERMINISTIC):
+1) ROLE ANGLE (DETERMINISTIC):
    Select exactly ONE role angle label from the list below.
    The label must match one of these values exactly. Do not invent new labels.
 
@@ -302,13 +323,14 @@ TASK (do in order):
    - Choose the closest fit based only on resume evidence and job context.
    - Use "Early-Career Generalist" when experience is broad or mixed.
    - Use "Other" only if none apply, and explain why.
+
 2) Explain why in 1–2 sentences and include supporting resume evidence quotes.
 3) Provide How to Arrange Your Resume:
    - Include the sentence: "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience."
    - Make clear this is reordering existing facts, not rewriting them.
    - Output Lead With (1), Support With (1–2), Then Include (0–2), De-emphasize (0–1) if applicable.
 4) Summary Statement: return need_summary YES/NO and explain why. If YES, give one recommended summary and cite evidence.
-5) Resume Bullet Edits: 3–6 edits when needed. Minimum 3 if you recommend any. Each edit must pass the High-Impact Filter and include a single verbatim evidence quote.
+5) Resume Bullet Edits: return only edits that pass the Bullet Edit Eligibility Test. If none are needed, return an empty array.
 
 Return JSON only. No markdown. No extra text.
     `.trim()
