@@ -1,4 +1,5 @@
-// /_lib/keywordCoverage.ts
+// app/api/_lib/keywordCoverage.ts
+
 export type KeywordHit = {
   phrase: string
   weight: number
@@ -22,6 +23,23 @@ const STOPWORDS = new Set([
   "fast-paced","self-starter","team","player"
 ])
 
+// terms that are usually too generic to be "high-priority keywords"
+const VAGUE_TERMS = new Set([
+  "execution","execute","support","supporting","supportive","collaboration","collaborate","communicate","communication",
+  "cross-functional","cross","functional","cross-team","cross","team","stakeholder","stakeholders",
+  "initiative","initiatives","process","processes","workflow","efficiency","impact","results",
+  "responsible","ownership","detail","organized","organization","program","programs","project","projects",
+  "deliver","delivering","deliverables","improve","improving","improvement","successful","success"
+])
+
+// lightweight tool dictionary (expand over time)
+const TOOL_TERMS = new Set([
+  "excel","sql","python","tableau","powerbi","power","bi","r","sas","stata",
+  "google sheets","sheets","google docs","docs","powerpoint","ppt","word",
+  "jira","asana","trello","slack","salesforce","hubspot","figma","adobe","photoshop","illustrator","canva",
+  "google analytics","analytics"
+])
+
 function normalizeText(s: string) {
   return s
     .toLowerCase()
@@ -30,11 +48,60 @@ function normalizeText(s: string) {
     .trim()
 }
 
+function hasToolSignal(phrase: string) {
+  const p = normalizeText(phrase)
+  if (TOOL_TERMS.has(p)) return true
+  const tokens = p.split(" ").filter(Boolean)
+  return tokens.some(t => TOOL_TERMS.has(t))
+}
+
+function isVaguePhrase(phrase: string) {
+  const p = normalizeText(phrase)
+  const tokens = p.split(" ").filter(Boolean)
+
+  // single-word vague tokens are almost always junk
+  if (tokens.length === 1 && VAGUE_TERMS.has(tokens[0])) return true
+
+  // phrases that are entirely vague/stopwords are junk
+  if (tokens.length > 0 && tokens.every(t => VAGUE_TERMS.has(t) || STOPWORDS.has(t))) return true
+
+  // common fluffy patterns we do not want as target keywords
+  if (p.includes("cross team") || p.includes("cross-team")) return true
+  if (p.includes("cross functional") || p.includes("cross-functional")) return true
+  if (p.includes("stakeholder")) return true
+  if (p.includes("program execution")) return true
+
+  return false
+}
+
+function isSpecificEnough(phrase: string) {
+  const p = normalizeText(phrase)
+  const tokens = p.split(" ").filter(Boolean)
+
+  // tools are always specific enough
+  if (hasToolSignal(p)) return true
+
+  // multi-word phrases can be specific if they include at least one non-vague, non-stopword token
+  if (tokens.length >= 2) {
+    return tokens.some(t => !VAGUE_TERMS.has(t) && !STOPWORDS.has(t))
+  }
+
+  // single words must not be vague/stopwords and should be at least 4 chars
+  if (tokens.length === 1) {
+    const t = tokens[0]
+    if (STOPWORDS.has(t)) return false
+    if (VAGUE_TERMS.has(t)) return false
+    if (t.length < 4) return false
+    return true
+  }
+
+  return false
+}
+
 function splitSections(jobText: string) {
   const t = jobText
   const lower = jobText.toLowerCase()
 
-  // naive section splits. Deterministic and good enough.
   const markers = [
     { key: "required", patterns: ["required", "must have", "minimum qualifications", "requirements"] },
     { key: "preferred", patterns: ["preferred", "nice to have", "bonus", "preferred qualifications"] },
@@ -62,7 +129,6 @@ function splitSections(jobText: string) {
     chunks[idxs[i].key] += "\n" + t.slice(start, end)
   }
 
-  // anything before first marker goes into other
   const first = idxs[0].idx
   if (first > 0) chunks.other = t.slice(0, first)
 
@@ -87,7 +153,6 @@ function ngramFreq(text: string, n: number) {
   const freq = new Map<string, number>()
   for (let i = 0; i + n <= tokens.length; i++) {
     const gram = tokens.slice(i, i + n).join(" ")
-    // drop grams that are all generic words
     if (gram.split(" ").every(w => STOPWORDS.has(w))) continue
     freq.set(gram, (freq.get(gram) ?? 0) + 1)
   }
@@ -116,15 +181,18 @@ function phraseMultiplier(phrase: string) {
 }
 
 function weight(freq: number, section: KeywordHit["section"], phrase: string) {
-  // w_k = log(1 + f_k) * section_multiplier * phrase_multiplier
   const w = Math.log(1 + freq) * sectionMultiplier(section) * phraseMultiplier(phrase)
-  return Number.isFinite(w) ? w : 0
+
+  // small boost for tool signals (keeps Excel/SQL/Python etc near the top)
+  const boost = hasToolSignal(phrase) ? 1.25 : 1.0
+
+  const out = w * boost
+  return Number.isFinite(out) ? out : 0
 }
 
 function containsPhrase(haystack: string, phrase: string) {
   const h = normalizeText(haystack)
   const p = normalizeText(phrase)
-  // word-boundary-ish match
   return h.includes(p)
 }
 
@@ -132,32 +200,49 @@ function containsPhrase(haystack: string, phrase: string) {
  * Extract top job phrases and compute bullet coverage against resume bullets.
  * Deterministic and stable by construction.
  */
-export function computeKeywordCoverage(jobTextRaw: string, resumeBulletsRaw: string, options?: {
-  max_keywords?: number
-  missing_top_n?: number
-}) : CoverageResult {
+export function computeKeywordCoverage(
+  jobTextRaw: string,
+  resumeBulletsRaw: string,
+  options?: { max_keywords?: number; missing_top_n?: number }
+): CoverageResult {
   const maxKeywords = options?.max_keywords ?? 30
   const missingTopN = options?.missing_top_n ?? 8
 
   const sections = splitSections(jobTextRaw)
 
-  // build candidate phrases per section
   const sectionPhrases: { section: KeywordHit["section"]; freq: Map<string, number> }[] = [
-    { section: "required", freq: mergeFreqMaps([tokenFreq(sections.required), ngramFreq(sections.required, 2), ngramFreq(sections.required, 3)]) },
-    { section: "preferred", freq: mergeFreqMaps([tokenFreq(sections.preferred), ngramFreq(sections.preferred, 2), ngramFreq(sections.preferred, 3)]) },
-    { section: "responsibilities", freq: mergeFreqMaps([tokenFreq(sections.responsibilities), ngramFreq(sections.responsibilities, 2), ngramFreq(sections.responsibilities, 3)]) },
+    {
+      section: "required",
+      freq: mergeFreqMaps([tokenFreq(sections.required), ngramFreq(sections.required, 2), ngramFreq(sections.required, 3)]),
+    },
+    {
+      section: "preferred",
+      freq: mergeFreqMaps([tokenFreq(sections.preferred), ngramFreq(sections.preferred, 2), ngramFreq(sections.preferred, 3)]),
+    },
+    {
+      section: "responsibilities",
+      freq: mergeFreqMaps([
+        tokenFreq(sections.responsibilities),
+        ngramFreq(sections.responsibilities, 2),
+        ngramFreq(sections.responsibilities, 3),
+      ]),
+    },
     { section: "other", freq: mergeFreqMaps([tokenFreq(sections.other), ngramFreq(sections.other, 2)]) },
   ]
 
-  // score candidates
   const candidates: KeywordHit[] = []
   for (const s of sectionPhrases) {
     for (const [phrase, freq] of s.freq.entries()) {
-      // remove overly generic single words
       if (phrase.length < 3) continue
       if (STOPWORDS.has(phrase)) continue
+
+      // NEW: filter out junk/vague phrases
+      if (isVaguePhrase(phrase)) continue
+      if (!isSpecificEnough(phrase)) continue
+
       const w = weight(freq, s.section, phrase)
       if (w <= 0) continue
+
       candidates.push({
         phrase,
         freq,

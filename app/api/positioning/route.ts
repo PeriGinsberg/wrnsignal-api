@@ -176,6 +176,13 @@ export async function POST(req: Request) {
       .filter(Boolean)
       .slice(0, 8)
 
+const missingKeywords = (keywordCoverage?.missing_top ?? [])
+  .map((x: any) => String(x?.phrase || "").trim())
+  .filter(k => k.length >= 3)
+  .filter(k => !["execution","support","communication","stakeholder","initiative","process"].includes(k.toLowerCase()))
+  .slice(0, 8)
+
+
     const missingKeywordsText = missingKeywords.length
       ? missingKeywords.map((k) => `- ${k}`).join("\n")
       : "- None"
@@ -343,11 +350,12 @@ TASK (do in order):
    - Output Lead With (1), Support With (1–2), Then Include (0–2), De-emphasize (0–1) if applicable.
 4) Summary Statement: return need_summary YES/NO and explain why. If YES, give one recommended summary and cite evidence.
 5) Resume Bullet Edits:
-   - Only rewrite bullets to clearly highlight missing high-priority job keywords listed above that your resume already supports.
-   - Do not add new facts. Do not invent tools, metrics, or outcomes.
-   - If a keyword is not supported by the resume facts, do not add it.
+   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim).
+   - Only do this if the resume facts already support it. Do not add new facts.
+   - Do not use generic substitutes like “execution,” “support,” “cross-team,” or “stakeholder” unless they appear verbatim in the job keywords list.
    - Return 0–6 edits. Do not pad.
-   - If no edits are needed, return an empty array.
+   - If you cannot truthfully include any of the listed keywords in a bullet, return an empty array.
+
 
 Return JSON only. No markdown. No extra text.
     `.trim()
