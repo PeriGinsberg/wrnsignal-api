@@ -257,6 +257,13 @@ BULLET EDIT RULE (NON-NEGOTIABLE):
 Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
 Do not add new facts. Do not invent tools, metrics, or outcomes.
 
+KEYWORD STRICTNESS RULE:
+- Bullet edits must introduce or emphasize a SPECIFIC noun or tool (e.g., research, reports, analysis, dashboards, Excel, client deliverables).
+- Do NOT rewrite bullets to add vague business language such as:
+  “effective,” “support,” “requirements,” “customers,” “stakeholders,” or similar.
+- If only vague wording can be added, return no edit.
+
+
 WHY THIS MATTERS RULE:
 - Write exactly ONE short sentence.
 - Explain what becomes clearer to a recruiter.
