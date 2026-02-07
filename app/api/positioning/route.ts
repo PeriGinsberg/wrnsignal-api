@@ -257,6 +257,13 @@ BULLET EDIT RULE (NON-NEGOTIABLE):
 Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
 Do not add new facts. Do not invent tools, metrics, or outcomes.
 
+WHY THIS MATTERS RULE:
+- Write exactly ONE short sentence.
+- Explain what becomes clearer to a recruiter.
+- Use plain language.
+- Do NOT mention keywords, alignment, matching, ATS, or the job description.
+
+
 OUTPUT RULES FOR BULLET EDITS:
 - Return 0 bullet edits if none are needed.
 - If edits are needed, return 1–6 high-impact edits.
@@ -286,6 +293,7 @@ Return VALID JSON ONLY with this exact shape:
     "recommended_summary": string | null,
     "evidence": string[]
   },
+// The "why" field must follow the WHY THIS MATTERS RULE above.
 
   "resume_bullet_edits": [
     {
