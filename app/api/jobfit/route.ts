@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { corsOptionsResponse } from "../_lib/cors"
@@ -10,6 +11,20 @@ const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
 const MODEL_ID = "current"
 
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function requireEnv(name: string, v?: string) {
+  if (!v) throw new Error(`Missing server env: ${name}`)
+  return v
+}
+
+const supabaseAdmin = createClient(
+  requireEnv("SUPABASE_URL", SUPABASE_URL),
+  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
+
 /**
  * CORS preflight
  */
@@ -18,7 +33,7 @@ export async function OPTIONS(req: Request) {
 }
 
 /**
- * Basic CORS JSON responder (bypasses withCorsJson)
+ * Basic CORS JSON responder
  */
 function corsJson(req: Request, body: any, status = 200) {
   const origin = req.headers.get("origin") || "*"
@@ -81,7 +96,7 @@ function buildJobFitFingerprint(payload: any) {
 }
 
 /**
- * Run JobFit for an authenticated user.
+ * Run JobFit for an authenticated user, with caching by fingerprint.
  */
 export async function POST(req: Request) {
   try {
@@ -108,16 +123,58 @@ export async function POST(req: Request) {
     const { fingerprint_hash, fingerprint_code } =
       buildJobFitFingerprint(fingerprintPayload)
 
+    // 1) Lookup existing run
+    const { data: existingRun, error: findErr } = await supabaseAdmin
+      .from("jobfit_runs")
+      .select("result_json, verdict, fingerprint_code, fingerprint_hash, created_at")
+      .eq("client_profile_id", profileId)
+      .eq("fingerprint_hash", fingerprint_hash)
+      .maybeSingle()
+
+    if (findErr) {
+      // If lookup fails, we can still proceed with a fresh run (don’t block user).
+      // Return will be uncached.
+      console.warn("jobfit_runs lookup failed:", findErr.message)
+    }
+
+    if (existingRun?.result_json) {
+      return corsJson(req, {
+        ...(existingRun.result_json as any),
+        fingerprint_code,
+        fingerprint_hash,
+        reused: true,
+      })
+    }
+
+    // 2) Run JobFit (GPT)
     const result = await runJobFit({
       profileText,
       jobText,
     })
 
+    // 3) Store result (best effort)
+    const toStore = {
+      client_profile_id: profileId,
+      job_url: null,
+      fingerprint_hash,
+      fingerprint_code,
+      verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
+      result_json: result,
+    }
+
+    const { error: insertErr } = await supabaseAdmin
+      .from("jobfit_runs")
+      .insert(toStore)
+
+    if (insertErr) {
+      console.warn("jobfit_runs insert failed:", insertErr.message)
+    }
+
     return corsJson(req, {
       ...result,
       fingerprint_code,
       fingerprint_hash,
-      __debug_jobfit_route: "v1_fingerprint_enabled",
+      reused: false,
     })
   } catch (err: any) {
     const detail = err?.message || String(err)
