@@ -1,3 +1,5 @@
+// TEMP: fingerprint debug change
+
 import crypto from "crypto"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
