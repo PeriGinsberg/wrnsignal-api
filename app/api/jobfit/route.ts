@@ -103,12 +103,6 @@ if (!jobText) {
   return corsJson(req, { error: "Missing job" }, 400)
 }
 
-// CANARY MODE (temporary)
-return corsJson(req, {
-  __canary: true,
-  __debug_jobfit_route: "canary_2026_02_07",
-  fingerprint_code: "JF-CANARY",
-}, 200)
 
 // (everything below won’t run during the canary test)
 
