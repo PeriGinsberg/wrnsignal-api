@@ -3,6 +3,7 @@ import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { computeKeywordCoverage } from "../_lib/keywordCoverage"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -92,6 +93,15 @@ function asStringArray(v: any): string[] {
   return Array.isArray(v) ? v.filter(isNonEmptyString).map((s: string) => s.trim()) : []
 }
 
+function extractResumeBullets(resumeText: string) {
+  // v1: lines that look like bullets
+  return resumeText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => /^[-•*]\s+/.test(l) || /^\d+\.\s+/.test(l))
+    .join("\n")
+}
+
 type ArrangePick = {
   role: string
   why: string
@@ -129,7 +139,7 @@ function normalizeBulletEdits(arr: any): BulletEdit[] {
       why: asString(b?.why, ""),
       evidence: asString(b?.evidence, ""),
     }))
-    .filter((b: BulletEdit) => b.before && b.after && b.evidence && b.evidence === b.before)
+    .filter((b: BulletEdit) => b.before && b.after)
 }
 
 /**
@@ -154,13 +164,35 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
+    // Deterministic keyword coverage (used to guide bullet edits)
+    const resumeBulletsRaw = extractResumeBullets(profileText)
+    const keywordCoverage = computeKeywordCoverage(jobText, resumeBulletsRaw, {
+      max_keywords: 30,
+      missing_top_n: 8,
+    })
+
+    const missingKeywords = (keywordCoverage?.missing_top ?? [])
+      .map((x: any) => String(x?.phrase || "").trim())
+      .filter(Boolean)
+      .slice(0, 8)
+
+    const missingKeywordsText = missingKeywords.length
+      ? missingKeywords.map((k) => `- ${k}`).join("\n")
+      : "- None"
+
     // Fingerprint inputs used for evaluation (job + profile + system pins)
+    // Include keyword results in fingerprint so edits stay consistent as logic evolves.
     const fingerprintPayload = {
       job: { text: jobText || MISSING },
       profile: { id: profileId || MISSING, text: profileText || MISSING },
       system: {
         positioning_prompt_version: POSITIONING_PROMPT_VERSION,
         model_id: MODEL_ID,
+      },
+      keyword_logic: {
+        // minimal pins so a change in keyword scoring can intentionally bust cache
+        max_keywords: 30,
+        missing_top_n: 8,
       },
     }
 
@@ -224,39 +256,15 @@ SUMMARY STATEMENT LOGIC:
 - If NO because summary exists and is aligned, then return sentence saying existing summary is strong.
 If YES, include one recommended summary (factual). If NO, do not write a new summary.
 
-BULLET EDITS: WHAT COUNTS AS "NEEDED"
-A bullet edit is needed only when it creates a clear, job-relevant signal lift.
-If an edit would be stylistic, nit picky, or interchangeable wording, it is NOT needed.
+BULLET EDIT RULE (NON-NEGOTIABLE):
+Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
+Do not add new facts. Do not invent tools, metrics, or outcomes.
+If no edits are needed, return an empty resume_bullet_edits array.
 
-BULLET EDIT ELIGIBILITY TEST (MUST PASS)
-You may propose a bullet edit only if ALL conditions are true:
-1) Anchored: the "before" text is copied verbatim from the resume (exact characters).
-2) Truth-preserving: the "after" text does not add any new facts. It can only reorder, clarify, or foreground facts already stated.
-3) Job-relevant: the edit increases alignment to the job description by doing at least ONE:
-   A) Adds a keyword/phrase that appears in the job description AND is already supported by the resume facts, OR
-   B) Moves an already-supported job-relevant keyword earlier or makes it more explicit.
-4) Material lift: the edit clearly improves at least ONE of these using existing resume facts only:
-   - scope (what you owned)
-   - output (what you delivered)
-   - method (how you did it)
-   - stakeholder (who it served)
-   - measure (numbers already present)
-
-If ANY condition fails, DO NOT propose the edit.
-
-EVIDENCE RULE FOR BULLET EDITS (STRICT)
-For every bullet edit:
-- evidence MUST equal the exact "before" bullet text (verbatim).
-- If you cannot do that, do not include the edit.
-
-OUTPUT RULES:
+OUTPUT RULES FOR BULLET EDITS:
 - Return 0 bullet edits if none are needed.
 - If edits are needed, return 1–6 high-impact edits.
 - Do not pad the list to reach a minimum.
-
-DO NOT INCLUDE:
-- Do This Next, Show Proof, Quick Checklist, Competitiveness Check, Next Steps.
-- Buttons or UI instructions like "Copy".
 
 Return VALID JSON ONLY with this exact shape:
 {
@@ -302,6 +310,10 @@ ${profileText}
 JOB DESCRIPTION (verbatim):
 ${jobText}
 
+HIGH-PRIORITY JOB KEYWORDS (SYSTEM-DETERMINED):
+These are important keywords/phrases from the job description that are currently missing or underrepresented in your resume bullets:
+${missingKeywordsText}
+
 TASK (do in order):
 1) ROLE ANGLE (DETERMINISTIC):
    Select exactly ONE role angle label from the list below.
@@ -330,7 +342,12 @@ TASK (do in order):
    - Make clear this is reordering existing facts, not rewriting them.
    - Output Lead With (1), Support With (1–2), Then Include (0–2), De-emphasize (0–1) if applicable.
 4) Summary Statement: return need_summary YES/NO and explain why. If YES, give one recommended summary and cite evidence.
-5) Resume Bullet Edits: return only edits that pass the Bullet Edit Eligibility Test. If none are needed, return an empty array.
+5) Resume Bullet Edits:
+   - Only rewrite bullets to clearly highlight missing high-priority job keywords listed above that your resume already supports.
+   - Do not add new facts. Do not invent tools, metrics, or outcomes.
+   - If a keyword is not supported by the resume facts, do not add it.
+   - Return 0–6 edits. Do not pad.
+   - If no edits are needed, return an empty array.
 
 Return JSON only. No markdown. No extra text.
     `.trim()
@@ -388,10 +405,15 @@ Return JSON only. No markdown. No extra text.
     }
 
     // Normalize model output into our expected schema
-    const student_intro = asString(
+    const baseIntro = asString(
       parsed?.student_intro,
       "Here is the clearest way to position your resume for this job, with only factual, high-impact changes."
     )
+
+    const bulletPolicy =
+      "We only recommend bullet changes when they clearly highlight the most important keywords for this job that your resume already supports."
+
+    const student_intro = baseIntro.endsWith(".") ? `${baseIntro} ${bulletPolicy}` : `${baseIntro}. ${bulletPolicy}`
 
     const roleRaw = parsed?.role_angle && typeof parsed.role_angle === "object" ? parsed.role_angle : {}
     const role_angle = {
@@ -429,12 +451,20 @@ Return JSON only. No markdown. No extra text.
 
     const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
 
+    // Optional: expose deterministic coverage info for UI/debugging later (not required to render)
+    // Keep it lightweight.
+    const keyword_analysis = {
+      coverage_pct: Math.round(keywordCoverage.coverage * 100),
+      missing_high_priority: missingKeywords,
+    }
+
     const finalResult = {
       student_intro,
       role_angle,
       arrange_resume,
       summary_statement,
       resume_bullet_edits,
+      keyword_analysis,
     }
 
     // Store result (best effort). Cache only valid parsed + normalized output.
