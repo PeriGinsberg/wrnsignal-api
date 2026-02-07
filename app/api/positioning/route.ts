@@ -263,6 +263,9 @@ WHY THIS MATTERS RULE:
 - Use plain language.
 - Do NOT mention keywords, alignment, matching, ATS, or the job description.
 
+WORDING CONSTRAINT:
+Do not introduce abstract tool phrases like “data analytics tools,” “analytical tools,” or “research tools.”
+If a specific tool is not named in the resume, describe the activity plainly (e.g., “analyzing data in Excel”).
 
 OUTPUT RULES FOR BULLET EDITS:
 - Return 0 bullet edits if none are needed.
