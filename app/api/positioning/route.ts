@@ -1,3 +1,4 @@
+// app/api/positioning/route.ts
 import crypto from "crypto"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
@@ -14,7 +15,7 @@ const MISSING = "__MISSING__"
 const POSITIONING_PROMPT_VERSION = "positioning_v1_2026_02_07"
 const MODEL_ID = "current"
 
-// Supabase (mirrors JobFit pattern)
+// Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -30,7 +31,7 @@ const supabaseAdmin = createClient(
 )
 
 /**
- * Normalize values for deterministic fingerprinting (copied from JobFit)
+ * Normalize values for deterministic fingerprinting
  */
 function normalize(value: any): any {
   if (typeof value === "string") {
@@ -39,18 +40,14 @@ function normalize(value: any): any {
     return cleaned.toLowerCase().replace(/\s+/g, " ")
   }
 
-  if (Array.isArray(value)) {
-    return value.map(normalize).sort()
-  }
+  if (Array.isArray(value)) return value.map(normalize).sort()
 
   if (value && typeof value === "object") {
     return Object.keys(value)
       .sort()
       .reduce((acc: any, key) => {
         const v = value[key]
-        if (v !== null && v !== undefined) {
-          acc[key] = normalize(v)
-        }
+        if (v !== null && v !== undefined) acc[key] = normalize(v)
         return acc
       }, {})
   }
@@ -58,15 +55,11 @@ function normalize(value: any): any {
   return value
 }
 
-/**
- * Build Positioning fingerprint
- */
 function buildPositioningFingerprint(payload: any) {
   const normalized = normalize(payload)
   const canonical = JSON.stringify(normalized)
 
   const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
-
   const fingerprint_code =
     "PO-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
 
@@ -150,11 +143,10 @@ export async function OPTIONS(req: Request) {
 }
 
 /**
- * Positioning with caching by fingerprint (mirrors JobFit behavior)
+ * Positioning with caching by fingerprint.
  */
 export async function POST(req: Request) {
   try {
-    // Auth + stored profile (server-side, user-bound)
     const { profileId, profileText } = await getAuthedProfileText(req)
 
     const body = await req.json()
@@ -164,31 +156,31 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
-    // Deterministic keyword coverage (used to guide bullet edits)
+    // Deterministic keyword coverage
     const resumeBulletsRaw = extractResumeBullets(profileText)
     const keywordCoverage = computeKeywordCoverage(jobText, resumeBulletsRaw, {
       max_keywords: 30,
       missing_top_n: 8,
     })
 
-    const missingKeywords = (keywordCoverage?.missing_top ?? [])
+    // Missing keywords (single source of truth, no duplicates)
+    const missingHighPriorityKeywords = (keywordCoverage?.missing_top ?? [])
       .map((x: any) => String(x?.phrase || "").trim())
       .filter(Boolean)
+      .filter((k) => k.length >= 3)
+      .filter(
+        (k) =>
+          !["execution", "support", "communication", "stakeholder", "initiative", "process"].includes(
+            k.toLowerCase()
+          )
+      )
       .slice(0, 8)
 
-const missingKeywords = (keywordCoverage?.missing_top ?? [])
-  .map((x: any) => String(x?.phrase || "").trim())
-  .filter(k => k.length >= 3)
-  .filter(k => !["execution","support","communication","stakeholder","initiative","process"].includes(k.toLowerCase()))
-  .slice(0, 8)
-
-
-    const missingKeywordsText = missingKeywords.length
-      ? missingKeywords.map((k) => `- ${k}`).join("\n")
+    const missingHighPriorityKeywordsText = missingHighPriorityKeywords.length
+      ? missingHighPriorityKeywords.map((k) => `- ${k}`).join("\n")
       : "- None"
 
-    // Fingerprint inputs used for evaluation (job + profile + system pins)
-    // Include keyword results in fingerprint so edits stay consistent as logic evolves.
+    // Fingerprint pins
     const fingerprintPayload = {
       job: { text: jobText || MISSING },
       profile: { id: profileId || MISSING, text: profileText || MISSING },
@@ -197,7 +189,6 @@ const missingKeywords = (keywordCoverage?.missing_top ?? [])
         model_id: MODEL_ID,
       },
       keyword_logic: {
-        // minimal pins so a change in keyword scoring can intentionally bust cache
         max_keywords: 30,
         missing_top_n: 8,
       },
@@ -214,7 +205,6 @@ const missingKeywords = (keywordCoverage?.missing_top ?? [])
       .maybeSingle()
 
     if (findErr) {
-      // If lookup fails, proceed with a fresh run (do not block user).
       console.warn("positioning_runs lookup failed:", findErr.message)
     }
 
@@ -266,7 +256,6 @@ If YES, include one recommended summary (factual). If NO, do not write a new sum
 BULLET EDIT RULE (NON-NEGOTIABLE):
 Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
 Do not add new facts. Do not invent tools, metrics, or outcomes.
-If no edits are needed, return an empty resume_bullet_edits array.
 
 OUTPUT RULES FOR BULLET EDITS:
 - Return 0 bullet edits if none are needed.
@@ -319,7 +308,7 @@ ${jobText}
 
 HIGH-PRIORITY JOB KEYWORDS (SYSTEM-DETERMINED):
 These are important keywords/phrases from the job description that are currently missing or underrepresented in your resume bullets:
-${missingKeywordsText}
+${missingHighPriorityKeywordsText}
 
 TASK (do in order):
 1) ROLE ANGLE (DETERMINISTIC):
@@ -356,7 +345,6 @@ TASK (do in order):
    - Return 0–6 edits. Do not pad.
    - If you cannot truthfully include any of the listed keywords in a bullet, return an empty array.
 
-
 Return JSON only. No markdown. No extra text.
     `.trim()
 
@@ -372,7 +360,6 @@ Return JSON only. No markdown. No extra text.
     const raw = (resp as any).output_text || ""
     const parsed = safeJsonParse(raw)
 
-    // If model fails to return valid JSON, return safe fallback (do not cache)
     if (!parsed) {
       return withCorsJson(
         req,
@@ -380,11 +367,7 @@ Return JSON only. No markdown. No extra text.
           student_intro:
             "I could not generate your positioning plan because the model did not return valid JSON. Paste the full job description again and retry.",
 
-          role_angle: {
-            label: "Unclear",
-            why: raw || "Non-JSON response.",
-            evidence: [],
-          },
+          role_angle: { label: "Unclear", why: raw || "Non-JSON response.", evidence: [] },
 
           arrange_resume: {
             intro:
@@ -412,7 +395,6 @@ Return JSON only. No markdown. No extra text.
       )
     }
 
-    // Normalize model output into our expected schema
     const baseIntro = asString(
       parsed?.student_intro,
       "Here is the clearest way to position your resume for this job, with only factual, high-impact changes."
@@ -459,11 +441,9 @@ Return JSON only. No markdown. No extra text.
 
     const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
 
-    // Optional: expose deterministic coverage info for UI/debugging later (not required to render)
-    // Keep it lightweight.
     const keyword_analysis = {
       coverage_pct: Math.round(keywordCoverage.coverage * 100),
-      missing_high_priority: missingKeywords,
+      missing_high_priority: missingHighPriorityKeywords,
     }
 
     const finalResult = {
@@ -475,7 +455,6 @@ Return JSON only. No markdown. No extra text.
       keyword_analysis,
     }
 
-    // Store result (best effort). Cache only valid parsed + normalized output.
     const { error: insertErr } = await supabaseAdmin.from("positioning_runs").insert({
       client_profile_id: profileId,
       job_url: null,
