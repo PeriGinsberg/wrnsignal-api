@@ -1,7 +1,3 @@
-/** 
-* jobfit function
-*/
-
 import crypto from "crypto"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
@@ -22,7 +18,7 @@ export async function OPTIONS(req: Request) {
 }
 
 /**
- * Basic CORS JSON responder (bypasses withCorsJson to avoid stripping/wrapping)
+ * Basic CORS JSON responder (bypasses withCorsJson)
  */
 function corsJson(req: Request, body: any, status = 200) {
   const origin = req.headers.get("origin") || "*"
@@ -90,7 +86,7 @@ function buildJobFitFingerprint(payload: any) {
 export async function POST(req: Request) {
   try {
     // Auth + stored profile (server-side, user-bound)
-    const { profileText } = await getAuthedProfileText(req)
+    const { profileId, profileText } = await getAuthedProfileText(req)
 
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
@@ -99,22 +95,10 @@ export async function POST(req: Request) {
       return corsJson(req, { error: "Missing job" }, 400)
     }
 
-if (!jobText) {
-  return corsJson(req, { error: "Missing job" }, 400)
-}
-
-
-// (everything below won’t run during the canary test)
-
-
     // Fingerprint inputs used for evaluation (job + profile + system pins)
     const fingerprintPayload = {
-      job: {
-        text: jobText || MISSING,
-      },
-      profile: {
-        text: profileText || MISSING,
-      },
+      job: { text: jobText || MISSING },
+      profile: { id: profileId || MISSING, text: profileText || MISSING },
       system: {
         jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
         model_id: MODEL_ID,
@@ -124,13 +108,11 @@ if (!jobText) {
     const { fingerprint_hash, fingerprint_code } =
       buildJobFitFingerprint(fingerprintPayload)
 
-    // Run JobFit (behavior unchanged)
     const result = await runJobFit({
       profileText,
       jobText,
     })
 
-    // Return result + fingerprint (explicit, guaranteed)
     return corsJson(req, {
       ...result,
       fingerprint_code,

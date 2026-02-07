@@ -1,4 +1,3 @@
-
 import { createClient } from "@supabase/supabase-js"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -49,7 +48,9 @@ type ClientProfileRow = {
  * API owns profile creation + attachment.
  * Client never writes to client_profiles.
  */
-export async function getAuthedProfileText(req: Request): Promise<{ profileText: string }> {
+export async function getAuthedProfileText(
+  req: Request
+): Promise<{ profileId: string; profileText: string }> {
   const { userId, email } = await getAuthedUser(req)
 
   // Try to fetch profile by user_id (auth.users.id)
@@ -78,9 +79,8 @@ export async function getAuthedProfileText(req: Request): Promise<{ profileText:
       throw new Error(`Profile create failed: ${createErr?.message || "unknown"}`)
     }
 
-    return { profileText: created.profile_text || "" }
+    return { profileId: created.id, profileText: created.profile_text || "" }
   }
 
-  return { profileText: existing.profile_text || "" }
+  return { profileId: existing.id, profileText: existing.profile_text || "" }
 }
-
