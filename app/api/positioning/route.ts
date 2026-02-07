@@ -282,7 +282,26 @@ JOB DESCRIPTION (verbatim):
 ${job}
 
 TASK (do in order):
-1) Identify the best Role Angle label (2–5 words) for how this resume should be read for this job.
+1) 1) ROLE ANGLE (DETERMINISTIC):
+   Select exactly ONE role angle label from the list below.
+   The label must match one of these values exactly. Do not invent new labels.
+
+   Role Angle Labels:
+   - Client-Facing / Communication
+   - Analytical / Quantitative
+   - Creative / Storytelling
+   - Technical / Builder
+   - Operations / Execution
+   - Leadership / Program Ownership
+   - Research / Knowledge Creation
+   - Business / Commercial
+   - Early-Career Generalist
+   - Other
+
+   Rules:
+   - Choose the closest fit based only on resume evidence and job context.
+   - Use "Early-Career Generalist" when experience is broad or mixed.
+   - Use "Other" only if none apply, and explain why.
 2) Explain why in 1–2 sentences and include supporting resume evidence quotes.
 3) Provide How to Arrange Your Resume:
    - Include the sentence: "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience."
