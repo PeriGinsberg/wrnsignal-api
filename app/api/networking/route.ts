@@ -14,10 +14,6 @@ function safeJsonParse(raw: string) {
   }
 }
 
-/**
- * The Responses API can return text in different shapes depending on SDK versions.
- * This extractor keeps your endpoint resilient without changing UI assumptions.
- */
 function extractOutputText(resp: any): string {
   if (typeof resp?.output_text === "string" && resp.output_text.trim()) return resp.output_text
 
@@ -38,8 +34,7 @@ function extractOutputText(resp: any): string {
 }
 
 /**
- * Ensures we always return a complete plan with exactly 3 actions,
- * even if the model returns partial data.
+ * Basic shape guard + fill defaults. Keeps UI stable.
  */
 function normalizePlan(parsed: any) {
   const fallback = {
@@ -52,107 +47,7 @@ function normalizePlan(parsed: any) {
       { day: "Day 5–6", step: "Send Action 3." },
       { day: "Day 7", step: "Follow up Action 2 if needed (then stop)." },
     ],
-    actions: [
-      {
-        ladder_rung: "Closest to the work",
-        target_roles: ["Recent hire in the same function/team", "Someone doing the role now"],
-        person_to_pick: "Recent hire (0–2 years) or current team member doing the work.",
-        rationale:
-          "Closest to the work gives you the real expectations and what actually helps candidates stand out.",
-        channel: {
-          primary: "LinkedIn",
-          why: "Best for finding the right person quickly. Email can come after you confirm the company’s format.",
-          email_schema_guidance: {
-            likely_formats: ["first.last@company.com", "first@company.com"],
-            how_to_verify:
-              "Check press releases, investor relations PDFs, or the company website for any staff emails. Confirm the format before sending.",
-            caution: "Do not guess a specific person’s email. Verify the company pattern first.",
-          },
-        },
-        search_terms: [
-          'site:linkedin.com/in "Company" ("Analyst" OR "Associate")',
-          '"Company" "Analyst" "Team keyword" LinkedIn',
-        ],
-        message: {
-          initial:
-            "Hi [Name] — I applied for the [Role] role at [Company]. I’m reaching out directly because you’re close to the work on the team. Could I grab 10 minutes this week to learn how the team actually thinks about this role and what helps candidates stand out?",
-          follow_up:
-            "Quick follow-up — I applied for [Role] and wanted to see if you’d be open to 10 minutes to share what helps candidates stand out on your team.",
-        },
-        conversation: {
-          questions: [
-            "What actually matters most for this team when they’re reviewing candidates?",
-            "What do strong candidates do differently that most applicants miss?",
-          ],
-        },
-      },
-      {
-        ladder_rung: "Influence adjacent",
-        target_roles: ["Senior IC / Team Lead in the function", "Cross-functional partner who works with the team"],
-        person_to_pick: "Senior IC, team lead, or close partner who influences the hiring manager informally.",
-        rationale:
-          "Influence-adjacent people help your name travel internally and tell you what signals create traction.",
-        channel: {
-          primary: "Email",
-          why: "Email often gets higher response than DMs once you have the right person and verified company format.",
-          email_schema_guidance: {
-            likely_formats: ["first.last@company.com", "first_last@company.com", "first@company.com"],
-            how_to_verify:
-              "Look for any publicly listed employee emails (press, media kit, conference bios) to infer the pattern. Verify using at least two examples before emailing.",
-            caution: "Don’t send the same message on LinkedIn and email. Pick one channel.",
-          },
-        },
-        search_terms: [
-          'site:linkedin.com/in "Company" ("Senior" OR "Lead") ("Title keyword")',
-          '"Company" "Team Lead" "Function" LinkedIn',
-        ],
-        message: {
-          initial:
-            "Hi [Name] — I applied for the [Role] at [Company]. I’m reaching out because your work is closely connected to the team. Could I grab 10 minutes to learn what actually helps candidates stand out for this role and what the team cares about most?",
-          follow_up:
-            "Following up — I applied for [Role] and wanted to see if you’d be open to 10 minutes to share what helps candidates stand out for your team.",
-        },
-        conversation: {
-          questions: [
-            "What signals make someone stand out quickly for this role?",
-            "If you were advising a candidate, what would you tell them to focus on in the first 30 days of the role?",
-          ],
-        },
-      },
-      {
-        ladder_rung: "Process owner",
-        target_roles: ["Recruiter aligned to the function/program", "Early career / program manager if program-based"],
-        person_to_pick: "The recruiter/program owner responsible for this role family, not a random HR contact.",
-        rationale:
-          "Process owners can clarify timing and how to avoid getting buried, especially in program or high-volume pipelines.",
-        channel: {
-          primary: "Email",
-          why: "Recruiting teams are built around email workflows. It’s the most natural channel for process questions.",
-          email_schema_guidance: {
-            likely_formats: ["first.last@company.com", "first@company.com"],
-            how_to_verify:
-              "Company careers pages sometimes list recruiter contact formats; otherwise infer from public examples. Verify pattern before sending.",
-            caution: "Do not ask for a referral. Do not ask them to ‘pull’ your app. Keep it about process and standing out.",
-          },
-        },
-        search_terms: [
-          '"Company" recruiter "Function"',
-          'site:linkedin.com/in "Company" recruiter ("campus" OR "early career" OR "university")',
-        ],
-        message: {
-          initial:
-            "Hi [Name] — I applied for the [Role] at [Company]. I wanted to reach out directly to understand the timeline and what helps candidates stand out as the team reviews applications. Could I grab 10 minutes this week to make sure I’m focusing on the right things?",
-          follow_up:
-            "Quick follow-up — I applied for [Role] and wanted to see if you’d be open to 10 minutes to share timeline and what helps candidates stand out in this process.",
-        },
-        conversation: {
-          questions: [
-            "What does the timeline look like from here and when are interviews typically scheduled?",
-            "What do candidates who move forward usually do differently in how they present their experience?",
-          ],
-        },
-      },
-    ],
+    actions: [],
   }
 
   const out: any = { ...fallback }
@@ -162,15 +57,12 @@ function normalizePlan(parsed: any) {
     if (typeof parsed.note === "string" && parsed.note.trim()) out.note = parsed.note.trim()
 
     if (Array.isArray(parsed.sequence) && parsed.sequence.length) {
-      out.sequence = parsed.sequence
+      const seq = parsed.sequence
         .filter((x: any) => x && typeof x === "object")
-        .slice(0, 6)
-        .map((x: any) => ({
-          day: String(x.day || "").trim(),
-          step: String(x.step || "").trim(),
-        }))
+        .map((x: any) => ({ day: String(x.day || "").trim(), step: String(x.step || "").trim() }))
         .filter((x: any) => x.day && x.step)
-      if (!out.sequence.length) out.sequence = fallback.sequence
+        .slice(0, 8)
+      if (seq.length) out.sequence = seq
     }
 
     if (Array.isArray(parsed.actions)) {
@@ -204,15 +96,88 @@ function normalizePlan(parsed: any) {
     }
   }
 
-  // Ensure exactly 3 actions
-  while (out.actions.length < 3) out.actions.push(fallback.actions[out.actions.length])
+  // Ensure exactly 3 actions with minimal structure
+  while (out.actions.length < 3) {
+    out.actions.push({
+      ladder_rung: "",
+      target_roles: [],
+      person_to_pick: "",
+      rationale: "",
+      channel: {
+        primary: "",
+        why: "",
+        email_schema_guidance: { likely_formats: [], how_to_verify: "", caution: "" },
+      },
+      search_terms: [],
+      message: { initial: "", follow_up: "" },
+      conversation: { questions: [] },
+    })
+  }
   out.actions = out.actions.slice(0, 3)
 
-  // Light sanity fill for required strings
-  if (!out.framing) out.framing = fallback.framing
-  if (!out.note) out.note = fallback.note
-
   return out
+}
+
+/**
+ * If the model returns non-JSON, run a cheap "repair" call that converts to strict JSON.
+ * This dramatically reduces flaky outputs without relying on response_format support.
+ */
+async function repairToJson(raw: string) {
+  const repairSystem = `
+You are a JSON repair tool. Convert the user's content into valid JSON matching this exact schema.
+Return JSON only. No markdown. No commentary.
+
+SCHEMA:
+{
+  "framing": string,
+  "note": string,
+  "sequence": [{ "day": string, "step": string }],
+  "actions": [
+    {
+      "ladder_rung": string,
+      "target_roles": string[],
+      "person_to_pick": string,
+      "rationale": string,
+      "channel": {
+        "primary": "LinkedIn" | "Email" | string,
+        "why": string,
+        "email_schema_guidance": {
+          "likely_formats": string[],
+          "how_to_verify": string,
+          "caution": string
+        }
+      },
+      "search_terms": string[],
+      "message": { "initial": string, "follow_up": string },
+      "conversation": { "questions": string[] }
+    },
+    { ... }, { ... }
+  ]
+}
+
+RULES:
+- actions must be exactly 3 items (pad with empty items if missing).
+- sequence should be 2-8 items (use reasonable defaults if missing).
+- Keep text concise. Preserve intent. Do not invent personal email addresses.
+  `.trim()
+
+  const repairUser = `
+Convert the following into JSON matching the schema. If content is incomplete, infer missing structure conservatively.
+
+RAW:
+${raw}
+  `.trim()
+
+  const resp = await client.responses.create({
+    model: "gpt-4.1-mini",
+    input: [
+      { role: "system", content: repairSystem },
+      { role: "user", content: repairUser },
+    ],
+  })
+
+  const repairedText = extractOutputText(resp)
+  return safeJsonParse(repairedText)
 }
 
 export async function OPTIONS(req: Request) {
@@ -221,68 +186,96 @@ export async function OPTIONS(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    // ✅ Auth + stored profile (server-side)
     const { profileText } = await getAuthedProfileText(req)
     const profile = profileText
 
-    // ✅ Client sends only { job }
     const body = await req.json()
     const job = String(body?.job || "").trim()
 
-    if (!job) {
-      return withCorsJson(req, { error: "Missing job" }, 400)
-    }
+    if (!job) return withCorsJson(req, { error: "Missing job" }, 400)
 
     const system = `
-You are WRNSignal (Networking module). You produce a networking PLAN for ONE job.
+You are WRNSignal (Networking module). You generate a networking PLAN for ONE job.
 
 CORE PHILOSOPHY (LOCKED):
-- Networking is post-apply. You can generate anytime, but always reinforce: applying is ~20%, networking after applying is ~80%.
-- We are "appropriately aggressive":
-  - We explicitly say we applied.
-  - We ask for 10 minutes.
-  - We want to learn about the team/company and what helps candidates stand out.
-  - We do NOT ask for a job, referral, or resume review.
-  - We do NOT do fake curiosity ("your path is so interesting") or flattery.
+- Networking is post-apply. Reinforce: applying is ~20%, networking after you apply is ~80%.
+- "Appropriately aggressive" means:
+  - Explicitly say: I applied.
+  - Ask for 10 minutes.
+  - Ask to learn about the team/company and what helps candidates stand out.
+  - No job ask. No referral ask. No resume ask.
+  - No fake curiosity. No flattery. No "hope you're well". No exclamation points.
 
 YOU MUST OUTPUT A PLAN, NOT TIPS:
-- Provide a short framing line and a short note.
-- Provide a sequenced execution plan (days + steps).
-- Provide EXACTLY 3 actions using the ladder:
-  1) Closest to the work
-  2) Influence adjacent
-  3) Process owner
-- Each action must include:
-  - ladder_rung
-  - target_roles (role titles to search for)
-  - person_to_pick (what kind of person to select: recent hire, senior IC, etc.)
-  - rationale (why this rung matters)
-  - channel recommendation (LinkedIn vs Email)
-    - LinkedIn is best for discovery, email is often best for response.
-    - You may provide email SCHEMA GUIDANCE (likely formats) and HOW TO VERIFY.
-    - You must NOT output guessed personal email addresses.
-  - search_terms (LinkedIn / Google search strings to find the right person)
-  - message.initial and message.follow_up:
-    - Student voice, direct, short.
-    - MUST state they applied.
-    - MUST ask for 10 minutes.
-    - MUST ask to learn about team/company and how to stand out.
-    - No "hope you're well", no exclamation points, no buzzwords, no "pick your brain".
-    - Follow-up is one follow-up only, 48–72 hours later, shorter than initial.
-  - conversation.questions (2–4 questions for the 10-minute chat)
+Return valid JSON only with:
+{
+  "framing": string,
+  "note": string,
+  "sequence": [{ "day": string, "step": string }],
+  "actions": [
+    {
+      "ladder_rung": "Closest to the work" | "Influence adjacent" | "Process owner",
+      "target_roles": string[],
+      "person_to_pick": string,
+      "rationale": string,
+      "channel": {
+        "primary": "LinkedIn" | "Email",
+        "why": string,
+        "email_schema_guidance": {
+          "likely_formats": string[],
+          "how_to_verify": string,
+          "caution": string
+        }
+      },
+      "search_terms": string[],
+      "message": { "initial": string, "follow_up": string },
+      "conversation": { "questions": string[] }
+    },
+    { ... }, { ... }
+  ]
+}
 
-JOBFIT MODIFIERS (IMPORTANT):
-- If JobFit is APPROVE: more direct, closer to decision influence, but still student voice.
-- If JobFit is REVIEW: peer-first emphasis, focus on what stands out and how to frame experience.
-- If JobFit is PASS: plan becomes exploratory. Still state you applied ONLY if user did. Otherwise: learn what matters before investing more; do not push recruiters.
+LADDER (EXACTLY 3 ACTIONS, IN THIS ORDER):
+1) Closest to the work
+2) Influence adjacent
+3) Process owner
 
-EXECUTIVE/SENIOR OUTREACH:
-- Allowed only when appropriate (small company, founder-led, close to the work).
-- If suggested, keep messages extra short and still student-credible.
+PLAN REQUIREMENTS:
+- framing should use:
+  - APPROVE/REVIEW tone: "Here’s how you stop being just another application."
+  - PASS tone: "Here’s how to learn what actually matters before you invest more effort."
+(If you cannot infer JobFit, default to APPROVE/REVIEW tone.)
 
-OUTPUT:
-Return valid JSON only. No markdown. No extra commentary.
-`.trim()
+- sequence must be a real plan (timing + steps). Default:
+  Day 0: send actions 1 and 2
+  Day 2: follow up action 1 (one follow-up only)
+  Day 5–6: send action 3
+  Day 7: follow up action 2 if needed, then stop
+
+CHANNEL LOGIC:
+- LinkedIn is best for discovery (finding names).
+- Email is often better for response once the person is identified.
+- You MAY provide likely email formats and how to verify the company pattern.
+- You MUST NOT guess a specific person's email address.
+
+STUDENT VOICE:
+- Must sound like a student (direct, plainspoken).
+- No corporate jargon, no "pick your brain", no compliments.
+- The initial message must:
+  - say they applied
+  - ask for 10 minutes
+  - ask to learn about team/company and what helps candidates stand out
+- follow_up must:
+  - be shorter than initial
+  - happen 48–72 hours later
+  - be one follow-up only
+
+EXEC/SENIOR OUTREACH:
+- Allowed when appropriate (small company, founder-led, close to the work).
+- If used, keep messages extra short and still student-credible.
+
+RETURN JSON ONLY.
+    `.trim()
 
     const user = `
 CLIENT PROFILE:
@@ -292,10 +285,8 @@ JOB DESCRIPTION:
 ${job}
 
 TASK:
-Generate a networking PLAN using the rules. Produce exactly 3 actions, each with ladder_rung and all required fields.
-Assume the student has applied unless the job text clearly indicates otherwise.
-Return JSON only.
-`.trim()
+Generate the networking plan JSON now. Exactly 3 actions in the ladder order.
+    `.trim()
 
     const resp = await client.responses.create({
       model: "gpt-4.1-mini",
@@ -303,107 +294,17 @@ Return JSON only.
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-      // If your SDK supports it, this keeps the shape consistent without changing UI.
-      // If not supported in your environment, you can remove response_format and rely on safeJsonParse fallback.
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "wrnsignal_networking_plan",
-          strict: true,
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              framing: { type: "string" },
-              note: { type: "string" },
-              sequence: {
-                type: "array",
-                minItems: 2,
-                maxItems: 8,
-                items: {
-                  type: "object",
-                  additionalProperties: false,
-                  properties: {
-                    day: { type: "string" },
-                    step: { type: "string" },
-                  },
-                  required: ["day", "step"],
-                },
-              },
-              actions: {
-                type: "array",
-                minItems: 3,
-                maxItems: 3,
-                items: {
-                  type: "object",
-                  additionalProperties: false,
-                  properties: {
-                    ladder_rung: { type: "string" },
-                    target_roles: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 6 },
-                    person_to_pick: { type: "string" },
-                    rationale: { type: "string" },
-                    channel: {
-                      type: "object",
-                      additionalProperties: false,
-                      properties: {
-                        primary: { type: "string" },
-                        why: { type: "string" },
-                        email_schema_guidance: {
-                          type: "object",
-                          additionalProperties: false,
-                          properties: {
-                            likely_formats: { type: "array", items: { type: "string" }, minItems: 0, maxItems: 6 },
-                            how_to_verify: { type: "string" },
-                            caution: { type: "string" },
-                          },
-                          required: ["likely_formats", "how_to_verify", "caution"],
-                        },
-                      },
-                      required: ["primary", "why", "email_schema_guidance"],
-                    },
-                    search_terms: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 6 },
-                    message: {
-                      type: "object",
-                      additionalProperties: false,
-                      properties: {
-                        initial: { type: "string" },
-                        follow_up: { type: "string" },
-                      },
-                      required: ["initial", "follow_up"],
-                    },
-                    conversation: {
-                      type: "object",
-                      additionalProperties: false,
-                      properties: {
-                        questions: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 4 },
-                      },
-                      required: ["questions"],
-                    },
-                  },
-                  required: [
-                    "ladder_rung",
-                    "target_roles",
-                    "person_to_pick",
-                    "rationale",
-                    "channel",
-                    "search_terms",
-                    "message",
-                    "conversation",
-                  ],
-                },
-              },
-            },
-            required: ["framing", "note", "sequence", "actions"],
-          },
-        },
-      },
     })
 
     const raw = extractOutputText(resp)
-    const parsed = safeJsonParse(raw)
+    let parsed = safeJsonParse(raw)
 
-    // If schema mode returns parsed JSON differently in your SDK/env, try to fall back gracefully:
-    const plan = normalizePlan(parsed || safeJsonParse(raw) || null)
+    // Repair if non-JSON
+    if (!parsed) {
+      parsed = await repairToJson(raw)
+    }
+
+    const plan = normalizePlan(parsed)
 
     return withCorsJson(req, plan, 200)
   } catch (err: any) {
