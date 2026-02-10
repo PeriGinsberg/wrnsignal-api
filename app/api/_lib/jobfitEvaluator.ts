@@ -1,3 +1,4 @@
+// app/api/_lib/jobfitEvaluator.ts
 import OpenAI from "openai"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -27,7 +28,6 @@ type ProfileConstraints = {
 
 function extractJsonObject(raw: string) {
   if (!raw) return null
-
   const cleaned = raw.replace(/```(?:json)?/g, "").replace(/```/g, "").trim()
 
   try {
@@ -80,7 +80,7 @@ function ensureArrayOfStrings(x: any, max: number) {
     .slice(0, max)
 }
 
-/* ----------------------- deterministic gates (NEW) ----------------------- */
+/* ----------------------- deterministic extraction ----------------------- */
 
 function normalizeText(t: string) {
   return (t || "")
@@ -101,7 +101,9 @@ function extractJobFacts(jobText: string): JobFacts {
     /\b\d+(\.\d+)?\s*\/\s*hr\b/.test(t0)
 
   let hourlyEvidence: string | null = null
-  const mHr = t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/) || t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
+  const mHr =
+    t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/) ||
+    t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
   if (mHr?.[0]) hourlyEvidence = mHr[0]
 
   // Contract signals
@@ -121,7 +123,9 @@ function extractJobFacts(jobText: string): JobFacts {
     t0.match(/\b3\s*month\b/) ||
     t0.match(/\b6\s*month\b/) ||
     t0.match(/\btemporary\b/) ||
-    t0.match(/\bduration\b/)
+    t0.match(/\bduration\b/) ||
+    t0.match(/\b1099\b/) ||
+    t0.match(/\bw2\b/)
   if (mContract?.[0]) contractEvidence = mContract[0]
 
   return { isHourly, hourlyEvidence, isContract, contractEvidence }
@@ -130,21 +134,19 @@ function extractJobFacts(jobText: string): JobFacts {
 function extractProfileConstraints(profileText: string): ProfileConstraints {
   const t0 = normalizeText(profileText)
 
-  // Hard exclusions
   const hardNoHourlyPay =
     t0.includes("no hourly") ||
     t0.includes("no hourly pay") ||
     (t0.includes("do not want") && t0.includes("hourly")) ||
-    (t0.includes("hard exclusion") && t0.includes("hourly"))
+    (t0.includes("hard exclusion") && t0.includes("hourly")) ||
+    (t0.includes("d o n o t want") && t0.includes("hourly"))
 
-  // Preference: full time (not necessarily a hard exclusion)
   const prefFullTime =
     t0.includes("full time") ||
     t0.includes("full-time") ||
     t0.includes("fulltime") ||
-    t0.includes("job type preference") && t0.includes("full")
+    (t0.includes("job type preference") && t0.includes("full"))
 
-  // Explicit contract exclusion only if clearly stated
   const hardNoContract =
     t0.includes("no contract") ||
     t0.includes("do not want contract") ||
@@ -154,8 +156,98 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
   return { hardNoHourlyPay, prefFullTime, hardNoContract }
 }
 
-function evaluateGates(job: JobFacts, profile: ProfileConstraints): Gate {
-  // Rule 1: Hard exclusion NO HOURLY PAY => automatic PASS
+/* ----------------------- deterministic job family + requirements ----------------------- */
+
+type JobFamily =
+  | "accounting_finance_ops"
+  | "sales"
+  | "brand_marketing_media_buying"
+  | "pm_program"
+  | "customer_success"
+  | "strategy_ops"
+  | "unknown"
+
+function inferJobFamily(jobText: string): JobFamily {
+  const t = normalizeText(jobText)
+
+  if (
+    /\b(accounts?\s+receivable|accounts?\s+payable|staff accountant|accountant|bookkeeper|double entry|general ledger|gl\b|reconciliation|balance sheet)\b/.test(
+      t
+    )
+  ) return "accounting_finance_ops"
+
+  if (/\b(media buying|media buy|brand awareness media|tv\b|billboards?|podcasts?|radio|placements?|allocate marketing budget)\b/.test(t)) {
+    return "brand_marketing_media_buying"
+  }
+
+  if (/\b(customer success|client success|client engagement|implementation|onboarding|account manager)\b/.test(t)) {
+    return "customer_success"
+  }
+
+  if (/\b(program manager|project manager|program management|project management|pm\b)\b/.test(t)) {
+    return "pm_program"
+  }
+
+  if (/\b(strategy|operations|biz ops|business operations|strategic planning|operational)\b/.test(t)) {
+    return "strategy_ops"
+  }
+
+  if (/\b(sales|business development|quota|commission|pipeline|lead gen|cold call)\b/.test(t)) {
+    return "sales"
+  }
+
+  return "unknown"
+}
+
+function profileMentionsFamily(profileText: string, family: JobFamily): boolean {
+  const t = normalizeText(profileText)
+
+  const rx: Record<JobFamily, RegExp> = {
+    accounting_finance_ops: /\b(accounting|accountant|ar\b|ap\b|bookkeeping|controller|general ledger|reconciliation)\b/,
+    brand_marketing_media_buying: /\b(media buying|media buy|paid media|media planning|media strategy|programmatic|attribution|marketing measurement|brand media)\b/,
+    customer_success: /\b(customer success|client success|client engagement|implementation|onboarding|account management)\b/,
+    pm_program: /\b(program|project|program management|project management|pm\b)\b/,
+    strategy_ops: /\b(strategy|operations|biz ops|business operations|strategic partnerships|planning)\b/,
+    sales: /\b(sales|business development|quota|commission|pipeline)\b/,
+    unknown: /$^/,
+  }
+
+  return family !== "unknown" && rx[family].test(t)
+}
+
+function jobRequiresMediaBuying(jobText: string) {
+  const t = normalizeText(jobText)
+  return (
+    t.includes("media buy") ||
+    t.includes("media buying") ||
+    t.includes("brand awareness media") ||
+    t.includes("allocate marketing budget") ||
+    t.includes("placements") ||
+    t.includes("billboard") ||
+    t.includes("podcast") ||
+    t.includes("radio") ||
+    t.includes("tv") ||
+    t.includes("buy our brand awareness")
+  )
+}
+
+function profileHasMediaBuying(profileText: string) {
+  const t = normalizeText(profileText)
+  return (
+    t.includes("media buying") ||
+    t.includes("media buy") ||
+    t.includes("paid media") ||
+    t.includes("programmatic") ||
+    t.includes("performance marketing") ||
+    t.includes("attribution") ||
+    t.includes("marketing measurement") ||
+    t.includes("media planning") ||
+    t.includes("media strategy")
+  )
+}
+
+function evaluateGates(job: JobFacts, profile: ProfileConstraints, jobText: string, profileText: string): Gate {
+  // Rule 0: Hourly exclusion => PASS
   if (profile.hardNoHourlyPay && job.isHourly) {
     const ev = job.hourlyEvidence ? ` (${job.hourlyEvidence})` : ""
     return {
@@ -164,7 +256,7 @@ function evaluateGates(job: JobFacts, profile: ProfileConstraints): Gate {
     }
   }
 
-  // Rule 2: Full-time preference + contract job => REVIEW floor unless contract is explicitly excluded (then PASS could be handled elsewhere)
+  // Rule 1: Full-time preference + contract => REVIEW floor (unless contract is explicitly excluded elsewhere)
   if (profile.prefFullTime && job.isContract && !profile.hardNoContract) {
     const ev = job.contractEvidence ? ` (signals: ${job.contractEvidence})` : ""
     return {
@@ -173,12 +265,29 @@ function evaluateGates(job: JobFacts, profile: ProfileConstraints): Gate {
     }
   }
 
+  // Rule 2: Media buying required but not evidenced => REVIEW floor
+  if (jobRequiresMediaBuying(jobText) && !profileHasMediaBuying(profileText)) {
+    return {
+      type: "floor_review",
+      reason:
+        "Role is media buying and channel budget focused, but the profile does not show direct media buying or paid media experience. This requires review.",
+    }
+  }
+
+  // Rule 3: Obvious function mismatch (hard) for accounting-family roles when profile does not target it
+  const fam = inferJobFamily(jobText)
+  if (fam === "accounting_finance_ops" && !profileMentionsFamily(profileText, "accounting_finance_ops")) {
+    return {
+      type: "force_pass",
+      reason: "Role is accounting-focused, which does not match the candidate’s stated target roles.",
+    }
+  }
+
   return { type: "none" }
 }
 
 /* ----------------------- content hygiene filters ----------------------- */
 
-// location/commute scrub (your rule)
 function stripLocationLanguage(items: string[]) {
   return items.filter((s0) => {
     const s = (s0 || "").toLowerCase()
@@ -197,12 +306,16 @@ function stripLocationLanguage(items: string[]) {
       s.includes("location mismatch") ||
       s.includes("location preference mismatch") ||
       s.includes("location preference") ||
-      s.includes("within commuting distance")
+      s.includes("within commuting distance") ||
+      s.includes("location specifics") ||
+      (s.includes("location") && s.includes("should be confirmed")) ||
+      s.includes("flexible arrangements") ||
+      s.includes("hybrid arrangement") ||
+      s.includes("in-office requirement should be confirmed")
     )
   })
 }
 
-// remove “timeline aligns / graduation aligns” hallucination phrasing
 function stripTimelineLanguage(items: string[]) {
   return items.filter((s0) => {
     const s = (s0 || "").toLowerCase()
@@ -210,12 +323,15 @@ function stripTimelineLanguage(items: string[]) {
       (s.includes("timeline") && s.includes("align")) ||
       (s.includes("graduation") && s.includes("align")) ||
       (s.includes("graduation date") && s.includes("align")) ||
-      (s.includes("program requirements") && s.includes("align"))
+      (s.includes("program requirements") && s.includes("align")) ||
+      (s.includes("timeline") && (s.includes("confirm") || s.includes("confirmed"))) ||
+      (s.includes("start") && (s.includes("confirm") || s.includes("confirmed"))) ||
+      s.includes("start date should be confirmed") ||
+      s.includes("availability should be confirmed")
     )
   })
 }
 
-// remove “non-risk” risk flags that are actually validations/checkmarks
 function stripNonRiskRiskFlags(items: string[]) {
   const badPhrases = [
     "no eligibility issue",
@@ -243,7 +359,6 @@ function stripNonRiskRiskFlags(items: string[]) {
   })
 }
 
-// remove coaching/advice leakage (your system rules)
 function stripAdviceLanguage(items: string[]) {
   const bad = [
     "highlight",
@@ -269,7 +384,7 @@ function stripAdviceLanguage(items: string[]) {
 
 function containsThreePlusYearsFlag(riskFlags: string[]) {
   return riskFlags.some((r) => {
-    const s = r.toLowerCase()
+    const s = (r || "").toLowerCase()
     return (
       s.includes("3+ years") ||
       s.includes("3 years") ||
@@ -315,7 +430,9 @@ function hasHardPassSignals(riskFlags: string[], bullets: string[]) {
 
   const functionMismatch =
     all.some((x) => x.includes("function mismatch")) ||
-    all.some((x) => x.includes("not aligned") && (x.includes("role") || x.includes("position")))
+    all.some((x) => x.includes("not aligned") && (x.includes("role") || x.includes("position"))) ||
+    all.some((x) => x.includes("does not match") && (x.includes("target roles") || x.includes("role targets"))) ||
+    all.some((x) => x.includes("not a match") && x.includes("target roles"))
 
   const clearlySenior =
     all.some((x) => x.includes("5+ years")) ||
@@ -367,7 +484,6 @@ function parseMonthYear(s: string): YM | null {
     /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]{0,10}\b(20\d{2})\b/
   )
   if (!m) return null
-
   const month = MONTHS[m[1]]
   const year = Number(m[2])
   if (!month || !Number.isFinite(year)) return null
@@ -435,7 +551,7 @@ function formatYM(ym: YM) {
   return `${monthNames[ym.month - 1]} ${ym.year}`
 }
 
-/* ----------------------- “meaningful risk” enforcement ----------------------- */
+/* ----------------------- meaningful risk enforcement ----------------------- */
 
 function isMeaningfulRisk(r: string) {
   const s = (r || "").toLowerCase()
@@ -474,7 +590,30 @@ function countMeaningfulRisks(riskFlags: string[]) {
   return riskFlags.filter(isMeaningfulRisk).length
 }
 
-/* ----------------------- main (rewritten with NEW rules) ----------------------- */
+function hasMissingCoreExperience(riskFlags: string[]) {
+  const t = riskFlags.join(" ").toLowerCase()
+  return (
+    t.includes("no direct experience") ||
+    t.includes("lack of explicit direct experience") ||
+    t.includes("lack of direct experience") ||
+    t.includes("no specific mention") ||
+    (t.includes("lack of") && t.includes("experience")) ||
+    (t.includes("missing") && t.includes("experience"))
+  )
+}
+
+/* ----------------------- evidence enforcement ----------------------- */
+
+function requireEvidence(items: string[]) {
+  return items.filter((s) => {
+    const t = (s || "").toLowerCase()
+    const hasJob = t.includes("job:")
+    const hasProfileOrMissing = t.includes("profile:") || t.includes("missing:")
+    return hasJob && hasProfileOrMissing
+  })
+}
+
+/* ----------------------- main ----------------------- */
 
 export async function runJobFit({
   profileText,
@@ -483,17 +622,16 @@ export async function runJobFit({
   profileText: string
   jobText: string
 }) {
-  // NEW: deterministic gating layer
+  // Deterministic gates
   const jobFacts = extractJobFacts(jobText)
   const profileConstraints = extractProfileConstraints(profileText)
-  const gate = evaluateGates(jobFacts, profileConstraints)
+  const gate = evaluateGates(jobFacts, profileConstraints, jobText, profileText)
 
-  // If forced PASS, do not call the model at all
+  // Forced PASS: do not call model
   if (gate.type === "force_pass") {
     const bullets = [gate.reason]
     const risk_flags: string[] = []
 
-    // Also surface the contract mismatch as a risk flag if present (optional but useful)
     if (jobFacts.isContract && profileConstraints.prefFullTime && !profileConstraints.hardNoContract) {
       risk_flags.push("Role appears to be contract while the candidate preference is full-time.")
     }
@@ -523,15 +661,18 @@ Return JSON only:
   "location_constraint": "constrained" | "not_constrained" | "unclear"
 }
 
-Rules:
-- Bullets and risk_flags must be specific and grounded in the provided profile and job.
-- risk_flags must be actual risks/unknowns, not confirmations or “no issue” statements.
+Non-negotiables:
+- Every bullet and risk flag must be grounded in BOTH the job and the profile. No vibes.
+- Use this format in every line:
+  - Bullets: "<claim> | Job: <short quote or phrase> | Profile: <short quote or phrase>"
+  - Risks: "<risk> | Job: <short quote or phrase> | Missing: <what is not shown in profile>"
+- risk_flags must be actual risks or unknowns. Do not write "no issue" statements.
 - Do NOT provide resume/cover letter/networking advice.
-- location_constraint rules as previously described.
+- Do not invent constraints not present in the job text.
 
-Important policy:
+Policy:
 - Do not assume candidate accepts hourly or contract work unless clearly stated.
-  `.trim()
+`.trim()
 
   const user = `
 CLIENT PROFILE:
@@ -542,7 +683,7 @@ ${jobText}
 
 Make a JobFit decision.
 Return JSON only.
-  `.trim()
+`.trim()
 
   const resp = await client.responses.create({
     model: "gpt-4.1-mini",
@@ -557,9 +698,7 @@ Return JSON only.
   const parsed = extractJsonObject(raw)
 
   if (!parsed) {
-    // If we had a REVIEW floor, keep it, even on parse failure
     const fallbackDecision: Decision = gate.type === "floor_review" ? "Review" : "Review"
-
     return {
       decision: fallbackDecision,
       icon: iconForDecision(fallbackDecision),
@@ -578,12 +717,13 @@ Return JSON only.
   let decision = normalizeDecision(parsed.decision)
   let score = clampScore(parsed.score)
 
-  let bullets = ensureArrayOfStrings(parsed.bullets, 10)
-  let riskFlags = ensureArrayOfStrings(parsed.risk_flags, 12)
+  let bullets = ensureArrayOfStrings(parsed.bullets, 12)
+  let riskFlags = ensureArrayOfStrings(parsed.risk_flags, 16)
 
   const loc = normalizeLocationConstraint(parsed.location_constraint)
   const treatAsConstrained = loc === "constrained"
 
+  // Hygiene
   if (!treatAsConstrained) {
     bullets = stripLocationLanguage(bullets)
     riskFlags = stripLocationLanguage(riskFlags)
@@ -592,19 +732,29 @@ Return JSON only.
   bullets = stripAdviceLanguage(bullets)
   riskFlags = stripAdviceLanguage(riskFlags)
 
+  bullets = stripTimelineLanguage(bullets)
+  riskFlags = stripTimelineLanguage(riskFlags)
+
   riskFlags = stripNonRiskRiskFlags(riskFlags)
 
+  // Evidence enforcement (drops vibe lines)
+  bullets = requireEvidence(bullets)
+  riskFlags = requireEvidence(riskFlags)
+
+  // Remove hallucinated "3+ years" flags when JD does not mention it
   if (containsThreePlusYearsFlag(riskFlags) && !jdMentionsThreePlusYears(jobText)) {
     riskFlags = riskFlags.filter((r) => !containsThreePlusYearsFlag([r]))
   }
 
-  // Deterministic graduation-window eligibility enforcement (kept)
+  // Graduation-window eligibility (kept)
   const gradWindow = extractGradWindow(jobText)
   const candGrad = extractCandidateGrad(profileText)
 
   if (gradWindow) {
     if (!candGrad) {
-      riskFlags.unshift("graduation window unclear (candidate graduation date not found)")
+      riskFlags.unshift(
+        `graduation window unclear | Job: expected graduation window | Missing: candidate graduation date not found`
+      )
     } else {
       const candIdx = ymToIndex(candGrad)
       const startIdx = ymToIndex(gradWindow.start)
@@ -615,11 +765,10 @@ Return JSON only.
       if (outside) {
         bullets = stripTimelineLanguage(bullets)
         riskFlags.unshift(
-          `graduation window mismatch (job requires ${formatYM(gradWindow.start)}–${formatYM(
+          `graduation window mismatch | Job: ${formatYM(gradWindow.start)}–${formatYM(
             gradWindow.end
-          )}; candidate appears to graduate ${formatYM(candGrad)})`
+          )} | Missing: candidate appears to graduate ${formatYM(candGrad)}`
         )
-
         decision = "Pass"
         score = Math.min(score, 59)
       }
@@ -630,63 +779,55 @@ Return JSON only.
   const hasExplicitExclusion = riskFlags.some((r) => r.toLowerCase().includes("explicit exclusion"))
   if (hasExplicitExclusion) decision = "Pass"
 
-  // Score sanity: Review not allowed < 60
+  // Review cannot be below 60
   if (decision === "Review" && score < 60) decision = "Pass"
-
-  // 3+ years safety net: never allow Pass solely due to 3+ years
-  if (
-  decision === "Pass" &&
-  !hasExplicitExclusion &&
-  containsThreePlusYearsFlag(riskFlags) &&
-  !jdMentionsThreePlusYears(jobText)
-) {
-  decision = "Review"
-}
-
 
   // Hard-pass signals
   if (!hasExplicitExclusion && decision !== "Apply" && hasHardPassSignals(riskFlags, bullets)) {
     decision = "Pass"
   }
 
-  // Meaningful-risk enforcement
+  // Meaningful risks
   const meaningfulRiskCount = countMeaningfulRisks(riskFlags)
-
-  // NEW: do not allow Review -> Apply auto-upgrade if a REVIEW floor is active
   const hasReviewFloor = gate.type === "floor_review"
 
+  // Do not allow Apply if risks indicate missing core experience
+  if (decision === "Apply" && hasMissingCoreExperience(riskFlags)) {
+    decision = "Review"
+  }
+
+  // Review -> Apply auto-upgrades only when no floors exist
   if (!hasExplicitExclusion && !hasReviewFloor && decision === "Review" && meaningfulRiskCount <= 1) {
     decision = "Apply"
   }
-
   if (!hasExplicitExclusion && !hasReviewFloor && decision === "Review" && score >= 75 && meaningfulRiskCount <= 2) {
     decision = "Apply"
   }
 
+  // Too many risks means Review
   if (decision !== "Pass" && riskFlags.length >= 5) {
     decision = "Review"
   }
 
-  // NEW: apply the REVIEW floor last, after other logic (unless already Pass)
+  // Apply the REVIEW floor last
   if (gate.type === "floor_review" && decision === "Apply") {
     decision = "Review"
   }
 
-  // Ensure the floor reason is visible to the user
+  // Ensure the floor reason is visible
   if (gate.type === "floor_review") {
     const alreadyMentioned =
-      bullets.some((b) => b.toLowerCase().includes("contract")) ||
-      riskFlags.some((r) => r.toLowerCase().includes("contract"))
+      bullets.some((b) => b.toLowerCase().includes("contract") || b.toLowerCase().includes("media buy")) ||
+      riskFlags.some((r) => r.toLowerCase().includes("contract") || r.toLowerCase().includes("media buy"))
     if (!alreadyMentioned) {
-      // Put it in risks by default, because bullets should stay "why it fits" plus the gate reason can be a risk.
-      riskFlags.unshift(gate.reason)
+      riskFlags.unshift(`${gate.reason} | Job: requirement detected | Missing: confirm fit in profile`)
     }
   }
 
-  // Enforce score bands LAST
+  // Final banding
   score = enforceScoreBand(decision, score)
 
-  // Final trims for UI
+  // Final trims
   bullets = bullets.slice(0, 8)
   riskFlags = riskFlags.slice(0, 6)
 
