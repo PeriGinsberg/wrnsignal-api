@@ -6,7 +6,8 @@ type CorsConfig = {
 }
 
 const DEFAULT_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-const DEFAULT_ALLOW_HEADERS = ["authorization", "content-type"]
+const DEFAULT_ALLOW_HEADERS = ["authorization", "content-type", "x-jobfit-key"]
+
 const DEFAULT_MAX_AGE = 86400
 
 function normalizeOrigin(origin: string) {
