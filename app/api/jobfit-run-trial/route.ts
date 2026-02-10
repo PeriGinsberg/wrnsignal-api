@@ -1,24 +1,7 @@
+// app/api/jobfit-run-trial/route.ts
 import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
-
-const t0 = Date.now()
-
-console.log("[jobfit-run-trial] start", { email })
-
-// after loading user
-console.log("[jobfit-run-trial] loaded user", { ms: Date.now() - t0 })
-
-// after loading profile
-console.log("[jobfit-run-trial] loaded profile", { ms: Date.now() - t0 })
-
-// right before runJobFit
-console.log("[jobfit-run-trial] calling runJobFit", { ms: Date.now() - t0 })
-
-const result = await runJobFit({ profileText, jobText: job_description })
-
-console.log("[jobfit-run-trial] runJobFit returned", { ms: Date.now() - t0 })
-
 
 export const runtime = "nodejs"
 
@@ -59,21 +42,37 @@ function buildFallbackProfileText(args: {
     .trim()
 }
 
+function msSince(t0: number) {
+  return Date.now() - t0
+}
+
 export async function POST(req: Request) {
+  const t0 = Date.now()
+
   try {
+    console.log("[jobfit-run-trial] start", { ms: msSince(t0) })
+
     // Optional protection
     const expectedKey = process.env.JOBFIT_INGEST_KEY
     if (expectedKey) {
       const got = req.headers.get("x-jobfit-key")
       if (got !== expectedKey) {
+        console.warn("[jobfit-run-trial] unauthorized", { ms: msSince(t0) })
         return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
       }
     }
 
+    // Parse request body first (do not reference fields before this)
     const body = await req.json()
 
     const email = String(body.email ?? "").toLowerCase().trim()
     const job_description = String(body.job_description ?? "").trim()
+
+    console.log("[jobfit-run-trial] parsed request", {
+      email_present: Boolean(email),
+      job_len: job_description.length,
+      ms: msSince(t0),
+    })
 
     if (!email) {
       return withCorsJson(req, { ok: false, error: "missing_email" }, 400)
@@ -85,6 +84,7 @@ export async function POST(req: Request) {
     const supabaseUrl = process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!supabaseUrl || !serviceRoleKey) {
+      console.error("[jobfit-run-trial] missing supabase env", { ms: msSince(t0) })
       return withCorsJson(
         req,
         { ok: false, error: "server_misconfigured", detail: "Missing Supabase env vars" },
@@ -101,7 +101,10 @@ export async function POST(req: Request) {
       .eq("email", email)
       .maybeSingle()
 
+    console.log("[jobfit-run-trial] loaded user", { found: Boolean(user), ms: msSince(t0) })
+
     if (userErr) {
+      console.error("[jobfit-run-trial] user query error", { error: userErr.message, ms: msSince(t0) })
       return withCorsJson(req, { ok: false, error: userErr.message }, 500)
     }
     if (!user) {
@@ -112,14 +115,16 @@ export async function POST(req: Request) {
     }
 
     // 2) Load profile data for evaluator context
-    // Prefer profile_text, but keep a fallback while migrating.
     const { data: profile, error: profErr } = await supabase
       .from("jobfit_profiles")
       .select("name,job_type,profile_text,target_roles,target_locations,timeline,resume_text")
       .eq("user_id", user.id)
       .maybeSingle()
 
+    console.log("[jobfit-run-trial] loaded profile", { found: Boolean(profile), ms: msSince(t0) })
+
     if (profErr) {
+      console.error("[jobfit-run-trial] profile query error", { error: profErr.message, ms: msSince(t0) })
       return withCorsJson(req, { ok: false, error: profErr.message }, 500)
     }
     if (!profile) {
@@ -139,9 +144,20 @@ export async function POST(req: Request) {
       })
 
     // 3) Run Job Fit (shared evaluator)
+    console.log("[jobfit-run-trial] calling runJobFit", {
+      profile_len: profileText.length,
+      job_len: job_description.length,
+      ms: msSince(t0),
+    })
+
     const result = await runJobFit({
       profileText,
       jobText: job_description,
+    })
+
+    console.log("[jobfit-run-trial] runJobFit returned", {
+      decision: result?.decision,
+      ms: msSince(t0),
     })
 
     // 4) Decrement credits AFTER successful evaluation
@@ -151,15 +167,16 @@ export async function POST(req: Request) {
       .update({ credits_remaining: newCredits })
       .eq("id", user.id)
 
+    console.log("[jobfit-run-trial] credits updated", { newCredits, ms: msSince(t0) })
+
     if (creditErr) {
+      console.error("[jobfit-run-trial] credit update error", { error: creditErr.message, ms: msSince(t0) })
       return withCorsJson(req, { ok: false, error: creditErr.message }, 500)
     }
 
     return withCorsJson(req, { ok: true, credits_remaining: newCredits, result }, 200)
   } catch (err: any) {
+    console.error("[jobfit-run-trial] unhandled", { error: err?.message || String(err), ms: msSince(t0) })
     return withCorsJson(req, { ok: false, error: err?.message || String(err) }, 500)
   }
 }
-
-
-
