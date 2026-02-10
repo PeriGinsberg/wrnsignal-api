@@ -265,7 +265,30 @@ function stripAdviceLanguage(items: string[]) {
   })
 }
 
+/* ----------------------- 3+ years contamination ----------------------- */
 
+function containsThreePlusYearsFlag(riskFlags: string[]) {
+  return riskFlags.some((r) => {
+    const s = r.toLowerCase()
+    return (
+      s.includes("3+ years") ||
+      s.includes("3 years") ||
+      s.includes("three years") ||
+      s.includes("minimum 3 years")
+    )
+  })
+}
+
+function jdMentionsThreePlusYears(jobText: string) {
+  const t = (jobText || "").toLowerCase()
+  return (
+    t.includes("3+ years") ||
+    t.includes("three years") ||
+    t.includes("minimum 3 years") ||
+    /\b3\+\s*year/.test(t) ||
+    /\b3\s*years?\b/.test(t)
+  )
+}
 
 /* ----------------------- location constraint ----------------------- */
 
@@ -611,9 +634,15 @@ Return JSON only.
   if (decision === "Review" && score < 60) decision = "Pass"
 
   // 3+ years safety net: never allow Pass solely due to 3+ years
-  if (decision === "Pass" && !hasExplicitExclusion && containsThreePlusYearsFlag(riskFlags)) {
-    decision = "Review"
-  }
+  if (
+  decision === "Pass" &&
+  !hasExplicitExclusion &&
+  containsThreePlusYearsFlag(riskFlags) &&
+  !jdMentionsThreePlusYears(jobText)
+) {
+  decision = "Review"
+}
+
 
   // Hard-pass signals
   if (!hasExplicitExclusion && decision !== "Apply" && hasHardPassSignals(riskFlags, bullets)) {
