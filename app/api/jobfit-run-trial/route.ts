@@ -2,6 +2,24 @@ import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
+const t0 = Date.now()
+
+console.log("[jobfit-run-trial] start", { email })
+
+// after loading user
+console.log("[jobfit-run-trial] loaded user", { ms: Date.now() - t0 })
+
+// after loading profile
+console.log("[jobfit-run-trial] loaded profile", { ms: Date.now() - t0 })
+
+// right before runJobFit
+console.log("[jobfit-run-trial] calling runJobFit", { ms: Date.now() - t0 })
+
+const result = await runJobFit({ profileText, jobText: job_description })
+
+console.log("[jobfit-run-trial] runJobFit returned", { ms: Date.now() - t0 })
+
+
 export const runtime = "nodejs"
 
 export async function OPTIONS(req: Request) {
