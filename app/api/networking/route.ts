@@ -1,10 +1,33 @@
+// app/api/networking/route.ts
+import crypto from "crypto"
+import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import OpenAI from "openai"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+const MISSING = "__MISSING__"
+const NETWORKING_PROMPT_VERSION = "networking_v1_2026_02_10"
+const MODEL_ID = "current"
+
+// Supabase (service role)
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function requireEnv(name: string, v?: string) {
+  if (!v) throw new Error(`Missing server env: ${name}`)
+  return v
+}
+
+const supabaseAdmin = createClient(
+  requireEnv("SUPABASE_URL", SUPABASE_URL),
+  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
 
 function safeJsonParse(raw: string) {
   try {
@@ -31,6 +54,42 @@ function extractOutputText(resp: any): string {
     }
   }
   return ""
+}
+
+/**
+ * Normalize values for deterministic fingerprinting
+ */
+function normalize(value: any): any {
+  if (typeof value === "string") {
+    const cleaned = value.trim()
+    if (cleaned === "") return MISSING
+    return cleaned.toLowerCase().replace(/\s+/g, " ")
+  }
+
+  if (Array.isArray(value)) return value.map(normalize).sort()
+
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc: any, key) => {
+        const v = (value as any)[key]
+        if (v !== null && v !== undefined) acc[key] = normalize(v)
+        return acc
+      }, {})
+  }
+
+  return value
+}
+
+function buildNetworkingFingerprint(payload: any) {
+  const normalized = normalize(payload)
+  const canonical = JSON.stringify(normalized)
+
+  const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
+  const fingerprint_code =
+    "NW-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
+
+  return { fingerprint_hash, fingerprint_code }
 }
 
 /**
@@ -186,13 +245,50 @@ export async function OPTIONS(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { profileText } = await getAuthedProfileText(req)
+    const { profileId, profileText } = await getAuthedProfileText(req)
     const profile = profileText
 
     const body = await req.json()
     const job = String(body?.job || "").trim()
 
     if (!job) return withCorsJson(req, { error: "Missing job" }, 400)
+
+    // ---------- Fingerprint pins ----------
+    const fingerprintPayload = {
+      job: { text: job || MISSING },
+      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      system: {
+        networking_prompt_version: NETWORKING_PROMPT_VERSION,
+        model_id: MODEL_ID,
+      },
+    }
+
+    const { fingerprint_hash, fingerprint_code } = buildNetworkingFingerprint(fingerprintPayload)
+
+    // 1) Lookup existing run
+    const { data: existingRun, error: findErr } = await supabaseAdmin
+      .from("networking_runs")
+      .select("result_json, fingerprint_code, fingerprint_hash, created_at")
+      .eq("client_profile_id", profileId)
+      .eq("fingerprint_hash", fingerprint_hash)
+      .maybeSingle()
+
+    if (findErr) {
+      console.warn("networking_runs lookup failed:", findErr.message)
+    }
+
+    if (existingRun?.result_json) {
+      return withCorsJson(
+        req,
+        {
+          ...(existingRun.result_json as any),
+          fingerprint_code,
+          fingerprint_hash,
+          reused: true,
+        },
+        200
+      )
+    }
 
     const system = `
 You are WRNSignal (Networking module). You generate a networking PLAN for ONE job.
@@ -306,7 +402,29 @@ Generate the networking plan JSON now. Exactly 3 actions in the ladder order.
 
     const plan = normalizePlan(parsed)
 
-    return withCorsJson(req, plan, 200)
+    // 2) Cache the result
+    const { error: insertErr } = await supabaseAdmin.from("networking_runs").insert({
+      client_profile_id: profileId,
+      job_url: null,
+      fingerprint_hash,
+      fingerprint_code,
+      result_json: plan,
+    })
+
+    if (insertErr) {
+      console.warn("networking_runs insert failed:", insertErr.message)
+    }
+
+    return withCorsJson(
+      req,
+      {
+        ...plan,
+        fingerprint_code,
+        fingerprint_hash,
+        reused: false,
+      },
+      200
+    )
   } catch (err: any) {
     const detail = err?.message || String(err)
 
