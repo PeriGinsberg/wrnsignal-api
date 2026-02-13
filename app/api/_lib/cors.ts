@@ -37,8 +37,6 @@ function isAllowedOrigin(origin: string, allowOrigins?: string[]) {
   return false
 }
 
-}
-
 function buildCorsHeaders(origin: string | null, cfg?: CorsConfig) {
   const allowMethods = (cfg?.allowMethods?.length ? cfg.allowMethods : DEFAULT_ALLOW_METHODS).join(", ")
   const allowHeaders = (cfg?.allowHeaders?.length ? cfg.allowHeaders : DEFAULT_ALLOW_HEADERS).join(", ")
