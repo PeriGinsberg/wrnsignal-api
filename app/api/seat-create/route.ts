@@ -11,6 +11,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const purchaser_email = String(body?.purchaser_email ?? "").trim().toLowerCase()
+
     if (!purchaser_email) {
       return withCorsJson(req, { ok: false, error: "missing_purchaser_email" }, 400)
     }
@@ -27,8 +28,7 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    // TODO: your seat creation logic here
-    // For now return a stub so we can prove CORS is fixed:
+    // TEMP: return stub response to prove CORS works first
     return withCorsJson(req, { ok: true, purchaser_email }, 200)
   } catch (err: any) {
     return withCorsJson(req, { ok: false, error: err?.message || String(err) }, 500)
