@@ -22,11 +22,21 @@ function normalizeOrigin(origin: string) {
 
 function isAllowedOrigin(origin: string, allowOrigins?: string[]) {
   if (!origin) return false
-  if (!allowOrigins || allowOrigins.length === 0) {
-    return origin.startsWith("https://") || origin.startsWith("http://localhost")
-  }
-  const o = normalizeOrigin(origin)
-  return allowOrigins.map(normalizeOrigin).includes(o)
+
+  const o = origin.trim().toLowerCase()
+
+  // Allow production domain
+  if (o === "https://wrnsignal.workforcereadynow.com") return true
+
+  // Allow Framer preview domains
+  if (o.endsWith(".framer.app")) return true
+
+  // Allow localhost
+  if (o.startsWith("http://localhost")) return true
+
+  return false
+}
+
 }
 
 function buildCorsHeaders(origin: string | null, cfg?: CorsConfig) {
