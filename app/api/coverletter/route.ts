@@ -1,10 +1,76 @@
+// app/api/coverletter/route.ts
+import crypto from "crypto"
 import OpenAI from "openai"
+import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+const MISSING = "__MISSING__"
+const COVERLETTER_PROMPT_VERSION = "coverletter_v1_2026_02_14"
+const MODEL_ID = "current"
+
+// Supabase (server)
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function requireEnv(name: string, v?: string) {
+  if (!v) throw new Error(`Missing server env: ${name}`)
+  return v
+}
+
+const supabaseAdmin = createClient(
+  requireEnv("SUPABASE_URL", SUPABASE_URL),
+  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
+
+export async function OPTIONS(req: Request) {
+  return corsOptionsResponse(req.headers.get("origin"))
+}
+
+/**
+ * Normalize values for deterministic fingerprinting
+ */
+function normalize(value: any): any {
+  if (typeof value === "string") {
+    const cleaned = value.trim()
+    if (cleaned === "") return MISSING
+    return cleaned.toLowerCase().replace(/\s+/g, " ")
+  }
+
+  if (Array.isArray(value)) return value.map(normalize).sort()
+
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc: any, key) => {
+        const v = value[key]
+        if (v !== null && v !== undefined) acc[key] = normalize(v)
+        return acc
+      }, {})
+  }
+
+  return value
+}
+
+function buildCoverletterFingerprint(payload: any) {
+  const canonical = JSON.stringify(normalize(payload))
+
+  const fingerprint_hash = crypto
+    .createHash("sha256")
+    .update(canonical)
+    .digest("hex")
+
+  const fingerprint_code =
+    "CL-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
+
+  return { fingerprint_hash, fingerprint_code }
+}
 
 function safeJsonParse(raw: string) {
   try {
@@ -18,24 +84,57 @@ function isNonEmptyString(x: any): x is string {
   return typeof x === "string" && x.trim().length > 0
 }
 
-export async function OPTIONS(req: Request) {
-  return corsOptionsResponse(req.headers.get("origin"))
-}
-
 export async function POST(req: Request) {
   try {
     // Auth + stored profile (server-side)
-    const { profileText } = await getAuthedProfileText(req)
-    const profile = profileText
+    const { profileId, profileText } = await getAuthedProfileText(req)
 
-    // Client sends only: { job }
     const body = await req.json()
-    const job = String(body?.job || "").trim()
+    const jobText = String(body?.job || "").trim()
 
-    if (!job) {
+    if (!jobText) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
+    // Fingerprint pins (job + profile + system pins)
+    const fingerprintPayload = {
+      job: { text: jobText || MISSING },
+      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      system: {
+        coverletter_prompt_version: COVERLETTER_PROMPT_VERSION,
+        model_id: MODEL_ID,
+      },
+    }
+
+    const { fingerprint_hash, fingerprint_code } =
+      buildCoverletterFingerprint(fingerprintPayload)
+
+    // 1) Cache lookup
+    const { data: existingRun, error: findErr } = await supabaseAdmin
+      .from("coverletter_runs")
+      .select("result_json, fingerprint_code, fingerprint_hash, created_at")
+      .eq("client_profile_id", profileId)
+      .eq("fingerprint_hash", fingerprint_hash)
+      .maybeSingle()
+
+    if (findErr) {
+      console.warn("coverletter_runs lookup failed:", findErr.message)
+    }
+
+    if (existingRun?.result_json) {
+      return withCorsJson(
+        req,
+        {
+          ...(existingRun.result_json as any),
+          fingerprint_code,
+          fingerprint_hash,
+          reused: true,
+        },
+        200
+      )
+    }
+
+    // 2) Generate
     const system = `
 You are WRNSignal by Workforce Ready Now (Cover Letter module).
 
@@ -66,10 +165,10 @@ Return VALID JSON ONLY:
 
     const user = `
 RESUME (verbatim):
-${profile}
+${profileText}
 
 JOB DESCRIPTION (verbatim):
-${job}
+${jobText}
 
 TASK:
 Write the cover letter following the system rules.
@@ -88,29 +187,50 @@ Return JSON only. No markdown. No commentary.
     const raw = (resp as any).output_text || ""
     const parsed = safeJsonParse(raw)
 
-    // If the model fails to return JSON, fall back to treating raw as the letter
     const letter =
-      parsed && typeof parsed === "object" && isNonEmptyString((parsed as any).letter)
+      parsed &&
+      typeof parsed === "object" &&
+      isNonEmptyString((parsed as any).letter)
         ? String((parsed as any).letter).trim()
         : String(raw || "").trim()
 
-    return withCorsJson(req, { letter }, 200)
+    const finalResult = { letter }
+
+    // 3) Store (best effort)
+    const { error: insertErr } = await supabaseAdmin.from("coverletter_runs").insert({
+      client_profile_id: profileId,
+      job_url: null,
+      fingerprint_hash,
+      fingerprint_code,
+      result_json: finalResult,
+    })
+
+    if (insertErr) {
+      console.warn("coverletter_runs insert failed:", insertErr.message)
+    }
+
+    return withCorsJson(
+      req,
+      {
+        ...finalResult,
+        fingerprint_code,
+        fingerprint_hash,
+        reused: false,
+      },
+      200
+    )
   } catch (err: any) {
     const detail = err?.message || String(err)
-
     const lower = String(detail).toLowerCase()
-    const status =
-      lower.includes("unauthorized")
-        ? 401
-        : lower.includes("profile not found")
-          ? 404
-          : lower.includes("access disabled")
-            ? 403
-            : 500
+
+    const status = lower.includes("unauthorized")
+      ? 401
+      : lower.includes("profile not found")
+        ? 404
+        : lower.includes("access disabled")
+          ? 403
+          : 500
 
     return withCorsJson(req, { error: "Coverletter failed", detail }, status)
   }
 }
-
-
-
