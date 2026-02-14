@@ -13,26 +13,34 @@ const DEFAULT_ALLOW_HEADERS = [
   "accept",
 ]
 
-
 const DEFAULT_MAX_AGE = 86400
-
-function normalizeOrigin(origin: string) {
-  return origin.trim().toLowerCase()
-}
 
 function isAllowedOrigin(origin: string, allowOrigins?: string[]) {
   if (!origin) return false
 
   const o = origin.trim().toLowerCase()
 
-  // Allow production domain
-  if (o === "https://wrnsignal.workforcereadynow.com") return true
+  // Explicit allow list support (optional)
+  if (allowOrigins?.length) {
+    const normalized = allowOrigins.map((x) => x.trim().toLowerCase())
+    if (normalized.includes(o)) return true
+  }
 
-  // Allow Framer preview domains
+  // Production domains
+  if (o === "https://wrnsignal.workforcereadynow.com") return true
+  if (o === "https://www.workforcereadynow.com") return true
+  if (o === "https://workforcereadynow.com") return true
+
+  // Framer hosted sites
   if (o.endsWith(".framer.app")) return true
 
-  // Allow localhost
+  // Framer Canvas preview (this is your current failing origin)
+  // Example: https://project-xxxxxxxxxxxxxxxx.framercanvas.com
+  if (o.endsWith(".framercanvas.com")) return true
+
+  // Local dev
   if (o.startsWith("http://localhost")) return true
+  if (o.startsWith("http://127.0.0.1")) return true
 
   return false
 }
@@ -69,4 +77,3 @@ export function withCorsJson(req: Request, data: any, status = 200, cfg?: CorsCo
   headers.set("Content-Type", "application/json; charset=utf-8")
   return new Response(JSON.stringify(data), { status, headers })
 }
-
