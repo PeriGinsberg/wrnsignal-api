@@ -79,16 +79,33 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    // 1) Upsert user by email
-    const { data: user, error: userErr } = await supabase
-      .from("jobfit_users")
-      .upsert({ email }, { onConflict: "email" })
-      .select("id,email,credits_remaining")
-      .single()
+   // 1) Find existing user
+const { data: existing, error: findErr } = await supabase
+  .from("jobfit_users")
+  .select("id,email,credits_remaining")
+  .eq("email", email)
+  .maybeSingle()
 
-    if (userErr) {
-      return withCorsJson(req, { ok: false, error: userErr.message }, 500)
-    }
+if (findErr) {
+  return withCorsJson(req, { ok: false, error: findErr.message }, 500)
+}
+
+let user = existing
+
+// 2) If none, create with 3 credits (first-time only)
+if (!user) {
+  const { data: created, error: createErr } = await supabase
+    .from("jobfit_users")
+    .insert({ email, credits_remaining: 3 })
+    .select("id,email,credits_remaining")
+    .single()
+
+  if (createErr) {
+    return withCorsJson(req, { ok: false, error: createErr.message }, 500)
+  }
+
+  user = created
+}
 
     // 2) Build combined profile text for model quality
     const profile_text = buildProfileText({
