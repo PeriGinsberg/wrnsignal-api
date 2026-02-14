@@ -2,7 +2,6 @@ import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
-import { corsOptionsResponse } from "../_lib/cors"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -26,26 +25,72 @@ const supabaseAdmin = createClient(
 )
 
 /**
- * CORS preflight
+ * CORS
+ *
+ * Framer preview origins look like:
+ *   https://project-<random>.framercanvas.com
+ *
+ * Your DEV site looks like:
+ *   https://genuine-times-909123.framer.app
+ *
+ * Production might be:
+ *   https://www.workforcereadynow.com
+ *
+ * Add any other domains you use here.
  */
-export async function OPTIONS(req: Request) {
-  return corsOptionsResponse(req.headers.get("origin"))
+const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
+  /^https:\/\/project-[a-z0-9]+\.framercanvas\.com$/i,
+  /^https:\/\/[a-z0-9-]+\.framer\.app$/i,
+  /^https:\/\/www\.workforcereadynow\.com$/i,
+  /^https:\/\/workforcereadynow\.com$/i,
+]
+
+function isAllowedOrigin(origin: string) {
+  if (!origin) return false
+  return ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin))
+}
+
+function corsHeaders(origin: string | null) {
+  const h = new Headers()
+
+  // Always vary so caches don’t serve the wrong allow-origin
+  h.set("Vary", "Origin")
+
+  // Only echo back allowed origins
+  if (origin && isAllowedOrigin(origin)) {
+    h.set("Access-Control-Allow-Origin", origin)
+  }
+
+  h.set("Access-Control-Allow-Methods", "POST, OPTIONS")
+  h.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+  // Optional: helps reduce preflight spam
+  h.set("Access-Control-Max-Age", "86400")
+
+  return h
+}
+
+function json(req: Request, body: any, status = 200) {
+  const origin = req.headers.get("origin")
+  const headers = corsHeaders(origin)
+  headers.set("Content-Type", "application/json")
+  return new Response(JSON.stringify(body), { status, headers })
+}
+
+function preflight(req: Request) {
+  const origin = req.headers.get("origin")
+  const headers = corsHeaders(origin)
+
+  // If the origin is missing (server-to-server) or not allowed, return 204 anyway
+  // but without allow-origin. Browser will block if it’s not allowed, which is what we want.
+  return new Response(null, { status: 204, headers })
 }
 
 /**
- * Basic CORS JSON responder
+ * CORS preflight
  */
-function corsJson(req: Request, body: any, status = 200) {
-  const origin = req.headers.get("origin") || "*"
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  })
+export async function OPTIONS(req: Request) {
+  return preflight(req)
 }
 
 /**
@@ -99,16 +144,26 @@ function buildJobFitFingerprint(payload: any) {
  * Run JobFit for an authenticated user, with caching by fingerprint.
  */
 export async function POST(req: Request) {
+  // Hard fail early if browser origin is present but not allowed
+  // This prevents accidental open CORS in production.
+  const origin = req.headers.get("origin")
+  if (origin && !isAllowedOrigin(origin)) {
+    return json(req, { error: "CORS blocked", detail: "Origin not allowed" }, 403)
+  }
+
   try {
     // Auth + stored profile (server-side, user-bound)
     const { profileId, profileText } = await getAuthedProfileText(req)
 
-    const body = await req.json()
-    const jobText = String(body?.job || "").trim()
-
-    if (!jobText) {
-      return corsJson(req, { error: "Missing job" }, 400)
+    let body: any = null
+    try {
+      body = await req.json()
+    } catch {
+      return json(req, { error: "Invalid JSON body" }, 400)
     }
+
+    const jobText = String(body?.job || "").trim()
+    if (!jobText) return json(req, { error: "Missing job" }, 400)
 
     // Fingerprint inputs used for evaluation (job + profile + system pins)
     const fingerprintPayload = {
@@ -132,13 +187,12 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (findErr) {
-      // If lookup fails, we can still proceed with a fresh run (don’t block user).
-      // Return will be uncached.
+      // Lookup failing should not block the user
       console.warn("jobfit_runs lookup failed:", findErr.message)
     }
 
     if (existingRun?.result_json) {
-      return corsJson(req, {
+      return json(req, {
         ...(existingRun.result_json as any),
         fingerprint_code,
         fingerprint_hash,
@@ -147,10 +201,7 @@ export async function POST(req: Request) {
     }
 
     // 2) Run JobFit (GPT)
-    const result = await runJobFit({
-      profileText,
-      jobText,
-    })
+    const result = await runJobFit({ profileText, jobText })
 
     // 3) Store result (best effort)
     const toStore = {
@@ -158,7 +209,9 @@ export async function POST(req: Request) {
       job_url: null,
       fingerprint_hash,
       fingerprint_code,
-      verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
+      verdict: String(
+        (result as any)?.decision ?? (result as any)?.verdict ?? "unknown"
+      ),
       result_json: result,
     }
 
@@ -170,7 +223,7 @@ export async function POST(req: Request) {
       console.warn("jobfit_runs insert failed:", insertErr.message)
     }
 
-    return corsJson(req, {
+    return json(req, {
       ...result,
       fingerprint_code,
       fingerprint_hash,
@@ -186,6 +239,6 @@ export async function POST(req: Request) {
       lower.includes("access disabled") ? 403 :
       500
 
-    return corsJson(req, { error: "JobFit failed", detail }, status)
+    return json(req, { error: "JobFit failed", detail }, status)
   }
 }
