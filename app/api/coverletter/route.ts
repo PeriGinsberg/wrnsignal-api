@@ -14,7 +14,7 @@ const MISSING = "__MISSING__"
 const COVERLETTER_PROMPT_VERSION = "coverletter_v1_2026_02_14"
 const MODEL_ID = "current"
 
-// Supabase (server)
+// Supabase (service role)
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -61,11 +61,7 @@ function normalize(value: any): any {
 function buildCoverletterFingerprint(payload: any) {
   const canonical = JSON.stringify(normalize(payload))
 
-  const fingerprint_hash = crypto
-    .createHash("sha256")
-    .update(canonical)
-    .digest("hex")
-
+  const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
   const fingerprint_code =
     "CL-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
 
@@ -84,6 +80,25 @@ function isNonEmptyString(x: any): x is string {
   return typeof x === "string" && x.trim().length > 0
 }
 
+function extractOutputText(resp: any): string {
+  if (typeof resp?.output_text === "string" && resp.output_text.trim()) return resp.output_text
+
+  const output = resp?.output
+  if (Array.isArray(output)) {
+    for (const item of output) {
+      const content = item?.content
+      if (Array.isArray(content)) {
+        for (const c of content) {
+          if (c?.type === "output_text" && typeof c?.text === "string" && c.text.trim()) {
+            return c.text
+          }
+        }
+      }
+    }
+  }
+  return ""
+}
+
 export async function POST(req: Request) {
   try {
     // Auth + stored profile (server-side)
@@ -91,12 +106,9 @@ export async function POST(req: Request) {
 
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
+    if (!jobText) return withCorsJson(req, { error: "Missing job" }, 400)
 
-    if (!jobText) {
-      return withCorsJson(req, { error: "Missing job" }, 400)
-    }
-
-    // Fingerprint pins (job + profile + system pins)
+    // Fingerprint pins
     const fingerprintPayload = {
       job: { text: jobText || MISSING },
       profile: { id: profileId || MISSING, text: profileText || MISSING },
@@ -106,20 +118,17 @@ export async function POST(req: Request) {
       },
     }
 
-    const { fingerprint_hash, fingerprint_code } =
-      buildCoverletterFingerprint(fingerprintPayload)
+    const { fingerprint_hash, fingerprint_code } = buildCoverletterFingerprint(fingerprintPayload)
 
     // 1) Cache lookup
     const { data: existingRun, error: findErr } = await supabaseAdmin
       .from("coverletter_runs")
-      .select("result_json, fingerprint_code, fingerprint_hash, created_at")
+      .select("result_json, created_at")
       .eq("client_profile_id", profileId)
       .eq("fingerprint_hash", fingerprint_hash)
       .maybeSingle()
 
-    if (findErr) {
-      console.warn("coverletter_runs lookup failed:", findErr.message)
-    }
+    if (findErr) console.warn("coverletter_runs lookup failed:", findErr.message)
 
     if (existingRun?.result_json) {
       return withCorsJson(
@@ -161,7 +170,7 @@ STRUCTURE:
 OUTPUT:
 Return VALID JSON ONLY:
 { "letter": string }
-    `.trim()
+`.trim()
 
     const user = `
 RESUME (verbatim):
@@ -173,7 +182,7 @@ ${jobText}
 TASK:
 Write the cover letter following the system rules.
 Return JSON only. No markdown. No commentary.
-    `.trim()
+`.trim()
 
     const resp = await client.responses.create({
       model: "gpt-4.1-mini",
@@ -183,31 +192,31 @@ Return JSON only. No markdown. No commentary.
       ],
     })
 
-    // @ts-ignore
-    const raw = (resp as any).output_text || ""
+    const raw = extractOutputText(resp)
     const parsed = safeJsonParse(raw)
 
     const letter =
-      parsed &&
-      typeof parsed === "object" &&
-      isNonEmptyString((parsed as any).letter)
+      parsed && typeof parsed === "object" && isNonEmptyString((parsed as any).letter)
         ? String((parsed as any).letter).trim()
         : String(raw || "").trim()
 
     const finalResult = { letter }
 
-    // 3) Store (best effort)
-    const { error: insertErr } = await supabaseAdmin.from("coverletter_runs").insert({
-      client_profile_id: profileId,
-      job_url: null,
-      fingerprint_hash,
-      fingerprint_code,
-      result_json: finalResult,
-    })
+    // 3) Store (best effort) — use upsert to avoid unique constraint race/double-click issues
+    const { error: upsertErr } = await supabaseAdmin
+      .from("coverletter_runs")
+      .upsert(
+        {
+          client_profile_id: profileId,
+          job_url: null,
+          fingerprint_hash,
+          fingerprint_code,
+          result_json: finalResult,
+        },
+        { onConflict: "client_profile_id,fingerprint_hash" }
+      )
 
-    if (insertErr) {
-      console.warn("coverletter_runs insert failed:", insertErr.message)
-    }
+    if (upsertErr) console.warn("coverletter_runs upsert failed:", upsertErr.message)
 
     return withCorsJson(
       req,
