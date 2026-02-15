@@ -6,8 +6,11 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Redirect after user clicks the magic link
+// DEV redirect (where the link should land after auth)
 const INTAKE_REDIRECT_URL = "https://genuine-times-909123.framer.app/signal/intake"
+
+// Helps you confirm staging is running the new route
+const VERSION = "dev-return-link-v1"
 
 function requireEnv(name: string, v?: string) {
   if (!v) throw new Error(`Missing server env: ${name}`)
@@ -51,7 +54,7 @@ export async function POST(req: Request) {
     if (!claim_token || !seat_email) {
       return withCorsJson(
         req,
-        { ok: false, error: "missing_required_fields", required: ["claim_token", "seat_email"] },
+        { ok: false, error: "missing_required_fields", required: ["claim_token", "seat_email"], version: VERSION },
         400
       )
     }
@@ -64,25 +67,39 @@ export async function POST(req: Request) {
       .select("id, seat_email, intended_user_name, used_at, expires_at, status")
       .eq("claim_token_hash", claim_token_hash)
       .eq("seat_email", seat_email)
-      .is("used_at", null)
-      .gt("expires_at", new Date().toISOString())
       .single()
 
     if (seatErr || !seat) {
-      return withCorsJson(req, { ok: true, sent: false, reason: "invalid_or_expired" }, 200)
+      return withCorsJson(req, { ok: true, sent: false, reason: "invalid_or_expired", version: VERSION }, 200)
     }
 
-    // Send magic link
-    const { error: linkErr } = await supabaseAdmin.auth.signInWithOtp({
+    if (seat.used_at) {
+      return withCorsJson(req, { ok: true, sent: false, reason: "already_used", version: VERSION }, 200)
+    }
+
+    if (seat.expires_at && new Date(seat.expires_at) < new Date()) {
+      return withCorsJson(req, { ok: true, sent: false, reason: "expired", version: VERSION }, 200)
+    }
+
+    // ✅ DEV: generate magic link (NO EMAIL)
+    const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
       email: seat_email,
-      options: { emailRedirectTo: INTAKE_REDIRECT_URL },
+      options: {
+        redirectTo: INTAKE_REDIRECT_URL,
+      },
     })
 
     if (linkErr) {
-      return withCorsJson(req, { ok: false, error: linkErr.message }, 400)
+      return withCorsJson(req, { ok: false, error: linkErr.message, version: VERSION }, 400)
     }
 
-    // Optional: update status. If your DB constraint doesn't allow this value, ignore the error.
+    const magic_link = (linkData as any)?.properties?.action_link
+    if (!magic_link) {
+      return withCorsJson(req, { ok: false, error: "missing_action_link", version: VERSION }, 500)
+    }
+
+    // Optional: update status. Ignore if DB constraint rejects it.
     try {
       await supabaseAdmin.from("signal_seats").update({ status: "sent" }).eq("id", seat.id)
     } catch {
@@ -91,10 +108,16 @@ export async function POST(req: Request) {
 
     return withCorsJson(
       req,
-      { ok: true, sent: true, intended_user_name: seat.intended_user_name },
+      {
+        ok: true,
+        sent: true,
+        intended_user_name: seat.intended_user_name,
+        magic_link,
+        version: VERSION,
+      },
       200
     )
   } catch (err: any) {
-    return withCorsJson(req, { ok: false, error: err?.message || "server_error" }, 500)
+    return withCorsJson(req, { ok: false, error: err?.message || "server_error", version: VERSION }, 500)
   }
 }
