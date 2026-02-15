@@ -36,34 +36,108 @@ function clampText(v: any, max = 20000) {
   return t.length > max ? t.slice(0, max) : t
 }
 
-/**
- * We keep the API payload simple and tolerant:
- * - profile_text is required
- * - resume_text is optional (can be same as profile_text)
- * - other fields are optional
- */
+function getBearer(req: Request) {
+  const h = req.headers.get("authorization") || ""
+  const m = h.match(/^Bearer\s+(.+)$/i)
+  return m ? m[1].trim() : ""
+}
+
+async function resolveProfileIdentity(req: Request) {
+  // Locked rule: call auth helper first
+  let authed: any = null
+  try {
+    authed = await getAuthedProfileText(req)
+  } catch {
+    // we will fall back below
+  }
+
+  // Try many plausible shapes
+  const profile =
+    authed?.profile ||
+    authed?.client_profile ||
+    authed?.clientProfile ||
+    authed?.client_profiles ||
+    authed?.clientProfiles ||
+    null
+
+  let client_profile_id =
+    profile?.id ||
+    authed?.client_profile_id ||
+    authed?.clientProfileId ||
+    authed?.profile_id ||
+    null
+
+  let user_id =
+    profile?.user_id ||
+    authed?.user_id ||
+    authed?.userId ||
+    authed?.user?.id ||
+    authed?.user?.user?.id ||
+    null
+
+  let email =
+    profile?.email ||
+    authed?.email ||
+    authed?.user?.email ||
+    authed?.user?.user?.email ||
+    null
+
+  // If we still don't have identity, decode token via Supabase
+  if (!user_id || !email) {
+    const token = getBearer(req)
+    if (token) {
+      const { data, error } = await supabaseAdmin.auth.getUser(token)
+      if (!error && data?.user) {
+        user_id = user_id || data.user.id
+        email = email || data.user.email
+      }
+    }
+  }
+
+  // If we have user_id but not profile id, look up client_profiles
+  if (user_id && !client_profile_id) {
+    const { data, error } = await supabaseAdmin
+      .from("client_profiles")
+      .select("id, user_id, email")
+      .eq("user_id", user_id)
+      .single()
+
+    if (!error && data?.id) {
+      client_profile_id = data.id
+      email = email || data.email
+    }
+  }
+
+  // As a last resort, look up by email (should still be unique)
+  if (email && !client_profile_id) {
+    const { data, error } = await supabaseAdmin
+      .from("client_profiles")
+      .select("id, user_id, email")
+      .eq("email", email)
+      .single()
+
+    if (!error && data?.id) {
+      client_profile_id = data.id
+      user_id = user_id || data.user_id
+    }
+  }
+
+  return { client_profile_id, user_id, email }
+}
+
+// ---------- Route ----------
 export async function POST(req: Request) {
   try {
-    // Auth + ownership is enforced here (locked rule)
-    const authed: any = await getAuthedProfileText(req)
-
-    // The auth helper’s exact return shape can vary; pull profile + ids safely.
-    const profileRow =
-      authed?.profile ||
-      authed?.client_profile ||
-      authed?.clientProfile ||
-      authed?.client_profiles ||
-      authed
-
-    const client_profile_id =
-      profileRow?.id || authed?.client_profile_id || authed?.clientProfileId || null
-    const user_id = profileRow?.user_id || authed?.user_id || authed?.userId || null
-    const email = profileRow?.email || authed?.email || null
+    const { client_profile_id, user_id, email } = await resolveProfileIdentity(req)
 
     if (!client_profile_id || !user_id || !email) {
       return withCorsJson(
         req,
-        { ok: false, error: "auth_profile_missing", detail: { client_profile_id, user_id, email } },
+        {
+          ok: false,
+          error: "auth_profile_missing",
+          detail: { client_profile_id, user_id, email },
+        },
         500
       )
     }
@@ -71,7 +145,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({} as any))
 
     // Required core input
-    const profile_text = clampText(body.profile_text, 50000)
+    const profile_text = clampText(body.profile_text, 80000)
     if (!profile_text) {
       return withCorsJson(
         req,
@@ -80,16 +154,15 @@ export async function POST(req: Request) {
       )
     }
 
-    // Optional fields (aligned to your client_profiles schema)
+    // Optional fields aligned to your client_profiles schema
     const name = clampText(body.name, 200)
-    const job_type = clampText(body.job_type, 200) // you can use this for "Current student / recent grad / etc"
-    const target_roles = clampText(body.target_roles, 2000)
-    const target_locations = clampText(body.target_locations, 2000)
-    const preferred_locations = clampText(body.preferred_locations, 2000)
+    const job_type = clampText(body.job_type, 200)
+    const target_roles = clampText(body.target_roles, 4000)
+    const target_locations = clampText(body.target_locations, 4000)
+    const preferred_locations = clampText(body.preferred_locations, 4000)
     const timeline = clampText(body.timeline, 200)
-    const resume_text = clampText(body.resume_text || body.profile_text, 80000)
+    const resume_text = clampText(body.resume_text || body.profile_text, 120000)
 
-    // Update the canonical authed profile row (server-side only)
     const { error: upErr } = await supabaseAdmin
       .from("client_profiles")
       .update({
@@ -110,14 +183,7 @@ export async function POST(req: Request) {
       return withCorsJson(req, { ok: false, error: upErr.message }, 400)
     }
 
-    return withCorsJson(
-      req,
-      {
-        ok: true,
-        client_profile_id,
-      },
-      200
-    )
+    return withCorsJson(req, { ok: true, client_profile_id }, 200)
   } catch (err: any) {
     return withCorsJson(req, { ok: false, error: err?.message || "server_error" }, 500)
   }
