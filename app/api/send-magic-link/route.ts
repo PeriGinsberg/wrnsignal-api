@@ -7,7 +7,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Redirect after user clicks the magic link
-const INTAKE_REDIRECT_URL = "https://www.workforcereadynow.com/signal/intake"
+const INTAKE_REDIRECT_URL = "https://genuine-times-909123.framer.app/signal/intake"
 
 function requireEnv(name: string, v?: string) {
   if (!v) throw new Error(`Missing server env: ${name}`)
