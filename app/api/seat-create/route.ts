@@ -33,8 +33,57 @@ function normalizeEmail(email: string) {
   return (email || "").trim().toLowerCase()
 }
 
-function safeText(s: any) {
-  return typeof s === "string" ? s.trim() : ""
+function toText(v: any) {
+  if (v === null || v === undefined) return ""
+  if (typeof v === "string") return v.trim()
+  // numbers/booleans get stringified
+  return String(v).trim()
+}
+
+/**
+ * GHL webhooks can arrive in a few shapes depending on the action type:
+ * - Top-level keys
+ * - Nested under customData/custom_data
+ * - Nested under data / data.customData
+ *
+ * This safely picks the first non-empty candidate.
+ */
+function pick(body: any, key: string) {
+  const candidates = [
+    body?.[key],
+    body?.customData?.[key],
+    body?.custom_data?.[key],
+    body?.data?.[key],
+    body?.data?.customData?.[key],
+    body?.data?.custom_data?.[key],
+  ]
+  for (const c of candidates) {
+    const t = toText(c)
+    if (t) return t
+  }
+  return ""
+}
+
+/**
+ * Parse request body with fallbacks.
+ * Some webhook implementations can send a JSON body; others can send form-encoded.
+ * We try JSON first; if it fails, try form data.
+ */
+async function readBody(req: Request) {
+  // Try JSON first
+  try {
+    return await req.json()
+  } catch {
+    // Fallback: try formData (application/x-www-form-urlencoded or multipart)
+    try {
+      const fd = await req.formData()
+      const out: Record<string, any> = {}
+      for (const [k, v] of fd.entries()) out[k] = typeof v === "string" ? v : String(v)
+      return out
+    } catch {
+      return {} as any
+    }
+  }
 }
 
 // ---------- Route ----------
@@ -46,21 +95,37 @@ export async function POST(req: Request) {
       return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
     }
 
-    const body = await req.json().catch(() => ({} as any))
+    const body = await readBody(req)
 
-    const order_id = safeText(body.order_id)
-    const ghl_contact_id = safeText(body.ghl_contact_id)
-    const purchaser_email = normalizeEmail(body.purchaser_email)
-    const seat_email = normalizeEmail(body.seat_email)
-    const intended_user_name = safeText(body.intended_user_name)
+    // Pull fields from multiple possible webhook shapes
+    const order_id = pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
+    const ghl_contact_id =
+      pick(body, "ghl_contact_id") || pick(body, "contact_id") || pick(body, "contactId")
+    const purchaser_email = normalizeEmail(
+      pick(body, "purchaser_email") || pick(body, "purchaserEmail") || pick(body, "email")
+    )
+    const seat_email = normalizeEmail(
+      pick(body, "seat_email") || pick(body, "seatEmail") || pick(body, "signal_user_email")
+    )
+    const intended_user_name =
+      pick(body, "intended_user_name") || pick(body, "intendedUserName") || pick(body, "signal_user_name")
 
-    if (!order_id || !seat_email || !intended_user_name) {
+    // Validate required fields
+    const missing: string[] = []
+    if (!order_id) missing.push("order_id")
+    if (!seat_email) missing.push("seat_email")
+    if (!intended_user_name) missing.push("intended_user_name")
+
+    if (missing.length) {
       return withCorsJson(
         req,
         {
           ok: false,
           error: "missing_required_fields",
           required: ["order_id", "seat_email", "intended_user_name"],
+          missing,
+          // DEV-only hint: helps confirm what shape we received without dumping the full payload
+          received_keys: Object.keys(body || {}),
         },
         400
       )
@@ -70,7 +135,7 @@ export async function POST(req: Request) {
     const rawToken = crypto.randomBytes(32).toString("base64url")
     const claim_token_hash = sha256Hex(rawToken)
 
-    // Insert seat (RLS does not matter because service role bypasses it)
+    // Insert seat (service role bypasses RLS)
     const { data, error } = await supabaseAdmin
       .from("signal_seats")
       .insert({
@@ -82,14 +147,11 @@ export async function POST(req: Request) {
         intended_user_email: seat_email, // keep aligned since seat_email is canonical
         claim_token_hash,
         status: "created",
-        // expires_at uses table default if set; otherwise you can set it explicitly here
       })
       .select("id")
       .single()
 
     if (error) {
-      // If you have a unique index on seat_email where used_at is null,
-      // this will throw when seat already exists. That is fine.
       return withCorsJson(req, { ok: false, error: error.message }, 400)
     }
 
@@ -106,10 +168,6 @@ export async function POST(req: Request) {
       200
     )
   } catch (err: any) {
-    return withCorsJson(
-      req,
-      { ok: false, error: err?.message || "server_error" },
-      500
-    )
+    return withCorsJson(req, { ok: false, error: err?.message || "server_error" }, 500)
   }
 }
