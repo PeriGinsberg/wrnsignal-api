@@ -8,6 +8,17 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const GHL_WEBHOOK_SECRET = process.env.GHL_WEBHOOK_SECRET
 
+// ✅ Where the magic link should land after auth
+// Set this in Vercel for both staging + prod.
+// Staging example:
+//   https://genuine-times-909123.framer.app/signal/intake
+// Prod example:
+//   https://wrnsignal.workforcereadynow.com/signal/intake
+const INTAKE_REDIRECT_URL = process.env.INTAKE_REDIRECT_URL
+
+// Optional kill switch (nice for testing)
+const AUTO_SEND_MAGIC_LINK = (process.env.AUTO_SEND_MAGIC_LINK || "true") === "true"
+
 function requireEnv(name: string, v?: string) {
   if (!v) throw new Error(`Missing server env: ${name}`)
   return v
@@ -36,18 +47,9 @@ function normalizeEmail(email: string) {
 function toText(v: any) {
   if (v === null || v === undefined) return ""
   if (typeof v === "string") return v.trim()
-  // numbers/booleans get stringified
   return String(v).trim()
 }
 
-/**
- * GHL webhooks can arrive in a few shapes depending on the action type:
- * - Top-level keys
- * - Nested under customData/custom_data
- * - Nested under data / data.customData
- *
- * This safely picks the first non-empty candidate.
- */
 function pick(body: any, key: string) {
   const candidates = [
     body?.[key],
@@ -64,17 +66,10 @@ function pick(body: any, key: string) {
   return ""
 }
 
-/**
- * Parse request body with fallbacks.
- * Some webhook implementations can send a JSON body; others can send form-encoded.
- * We try JSON first; if it fails, try form data.
- */
 async function readBody(req: Request) {
-  // Try JSON first
   try {
     return await req.json()
   } catch {
-    // Fallback: try formData (application/x-www-form-urlencoded or multipart)
     try {
       const fd = await req.formData()
       const out: Record<string, any> = {}
@@ -97,7 +92,6 @@ export async function POST(req: Request) {
 
     const body = await readBody(req)
 
-    // Pull fields from multiple possible webhook shapes
     const order_id = pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
     const ghl_contact_id =
       pick(body, "ghl_contact_id") || pick(body, "contact_id") || pick(body, "contactId")
@@ -108,7 +102,9 @@ export async function POST(req: Request) {
       pick(body, "seat_email") || pick(body, "seatEmail") || pick(body, "signal_user_email")
     )
     const intended_user_name =
-      pick(body, "intended_user_name") || pick(body, "intendedUserName") || pick(body, "signal_user_name")
+      pick(body, "intended_user_name") ||
+      pick(body, "intendedUserName") ||
+      pick(body, "signal_user_name")
 
     // Validate required fields
     const missing: string[] = []
@@ -124,7 +120,6 @@ export async function POST(req: Request) {
           error: "missing_required_fields",
           required: ["order_id", "seat_email", "intended_user_name"],
           missing,
-          // DEV-only hint: helps confirm what shape we received without dumping the full payload
           received_keys: Object.keys(body || {}),
         },
         400
@@ -135,7 +130,7 @@ export async function POST(req: Request) {
     const rawToken = crypto.randomBytes(32).toString("base64url")
     const claim_token_hash = sha256Hex(rawToken)
 
-    // Insert seat (service role bypasses RLS)
+    // Insert seat
     const { data, error } = await supabaseAdmin
       .from("signal_seats")
       .insert({
@@ -144,7 +139,7 @@ export async function POST(req: Request) {
         purchaser_email: purchaser_email || null,
         seat_email,
         intended_user_name,
-        intended_user_email: seat_email, // keep aligned since seat_email is canonical
+        intended_user_email: seat_email,
         claim_token_hash,
         status: "created",
       })
@@ -158,12 +153,43 @@ export async function POST(req: Request) {
     // DEV claim URL points to Framer dev site
     const claim_url = `https://genuine-times-909123.framer.app/start?claim=${rawToken}`
 
+    // ✅ AUTO EMAIL MAGIC LINK RIGHT AFTER PURCHASE
+    let email_sent = false
+    let email_error: string | null = null
+
+    if (AUTO_SEND_MAGIC_LINK) {
+      try {
+        const redirect = requireEnv("INTAKE_REDIRECT_URL", INTAKE_REDIRECT_URL)
+
+        const { error: otpErr } = await supabaseAdmin.auth.signInWithOtp({
+          email: seat_email,
+          options: { emailRedirectTo: redirect },
+        })
+
+        if (otpErr) {
+          email_error = otpErr.message
+        } else {
+          email_sent = true
+          // update status to sent
+          try {
+            await supabaseAdmin.from("signal_seats").update({ status: "sent" }).eq("id", data.id)
+          } catch {
+            // no-op
+          }
+        }
+      } catch (e: any) {
+        email_error = e?.message || "email_send_failed"
+      }
+    }
+
     return withCorsJson(
       req,
       {
         ok: true,
         seat_id: data.id,
-        claim_url,
+        claim_url, // dev helper
+        email_sent,
+        email_error,
       },
       200
     )

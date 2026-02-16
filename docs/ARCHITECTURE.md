@@ -1,40 +1,94 @@
-SIGNAL Source of Truth Handoff (Paste Into New Thread)
+SIGNAL Source of Truth Handoff
 
-1\) What SIGNAL is
+
+
+(Locked Architecture – Paste Into New Thread)
+
+
+
+Thread Starters (Paste First)
+
+
+
+“This is the locked SIGNAL architecture. Treat it as source of truth.”
+
+
+
+“Ask me only for deltas or missing pieces.”
+
+
+
+“Do not assume missing files; confirm via this doc.”
+
+
+
+1\) What SIGNAL Is
 
 
 
 SIGNAL is a job-search decision system for college students.
 
-Front end is a Framer site.
 
-Back end is a Next.js API on Vercel.
 
-Auth is Supabase magic link only (no passwords for full-access users).
+Architecture:
+
+
+
+Front end: Framer
+
+
+
+Back end: Next.js API deployed on Vercel
+
+
+
+Auth: Supabase (magic link only for full-access users)
+
+
+
+Database: Supabase Postgres
+
+
+
+Full-access users authenticate via Supabase magic link.
+
+Trial users are isolated in a separate flow.
 
 
 
 2\) Environments
 
-
-
 Production
 
 
 
-Live site: https://wrnsignal.workforcereadynow.com
+Live site:
+
+https://wrnsignal.workforcereadynow.com
 
 
 
-API base: https://wrnsignal-api.vercel.app
+API base:
+
+https://wrnsignal-api.vercel.app
 
 
 
-Upgrade URL: https://www.workforcereadynow.com/signal/home
+Upgrade URL:
+
+https://www.workforcereadynow.com/signal/home
 
 
 
-Supabase project id: ejhnokcnahauvrcbcmic
+Supabase project id:
+
+ejhnokcnahauvrcbcmic
+
+
+
+Magic link redirect (prod):
+
+https://wrnsignal.workforcereadynow.com/signal/intake
 
 
 
@@ -42,101 +96,229 @@ Dev
 
 
 
-Dev site: https://genuine-times-909123.framer.app/
+Dev site:
+
+https://genuine-times-909123.framer.app/
 
 
 
-API base: https://wrnsignal-api-staging.vercel.app
+API base:
+
+https://wrnsignal-api-staging.vercel.app
 
 
 
-Supabase dev URL: https://zydrqckpwidipwbhrfgd.supabase.co
+Supabase dev URL:
+
+https://zydrqckpwidipwbhrfgd.supabase.co
 
 
 
-Magic link redirect for dev:
+Magic link redirect (dev):
 
 
 
 const DEV\_SITE\_URL = "https://genuine-times-909123.framer.app"
 
-function getMagicLinkRedirect() { return DEV\_SITE\_URL + "/" }
+function getMagicLinkRedirect() {
+
+&nbsp; return DEV\_SITE\_URL + "/signal/intake"
+
+}
 
 
 
-3\) Core API routes and who can call them
+3\) Access Model (Seat-Based Full Access)
 
 
 
-Authenticated full-access (Bearer token via Supabase)
+Full access is seat-based.
+
+
+
+Flow:
+
+
+
+Buyer completes checkout.
+
+
+
+Backend creates a row in signal\_seats.
+
+
+
+A claim\_token (raw) is generated.
+
+
+
+Only claim\_token\_hash (sha256) is stored in DB.
+
+
+
+User receives a claim link:
+
+/start?claim=RAW\_TOKEN
+
+
+
+User verifies seat via /api/seat-verify.
+
+
+
+System sends Supabase magic link via /api/send-magic-link.
+
+
+
+Supabase redirects to /signal/intake.
+
+
+
+Intake form writes to client\_profiles.
+
+
+
+User is redirected to /signal/jobfit.
+
+
+
+Seats expire and are single-use.
+
+
+
+4\) Core API Routes
+
+Seat / Auth
+
+
+
+POST /api/seat-create
+
+Creates a new seat. Stores hashed claim token.
+
+
+
+POST /api/seat-verify
+
+Validates claim token + email.
+
+Returns { ok, verified, seat\_id }.
+
+
+
+POST /api/send-magic-link
+
+Re-verifies seat server-side.
+
+Uses Supabase signInWithOtp() with redirect.
+
+Updates seat status to "sent".
+
+
+
+Full-Access Authenticated Routes (Bearer Required)
+
+
+
+POST /api/profile-intake
+
+Creates or updates client\_profiles row for authenticated user.
 
 
 
 POST /api/jobfit
 
-
-
 POST /api/positioning
-
-
 
 POST /api/coverletter
 
-
-
 POST /api/networking
-
-
 
 POST /api/profile-risk-overrides
 
 
 
-Trial flow (separate, isolated today)
+All require:
 
 
 
-POST /api/jobfit-intake (public, no auth, intake form writes to trial tables)
+Authorization: Bearer <supabase\_access\_token>
 
 
 
-POST /api/jobfit-run-trial (trial user runs JobFit using their trial profile, decrements credits)
+Trial (Isolated System)
 
 
 
-Important: today trial users and full-access users are isolated. Future upgrade path may map trial info into client\_profiles, but not now.
+POST /api/jobfit-intake
+
+POST /api/jobfit-run-trial
 
 
 
-4\) CORS (single source of truth)
+Trial users use:
 
 
 
-All routes must use the shared CORS helpers:
+jobfit\_users
 
 
 
-File: app/api/\_lib/cors.ts
+jobfit\_profiles
 
 
 
-Use:
+Trial is NOT connected to client\_profiles.
 
 
 
-export async function OPTIONS(req) { return corsOptionsResponse(req.headers.get("origin")) }
+Trial users receive 3 credits.
 
 
 
-Return responses via withCorsJson(req, data, status)
+5\) CORS (Single Source of Truth)
 
 
 
-Do NOT hardcode origin regex/patterns inside route files.
+All routes MUST use:
 
 
 
-CORS allows:
+File:
+
+
+
+app/api/\_lib/cors.ts
+
+
+
+
+
+Pattern:
+
+
+
+export async function OPTIONS(req) {
+
+&nbsp; return corsOptionsResponse(req.headers.get("origin"))
+
+}
+
+
+
+
+
+Return responses using:
+
+
+
+withCorsJson(req, data, status)
+
+
+
+
+
+Allowed origins:
 
 
 
@@ -160,39 +342,63 @@ https://workforcereadynow.com
 
 
 
-localhost + 127.0.0.1
+localhost
 
 
 
-5\) Auth + profile ownership (single source of truth)
+127.0.0.1
 
 
 
-Full-access routes must use:
+Never inline origin logic inside route files.
 
 
 
-File: app/api/\_lib/authProfile.ts (not route.ts)
+6\) Auth + Profile Ownership (Single Source of Truth)
 
 
 
-Function: getAuthedProfileText(req)
+File:
 
 
 
-This does:
+app/api/\_lib/authProfile.ts
 
 
 
-validates bearer token
+
+
+Function:
 
 
 
-ensures exactly one client\_profiles row per user\_id
+getAuthedProfileText(req)
 
 
 
-attaches email-only profile row (if exists) to user\_id safely
+
+
+Responsibilities:
+
+
+
+Validates Supabase bearer token
+
+
+
+Extracts user\_id
+
+
+
+Ensures exactly one client\_profiles row per user\_id
+
+
+
+Safely attaches email-only profile to user\_id if needed
+
+
+
+Prevents client from directly writing to client\_profiles
 
 
 
@@ -200,15 +406,77 @@ Client never writes directly to client\_profiles.
 
 
 
-6\) Deterministic caching pattern (must be consistent)
+7\) Full-Access Intake (3-Screen Wizard)
 
 
 
-For modules that cache results (JobFit, Positioning, Networking, Coverletter):
+Route:
+
+/signal/intake
 
 
 
-Build deterministic fingerprint payload:
+Component:
+
+
+
+Auth gated
+
+
+
+Requires Supabase session
+
+
+
+On submit:
+
+
+
+Synthesizes canonical profile\_text
+
+
+
+Sends POST /api/profile-intake
+
+
+
+Redirects to /signal/jobfit
+
+
+
+Redirect path after intake:
+
+
+
+/signal/jobfit
+
+
+
+8\) Deterministic Caching Pattern (MANDATORY)
+
+
+
+Applies to:
+
+
+
+JobFit
+
+
+
+Positioning
+
+
+
+Cover Letter
+
+
+
+Networking
+
+
+
+Fingerprint payload includes:
 
 
 
@@ -216,7 +484,11 @@ job text
 
 
 
-profile id + profile text
+profile id
+
+
+
+profile text
 
 
 
@@ -228,15 +500,27 @@ model id constant
 
 
 
-any pinned deterministic logic params (example: keyword logic)
+pinned deterministic params
 
 
 
-Hash canonicalized normalized JSON with sha256
+Steps:
 
 
 
-Query existing run table by:
+Normalize
+
+
+
+JSON stringify canonicalized payload
+
+
+
+SHA256 hash
+
+
+
+Query run table by:
 
 
 
@@ -248,43 +532,111 @@ fingerprint\_hash
 
 
 
-If exists: return cached result with { reused: true }
+If exists:
 
 
 
-If not: run OpenAI, store result, return with { reused: false }
+return cached result
 
 
 
-Prefer upsert with onConflict: "client\_profile\_id,fingerprint\_hash" to avoid double-click race conditions.
+{ reused: true }
 
 
 
-7\) Database tables
+If not:
 
 
 
-Full-access
+run evaluator
 
 
 
-client\_profiles (unique user\_id and unique email)
+insert result
 
 
 
-jobfit\_runs (unique client\_profile\_id + fingerprint\_hash)
+return { reused: false }
 
 
 
-positioning\_runs (unique client\_profile\_id + fingerprint\_hash)
+Prefer:
 
 
 
-coverletter\_runs (unique client\_profile\_id + fingerprint\_hash)
+upsert with onConflict: "client\_profile\_id,fingerprint\_hash"
 
 
 
-networking\_runs (unique client\_profile\_id + fingerprint\_hash)
+
+
+To avoid race conditions.
+
+
+
+9\) Database Tables
+
+Full Access
+
+
+
+client\_profiles
+
+
+
+unique user\_id
+
+
+
+unique email
+
+
+
+jobfit\_runs
+
+
+
+unique (client\_profile\_id, fingerprint\_hash)
+
+
+
+positioning\_runs
+
+coverletter\_runs
+
+networking\_runs
+
+
+
+Each has unique (client\_profile\_id, fingerprint\_hash)
+
+
+
+signal\_seats
+
+
+
+claim\_token\_hash
+
+
+
+seat\_email
+
+
+
+intended\_user\_name
+
+
+
+status
+
+
+
+expires\_at
+
+
+
+used\_at
 
 
 
@@ -292,45 +644,123 @@ Trial
 
 
 
-jobfit\_users (unique email, credits\_remaining)
+jobfit\_users
 
 
 
-jobfit\_profiles (unique user\_id, stores profile\_text)
+unique email
 
 
 
-Trial runs are not written into full-access run tables today.
+credits\_remaining
 
 
 
-Trial credits: new trial user gets 3 total credits.
+jobfit\_profiles
 
 
 
-8\) Local file paths (Windows)
+unique user\_id
+
+
+
+Trial runs NOT written to full-access run tables.
+
+
+
+10\) Supabase Auth Notes (Critical)
+
+
+
+Auth mode: Magic link only.
+
+
+
+PKCE is enabled.
+
+
+
+When Supabase redirects with:
+
+
+
+?code=...
+
+
+
+
+
+Frontend must call:
+
+
+
+supabase.auth.exchangeCodeForSession(code)
+
+
+
+
+
+BEFORE:
+
+
+
+supabase.auth.getSession()
+
+
+
+
+
+If not, the session will not initialize.
+
+
+
+Expired links produce:
+
+
+
+error=access\_denied
+
+error\_code=otp\_expired
+
+
+
+
+
+Supabase email rate limits can produce:
+
+
+
+email rate limit exceeded
+
+
+
+11\) Local File Paths (Windows)
+
+
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\seat-create\\route.ts
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\seat-verify\\route.ts
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\send-magic-link\\route.ts
+
+
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\profile-intake\\route.ts
 
 
 
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit\\route.ts
 
-
-
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\positioning\\route.ts
 
-
-
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\coverletter\\route.ts
-
-
 
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\networking\\route.ts
 
 
 
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit-intake\\route.ts
-
-
 
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit-run-trial\\route.ts
 
@@ -340,25 +770,97 @@ C:\\Users\\perig\\wrnsignal-api\\app\\api\\profile-risk-overrides\\route.ts
 
 
 
-C:\\Users\\perig\\wrnsignal-api\\app\\api\\\_lib\\authProfile.ts
+C:\\Users\\perig\\wrnsignal-api\\app\\api\_lib\\authProfile.ts
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\_lib\\cors.ts
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\_lib\\jobfitEvaluator.ts
 
 
 
-C:\\Users\\perig\\wrnsignal-api\\app\\api\\\_lib\\cors.ts
+12\) Current Known Gotchas
 
 
 
-C:\\Users\\perig\\wrnsignal-api\\app\\api\\\_lib\\jobfitEvaluator.ts
+If you see:
 
 
 
-9\) Current known gotchas
+Failed to fetch
 
 
 
-If you see Failed to fetch plus CORS preflight missing Access-Control-Allow-Origin, it means the route is not using \_lib/cors.ts correctly or OPTIONS isn’t returning the right headers for the requesting origin (often \*.framercanvas.com).
+
+
+And CORS preflight error:
 
 
 
-Don’t inline origin logic inside route files. Always use \_lib/cors.ts.
+No 'Access-Control-Allow-Origin'
+
+
+
+
+
+It means:
+
+
+
+Route is not using \_lib/cors.ts
+
+
+
+OPTIONS handler missing
+
+
+
+Origin not matched (often \*.framercanvas.com)
+
+
+
+Do not inline CORS logic.
+
+
+
+13\) Critical Separation Rules
+
+
+
+Trial and full-access are isolated.
+
+
+
+Magic link flow is seat-based.
+
+
+
+Only server writes to:
+
+
+
+client\_profiles
+
+
+
+run tables
+
+
+
+signal\_seats
+
+
+
+Client never:
+
+
+
+touches run tables
+
+
+
+writes to client\_profiles directly
+
+
+
+manipulates seat status
 
