@@ -8,16 +8,28 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const GHL_WEBHOOK_SECRET = process.env.GHL_WEBHOOK_SECRET
 
-// ✅ Where the magic link should land after auth
-// Set this in Vercel for both staging + prod.
-// Staging example:
-//   https://genuine-times-909123.framer.app/signal/intake
-// Prod example:
-//   https://wrnsignal.workforcereadynow.com/signal/intake
+// Where Supabase magic link should land after auth
+// Staging: https://genuine-times-909123.framer.app/signal/intake
+// Prod:    https://wrnsignal.workforcereadynow.com/signal/intake
 const INTAKE_REDIRECT_URL = process.env.INTAKE_REDIRECT_URL
 
-// Optional kill switch (nice for testing)
-const AUTO_SEND_MAGIC_LINK = (process.env.AUTO_SEND_MAGIC_LINK || "true") === "true"
+// GHL: write the magic link back to the contact so your GHL email can include it
+// You’ll store it in a Contact Custom Field key like: signal_magic_link
+const GHL_ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN
+const GHL_BASE_URL =
+  (process.env.GHL_BASE_URL || "https://services.leadconnectorhq.com").replace(
+    /\/+$/,
+    ""
+  )
+const GHL_API_VERSION = process.env.GHL_API_VERSION || "2021-07-28"
+const GHL_MAGIC_LINK_FIELD_KEY =
+  process.env.GHL_MAGIC_LINK_FIELD_KEY || "signal_magic_link"
+
+// Kill switches (useful in DEV)
+const AUTO_CREATE_MAGIC_LINK =
+  (process.env.AUTO_CREATE_MAGIC_LINK || "true") === "true"
+const AUTO_PUSH_TO_GHL =
+  (process.env.AUTO_PUSH_TO_GHL || "true") === "true"
 
 function requireEnv(name: string, v?: string) {
   if (!v) throw new Error(`Missing server env: ${name}`)
@@ -50,6 +62,9 @@ function toText(v: any) {
   return String(v).trim()
 }
 
+/**
+ * Webhook bodies vary. This picks the first non-empty candidate.
+ */
 function pick(body: any, key: string) {
   const candidates = [
     body?.[key],
@@ -66,6 +81,9 @@ function pick(body: any, key: string) {
   return ""
 }
 
+/**
+ * Parse request body with fallbacks (JSON first, then formData).
+ */
 async function readBody(req: Request) {
   try {
     return await req.json()
@@ -73,11 +91,71 @@ async function readBody(req: Request) {
     try {
       const fd = await req.formData()
       const out: Record<string, any> = {}
-      for (const [k, v] of fd.entries()) out[k] = typeof v === "string" ? v : String(v)
+      for (const [k, v] of fd.entries())
+        out[k] = typeof v === "string" ? v : String(v)
       return out
     } catch {
       return {} as any
     }
+  }
+}
+
+/**
+ * Create a Supabase admin-generated magic link URL (no email sent).
+ * This is ideal because you can put it into your own branded GHL email.
+ */
+async function createMagicLinkOrThrow(email: string, redirectTo: string) {
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo },
+  })
+
+  if (error) throw new Error(error.message)
+
+  const magic_link = (data as any)?.properties?.action_link as string | undefined
+  if (!magic_link) throw new Error("missing_action_link")
+
+  return magic_link
+}
+
+/**
+ * Push the generated magic link back into GHL contact custom field.
+ * This is what Step 4 actually is.
+ */
+async function pushMagicLinkToGhlOrThrow(opts: {
+  ghl_contact_id: string
+  magic_link: string
+}) {
+  const { ghl_contact_id, magic_link } = opts
+
+  const token = requireEnv("GHL_ACCESS_TOKEN", GHL_ACCESS_TOKEN)
+  const url = `${GHL_BASE_URL}/contacts/${encodeURIComponent(ghl_contact_id)}`
+
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Version: GHL_API_VERSION,
+    },
+    body: JSON.stringify({
+      customFields: [{ key: GHL_MAGIC_LINK_FIELD_KEY, value: magic_link }],
+    }),
+  })
+
+  const raw = await res.text()
+  if (!res.ok) {
+    throw new Error(
+      `ghl_update_failed (${res.status}): ${raw || res.statusText}`
+    )
+  }
+
+  // Some GHL endpoints return JSON, some return empty text.
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return { ok: true }
   }
 }
 
@@ -92,15 +170,25 @@ export async function POST(req: Request) {
 
     const body = await readBody(req)
 
-    const order_id = pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
+    // Extract fields from webhook
+    const order_id =
+      pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
+
     const ghl_contact_id =
       pick(body, "ghl_contact_id") || pick(body, "contact_id") || pick(body, "contactId")
+
     const purchaser_email = normalizeEmail(
-      pick(body, "purchaser_email") || pick(body, "purchaserEmail") || pick(body, "email")
+      pick(body, "purchaser_email") ||
+        pick(body, "purchaserEmail") ||
+        pick(body, "email")
     )
+
     const seat_email = normalizeEmail(
-      pick(body, "seat_email") || pick(body, "seatEmail") || pick(body, "signal_user_email")
+      pick(body, "seat_email") ||
+        pick(body, "seatEmail") ||
+        pick(body, "signal_user_email")
     )
+
     const intended_user_name =
       pick(body, "intended_user_name") ||
       pick(body, "intendedUserName") ||
@@ -111,6 +199,7 @@ export async function POST(req: Request) {
     if (!order_id) missing.push("order_id")
     if (!seat_email) missing.push("seat_email")
     if (!intended_user_name) missing.push("intended_user_name")
+    if (!ghl_contact_id) missing.push("ghl_contact_id")
 
     if (missing.length) {
       return withCorsJson(
@@ -118,7 +207,7 @@ export async function POST(req: Request) {
         {
           ok: false,
           error: "missing_required_fields",
-          required: ["order_id", "seat_email", "intended_user_name"],
+          required: ["order_id", "ghl_contact_id", "seat_email", "intended_user_name"],
           missing,
           received_keys: Object.keys(body || {}),
         },
@@ -131,7 +220,7 @@ export async function POST(req: Request) {
     const claim_token_hash = sha256Hex(rawToken)
 
     // Insert seat
-    const { data, error } = await supabaseAdmin
+    const { data: seatRow, error: seatErr } = await supabaseAdmin
       .from("signal_seats")
       .insert({
         order_id,
@@ -146,39 +235,41 @@ export async function POST(req: Request) {
       .select("id")
       .single()
 
-    if (error) {
-      return withCorsJson(req, { ok: false, error: error.message }, 400)
+    if (seatErr || !seatRow?.id) {
+      return withCorsJson(req, { ok: false, error: seatErr?.message || "seat_insert_failed" }, 400)
     }
 
-    // DEV claim URL points to Framer dev site
+    // DEV helper claim URL (optional, but useful)
     const claim_url = `https://genuine-times-909123.framer.app/start?claim=${rawToken}`
 
-    // ✅ AUTO EMAIL MAGIC LINK RIGHT AFTER PURCHASE
-    let email_sent = false
-    let email_error: string | null = null
+    // Create magic link + push into GHL
+    let magic_link: string | null = null
+    let ghl_updated = false
+    let ghl_error: string | null = null
 
-    if (AUTO_SEND_MAGIC_LINK) {
+    if (AUTO_CREATE_MAGIC_LINK && AUTO_PUSH_TO_GHL) {
       try {
         const redirect = requireEnv("INTAKE_REDIRECT_URL", INTAKE_REDIRECT_URL)
+        magic_link = await createMagicLinkOrThrow(seat_email, redirect)
 
-        const { error: otpErr } = await supabaseAdmin.auth.signInWithOtp({
-          email: seat_email,
-          options: { emailRedirectTo: redirect },
+        await pushMagicLinkToGhlOrThrow({
+          ghl_contact_id,
+          magic_link,
         })
 
-        if (otpErr) {
-          email_error = otpErr.message
-        } else {
-          email_sent = true
-          // update status to sent
-          try {
-            await supabaseAdmin.from("signal_seats").update({ status: "sent" }).eq("id", data.id)
-          } catch {
-            // no-op
-          }
+        ghl_updated = true
+
+        // Update seat status
+        try {
+          await supabaseAdmin
+            .from("signal_seats")
+            .update({ status: "sent" })
+            .eq("id", seatRow.id)
+        } catch {
+          // no-op
         }
       } catch (e: any) {
-        email_error = e?.message || "email_send_failed"
+        ghl_error = e?.message || "magic_link_or_ghl_update_failed"
       }
     }
 
@@ -186,10 +277,13 @@ export async function POST(req: Request) {
       req,
       {
         ok: true,
-        seat_id: data.id,
+        seat_id: seatRow.id,
         claim_url, // dev helper
-        email_sent,
-        email_error,
+        magic_link_generated: Boolean(magic_link),
+        ghl_updated,
+        ghl_error,
+        // Optional: only include the link in dev if you want
+        // magic_link,
       },
       200
     )
