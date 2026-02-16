@@ -3,33 +3,17 @@ import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
-// ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const GHL_WEBHOOK_SECRET = process.env.GHL_WEBHOOK_SECRET
 
-// Where Supabase magic link should land after auth
-// Staging: https://genuine-times-909123.framer.app/signal/intake
-// Prod:    https://wrnsignal.workforcereadynow.com/signal/intake
 const INTAKE_REDIRECT_URL = process.env.INTAKE_REDIRECT_URL
 
-// GHL: write the magic link back to the contact so your GHL email can include it
-// You’ll store it in a Contact Custom Field key like: signal_magic_link
-const GHL_ACCESS_TOKEN = process.env.GHL_ACCESS_TOKEN
-const GHL_BASE_URL =
-  (process.env.GHL_BASE_URL || "https://services.leadconnectorhq.com").replace(
-    /\/+$/,
-    ""
-  )
-const GHL_API_VERSION = process.env.GHL_API_VERSION || "2021-07-28"
-const GHL_MAGIC_LINK_FIELD_KEY =
-  process.env.GHL_MAGIC_LINK_FIELD_KEY || "signal_magic_link"
-
-// Kill switches (useful in DEV)
-const AUTO_CREATE_MAGIC_LINK =
-  (process.env.AUTO_CREATE_MAGIC_LINK || "true") === "true"
-const AUTO_PUSH_TO_GHL =
-  (process.env.AUTO_PUSH_TO_GHL || "true") === "true"
+// Private Integration token (HighLevel)
+const GHL_PRIVATE_TOKEN = process.env.GHL_PRIVATE_TOKEN
+// Some HighLevel/LeadConnector endpoints require a Version header.
+// If yours does, set it in env (example values vary by doc/account).
+const GHL_API_VERSION = process.env.GHL_API_VERSION // optional
 
 function requireEnv(name: string, v?: string) {
   if (!v) throw new Error(`Missing server env: ${name}`)
@@ -42,29 +26,21 @@ const supabaseAdmin = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } }
 )
 
-// ---------- CORS ----------
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
-// ---------- Helpers ----------
 function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex")
 }
-
 function normalizeEmail(email: string) {
   return (email || "").trim().toLowerCase()
 }
-
 function toText(v: any) {
   if (v === null || v === undefined) return ""
   if (typeof v === "string") return v.trim()
   return String(v).trim()
 }
-
-/**
- * Webhook bodies vary. This picks the first non-empty candidate.
- */
 function pick(body: any, key: string) {
   const candidates = [
     body?.[key],
@@ -80,10 +56,6 @@ function pick(body: any, key: string) {
   }
   return ""
 }
-
-/**
- * Parse request body with fallbacks (JSON first, then formData).
- */
 async function readBody(req: Request) {
   try {
     return await req.json()
@@ -91,8 +63,7 @@ async function readBody(req: Request) {
     try {
       const fd = await req.formData()
       const out: Record<string, any> = {}
-      for (const [k, v] of fd.entries())
-        out[k] = typeof v === "string" ? v : String(v)
+      for (const [k, v] of fd.entries()) out[k] = typeof v === "string" ? v : String(v)
       return out
     } catch {
       return {} as any
@@ -100,69 +71,39 @@ async function readBody(req: Request) {
   }
 }
 
-/**
- * Create a Supabase admin-generated magic link URL (no email sent).
- * This is ideal because you can put it into your own branded GHL email.
- */
-async function createMagicLinkOrThrow(email: string, redirectTo: string) {
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-    options: { redirectTo },
-  })
-
-  if (error) throw new Error(error.message)
-
-  const magic_link = (data as any)?.properties?.action_link as string | undefined
-  if (!magic_link) throw new Error("missing_action_link")
-
-  return magic_link
-}
-
-/**
- * Push the generated magic link back into GHL contact custom field.
- * This is what Step 4 actually is.
- */
-async function pushMagicLinkToGhlOrThrow(opts: {
-  ghl_contact_id: string
-  magic_link: string
+async function updateGhlMagicLink(params: {
+  ghlContactId: string
+  magicLink: string
 }) {
-  const { ghl_contact_id, magic_link } = opts
+  // HighLevel API base shown in official docs. :contentReference[oaicite:2]{index=2}
+  const url = `https://services.leadconnectorhq.com/contacts/${encodeURIComponent(params.ghlContactId)}`
 
-  const token = requireEnv("GHL_ACCESS_TOKEN", GHL_ACCESS_TOKEN)
-  const url = `${GHL_BASE_URL}/contacts/${encodeURIComponent(ghl_contact_id)}`
+  // IMPORTANT:
+  // HighLevel has a couple shapes for custom fields depending on endpoint/version.
+  // Start with "customFields" by key. If your account requires IDs, switch to IDs.
+  const body = {
+    customFields: [
+      { key: "signal_magic_link", value: params.magicLink },
+    ],
+  }
 
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Version: GHL_API_VERSION,
-    },
-    body: JSON.stringify({
-      customFields: [{ key: GHL_MAGIC_LINK_FIELD_KEY, value: magic_link }],
-    }),
-  })
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${requireEnv("GHL_PRIVATE_TOKEN", GHL_PRIVATE_TOKEN)}`,
+    "Content-Type": "application/json",
+  }
+  if (GHL_API_VERSION) headers["Version"] = GHL_API_VERSION
 
+  const res = await fetch(url, { method: "PUT", headers, body: JSON.stringify(body) })
   const raw = await res.text()
-  if (!res.ok) {
-    throw new Error(
-      `ghl_update_failed (${res.status}): ${raw || res.statusText}`
-    )
-  }
 
-  // Some GHL endpoints return JSON, some return empty text.
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return { ok: true }
+  if (!res.ok) {
+    throw new Error(`GHL update failed (${res.status}): ${raw}`)
   }
+  return raw
 }
 
-// ---------- Route ----------
 export async function POST(req: Request) {
   try {
-    // Webhook auth
     const secret = req.headers.get("x-webhook-secret") || ""
     if (!GHL_WEBHOOK_SECRET || secret !== GHL_WEBHOOK_SECRET) {
       return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
@@ -170,31 +111,19 @@ export async function POST(req: Request) {
 
     const body = await readBody(req)
 
-    // Extract fields from webhook
-    const order_id =
-      pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
-
+    const order_id = pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
     const ghl_contact_id =
       pick(body, "ghl_contact_id") || pick(body, "contact_id") || pick(body, "contactId")
 
     const purchaser_email = normalizeEmail(
-      pick(body, "purchaser_email") ||
-        pick(body, "purchaserEmail") ||
-        pick(body, "email")
+      pick(body, "purchaser_email") || pick(body, "purchaserEmail") || pick(body, "email")
     )
-
     const seat_email = normalizeEmail(
-      pick(body, "seat_email") ||
-        pick(body, "seatEmail") ||
-        pick(body, "signal_user_email")
+      pick(body, "seat_email") || pick(body, "seatEmail") || pick(body, "signal_user_email")
     )
-
     const intended_user_name =
-      pick(body, "intended_user_name") ||
-      pick(body, "intendedUserName") ||
-      pick(body, "signal_user_name")
+      pick(body, "intended_user_name") || pick(body, "intendedUserName") || pick(body, "signal_user_name")
 
-    // Validate required fields
     const missing: string[] = []
     if (!order_id) missing.push("order_id")
     if (!seat_email) missing.push("seat_email")
@@ -204,27 +133,20 @@ export async function POST(req: Request) {
     if (missing.length) {
       return withCorsJson(
         req,
-        {
-          ok: false,
-          error: "missing_required_fields",
-          required: ["order_id", "ghl_contact_id", "seat_email", "intended_user_name"],
-          missing,
-          received_keys: Object.keys(body || {}),
-        },
+        { ok: false, error: "missing_required_fields", missing, received_keys: Object.keys(body || {}) },
         400
       )
     }
 
-    // Generate raw token (never store raw)
+    // Create seat token
     const rawToken = crypto.randomBytes(32).toString("base64url")
     const claim_token_hash = sha256Hex(rawToken)
 
-    // Insert seat
     const { data: seatRow, error: seatErr } = await supabaseAdmin
       .from("signal_seats")
       .insert({
         order_id,
-        ghl_contact_id: ghl_contact_id || null,
+        ghl_contact_id,
         purchaser_email: purchaser_email || null,
         seat_email,
         intended_user_name,
@@ -235,41 +157,39 @@ export async function POST(req: Request) {
       .select("id")
       .single()
 
-    if (seatErr || !seatRow?.id) {
-      return withCorsJson(req, { ok: false, error: seatErr?.message || "seat_insert_failed" }, 400)
-    }
+    if (seatErr) return withCorsJson(req, { ok: false, error: seatErr.message }, 400)
 
-    // DEV helper claim URL (optional, but useful)
-    const claim_url = `https://genuine-times-909123.framer.app/start?claim=${rawToken}`
+    // Generate magic link (NO email sent by Supabase here)
+    const redirectTo = requireEnv("INTAKE_REDIRECT_URL", INTAKE_REDIRECT_URL)
 
-    // Create magic link + push into GHL
-    let magic_link: string | null = null
+    const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: seat_email,
+      options: { redirectTo },
+    })
+
+    if (linkErr) return withCorsJson(req, { ok: false, error: linkErr.message }, 400)
+
+    const magic_link = (linkData as any)?.properties?.action_link
+    if (!magic_link) return withCorsJson(req, { ok: false, error: "missing_action_link" }, 500)
+
+    // Push into GHL contact custom field so your workflow email can use it
     let ghl_updated = false
     let ghl_error: string | null = null
 
-    if (AUTO_CREATE_MAGIC_LINK && AUTO_PUSH_TO_GHL) {
+    try {
+      await updateGhlMagicLink({ ghlContactId: ghl_contact_id, magicLink: magic_link })
+      ghl_updated = true
+    } catch (e: any) {
+      ghl_error = e?.message || "ghl_update_failed"
+    }
+
+    // Mark sent if we successfully pushed link to GHL
+    if (ghl_updated) {
       try {
-        const redirect = requireEnv("INTAKE_REDIRECT_URL", INTAKE_REDIRECT_URL)
-        magic_link = await createMagicLinkOrThrow(seat_email, redirect)
-
-        await pushMagicLinkToGhlOrThrow({
-          ghl_contact_id,
-          magic_link,
-        })
-
-        ghl_updated = true
-
-        // Update seat status
-        try {
-          await supabaseAdmin
-            .from("signal_seats")
-            .update({ status: "sent" })
-            .eq("id", seatRow.id)
-        } catch {
-          // no-op
-        }
-      } catch (e: any) {
-        ghl_error = e?.message || "magic_link_or_ghl_update_failed"
+        await supabaseAdmin.from("signal_seats").update({ status: "sent" }).eq("id", seatRow.id)
+      } catch {
+        // ignore
       }
     }
 
@@ -278,12 +198,13 @@ export async function POST(req: Request) {
       {
         ok: true,
         seat_id: seatRow.id,
-        claim_url, // dev helper
-        magic_link_generated: Boolean(magic_link),
+        seat_email,
+        purchaser_email,
+        ghl_contact_id,
         ghl_updated,
         ghl_error,
-        // Optional: only include the link in dev if you want
-        // magic_link,
+        // DEV-only: helps you verify it generated correctly
+        magic_link,
       },
       200
     )
