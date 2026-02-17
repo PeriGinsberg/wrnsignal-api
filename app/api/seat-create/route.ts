@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
+// ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const GHL_WEBHOOK_SECRET = process.env.GHL_WEBHOOK_SECRET
@@ -24,6 +25,7 @@ const supabaseAdmin = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } }
 )
 
+// ---------- CORS ----------
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -74,63 +76,67 @@ async function readBody(req: Request) {
   }
 }
 
+function isUniqueViolation(errMsg?: string) {
+  const m = (errMsg || "").toLowerCase()
+  return m.includes("duplicate key value") || m.includes("unique constraint")
+}
+
+// ---------- GHL update ----------
 async function updateGhlMagicLink(args: { contactId: string; magicLink: string }) {
   const token = requireEnv("GHL_API_KEY", GHL_API_KEY)
   const locationId = requireEnv("GHL_LOCATION_ID", GHL_LOCATION_ID)
   const fieldId = requireEnv("GHL_MAGIC_LINK_FIELD_ID", GHL_MAGIC_LINK_FIELD_ID)
 
+  // LeadConnector contact update endpoint
   const url = `https://services.leadconnectorhq.com/contacts/${encodeURIComponent(args.contactId)}`
-  const payload = {
-    locationId,
-    customFields: [{ id: fieldId, value: args.magicLink }],
-  }
 
-  // Try PATCH first (most common)
-  const tryOnce = async (method: "PATCH" | "PUT") => {
-    const res = await fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Version: "2021-07-28",
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
+  // IMPORTANT:
+  // - DO NOT put locationId in the JSON body (GHL returns 422).
+  // - If location context is needed, pass it as a header.
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Version: "2021-07-28",
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      // Some GHL accounts require this header, some ignore it. Safe to include.
+      LocationId: locationId,
+    },
+    body: JSON.stringify({
+      customFields: [
+        {
+          id: fieldId,
+          value: args.magicLink,
+        },
+      ],
+    }),
+  })
 
-    const raw = await res.text()
-    return { ok: res.ok, status: res.status, raw, method }
-  }
-
-  const a = await tryOnce("PATCH")
-  if (a.ok) return a
-
-  const b = await tryOnce("PUT")
-  return b
+  const raw = await res.text()
+  return { ok: res.ok, status: res.status, raw }
 }
 
+// ---------- Route ----------
 export async function POST(req: Request) {
-  // IMPORTANT: do not 400 to GHL unless secret is wrong
-  const secret = req.headers.get("x-webhook-secret") || ""
-  if (!GHL_WEBHOOK_SECRET || secret !== GHL_WEBHOOK_SECRET) {
-    return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
-  }
-
   try {
+    // Webhook auth
+    const secret = req.headers.get("x-webhook-secret") || ""
+    if (!GHL_WEBHOOK_SECRET || secret !== GHL_WEBHOOK_SECRET) {
+      return withCorsJson(req, { ok: false, error: "unauthorized" }, 401)
+    }
+
     const body = await readBody(req)
 
     const order_id = pick(body, "order_id") || pick(body, "orderId") || pick(body, "orderID")
     const ghl_contact_id =
       pick(body, "ghl_contact_id") || pick(body, "contact_id") || pick(body, "contactId")
-
     const purchaser_email = normalizeEmail(
       pick(body, "purchaser_email") || pick(body, "purchaserEmail") || pick(body, "email")
     )
-
     const seat_email = normalizeEmail(
       pick(body, "seat_email") || pick(body, "seatEmail") || pick(body, "signal_user_email")
     )
-
     const intended_user_name =
       pick(body, "intended_user_name") ||
       pick(body, "intendedUserName") ||
@@ -143,20 +149,21 @@ export async function POST(req: Request) {
     if (!intended_user_name) missing.push("intended_user_name")
 
     if (missing.length) {
-      // Return 200 so GHL stops retry loops, but include what was missing
       return withCorsJson(
         req,
-        { ok: true, accepted: false, reason: "missing_required_fields", missing, received_keys: Object.keys(body || {}) },
-        200
+        { ok: false, error: "missing_required_fields", missing, received_keys: Object.keys(body || {}) },
+        400
       )
     }
 
-    // Create seat token (raw not stored)
+    // Token for claim + hash for storage
     const rawToken = crypto.randomBytes(32).toString("base64url")
     const claim_token_hash = sha256Hex(rawToken)
 
-    // Insert seat
-    const { data: seatRow, error: seatErr } = await supabaseAdmin
+    // Try insert seat
+    let seatId: string | null = null
+
+    const insertRes = await supabaseAdmin
       .from("signal_seats")
       .insert({
         order_id,
@@ -171,21 +178,48 @@ export async function POST(req: Request) {
       .select("id")
       .single()
 
-    // If seat insert fails due to uniqueness, don’t fail the webhook (return 200)
-    if (seatErr) {
-      return withCorsJson(
-        req,
-        {
-          ok: true,
-          accepted: false,
-          reason: "seat_insert_failed",
-          seat_error: seatErr.message,
-        },
-        200
-      )
+    if (insertRes.error) {
+      // If a seat already exists (active), rotate token instead of failing.
+      if (isUniqueViolation(insertRes.error.message)) {
+        const existing = await supabaseAdmin
+          .from("signal_seats")
+          .select("id, used_at")
+          .eq("seat_email", seat_email)
+          .is("used_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (existing.data?.id) {
+          seatId = existing.data.id
+
+          const upd = await supabaseAdmin
+            .from("signal_seats")
+            .update({
+              order_id,
+              ghl_contact_id,
+              purchaser_email: purchaser_email || null,
+              intended_user_name,
+              intended_user_email: seat_email,
+              claim_token_hash,
+              status: "created",
+            })
+            .eq("id", seatId)
+
+          if (upd.error) {
+            return withCorsJson(req, { ok: false, error: upd.error.message }, 400)
+          }
+        } else {
+          return withCorsJson(req, { ok: false, error: insertRes.error.message }, 400)
+        }
+      } else {
+        return withCorsJson(req, { ok: false, error: insertRes.error.message }, 400)
+      }
+    } else {
+      seatId = insertRes.data.id
     }
 
-    // Generate magic link (no Supabase email)
+    // Generate magic link (NO Supabase email, since GHL emails it)
     const redirectTo = requireEnv("INTAKE_REDIRECT_URL", INTAKE_REDIRECT_URL)
     const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
@@ -194,33 +228,24 @@ export async function POST(req: Request) {
     })
 
     if (linkErr) {
-      return withCorsJson(
-        req,
-        { ok: true, accepted: false, reason: "generate_link_failed", link_error: linkErr.message, seat_id: seatRow.id },
-        200
-      )
+      return withCorsJson(req, { ok: false, error: linkErr.message }, 400)
     }
 
     const magic_link = (linkData as any)?.properties?.action_link
     if (!magic_link) {
-      return withCorsJson(
-        req,
-        { ok: true, accepted: false, reason: "missing_action_link", seat_id: seatRow.id },
-        200
-      )
+      return withCorsJson(req, { ok: false, error: "missing_action_link" }, 500)
     }
 
-    // Write magic link into GHL custom field (on purchaser contact)
-    const ghlUpdate = await updateGhlMagicLink({ contactId: ghl_contact_id, magicLink: magic_link })
+    // Write magic link to GHL
+    const ghl = await updateGhlMagicLink({ contactId: ghl_contact_id, magicLink: magic_link })
 
-    // Mark seat as sent (best effort)
-    if (ghlUpdate.ok) {
+    // Mark seat as sent if GHL update worked (best effort)
+    if (ghl.ok) {
       try {
-        await supabaseAdmin.from("signal_seats").update({ status: "sent" }).eq("id", seatRow.id)
+        await supabaseAdmin.from("signal_seats").update({ status: "sent" }).eq("id", seatId)
       } catch {}
     }
 
-    // Dev helper claim URL (optional)
     const claim_url = `https://genuine-times-909123.framer.app/start?claim=${rawToken}`
 
     return withCorsJson(
@@ -228,18 +253,16 @@ export async function POST(req: Request) {
       {
         ok: true,
         accepted: true,
-        seat_id: seatRow.id,
+        seat_id: seatId,
         claim_url,
-        ghl_update_ok: ghlUpdate.ok,
-        ghl_update_status: ghlUpdate.status,
-        ghl_update_method: ghlUpdate.method,
-        // Keep raw short, but still visible for debugging
-        ghl_update_raw_preview: (ghlUpdate.raw || "").slice(0, 300),
+        ghl_update_ok: ghl.ok,
+        ghl_update_status: ghl.status,
+        ghl_update_method: "PUT",
+        ghl_update_raw_preview: (ghl.raw || "").slice(0, 500),
       },
       200
     )
   } catch (err: any) {
-    // Return 200 so GHL doesn’t retry forever, but tell you what happened
-    return withCorsJson(req, { ok: true, accepted: false, reason: "server_error", error: err?.message || "server_error" }, 200)
+    return withCorsJson(req, { ok: false, accepted: false, reason: "server_error", error: err?.message || "server_error" }, 200)
   }
 }
