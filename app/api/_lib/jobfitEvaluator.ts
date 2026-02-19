@@ -1036,13 +1036,23 @@ export async function runJobFit({
 // --- inside runJobFit() where you build bullets ---
 const bullets: string[] = []
 const jobSignals = extractJobSignals(jobText)
+const jobSignalsRaw = extractJobSignals(jobText)
+
+// FORCE jobSignals to be strings (prevents [object Object])
+const jobSignals = (jobSignalsRaw || [])
+  .map((x: any) => (typeof x === "string" ? x : String(x?.label || x?.text || x?.name || "")))
+  .map((s: string) => s.trim())
+  .filter(Boolean)
+  .slice(0, 3)
+
 const profSignals = extractProfileSignals(profileText)
 const overlap = overlapSignals(jobSignals, profSignals)
 
 // 1) What the job is
 if (jobSignals.length > 0) {
-  bullets.push(`This role centers on: ${jobSignals.map((s) => s.label).join(", ")}.`)
-} else {
+  bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
+}
+ else {
   bullets.push("This role is broad. Decision is based on visible function fit and competitiveness signals.")
 }
 
