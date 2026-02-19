@@ -230,31 +230,44 @@ function inferJobFunction(jobText: string): JobFunction {
 
 // ----------------------- job signals (no quotes) -----------------------
 
-function extractJobSignals(jobText: string): string[] {
+type SignalKey =
+  | "modeling"
+  | "underwriting"
+  | "presentations"
+  | "excel"
+  | "sql"
+  | "paid_media"
+  | "ops"
+  | "research"
+  | "sales"
+  | "fin_statements"
+
+type Signal = { key: SignalKey; label: string }
+
+function extractJobSignals(jobText: string): Signal[] {
   const t = normalizeText(jobText)
 
-  const signals: Array<[RegExp, string]> = [
-    [/\bfinancial modeling|valuation|dcf|lbo\b/, "Financial modeling and valuation"],
-    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, "Stakeholder communication and presentations"],
-    [/\bexcel\b/, "Heavy Excel execution"],
-    [/\bsql\b/, "SQL-based analysis"],
-    [/\bgoogle analytics|ga4\b/, "Web analytics measurement"],
-    [/\bmeta ads|google ads|paid media|roas\b/, "Performance marketing execution"],
-    [/\bproject management|program management|timeline|roadmap\b/, "Project or program management"],
-    [/\boperations|process improvement|workflow\b/, "Operational execution and process improvement"],
-    [/\bresearch|literature review|irb|lab\b/, "Research-heavy responsibilities"],
-    [/\bcold call|quota|pipeline|crm\b/, "Outbound sales execution"],
-    [/\bund(er)?writing|credit memo|loan\b/, "Underwriting or credit work"],
-    [/\bfinancial statements|balance sheet|income statement|cash flow\b/, "Financial statement work"],
+  const signals: Array<[RegExp, Signal]> = [
+    [/\bfinancial modeling|valuation|dcf|lbo\b/, { key: "modeling", label: "Financial modeling and valuation" }],
+    [/\bund(er)?writing|credit memo|credit\b|loan\b/, { key: "underwriting", label: "Underwriting or credit work" }],
+    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, { key: "presentations", label: "Stakeholder communication and presentations" }],
+    [/\bexcel\b/, { key: "excel", label: "Heavy Excel execution" }],
+    [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
+    [/\bfinancial statements|balance sheet|income statement|cash flow\b/, { key: "fin_statements", label: "Financial statement work" }],
+    [/\bresearch|literature review|irb|lab\b/, { key: "research", label: "Research-heavy responsibilities" }],
+    [/\boperations|process improvement|workflow\b/, { key: "ops", label: "Operational execution and process improvement" }],
+    [/\bcold call|quota|pipeline|crm\b/, { key: "sales", label: "Outbound sales execution" }],
+    [/\bmeta ads|google ads|paid media|roas\b/, { key: "paid_media", label: "Performance marketing execution" }],
   ]
 
-  const out: string[] = []
-  for (const [re, label] of signals) {
-    if (re.test(t)) out.push(label)
+  const out: Signal[] = []
+  for (const [re, sig] of signals) {
+    if (re.test(t)) out.push(sig)
     if (out.length >= 3) break
   }
   return out
 }
+
 
 // ----------------------- profile constraints -----------------------
 
@@ -763,23 +776,25 @@ function shouldSurfaceDepthRisk(params: {
 
 // ----------------------- profile signals -----------------------
 
-function extractProfileSignals(profileText: string): string[] {
+function extractProfileSignals(profileText: string): Signal[] {
   const t = normalizeText(profileText)
-  const signals: Array<[RegExp, string]> = [
-    [/\bund(er)?writing|credit\b|loan\b|debt\b/, "Underwriting or credit exposure"],
-    [/\bfinancial modeling|valuation|dcf|lbo\b/, "Financial modeling and valuation"],
-    [/\bexcel\b/, "Excel execution"],
-    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, "Stakeholder communication and presentations"],
-    [/\bsql\b/, "SQL-based analysis"],
-    [/\bcrm\b|salesforce\b/, "CRM usage"],
-    [/\bresearch|literature review|irb|lab\b/, "Research experience"],
-    [/\bleadership|president|vp|captain|lead\b/, "Leadership signals"],
-    [/\bproject\b|capstone\b|case competition\b/, "Project-based work"],
+
+  const signals: Array<[RegExp, Signal]> = [
+    [/\bfinancial modeling|valuation|dcf|lbo\b/, { key: "modeling", label: "Financial modeling and valuation" }],
+    [/\bund(er)?writing|credit memo|credit\b|loan\b/, { key: "underwriting", label: "Underwriting or credit exposure" }],
+    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, { key: "presentations", label: "Stakeholder communication and presentations" }],
+    [/\bexcel\b/, { key: "excel", label: "Excel execution" }],
+    [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
+    [/\bfinancial statements|balance sheet|income statement|cash flow\b/, { key: "fin_statements", label: "Financial statement work" }],
+    [/\bresearch|literature review|irb|lab\b/, { key: "research", label: "Research experience" }],
+    [/\boperations|process improvement|workflow\b/, { key: "ops", label: "Operations/process work" }],
+    [/\bcold call|quota|pipeline|crm\b|salesforce\b/, { key: "sales", label: "Sales/CRM execution" }],
+    [/\bmeta ads|google ads|paid media|roas\b/, { key: "paid_media", label: "Performance marketing execution" }],
   ]
 
-  const out: string[] = []
-  for (const [re, label] of signals) {
-    if (re.test(t)) out.push(label)
+  const out: Signal[] = []
+  for (const [re, sig] of signals) {
+    if (re.test(t)) out.push(sig)
     if (out.length >= 4) break
   }
   return out
@@ -1013,7 +1028,49 @@ export async function runJobFit({
 
   // Strongest visible match
   if (jobSignals.length > 0 && profSignals.length > 0) {
-    bullets.push(`Strongest visible match: ${jobSignals[0]} backed by ${profSignals[0]}.`)
+   function overlapSignals(job: Signal[], prof: Signal[]) {
+  const profKeys = new Set(prof.map((s) => s.key))
+  return job.filter((s) => profKeys.has(s.key))
+}
+
+// --- inside runJobFit() where you build bullets ---
+const bullets: string[] = []
+const jobSignals = extractJobSignals(jobText)
+const profSignals = extractProfileSignals(profileText)
+const overlap = overlapSignals(jobSignals, profSignals)
+
+// 1) What the job is
+if (jobSignals.length > 0) {
+  bullets.push(`This role centers on: ${jobSignals.map((s) => s.label).join(", ")}.`)
+} else {
+  bullets.push("This role is broad. Decision is based on visible function fit and competitiveness signals.")
+}
+
+// 2) Proof (ONLY when overlap exists)
+if (overlap.length > 0) {
+  bullets.push(`Visible proof of fit: ${overlap.map((s) => s.label).slice(0, 2).join(" + ")}.`)
+} else if (alignmentLevel === "direct") {
+  bullets.push("Function fit looks right, but the proof is not specific in what is currently visible.")
+} else if (alignmentLevel === "strong_adjacent") {
+  bullets.push("Your background is adjacent. You are plausible, but you are not the obvious pick.")
+} else {
+  bullets.push("You have transferable signals, but fit is not clearly demonstrated.")
+}
+
+// 3) Depth
+if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
+else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have enough proof to justify a shot, but this is not a lock.")
+else bullets.push("Depth is limited. You may be screened out unless your proof is stronger than what is currently visible.")
+
+// 4) Apply momentum
+if (decision === "Priority Apply") bullets.push("This is worth prioritizing. Move quickly.")
+if (decision === "Apply") bullets.push("This is worth applying to based on visible fit.")
+
+// 5) Visibility reminder only for Review/Pass
+if (decision === "Review" || decision === "Pass") bullets.push(buildPassVisibilityBullet())
+
+const finalBullets = uniqTop(bullets, 6)
+
   } else if (alignmentLevel === "direct") {
     bullets.push("Your profile shows clear fit for what this job does.")
   } else if (alignmentLevel === "strong_adjacent") {
