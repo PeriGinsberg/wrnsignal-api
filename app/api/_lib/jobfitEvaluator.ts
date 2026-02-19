@@ -939,9 +939,6 @@ export async function runJobFit({
   if (employerTier === 2) riskCodes.push("tier2_competition")
 
   // Always surface depth risk when not strong (prevents empty risks)
- if (shouldSurfaceDepthRisk({ decision, employerTier, depthLabel, alignmentLevel })) {
-  riskCodes.push("depth_limited")
-}
 
 
   // Tier 1/2 pedigree risk (as a risk, not a hard gate)
@@ -1003,6 +1000,12 @@ const finalRiskFlags =
 
   // Apply ceilings last
   decision = applyCeilings(decision, ceilings)
+// Depth is only a risk when it threatens outcome.
+// Now that decision exists, we can decide whether to show it.
+if (shouldSurfaceDepthRisk({ decision, employerTier, depthLabel, alignmentLevel })) {
+  riskCodes.push("depth_limited")
+}
+
 
   // Build bullets (job-specific first, no quotes)
 const bullets: string[] = []
