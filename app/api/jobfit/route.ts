@@ -88,7 +88,8 @@ function buildJobFitFingerprint(payload: any) {
 export async function POST(req: Request) {
   try {
     // Auth + stored profile (server-side, user-bound)
-    const { profileId, profileText } = await getAuthedProfileText(req)
+    const { profileId, profileText, profileStructured } = await getAuthedProfileText(req)
+
 
     // Parse request body
     let body: any
@@ -105,14 +106,19 @@ export async function POST(req: Request) {
 
     // Fingerprint inputs used for evaluation (job + profile + system pins)
     const fingerprintPayload = {
-      job: { text: jobText || MISSING },
-      profile: { id: profileId || MISSING, text: profileText || MISSING },
-      system: {
-        jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
-        model_id: MODEL_ID,
- jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-      },
-    }
+  job: { text: jobText || MISSING },
+  profile: {
+    id: profileId || MISSING,
+    text: profileText || MISSING,
+    structured: profileStructured || {},
+  },
+  system: {
+    jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
+    model_id: MODEL_ID,
+    jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+  },
+}
+
 
     const { fingerprint_hash, fingerprint_code } =
       buildJobFitFingerprint(fingerprintPayload)
