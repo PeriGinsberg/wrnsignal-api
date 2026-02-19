@@ -454,6 +454,29 @@ function suppressRiskText(s0: string) {
 
   return false
 }
+function extractJobSignals(jobText: string): string[] {
+  const t = normalizeText(jobText)
+
+  const signals: Array<[RegExp, string]> = [
+    [/\bfinancial modeling|valuation|dcf|lbo\b/, "Financial modeling and valuation work"],
+    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, "Client-facing communication and presentation work"],
+    [/\bexcel\b/, "Heavy Excel execution"],
+    [/\bsql\b/, "SQL-based analysis"],
+    [/\bgoogle analytics|ga4\b/, "Web analytics measurement work"],
+    [/\bmeta ads|google ads|paid media|roas\b/, "Performance marketing execution"],
+    [/\bproject management|program management|timeline|roadmap\b/, "Project/program management execution"],
+    [/\boperations|process improvement|workflow\b/, "Operational execution and process improvement"],
+    [/\bresearch|literature review|irb|lab\b/, "Research-heavy responsibilities"],
+    [/\bcold call|quota|pipeline|crm\b/, "Outbound sales execution"],
+  ]
+
+  const out: string[] = []
+  for (const [re, label] of signals) {
+    if (re.test(t)) out.push(label)
+    if (out.length >= 3) break
+  }
+  return out
+}
 
 // ----------------------- requirements gate (hard requirements only) -----------------------
 
@@ -674,10 +697,11 @@ function applyCeilings(decision: Decision, ceilings: Array<"cap_review">): Decis
 
 function buildNextStep(decision: Decision) {
   if (decision === "Pass") return "Do not apply."
-  if (decision === "Review") return "Proceed only if the risks are acceptable."
-  if (decision === "Apply") return "Apply promptly if this role is still open."
-  return "Apply immediately."
+  if (decision === "Review") return "Only apply if you accept the risks."
+  if (decision === "Apply") return "Apply. Then move to networking."
+  return "Priority apply. Then move to networking."
 }
+
 
 function buildPassVisibilityBullet(): string {
   return "SIGNAL evaluates what is visible. If you have this experience but it is not clearly shown, the market will treat it as missing."
@@ -859,6 +883,20 @@ export async function runJobFit({
 
   if (employerTier === 1) risks.push("tier1_competition")
   if (employerTier === 2) risks.push("tier2_competition")
+
+// Normal (non-hallucinated) risks when decision isn't perfect
+if (depthLabel === "moderate") risks.push("depth_moderate")
+if (depthLabel === "weak") risks.push("depth_limited")
+
+// If we could not confidently classify competition level, call it out
+if (employerTier === 3 && inferEmployerTier(jobText) === 3) {
+  // still allowed, but you should admit tier classification is heuristic
+  risks.push("competition_level_estimated")
+}
+
+// If targets are missing or unclear, that is a real risk for decision confidence
+if (targetAlignment === "unclear") risks.push("targets_unclear")
+
 
   // GPA risk visibility rules
   if (shouldShowGpaRisk(employerTier, gpaBand)) {
