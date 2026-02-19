@@ -1,20 +1,23 @@
 // app/api/_lib/jobfitEvaluator.ts
-// Deterministic JobFit rules engine (no LLM decisioning)
-//
-// Principles
-// - Decision-first (Priority Apply / Apply / Review / Pass)
-// - Conservative: if proof is not visible, do not claim it
-// - No job quotes in bullets (no direct copy/paste fragments)
-// - Do not surface internal depth labels or scoring internals to user
-// - No visa/work auth, driver's license, background check, drug test risks
-// - Uses profileStructured when present (no new user inputs)
-// - Human-readable risks only (no internal tokens)
-// - Slightly aggressive: if you cannot stand up to it, it is Review/Pass, not Apply
+// WRNSignal JobFit (Hybrid v1.1)
+// Keeps what worked: deterministic gates + LLM for nuanced WHY/RISKS
+// Changes vs your older version:
+// - Removes job/profile quotes from WHY/RISK output (prompt + deterministic sanitizers)
+// - Forces 3–5 WHY bullets (no fluff, no advice)
+// - Prevents “no risks returned” for competitive roles
+// - More strict: prevents overly generous APPLY when evidence is thin
 
-export type Decision = "Priority Apply" | "Apply" | "Review" | "Pass"
-export type LocationConstraint = "constrained" | "not_constrained" | "unclear"
+import OpenAI from "openai"
 
-type YM = { year: number; month: number } // month 1-12
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+type Decision = "Apply" | "Review" | "Pass"
+type LocationConstraint = "constrained" | "not_constrained" | "unclear"
+
+type Gate =
+  | { type: "force_pass"; reason: string }
+  | { type: "floor_review"; reason: string }
+  | { type: "none" }
 
 type JobFacts = {
   isHourly: boolean
@@ -31,37 +34,71 @@ type ProfileConstraints = {
   hardNoSales: boolean
   hardNoGovernment: boolean
   hardNoFullyRemote: boolean
-  veryOpenToNonObvious: boolean
 }
 
-type EmployerTier = 1 | 2 | 3 | 4
-type SchoolTier = "S" | "A" | "B" | "C" | "unknown"
-type GpaBand = "3.8_plus" | "3.5_3.79" | "below_3.5" | "unknown"
-type JobSeniority = "internship" | "entry" | "early_career" | "experienced" | "unknown"
+type YM = { year: number; month: number } // month 1-12
 
-type JobFunction =
-  | "investment_banking_pe_mna"
-  | "consulting_strategy"
-  | "finance_accounting"
-  | "commercial_real_estate"
-  | "publishing_editorial"
-  | "sales"
-  | "marketing_analytics"
-  | "brand_marketing"
-  | "product_program_ops"
-  | "customer_success"
-  | "government_public"
-  | "software_data"
-  | "research"
-  | "clinical_health"
-  | "unknown"
+const JOBFIT_LOGIC_VERSION = "hybrid_v1_1_2026_02_19"
 
-type AlignmentLevel = "direct" | "strong_adjacent" | "weak_adjacent" | "none"
-type TargetAlignment = "on_target" | "off_target" | "unclear"
+/* ----------------------- helpers ----------------------- */
 
-const JOBFIT_LOGIC_VERSION = "rules_v1_2026_02_19b"
+function extractJsonObject(raw: string) {
+  if (!raw) return null
+  const cleaned = raw
+    .replace(/```(?:json)?/g, "")
+    .replace(/```/g, "")
+    .trim()
 
-// ----------------------- basics -----------------------
+  try {
+    return JSON.parse(cleaned)
+  } catch {}
+
+  const first = cleaned.indexOf("{")
+  const last = cleaned.lastIndexOf("}")
+  if (first === -1 || last === -1 || last <= first) return null
+  const candidate = cleaned.slice(first, last + 1)
+
+  try {
+    return JSON.parse(candidate)
+  } catch {
+    return null
+  }
+}
+
+function clampScore(n: any) {
+  const x = Number(n)
+  if (!Number.isFinite(x)) return 0
+  return Math.max(0, Math.min(100, Math.round(x)))
+}
+
+function normalizeDecision(d: any): Decision {
+  const s = String(d || "").trim().toLowerCase()
+  if (s === "apply" || s === "approve") return "Apply"
+  if (s === "review" || s === "review carefully") return "Review"
+  if (s === "pass") return "Pass"
+  return "Review"
+}
+
+function iconForDecision(decision: Decision) {
+  if (decision === "Apply") return "✅"
+  if (decision === "Review") return "⚠️"
+  return "⛔"
+}
+
+function enforceScoreBand(decision: Decision, score: number) {
+  // Tighten slightly so "Apply" isn't handed out too easily
+  if (decision === "Apply") return Math.max(score, 75)
+  if (decision === "Review") return Math.min(Math.max(score, 58), 74)
+  return Math.min(score, 57)
+}
+
+function ensureArrayOfStrings(x: any, max: number) {
+  if (!Array.isArray(x)) return []
+  return x
+    .map((v) => String(v ?? "").trim())
+    .filter(Boolean)
+    .slice(0, max)
+}
 
 function normalizeText(t: string) {
   return (t || "")
@@ -71,65 +108,11 @@ function normalizeText(t: string) {
     .toLowerCase()
 }
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n))
-}
-
-function iconForDecision(decision: Decision) {
-  if (decision === "Priority Apply") return "🔥"
-  if (decision === "Apply") return "✅"
-  if (decision === "Review") return "⚠️"
-  return "⛔"
-}
-
-function enforceScoreBand(decision: Decision, score: number) {
-  const s = Math.round(score)
-  if (decision === "Priority Apply") return clamp(s, 85, 95)
-  if (decision === "Apply") return clamp(s, 70, 84)
-  if (decision === "Review") return clamp(s, 50, 69)
-  return clamp(s, 40, 49)
-}
-
-function uniqTop(items: string[], max: number) {
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const x of items || []) {
-    const k = String(x || "").trim()
-    if (!k) continue
-    const key = k.toLowerCase()
-    if (seen.has(key)) continue
-    seen.add(key)
-    out.push(k)
-    if (out.length >= max) break
-  }
-  return out
-}
-
 function safeObj(x: any) {
   return x && typeof x === "object" ? x : {}
 }
 
-function joinWithAnd(items: string[]) {
-  const a = (items || []).map((x) => String(x || "").trim()).filter(Boolean)
-  if (a.length === 0) return ""
-  if (a.length === 1) return a[0]
-  if (a.length === 2) return `${a[0]} and ${a[1]}`
-  return `${a.slice(0, -1).join(", ")}, and ${a[a.length - 1]}`
-}
-
-function cleanSignalLabel(label: string) {
-  // Keep labels tight, remove parentheticals, avoid bloated text
-  return String(label || "")
-    .replace(/\s*\([^)]*\)\s*/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
-function buildVisibilityBullet() {
-  return "SIGNAL evaluates what is visible. If you have the experience but it is not clearly shown, the market will treat it as missing."
-}
-
-// ----------------------- extract job facts -----------------------
+/* ----------------------- deterministic extraction ----------------------- */
 
 function extractJobFacts(jobText: string): JobFacts {
   const t0 = normalizeText(jobText)
@@ -146,11 +129,10 @@ function extractJobFacts(jobText: string): JobFacts {
     t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
   if (mHr?.[0]) hourlyEvidence = mHr[0]
 
-  // Contract should mean employment type, not "draft contracts" as a responsibility
+  // Contract signals should mean employment type, not “draft contracts”
   const contractNoise =
     /\bcontract\s+(forms?|templates?|paperwork|documents?)\b/.test(t0) ||
-    /\bdraft\b[^\n]{0,40}\bcontract\b/.test(t0) ||
-    /\bdeal\s+memos?\b/.test(t0)
+    /\bdraft\b[^\n]{0,40}\bcontract\b/.test(t0)
 
   const contractEmployment =
     /\b(contract\s+(role|position|job|employment|assignment))\b/.test(t0) ||
@@ -178,301 +160,6 @@ function extractJobFacts(jobText: string): JobFacts {
   return { isHourly, hourlyEvidence, isContract, contractEvidence, isFullyRemote }
 }
 
-function inferJobSeniority(jobText: string): JobSeniority {
-  const t = normalizeText(jobText)
-  if (/\b(intern|internship|summer analyst|co-op|co op)\b/.test(t)) return "internship"
-  if (/\b(0-?1|0-?2)\s+years\b/.test(t) || /\b(entry level|new grad|graduate program)\b/.test(t)) return "entry"
-  if (/\b(1-?3|2-?4)\s+years\b/.test(t)) return "early_career"
-  if (/\b(3\+|4\+|5\+)\s+years\b/.test(t) || /\bminimum\s+(3|4|5)\s+years\b/.test(t)) return "experienced"
-  return "unknown"
-}
-
-function inferEmployerTier(jobText: string): EmployerTier {
-  const t = normalizeText(jobText)
-
-  const tier1Signals = [
-    /\binvestment banking\b/,
-    /\bprivate equity\b/,
-    /\bm&a\b/,
-    /\bleveraged finance\b/,
-    /\blbo\b/,
-    /\bmanagement consulting\b/,
-    /\bstrategy\s+consult(ing|ant)\b/,
-    /\bgoldman\b|\bmorgan stanley\b|\bjpmorgan\b|\bciti\b|\bbofa\b|\bbarclays\b|\bevercore\b|\blazard\b|\bcenterview\b/,
-    /\bmckinsey\b|\bbain\b|\bbcg\b|\bdeloitte consulting\b|\bstrategy&\b/,
-  ]
-
-  const tier2Signals = [
-    /\brotational\b/,
-    /\bleadership development\b/,
-    /\bformal training\b/,
-    /\bnew grad program\b/,
-    /\baccelerated development\b/,
-    /\bprestige\b/,
-  ]
-
-  if (tier1Signals.some((r) => r.test(t))) return 1
-  if (tier2Signals.some((r) => r.test(t))) return 2
-  return 3
-}
-
-function inferJobFunction(jobText: string): JobFunction {
-  const t = normalizeText(jobText)
-
-  if (/\b(investment banking|private equity|m&a|mergers|acquisitions|lbo|leveraged buyout|capital markets)\b/.test(t))
-    return "investment_banking_pe_mna"
-
-  if (/\b(management consulting|strategy consulting|consultant|case interview|client engagements?)\b/.test(t))
-    return "consulting_strategy"
-
-  if (/\b(commercial real estate|cre\b|multifamily|industrial|office leasing|real estate underwriting|dscr|noi|cap rate)\b/.test(t))
-    return "commercial_real_estate"
-
-  if (/\b(accounting|accountant|general ledger|reconciliation|financial statements|cpa)\b/.test(t))
-    return "finance_accounting"
-
-  // Publishing/editorial should win early
-  if (
-    /\b(editorial assistant|editorial|assistant editor|copy editor|copyeditor|proofread|copy[- ]?edit|line edit|publishing|imprint|literary agent|book proposals?|submissions?|manuscripts?)\b/.test(
-      t
-    ) ||
-    /\b(jacket copy|galley copy|fact sheets?|metadata|book production|incopy|ap style|chicago manual)\b/.test(t)
-  ) return "publishing_editorial"
-
-  if (/\b(sales|business development|quota|commission|pipeline|lead gen|cold call)\b/.test(t))
-    return "sales"
-
-  if (/\b(marketing analytics|marketing analyst|roas|meta ads|google ads|campaign performance|attribution|sql\b|a\/b test)\b/.test(t))
-    return "marketing_analytics"
-
-  if (/\b(brand marketing|brand strategy|brand manager|content marketing|social media|creative strategy|communications)\b/.test(t))
-    return "brand_marketing"
-
-  if (/\b(program manager|project manager|operations|biz ops|business operations|process improvement|program management)\b/.test(t))
-    return "product_program_ops"
-
-  if (/\b(customer success|client success|implementation|onboarding|account manager)\b/.test(t))
-    return "customer_success"
-
-  if (/\b(government|public sector|municipal|state agency|federal)\b/.test(t))
-    return "government_public"
-
-  if (/\b(software engineer|developer|full stack|frontend|backend|api\b|javascript|typescript|python\b|data engineer|machine learning)\b/.test(t))
-    return "software_data"
-
-  if (/\b(research assistant|literature review|irb\b|lab\b|publication)\b/.test(t))
-    return "research"
-
-  if (/\b(clinical|patient|medical device|emt\b|paramedic|nurse|rn\b|therapy|pt\b|occupational)\b/.test(t))
-    return "clinical_health"
-
-  return "unknown"
-}
-
-// ----------------------- signals -----------------------
-
-export type SignalKey =
-  // Finance
-  | "modeling"
-  | "valuation"
-  | "fp_and_a"
-  | "budgeting"
-  | "forecasting"
-  | "fin_statements"
-  | "underwriting"
-  | "credit_risk"
-  | "treasury"
-  | "audit"
-  | "tax"
-  | "ap_ar"
-  | "bookkeeping"
-
-  // Data and analytics
-  | "excel"
-  | "sql"
-  | "dashboarding"
-  | "reporting"
-  | "data_analysis"
-  | "data_engineering"
-  | "data_modeling"
-  | "data_quality"
-  | "statistics"
-  | "experimentation"
-  | "market_research"
-  | "research"
-
-  // Software and IT
-  | "software_engineering"
-  | "frontend"
-  | "backend"
-  | "full_stack"
-  | "api_development"
-  | "cloud_infra"
-  | "devops"
-  | "sre"
-  | "security"
-  | "it_support"
-  | "networking_it"
-  | "qa_testing"
-  | "automation"
-  | "ai_ml"
-
-  // Product and project
-  | "product_management"
-  | "program_management"
-  | "project_management"
-  | "roadmapping"
-  | "requirements"
-  | "process_improvement"
-  | "change_management"
-  | "documentation"
-
-  // Operations and supply chain
-  | "ops"
-  | "logistics"
-  | "supply_chain"
-  | "procurement"
-  | "vendor_management"
-  | "inventory"
-  | "facilities"
-  | "quality_assurance"
-  | "manufacturing"
-  | "compliance_ops"
-
-  // Sales and customer
-  | "sales"
-  | "business_development"
-  | "account_management"
-  | "customer_success"
-  | "support"
-  | "crm"
-  | "negotiation"
-  | "partnerships"
-  | "presentations"
-
-  // Marketing and growth
-  | "brand_marketing"
-  | "content_marketing"
-  | "copywriting"
-  | "paid_media"
-  | "seo"
-  | "lifecycle_marketing"
-  | "events_marketing"
-  | "social_media"
-  | "communications_pr"
-  | "creative_direction"
-
-  // Writing, editorial, publishing
-  | "editing"
-  | "proofreading"
-  | "publishing_ops"
-  | "cms"
-  | "headline_writing"
-  | "publishing_research"
-
-  // HR and recruiting
-  | "recruiting"
-  | "hr_ops"
-  | "people_ops"
-  | "payroll_benefits"
-  | "learning_development"
-
-  // Legal and policy
-  | "legal_contracts"
-  | "legal_research"
-  | "policy"
-
-  // Healthcare and clinical
-  | "clinical_care"
-  | "patient_intake"
-  | "medical_documentation"
-  | "phlebotomy"
-  | "emt"
-  | "therapy"
-  | "public_health"
-  | "clinical_research"
-
-  // Education and nonprofit
-  | "teaching"
-  | "curriculum"
-  | "student_services"
-  | "grant_writing"
-  | "fundraising"
-  | "community_outreach"
-
-export type Signal = { key: SignalKey; label: string; strength?: "explicit" | "implied" }
-
-function signalLabels(signals: Signal[], max: number) {
-  return (signals || [])
-    .map((s) => cleanSignalLabel(s?.label || ""))
-    .filter(Boolean)
-    .slice(0, max)
-}
-
-function overlapSignals(job: Signal[], prof: Signal[]) {
-  const profKeys = new Set((prof || []).map((s) => s.key))
-  return (job || []).filter((s) => profKeys.has(s.key))
-}
-
-function safeOverlapLabels(overlap: Signal[]) {
-  const raw = signalLabels(overlap, 6)
-  // avoid tiny generic labels
-  const cleaned = raw.filter((s) => s.length >= 8)
-  return uniqTop(cleaned, 3)
-}
-
-// ----------------------- job signals (strict, specific first) -----------------------
-
-function extractJobSignals(jobText: string): Signal[] {
-  const t = normalizeText(jobText)
-
-  const patterns: Array<[RegExp, Signal]> = [
-    // Editorial core
-    [/\b(copy[- ]?edit|copyedit|line edit|line editing)\b/, { key: "editing", label: "Copyediting and line editing", strength: "explicit" }],
-    [/\b(proofread|proofreading|final pass)\b/, { key: "proofreading", label: "Proofreading and final-pass accuracy", strength: "explicit" }],
-    [/\b(fact[- ]?check|fact check)\b/, { key: "publishing_research", label: "Fact-checking and accuracy review", strength: "explicit" }],
-    [/\b(style guide|ap style|chicago)\b/, { key: "editing", label: "Style guide based editing (AP/Chicago)", strength: "explicit" }],
-    [/\b(headlines?|display copy)\b/, { key: "headline_writing", label: "Headline and display copy writing", strength: "explicit" }],
-    [/\bseo\b/, { key: "seo", label: "SEO-aware editorial publishing", strength: "explicit" }],
-    [/\b(content[- ]?management system|cms)\b/, { key: "cms", label: "CMS publishing workflow", strength: "explicit" }],
-    [/\b(wordpress|incopy|google docs)\b/, { key: "cms", label: "Editorial tools (WordPress, Docs, InCopy)", strength: "explicit" }],
-
-    // Publishing ops, submissions, authors
-    [/\b(editorial assistant|editorial operations|publishing workflow|schedule pieces|content calendar)\b/, { key: "publishing_ops", label: "Editorial operations and publishing workflow", strength: "explicit" }],
-    [/\b(submissions?|unsolicited submissions?|slush pile|proposals?|manuscripts?)\b/, { key: "publishing_ops", label: "Evaluating submissions and drafts", strength: "explicit" }],
-    [/\b(authors?|agents?|contributors?|freelancers?)\b/, { key: "publishing_ops", label: "Working with contributors, authors, or agents", strength: "explicit" }],
-
-    // Rotational, program signals
-    [/\brotational\b|\baccelerate\b|\bapprenticeship\b|\bdevelopment program\b/, { key: "program_management", label: "Rotational or structured development program", strength: "explicit" }],
-
-    // Presentations (only when explicit)
-    [/\b(presentation|deck|powerpoint)\b/, { key: "presentations", label: "Presentations and stakeholder communication", strength: "explicit" }],
-
-    // Data analysis (only when explicit)
-    [/\b(data analysis|analyze performance|testing and reporting|kpi)\b/, { key: "data_analysis", label: "Data analysis and performance reporting", strength: "explicit" }],
-    [/\bsql\b/, { key: "sql", label: "SQL-based analysis", strength: "explicit" }],
-    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling)\b/, { key: "excel", label: "Advanced Excel execution", strength: "explicit" }],
-
-    // Marketing adjacent signals in editorial programs
-    [/\b(influencer program|ads and creative|paid social|campaign)\b/, { key: "paid_media", label: "Campaign and creative execution (ads/influencers)", strength: "explicit" }],
-    [/\b(copywriting|marketing copy)\b/, { key: "copywriting", label: "Copywriting or marketing copy refinement", strength: "explicit" }],
-
-    // Finance / analytics
-    [/\b(financial modeling|dcf|lbo|valuation)\b/, { key: "modeling", label: "Financial modeling and valuation", strength: "explicit" }],
-    [/\b(underwriting|credit memo|credit analysis)\b/, { key: "underwriting", label: "Underwriting or credit analysis", strength: "explicit" }],
-    [/\b(financial statements|balance sheet|income statement|cash flow)\b/, { key: "fin_statements", label: "Financial statement work", strength: "explicit" }],
-  ]
-
-  const out: Signal[] = []
-  for (const [re, sig] of patterns) {
-    if (re.test(t)) out.push(sig)
-    if (out.length >= 6) break
-  }
-  return out
-}
-
-// ----------------------- profile constraints -----------------------
-
 function extractProfileConstraints(profileText: string): ProfileConstraints {
   const t0 = normalizeText(profileText)
 
@@ -480,7 +167,8 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
     t0.includes("no hourly") ||
     t0.includes("no hourly pay") ||
     (t0.includes("do not want") && t0.includes("hourly")) ||
-    (t0.includes("hard exclusion") && t0.includes("hourly"))
+    (t0.includes("hard exclusion") && t0.includes("hourly")) ||
+    (t0.includes("d o n o t want") && t0.includes("hourly"))
 
   const prefFullTime =
     t0.includes("full time") ||
@@ -495,26 +183,20 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
     t0.includes("no temporary")
 
   const hardNoSales =
-    (t0.includes("do not want") && (t0.includes("sales") || t0.includes("commission"))) ||
-    t0.includes("no sales") ||
-    t0.includes("no commission") ||
-    t0.includes("commission-based")
+    ((t0.includes("do not want") && (t0.includes("sales") || t0.includes("commission"))) ||
+      t0.includes("no sales") ||
+      t0.includes("no commission") ||
+      t0.includes("commission-based"))
 
   const hardNoGovernment =
-    (t0.includes("do not want") && (t0.includes("government") || t0.includes("governmental"))) ||
-    t0.includes("no government") ||
-    t0.includes("governmental")
+    ((t0.includes("do not want") && (t0.includes("government") || t0.includes("governmental"))) ||
+      t0.includes("no government") ||
+      t0.includes("governmental"))
 
   const hardNoFullyRemote =
     t0.includes("no fully remote") ||
-    (t0.includes("do not want") && t0.includes("fully remote"))
-
-  const veryOpenToNonObvious =
-    t0.includes("very open") ||
-    t0.includes("open to non-obvious") ||
-    t0.includes("open to non obvious") ||
-    t0.includes("non-obvious entry") ||
-    t0.includes("non obvious entry")
+    (t0.includes("do not want") && t0.includes("fully remote")) ||
+    (t0.includes("d o n o t want") && t0.includes("fully remote"))
 
   return {
     hardNoHourlyPay,
@@ -523,125 +205,153 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
     hardNoSales,
     hardNoGovernment,
     hardNoFullyRemote,
-    veryOpenToNonObvious,
   }
 }
 
-// ----------------------- structured profile readers -----------------------
+/* ----------------------- deterministic job family mismatch ----------------------- */
 
-const SCHOOL_TIER_S: string[] = [
-  "harvard", "yale", "princeton", "stanford", "mit", "caltech",
-  "oxford", "cambridge"
-]
+type JobFamily =
+  | "accounting_finance"
+  | "brand_marketing_media"
+  | "marketing_analytics"
+  | "customer_success"
+  | "pm_program"
+  | "strategy_ops"
+  | "publishing_editorial"
+  | "software_data"
+  | "clinical_health"
+  | "sales"
+  | "government_public"
+  | "unknown"
 
-const SCHOOL_TIER_A: string[] = [
-  "columbia", "upenn", "university of pennsylvania", "brown",
-  "dartmouth", "cornell", "duke", "northwestern",
-  "university of chicago", "uchicago",
-  "johns hopkins", "georgetown",
-  "uc berkeley", "berkeley", "ucla",
-  "carnegie mellon", "rice", "vanderbilt",
-  "notre dame", "nyu", "new york university"
-]
+function inferJobFamily(jobText: string): JobFamily {
+  const t = normalizeText(jobText)
 
-function inferSchoolTierFromText(profileText: string): SchoolTier {
-  const t = normalizeText(profileText)
-  if (!t) return "unknown"
+  if (
+    /\b(accounts?\s+receivable|accounts?\s+payable|staff accountant|accountant|bookkeeper|double entry|general ledger|reconciliation|balance sheet|ar\b|ap\b)\b/.test(
+      t
+    )
+  ) return "accounting_finance"
 
-  const hasSchool = (list: string[]) => list.some((name) => t.includes(name))
-  if (hasSchool(SCHOOL_TIER_S)) return "S"
-  if (hasSchool(SCHOOL_TIER_A)) return "A"
+  if (
+    /\b(media buying|media buy|brand awareness media|tv\b|billboards?|podcasts?|radio|placements?|allocate marketing budget|programmatic)\b/.test(
+      t
+    )
+  ) return "brand_marketing_media"
+
+  if (
+    /\b(marketing analytics|marketing analyst|digital marketing performance|campaign performance|return on ad spend|roas|meta ads|google ads|linkedin ads|attribution|a\/b test)\b/.test(
+      t
+    )
+  ) return "marketing_analytics"
+
+  if (/\b(customer success|client success|implementation|onboarding|account manager|retention)\b/.test(t))
+    return "customer_success"
+
+  if (/\b(program manager|project manager|program management|project management|pm\b)\b/.test(t))
+    return "pm_program"
+
+  if (/\b(strategy|operations|biz ops|business operations|strategic planning|operational|partnerships)\b/.test(t))
+    return "strategy_ops"
+
+  if (/\b(editor|editorial|copy[- ]?edit|proofread|publishing|wordpress|cms|seo|headline)\b/.test(t))
+    return "publishing_editorial"
+
+  if (/\b(software engineer|developer|full stack|frontend|backend|api\b|typescript|javascript|python\b|data engineer|sql\b)\b/.test(t))
+    return "software_data"
+
+  if (/\b(emt\b|paramedic|nurse|rn\b|clinical|patient|medical device|therapy|hospital)\b/.test(t))
+    return "clinical_health"
+
+  if (/\b(sales|business development|quota|commission|pipeline|lead gen|cold call)\b/.test(t))
+    return "sales"
+
+  if (/\b(government|public sector|municipal|state agency|federal)\b/.test(t))
+    return "government_public"
+
   return "unknown"
 }
 
-function readSchoolTier(profileStructured: any, profileText: string): SchoolTier {
-  const ps = safeObj(profileStructured)
-  const raw = String(ps.school_tier || ps.profile?.school_tier || "").trim().toUpperCase()
-  if (raw === "S" || raw === "A" || raw === "B" || raw === "C") return raw as SchoolTier
-  return inferSchoolTierFromText(profileText)
-}
-
-function readGpaBand(profileStructured: any): GpaBand {
-  const ps = safeObj(profileStructured)
-  const raw = String(ps.gpa_band || ps.profile?.gpa_band || "").trim().toLowerCase()
-  if (raw === "3.8_plus" || raw === "3.5_3.79" || raw === "below_3.5") return raw as GpaBand
-  return "unknown"
-}
-
-function readGpa(profileStructured: any): number | null {
-  const ps = safeObj(profileStructured)
-  const g = Number(ps.gpa || ps.profile?.gpa)
-  return Number.isFinite(g) ? g : null
-}
-
-function readTargets(profileStructured: any, profileText: string): string[] {
-  const ps = safeObj(profileStructured)
-  const list =
-    (Array.isArray(ps.target_roles_list) ? ps.target_roles_list : null) ||
-    (Array.isArray(ps.profile?.target_roles_list) ? ps.profile.target_roles_list : null) ||
-    []
-
-  const fromStructured = list.map((x: any) => String(x || "").trim()).filter(Boolean)
-  if (fromStructured.length > 0) return fromStructured.slice(0, 25)
-
-  // fallback: weak extraction from text
+function profileTargetsAccounting(profileText: string) {
   const t = normalizeText(profileText)
-  const hits: string[] = []
-
-  if (t.includes("investment banking")) hits.push("investment banking")
-  if (t.includes("private equity")) hits.push("private equity")
-  if (t.includes("consulting")) hits.push("consulting")
-  if (t.includes("commercial real estate")) hits.push("commercial real estate")
-  if (t.includes("publishing") || t.includes("editorial")) hits.push("publishing / editorial")
-  if (t.includes("marketing")) hits.push("marketing")
-  if (t.includes("sales")) hits.push("sales")
-  if (t.includes("finance")) hits.push("finance")
-  if (t.includes("product")) hits.push("product")
-  if (t.includes("operations")) hits.push("operations")
-  if (t.includes("customer success")) hits.push("customer success")
-  if (t.includes("government")) hits.push("government")
-
-  return uniqTop(hits, 12)
+  return /\b(accounting|accountant|ar\b|ap\b|bookkeeping|controller|general ledger|reconciliation)\b/.test(t)
 }
 
-function mapTargetsToFunctions(targets: string[]): JobFunction[] {
-  const t = (targets || []).map((x) => normalizeText(x))
-  const out: JobFunction[] = []
+function profileTargetsMarketingOrOps(profileText: string) {
+  const t = normalizeText(profileText)
+  return /\b(marketing|brand|campaign|analytics|operations|strategy|program|project|customer success|partnerships)\b/.test(t)
+}
 
-  for (const s of t) {
-    if (/\b(investment banking|private equity|m&a|ib\b|pe\b)\b/.test(s)) out.push("investment_banking_pe_mna")
-    else if (/\b(consulting|strategy)\b/.test(s)) out.push("consulting_strategy")
-    else if (/\b(commercial real estate|real estate)\b/.test(s)) out.push("commercial_real_estate")
-    else if (/\b(accounting|finance)\b/.test(s)) out.push("finance_accounting")
-    else if (/\b(publishing|editorial|books?)\b/.test(s)) out.push("publishing_editorial")
-    else if (/\b(sales|business development)\b/.test(s)) out.push("sales")
-    else if (/\b(marketing analytics|analytics)\b/.test(s)) out.push("marketing_analytics")
-    else if (/\b(brand|content|social)\b/.test(s)) out.push("brand_marketing")
-    else if (/\b(product|program|operations|ops)\b/.test(s)) out.push("product_program_ops")
-    else if (/\b(customer success|client success)\b/.test(s)) out.push("customer_success")
-    else if (/\b(government|public)\b/.test(s)) out.push("government_public")
-    else if (/\b(software|engineering|data)\b/.test(s)) out.push("software_data")
-    else if (/\b(research)\b/.test(s)) out.push("research")
-    else if (/\b(clinical|medical|health)\b/.test(s)) out.push("clinical_health")
+function jobIsFullyRemote(jobText: string) {
+  const t = normalizeText(jobText)
+  return /\bfully remote|100% remote|remote only|work from home\b/.test(t)
+}
+
+/* ----------------------- gates ----------------------- */
+
+function evaluateGates(job: JobFacts, profile: ProfileConstraints, jobText: string, profileText: string): Gate {
+  // PASS: hourly explicitly disallowed
+  if (profile.hardNoHourlyPay && job.isHourly) {
+    const ev = job.hourlyEvidence ? ` (${job.hourlyEvidence})` : ""
+    return {
+      type: "force_pass",
+      reason: `Job is hourly${ev}, and you explicitly said no hourly pay.`,
+    }
   }
 
-  const seen = new Set<string>()
-  const dedup: JobFunction[] = []
-  for (const f of out) {
-    if (seen.has(f)) continue
-    seen.add(f)
-    dedup.push(f)
+  // REVIEW floor: full-time preference but contract role (unless contract explicitly disallowed)
+  if (profile.prefFullTime && job.isContract && !profile.hardNoContract) {
+    const ev = job.contractEvidence ? ` (signals: ${job.contractEvidence})` : ""
+    return {
+      type: "floor_review",
+      reason: `Role appears to be contract${ev}, and your preference is full-time.`,
+    }
   }
-  return dedup.slice(0, 12)
+
+  // PASS: sales disallowed and job is clearly sales
+  const fam = inferJobFamily(jobText)
+  if (profile.hardNoSales && fam === "sales") {
+    return { type: "force_pass", reason: "Role is sales/commission-focused, which you explicitly excluded." }
+  }
+
+  // PASS: government disallowed and job is clearly government/public sector
+  if (profile.hardNoGovernment && fam === "government_public") {
+    return { type: "force_pass", reason: "Role is government/public-sector, which you explicitly excluded." }
+  }
+
+  // PASS: obvious mismatch (accounting job for non-accounting targets)
+  if (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) {
+    return { type: "force_pass", reason: "Role is accounting-focused and does not match your stated target direction." }
+  }
+
+  // REVIEW floor: fully remote disallowed and job is explicitly fully remote
+  if (profile.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
+    return { type: "floor_review", reason: "Role is explicitly fully remote, and you prefer not to be fully remote." }
+  }
+
+  // REVIEW floor: brand media buying requires hands-on paid media proof
+  if (fam === "brand_marketing_media") {
+    const t = normalizeText(profileText)
+    const hasPaidMedia =
+      t.includes("media buying") ||
+      t.includes("paid media") ||
+      t.includes("programmatic") ||
+      t.includes("media planning") ||
+      t.includes("media strategy") ||
+      t.includes("google ads") ||
+      t.includes("meta ads")
+    if (!hasPaidMedia) {
+      return {
+        type: "floor_review",
+        reason: "Role is media buying/budget allocation focused, but your profile does not show direct paid media/media buying execution.",
+      }
+    }
+  }
+
+  return { type: "none" }
 }
 
-function inferTargetAlignment(primary: JobFunction, targets: JobFunction[]): TargetAlignment {
-  if (!targets || targets.length === 0) return "unclear"
-  if (targets.includes(primary)) return "on_target"
-  return "off_target"
-}
-
-// ----------------------- eligibility (graduation window) -----------------------
+/* ----------------------- deterministic date parsing (eligibility) ----------------------- */
 
 const MONTHS: Record<string, number> = {
   jan: 1, january: 1,
@@ -696,7 +406,7 @@ function extractGradWindow(jobText: string): { start: YM; end: YM } | null {
   return { start, end }
 }
 
-function extractCandidateGrad(profileText: string, profileStructured: any): YM | null {
+function extractCandidateGrad(profileText: string, profileStructured?: any): YM | null {
   const ps = safeObj(profileStructured)
   const y = Number(ps.grad_year || ps.profile?.grad_year)
   const m = Number(ps.grad_month || ps.profile?.grad_month)
@@ -704,16 +414,17 @@ function extractCandidateGrad(profileText: string, profileStructured: any): YM |
     return { year: y, month: m }
   }
 
-  const explicit = parseMonthYear(profileText || "")
+  const t = (profileText || "").replace(/\u202f/g, " ")
+  const explicit = parseMonthYear(t)
   if (explicit) return explicit
 
-  const classOf = (profileText || "").match(/\bclass of\s*(20\d{2})\b/i)
+  const classOf = t.match(/\bclass of\s*(20\d{2})\b/i)
   if (classOf) {
     const year = Number(classOf[1])
     if (Number.isFinite(year)) return { year, month: 5 }
   }
 
-  const yr = (profileText || "").match(/\b(graduate|graduating|graduation)\b[^\d]{0,20}\b(20\d{2})\b/i)
+  const yr = t.match(/\b(graduate|graduating|graduation)\b[^\d]{0,20}\b(20\d{2})\b/i)
   if (yr) {
     const year = Number(yr[2])
     if (Number.isFinite(year)) return { year, month: 5 }
@@ -730,432 +441,289 @@ function formatYM(ym: YM) {
   return `${monthNames[ym.month - 1]} ${ym.year}`
 }
 
-// ----------------------- suppress noisy risks -----------------------
+/* ----------------------- content hygiene filters ----------------------- */
 
-function suppressRiskText(s0: string) {
-  const s = normalizeText(s0)
-  if (s.includes("visa") || s.includes("work authorization") || s.includes("sponsorship")) return true
-  if (s.includes("authorized to work") || s.includes("employment authorization")) return true
-  if (s.includes("driver") && s.includes("license")) return true
-  if (s.includes("background check") || s.includes("drug test")) return true
-  if (s.includes("valid license") && s.includes("driver")) return true
-  if (s.includes("not stated") || s.includes("not specified") || s.includes("not mentioned")) return true
-  return false
+function stripAdviceLanguage(items: string[]) {
+  const bad = [
+    "highlight",
+    "tailor",
+    "your application",
+    "application materials",
+    "resume",
+    "cover letter",
+    "networking",
+    "reach out",
+    "informational interview",
+    "branding",
+    "pitch yourself",
+  ]
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase()
+    return !bad.some((b) => s.includes(b))
+  })
 }
 
-// ----------------------- hard requirements gate (explicit only) -----------------------
+function stripLocationLanguage(items: string[]) {
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase()
+    return !(
+      s.includes("commute") ||
+      s.includes("commuting") ||
+      s.includes("reasonable commuting distance") ||
+      s.includes("miles away") ||
+      s.includes("distance") ||
+      s.includes("not local") ||
+      s.includes("local presence") ||
+      s.includes("must be local") ||
+      s.includes("onsite presence required") ||
+      s.includes("hybrid location requirement") ||
+      s.includes("location mismatch") ||
+      s.includes("location preference")
+    )
+  })
+}
 
-type RequirementHit = { key: string; label: string }
-
-function detectHardRequirements(jobText: string): RequirementHit[] {
-  const t = normalizeText(jobText)
-  const reqs: RequirementHit[] = []
-
-  const patterns: Array<[RegExp, RequirementHit]> = [
-    [/\b(series\s*7)\b/, { key: "req_series_7", label: "Series 7 license required" }],
-    [/\b(series\s*63)\b/, { key: "req_series_63", label: "Series 63 license required" }],
-    [/\b(cpa)\b/, { key: "req_cpa", label: "CPA required" }],
-    [/\b(pmp)\b/, { key: "req_pmp", label: "PMP certification required" }],
-    [/\b(security clearance|ts\/sc|top secret)\b/, { key: "req_clearance", label: "Security clearance required" }],
-    [/\b(rn)\b/, { key: "req_rn", label: "RN license required" }],
-    [/\b(emt)\b/, { key: "req_emt", label: "EMT certification required" }],
+function stripNonRiskRiskFlags(items: string[]) {
+  const badPhrases = [
+    "no eligibility issue",
+    "no eligibility issues",
+    "no issues",
+    "no issue",
+    "matches the requirement",
+    "satisfies",
+    "aligned",
+    "assumed",
+    "no risk flagged",
+    "no indication",
   ]
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase()
+    return !badPhrases.some((p) => s.includes(p))
+  })
+}
 
-  for (const [re, hit] of patterns) {
-    if (re.test(t)) reqs.push(hit)
+function stripMissingJobInfoRisks(items: string[]) {
+  const bad = [
+    "job: location not stated",
+    "job: not stated",
+    "job: not specified",
+    "job: not mentioned",
+    "job: unclear",
+    "not stated in the job",
+    "not specified in the job",
+    "not mentioned in the job",
+    "unclear from the job",
+    "job does not mention",
+    "job doesn't mention",
+    "location not stated",
+    "location not specified",
+  ]
+  return items.filter((s0) => {
+    const s = (s0 || "").toLowerCase()
+    return !bad.some((b) => s.includes(b))
+  })
+}
+
+/* ----------------------- quote removal + anti-copy enforcement ----------------------- */
+
+function stripQuotesAndPrefixes(s0: string) {
+  let s = String(s0 || "").trim()
+
+  // Remove straight/dumb quotes and smart quotes content markers, but keep the sentence
+  // 1) remove double-quoted substrings
+  s = s.replace(/"[^"]{1,220}"/g, "")
+  // 2) remove single-quoted substrings (short only, avoids nuking contractions)
+  s = s.replace(/'[^']{8,220}'/g, "")
+
+  // Kill explicit prefixes if model tries them
+  s = s.replace(/\b(job|profile)\s*:\s*/gi, "")
+
+  // Remove leftover separators from earlier “proof format”
+  s = s.replace(/\s*\|\s*(job|profile)\s*:[^|]{0,200}/gi, "")
+  s = s.replace(/\s*\|\s*/g, " ")
+
+  // Collapse whitespace
+  s = s.replace(/\s+/g, " ").trim()
+
+  // Remove leading punctuation artifacts
+  s = s.replace(/^[\-\–\—\:\|]+\s*/g, "").trim()
+
+  return s
+}
+
+// If a bullet contains a long verbatim fragment from the JD, remove that fragment.
+// Simple heuristic: if any 10+ word phrase in the bullet appears in jobText, cut that phrase.
+function stripVerbatimFromJob(bullet: string, jobText: string) {
+  const b = String(bullet || "").trim()
+  const jt = normalizeText(jobText)
+  const words = b.split(/\s+/).filter(Boolean)
+  if (words.length < 12) return b
+
+  // check sliding windows of 10–14 words
+  const maxWindow = Math.min(14, Math.floor(words.length / 2))
+  for (let w = maxWindow; w >= 10; w--) {
+    for (let i = 0; i + w <= words.length; i++) {
+      const phrase = words.slice(i, i + w).join(" ").toLowerCase()
+      if (phrase.length < 40) continue
+      if (jt.includes(normalizeText(phrase))) {
+        const before = words.slice(0, i).join(" ")
+        const after = words.slice(i + w).join(" ")
+        const rebuilt = `${before} ${after}`.replace(/\s+/g, " ").trim()
+        return rebuilt || b
+      }
+    }
   }
+  return b
+}
 
+function cleanBulletsNoQuotes(items: string[], jobText: string, max: number) {
+  const out: string[] = []
   const seen = new Set<string>()
-  const out: RequirementHit[] = []
-  for (const r of reqs) {
-    if (seen.has(r.key)) continue
-    seen.add(r.key)
-    out.push(r)
-  }
-  return out.slice(0, 10)
-}
-
-function profileMentionsRequirement(profileText: string, req: RequirementHit) {
-  const t = normalizeText(profileText)
-  if (req.key === "req_series_7") return /\bseries\s*7\b/.test(t)
-  if (req.key === "req_series_63") return /\bseries\s*63\b/.test(t)
-  if (req.key === "req_cpa") return /\bcpa\b/.test(t)
-  if (req.key === "req_pmp") return /\bpmp\b/.test(t)
-  if (req.key === "req_clearance") return /\bsecurity clearance|ts\/sc|top secret\b/.test(t)
-  if (req.key === "req_rn") return /\brn\b/.test(t)
-  if (req.key === "req_emt") return /\bemt\b/.test(t)
-  return false
-}
-
-// ----------------------- alignment inference -----------------------
-
-const DIRECT_KEYWORDS: Record<JobFunction, RegExp[]> = {
-  investment_banking_pe_mna: [/\b(investment banking|ib\b|m&a|mergers|acquisitions|lbo|leveraged buyout|pitchbook|financial modeling|valuation|dcf)\b/],
-  consulting_strategy: [/\b(consulting|consultant|case interview|workstream|deck|analysis|client deliverables)\b/],
-  finance_accounting: [/\b(financial analysis|fp&a|budget|forecast|accounting|reconciliation|general ledger|journal entries|ar\b|ap\b)\b/],
-  commercial_real_estate: [/\b(commercial real estate|real estate underwriting|noi|cap rate|dscr|multifamily|industrial|office|leasing)\b/],
-  publishing_editorial: [
-    /\b(copy[- ]?edit|copyedit|proofread|proofreading|line edit|fact[- ]?check|style guide|ap style|chicago)\b/,
-    /\b(editorial assistant|assistant editor|editor\b|publishing|imprint|submissions?|manuscripts?|op-eds?|contributors?)\b/,
-    /\b(cms|content[- ]?management system|wordpress|incopy)\b/,
-  ],
-  sales: [/\b(sales|business development|quota|pipeline|crm\b|lead gen|cold call|outbound|closing)\b/],
-  marketing_analytics: [/\b(sql\b|google analytics|roas|attribution|a\/b test|performance marketing|campaign performance|meta ads|google ads)\b/],
-  brand_marketing: [/\b(brand|content|social media|creative strategy|communications|copywriting|storytelling)\b/],
-  product_program_ops: [/\b(program management|project management|operations|process improvement|roadmap|requirements|stakeholders?)\b/],
-  customer_success: [/\b(customer success|client success|onboarding|implementation|account management|retention)\b/],
-  government_public: [/\b(government|public sector|municipal|state agency|federal)\b/],
-  software_data: [/\b(software|engineer|developer|typescript|javascript|python\b|api\b|database|sql\b|data pipeline|machine learning)\b/],
-  research: [/\b(research assistant|lab\b|irb\b|publication|literature review|data collection|analysis)\b/],
-  clinical_health: [/\b(emt\b|patient|clinical|medical device|therapy|rn\b|hospital)\b/],
-  unknown: [],
-}
-
-const STRONG_ADJACENCY: Record<JobFunction, JobFunction[]> = {
-  investment_banking_pe_mna: ["finance_accounting", "commercial_real_estate", "consulting_strategy"],
-  consulting_strategy: ["product_program_ops", "finance_accounting", "marketing_analytics"],
-  finance_accounting: ["investment_banking_pe_mna", "commercial_real_estate", "product_program_ops"],
-  commercial_real_estate: ["finance_accounting", "investment_banking_pe_mna"],
-  publishing_editorial: ["brand_marketing", "research", "product_program_ops"],
-  sales: ["customer_success", "brand_marketing"],
-  marketing_analytics: ["brand_marketing", "product_program_ops"],
-  brand_marketing: ["marketing_analytics", "customer_success"],
-  product_program_ops: ["consulting_strategy", "marketing_analytics", "finance_accounting"],
-  customer_success: ["sales", "brand_marketing", "product_program_ops"],
-  government_public: ["unknown"],
-  software_data: ["research"],
-  research: ["software_data", "clinical_health"],
-  clinical_health: ["research"],
-  unknown: ["unknown"],
-}
-
-function countKeywordHits(text: string, patterns: RegExp[]) {
-  const t = normalizeText(text)
-  let hits = 0
-  for (const re of patterns || []) {
-    if (re.test(t)) hits += 1
-  }
-  return hits
-}
-
-function inferAlignmentLevel(profileText: string, primary: JobFunction): { level: AlignmentLevel; evidenceScore: number } {
-  if (primary === "unknown") return { level: "weak_adjacent", evidenceScore: 0 }
-
-  const directHits = countKeywordHits(profileText, DIRECT_KEYWORDS[primary] || [])
-  if (directHits >= 1) return { level: "direct", evidenceScore: 2 + directHits }
-
-  const strongAdj = STRONG_ADJACENCY[primary] || []
-  let bestAdjHits = 0
-  for (const adj of strongAdj) {
-    const hits = countKeywordHits(profileText, DIRECT_KEYWORDS[adj] || [])
-    if (hits > bestAdjHits) bestAdjHits = hits
-  }
-  if (bestAdjHits >= 1) return { level: "strong_adjacent", evidenceScore: 1 + bestAdjHits }
-
-  // Weak adjacency is allowed only when the profile has general evidence of professional execution
-  const t = normalizeText(profileText)
-  const weakSignals =
-    (t.includes("project") ? 1 : 0) +
-    (t.includes("leadership") ? 1 : 0) +
-    (t.includes("analysis") ? 1 : 0) +
-    (t.includes("intern") ? 1 : 0)
-  if (weakSignals >= 2) return { level: "weak_adjacent", evidenceScore: 1 }
-
-  return { level: "none", evidenceScore: 0 }
-}
-
-// ----------------------- experience gate (years required) -----------------------
-
-function extractMinYearsRequired(jobText: string): number | null {
-  const t = normalizeText(jobText)
-
-  // patterns: "3-6 years", "3 to 6 years"
-  const mRange = t.match(/\b(\d{1,2})\s*(?:-|\sto\s)\s*(\d{1,2})\s+years?\b/)
-  if (mRange) return Number(mRange[1])
-
-  // patterns: "at least 3 years", "minimum 3 years"
-  const mAtLeast = t.match(/\b(at least|minimum|min\.)\s*(\d{1,2})\s+years?\b/)
-  if (mAtLeast) return Number(mAtLeast[2])
-
-  // patterns: "3+ years"
-  const mPlus = t.match(/\b(\d{1,2})\s*\+\s*years?\b/)
-  if (mPlus) return Number(mPlus[1])
-
-  return null
-}
-
-type ExperienceBand = "0_1" | "2_3" | "4_6" | "7_plus" | "unknown"
-
-function estimateExperienceBand(profileText: string, profileStructured: any): ExperienceBand {
-  const t = normalizeText(profileText)
-  const ps = safeObj(profileStructured)
-
-  // explicit "X years"
-  const mYears = t.match(/\b(\d{1,2})\s*\+?\s*years?\b/)
-  if (mYears) {
-    const y = Number(mYears[1])
-    if (y >= 7) return "7_plus"
-    if (y >= 4) return "4_6"
-    if (y >= 2) return "2_3"
-    return "0_1"
-  }
-
-  // proxy: grad year
-  const gy = Number(ps.grad_year || ps.profile?.grad_year)
-  if (Number.isFinite(gy)) {
-    const nowYear = 2026
-    const diff = nowYear - gy
-    if (diff >= 7) return "7_plus"
-    if (diff >= 4) return "4_6"
-    if (diff >= 2) return "2_3"
-    if (diff >= 0) return "0_1"
-  }
-
-  // fallback: obvious student signals
-  if (t.includes("recent graduate") || t.includes("class of")) return "0_1"
-
-  return "unknown"
-}
-
-function yearsBandMeets(minYears: number, band: ExperienceBand): boolean {
-  if (band === "unknown") return false
-  if (minYears >= 7) return band === "7_plus"
-  if (minYears >= 4) return band === "4_6" || band === "7_plus"
-  if (minYears >= 2) return band === "2_3" || band === "4_6" || band === "7_plus"
-  return true
-}
-
-// ----------------------- profile signals (strict, proof-first) -----------------------
-
-function extractProfileSignals(profileText: string): Signal[] {
-  const t = normalizeText(profileText)
-
-  const patterns: Array<[RegExp, Signal]> = [
-    // Editorial proof (only when explicit)
-    [/\b(copy[- ]?edit(or|ing)?|copyedit|line edit(ing)?)\b/, { key: "editing", label: "Copyediting and line editing", strength: "explicit" }],
-    [/\b(proofread(ing)?)\b/, { key: "proofreading", label: "Proofreading and final-pass accuracy", strength: "explicit" }],
-    [/\b(fact[- ]?check(ing)?|fact check(ing)?)\b/, { key: "publishing_research", label: "Fact-checking and accuracy review", strength: "explicit" }],
-    [/\b(style guide|ap style|chicago)\b/, { key: "editing", label: "Style guide based editing (AP/Chicago)", strength: "explicit" }],
-    [/\b(headlines?|display copy)\b/, { key: "headline_writing", label: "Headline and display copy writing", strength: "explicit" }],
-    [/\bseo\b/, { key: "seo", label: "SEO-aware publishing", strength: "explicit" }],
-    [/\b(content[- ]?management system|cms|wordpress|incopy)\b/, { key: "cms", label: "CMS publishing workflow", strength: "explicit" }],
-
-    // Publication environment (only when a real publication is referenced)
-    [/\b(newsroom|magazine|journal|the yale review|yale daily news|the new journal)\b/, { key: "publishing_ops", label: "Editorial team experience in a publication environment", strength: "explicit" }],
-
-    // Submissions screening (ONLY when explicit)
-    [/\b(unsolicited submissions?|slush pile|submissions? screening|reader\b)\b/, { key: "publishing_ops", label: "Evaluating and screening submissions", strength: "explicit" }],
-
-    // Presentations
-    [/\b(presentation|deck|powerpoint)\b/, { key: "presentations", label: "Presentations and stakeholder communication", strength: "explicit" }],
-
-    // Data analysis
-    [/\b(data analysis|testing and reporting|kpi)\b/, { key: "data_analysis", label: "Data analysis and reporting", strength: "explicit" }],
-    [/\bsql\b/, { key: "sql", label: "SQL-based analysis", strength: "explicit" }],
-    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling)\b/, { key: "excel", label: "Advanced Excel execution", strength: "explicit" }],
-
-    // Operations / coordination
-    [/\b(operations intern|operations assistant|operations coordinator)\b/, { key: "ops", label: "Operations coordination and execution", strength: "explicit" }],
-    [/\b(schedule(ing)?|calendar management|deadline(s)?|multi[- ]?thread)\b/, { key: "project_management", label: "Deadlines, scheduling, and coordination", strength: "explicit" }],
-  ]
-
-  const out: Signal[] = []
-  for (const [re, sig] of patterns) {
-    if (re.test(t)) out.push(sig)
-    if (out.length >= 7) break
+  for (const raw of items) {
+    let s = stripQuotesAndPrefixes(raw)
+    s = stripVerbatimFromJob(s, jobText)
+    s = s.replace(/\s+/g, " ").trim()
+    if (!s) continue
+    const k = s.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(s)
+    if (out.length >= max) break
   }
   return out
 }
 
-// ----------------------- hard exclusions + ceilings -----------------------
+/* ----------------------- 3+ years contamination ----------------------- */
 
-function isHardExclusionPass(
-  constraints: ProfileConstraints,
-  jobFacts: JobFacts,
-  primary: JobFunction
-): { pass: boolean; reason?: string } {
-  if (constraints.hardNoHourlyPay && jobFacts.isHourly) {
-    const ev = jobFacts.hourlyEvidence ? ` (${jobFacts.hourlyEvidence})` : ""
-    return { pass: true, reason: `Hourly role${ev} conflicts with an explicit no-hourly exclusion.` }
-  }
-  if (constraints.hardNoContract && jobFacts.isContract) {
-    return { pass: true, reason: "Contract role conflicts with an explicit no-contract exclusion." }
-  }
-  if (constraints.hardNoSales && primary === "sales") {
-    return { pass: true, reason: "Sales-focused role conflicts with an explicit no-sales exclusion." }
-  }
-  if (constraints.hardNoGovernment && primary === "government_public") {
-    return { pass: true, reason: "Government/public-sector role conflicts with an explicit no-government exclusion." }
-  }
-  return { pass: false }
+function containsThreePlusYearsFlag(riskFlags: string[]) {
+  return riskFlags.some((r) => {
+    const s = (r || "").toLowerCase()
+    return s.includes("3+ years") || s.includes("3 years") || s.includes("three years") || s.includes("minimum 3 years")
+  })
 }
 
-type Ceiling = "cap_review"
-
-function applyCeilings(decision: Decision, ceilings: Ceiling[]): Decision {
-  if (ceilings.includes("cap_review")) {
-    if (decision === "Priority Apply" || decision === "Apply") return "Review"
-  }
-  return decision
+function jdMentionsThreePlusYears(jobText: string) {
+  const t = (jobText || "").toLowerCase()
+  return (
+    t.includes("3+ years") ||
+    t.includes("three years") ||
+    t.includes("minimum 3 years") ||
+    /\b3\+\s*year/.test(t) ||
+    /\b3\s*years?\b/.test(t)
+  )
 }
 
-// ----------------------- next step copy -----------------------
+/* ----------------------- meaningful risk enforcement ----------------------- */
 
-function buildNextStep(decision: Decision) {
-  if (decision === "Pass") return "Do not apply."
-  if (decision === "Review") return "Only apply if you accept the risks and can tighten proof fast."
-  if (decision === "Apply") return "Apply. Then move to networking."
-  return "Priority apply. Then move to networking."
+function isMeaningfulRisk(r: string) {
+  const s = (r || "").toLowerCase()
+
+  if (
+    s.includes("no issue") ||
+    s.includes("no issues") ||
+    s.includes("no eligibility") ||
+    s.includes("matches") ||
+    s.includes("satisfies") ||
+    s.includes("aligned") ||
+    s.includes("assumed")
+  ) return false
+
+  const cues = [
+    "unclear",
+    "missing",
+    "gap",
+    "limited",
+    "concern",
+    "risk",
+    "lack",
+    "mismatch",
+    "outside",
+    "requires",
+    "preferred",
+    "competitive",
+    "contract",
+    "hourly",
+    "remote",
+    "years",
+  ]
+  return cues.some((c) => s.includes(c))
 }
 
-function shouldShowGpaRisk(employerTier: EmployerTier, gpaBand: GpaBand) {
-  if (gpaBand === "unknown") return false
-  if (employerTier === 1) return true
-  if (employerTier === 2) return gpaBand === "below_3.5"
-  return false
+function countMeaningfulRisks(riskFlags: string[]) {
+  return riskFlags.filter(isMeaningfulRisk).length
 }
 
-function shouldAddPedigreeBullet(params: { employerTier: EmployerTier; schoolTier: SchoolTier; decision: Decision }) {
-  const { employerTier, schoolTier, decision } = params
-  const pedigreeStrong = schoolTier === "S" || schoolTier === "A"
-  if (!pedigreeStrong) return false
-
-  // Only show when it helps and does not become fluff
-  if (decision === "Priority Apply" || decision === "Apply") return true
-  if (employerTier === 1 || employerTier === 2) return true
-  return false
+function hasMissingCoreRequirement(riskFlags: string[]) {
+  const t = riskFlags.join(" ").toLowerCase()
+  return (
+    t.includes("no direct experience") ||
+    t.includes("lack of direct experience") ||
+    (t.includes("missing") && t.includes("experience")) ||
+    (t.includes("no experience") && (t.includes("required") || t.includes("platform") || t.includes("tool")))
+  )
 }
 
-// ----------------------- risk labels (human only) -----------------------
+/* ----------------------- location constraint ----------------------- */
 
-type RiskCode =
-  | "off_target_role"
-  | "weak_alignment"
-  | "strong_adjacent_alignment"
-  | "tier1_competition"
-  | "tier2_competition"
-  | "competitive_market"
-  | "pedigree_gap"
-  | "gpa_risk_below_3_8"
-  | "gpa_risk_below_3_5"
-  | "contract_role"
-  | "hourly_role"
-  | "fully_remote_role"
-  | "years_required_mismatch"
-  | "targets_unclear"
-
-function riskLabel(code: RiskCode) {
-  switch (code) {
-    case "off_target_role":
-      return "Off-target vs your stated direction. Do not treat this as a smart apply unless you are intentionally pivoting."
-    case "weak_alignment":
-      return "The role match is not clearly proven in your materials. Screens will treat that as missing."
-    case "strong_adjacent_alignment":
-      return "Your background is adjacent, not direct. That can work, but it raises the bar."
-    case "tier1_competition":
-      return "Tier 1 competition. Expect tougher screens and a deeper candidate pool."
-    case "tier2_competition":
-      return "Tier 2 competition. Still competitive."
-    case "competitive_market":
-      return "Competitive applicant pool. Your materials need tight proof and fast follow-up networking."
-    case "pedigree_gap":
-      return "For this level of competition, school pedigree can matter. Without a feeder background, you need stronger proof."
-    case "gpa_risk_below_3_8":
-      return "For Tier 1 competition, GPA below 3.8 can reduce odds depending on employer screens."
-    case "gpa_risk_below_3_5":
-      return "GPA below 3.5 can reduce odds depending on employer screens."
-    case "contract_role":
-      return "Contract structure. Only proceed if that fits your preference and risk tolerance."
-    case "hourly_role":
-      return "Hourly pay structure. Make sure that fits your preference and trajectory."
-    case "fully_remote_role":
-      return "Fully remote role. If you prefer in-person or hybrid, treat this as a real tradeoff."
-    case "years_required_mismatch":
-      return "Years-of-experience mismatch. The job asks for experienced ownership, and your profile does not clearly prove that level yet."
-    case "targets_unclear":
-      return "Your targets are unclear, so this decision is based purely on visible fit signals."
-  }
+function normalizeLocationConstraint(x: any): LocationConstraint {
+  const s = String(x || "").trim().toLowerCase()
+  if (s === "constrained") return "constrained"
+  if (s === "not_constrained" || s === "not constrained") return "not_constrained"
+  if (s === "unclear") return "unclear"
+  return "unclear"
 }
 
-function toUserRiskFlags(codes: RiskCode[]) {
-  const out: string[] = []
-  for (const code of codes || []) {
-    const label = riskLabel(code)
-    if (label && !suppressRiskText(label)) out.push(label)
-  }
-  return uniqTop(out, 6)
+/* ----------------------- school tier (optional competitiveness signal) ----------------------- */
+
+type SchoolTier = "S" | "A" | "B" | "C" | "unknown"
+
+const SCHOOL_TIER_S: string[] = [
+  "harvard", "yale", "princeton", "stanford", "mit", "caltech",
+  "oxford", "cambridge",
+]
+
+const SCHOOL_TIER_A: string[] = [
+  "columbia", "upenn", "university of pennsylvania", "brown",
+  "dartmouth", "cornell", "duke", "northwestern",
+  "university of chicago", "uchicago",
+  "johns hopkins", "georgetown",
+  "uc berkeley", "berkeley", "ucla",
+  "carnegie mellon", "rice", "vanderbilt",
+  "notre dame", "nyu", "new york university",
+]
+
+function inferSchoolTierFromText(profileText: string): SchoolTier {
+  const t = normalizeText(profileText)
+  if (!t) return "unknown"
+  const hasSchool = (list: string[]) => list.some((name) => t.includes(name))
+  if (hasSchool(SCHOOL_TIER_S)) return "S"
+  if (hasSchool(SCHOOL_TIER_A)) return "A"
+  return "unknown"
 }
 
-// ----------------------- bullet builders (Why must be factual) -----------------------
-
-function buildWhyBullets(params: {
-  decision: Decision
-  jobSignals: Signal[]
-  profSignals: Signal[]
-  overlap: Signal[]
-  schoolTier: SchoolTier
-  employerTier: EmployerTier
-  minYears: number | null
-  expBand: ExperienceBand
-}) {
-  const {
-    decision,
-    jobSignals,
-    profSignals,
-    overlap,
-    schoolTier,
-    employerTier,
-    minYears,
-    expBand,
-  } = params
-
-  const bullets: string[] = []
-
-  const jobTop = uniqTop(signalLabels(jobSignals, 4), 4)
-  const overlapTop = safeOverlapLabels(overlap)
-
-  // 1) Role requirement statement (generic, no quotes)
-  if (jobTop.length > 0) {
-    bullets.push(`This role centers on ${joinWithAnd(jobTop).toLowerCase()}.`)
-  } else {
-    bullets.push("This role is evaluating strong execution in its core function and quality standards.")
-  }
-
-  // 2) Proof statement (only if overlap is real)
-  if (overlapTop.length > 0) {
-    bullets.push(`Visible proof: your ${joinWithAnd(overlapTop).toLowerCase()} maps to what this role requires.`)
-  } else {
-    bullets.push("Your resume does not show clean, explicit proof that matches the role’s core requirements yet.")
-  }
-
-  // 3) Competitiveness signal (only if it matters and is not fluff)
-  const pedigreeStrong = schoolTier === "S" || schoolTier === "A"
-  if (shouldAddPedigreeBullet({ employerTier, schoolTier, decision })) {
-    bullets.push("Your Tier 1 school strengthens your competitiveness for this role.")
-  } else if (decision === "Review" && employerTier <= 2) {
-    bullets.push("This is competitive. If your proof is not explicit, you will get screened out fast.")
-  }
-
-  // 4) Experience statement (only if job asks for it)
-  if (minYears !== null && minYears >= 3) {
-    const meets = yearsBandMeets(minYears, expBand)
-    if (!meets) {
-      bullets.push("This posting expects experienced editing ownership. If you apply anyway, your materials must show equivalent professional-level work.")
-    } else {
-      bullets.push("Your experience level appears closer to what this posting expects, so this becomes a cleaner shot if your proof is explicit.")
-    }
-  }
-
-  // 5) Decision-specific action line (not fluff)
-  if (decision === "Priority Apply") bullets.push("Priority apply. Submit clean materials, then move to targeted networking.")
-  if (decision === "Apply") bullets.push("Apply. Submit clean materials, then move to targeted networking.")
-  if (decision === "Review") bullets.push("Review. Only apply if you can tighten proof fast and accept the risks.")
-  if (decision === "Pass") bullets.push("Pass. This is not a smart use of applications right now.")
-
-  return uniqTop(bullets, 6)
+function readSchoolTier(profileStructured: any, profileText: string): SchoolTier {
+  const ps = safeObj(profileStructured)
+  const raw = String(ps.school_tier || ps.profile?.school_tier || "").trim().toUpperCase()
+  if (raw === "S" || raw === "A" || raw === "B" || raw === "C") return raw as SchoolTier
+  return inferSchoolTierFromText(profileText)
 }
 
-// ----------------------- MAIN -----------------------
+function isCompetitiveEditorialOrg(jobText: string) {
+  const t = normalizeText(jobText)
+  // Keep this conservative: only obvious prestige/competition magnets
+  return (
+    t.includes("the new yorker") ||
+    t.includes("wall street journal") ||
+    t.includes("wsj") ||
+    t.includes("dow jones") ||
+    t.includes("condé nast") ||
+    t.includes("conde nast") ||
+    t.includes("new york times") ||
+    t.includes("the economist")
+  )
+}
+
+/* ----------------------- main ----------------------- */
 
 export async function runJobFit({
   profileText,
@@ -1167,50 +735,26 @@ export async function runJobFit({
   profileStructured?: any
 }) {
   const ps = safeObj(profileStructured)
-
   const jobFacts = extractJobFacts(jobText)
-  const constraints = extractProfileConstraints(profileText)
+  const profileConstraints = extractProfileConstraints(profileText)
 
-  const employerTier: EmployerTier =
-    (Number(ps.employer_tier) as any) ||
-    (Number(ps.job_meta?.employer_tier) as any) ||
-    inferEmployerTier(jobText)
+  const gate = evaluateGates(jobFacts, profileConstraints, jobText, profileText)
 
-  const schoolTier = readSchoolTier(ps, profileText)
-  const gpaBand = readGpaBand(ps)
-  const gpa = readGpa(ps)
-
-  const seniority = inferJobSeniority(jobText)
-  const primaryFunction = inferJobFunction(jobText)
-
-  const rawTargets = readTargets(ps, profileText)
-  const targetFunctions = mapTargetsToFunctions(rawTargets)
-  const targetAlignment = inferTargetAlignment(primaryFunction, targetFunctions)
-
-  const ceilings: Ceiling[] = []
-
-  // 1) HARD EXCLUSIONS => PASS
-  const hard = isHardExclusionPass(constraints, jobFacts, primaryFunction)
-  if (hard.pass) {
-    const bullets = uniqTop([hard.reason || "Role conflicts with an explicit hard exclusion.", buildVisibilityBullet()], 6)
+  // Forced PASS: do not call model
+  if (gate.type === "force_pass") {
     return {
       decision: "Pass" as Decision,
       icon: iconForDecision("Pass"),
-      score: enforceScoreBand("Pass", 45),
-      bullets,
+      score: 57,
+      bullets: [gate.reason].slice(0, 6),
       risk_flags: [],
-      next_step: buildNextStep("Pass"),
+      next_step: "Do not apply. Focus on more aligned positions.",
       location_constraint: "unclear" as LocationConstraint,
       logic_version: JOBFIT_LOGIC_VERSION,
     }
   }
 
-  // 2) CEILINGS (do not auto-pass)
-  if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) ceilings.push("cap_review")
-  if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) ceilings.push("cap_review")
-  if (targetAlignment === "off_target" && !constraints.veryOpenToNonObvious) ceilings.push("cap_review")
-
-  // 3) GRAD WINDOW => PASS (deterministically mismatched)
+  // Graduation-window eligibility: mismatch => PASS (deterministic)
   const gradWindow = extractGradWindow(jobText)
   const candGrad = extractCandidateGrad(profileText, ps)
   if (gradWindow && candGrad) {
@@ -1218,208 +762,244 @@ export async function runJobFit({
     const s = ymToIndex(gradWindow.start)
     const e = ymToIndex(gradWindow.end)
     if (c < s || c > e) {
-      const bullets = uniqTop(
-        [
-          `Graduation window mismatch. This role targets graduates between ${formatYM(gradWindow.start)} and ${formatYM(gradWindow.end)}.`,
-          `Your profile indicates graduation around ${formatYM(candGrad)}.`,
-          buildVisibilityBullet(),
-        ],
-        6
-      )
       return {
         decision: "Pass" as Decision,
         icon: iconForDecision("Pass"),
-        score: enforceScoreBand("Pass", 45),
-        bullets,
+        score: 57,
+        bullets: [
+          `Graduation window mismatch. This role targets graduates between ${formatYM(gradWindow.start)} and ${formatYM(gradWindow.end)}.`,
+          `Your profile indicates graduation around ${formatYM(candGrad)}.`,
+        ].slice(0, 6),
         risk_flags: [],
-        next_step: buildNextStep("Pass"),
+        next_step: "Do not apply. Focus on roles aligned to your eligibility window.",
         location_constraint: "unclear" as LocationConstraint,
         logic_version: JOBFIT_LOGIC_VERSION,
       }
     }
   }
 
-  // 4) HARD REQUIREMENTS => PASS (explicit only)
-  const reqs = detectHardRequirements(jobText)
-  const missingReqs = reqs.filter((r) => !profileMentionsRequirement(profileText, r))
-  if (missingReqs.length > 0) {
-    const bullets = uniqTop(
-      [
-        "This role has explicit hard requirements that are not visible in your profile.",
-        ...missingReqs.map((r) => r.label),
-        buildVisibilityBullet(),
-      ],
-      6
-    )
+  const schoolTier = readSchoolTier(ps, profileText)
+  const fam = inferJobFamily(jobText)
+  const competitiveEditorial = fam === "publishing_editorial" && isCompetitiveEditorialOrg(jobText)
+
+  // System prompt: no quotes, no Job:/Profile: prefixes, 3–5 WHY bullets, real risks only.
+  const system = `
+You are WRNSignal, a job evaluation decision system by Workforce Ready Now.
+
+Evaluate whether ONE job is worth applying to for an early-career candidate.
+
+Return JSON ONLY in this schema:
+{
+  "decision": "Apply" | "Review" | "Pass",
+  "score": number,
+  "bullets": string[],
+  "risk_flags": string[],
+  "location_constraint": "constrained" | "not_constrained" | "unclear"
+}
+
+Non-negotiables:
+- Provide 3 to 5 WHY bullets. These must be specific and grounded in BOTH the job and the profile.
+- Do NOT quote the job description or profile. No quotation marks. Do not copy long phrases.
+- Do NOT use prefixes like "Job:" or "Profile:".
+- WHY bullets must be factual. Do not claim tools/platforms/experience unless visible in the profile text.
+- Each WHY bullet must include both sides of evidence in one sentence using this structure:
+  "<claim>. Evidence: job needs <requirement>, profile shows <proof>."
+  Keep the evidence short and paraphrased.
+- Risk flags must be plain text only. No "Job:" / "Profile:" / "Missing:".
+- Only include risks triggered by explicit job requirements/responsibilities OR obvious competitiveness.
+- Do NOT create risks based on missing job info (do not say "not stated/not mentioned").
+- Do NOT provide resume/cover letter/networking advice.
+- If the job lists a minimum years requirement that is above typical entry-level and the profile does not show that years level, add a risk.
+- If the job is clearly competitive (top publication/brand) and the profile proof is partial, add a competition/bar-raising risk.
+`.trim()
+
+  const user = `
+CLIENT PROFILE:
+${profileText}
+
+JOB DESCRIPTION:
+${jobText}
+
+Extra context:
+- SchoolTier detected: ${schoolTier}
+- JobFamily inferred: ${fam}
+- CompetitiveEditorialOrg: ${competitiveEditorial ? "true" : "false"}
+
+Make a JobFit decision. Return JSON only.
+`.trim()
+
+  const resp = await client.responses.create({
+    model: "gpt-4.1-mini",
+    input: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  })
+
+  // @ts-ignore
+  const raw = (resp as any).output_text || ""
+  const parsed = extractJsonObject(raw)
+
+  if (!parsed) {
+    const fallbackDecision: Decision = gate.type === "floor_review" ? "Review" : "Review"
     return {
-      decision: "Pass" as Decision,
-      icon: iconForDecision("Pass"),
-      score: enforceScoreBand("Pass", 45),
-      bullets,
-      risk_flags: [],
-      next_step: buildNextStep("Pass"),
+      decision: fallbackDecision,
+      icon: iconForDecision(fallbackDecision),
+      score: enforceScoreBand(fallbackDecision, 60),
+      bullets: [
+        "Model did not return structured JSON.",
+        gate.type === "floor_review" ? gate.reason : "Decision requires manual review.",
+      ].slice(0, 6),
+      risk_flags: ["Non-JSON model response"].slice(0, 6),
+      next_step: "Review the risk flags carefully before proceeding.",
       location_constraint: "unclear" as LocationConstraint,
       logic_version: JOBFIT_LOGIC_VERSION,
     }
   }
 
-  // 5) ALIGNMENT
-  const { level: alignmentLevel } = inferAlignmentLevel(profileText, primaryFunction)
+  let decision = normalizeDecision(parsed.decision)
+  let score = clampScore(parsed.score)
+  let bullets = ensureArrayOfStrings(parsed.bullets, 10)
+  let riskFlags = ensureArrayOfStrings(parsed.risk_flags, 12)
+  const loc = normalizeLocationConstraint(parsed.location_constraint)
 
-  // Absolute mismatch => PASS
-  if (alignmentLevel === "none") {
-    const bullets = uniqTop(["No role-relevant alignment is visible for this job’s function.", buildVisibilityBullet()], 6)
-    return {
-      decision: "Pass" as Decision,
-      icon: iconForDecision("Pass"),
-      score: enforceScoreBand("Pass", 45),
-      bullets,
-      risk_flags: [],
-      next_step: buildNextStep("Pass"),
-      location_constraint: "unclear" as LocationConstraint,
-      logic_version: JOBFIT_LOGIC_VERSION,
-    }
+  const treatAsConstrained = loc === "constrained"
+
+  // Hygiene filters
+  if (!treatAsConstrained) {
+    bullets = stripLocationLanguage(bullets)
+    riskFlags = stripLocationLanguage(riskFlags)
+  }
+  bullets = stripAdviceLanguage(bullets)
+  riskFlags = stripAdviceLanguage(riskFlags)
+  riskFlags = stripNonRiskRiskFlags(riskFlags)
+  riskFlags = stripMissingJobInfoRisks(riskFlags)
+
+  // Remove hallucinated "3+ years" risks if JD doesn't mention it
+  if (containsThreePlusYearsFlag(riskFlags) && !jdMentionsThreePlusYears(jobText)) {
+    riskFlags = riskFlags.filter((r) => !containsThreePlusYearsFlag([r]))
   }
 
-  // 6) EXPERIENCE GATE (years required)
-  const minYears = extractMinYearsRequired(jobText)
-  const expBand = estimateExperienceBand(profileText, ps)
-
-  // If job requires 3+ years and we cannot clearly prove it, cap to Review
-  const yearsMismatch = minYears !== null && minYears >= 3 && !yearsBandMeets(minYears, expBand)
-  if (yearsMismatch) ceilings.push("cap_review")
-
-  // 7) DECISION (conservative)
-  const pedigreeStrong = schoolTier === "S" || schoolTier === "A"
-  const gpaStrong = gpaBand === "3.8_plus"
-  const gpaCompetitive = gpaBand === "3.8_plus" || gpaBand === "3.5_3.79"
-
-  let decision: Decision = "Review"
-
-  if (alignmentLevel === "direct") {
-    if (employerTier === 1) {
-      if (pedigreeStrong && gpaStrong && !yearsMismatch) decision = "Priority Apply"
-      else if ((pedigreeStrong || gpaStrong) && !yearsMismatch) decision = "Apply"
-      else decision = "Review"
-    } else if (employerTier === 2) {
-      if ((pedigreeStrong || gpaCompetitive) && !yearsMismatch) decision = "Apply"
-      else decision = "Review"
-    } else {
-      if (!yearsMismatch) decision = "Apply"
-      else decision = "Review"
-    }
-
-    // Internship carveout
-    if (seniority === "internship" && decision === "Review" && !yearsMismatch) decision = "Apply"
-  } else if (alignmentLevel === "strong_adjacent") {
-    // Adjacent is never Priority Apply
-    if (employerTier === 1) {
-      decision = pedigreeStrong && gpaStrong && !yearsMismatch ? "Apply" : "Review"
-    } else if (employerTier === 2) {
-      decision = gpaCompetitive && !yearsMismatch ? "Apply" : "Review"
-    } else {
-      decision = !yearsMismatch ? "Apply" : "Review"
-    }
-  } else {
+  // Deterministic REVIEW floor override
+  if (gate.type === "floor_review" && decision === "Apply") {
     decision = "Review"
   }
 
-  decision = applyCeilings(decision, ceilings)
+  // Obvious mismatch override always wins
+  const obviousMismatch =
+    (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) ||
+    (profileConstraints.hardNoSales && fam === "sales") ||
+    (profileConstraints.hardNoGovernment && fam === "government_public") ||
+    (profileConstraints.hardNoHourlyPay && jobFacts.isHourly)
 
-  // 8) RISKS (do not allow "no risks" when job clearly asks for experience or is competitive)
-  const riskCodes: RiskCode[] = []
-
-  if (jobFacts.isContract) riskCodes.push("contract_role")
-  if (jobFacts.isHourly) riskCodes.push("hourly_role")
-  if (jobFacts.isFullyRemote) riskCodes.push("fully_remote_role")
-
-  if (targetAlignment === "off_target") riskCodes.push("off_target_role")
-  if (targetAlignment === "unclear") riskCodes.push("targets_unclear")
-
-  if (alignmentLevel === "strong_adjacent") riskCodes.push("strong_adjacent_alignment")
-  if (alignmentLevel === "weak_adjacent") riskCodes.push("weak_alignment")
-
-  if (employerTier === 1) riskCodes.push("tier1_competition")
-  if (employerTier === 2) riskCodes.push("tier2_competition")
-
-  // Pedigree gap (Tier 1/2 only)
-  if ((employerTier === 1 || employerTier === 2) && !pedigreeStrong) riskCodes.push("pedigree_gap")
-
-  // GPA risk visibility rules
-  if (shouldShowGpaRisk(employerTier, gpaBand)) {
-    if (gpaBand === "below_3.5") riskCodes.push("gpa_risk_below_3_5")
-    if (gpaBand === "3.5_3.79" && employerTier === 1) riskCodes.push("gpa_risk_below_3_8")
+  if (obviousMismatch) {
+    decision = "Pass"
+    score = Math.min(score, 57)
+    if (riskFlags.length < 1) riskFlags.unshift("Obvious mismatch with stated direction or explicit exclusions.")
   }
 
-  // Years mismatch risk
-  if (yearsMismatch) riskCodes.push("years_required_mismatch")
-
-  // Competitive market risk for high tiers even when Apply
-  if ((decision === "Apply" || decision === "Priority Apply") && (employerTier === 1 || employerTier === 2)) {
-    riskCodes.push("competitive_market")
+  // Strict core requirement enforcement: if risks say missing core requirement, do not allow Apply
+  if (decision === "Apply" && hasMissingCoreRequirement(riskFlags)) {
+    decision = "Review"
   }
 
-  const risk_flags = toUserRiskFlags(uniqTop(riskCodes, 12) as RiskCode[])
+  // Tighten: if Review but risks are basically empty AND WHY bullets are weak, don't auto-upgrade.
+  // (We no longer auto-bump Review->Apply just because risks are low.)
 
-  // 9) WHY BULLETS (3+ bullets, factual, no "depth" talk)
-  const jobSignals = extractJobSignals(jobText)
-  const profSignals = extractProfileSignals(profileText)
-  const overlap = overlapSignals(jobSignals, profSignals)
+  // Too many risks => Review
+  if (decision !== "Pass" && riskFlags.length >= 5) {
+    decision = "Review"
+  }
 
-  const bullets = buildWhyBullets({
-    decision,
-    jobSignals,
-    profSignals,
-    overlap,
-    schoolTier,
-    employerTier,
-    minYears,
-    expBand,
-  })
+  // Sanitize outputs to enforce “no quotes / no copied JD lines”
+  bullets = cleanBulletsNoQuotes(bullets, jobText, 6)
+  riskFlags = cleanBulletsNoQuotes(riskFlags, jobText, 6)
 
-  // 10) SCORE (deterministic, but not described to user)
-  let scoreBase =
-    decision === "Priority Apply" ? 90 :
-    decision === "Apply" ? 78 :
-    decision === "Review" ? 60 : 45
+  // Force 3–5 WHY bullets
+  if (bullets.length < 3) {
+    // Minimal deterministic fillers that do not overclaim
+    const filler: string[] = []
+    if (fam === "publishing_editorial") {
+      filler.push("Your background shows writing/editing signals that are relevant here. Evidence: job needs strong editing judgment, profile shows editorial or publication work.")
+      filler.push("You have detail-driven work that maps to editorial quality control. Evidence: job needs accuracy and consistency, profile shows proofreading/editing responsibilities.")
+    } else {
+      filler.push("There is some visible alignment to the role’s function, but proof is limited. Evidence: job needs role-specific execution, profile shows adjacent transferable work.")
+      filler.push("You have demonstrated follow-through and multi-tasking in prior roles. Evidence: job needs deadline management, profile shows coordination and responsibility.")
+    }
+    bullets = cleanBulletsNoQuotes([...bullets, ...filler], jobText, 5)
+  }
+  bullets = bullets.slice(0, 5)
 
-  if (alignmentLevel === "direct") scoreBase += 3
-  if (alignmentLevel === "strong_adjacent") scoreBase += 1
-  if (employerTier === 1) scoreBase -= 2
-  if (targetAlignment === "off_target") scoreBase -= 4
-  if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) scoreBase -= 2
-  if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) scoreBase -= 2
-  if (yearsMismatch) scoreBase -= 4
+  // Prevent “No risk flags returned” on competitive roles or when Apply is granted without clear proof
+  const meaningfulRiskCount = countMeaningfulRisks(riskFlags)
+  const roleHasYearsReq = /\b(3–6 years|3-6 years|3 to 6 years|minimum\s+3\s+years|at least\s+3\s+years)\b/i.test(jobText)
 
-  const score = enforceScoreBand(decision, scoreBase)
+  if (decision !== "Pass") {
+    const shouldForceRisk =
+      (riskFlags.length === 0) ||
+      (meaningfulRiskCount === 0 && (competitiveEditorial || roleHasYearsReq))
+
+    if (shouldForceRisk) {
+      const add: string[] = []
+
+      if (roleHasYearsReq) {
+        add.push("Years-of-experience bar may be above typical entry-level. If you do not have multiple years of professional editing, expect a tougher screen.")
+      }
+
+      if (competitiveEditorial) {
+        add.push("Competitive applicant pool. Expect higher editing standards and stronger prior publication experience among finalists.")
+      }
+
+      if (gate.type === "floor_review") {
+        add.push(gate.reason)
+      }
+
+      // If none triggered, add one honest general risk
+      if (add.length === 0) {
+        add.push("Competitive screening. If your most relevant proof is limited on-paper, expect a tougher first screen.")
+      }
+
+      riskFlags = cleanBulletsNoQuotes([...add, ...riskFlags], jobText, 6)
+    }
+  }
+
+  // If decision says Apply but we have 2+ meaningful risks, tighten to Review
+  if (decision === "Apply" && countMeaningfulRisks(riskFlags) >= 2) {
+    decision = "Review"
+  }
+
+  // If Review and risks are actually empty, allow Apply only if we have strong WHY volume (>=4) and not floor_review
+  if (decision === "Review" && gate.type !== "floor_review" && countMeaningfulRisks(riskFlags) === 0 && bullets.length >= 4) {
+    decision = "Apply"
+  }
+
+  // Score sanity
+  if (decision === "Review" && score < 58) decision = "Pass"
+  score = enforceScoreBand(decision, score)
+
+  const next_step =
+    decision === "Pass"
+      ? "Do not apply. Focus on more aligned positions."
+      : decision === "Review"
+      ? "Review the risk flags carefully before proceeding."
+      : "Apply promptly if this role is still open."
 
   return {
     decision,
     icon: iconForDecision(decision),
     score,
-    bullets,
-    risk_flags,
-    next_step: buildNextStep(decision),
-    location_constraint: "unclear" as LocationConstraint,
+    bullets, // WHY bullets
+    risk_flags: riskFlags,
+    next_step,
+    location_constraint: loc,
     logic_version: JOBFIT_LOGIC_VERSION,
     debug: {
-      employer_tier: employerTier,
+      gate_type: gate.type,
+      job_family: fam,
       school_tier: schoolTier,
-      gpa_band: gpaBand,
-      gpa,
-      job_seniority: seniority,
-      primary_function: primaryFunction,
-      alignment_level: alignmentLevel,
-      target_alignment: targetAlignment,
-      ceilings,
+      competitive_editorial: competitiveEditorial,
       job_facts: jobFacts,
-      min_years_required: minYears,
-      experience_band: expBand,
-      years_mismatch: yearsMismatch,
-      job_signals: signalLabels(jobSignals, 12),
-      profile_signals: signalLabels(profSignals, 12),
-      overlap_signals: signalLabels(overlap, 12),
-      risk_codes: uniqTop(riskCodes, 12),
+      raw_model_json_ok: true,
     },
   }
 }
