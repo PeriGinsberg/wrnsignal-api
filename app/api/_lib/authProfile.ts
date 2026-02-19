@@ -1,3 +1,4 @@
+// app/api/_lib/authProfile.ts
 import { createClient } from "@supabase/supabase-js"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -40,6 +41,7 @@ type ClientProfileRow = {
   email: string | null
   user_id: string | null
   profile_text: string | null
+  profile_structured?: any
   risk_overrides?: any
 }
 
@@ -59,6 +61,12 @@ function isDuplicateConstraint(err: any, constraintName?: string) {
   return code === "23505" || hitConstraint
 }
 
+function safeStructured(row: any) {
+  const v = row?.profile_structured
+  if (v && typeof v === "object") return v
+  return {}
+}
+
 /**
  * API owns profile creation + attachment.
  * Client never writes to client_profiles.
@@ -69,21 +77,27 @@ function isDuplicateConstraint(err: any, constraintName?: string) {
  * - else lookup by email; attach only if user_id is null
  * - else create; if create hits duplicate email, re-fetch by email and attach
  */
-export async function getAuthedProfileText(
-  req: Request
-): Promise<{ profileId: string; profileText: string }> {
+export async function getAuthedProfileText(req: Request): Promise<{
+  profileId: string
+  profileText: string
+  profileStructured: any
+}> {
   const { userId, email } = await getAuthedUser(req)
 
   // 1) Prefer lookup by user_id
   const { data: byUserId, error: byUserErr } = await supabaseAdmin
     .from("client_profiles")
-    .select("id,user_id,email,profile_text")
+    .select("id,user_id,email,profile_text,profile_structured")
     .eq("user_id", userId)
     .maybeSingle<ClientProfileRow>()
 
   if (byUserErr) throw new Error(`Profile lookup failed: ${byUserErr.message}`)
   if (byUserId?.id) {
-    return { profileId: byUserId.id, profileText: byUserId.profile_text || "" }
+    return {
+      profileId: byUserId.id,
+      profileText: byUserId.profile_text || "",
+      profileStructured: safeStructured(byUserId),
+    }
   }
 
   // If no email, we cannot attach by email. Create a user-owned row.
@@ -94,31 +108,43 @@ export async function getAuthedProfileText(
         user_id: userId,
         email: null,
         profile_text: "",
+        profile_structured: {},
         updated_at: new Date().toISOString(),
       })
-      .select("id,user_id,email,profile_text")
+      .select("id,user_id,email,profile_text,profile_structured")
       .single<ClientProfileRow>()
 
     if (createErr || !created) {
-      throw new Error(`Profile create failed: ${createErr?.message || "unknown"}`)
+      throw new Error(
+        `Profile create failed: ${createErr?.message || "unknown"}`
+      )
     }
 
-    return { profileId: created.id, profileText: created.profile_text || "" }
+    return {
+      profileId: created.id,
+      profileText: created.profile_text || "",
+      profileStructured: safeStructured(created),
+    }
   }
 
   // 2) Try lookup by email (intake may have created email-only row)
   const { data: byEmail, error: byEmailErr } = await supabaseAdmin
     .from("client_profiles")
-    .select("id,user_id,email,profile_text")
+    .select("id,user_id,email,profile_text,profile_structured")
     .eq("email", email)
     .maybeSingle<ClientProfileRow>()
 
-  if (byEmailErr) throw new Error(`Profile lookup by email failed: ${byEmailErr.message}`)
+  if (byEmailErr)
+    throw new Error(`Profile lookup by email failed: ${byEmailErr.message}`)
 
   if (byEmail?.id) {
     // If already attached to THIS user, return
     if (byEmail.user_id === userId) {
-      return { profileId: byEmail.id, profileText: byEmail.profile_text || "" }
+      return {
+        profileId: byEmail.id,
+        profileText: byEmail.profile_text || "",
+        profileStructured: safeStructured(byEmail),
+      }
     }
 
     // If attached to SOME OTHER user, do NOT attach. This should never happen in a healthy flow.
@@ -133,7 +159,7 @@ export async function getAuthedProfileText(
       .from("client_profiles")
       .update({ user_id: userId, updated_at: new Date().toISOString() })
       .eq("id", byEmail.id)
-      .select("id,user_id,email,profile_text")
+      .select("id,user_id,email,profile_text,profile_structured")
       .single<ClientProfileRow>()
 
     if (attachErr || !attached) {
@@ -141,18 +167,28 @@ export async function getAuthedProfileText(
       if (isDuplicateConstraint(attachErr, "client_profiles_user_id_key")) {
         const { data: raced, error: racedErr } = await supabaseAdmin
           .from("client_profiles")
-          .select("id,user_id,email,profile_text")
+          .select("id,user_id,email,profile_text,profile_structured")
           .eq("user_id", userId)
           .maybeSingle<ClientProfileRow>()
 
         if (racedErr) throw new Error(`Profile lookup failed: ${racedErr.message}`)
-        if (raced?.id) return { profileId: raced.id, profileText: raced.profile_text || "" }
+        if (raced?.id) {
+          return {
+            profileId: raced.id,
+            profileText: raced.profile_text || "",
+            profileStructured: safeStructured(raced),
+          }
+        }
       }
 
       throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
     }
 
-    return { profileId: attached.id, profileText: attached.profile_text || "" }
+    return {
+      profileId: attached.id,
+      profileText: attached.profile_text || "",
+      profileStructured: safeStructured(attached),
+    }
   }
 
   // 3) Create fresh row. If this races with intake insert, email unique may trip.
@@ -162,9 +198,10 @@ export async function getAuthedProfileText(
       user_id: userId,
       email,
       profile_text: "",
+      profile_structured: {},
       updated_at: new Date().toISOString(),
     })
-    .select("id,user_id,email,profile_text")
+    .select("id,user_id,email,profile_text,profile_structured")
     .single<ClientProfileRow>()
 
   if (createErr) {
@@ -172,17 +209,21 @@ export async function getAuthedProfileText(
     if (isDuplicateConstraint(createErr, "client_profiles_email_key")) {
       const { data: existingByEmail, error: reErr } = await supabaseAdmin
         .from("client_profiles")
-        .select("id,user_id,email,profile_text")
+        .select("id,user_id,email,profile_text,profile_structured")
         .eq("email", email)
         .maybeSingle<ClientProfileRow>()
 
       if (reErr) throw new Error(`Profile lookup by email failed: ${reErr.message}`)
-      if (!existingByEmail?.id) throw new Error(`Profile create failed: duplicate email, but could not re-fetch.`)
+      if (!existingByEmail?.id)
+        throw new Error(
+          `Profile create failed: duplicate email, but could not re-fetch.`
+        )
 
       if (existingByEmail.user_id === userId) {
         return {
           profileId: existingByEmail.id,
           profileText: existingByEmail.profile_text || "",
+          profileStructured: safeStructured(existingByEmail),
         }
       }
 
@@ -196,14 +237,18 @@ export async function getAuthedProfileText(
         .from("client_profiles")
         .update({ user_id: userId, updated_at: new Date().toISOString() })
         .eq("id", existingByEmail.id)
-        .select("id,user_id,email,profile_text")
+        .select("id,user_id,email,profile_text,profile_structured")
         .single<ClientProfileRow>()
 
       if (attachErr || !attached) {
         throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
       }
 
-      return { profileId: attached.id, profileText: attached.profile_text || "" }
+      return {
+        profileId: attached.id,
+        profileText: attached.profile_text || "",
+        profileStructured: safeStructured(attached),
+      }
     }
 
     throw new Error(`Profile create failed: ${createErr.message}`)
@@ -211,5 +256,9 @@ export async function getAuthedProfileText(
 
   if (!created) throw new Error("Profile create failed: unknown")
 
-  return { profileId: created.id, profileText: created.profile_text || "" }
+  return {
+    profileId: created.id,
+    profileText: created.profile_text || "",
+    profileStructured: safeStructured(created),
+  }
 }
