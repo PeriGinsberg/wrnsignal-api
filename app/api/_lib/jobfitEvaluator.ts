@@ -2,12 +2,13 @@
 // Deterministic JobFit rules engine (no LLM decisioning)
 // - Decision-first (Priority Apply / Apply / Review / Pass)
 // - No job quotes in bullets
-// - Suppresses visa/work auth + driver's license + other minimal qualifiers
+// - No visa/work auth, driver's license, or other minimal qualifier risks
 // - Uses profileStructured when present (no new user inputs)
+// - Human-readable risk flags only (no internal tokens)
+// - Slightly aggressive: if you can't stand up to it, it's Review/Pass, not Apply
 
 type Decision = "Priority Apply" | "Apply" | "Review" | "Pass"
 type LocationConstraint = "constrained" | "not_constrained" | "unclear"
-
 type YM = { year: number; month: number } // month 1-12
 
 type JobFacts = {
@@ -98,6 +99,10 @@ function uniqTop(items: string[], max: number) {
   return out
 }
 
+function safeObj(x: any) {
+  return x && typeof x === "object" ? x : {}
+}
+
 // ----------------------- extract job facts -----------------------
 
 function extractJobFacts(jobText: string): JobFacts {
@@ -151,26 +156,24 @@ function inferJobSeniority(jobText: string): JobSeniority {
 }
 
 function inferEmployerTier(jobText: string): EmployerTier {
-  // Deterministic heuristic fallback. Real tiering should come from your internal mapping table later.
+  // Deterministic heuristic fallback. Real tiering should come from your internal mapping later.
   const t = normalizeText(jobText)
 
   const tier1Signals = [
     /\binvestment banking\b/,
     /\bprivate equity\b/,
     /\bm&a\b/,
-    /\bmergers\b/,
     /\bleveraged finance\b/,
     /\blbo\b/,
     /\bmanagement consulting\b/,
-    /\bstrateg(y|ic)\s+consult(ing|ant)\b/,
-    /\bgoldman\b|\bmorgan stanley\b|\bjpmorgan\b|\bciti\b|\bbofa\b|\bbarclays\b|\bcredit suisse\b|\bevercore\b|\blazard\b|\bcenterview\b/,
+    /\bstrategy\s+consult(ing|ant)\b/,
+    /\bgoldman\b|\bmorgan stanley\b|\bjpmorgan\b|\bciti\b|\bbofa\b|\bbarclays\b|\bevercore\b|\blazard\b|\bcenterview\b/,
     /\bmckinsey\b|\bbain\b|\bbcg\b|\bdeloitte consulting\b|\bstrategy&\b/,
   ]
 
   const tier2Signals = [
     /\brotational\b/,
     /\bleadership development\b/,
-    /\bfortunes?\s*500\b/,
     /\bformal training\b/,
     /\bnew grad program\b/,
     /\baccelerated development\b/,
@@ -178,15 +181,13 @@ function inferEmployerTier(jobText: string): EmployerTier {
 
   if (tier1Signals.some((r) => r.test(t))) return 1
   if (tier2Signals.some((r) => r.test(t))) return 2
-
-  // Default: most roles are Tier 3 unless you explicitly classify later
   return 3
 }
 
 function inferJobFunction(jobText: string): JobFunction {
   const t = normalizeText(jobText)
 
-  if (/\b(investment banking|private equity|m&a|mergers|acquisitions|lbo|leveraged finance|capital markets)\b/.test(t))
+  if (/\b(investment banking|private equity|m&a|mergers|acquisitions|lbo|leveraged buyout|capital markets)\b/.test(t))
     return "investment_banking_pe_mna"
 
   if (/\b(management consulting|strategy consulting|consultant|case interview|client engagements?)\b/.test(t))
@@ -226,6 +227,34 @@ function inferJobFunction(jobText: string): JobFunction {
     return "clinical_health"
 
   return "unknown"
+}
+
+// ----------------------- job signals (no quotes) -----------------------
+
+function extractJobSignals(jobText: string): string[] {
+  const t = normalizeText(jobText)
+
+  const signals: Array<[RegExp, string]> = [
+    [/\bfinancial modeling|valuation|dcf|lbo\b/, "Financial modeling and valuation"],
+    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, "Stakeholder communication and presentations"],
+    [/\bexcel\b/, "Heavy Excel execution"],
+    [/\bsql\b/, "SQL-based analysis"],
+    [/\bgoogle analytics|ga4\b/, "Web analytics measurement"],
+    [/\bmeta ads|google ads|paid media|roas\b/, "Performance marketing execution"],
+    [/\bproject management|program management|timeline|roadmap\b/, "Project or program management"],
+    [/\boperations|process improvement|workflow\b/, "Operational execution and process improvement"],
+    [/\bresearch|literature review|irb|lab\b/, "Research-heavy responsibilities"],
+    [/\bcold call|quota|pipeline|crm\b/, "Outbound sales execution"],
+    [/\bund(er)?writing|credit memo|loan\b/, "Underwriting or credit work"],
+    [/\bfinancial statements|balance sheet|income statement|cash flow\b/, "Financial statement work"],
+  ]
+
+  const out: string[] = []
+  for (const [re, label] of signals) {
+    if (re.test(t)) out.push(label)
+    if (out.length >= 3) break
+  }
+  return out
 }
 
 // ----------------------- profile constraints -----------------------
@@ -271,49 +300,48 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
   return { hardNoHourlyPay, prefFullTime, hardNoContract, hardNoSales, hardNoGovernment, hardNoFullyRemote }
 }
 
-// ----------------------- structured profile helpers -----------------------
-
-function safeObj(x: any) {
-  return x && typeof x === "object" ? x : {}
-}
+// ----------------------- structured profile readers -----------------------
 
 function readSchoolTier(profileStructured: any): SchoolTier {
   const ps = safeObj(profileStructured)
-  const raw = String(ps.school_tier || "").trim().toUpperCase()
+  const raw = String(ps.school_tier || ps.profile?.school_tier || "").trim().toUpperCase()
   if (raw === "S" || raw === "A" || raw === "B" || raw === "C") return raw
   return "unknown"
 }
 
 function readGpaBand(profileStructured: any): GpaBand {
   const ps = safeObj(profileStructured)
-  const raw = String(ps.gpa_band || "").trim().toLowerCase()
+  const raw = String(ps.gpa_band || ps.profile?.gpa_band || "").trim().toLowerCase()
   if (raw === "3.8_plus" || raw === "3.5_3.79" || raw === "below_3.5") return raw
   return "unknown"
 }
 
 function readGpa(profileStructured: any): number | null {
   const ps = safeObj(profileStructured)
-  const g = Number(ps.gpa)
+  const g = Number(ps.gpa || ps.profile?.gpa)
   return Number.isFinite(g) ? g : null
 }
 
 function readTargets(profileStructured: any, profileText: string): string[] {
   const ps = safeObj(profileStructured)
-  const list = Array.isArray(ps.target_roles_list) ? ps.target_roles_list : []
-  const fromStructured = list.map((x: any) => String(x || "").trim()).filter(Boolean)
+  const list =
+    (Array.isArray(ps.target_roles_list) ? ps.target_roles_list : null) ||
+    (Array.isArray(ps.profile?.target_roles_list) ? ps.profile.target_roles_list : null) ||
+    []
 
-  // Fallback: parse target roles from profile text if structured targets missing
+  const fromStructured = list.map((x: any) => String(x || "").trim()).filter(Boolean)
   if (fromStructured.length > 0) return fromStructured.slice(0, 25)
 
+  // Fallback parse from profile text (light)
   const t = normalizeText(profileText)
   const hits: string[] = []
   if (t.includes("investment banking")) hits.push("investment banking")
   if (t.includes("private equity")) hits.push("private equity")
   if (t.includes("consulting")) hits.push("consulting")
+  if (t.includes("commercial real estate")) hits.push("commercial real estate")
   if (t.includes("marketing")) hits.push("marketing")
   if (t.includes("sales")) hits.push("sales")
   if (t.includes("finance")) hits.push("finance")
-  if (t.includes("commercial real estate")) hits.push("commercial real estate")
   if (t.includes("product")) hits.push("product")
   if (t.includes("operations")) hits.push("operations")
   if (t.includes("customer success")) hits.push("customer success")
@@ -326,7 +354,7 @@ function mapTargetsToFunctions(targets: string[]): JobFunction[] {
   const out: JobFunction[] = []
 
   for (const s of t) {
-    if (/\b(investment banking|private equity|m&a|ib|pe)\b/.test(s)) out.push("investment_banking_pe_mna")
+    if (/\b(investment banking|private equity|m&a|ib\b|pe\b)\b/.test(s)) out.push("investment_banking_pe_mna")
     else if (/\b(consulting|strategy)\b/.test(s)) out.push("consulting_strategy")
     else if (/\b(commercial real estate|real estate)\b/.test(s)) out.push("commercial_real_estate")
     else if (/\b(accounting|finance)\b/.test(s)) out.push("finance_accounting")
@@ -341,7 +369,15 @@ function mapTargetsToFunctions(targets: string[]): JobFunction[] {
     else if (/\b(clinical|medical|health)\b/.test(s)) out.push("clinical_health")
   }
 
-  return uniqTop(out, 12) as JobFunction[]
+  // Unique while preserving order
+  const seen = new Set<string>()
+  const dedup: JobFunction[] = []
+  for (const f of out) {
+    if (seen.has(f)) continue
+    seen.add(f)
+    dedup.push(f)
+  }
+  return dedup.slice(0, 12)
 }
 
 // ----------------------- eligibility (graduation window) -----------------------
@@ -401,8 +437,8 @@ function extractGradWindow(jobText: string): { start: YM; end: YM } | null {
 
 function extractCandidateGrad(profileText: string, profileStructured: any): YM | null {
   const ps = safeObj(profileStructured)
-  const y = Number(ps.grad_year)
-  const m = Number(ps.grad_month)
+  const y = Number(ps.grad_year || ps.profile?.grad_year)
+  const m = Number(ps.grad_month || ps.profile?.grad_month)
   if (Number.isFinite(y) && Number.isFinite(m) && y >= 2020 && m >= 1 && m <= 12) {
     return { year: y, month: m }
   }
@@ -443,7 +479,7 @@ function suppressRiskText(s0: string) {
   if (s.includes("visa") || s.includes("work authorization") || s.includes("sponsorship")) return true
   if (s.includes("authorized to work") || s.includes("employment authorization")) return true
 
-  // Driver's license / background check / generic minimal qualifiers: suppress
+  // Driver's license / background check / drug test: suppress
   if (s.includes("driver") && s.includes("license")) return true
   if (s.includes("background check") || s.includes("drug test")) return true
   if (s.includes("valid license") && s.includes("driver")) return true
@@ -454,41 +490,16 @@ function suppressRiskText(s0: string) {
 
   return false
 }
-function extractJobSignals(jobText: string): string[] {
-  const t = normalizeText(jobText)
 
-  const signals: Array<[RegExp, string]> = [
-    [/\bfinancial modeling|valuation|dcf|lbo\b/, "Financial modeling and valuation work"],
-    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, "Client-facing communication and presentation work"],
-    [/\bexcel\b/, "Heavy Excel execution"],
-    [/\bsql\b/, "SQL-based analysis"],
-    [/\bgoogle analytics|ga4\b/, "Web analytics measurement work"],
-    [/\bmeta ads|google ads|paid media|roas\b/, "Performance marketing execution"],
-    [/\bproject management|program management|timeline|roadmap\b/, "Project/program management execution"],
-    [/\boperations|process improvement|workflow\b/, "Operational execution and process improvement"],
-    [/\bresearch|literature review|irb|lab\b/, "Research-heavy responsibilities"],
-    [/\bcold call|quota|pipeline|crm\b/, "Outbound sales execution"],
-  ]
-
-  const out: string[] = []
-  for (const [re, label] of signals) {
-    if (re.test(t)) out.push(label)
-    if (out.length >= 3) break
-  }
-  return out
-}
-
-// ----------------------- requirements gate (hard requirements only) -----------------------
+// ----------------------- hard requirements gate (explicit only) -----------------------
 
 type RequirementHit = { key: string; label: string }
 
 function detectHardRequirements(jobText: string): RequirementHit[] {
-  // Only flag truly hard constraints. Explicit only. Keep list tight.
   const t = normalizeText(jobText)
-
   const reqs: RequirementHit[] = []
 
-  // IMPORTANT: Do NOT add visa or driver's license here.
+  // Do NOT include visa or driver's license.
   const patterns: Array<[RegExp, RequirementHit]> = [
     [/\b(series\s*7)\b/, { key: "req_series_7", label: "Series 7 license required" }],
     [/\b(series\s*63)\b/, { key: "req_series_63", label: "Series 63 license required" }],
@@ -503,12 +514,19 @@ function detectHardRequirements(jobText: string): RequirementHit[] {
     if (re.test(t)) reqs.push(hit)
   }
 
-  return uniqTop(reqs.map((r) => JSON.stringify(r)), 10).map((x) => JSON.parse(x))
+  // Unique
+  const seen = new Set<string>()
+  const out: RequirementHit[] = []
+  for (const r of reqs) {
+    if (seen.has(r.key)) continue
+    seen.add(r.key)
+    out.push(r)
+  }
+  return out.slice(0, 10)
 }
 
 function profileMentionsRequirement(profileText: string, req: RequirementHit) {
   const t = normalizeText(profileText)
-
   if (req.key === "req_series_7") return /\bseries\s*7\b/.test(t)
   if (req.key === "req_series_63") return /\bseries\s*63\b/.test(t)
   if (req.key === "req_cpa") return /\bcpa\b/.test(t)
@@ -516,52 +534,25 @@ function profileMentionsRequirement(profileText: string, req: RequirementHit) {
   if (req.key === "req_clearance") return /\bsecurity clearance|ts\/sc|top secret\b/.test(t)
   if (req.key === "req_rn") return /\brn\b/.test(t)
   if (req.key === "req_emt") return /\bemt\b/.test(t)
-
   return false
 }
 
 // ----------------------- alignment + depth -----------------------
 
 const DIRECT_KEYWORDS: Record<JobFunction, RegExp[]> = {
-  investment_banking_pe_mna: [
-    /\b(investment banking|ib\b|m&a|mergers|acquisitions|lbo|leveraged buyout|pitchbook|financial modeling|valuation|dcf)\b/,
-  ],
-  consulting_strategy: [
-    /\b(consulting|consultant|case interview|client deliverables|workstream|deck|powerpoint|analysis)\b/,
-  ],
-  finance_accounting: [
-    /\b(financial analysis|fp&a|budget|forecast|accounting|reconciliation|general ledger|journal entries|ar\b|ap\b)\b/,
-  ],
-  commercial_real_estate: [
-    /\b(commercial real estate|real estate underwriting|noi|cap rate|dscr|multifamily|industrial|office|leasing)\b/,
-  ],
-  sales: [
-    /\b(sales|business development|quota|pipeline|crm\b|lead gen|cold call|outbound|clos(e|ing))\b/,
-  ],
-  marketing_analytics: [
-    /\b(sql\b|google analytics|roas|attribution|a\/b test|performance marketing|campaign performance|meta ads|google ads)\b/,
-  ],
-  brand_marketing: [
-    /\b(brand|content|social media|creative strategy|communications|copywriting|storytelling)\b/,
-  ],
-  product_program_ops: [
-    /\b(program management|project management|operations|process improvement|roadmap|requirements|stakeholders?)\b/,
-  ],
-  customer_success: [
-    /\b(customer success|client success|onboarding|implementation|account management|retention)\b/,
-  ],
-  government_public: [
-    /\b(government|public sector|municipal|state agency|federal)\b/,
-  ],
-  software_data: [
-    /\b(software|engineer|developer|typescript|javascript|python\b|api\b|database|sql\b|data pipeline|machine learning)\b/,
-  ],
-  research: [
-    /\b(research|lab\b|irb\b|publication|literature review|data collection|analysis)\b/,
-  ],
-  clinical_health: [
-    /\b(emt\b|patient|clinical|medical device|therapy|rn\b|hospital)\b/,
-  ],
+  investment_banking_pe_mna: [/\b(investment banking|ib\b|m&a|mergers|acquisitions|lbo|leveraged buyout|pitchbook|financial modeling|valuation|dcf)\b/],
+  consulting_strategy: [/\b(consulting|consultant|case interview|workstream|deck|analysis|client deliverables)\b/],
+  finance_accounting: [/\b(financial analysis|fp&a|budget|forecast|accounting|reconciliation|general ledger|journal entries|ar\b|ap\b)\b/],
+  commercial_real_estate: [/\b(commercial real estate|real estate underwriting|noi|cap rate|dscr|multifamily|industrial|office|leasing)\b/],
+  sales: [/\b(sales|business development|quota|pipeline|crm\b|lead gen|cold call|outbound|closing)\b/],
+  marketing_analytics: [/\b(sql\b|google analytics|roas|attribution|a\/b test|performance marketing|campaign performance|meta ads|google ads)\b/],
+  brand_marketing: [/\b(brand|content|social media|creative strategy|communications|copywriting|storytelling)\b/],
+  product_program_ops: [/\b(program management|project management|operations|process improvement|roadmap|requirements|stakeholders?)\b/],
+  customer_success: [/\b(customer success|client success|onboarding|implementation|account management|retention)\b/],
+  government_public: [/\b(government|public sector|municipal|state agency|federal)\b/],
+  software_data: [/\b(software|engineer|developer|typescript|javascript|python\b|api\b|database|sql\b|data pipeline|machine learning)\b/],
+  research: [/\b(research|lab\b|irb\b|publication|literature review|data collection|analysis)\b/],
+  clinical_health: [/\b(emt\b|patient|clinical|medical device|therapy|rn\b|hospital)\b/],
   unknown: [],
 }
 
@@ -591,32 +582,24 @@ function countKeywordHits(text: string, patterns: RegExp[]) {
   return hits
 }
 
-function inferAlignmentLevel(profileText: string, primary: JobFunction): { level: AlignmentLevel; evidenceScore: number; evidenceLabel: string } {
-  if (primary === "unknown") {
-    return { level: "weak_adjacent", evidenceScore: 0, evidenceLabel: "Role function unclear; alignment requires review." }
-  }
+function inferAlignmentLevel(profileText: string, primary: JobFunction): {
+  level: AlignmentLevel
+  evidenceScore: number
+} {
+  if (primary === "unknown") return { level: "weak_adjacent", evidenceScore: 0 }
 
   const directHits = countKeywordHits(profileText, DIRECT_KEYWORDS[primary] || [])
-  if (directHits >= 1) {
-    return { level: "direct", evidenceScore: 2 + directHits, evidenceLabel: "Direct alignment signals detected in profile." }
-  }
+  if (directHits >= 1) return { level: "direct", evidenceScore: 2 + directHits }
 
   const strongAdj = STRONG_ADJACENCY[primary] || []
   let bestAdjHits = 0
-  let bestAdj: JobFunction | null = null
   for (const adj of strongAdj) {
     const hits = countKeywordHits(profileText, DIRECT_KEYWORDS[adj] || [])
-    if (hits > bestAdjHits) {
-      bestAdjHits = hits
-      bestAdj = adj
-    }
+    if (hits > bestAdjHits) bestAdjHits = hits
   }
 
-  if (bestAdjHits >= 1) {
-    return { level: "strong_adjacent", evidenceScore: 1 + bestAdjHits, evidenceLabel: "Strong adjacent alignment signals detected in profile." }
-  }
+  if (bestAdjHits >= 1) return { level: "strong_adjacent", evidenceScore: 1 + bestAdjHits }
 
-  // Weak adjacent: transferable general signals (leadership, projects, analysis)
   const t = normalizeText(profileText)
   const weakSignals =
     (t.includes("project") ? 1 : 0) +
@@ -624,29 +607,22 @@ function inferAlignmentLevel(profileText: string, primary: JobFunction): { level
     (t.includes("analysis") ? 1 : 0) +
     (t.includes("intern") ? 1 : 0)
 
-  if (weakSignals >= 2) {
-    return { level: "weak_adjacent", evidenceScore: 1, evidenceLabel: "Transferable signals exist but not clearly tied to the role function." }
-  }
-
-  return { level: "none", evidenceScore: 0, evidenceLabel: "No role-relevant alignment signals detected." }
+  if (weakSignals >= 2) return { level: "weak_adjacent", evidenceScore: 1 }
+  return { level: "none", evidenceScore: 0 }
 }
 
 function computeDepthScore(profileText: string, seniority: JobSeniority): { depth: number; label: "strong" | "moderate" | "weak" } {
   const t = normalizeText(profileText)
 
-  // Allow stacking; internships can lean more on academics/projects/leadership.
   const hasIntern = /\b(intern|internship|co-op|co op)\b/.test(t) ? 2 : 0
-  const hasWork = /\b(analyst|assistant|associate|coordinator|representative)\b/.test(t) ? 1 : 0
+  const hasWork = /\b(analyst|assistant|associate|coordinator|representative|specialist)\b/.test(t) ? 1 : 0
   const hasLeadership = /\b(president|vp|vice president|captain|lead|chair|founder)\b/.test(t) ? 1 : 0
   const hasProjects = /\b(project|case competition|capstone)\b/.test(t) ? 1 : 0
   const hasResearch = /\b(research|lab|irb|publication)\b/.test(t) ? 1 : 0
-
-  // Academics signal (major/minor) often exists in profile text; count lightly.
   const hasAcademics = /\b(major|minor|b\.s\.|b\.a\.|gpa)\b/.test(t) ? 1 : 0
 
   let depth = hasIntern + hasWork + hasLeadership + hasProjects + hasResearch + hasAcademics
 
-  // Seniority adjustments: experienced roles demand more depth; internships allow more academic weighting
   if (seniority === "experienced") depth -= 1
   if (seniority === "internship") depth += 1
 
@@ -663,24 +639,56 @@ function inferTargetAlignment(primary: JobFunction, targets: JobFunction[]): Tar
   return "off_target"
 }
 
-// ----------------------- decision rules -----------------------
+// ----------------------- risk labels (no internal tokens) -----------------------
 
-function isHardExclusionPass(constraints: ProfileConstraints, jobFacts: JobFacts, primary: JobFunction): { pass: boolean; reason?: string; riskKey?: string } {
+function riskLabel(code: string) {
+  const c = String(code || "").trim().toLowerCase()
+
+  if (c === "depth_limited") return "Depth is light for what this role expects. If you have more relevant work, it is not showing clearly."
+  if (c === "depth_moderate") return "Depth is decent, but not bulletproof. You may be competing against candidates with more direct reps."
+  if (c === "off_target_role") return "This is off-target vs your stated direction. Even if you want it, it is not a smart application unless you are pivoting."
+  if (c === "weak_alignment") return "Alignment is not clearly tied to what this job does. The market will treat that as missing."
+  if (c === "strong_adjacent_alignment") return "Your background is adjacent, not direct. That can work, but it raises the bar."
+  if (c === "tier1_competition") return "Tier 1 competition. Expect higher screening and a deeper candidate pool."
+  if (c === "tier2_competition") return "Tier 2 competition. Still competitive."
+  if (c === "pedigree_gap") return "For this level of competition, school pedigree can matter. Without a feeder background, you need stronger proof."
+  if (c === "gpa_risk_below_3_8") return "For Tier 1 competition, GPA below 3.8 can reduce odds depending on employer screening."
+  if (c === "gpa_risk_below_3_5") return "GPA below 3.5 can reduce odds depending on employer screening."
+  if (c === "contract_role") return "Contract structure. Make sure that fits your preference and risk tolerance."
+  if (c === "hourly_role") return "Hourly pay structure. Make sure that fits your preference and trajectory."
+  if (c === "fully_remote_role") return "Fully remote role. If you prefer in-person or hybrid, treat this as a real tradeoff."
+  if (c === "targets_unclear") return "Your targets are unclear, so this decision is based purely on visible fit signals."
+
+  return null
+}
+
+function toUserRiskFlags(codes: string[]) {
+  const out: string[] = []
+  for (const code of codes) {
+    const label = riskLabel(code)
+    if (label && !suppressRiskText(label)) out.push(label)
+  }
+  return uniqTop(out, 6)
+}
+
+// ----------------------- hard exclusions -----------------------
+
+function isHardExclusionPass(constraints: ProfileConstraints, jobFacts: JobFacts, primary: JobFunction): { pass: boolean; reason?: string } {
   if (constraints.hardNoHourlyPay && jobFacts.isHourly) {
     const ev = jobFacts.hourlyEvidence ? ` (${jobFacts.hourlyEvidence})` : ""
-    return { pass: true, reason: `Hourly role${ev} conflicts with an explicit no-hourly exclusion.`, riskKey: "hard_exclusion_hourly" }
+    return { pass: true, reason: `Hourly role${ev} conflicts with an explicit no-hourly exclusion.` }
   }
 
   if (constraints.hardNoContract && jobFacts.isContract) {
-    return { pass: true, reason: `Contract role conflicts with an explicit no-contract exclusion.`, riskKey: "hard_exclusion_contract" }
+    return { pass: true, reason: "Contract role conflicts with an explicit no-contract exclusion." }
   }
 
   if (constraints.hardNoSales && primary === "sales") {
-    return { pass: true, reason: `Sales-focused role conflicts with an explicit no-sales exclusion.`, riskKey: "hard_exclusion_sales" }
+    return { pass: true, reason: "Sales-focused role conflicts with an explicit no-sales exclusion." }
   }
 
   if (constraints.hardNoGovernment && primary === "government_public") {
-    return { pass: true, reason: `Government/public-sector role conflicts with an explicit no-government exclusion.`, riskKey: "hard_exclusion_government" }
+    return { pass: true, reason: "Government/public-sector role conflicts with an explicit no-government exclusion." }
   }
 
   return { pass: false }
@@ -693,7 +701,7 @@ function applyCeilings(decision: Decision, ceilings: Array<"cap_review">): Decis
   return decision
 }
 
-// ----------------------- output builders -----------------------
+// ----------------------- next step copy -----------------------
 
 function buildNextStep(decision: Decision) {
   if (decision === "Pass") return "Do not apply."
@@ -702,8 +710,7 @@ function buildNextStep(decision: Decision) {
   return "Priority apply. Then move to networking."
 }
 
-
-function buildPassVisibilityBullet(): string {
+function buildPassVisibilityBullet() {
   return "SIGNAL evaluates what is visible. If you have this experience but it is not clearly shown, the market will treat it as missing."
 }
 
@@ -726,6 +733,7 @@ export async function runJobFit({
   profileStructured?: any
 }) {
   const ps = safeObj(profileStructured)
+
   const jobFacts = extractJobFacts(jobText)
   const constraints = extractProfileConstraints(profileText)
 
@@ -750,37 +758,24 @@ export async function runJobFit({
   // Hard exclusions => PASS
   const hard = isHardExclusionPass(constraints, jobFacts, primaryFunction)
   if (hard.pass) {
-    const bullets = uniqTop(
-      [
-        hard.reason || "Role conflicts with an explicit hard exclusion.",
-        buildPassVisibilityBullet(),
-      ],
-      5
-    )
-
-    const risk_flags = uniqTop([hard.riskKey || "hard_exclusion"], 3)
+    const bullets = uniqTop([hard.reason || "Role conflicts with an explicit hard exclusion.", buildPassVisibilityBullet()], 5)
     return {
       decision: "Pass" as Decision,
       icon: iconForDecision("Pass"),
       score: enforceScoreBand("Pass", 45),
       bullets,
-      risk_flags,
+      risk_flags: [],
       next_step: buildNextStep("Pass"),
       location_constraint: "unclear" as LocationConstraint,
-      // optional debug fields (safe to keep in result_json for your own analysis)
       logic_version: JOBFIT_LOGIC_VERSION,
     }
   }
 
   // Fully remote disallowed => cap Review (not a Pass)
-  if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) {
-    ceilings.push("cap_review")
-  }
+  if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) ceilings.push("cap_review")
 
-  // Contract role with full-time preference => cap Review (unless explicitly disallowed which would have passed above)
-  if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) {
-    ceilings.push("cap_review")
-  }
+  // Contract role with full-time preference => cap Review
+  if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) ceilings.push("cap_review")
 
   // Graduation window mismatch => PASS
   const gradWindow = extractGradWindow(jobText)
@@ -792,20 +787,17 @@ export async function runJobFit({
     if (c < s || c > e) {
       const bullets = uniqTop(
         [
-          `Graduation window mismatch. This role targets graduates between ${formatYM(gradWindow.start)} and ${formatYM(
-            gradWindow.end
-          )}.`,
+          `Graduation window mismatch. This role targets graduates between ${formatYM(gradWindow.start)} and ${formatYM(gradWindow.end)}.`,
           `Your profile indicates graduation around ${formatYM(candGrad)}.`,
         ],
         5
       )
-
       return {
         decision: "Pass" as Decision,
         icon: iconForDecision("Pass"),
         score: enforceScoreBand("Pass", 45),
         bullets,
-        risk_flags: ["grad_window_mismatch"],
+        risk_flags: [],
         next_step: buildNextStep("Pass"),
         location_constraint: "unclear" as LocationConstraint,
         logic_version: JOBFIT_LOGIC_VERSION,
@@ -823,44 +815,39 @@ export async function runJobFit({
         ...missingReqs.map((r) => r.label),
         buildPassVisibilityBullet(),
       ],
-      5
+      6
     )
-
     return {
       decision: "Pass" as Decision,
       icon: iconForDecision("Pass"),
       score: enforceScoreBand("Pass", 45),
       bullets,
-      risk_flags: uniqTop(missingReqs.map((r) => r.key), 3),
+      risk_flags: [],
       next_step: buildNextStep("Pass"),
       location_constraint: "unclear" as LocationConstraint,
       logic_version: JOBFIT_LOGIC_VERSION,
     }
   }
 
-  // Target alignment ceiling: off-target can never be Apply or Priority Apply
+  // Target alignment ceiling: off-target can never be Apply/Priority
   if (targetAlignment === "off_target") ceilings.push("cap_review")
 
   // Alignment + depth
-  const { level: alignmentLevel, evidenceLabel } = inferAlignmentLevel(profileText, primaryFunction)
+  const { level: alignmentLevel } = inferAlignmentLevel(profileText, primaryFunction)
   const { depth, label: depthLabel } = computeDepthScore(profileText, seniority)
+
+  // Aggressive rule: weak depth (non-internship) cannot be Apply
+  if (depthLabel === "weak" && seniority !== "internship") ceilings.push("cap_review")
 
   // None => PASS
   if (alignmentLevel === "none") {
-    const bullets = uniqTop(
-      [
-        "No role-relevant alignment is visible for this job’s function.",
-        buildPassVisibilityBullet(),
-      ],
-      5
-    )
-
+    const bullets = uniqTop(["No role-relevant alignment is visible for this job’s function.", buildPassVisibilityBullet()], 5)
     return {
       decision: "Pass" as Decision,
       icon: iconForDecision("Pass"),
       score: enforceScoreBand("Pass", 45),
       bullets,
-      risk_flags: ["no_alignment_detected"],
+      risk_flags: [],
       next_step: buildNextStep("Pass"),
       location_constraint: "unclear" as LocationConstraint,
       logic_version: JOBFIT_LOGIC_VERSION,
@@ -870,158 +857,104 @@ export async function runJobFit({
   // Weak adjacent => cap Review
   if (alignmentLevel === "weak_adjacent") ceilings.push("cap_review")
 
-  // Build risks (enumerated, suppressed)
-  const risks: string[] = []
-
-  if (jobFacts.isContract) risks.push("contract_role")
-  if (jobFacts.isHourly) risks.push("hourly_role")
-  if (jobFacts.isFullyRemote) risks.push("fully_remote_role")
-
-  if (targetAlignment === "off_target") risks.push("off_target_role")
-  if (alignmentLevel === "strong_adjacent") risks.push("strong_adjacent_alignment")
-  if (alignmentLevel === "weak_adjacent") risks.push("weak_alignment")
-
-  if (employerTier === 1) risks.push("tier1_competition")
-  if (employerTier === 2) risks.push("tier2_competition")
-
-// Normal (non-hallucinated) risks when decision isn't perfect
-if (depthLabel === "moderate") risks.push("depth_moderate")
-if (depthLabel === "weak") risks.push("depth_limited")
-
-// If we could not confidently classify competition level, call it out
-if (employerTier === 3 && inferEmployerTier(jobText) === 3) {
-  // still allowed, but you should admit tier classification is heuristic
-  risks.push("competition_level_estimated")
-}
-
-// If targets are missing or unclear, that is a real risk for decision confidence
-if (targetAlignment === "unclear") risks.push("targets_unclear")
-
-
-  // GPA risk visibility rules
-  if (shouldShowGpaRisk(employerTier, gpaBand)) {
-    if (gpaBand === "below_3.5") risks.push("gpa_risk_below_3_5")
-    if (gpaBand === "3.5_3.79" && employerTier === 1) risks.push("gpa_risk_below_3_8")
-  }
-
-  // Pedigree risk: Tier 1/2 only
+  // Pedigree / GPA inputs
   const pedigreeStrong = schoolTier === "S" || schoolTier === "A"
-  if ((employerTier === 1 || employerTier === 2) && !pedigreeStrong) {
-    risks.push("pedigree_gap")
-  }
-
-  // Clean risks (safety suppression)
-  const risk_flags = uniqTop(risks.filter((r) => !suppressRiskText(r)), 6)
-
-  // Decision selection (deterministic)
-  let decision: Decision = "Review"
-
-  // Helper: strong conditions
-  const depthStrong = depthLabel === "strong"
-  const depthModerateOrBetter = depthLabel === "strong" || depthLabel === "moderate"
   const gpaStrong = gpaBand === "3.8_plus"
   const gpaCompetitive = gpaBand === "3.8_plus" || gpaBand === "3.5_3.79"
 
+  // Build risk codes (internal)
+  const riskCodes: string[] = []
+
+  if (jobFacts.isContract) riskCodes.push("contract_role")
+  if (jobFacts.isHourly) riskCodes.push("hourly_role")
+  if (jobFacts.isFullyRemote) riskCodes.push("fully_remote_role")
+
+  if (targetAlignment === "off_target") riskCodes.push("off_target_role")
+  if (targetAlignment === "unclear") riskCodes.push("targets_unclear")
+
+  if (alignmentLevel === "strong_adjacent") riskCodes.push("strong_adjacent_alignment")
+  if (alignmentLevel === "weak_adjacent") riskCodes.push("weak_alignment")
+
+  if (employerTier === 1) riskCodes.push("tier1_competition")
+  if (employerTier === 2) riskCodes.push("tier2_competition")
+
+  // Always surface depth risk when not strong (prevents empty risks)
+  if (depthLabel === "moderate") riskCodes.push("depth_moderate")
+  if (depthLabel === "weak") riskCodes.push("depth_limited")
+
+  // Tier 1/2 pedigree risk (as a risk, not a hard gate)
+  if ((employerTier === 1 || employerTier === 2) && !pedigreeStrong) riskCodes.push("pedigree_gap")
+
+  // GPA risk visibility rules
+  if (shouldShowGpaRisk(employerTier, gpaBand)) {
+    if (gpaBand === "below_3.5") riskCodes.push("gpa_risk_below_3_5")
+    if (gpaBand === "3.5_3.79" && employerTier === 1) riskCodes.push("gpa_risk_below_3_8")
+  }
+
+  // Convert to user-readable risks
+  const risk_flags = toUserRiskFlags(uniqTop(riskCodes, 10))
+
+  // Determine decision (deterministic)
+  let decision: Decision = "Review"
+
+  const depthStrong = depthLabel === "strong"
+  const depthModerateOrBetter = depthLabel === "strong" || depthLabel === "moderate"
+
   if (alignmentLevel === "direct") {
-    // Tier 1: needs strong evidence; allow Apply with strong profile; Priority only with strong pedigree + gpa + depth
     if (employerTier === 1) {
       if (depthStrong && (pedigreeStrong || gpaStrong)) decision = "Priority Apply"
       else if (depthModerateOrBetter && (pedigreeStrong || gpaStrong)) decision = "Apply"
       else decision = "Review"
-    }
-
-    // Tier 2: more forgiving, still competitive
-    if (employerTier === 2) {
+    } else if (employerTier === 2) {
+      if (depthStrong) decision = "Priority Apply"
+      else if (depthModerateOrBetter) decision = "Apply"
+      else decision = "Review"
+    } else {
       if (depthStrong) decision = "Priority Apply"
       else if (depthModerateOrBetter) decision = "Apply"
       else decision = "Review"
     }
 
-    // Tier 3/4: direct alignment carries
-    if (employerTier === 3 || employerTier === 4) {
-      if (depthStrong) decision = "Priority Apply"
-      else if (depthModerateOrBetter) decision = "Apply"
-      else decision = "Review"
-    }
-
-    // Internship carveout: don't auto-punish first-timers
-    if (seniority === "internship" && decision === "Review" && depthModerateOrBetter) {
-      decision = "Apply"
-    }
+    // Internship carveout: avoid penalizing first-time candidates
+    if (seniority === "internship" && decision === "Review" && depthModerateOrBetter) decision = "Apply"
   } else if (alignmentLevel === "strong_adjacent") {
-    // Tier 1: strong adjacent can work only with pedigree + gpa + depth (Apply, not Priority)
     if (employerTier === 1) {
-      if (depthStrong && pedigreeStrong && gpaStrong) decision = "Apply"
+      if (depthStrong && pedigreeStrong && gpaStrong) decision = "Apply" // never Priority on adjacent
       else decision = "Review"
-    }
-
-    // Tier 2: adjacent can reach Apply if depth is strong and GPA is at least competitive
-    if (employerTier === 2) {
+    } else if (employerTier === 2) {
       if (depthStrong && gpaCompetitive) decision = "Apply"
       else decision = "Review"
-    }
-
-    // Tier 3/4: adjacent is usually Review
-    if (employerTier === 3 || employerTier === 4) {
-      decision = depthStrong ? "Review" : "Review"
-    }
-
-    // Internship carveout: adjacent can be Apply if strong depth
-    if (seniority === "internship" && depthStrong && employerTier !== 1) {
-      decision = "Apply"
+    } else {
+      decision = "Review"
+      if (seniority === "internship" && depthStrong) decision = "Apply"
     }
   } else {
-    // weak_adjacent already caps at Review
     decision = "Review"
   }
 
-  // Apply ceilings last (off-target, weak adjacent, remote preference caps, etc.)
+  // Apply ceilings last
   decision = applyCeilings(decision, ceilings)
 
-  // Build bullets (no job quotes)
+  // Build bullets (job-specific first, no quotes)
   const bullets: string[] = []
+  const jobSignals = extractJobSignals(jobText)
 
-  // Core explanation bullets
-  bullets.push(
-    alignmentLevel === "direct"
-      ? "Direct alignment to the role function is visible in your profile."
-      : alignmentLevel === "strong_adjacent"
-      ? "Strong adjacent alignment is visible, but this role may still be competitive without direct matches."
-      : "Transferable signals exist, but alignment is not clearly tied to this role’s function."
-  )
+  if (jobSignals.length > 0) bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
+  else bullets.push("Role responsibilities are broad. Decision is based on visible function alignment and competitiveness signals.")
 
-  bullets.push(
-    depthLabel === "strong"
-      ? "Depth is strong based on the number and variety of relevant experiences and signals."
-      : depthLabel === "moderate"
-      ? "Depth is moderate. You have some relevant signals, but the role may still be competitive."
-      : "Depth is limited for this role’s expectations."
-  )
+  if (alignmentLevel === "direct") bullets.push("Your profile shows direct alignment to this function.")
+  else if (alignmentLevel === "strong_adjacent") bullets.push("Your profile is strongly adjacent. You are plausible, but not the obvious pick.")
+  else bullets.push("Your profile shows transferable signals, but alignment is not clearly tied to this job.")
 
-  // Tier + competitiveness bullet
-  if (employerTier === 1) bullets.push("This is a high-competition role category. The bar is higher than most early-career postings.")
-  else if (employerTier === 2) bullets.push("This is a structured early-career role category. Competition is meaningful but not Tier 1.")
-  else bullets.push("This role is not classified as Tier 1 competition. Alignment and depth should drive the decision.")
+  if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
+  else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have some fit signals, but this is not a lock.")
+  else bullets.push("Depth is limited for what this job expects.")
 
-  // Constraints bullets (only if actually relevant)
-  if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) {
-    bullets.push("Contract structure conflicts with a stated full-time preference, so this should be treated as a Review decision.")
-  }
-  if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) {
-    bullets.push("Fully remote structure conflicts with a stated preference against fully remote work, so this should be treated as a Review decision.")
-  }
+  if (targetAlignment === "off_target") bullets.push("This is off-target relative to your stated direction, so it cannot be a clean Apply recommendation.")
 
-  // Target alignment bullet (only if targets exist)
-  if (targetAlignment === "off_target") bullets.push("This role does not align with your stated targets, so it cannot be an Apply decision.")
-  if (targetAlignment === "unclear") bullets.push("Targets are unclear. Decision is based on visible alignment and competitiveness signals.")
+  // Pass visibility bullet (only when Review/Pass, not on Apply unless risk indicates missing proof)
+  if (decision === "Review" || decision === "Pass") bullets.push(buildPassVisibilityBullet())
 
-  // GPA mention rules (only Tier 1 and sometimes Tier 2)
-  if (shouldShowGpaRisk(employerTier, gpaBand) && gpa !== null) {
-    if (employerTier === 1 && gpa < 3.8) bullets.push("For Tier 1 competition, GPA can be a meaningful filter depending on the employer and applicant pool.")
-    if (employerTier === 2 && gpa < 3.5) bullets.push("For structured early-career roles, low GPA can reduce odds depending on the employer’s screening rules.")
-  }
-
-  // Clean + cap bullets
   const finalBullets = uniqTop(bullets, 6)
 
   // Score (deterministic)
@@ -1030,12 +963,12 @@ if (targetAlignment === "unclear") risks.push("targets_unclear")
     decision === "Apply" ? 78 :
     decision === "Review" ? 60 : 45
 
-  // modifiers (small, deterministic)
+  // small deterministic modifiers
   if (alignmentLevel === "direct") scoreBase += 3
   if (alignmentLevel === "strong_adjacent") scoreBase += 1
   if (depthLabel === "strong") scoreBase += 3
   if (depthLabel === "weak") scoreBase -= 3
-  if (employerTier === 1) scoreBase -= 2 // harder market
+  if (employerTier === 1) scoreBase -= 2
   if (targetAlignment === "off_target") scoreBase -= 4
   if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) scoreBase -= 2
   if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) scoreBase -= 2
@@ -1048,22 +981,24 @@ if (targetAlignment === "unclear") risks.push("targets_unclear")
     icon: iconForDecision(decision),
     score,
     bullets: finalBullets,
-    risk_flags: risk_flags,
+    risk_flags,
     next_step: buildNextStep(decision),
     location_constraint: "unclear" as LocationConstraint,
     logic_version: JOBFIT_LOGIC_VERSION,
 
-    // Optional internal debug fields (kept in result_json for analysis; UI can ignore)
+    // internal debug only (UI can ignore)
     debug: {
       employer_tier: employerTier,
       school_tier: schoolTier,
       gpa_band: gpaBand,
+      gpa,
       job_seniority: seniority,
       primary_function: primaryFunction,
       alignment_level: alignmentLevel,
       depth_score: depth,
       target_alignment: targetAlignment,
       ceilings,
+      risk_codes: uniqTop(riskCodes, 12),
     },
   }
 }
