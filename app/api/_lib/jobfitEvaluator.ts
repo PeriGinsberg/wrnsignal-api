@@ -245,54 +245,278 @@ function inferJobFunction(jobText: string): JobFunction {
 // ----------------------- job signals (no quotes) -----------------------
 
 type SignalKey =
+  // Finance
   | "modeling"
+  | "valuation"
+  | "fp_and_a"
+  | "budgeting"
+  | "forecasting"
+  | "fin_statements"
   | "underwriting"
-  | "presentations"
+  | "credit_risk"
+  | "treasury"
+  | "audit"
+  | "tax"
+  | "ap_ar"
+  | "bookkeeping"
+
+  // Data and analytics
   | "excel"
   | "sql"
-  | "paid_media"
+  | "dashboarding"
+  | "reporting"
+  | "data_analysis"
+  | "data_engineering"
+  | "data_modeling"
+  | "data_quality"
+  | "statistics"
+  | "experimentation"
+  | "market_research"
+
+  // Software and IT
+  | "software_engineering"
+  | "frontend"
+  | "backend"
+  | "full_stack"
+  | "api_development"
+  | "cloud_infra"
+  | "devops"
+  | "sre"
+  | "security"
+  | "it_support"
+  | "networking_it"
+  | "qa_testing"
+  | "automation"
+  | "ai_ml"
+
+  // Product and project
+  | "product_management"
+  | "program_management"
+  | "project_management"
+  | "roadmapping"
+  | "requirements"
+  | "process_improvement"
+  | "change_management"
+  | "documentation"
+
+  // Operations and supply chain
   | "ops"
-  | "research"
+  | "logistics"
+  | "supply_chain"
+  | "procurement"
+  | "vendor_management"
+  | "inventory"
+  | "facilities"
+  | "quality_assurance"
+  | "manufacturing"
+  | "compliance_ops"
+
+  // Sales and customer
   | "sales"
-  | "fin_statements"
-  | "editing"
-  | "publishing_ops"
+  | "business_development"
+  | "account_management"
+  | "customer_success"
+  | "support"
+  | "crm"
+  | "negotiation"
+  | "partnerships"
+
+  // Marketing and growth
+  | "brand_marketing"
+  | "content_marketing"
   | "copywriting"
+  | "paid_media"
+  | "seo"
+  | "lifecycle_marketing"
+  | "events_marketing"
+  | "social_media"
+  | "communications_pr"
+  | "creative_direction"
+
+  // Writing, editorial, publishing
+  | "editing"
+  | "proofreading"
+  | "publishing_ops"
+  | "cms"
+  | "headline_writing"
   | "publishing_research"
+
+  // HR and recruiting
+  | "recruiting"
+  | "hr_ops"
+  | "people_ops"
+  | "payroll_benefits"
+  | "learning_development"
+
+  // Legal and policy
+  | "legal_contracts"
+  | "legal_research"
+  | "policy"
+
+  // Healthcare and clinical
+  | "clinical_care"
+  | "patient_intake"
+  | "medical_documentation"
+  | "phlebotomy"
+  | "emt"
+  | "therapy"
+  | "public_health"
+  | "clinical_research"
+
+  // Education and nonprofit
+  | "teaching"
+  | "curriculum"
+  | "student_services"
+  | "grant_writing"
+  | "fundraising"
+  | "community_outreach"
 
 type Signal = { key: SignalKey; label: string }
 
-// NOTE: Signals should not exaggerate. “Excel” as a basic tool should not become “Heavy Excel execution”.
+// Helpers to keep labels honest and avoid accidental overclaiming
+function addIfMatch(out: Signal[], t: string, re: RegExp, sig: Signal) {
+  if (re.test(t)) out.push(sig)
+}
+
 function extractJobSignals(jobText: string): Signal[] {
   const t = normalizeText(jobText)
 
+  // Priority-ordered patterns: specific first, generic later
   const signals: Array<[RegExp, Signal]> = [
-    // Publishing/editorial (high priority)
-    [/\b(editorial assistant|editorial|executive editor|acquisitions|editor\b|publishing|imprint)\b/, { key: "publishing_ops", label: "Editorial support and publishing workflow" }],
-    [/\b(jacket copy|galley copy|fact sheets?|descriptive copy|jacket)\b/, { key: "copywriting", label: "Writing descriptive copy (jacket, galley, fact sheets)" }],
-    [/\b(proposals?|submissions?|manuscripts?|literary agents?|authors?)\b/, { key: "editing", label: "Reviewing proposals and working with authors/agents" }],
-    [/\b(metadata updates?|book production|route materials|manage deadlines|production process)\b/, { key: "publishing_ops", label: "Managing production timelines and metadata" }],
-    [/\b(research)\b[^\n]{0,80}\b(book sales|databases?)\b|\bbook sales\b[^\n]{0,80}\bresearch\b/, { key: "publishing_research", label: "Researching book sales and market data" }],
+    // ---------------- Publishing / editorial ----------------
+    [/\b(copy[- ]?edit|copyedit|line edit|line editing)\b/, { key: "editing", label: "Copyediting and line editing" }],
+    [/\b(proofread|proofreading)\b/, { key: "proofreading", label: "Proofreading and final-pass accuracy" }],
+    [/\b(headlines?|display copy)\b/, { key: "headline_writing", label: "Headline and display copy writing" }],
+    [/\bseo\b/, { key: "seo", label: "SEO-aware writing and publishing" }],
+    [/\b(content[- ]?management system|cms)\b/, { key: "cms", label: "Content management system publishing" }],
+    [/\b(wordpress|incopy|google docs)\b/, { key: "cms", label: "Working in editorial tools (CMS, Docs, InCopy)" }],
+    [/\b(editorial assistant|editorial|executive editor|acquisitions|imprint|publishing)\b/, { key: "publishing_ops", label: "Editorial support and publishing workflow" }],
+    [/\b(jacket copy|galley copy|fact sheets?|descriptive copy)\b/, { key: "copywriting", label: "Writing and editing descriptive copy" }],
+    [/\b(proposals?|submissions?|manuscripts?|literary agents?|authors?)\b/, { key: "publishing_ops", label: "Working with submissions and authors/agents" }],
+    [/\b(metadata updates?|production process|route materials|manage deadlines)\b/, { key: "publishing_ops", label: "Managing deadlines, routing, and metadata" }],
+    // publishing research only when explicit (prevents “research” leakage)
+    [
+      /\b(research)\b.*\b(archives?|database|databases|market|sales|sources|fact[- ]?check|fact check)\b|\b(archives?|database|databases|market|sales|sources|fact[- ]?check|fact check)\b.*\b(research)\b/,
+      { key: "publishing_research", label: "Researching archives, databases, or market context" },
+    ],
 
-    // Finance / analytics
-    [/\bfinancial modeling|valuation|dcf|lbo\b/, { key: "modeling", label: "Financial modeling and valuation" }],
-    [/\bund(er)?writing|credit memo|credit\b|loan\b/, { key: "underwriting", label: "Underwriting or credit work" }],
-    [/\bfinancial statements|balance sheet|income statement|cash flow\b/, { key: "fin_statements", label: "Financial statement work" }],
+    // ---------------- Finance ----------------
+    [/\b(financial modeling|dcf|lbo|valuation)\b/, { key: "modeling", label: "Financial modeling and valuation" }],
+    [/\b(valuation)\b/, { key: "valuation", label: "Valuation work" }],
+    [/\b(fp&a|forecasting|budgeting|plan vs actual)\b/, { key: "fp_and_a", label: "FP&A, forecasting, and planning" }],
+    [/\b(budget|budgeting)\b/, { key: "budgeting", label: "Budgeting and spend management" }],
+    [/\b(forecast|forecasting)\b/, { key: "forecasting", label: "Forecasting and performance tracking" }],
+    [/\b(financial statements|balance sheet|income statement|cash flow)\b/, { key: "fin_statements", label: "Financial statement work" }],
+    [/\b(underwriting|credit memo|credit analysis)\b/, { key: "underwriting", label: "Underwriting or credit analysis" }],
+    [/\b(credit risk|risk rating|loss forecasting|delinquency)\b/, { key: "credit_risk", label: "Credit risk analysis" }],
+    [/\b(treasury|cash management|liquidity)\b/, { key: "treasury", label: "Treasury and cash management" }],
+    [/\b(audit|sox|internal controls)\b/, { key: "audit", label: "Audit and internal controls" }],
+    [/\b(tax|irs|sales tax|vat)\b/, { key: "tax", label: "Tax-related work" }],
+    [/\b(accounts payable|ap\b|accounts receivable|ar\b|reconciliation|invoic)\b/, { key: "ap_ar", label: "AP/AR, invoicing, and reconciliations" }],
+    [/\b(bookkeeping|quickbooks|journal entries)\b/, { key: "bookkeeping", label: "Bookkeeping and journal entries" }],
+
+    // ---------------- Data and analytics ----------------
     [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
+    // Excel only when explicit beyond “familiar with”
+    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling)\b/, { key: "excel", label: "Excel execution (advanced functions)" }],
+    [/\b(dashboard|tableau|power bi|looker)\b/, { key: "dashboarding", label: "Dashboards and BI tools" }],
+    [/\b(reporting|weekly report|monthly report|kpi)\b/, { key: "reporting", label: "Operational reporting and KPI tracking" }],
+    [/\b(data analysis|analyzing data|insights)\b/, { key: "data_analysis", label: "Data analysis and insights" }],
+    [/\b(etl|data pipeline|warehouse|dbt)\b/, { key: "data_engineering", label: "Data pipelines and engineering" }],
+    [/\b(data model|dimensional model|star schema)\b/, { key: "data_modeling", label: "Data modeling" }],
+    [/\b(data quality|dq\b|validation|reconciliation checks)\b/, { key: "data_quality", label: "Data quality and validation" }],
+    [/\b(statistics|regression|hypothesis testing)\b/, { key: "statistics", label: "Statistical analysis" }],
+    [/\b(a\/b test|experiment|randomized)\b/, { key: "experimentation", label: "Experimentation and testing" }],
+    [/\b(market research|competitive research|user research)\b/, { key: "market_research", label: "Market, competitive, or user research" }],
 
-    // Communication (don’t overclaim “presentations” unless it’s explicit)
-    [/\b(presentation|deck|powerpoint)\b/, { key: "presentations", label: "Presentations and stakeholder communication" }],
+    // ---------------- Software and IT ----------------
+    [/\b(software engineer|developer|engineering)\b/, { key: "software_engineering", label: "Software engineering" }],
+    [/\b(frontend|react|next\.js|typescript|javascript)\b/, { key: "frontend", label: "Frontend development" }],
+    [/\b(backend|node|python|java|go|api)\b/, { key: "backend", label: "Backend development" }],
+    [/\b(full stack|full-stack)\b/, { key: "full_stack", label: "Full-stack development" }],
+    [/\b(rest api|graphql|api development)\b/, { key: "api_development", label: "API development" }],
+    [/\b(aws|gcp|azure|cloud infrastructure)\b/, { key: "cloud_infra", label: "Cloud infrastructure" }],
+    [/\b(devops|ci\/cd|docker|kubernetes)\b/, { key: "devops", label: "DevOps and deployment" }],
+    [/\b(site reliability|sre)\b/, { key: "sre", label: "Reliability and uptime ownership" }],
+    [/\b(security|vulnerability|threat|iam)\b/, { key: "security", label: "Security practices and controls" }],
+    [/\b(it support|help desk|ticketing)\b/, { key: "it_support", label: "IT support and troubleshooting" }],
+    [/\b(networking|dns|vpn|firewall)\b/, { key: "networking_it", label: "Networking and systems" }],
+    [/\b(qa|quality assurance|test plan|test cases)\b/, { key: "qa_testing", label: "QA testing and test execution" }],
+    [/\b(automation|scripting|automate)\b/, { key: "automation", label: "Automation and scripting" }],
+    [/\b(machine learning|ml\b|model training|llm)\b/, { key: "ai_ml", label: "AI/ML work" }],
 
-    // Excel: only when it’s clearly more than “familiar with”
-    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling|heavy excel)\b/, { key: "excel", label: "Excel-heavy execution" }],
+    // ---------------- Product / project / process ----------------
+    [/\b(product manager|product management)\b/, { key: "product_management", label: "Product management" }],
+    [/\b(program manager|program management)\b/, { key: "program_management", label: "Program management" }],
+    [/\b(project manager|project management)\b/, { key: "project_management", label: "Project management" }],
+    [/\b(roadmap|roadmapping)\b/, { key: "roadmapping", label: "Roadmapping and prioritization" }],
+    [/\b(requirements|user stories|prd)\b/, { key: "requirements", label: "Requirements and specs" }],
+    [/\b(process improvement|lean|six sigma)\b/, { key: "process_improvement", label: "Process improvement" }],
+    [/\b(change management)\b/, { key: "change_management", label: "Change management" }],
+    [/\b(documentation|sop|standard operating procedure)\b/, { key: "documentation", label: "Documentation and SOPs" }],
 
-    // Research: only when it’s meaningfully research-forward, not a single admin bullet
-    [/\b(literature review|irb\b|lab\b|research assistant|publication)\b/, { key: "research", label: "Research-forward responsibilities" }],
+    // ---------------- Operations and supply chain ----------------
+    [/\b(operations|ops)\b/, { key: "ops", label: "Operations execution" }],
+    [/\b(logistics|shipping|freight|transportation)\b/, { key: "logistics", label: "Logistics coordination" }],
+    [/\b(supply chain)\b/, { key: "supply_chain", label: "Supply chain planning" }],
+    [/\b(procurement|sourcing|purchase orders?)\b/, { key: "procurement", label: "Procurement and sourcing" }],
+    [/\b(vendor management|supplier management)\b/, { key: "vendor_management", label: "Vendor and supplier management" }],
+    [/\b(inventory|cycle count)\b/, { key: "inventory", label: "Inventory tracking" }],
+    [/\b(facilities|maintenance|work orders?)\b/, { key: "facilities", label: "Facilities operations" }],
+    [/\b(quality assurance|qc|quality control)\b/, { key: "quality_assurance", label: "Quality assurance" }],
+    [/\b(manufacturing|production line)\b/, { key: "manufacturing", label: "Manufacturing operations" }],
+    [/\b(compliance|regulated|controls)\b/, { key: "compliance_ops", label: "Operational compliance" }],
 
-    // Ops/sales/paid media
-    [/\boperations|process improvement|workflow\b/, { key: "ops", label: "Operational execution and process improvement" }],
-    [/\b(cold call|quota|pipeline|crm\b)\b/, { key: "sales", label: "Outbound sales execution" }],
-    [/\b(meta ads|google ads|paid media|roas\b)\b/, { key: "paid_media", label: "Performance marketing execution" }],
+    // ---------------- Sales / customer ----------------
+    [/\b(cold call|pipeline|quota|closing)\b/, { key: "sales", label: "Sales execution" }],
+    [/\b(business development|bd)\b/, { key: "business_development", label: "Business development" }],
+    [/\b(account management)\b/, { key: "account_management", label: "Account management" }],
+    [/\b(customer success|client success|retention)\b/, { key: "customer_success", label: "Customer success and retention" }],
+    [/\b(customer support|support|ticketing)\b/, { key: "support", label: "Customer support" }],
+    [/\b(crm|salesforce|hubspot)\b/, { key: "crm", label: "CRM usage and pipeline hygiene" }],
+    [/\b(negotiate|negotiation|terms)\b/, { key: "negotiation", label: "Negotiation and deal terms" }],
+    [/\b(partnerships|strategic partners?)\b/, { key: "partnerships", label: "Partnership development" }],
+
+    // ---------------- Marketing ----------------
+    [/\b(brand marketing|brand strategy)\b/, { key: "brand_marketing", label: "Brand marketing" }],
+    [/\b(content marketing|content strategy)\b/, { key: "content_marketing", label: "Content marketing" }],
+    [/\b(copywriting)\b/, { key: "copywriting", label: "Copywriting" }],
+    [/\b(meta ads|google ads|paid media|roas)\b/, { key: "paid_media", label: "Paid media execution" }],
+    [/\b(lifecycle|email marketing|drip campaigns)\b/, { key: "lifecycle_marketing", label: "Lifecycle and email marketing" }],
+    [/\b(events|event marketing|webinars?)\b/, { key: "events_marketing", label: "Events and field marketing" }],
+    [/\b(social media|tiktok|instagram|youtube)\b/, { key: "social_media", label: "Social media execution" }],
+    [/\b(public relations|pr\b|press)\b/, { key: "communications_pr", label: "Communications and PR" }],
+    [/\b(creative direction|art direction)\b/, { key: "creative_direction", label: "Creative direction" }],
+
+    // ---------------- HR / recruiting ----------------
+    [/\b(recruiter|recruiting|talent acquisition)\b/, { key: "recruiting", label: "Recruiting and hiring support" }],
+    [/\b(hr operations|hr ops|onboarding|offboarding)\b/, { key: "hr_ops", label: "HR operations" }],
+    [/\b(people ops|employee experience)\b/, { key: "people_ops", label: "People operations" }],
+    [/\b(payroll|benefits|401k)\b/, { key: "payroll_benefits", label: "Payroll and benefits support" }],
+    [/\b(training|learning and development|l&d)\b/, { key: "learning_development", label: "Training and development" }],
+
+    // ---------------- Legal ----------------
+    [/\b(contracts?|msa|nda|terms and conditions)\b/, { key: "legal_contracts", label: "Contract drafting and review" }],
+    [/\b(legal research|case law|westlaw|lexis)\b/, { key: "legal_research", label: "Legal research" }],
+    [/\b(policy|regulatory)\b/, { key: "policy", label: "Policy and regulatory work" }],
+
+    // ---------------- Healthcare / clinical ----------------
+    [/\b(patient care|clinical care|bedside)\b/, { key: "clinical_care", label: "Clinical or patient-facing care" }],
+    [/\b(intake|triage|vitals)\b/, { key: "patient_intake", label: "Patient intake and triage support" }],
+    [/\b(documentation|charting|ehr|epic)\b/, { key: "medical_documentation", label: "Medical documentation and charting" }],
+    [/\b(phlebotomy|draw blood)\b/, { key: "phlebotomy", label: "Phlebotomy or specimen handling" }],
+    [/\bemt\b|paramedic\b/, { key: "emt", label: "Emergency medical response" }],
+    [/\b(physical therapy|pt\b|occupational therapy|ot\b)\b/, { key: "therapy", label: "Therapy support (PT/OT)" }],
+    [/\b(public health|community health)\b/, { key: "public_health", label: "Public health work" }],
+    [/\b(clinical research|trial|irb)\b/, { key: "clinical_research", label: "Clinical research support" }],
+
+    // ---------------- Education / nonprofit ----------------
+    [/\b(teach|teaching|instructor)\b/, { key: "teaching", label: "Teaching and instruction" }],
+    [/\b(curriculum|lesson plans?)\b/, { key: "curriculum", label: "Curriculum and lesson planning" }],
+    [/\b(student services|advising|counseling)\b/, { key: "student_services", label: "Student support services" }],
+    [/\b(grant writing|grant application)\b/, { key: "grant_writing", label: "Grant writing" }],
+    [/\b(fundraising|donor|development)\b/, { key: "fundraising", label: "Fundraising and donor development" }],
+    [/\b(community outreach|community engagement)\b/, { key: "community_outreach", label: "Community outreach" }],
   ]
 
   const out: Signal[] = []
@@ -835,36 +1059,61 @@ function extractProfileSignals(profileText: string): Signal[] {
   const t = normalizeText(profileText)
 
   const signals: Array<[RegExp, Signal]> = [
-    // Publishing/editorial (high priority)
-    [/\b(copy editor|copyedited|copyediting|proofread|proofreading|undergraduate reader|editor)\b/, { key: "editing", label: "Editing, proofreading, and editorial judgment" }],
-    [/\b(yale review|yale daily news|new journal|publication|editorial)\b/, { key: "publishing_ops", label: "Publication and editorial team experience" }],
-    [/\b(fact-check|fact check|submissions?|proposals?)\b/, { key: "editing", label: "Evaluating and reviewing written submissions" }],
+    // ---------------- Publishing / editorial (high priority) ----------------
+    [/\b(copy[- ]?edit(or|ing)?|line edit(ing)?|proofread(ing)?|querying)\b/, { key: "editing", label: "Copyediting, proofreading, and editorial judgment" }],
+    [/\b(undergraduate reader|reader)\b/, { key: "editing", label: "Evaluating and screening written submissions" }],
+    [/\b(fact[- ]?check(ing)?|fact check(ing)?)\b/, { key: "publishing_research", label: "Fact-checking and accuracy-focused review" }],
+    [/\b(headlines?|display copy)\b/, { key: "headline_writing", label: "Headline or display copy writing" }],
+    [/\b(seo)\b/, { key: "seo", label: "SEO-aware editorial writing" }],
+    [/\b(content[- ]?management system|cms|wordpress|incopy)\b/, { key: "cms", label: "Working in editorial tools (CMS, WordPress, InCopy)" }],
 
-    // Other
-    [/\bfinancial modeling|valuation|dcf|lbo\b/, { key: "modeling", label: "Financial modeling and valuation" }],
-    [/\bund(er)?writing|credit memo|credit\b|loan\b/, { key: "underwriting", label: "Underwriting or credit exposure" }],
+    // Publications (signals credibility, not “publishing ops” by itself)
+    [/\b(yale review|yale daily news|the new journal|magazine|newsroom|publication)\b/, { key: "publishing_ops", label: "Editorial team experience in a publication environment" }],
+    [/\b(crossword editor|audio producer|producer)\b/, { key: "publishing_ops", label: "Editorial production support (editing, scheduling, publishing flow)" }],
+
+    // Writing/copy (only when explicit)
+    [/\b(copywriting|jacket copy|galley copy|fact sheets?|descriptive copy)\b/, { key: "copywriting", label: "Writing or editing descriptive/promotional copy" }],
+
+    // ---------------- Research (keep strict: avoid false positives) ----------------
+    [/\b(literature review|research assistant|catalog(ue|ing)|archiv(al|es)|monograph|publication)\b/, { key: "research", label: "Research and analysis for publication-quality work" }],
+    [/\b(database|databases|sources|archives)\b/, { key: "publishing_research", label: "Using databases/sources/archives to support editorial work" }],
+
+    // ---------------- Operations / coordination ----------------
+    [/\b(operations intern|operations assistant|operations coordinator)\b/, { key: "ops", label: "Operations coordination and execution" }],
+    [/\b(schedule(ing)?|calendar management|deadline(s)?|route materials)\b/, { key: "project_management", label: "Deadlines, scheduling, and multi-thread coordination" }],
+    [/\b(process improvement|workflow|sop)\b/, { key: "process_improvement", label: "Process improvement and workflow clean-up" }],
+
+    // ---------------- Finance / business ----------------
+    [/\b(financial modeling|dcf|lbo|valuation)\b/, { key: "modeling", label: "Financial modeling and valuation" }],
+    [/\b(underwriting|credit memo|credit analysis)\b/, { key: "underwriting", label: "Underwriting or credit analysis exposure" }],
+    [/\b(financial statements|balance sheet|income statement|cash flow)\b/, { key: "fin_statements", label: "Financial statement familiarity" }],
+    [/\b(budget|budgeting|expense tracking)\b/, { key: "budgeting", label: "Budgeting and expense tracking" }],
+    [/\b(invoice|invoicing|reconciliation|accounts payable|accounts receivable|ap\b|ar\b)\b/, { key: "ap_ar", label: "AP/AR, invoicing, and reconciliations" }],
+
+    // ---------------- Data / tools ----------------
     [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
+    [/\b(tableau|power bi|looker|dashboard)\b/, { key: "dashboarding", label: "Dashboards and BI tools" }],
+    // Excel: only when explicitly advanced
+    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling)\b/, { key: "excel", label: "Excel execution (advanced functions)" }],
 
-    // Presentations only when explicit
+    // Presentations / stakeholders (only when explicit)
     [/\b(presentation|deck|powerpoint)\b/, { key: "presentations", label: "Presentations and stakeholder communication" }],
+    [/\b(stakeholders?|cross-functional|coordinate with)\b/, { key: "presentations", label: "Cross-functional coordination and communication" }],
 
-    // Excel only when explicit heavy
-    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling|heavy excel)\b/, { key: "excel", label: "Excel-heavy execution" }],
-
-    [/\bfinancial statements|balance sheet|income statement|cash flow\b/, { key: "fin_statements", label: "Financial statement work" }],
-    [/\b(literature review|irb\b|lab\b|research assistant|publication)\b/, { key: "research", label: "Research-forward experience" }],
-    [/\boperations|process improvement|workflow\b/, { key: "ops", label: "Operations/process work" }],
-    [/\b(cold call|quota|pipeline|crm\b|salesforce\b)\b/, { key: "sales", label: "Sales/CRM execution" }],
-    [/\b(meta ads|google ads|paid media|roas\b)\b/, { key: "paid_media", label: "Performance marketing execution" }],
+    // ---------------- Sales / marketing (only when explicit) ----------------
+    [/\b(cold call|quota|pipeline|crm\b|salesforce|hubspot)\b/, { key: "sales", label: "Sales/CRM execution" }],
+    [/\b(meta ads|google ads|paid media|roas)\b/, { key: "paid_media", label: "Paid media execution" }],
+    [/\b(content marketing|social media)\b/, { key: "content_marketing", label: "Content and social execution" }],
   ]
 
   const out: Signal[] = []
   for (const [re, sig] of signals) {
     if (re.test(t)) out.push(sig)
-    if (out.length >= 5) break
+    if (out.length >= 6) break
   }
   return out
 }
+
 
 // ----------------------- MAIN -----------------------
 
@@ -1122,10 +1371,7 @@ const alignmentBullet = buildAlignmentBullet(jobSignalText, signalLabels(overlap
 bullets.push(alignmentBullet)
 
 
-  // 3) Depth
-  if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
-  else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have enough proof to justify a shot, but this is not a lock.")
-  else bullets.push("Depth is limited. You may be screened out unless your proof is stronger than what is currently visible.")
+ 
 
 function shouldAddPedigreeBullet(params: { employerTier: EmployerTier; schoolTier: SchoolTier; decision: Decision }) {
   const { employerTier, schoolTier, decision } = params
@@ -1142,6 +1388,7 @@ function shouldAddPedigreeBullet(params: { employerTier: EmployerTier; schoolTie
 if (shouldAddPedigreeBullet({ employerTier, schoolTier, decision })) {
   bullets.push("Your Tier 1 school strengthens your competitiveness for this role.")
 }
+if (decision === "Review") bullets.push("If you apply, tighten your proof fast: resume bullets and cover letter need to mirror the role’s core requirements.")
 
 
   // 4) Apply momentum
