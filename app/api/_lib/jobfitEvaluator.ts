@@ -942,15 +942,37 @@ export async function runJobFit({
   if (jobSignals.length > 0) bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
   else bullets.push("Role responsibilities are broad. Decision is based on visible function alignment and competitiveness signals.")
 
-  if (alignmentLevel === "direct") bullets.push("Your profile shows direct alignment to this function.")
-  else if (alignmentLevel === "strong_adjacent") bullets.push("Your profile is strongly adjacent. You are plausible, but not the obvious pick.")
-  else bullets.push("Your profile shows transferable signals, but alignment is not clearly tied to this job.")
+// Fit to what the job does (capability)
+if (alignmentLevel === "direct") {
+  bullets.push("Your profile shows clear fit for what this job actually does.")
+} else if (alignmentLevel === "strong_adjacent") {
+  bullets.push("Your profile is adjacent. You are plausible, but you are not the obvious pick.")
+} else {
+  bullets.push("Your profile has some transferable signals, but fit for this job is not clearly demonstrated.")
+}
+
+// Depth (credibility / reps)
+if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
+else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have some fit signals, but this is not a lock.")
+else bullets.push("Depth is limited for what this job expects.")
+
+// Targets (direction). Do NOT restate off-target here.
+// Keep targets logic in RISKS only to avoid contradiction.
+
+// Only use the visibility lecture when the decision is Pass,
+// or when Review is caused by missing proof (weak depth or weak alignment).
+const reviewBecauseProofIsWeak =
+  decision === "Review" && (depthLabel === "weak" || alignmentLevel !== "direct")
+
+if (decision === "Pass" || reviewBecauseProofIsWeak) {
+  bullets.push(buildPassVisibilityBullet())
+}
 
   if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
   else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have some fit signals, but this is not a lock.")
   else bullets.push("Depth is limited for what this job expects.")
 
-  if (targetAlignment === "off_target") bullets.push("This is off-target relative to your stated direction, so it cannot be a clean Apply recommendation.")
+
 
   // Pass visibility bullet (only when Review/Pass, not on Apply unless risk indicates missing proof)
   if (decision === "Review" || decision === "Pass") bullets.push(buildPassVisibilityBullet())
