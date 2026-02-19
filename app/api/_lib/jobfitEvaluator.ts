@@ -672,7 +672,8 @@ Return JSON only:
 
 Non-negotiables:
 - WHY bullets must be specific and grounded in both the job and the profile.
-- WHY bullets must include proof in this format: "<claim> | Job: <short quote/phrase> | Profile: <short proof>"
+- Do NOT include job quotes or “Job:” / “Profile:” evidence in the bullets.
+- Each WHY bullet should be one sentence stating the match in plain English.
 - RISK flags must be plain text only (no "Job:" / "Profile:" / "Missing:"), and must reflect real constraints or gaps.
 - Only include risks triggered by explicit job requirements or responsibilities.
 - Do NOT create risks based on missing job info (do not say "job not stated/not mentioned").
