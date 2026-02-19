@@ -272,6 +272,7 @@ type SignalKey =
   | "statistics"
   | "experimentation"
   | "market_research"
+  | "research"               // ✅ ADD THIS BACK
 
   // Software and IT
   | "software_engineering"
@@ -320,6 +321,7 @@ type SignalKey =
   | "crm"
   | "negotiation"
   | "partnerships"
+  | "presentations"          // ✅ ADD THIS BACK
 
   // Marketing and growth
   | "brand_marketing"
@@ -370,6 +372,7 @@ type SignalKey =
   | "grant_writing"
   | "fundraising"
   | "community_outreach"
+
 
 type Signal = { key: SignalKey; label: string }
 
