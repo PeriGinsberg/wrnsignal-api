@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic"
 
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
+const JOBFIT_LOGIC_VERSION = "rules_v1_2026_02_19"
+
 const MODEL_ID = "current"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -108,6 +110,7 @@ export async function POST(req: Request) {
       system: {
         jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
         model_id: MODEL_ID,
+ jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       },
     }
 
@@ -134,6 +137,7 @@ export async function POST(req: Request) {
         ...(existingRun.result_json as any),
         fingerprint_code,
         fingerprint_hash,
+ jobfit_logic_version: JOBFIT_LOGIC_VERSION,
         reused: true,
       })
     }
@@ -168,6 +172,7 @@ export async function POST(req: Request) {
       ...result,
       fingerprint_code,
       fingerprint_hash,
+ jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       reused: false,
     })
   } catch (err: any) {
