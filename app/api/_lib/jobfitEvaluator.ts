@@ -1019,7 +1019,15 @@ export async function runJobFit({
 
   // 8) BULLETS (strengths only, no contradictions)
   const bullets: string[] = []
-  const jobSignals = extractJobSignals(jobText)
+const jobSignalsRaw = extractJobSignals(jobText)
+
+// FORCE jobSignals to be strings (prevents [object Object])
+const jobSignals = (jobSignalsRaw || [])
+  .map((x: any) => (typeof x === "string" ? x : String(x?.label || x?.text || x?.name || "")))
+  .map((s: string) => s.trim())
+  .filter(Boolean)
+  .slice(0, 3)
+
   const profSignals = extractProfileSignals(profileText)
 
   // What the job is
@@ -1035,7 +1043,7 @@ export async function runJobFit({
 
 // --- inside runJobFit() where you build bullets ---
 const bullets: string[] = []
-const jobSignals = extractJobSignals(jobText)
+
 const jobSignalsRaw = extractJobSignals(jobText)
 
 // FORCE jobSignals to be strings (prevents [object Object])
