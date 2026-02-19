@@ -2,7 +2,7 @@
 // Deterministic JobFit rules engine (no LLM decisioning)
 // - Decision-first (Priority Apply / Apply / Review / Pass)
 // - No job quotes in bullets
-// - No visa/work auth, driver's license, or other minimal qualifier risks
+// - No visa/work auth, driver's license, background check, drug test risks
 // - Uses profileStructured when present (no new user inputs)
 // - Human-readable risk flags only (no internal tokens)
 // - Slightly aggressive: if you can't stand up to it, it's Review/Pass, not Apply
@@ -115,9 +115,7 @@ function extractJobFacts(jobText: string): JobFacts {
     /\b\d+(\.\d+)?\s*\/\s*hr\b/.test(t0)
 
   let hourlyEvidence: string | null = null
-  const mHr =
-    t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/) ||
-    t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
+  const mHr = t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/) || t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
   if (mHr?.[0]) hourlyEvidence = mHr[0]
 
   const isContract =
@@ -268,6 +266,17 @@ function extractJobSignals(jobText: string): Signal[] {
   return out
 }
 
+function overlapSignals(job: Signal[], prof: Signal[]) {
+  const profKeys = new Set(prof.map((s) => s.key))
+  return job.filter((s) => profKeys.has(s.key))
+}
+
+function signalLabels(signals: Signal[], max: number) {
+  return (signals || [])
+    .map((s) => String(s?.label || "").trim())
+    .filter(Boolean)
+    .slice(0, max)
+}
 
 // ----------------------- profile constraints -----------------------
 
@@ -287,11 +296,7 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
     t0.includes("fulltime") ||
     (t0.includes("job type preference") && t0.includes("full"))
 
-  const hardNoContract =
-    t0.includes("no contract") ||
-    t0.includes("do not want contract") ||
-    t0.includes("no temp") ||
-    t0.includes("no temporary")
+  const hardNoContract = t0.includes("no contract") || t0.includes("do not want contract") || t0.includes("no temp") || t0.includes("no temporary")
 
   const hardNoSales =
     (t0.includes("do not want") && (t0.includes("sales") || t0.includes("commission"))) ||
@@ -591,10 +596,7 @@ function countKeywordHits(text: string, patterns: RegExp[]) {
   return hits
 }
 
-function inferAlignmentLevel(profileText: string, primary: JobFunction): {
-  level: AlignmentLevel
-  evidenceScore: number
-} {
+function inferAlignmentLevel(profileText: string, primary: JobFunction): { level: AlignmentLevel; evidenceScore: number } {
   if (primary === "unknown") return { level: "weak_adjacent", evidenceScore: 0 }
 
   const directHits = countKeywordHits(profileText, DIRECT_KEYWORDS[primary] || [])
@@ -620,7 +622,10 @@ function inferAlignmentLevel(profileText: string, primary: JobFunction): {
   return { level: "none", evidenceScore: 0 }
 }
 
-function computeDepthScore(profileText: string, seniority: JobSeniority): { depth: number; label: "strong" | "moderate" | "weak" } {
+function computeDepthScore(
+  profileText: string,
+  seniority: JobSeniority
+): { depth: number; label: "strong" | "moderate" | "weak" } {
   const t = normalizeText(profileText)
 
   const hasIntern = /\b(intern|internship|co-op|co op)\b/.test(t) ? 2 : 0
@@ -750,7 +755,6 @@ function buildVisibilityBullet() {
   return "SIGNAL evaluates what is visible. If you have the experience but it is not clearly shown, the market will treat it as missing."
 }
 
-// GPA risk rules (your spec)
 function shouldShowGpaRisk(employerTier: EmployerTier, gpaBand: GpaBand) {
   if (gpaBand === "unknown") return false
   if (employerTier === 1) return true
@@ -758,7 +762,6 @@ function shouldShowGpaRisk(employerTier: EmployerTier, gpaBand: GpaBand) {
   return false
 }
 
-// Depth risk rules (fixed: decision exists before calling)
 function shouldSurfaceDepthRisk(params: {
   decision: Decision
   employerTier: EmployerTier
@@ -914,13 +917,7 @@ export async function runJobFit({
 
   // Absolute mismatch => PASS
   if (alignmentLevel === "none") {
-    const bullets = uniqTop(
-      [
-        "No role-relevant alignment is visible for this job’s function.",
-        buildVisibilityBullet(),
-      ],
-      6
-    )
+    const bullets = uniqTop(["No role-relevant alignment is visible for this job’s function.", buildVisibilityBullet()], 6)
     return {
       decision: "Pass" as Decision,
       icon: iconForDecision("Pass"),
@@ -1017,96 +1014,40 @@ export async function runJobFit({
 
   const risk_flags = toUserRiskFlags(uniqTop(riskCodes, 10) as RiskCode[])
 
-  // 8) BULLETS (strengths only, no contradictions)
+  // 8) BULLETS (strengths only, clean strings, no [object Object])
   const bullets: string[] = []
-const jobSignalsRaw = extractJobSignals(jobText)
 
-// FORCE jobSignals to be strings (prevents [object Object])
-const jobSignals = (jobSignalsRaw || [])
-  .map((x: any) => (typeof x === "string" ? x : String(x?.label || x?.text || x?.name || "")))
-  .map((s: string) => s.trim())
-  .filter(Boolean)
-  .slice(0, 3)
+  const jobSignals = extractJobSignals(jobText) // Signal[]
+  const profSignals = extractProfileSignals(profileText) // Signal[]
+  const overlap = overlapSignals(jobSignals, profSignals) // Signal[]
 
-  const profSignals = extractProfileSignals(profileText)
+  const jobSignalText = signalLabels(jobSignals, 3) // string[] for rendering
 
-  // What the job is
-  if (jobSignals.length > 0) bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
+  // 1) What the job is
+  if (jobSignalText.length > 0) bullets.push(`This role centers on: ${jobSignalText.join(", ")}.`)
   else bullets.push("This role is broad. Decision is based on visible function fit and competitiveness signals.")
 
-  // Strongest visible match
-  if (jobSignals.length > 0 && profSignals.length > 0) {
-   function overlapSignals(job: Signal[], prof: Signal[]) {
-  const profKeys = new Set(prof.map((s) => s.key))
-  return job.filter((s) => profKeys.has(s.key))
-}
-
-// --- inside runJobFit() where you build bullets ---
-const bullets: string[] = []
-
-const jobSignalsRaw = extractJobSignals(jobText)
-
-// FORCE jobSignals to be strings (prevents [object Object])
-const jobSignals = (jobSignalsRaw || [])
-  .map((x: any) => (typeof x === "string" ? x : String(x?.label || x?.text || x?.name || "")))
-  .map((s: string) => s.trim())
-  .filter(Boolean)
-  .slice(0, 3)
-
-const profSignals = extractProfileSignals(profileText)
-const overlap = overlapSignals(jobSignals, profSignals)
-
-// 1) What the job is
-if (jobSignals.length > 0) {
-  bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
-}
- else {
-  bullets.push("This role is broad. Decision is based on visible function fit and competitiveness signals.")
-}
-
-// 2) Proof (ONLY when overlap exists)
-if (overlap.length > 0) {
-  bullets.push(`Visible proof of fit: ${overlap.map((s) => s.label).slice(0, 2).join(" + ")}.`)
-} else if (alignmentLevel === "direct") {
-  bullets.push("Function fit looks right, but the proof is not specific in what is currently visible.")
-} else if (alignmentLevel === "strong_adjacent") {
-  bullets.push("Your background is adjacent. You are plausible, but you are not the obvious pick.")
-} else {
-  bullets.push("You have transferable signals, but fit is not clearly demonstrated.")
-}
-
-// 3) Depth
-if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
-else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have enough proof to justify a shot, but this is not a lock.")
-else bullets.push("Depth is limited. You may be screened out unless your proof is stronger than what is currently visible.")
-
-// 4) Apply momentum
-if (decision === "Priority Apply") bullets.push("This is worth prioritizing. Move quickly.")
-if (decision === "Apply") bullets.push("This is worth applying to based on visible fit.")
-
-// 5) Visibility reminder only for Review/Pass
-if (decision === "Review" || decision === "Pass") bullets.push(buildVisibilityBullet())
-
-const finalBullets = uniqTop(bullets, 6)
-
+  // 2) Proof (ONLY when overlap exists)
+  if (overlap.length > 0) {
+    bullets.push(`Visible proof of fit: ${signalLabels(overlap, 2).join(" + ")}.`)
   } else if (alignmentLevel === "direct") {
-    bullets.push("Your profile shows clear fit for what this job does.")
+    bullets.push("Function fit looks right, but the proof is not specific in what is currently visible.")
   } else if (alignmentLevel === "strong_adjacent") {
     bullets.push("Your background is adjacent. You are plausible, but you are not the obvious pick.")
   } else {
     bullets.push("You have transferable signals, but fit is not clearly demonstrated.")
   }
 
-  // Credibility / reps (as a strength statement)
+  // 3) Depth
   if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
   else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have enough proof to justify a shot, but this is not a lock.")
   else bullets.push("Depth is limited. You may be screened out unless your proof is stronger than what is currently visible.")
 
-  // Action-oriented (only for Apply/Priority)
+  // 4) Apply momentum
   if (decision === "Priority Apply") bullets.push("This is worth prioritizing. Move quickly.")
   if (decision === "Apply") bullets.push("This is worth applying to based on visible fit.")
 
-  // Visibility reminder: only on Review/Pass
+  // 5) Visibility reminder only for Review/Pass
   if (decision === "Review" || decision === "Pass") bullets.push(buildVisibilityBullet())
 
   const finalBullets = uniqTop(bullets, 6)
