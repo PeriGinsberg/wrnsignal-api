@@ -1067,7 +1067,7 @@ if (decision === "Priority Apply") bullets.push("This is worth prioritizing. Mov
 if (decision === "Apply") bullets.push("This is worth applying to based on visible fit.")
 
 // 5) Visibility reminder only for Review/Pass
-if (decision === "Review" || decision === "Pass") bullets.push(buildPassVisibilityBullet())
+if (decision === "Review" || decision === "Pass") bullets.push(buildVisibilityBullet())
 
 const finalBullets = uniqTop(bullets, 6)
 
