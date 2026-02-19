@@ -594,13 +594,17 @@ function normalizeLocationConstraint(x: any): LocationConstraint {
 export async function runJobFit({
   profileText,
   jobText,
+  profileStructured,
 }: {
   profileText: string
   jobText: string
+  profileStructured?: any
 }) {
   const jobFacts = extractJobFacts(jobText)
   const profileConstraints = extractProfileConstraints(profileText)
   const gate = evaluateGates(jobFacts, profileConstraints, jobText, profileText)
+const JOBFIT_LOGIC_VERSION = "rules_v1_2026_02_19"
+
 
   // Forced PASS: do not call model
   if (gate.type === "force_pass") {

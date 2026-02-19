@@ -152,6 +152,7 @@ export async function POST(req: Request) {
     const result = await runJobFit({
       profileText,
       jobText,
+ profileStructured: profileStructured || {},
     })
 
     // 3) Store result (best effort)
