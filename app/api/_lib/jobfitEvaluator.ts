@@ -26,6 +26,7 @@ type ProfileConstraints = {
   hardNoSales: boolean
   hardNoGovernment: boolean
   hardNoFullyRemote: boolean
+  veryOpenToNonObvious: boolean
 }
 
 type EmployerTier = 1 | 2 | 3 | 4
@@ -39,6 +40,7 @@ type JobFunction =
   | "consulting_strategy"
   | "finance_accounting"
   | "commercial_real_estate"
+  | "publishing_editorial"
   | "sales"
   | "marketing_analytics"
   | "brand_marketing"
@@ -115,31 +117,39 @@ function extractJobFacts(jobText: string): JobFacts {
     /\b\d+(\.\d+)?\s*\/\s*hr\b/.test(t0)
 
   let hourlyEvidence: string | null = null
-  const mHr = t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/) || t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
+  const mHr =
+    t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/) ||
+    t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
   if (mHr?.[0]) hourlyEvidence = mHr[0]
 
-  const isContract =
-    /\bcontract\b/.test(t0) ||
-    /\b3\s*month\b/.test(t0) ||
-    /\b6\s*month\b/.test(t0) ||
+  // Contract should mean employment type, not "contract forms"
+  const contractNoise =
+    /\bcontract\s+(forms?|templates?|paperwork|documents?)\b/.test(t0) ||
+    /\bdraft\b[^\n]{0,40}\bcontract\b/.test(t0) ||
+    /\bdeal\s+memos?\b/.test(t0)
+
+  const contractEmployment =
+    /\b(contract\s+(role|position|job|employment|assignment))\b/.test(t0) ||
+    /\b(3|6|9|12)\s*-\s*(month|mo)\s+contract\b/.test(t0) ||
+    /\b(3|6|9|12)\s*(month|mo)\s+contract\b/.test(t0) ||
     /\btemporary\b/.test(t0) ||
     /\btemp\b/.test(t0) ||
-    /\bduration\b/.test(t0) ||
-    /\b1099\b/.test(t0) ||
-    /\bw2\b/.test(t0)
+    /\b1099\b/.test(t0)
+
+  const isContract = contractEmployment && !contractNoise
 
   let contractEvidence: string | null = null
-  const mContract =
-    t0.match(/\bcontract\b/) ||
-    t0.match(/\b3\s*month\b/) ||
-    t0.match(/\b6\s*month\b/) ||
-    t0.match(/\btemporary\b/) ||
-    t0.match(/\bduration\b/) ||
-    t0.match(/\b1099\b/) ||
-    t0.match(/\bw2\b/)
-  if (mContract?.[0]) contractEvidence = mContract[0]
+  if (isContract) {
+    const mContract =
+      t0.match(/\b(contract\s+(role|position|job|employment|assignment))\b/) ||
+      t0.match(/\b(3|6|9|12)\s*-\s*(month|mo)\s+contract\b/) ||
+      t0.match(/\b(3|6|9|12)\s*(month|mo)\s+contract\b/) ||
+      t0.match(/\btemporary\b/) ||
+      t0.match(/\b1099\b/)
+    if (mContract?.[0]) contractEvidence = mContract[0]
+  }
 
-  const isFullyRemote = /\bfully remote|100% remote|remote only|work from home\b/.test(t0)
+  const isFullyRemote = /\b(fully remote|100% remote|remote only|work from home)\b/.test(t0)
 
   return { isHourly, hourlyEvidence, isContract, contractEvidence, isFullyRemote }
 }
@@ -196,6 +206,12 @@ function inferJobFunction(jobText: string): JobFunction {
   if (/\b(accounting|accountant|ar\b|ap\b|general ledger|reconciliation|financial statements|cpa)\b/.test(t))
     return "finance_accounting"
 
+  // Publishing/editorial must win early so we don’t mis-route to generic “research”
+  if (
+    /\b(editorial assistant|editorial|executive editor|acquisitions editor|editor\b|publishing|imprint|literary agent|book proposals?|submissions?|manuscripts?)\b/.test(t) ||
+    /\b(jacket copy|galley copy|fact sheets?|blurb outreach|deal memos?|metadata updates?|book production|route materials)\b/.test(t)
+  ) return "publishing_editorial"
+
   if (/\b(sales|business development|quota|commission|pipeline|lead gen|cold call)\b/.test(t))
     return "sales"
 
@@ -217,7 +233,7 @@ function inferJobFunction(jobText: string): JobFunction {
   if (/\b(software engineer|developer|full stack|frontend|backend|api\b|javascript|typescript|python\b|data engineer|machine learning)\b/.test(t))
     return "software_data"
 
-  if (/\b(research|research assistant|lab\b|publication|literature review|irb\b)\b/.test(t))
+  if (/\b(research assistant|literature review|irb\b|lab\b|publication)\b/.test(t))
     return "research"
 
   if (/\b(clinical|patient|medical device|emt\b|paramedic|nurse|rn\b|physician|therapy|pt\b|occupational)\b/.test(t))
@@ -239,29 +255,50 @@ type SignalKey =
   | "research"
   | "sales"
   | "fin_statements"
+  | "editing"
+  | "publishing_ops"
+  | "copywriting"
+  | "publishing_research"
 
 type Signal = { key: SignalKey; label: string }
 
+// NOTE: Signals should not exaggerate. “Excel” as a basic tool should not become “Heavy Excel execution”.
 function extractJobSignals(jobText: string): Signal[] {
   const t = normalizeText(jobText)
 
   const signals: Array<[RegExp, Signal]> = [
+    // Publishing/editorial (high priority)
+    [/\b(editorial assistant|editorial|executive editor|acquisitions|editor\b|publishing|imprint)\b/, { key: "publishing_ops", label: "Editorial support and publishing workflow" }],
+    [/\b(jacket copy|galley copy|fact sheets?|descriptive copy|jacket)\b/, { key: "copywriting", label: "Writing descriptive copy (jacket, galley, fact sheets)" }],
+    [/\b(proposals?|submissions?|manuscripts?|literary agents?|authors?)\b/, { key: "editing", label: "Reviewing proposals and working with authors/agents" }],
+    [/\b(metadata updates?|book production|route materials|manage deadlines|production process)\b/, { key: "publishing_ops", label: "Managing production timelines and metadata" }],
+    [/\b(research)\b[^\n]{0,80}\b(book sales|databases?)\b|\bbook sales\b[^\n]{0,80}\bresearch\b/, { key: "publishing_research", label: "Researching book sales and market data" }],
+
+    // Finance / analytics
     [/\bfinancial modeling|valuation|dcf|lbo\b/, { key: "modeling", label: "Financial modeling and valuation" }],
     [/\bund(er)?writing|credit memo|credit\b|loan\b/, { key: "underwriting", label: "Underwriting or credit work" }],
-    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, { key: "presentations", label: "Stakeholder communication and presentations" }],
-    [/\bexcel\b/, { key: "excel", label: "Heavy Excel execution" }],
-    [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
     [/\bfinancial statements|balance sheet|income statement|cash flow\b/, { key: "fin_statements", label: "Financial statement work" }],
-    [/\bresearch|literature review|irb|lab\b/, { key: "research", label: "Research-heavy responsibilities" }],
+    [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
+
+    // Communication (don’t overclaim “presentations” unless it’s explicit)
+    [/\b(presentation|deck|powerpoint)\b/, { key: "presentations", label: "Presentations and stakeholder communication" }],
+
+    // Excel: only when it’s clearly more than “familiar with”
+    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling|heavy excel)\b/, { key: "excel", label: "Excel-heavy execution" }],
+
+    // Research: only when it’s meaningfully research-forward, not a single admin bullet
+    [/\b(literature review|irb\b|lab\b|research assistant|publication)\b/, { key: "research", label: "Research-forward responsibilities" }],
+
+    // Ops/sales/paid media
     [/\boperations|process improvement|workflow\b/, { key: "ops", label: "Operational execution and process improvement" }],
-    [/\bcold call|quota|pipeline|crm\b/, { key: "sales", label: "Outbound sales execution" }],
-    [/\bmeta ads|google ads|paid media|roas\b/, { key: "paid_media", label: "Performance marketing execution" }],
+    [/\b(cold call|quota|pipeline|crm\b)\b/, { key: "sales", label: "Outbound sales execution" }],
+    [/\b(meta ads|google ads|paid media|roas\b)\b/, { key: "paid_media", label: "Performance marketing execution" }],
   ]
 
   const out: Signal[] = []
   for (const [re, sig] of signals) {
     if (re.test(t)) out.push(sig)
-    if (out.length >= 3) break
+    if (out.length >= 4) break
   }
   return out
 }
@@ -287,8 +324,7 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
     t0.includes("no hourly") ||
     t0.includes("no hourly pay") ||
     (t0.includes("do not want") && t0.includes("hourly")) ||
-    (t0.includes("hard exclusion") && t0.includes("hourly")) ||
-    (t0.includes("d o n o t want") && t0.includes("hourly"))
+    (t0.includes("hard exclusion") && t0.includes("hourly"))
 
   const prefFullTime =
     t0.includes("full time") ||
@@ -296,7 +332,11 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
     t0.includes("fulltime") ||
     (t0.includes("job type preference") && t0.includes("full"))
 
-  const hardNoContract = t0.includes("no contract") || t0.includes("do not want contract") || t0.includes("no temp") || t0.includes("no temporary")
+  const hardNoContract =
+    t0.includes("no contract") ||
+    t0.includes("do not want contract") ||
+    t0.includes("no temp") ||
+    t0.includes("no temporary")
 
   const hardNoSales =
     (t0.includes("do not want") && (t0.includes("sales") || t0.includes("commission"))) ||
@@ -311,10 +351,24 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
 
   const hardNoFullyRemote =
     t0.includes("no fully remote") ||
-    (t0.includes("do not want") && t0.includes("fully remote")) ||
-    (t0.includes("d o n o t want") && t0.includes("fully remote"))
+    (t0.includes("do not want") && t0.includes("fully remote"))
 
-  return { hardNoHourlyPay, prefFullTime, hardNoContract, hardNoSales, hardNoGovernment, hardNoFullyRemote }
+  const veryOpenToNonObvious =
+    t0.includes("very open") ||
+    t0.includes("open to non-obvious") ||
+    t0.includes("open to non obvious") ||
+    t0.includes("non-obvious entry") ||
+    t0.includes("non obvious entry")
+
+  return {
+    hardNoHourlyPay,
+    prefFullTime,
+    hardNoContract,
+    hardNoSales,
+    hardNoGovernment,
+    hardNoFullyRemote,
+    veryOpenToNonObvious,
+  }
 }
 
 // ----------------------- structured profile readers -----------------------
@@ -351,10 +405,12 @@ function readTargets(profileStructured: any, profileText: string): string[] {
 
   const t = normalizeText(profileText)
   const hits: string[] = []
+
   if (t.includes("investment banking")) hits.push("investment banking")
   if (t.includes("private equity")) hits.push("private equity")
   if (t.includes("consulting")) hits.push("consulting")
   if (t.includes("commercial real estate")) hits.push("commercial real estate")
+  if (t.includes("publishing") || t.includes("editorial")) hits.push("publishing / editorial")
   if (t.includes("marketing")) hits.push("marketing")
   if (t.includes("sales")) hits.push("sales")
   if (t.includes("finance")) hits.push("finance")
@@ -362,6 +418,7 @@ function readTargets(profileStructured: any, profileText: string): string[] {
   if (t.includes("operations")) hits.push("operations")
   if (t.includes("customer success")) hits.push("customer success")
   if (t.includes("government")) hits.push("government")
+
   return uniqTop(hits, 12)
 }
 
@@ -374,6 +431,7 @@ function mapTargetsToFunctions(targets: string[]): JobFunction[] {
     else if (/\b(consulting|strategy)\b/.test(s)) out.push("consulting_strategy")
     else if (/\b(commercial real estate|real estate)\b/.test(s)) out.push("commercial_real_estate")
     else if (/\b(accounting|finance)\b/.test(s)) out.push("finance_accounting")
+    else if (/\b(publishing|editorial|books?)\b/.test(s)) out.push("publishing_editorial")
     else if (/\b(sales|business development)\b/.test(s)) out.push("sales")
     else if (/\b(marketing analytics|analytics)\b/.test(s)) out.push("marketing_analytics")
     else if (/\b(brand|content|social)\b/.test(s)) out.push("brand_marketing")
@@ -497,12 +555,7 @@ function suppressRiskText(s0: string) {
   if (s.includes("background check") || s.includes("drug test")) return true
   if (s.includes("valid license") && s.includes("driver")) return true
 
-  if (
-    s.includes("not stated") ||
-    s.includes("not specified") ||
-    s.includes("not mentioned") ||
-    s.includes("unclear from the job")
-  ) return true
+  if (s.includes("not stated") || s.includes("not specified") || s.includes("not mentioned") || s.includes("unclear from the job")) return true
 
   return false
 }
@@ -558,6 +611,11 @@ const DIRECT_KEYWORDS: Record<JobFunction, RegExp[]> = {
   consulting_strategy: [/\b(consulting|consultant|case interview|workstream|deck|analysis|client deliverables)\b/],
   finance_accounting: [/\b(financial analysis|fp&a|budget|forecast|accounting|reconciliation|general ledger|journal entries|ar\b|ap\b)\b/],
   commercial_real_estate: [/\b(commercial real estate|real estate underwriting|noi|cap rate|dscr|multifamily|industrial|office|leasing)\b/],
+  publishing_editorial: [
+    /\b(editorial assistant|editorial|executive editor|editor\b|publishing|imprint|manuscripts?|submissions?|proposals?|literary agent)\b/,
+    /\b(jacket copy|galley copy|fact sheets?|blurb outreach|deal memos?|metadata|book production)\b/,
+    /\b(copy edit|copyediting|proofread|proofreading|line edit|fact-check)\b/,
+  ],
   sales: [/\b(sales|business development|quota|pipeline|crm\b|lead gen|cold call|outbound|closing)\b/],
   marketing_analytics: [/\b(sql\b|google analytics|roas|attribution|a\/b test|performance marketing|campaign performance|meta ads|google ads)\b/],
   brand_marketing: [/\b(brand|content|social media|creative strategy|communications|copywriting|storytelling)\b/],
@@ -565,7 +623,7 @@ const DIRECT_KEYWORDS: Record<JobFunction, RegExp[]> = {
   customer_success: [/\b(customer success|client success|onboarding|implementation|account management|retention)\b/],
   government_public: [/\b(government|public sector|municipal|state agency|federal)\b/],
   software_data: [/\b(software|engineer|developer|typescript|javascript|python\b|api\b|database|sql\b|data pipeline|machine learning)\b/],
-  research: [/\b(research|lab\b|irb\b|publication|literature review|data collection|analysis)\b/],
+  research: [/\b(research assistant|lab\b|irb\b|publication|literature review|data collection|analysis)\b/],
   clinical_health: [/\b(emt\b|patient|clinical|medical device|therapy|rn\b|hospital)\b/],
   unknown: [],
 }
@@ -575,6 +633,7 @@ const STRONG_ADJACENCY: Record<JobFunction, JobFunction[]> = {
   consulting_strategy: ["product_program_ops", "finance_accounting", "marketing_analytics"],
   finance_accounting: ["investment_banking_pe_mna", "commercial_real_estate", "product_program_ops"],
   commercial_real_estate: ["finance_accounting", "investment_banking_pe_mna"],
+  publishing_editorial: ["brand_marketing", "research", "product_program_ops"],
   sales: ["customer_success", "brand_marketing"],
   marketing_analytics: ["brand_marketing", "product_program_ops"],
   brand_marketing: ["marketing_analytics", "customer_success"],
@@ -622,10 +681,7 @@ function inferAlignmentLevel(profileText: string, primary: JobFunction): { level
   return { level: "none", evidenceScore: 0 }
 }
 
-function computeDepthScore(
-  profileText: string,
-  seniority: JobSeniority
-): { depth: number; label: "strong" | "moderate" | "weak" } {
+function computeDepthScore(profileText: string, seniority: JobSeniority): { depth: number; label: "strong" | "moderate" | "weak" } {
   const t = normalizeText(profileText)
 
   const hasIntern = /\b(intern|internship|co-op|co op)\b/.test(t) ? 2 : 0
@@ -712,11 +768,7 @@ function toUserRiskFlags(codes: RiskCode[]) {
 
 // ----------------------- hard exclusions + ceilings -----------------------
 
-function isHardExclusionPass(
-  constraints: ProfileConstraints,
-  jobFacts: JobFacts,
-  primary: JobFunction
-): { pass: boolean; reason?: string } {
+function isHardExclusionPass(constraints: ProfileConstraints, jobFacts: JobFacts, primary: JobFunction): { pass: boolean; reason?: string } {
   if (constraints.hardNoHourlyPay && jobFacts.isHourly) {
     const ev = jobFacts.hourlyEvidence ? ` (${jobFacts.hourlyEvidence})` : ""
     return { pass: true, reason: `Hourly role${ev} conflicts with an explicit no-hourly exclusion.` }
@@ -783,22 +835,33 @@ function extractProfileSignals(profileText: string): Signal[] {
   const t = normalizeText(profileText)
 
   const signals: Array<[RegExp, Signal]> = [
+    // Publishing/editorial (high priority)
+    [/\b(copy editor|copyedited|copyediting|proofread|proofreading|undergraduate reader|editor)\b/, { key: "editing", label: "Editing, proofreading, and editorial judgment" }],
+    [/\b(yale review|yale daily news|new journal|publication|editorial)\b/, { key: "publishing_ops", label: "Publication and editorial team experience" }],
+    [/\b(fact-check|fact check|submissions?|proposals?)\b/, { key: "editing", label: "Evaluating and reviewing written submissions" }],
+
+    // Other
     [/\bfinancial modeling|valuation|dcf|lbo\b/, { key: "modeling", label: "Financial modeling and valuation" }],
     [/\bund(er)?writing|credit memo|credit\b|loan\b/, { key: "underwriting", label: "Underwriting or credit exposure" }],
-    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, { key: "presentations", label: "Stakeholder communication and presentations" }],
-    [/\bexcel\b/, { key: "excel", label: "Excel execution" }],
     [/\bsql\b/, { key: "sql", label: "SQL-based analysis" }],
+
+    // Presentations only when explicit
+    [/\b(presentation|deck|powerpoint)\b/, { key: "presentations", label: "Presentations and stakeholder communication" }],
+
+    // Excel only when explicit heavy
+    [/\b(advanced excel|pivot tables?|vlookup|xlookup|index\s*match|excel modeling|heavy excel)\b/, { key: "excel", label: "Excel-heavy execution" }],
+
     [/\bfinancial statements|balance sheet|income statement|cash flow\b/, { key: "fin_statements", label: "Financial statement work" }],
-    [/\bresearch|literature review|irb|lab\b/, { key: "research", label: "Research experience" }],
+    [/\b(literature review|irb\b|lab\b|research assistant|publication)\b/, { key: "research", label: "Research-forward experience" }],
     [/\boperations|process improvement|workflow\b/, { key: "ops", label: "Operations/process work" }],
-    [/\bcold call|quota|pipeline|crm\b|salesforce\b/, { key: "sales", label: "Sales/CRM execution" }],
-    [/\bmeta ads|google ads|paid media|roas\b/, { key: "paid_media", label: "Performance marketing execution" }],
+    [/\b(cold call|quota|pipeline|crm\b|salesforce\b)\b/, { key: "sales", label: "Sales/CRM execution" }],
+    [/\b(meta ads|google ads|paid media|roas\b)\b/, { key: "paid_media", label: "Performance marketing execution" }],
   ]
 
   const out: Signal[] = []
   for (const [re, sig] of signals) {
     if (re.test(t)) out.push(sig)
-    if (out.length >= 4) break
+    if (out.length >= 5) break
   }
   return out
 }
@@ -856,7 +919,7 @@ export async function runJobFit({
   // 2) CEILINGS (do not auto-pass)
   if (constraints.hardNoFullyRemote && jobFacts.isFullyRemote) ceilings.push("cap_review")
   if (constraints.prefFullTime && jobFacts.isContract && !constraints.hardNoContract) ceilings.push("cap_review")
-  if (targetAlignment === "off_target") ceilings.push("cap_review")
+  if (targetAlignment === "off_target" && !constraints.veryOpenToNonObvious) ceilings.push("cap_review")
 
   // 3) GRAD WINDOW => PASS (if deterministically mismatched)
   const gradWindow = extractGradWindow(jobText)
@@ -965,14 +1028,15 @@ export async function runJobFit({
     if (seniority === "internship" && decision === "Review" && depthModerateOrBetter) decision = "Apply"
   } else if (alignmentLevel === "strong_adjacent") {
     if (employerTier === 1) {
-      // Adjacent never becomes Priority Apply
       if (depthStrong && pedigreeStrong && gpaStrong) decision = "Apply"
       else decision = "Review"
     } else if (employerTier === 2) {
       if (depthStrong && gpaCompetitive) decision = "Apply"
       else decision = "Review"
     } else {
-      decision = "Review"
+      // For Tier 3, strong adjacent + strong depth can be Apply (this helps real-world entry-level pivots)
+      if (depthStrong) decision = "Apply"
+      else decision = "Review"
       if (seniority === "internship" && depthStrong) decision = "Apply"
     }
   } else {
@@ -1091,6 +1155,10 @@ export async function runJobFit({
       target_alignment: targetAlignment,
       ceilings,
       risk_codes: uniqTop(riskCodes, 12),
+      job_facts: jobFacts,
+      job_signals: signalLabels(jobSignals, 8),
+      profile_signals: signalLabels(profSignals, 8),
+      overlap_signals: signalLabels(overlap, 8),
     },
   }
 }
