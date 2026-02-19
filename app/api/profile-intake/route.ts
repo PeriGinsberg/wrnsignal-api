@@ -35,6 +35,31 @@ function clampText(v: any, max = 20000) {
   if (!t) return ""
   return t.length > max ? t.slice(0, max) : t
 }
+function parseGpa(raw: any): number | null {
+  const s = toText(raw).replace(/[^\d.]/g, "")
+  const n = Number(s)
+  if (!Number.isFinite(n)) return null
+  if (n <= 0 || n > 4.5) return null
+  return Math.round(n * 100) / 100
+}
+
+function gpaBand(gpa: number | null): string {
+  if (gpa === null) return "unknown"
+  if (gpa >= 3.8) return "3.8_plus"
+  if (gpa >= 3.5) return "3.5_3.79"
+  return "below_3.5"
+}
+
+function splitList(raw: any, max = 12): string[] {
+  const s = toText(raw)
+  if (!s) return []
+  return s
+    .split(/[,;\n|]+/g)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .slice(0, max)
+}
+
 
 function getBearer(req: Request) {
   const h = req.headers.get("authorization") || ""
@@ -163,6 +188,31 @@ export async function POST(req: Request) {
     const timeline = clampText(body.timeline, 200)
     const resume_text = clampText(body.resume_text || body.profile_text, 120000)
 
+// ---- structured profile (server-owned; no new user effort) ----
+// If you already collect GPA or school elsewhere later, you can add it here.
+// For now we only use what exists in the intake payload.
+const gpa = parseGpa(body.gpa || body.GPA || body.grade_point_average || null)
+
+const profile_structured = {
+  // These may be unknown until you enrich later. That's fine.
+  school_tier: toText(body.school_tier) || "unknown",
+  gpa,
+  gpa_band: gpaBand(gpa),
+
+  // Targets: can come from target_roles text you already store
+  targets_raw: target_roles || "",
+  target_roles_list: splitList(target_roles, 20),
+
+  // Helpful, but optional
+  job_type: job_type || "",
+  target_locations_list: splitList(target_locations, 20),
+  preferred_locations_list: splitList(preferred_locations, 20),
+
+  // Explicit boundary decisions
+  work_auth_assumed: true,
+}
+
+
     const { error: upErr } = await supabaseAdmin
       .from("client_profiles")
       .update({
@@ -174,6 +224,7 @@ export async function POST(req: Request) {
         timeline: timeline || null,
         profile_text,
         resume_text: resume_text || null,
+profile_structured,
         updated_at: new Date().toISOString(),
       })
       .eq("id", client_profile_id)
