@@ -581,6 +581,45 @@ function countKeywordHits(text: string, patterns: RegExp[]) {
   }
   return hits
 }
+function isMeaningfulRiskCode(code: string) {
+  const c = String(code || "").trim().toLowerCase()
+  const meaningful = new Set([
+    "off_target_role",
+    "weak_alignment",
+    "strong_adjacent_alignment",
+    "tier1_competition",
+    "tier2_competition",
+    "pedigree_gap",
+    "gpa_risk_below_3_8",
+    "gpa_risk_below_3_5",
+    "contract_role",
+    "hourly_role",
+    "fully_remote_role",
+    "depth_limited",
+    "targets_unclear",
+  ])
+  return meaningful.has(c)
+}
+
+function shouldSurfaceDepthRisk(params: {
+  decision: Decision
+  employerTier: EmployerTier
+  depthLabel: "strong" | "moderate" | "weak"
+  alignmentLevel: AlignmentLevel
+}) {
+  const { decision, employerTier, depthLabel, alignmentLevel } = params
+
+  // Depth only becomes a "risk" when it actually threatens outcome.
+  if (depthLabel === "weak") return true
+
+  // For Tier 1, moderate depth is a real concern unless you have a perfect direct fit.
+  if (employerTier === 1 && depthLabel === "moderate" && alignmentLevel !== "direct") return true
+
+  // For Apply decisions in non-Tier1, do NOT surface moderate depth as a risk.
+  if (decision === "Apply" && employerTier >= 2 && depthLabel === "moderate") return false
+
+  return false
+}
 
 function inferAlignmentLevel(profileText: string, primary: JobFunction): {
   level: AlignmentLevel
@@ -645,7 +684,7 @@ function riskLabel(code: string) {
   const c = String(code || "").trim().toLowerCase()
 
   if (c === "depth_limited") return "Depth is light for what this role expects. If you have more relevant work, it is not showing clearly."
-  if (c === "depth_moderate") return "Depth is decent, but not bulletproof. You may be competing against candidates with more direct reps."
+ 
   if (c === "off_target_role") return "This is off-target vs your stated direction. Even if you want it, it is not a smart application unless you are pivoting."
   if (c === "weak_alignment") return "Alignment is not clearly tied to what this job does. The market will treat that as missing."
   if (c === "strong_adjacent_alignment") return "Your background is adjacent, not direct. That can work, but it raises the bar."
@@ -719,6 +758,27 @@ function shouldShowGpaRisk(employerTier: EmployerTier, gpaBand: GpaBand) {
   if (employerTier === 1) return true
   if (employerTier === 2) return gpaBand === "below_3.5"
   return false
+}
+function extractProfileSignals(profileText: string): string[] {
+  const t = normalizeText(profileText)
+  const signals: Array<[RegExp, string]> = [
+    [/\bund(er)?writing|credit\b|loan\b|debt\b/, "Underwriting or credit exposure"],
+    [/\bfinancial modeling|valuation|dcf|lbo\b/, "Financial modeling and valuation"],
+    [/\bexcel\b/, "Excel execution"],
+    [/\bclient|stakeholder|presentation|deck|powerpoint\b/, "Stakeholder communication and presentations"],
+    [/\bsql\b/, "SQL-based analysis"],
+    [/\bcrm\b|salesforce\b/, "CRM usage"],
+    [/\bresearch|literature review|irb|lab\b/, "Research experience"],
+    [/\bleadership|president|vp|captain|lead\b/, "Leadership signals"],
+    [/\bproject\b|capstone\b|case competition\b/, "Project-based work"],
+  ]
+
+  const out: string[] = []
+  for (const [re, label] of signals) {
+    if (re.test(t)) out.push(label)
+    if (out.length >= 4) break
+  }
+  return out
 }
 
 // ----------------------- main -----------------------
@@ -879,8 +939,10 @@ export async function runJobFit({
   if (employerTier === 2) riskCodes.push("tier2_competition")
 
   // Always surface depth risk when not strong (prevents empty risks)
-  if (depthLabel === "moderate") riskCodes.push("depth_moderate")
-  if (depthLabel === "weak") riskCodes.push("depth_limited")
+ if (shouldSurfaceDepthRisk({ decision, employerTier, depthLabel, alignmentLevel })) {
+  riskCodes.push("depth_limited")
+}
+
 
   // Tier 1/2 pedigree risk (as a risk, not a hard gate)
   if ((employerTier === 1 || employerTier === 2) && !pedigreeStrong) riskCodes.push("pedigree_gap")
@@ -893,6 +955,13 @@ export async function runJobFit({
 
   // Convert to user-readable risks
   const risk_flags = toUserRiskFlags(uniqTop(riskCodes, 10))
+const finalRiskFlags =
+  decision === "Apply" || decision === "Priority Apply"
+    ? risk_flags // could be empty
+    : risk_flags
+
+// Optional: if Apply and empty, keep it empty (don’t add fluff)
+
 
   // Determine decision (deterministic)
   let decision: Decision = "Review"
@@ -936,20 +1005,29 @@ export async function runJobFit({
   decision = applyCeilings(decision, ceilings)
 
   // Build bullets (job-specific first, no quotes)
-  const bullets: string[] = []
-  const jobSignals = extractJobSignals(jobText)
+const bullets: string[] = []
+const jobSignals = extractJobSignals(jobText)
+const profSignals = extractProfileSignals(profileText)
 
-  if (jobSignals.length > 0) bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
-  else bullets.push("Role responsibilities are broad. Decision is based on visible function alignment and competitiveness signals.")
+// 1) What the job is
+if (jobSignals.length > 0) bullets.push(`This role centers on: ${jobSignals.join(", ")}.`)
+else bullets.push("This role is broad. Decision is based on visible function alignment and competitiveness signals.")
 
-// Fit to what the job does (capability)
-if (alignmentLevel === "direct") {
-  bullets.push("Your profile shows clear fit for what this job actually does.")
+// 2) Strongest match (job signal ↔ profile signal)
+if (jobSignals.length > 0 && profSignals.length > 0) {
+  bullets.push(`Your strongest match: ${jobSignals[0]} backed by ${profSignals[0]}.`)
+} else if (alignmentLevel === "direct") {
+  bullets.push("Your profile shows clear fit for what this job does.")
 } else if (alignmentLevel === "strong_adjacent") {
   bullets.push("Your profile is adjacent. You are plausible, but you are not the obvious pick.")
 } else {
-  bullets.push("Your profile has some transferable signals, but fit for this job is not clearly demonstrated.")
+  bullets.push("Your profile has transferable signals, but fit for this job is not clearly demonstrated.")
 }
+
+// 3) Apply momentum (only for Apply/Priority)
+if (decision === "Priority Apply") bullets.push("This is one you should prioritize and move quickly on.")
+if (decision === "Apply") bullets.push("This is worth applying to based on visible fit.")
+
 
 // Depth (credibility / reps)
 if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
