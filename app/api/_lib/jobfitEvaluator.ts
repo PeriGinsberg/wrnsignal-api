@@ -1087,25 +1087,62 @@ export async function runJobFit({
 
   const jobSignalText = signalLabels(jobSignals, 3) // string[] for rendering
 
-  // 1) What the job is
-  if (jobSignalText.length > 0) bullets.push(`This role centers on: ${jobSignalText.join(", ")}.`)
-  else bullets.push("This role is broad. Decision is based on visible function fit and competitiveness signals.")
+function joinWithAnd(items: string[]) {
+  const a = (items || []).map((x) => String(x || "").trim()).filter(Boolean)
+  if (a.length <= 1) return a[0] || ""
+  if (a.length === 2) return `${a[0]} and ${a[1]}`
+  return `${a.slice(0, -1).join(", ")}, and ${a[a.length - 1]}`
+}
 
-  // 2) Proof (ONLY when overlap exists)
-  if (overlap.length > 0) {
-    bullets.push(`Visible proof of fit: ${signalLabels(overlap, 2).join(" + ")}.`)
-  } else if (alignmentLevel === "direct") {
-    bullets.push("Function fit looks right, but the proof is not specific in what is currently visible.")
-  } else if (alignmentLevel === "strong_adjacent") {
-    bullets.push("Your background is adjacent. You are plausible, but you are not the obvious pick.")
-  } else {
-    bullets.push("You have transferable signals, but fit is not clearly demonstrated.")
+function humanizeSignalLabel(label: string) {
+  const s = String(label || "").trim()
+  // Keep labels clean, remove parentheticals if you want it tighter
+  return s.replace(/\s*\([^)]*\)\s*/g, "").trim()
+}
+
+function buildAlignmentBullet(jobSignals: string[], overlapSignals: string[]) {
+  const js = uniqTop(jobSignals.map(humanizeSignalLabel), 4)
+  const os = uniqTop(overlapSignals.map(humanizeSignalLabel), 4)
+
+  // Prefer overlap (proof) if we have it, but keep it anchored to job requirements
+  if (os.length > 0 && js.length > 0) {
+    return `Your ${joinWithAnd(os).toLowerCase()} aligns with the job requirements.`
   }
+  if (os.length > 0) {
+    return `Your ${joinWithAnd(os).toLowerCase()} aligns with what this role requires.`
+  }
+  if (js.length > 0) {
+    return `This role requires ${joinWithAnd(js).toLowerCase()}. Your background is plausible, but the proof is not clearly visible.`
+  }
+  return "Decision is based on visible function fit and competitiveness signals."
+}
+
+// Build the alignment bullet (replaces “role centers on” and “visible proof”)
+const alignmentBullet = buildAlignmentBullet(jobSignalText, signalLabels(overlap, 4))
+bullets.push(alignmentBullet)
+
 
   // 3) Depth
   if (depthLabel === "strong") bullets.push("Depth is strong. You have multiple credible signals backing the fit.")
   else if (depthLabel === "moderate") bullets.push("Depth is moderate. You have enough proof to justify a shot, but this is not a lock.")
   else bullets.push("Depth is limited. You may be screened out unless your proof is stronger than what is currently visible.")
+
+function shouldAddPedigreeBullet(params: { employerTier: EmployerTier; schoolTier: SchoolTier; decision: Decision }) {
+  const { employerTier, schoolTier, decision } = params
+  const pedigreeStrong = schoolTier === "S" || schoolTier === "A"
+  if (!pedigreeStrong) return false
+
+  // Show it when it actually helps the competitive story
+  if (decision === "Apply" || decision === "Priority Apply") return true
+  if (employerTier === 1 || employerTier === 2) return true
+
+  return false
+}
+
+if (shouldAddPedigreeBullet({ employerTier, schoolTier, decision })) {
+  bullets.push("Your Tier 1 school strengthens your competitiveness for this role.")
+}
+
 
   // 4) Apply momentum
   if (decision === "Priority Apply") bullets.push("This is worth prioritizing. Move quickly.")
