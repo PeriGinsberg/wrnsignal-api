@@ -128,6 +128,8 @@ function extractJobFacts(jobText: string): JobFacts {
     /\bdraft\b[^\n]{0,40}\bcontract\b/.test(t0) ||
     /\bdeal\s+memos?\b/.test(t0)
 
+
+
   const contractEmployment =
     /\b(contract\s+(role|position|job|employment|assignment))\b/.test(t0) ||
     /\b(3|6|9|12)\s*-\s*(month|mo)\s+contract\b/.test(t0) ||
@@ -600,11 +602,43 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
 
 // ----------------------- structured profile readers -----------------------
 
-function readSchoolTier(profileStructured: any): SchoolTier {
+const SCHOOL_TIER_S: string[] = [
+  "harvard", "yale", "princeton", "stanford", "mit", "caltech",
+  "oxford", "cambridge"
+]
+
+const SCHOOL_TIER_A: string[] = [
+  "columbia", "upenn", "university of pennsylvania", "brown",
+  "dartmouth", "cornell", "duke", "northwestern",
+  "university of chicago", "uchicago",
+  "johns hopkins", "georgetown",
+  "uc berkeley", "berkeley", "ucla",
+  "carnegie mellon", "rice", "vanderbilt",
+  "notre dame", "nyu", "new york university"
+]
+
+function inferSchoolTierFromText(profileText: string): SchoolTier {
+  const t = normalizeText(profileText)
+
+  if (!t) return "unknown"
+
+  const hasSchool = (list: string[]) =>
+    list.some((name) => t.includes(name))
+
+  if (hasSchool(SCHOOL_TIER_S)) return "S"
+  if (hasSchool(SCHOOL_TIER_A)) return "A"
+
+  return "unknown"
+}
+
+
+function readSchoolTier(profileStructured: any, profileText: string): SchoolTier {
   const ps = safeObj(profileStructured)
   const raw = String(ps.school_tier || ps.profile?.school_tier || "").trim().toUpperCase()
+
   if (raw === "S" || raw === "A" || raw === "B" || raw === "C") return raw
-  return "unknown"
+
+  return inferSchoolTierFromText(profileText)
 }
 
 function readGpaBand(profileStructured: any): GpaBand {
@@ -1139,7 +1173,8 @@ export async function runJobFit({
     (Number(ps.job_meta?.employer_tier) as any) ||
     inferEmployerTier(jobText)
 
-  const schoolTier = readSchoolTier(ps)
+  const schoolTier = readSchoolTier(ps, profileText)
+
   const gpaBand = readGpaBand(ps)
   const gpa = readGpa(ps)
 
