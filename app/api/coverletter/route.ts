@@ -98,6 +98,7 @@ function extractOutputText(resp: any): string {
   }
   return ""
 }
+
 function extractContactFromProfileText(profileText: string) {
   const t = String(profileText || "").replace(/\r/g, "\n")
 
@@ -146,7 +147,6 @@ function extractContactFromProfileText(profileText: string) {
   }
 
   const full_name = lines.find(looksLikeName) || ""
-
   return { full_name, email, phone }
 }
 
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
   try {
     // Auth + stored profile (server-side)
     const { profileId, profileText } = await getAuthedProfileText(req)
-const contact = extractContactFromProfileText(profileText)
+    const contact = extractContactFromProfileText(profileText)
 
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
@@ -170,7 +170,8 @@ const contact = extractContactFromProfileText(profileText)
       },
     }
 
-    const { fingerprint_hash, fingerprint_code } = buildCoverletterFingerprint(fingerprintPayload)
+    const { fingerprint_hash, fingerprint_code } =
+      buildCoverletterFingerprint(fingerprintPayload)
 
     // 1) Cache lookup
     const { data: existingRun, error: findErr } = await supabaseAdmin
@@ -182,20 +183,21 @@ const contact = extractContactFromProfileText(profileText)
 
     if (findErr) console.warn("coverletter_runs lookup failed:", findErr.message)
 
- if (existingRun && existingRun.result_json) {
-  const cached = existingRun.result_json as any
-  return withCorsJson(
-    req,
-    {
-      ...(cached && typeof cached === "object" ? cached : {}),
-      contact,
-      fingerprint_code,
-      fingerprint_hash,
-      reused: true,
-    },
-    200
-  )
-}
+    if (existingRun?.result_json) {
+      const cached = existingRun.result_json as any
+      return withCorsJson(
+        req,
+        {
+          ...(cached && typeof cached === "object" ? cached : {}),
+          // ensure these are always returned even if cache is older
+          contact,
+          fingerprint_code,
+          fingerprint_hash,
+          reused: true,
+        },
+        200
+      )
+    }
 
     // 2) Generate
     const system = `
@@ -256,7 +258,7 @@ Return JSON only. No markdown. No commentary.
 
     const finalResult = { letter, contact }
 
-    // 3) Store (best effort) — use upsert to avoid unique constraint race/double-click issues
+    // 3) Store (best effort)
     const { error: upsertErr } = await supabaseAdmin
       .from("coverletter_runs")
       .upsert(
@@ -272,17 +274,16 @@ Return JSON only. No markdown. No commentary.
 
     if (upsertErr) console.warn("coverletter_runs upsert failed:", upsertErr.message)
 
- return withCorsJson(
-  req,
-  {
-    ...(existingRun.result_json as any),
-    contact,
-    fingerprint_code,
-    fingerprint_hash,
-    reused: true,
-  },
-  200
-)
+    return withCorsJson(
+      req,
+      {
+        ...finalResult,
+        fingerprint_code,
+        fingerprint_hash,
+        reused: false,
+      },
+      200
+    )
   } catch (err: any) {
     const detail = err?.message || String(err)
     const lower = String(detail).toLowerCase()
