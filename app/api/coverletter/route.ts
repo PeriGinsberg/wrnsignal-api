@@ -182,18 +182,20 @@ const contact = extractContactFromProfileText(profileText)
 
     if (findErr) console.warn("coverletter_runs lookup failed:", findErr.message)
 
-    if (existingRun?.result_json) {
-      return withCorsJson(
-        req,
-        {
-          ...(existingRun.result_json as any),
-          fingerprint_code,
-          fingerprint_hash,
-          reused: true,
-        },
-        200
-      )
-    }
+ if (existingRun && existingRun.result_json) {
+  const cached = existingRun.result_json as any
+  return withCorsJson(
+    req,
+    {
+      ...(cached && typeof cached === "object" ? cached : {}),
+      contact,
+      fingerprint_code,
+      fingerprint_hash,
+      reused: true,
+    },
+    200
+  )
+}
 
     // 2) Generate
     const system = `
