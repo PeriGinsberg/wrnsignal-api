@@ -1081,16 +1081,23 @@ if (decision === "Pass") score = Math.min(score, 59)
         }
     }
 
-    // 8) Apply/Review output
-    const bullets = (narrative.why || []).slice(0, 8)
-    const riskFlags = (narrative.risks || []).slice(0, 6)
-// After narrative, enforce decision caps based on displayed risks (strict but fair)
-const riskCount = (narrative.risks || []).slice(0, 6).length
-if (riskCount >= 3) decision = "Review"}
+      // 8) Apply/Review output
+    let bullets = (narrative.why || []).slice(0, 8)
+    let riskFlags = (narrative.risks || []).slice(0, 6)
 
-if (decision !== "Pass" && riskCount >= 5) {
-    decision = "Review" // keep as Review, or flip to Pass if you want harsher behavior
-}
+    // After narrative, enforce decision caps based on displayed risks (strict but fair)
+    const riskCount = riskFlags.length
+
+    // If it's not a clean fit, it is not Apply.
+    if (riskCount >= 3) {
+        decision = "Review"
+    }
+
+    // Optional: keep this if you want "lots of risks" to stay Review no matter what
+    if (riskCount >= 5) {
+        decision = "Review"
+    }
+
     const next_step =
         decision === "Review"
             ? "Review the risk flags carefully before proceeding."
