@@ -539,8 +539,11 @@ function computeDeterministicScore(args: {
 
     const fam = inferJobFamily(jobText)
 
-    // Degree requirement mismatch (big)
-    if (jobRequiresMBA(jobText) && !profileHasMBA(profileText)) {
+    // ----- HARD DISQUALIFIERS (deterministic) -----
+    // If these trigger, you should not be applying. Period.
+
+    const mbaMismatch = jobRequiresMBA(jobText) && !profileHasMBA(profileText)
+    if (mbaMismatch) {
         score -= 60
         explain.push({
             label: "MBA required mismatch",
@@ -551,13 +554,25 @@ function computeDeterministicScore(args: {
 
     // Years requirement mismatch (only if explicitly present)
     const reqYears = extractRequiredYears(jobText)
-    if (reqYears !== null && reqYears >= 3 && profileLooksEarlyCareer(profileText)) {
-        score -= 35
-        explain.push({
-            label: "Experience requirement mismatch",
-            delta: -35,
-            note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
-        })
+    const earlyCareer = profileLooksEarlyCareer(profileText)
+
+    if (reqYears !== null && earlyCareer) {
+        // 4+ years for early career is basically a no
+        if (reqYears >= 4) {
+            score -= 50
+            explain.push({
+                label: "Experience requirement mismatch (4+ years)",
+                delta: -50,
+                note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
+            })
+        } else if (reqYears >= 3) {
+            score -= 35
+            explain.push({
+                label: "Experience requirement mismatch (3+ years)",
+                delta: -35,
+                note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
+            })
+        }
     }
 
     // Obvious function mismatch penalty (even if not gated)
@@ -572,42 +587,65 @@ function computeDeterministicScore(args: {
 
     // Contract preference mismatch (soft penalty; gate handles floor_review)
     if (profileConstraints.prefFullTime && jobFacts.isContract) {
-        score -= 10
+        score -= 12
         explain.push({
             label: "Contract vs full-time preference",
-            delta: -10,
+            delta: -12,
+            note: "Role appears contract and candidate prefers full-time.",
         })
     }
 
-    // Fully remote dispreferred (soft penalty; gate handles floor_review)
+    // Fully remote constraint (soft penalty; gate handles floor_review)
     if (profileConstraints.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
-        score -= 10
+        score -= 12
         explain.push({
             label: "Fully remote constraint",
-            delta: -10,
+            delta: -12,
+            note: "Role is fully remote and candidate prefers not fully remote.",
         })
     }
 
     // Hourly signal (if not hard-excluded, still a penalty)
     if (jobFacts.isHourly && !profileConstraints.hardNoHourlyPay) {
-        score -= 15
+        score -= 18
         explain.push({
             label: "Hourly compensation signal",
-            delta: -15,
+            delta: -18,
+            note: "Job signals hourly compensation.",
         })
     }
 
-    // Clamp and cap: never 100, never above 97
+    // Clamp and cap: never above 97
     score = clampScore(score)
     score = Math.min(score, 97)
 
-    let decisionByScore: Decision = "Review"
-    if (score >= 75) decisionByScore = "Apply"
-    else if (score >= 60) decisionByScore = "Review"
-    else decisionByScore = "Pass"
+    // ----- DECISION LOGIC (STRICT + FAIR) -----
+    // 1) If any major deterministic mismatch exists, cap decision hard.
+    const hasMajorPenalty = explain.some((e) => e.delta <= -35) // 3+ years, accounting mismatch, etc.
+    const totalPenalty = explain.reduce((sum, e) => sum + Math.min(0, e.delta), 0) // negative number
 
-    return { score, decisionByScore, explain }
-}/* ----------------------- content hygiene filters ----------------------- */
+    // Hard pass line: MBA mismatch OR extremely heavy penalty
+    if (mbaMismatch || totalPenalty <= -75) {
+        return { score: Math.min(score, 59), decisionByScore: "Pass", explain }
+    }
+
+    // If major penalty exists, you cannot be Apply
+    if (hasMajorPenalty) {
+        const cappedScore = Math.min(Math.max(score, 60), 74)
+        return { score: cappedScore, decisionByScore: "Review", explain }
+    }
+
+    // If any penalties exist at all, be conservative: Review unless score is very high AND penalties are tiny
+    const hasAnyPenalty = explain.length > 0
+    if (hasAnyPenalty) {
+        // Only allow Apply if still extremely strong
+        if (score >= 90) return { score, decisionByScore: "Apply", explain }
+        return { score: Math.min(Math.max(score, 60), 74), decisionByScore: "Review", explain }
+    }
+
+    // Clean job: Apply
+    return { score, decisionByScore: "Apply", explain }
+}}/* ----------------------- content hygiene filters ----------------------- */
 function stripAdviceLanguage(items: string[]) {
     const bad = [
         "highlight",
@@ -1047,7 +1085,16 @@ if (decision === "Pass") score = Math.min(score, 59)
     // 8) Apply/Review output
     const bullets = (narrative.why || []).slice(0, 8)
     const riskFlags = (narrative.risks || []).slice(0, 6)
+// After narrative, enforce decision caps based on displayed risks (strict but fair)
+const riskCount = (narrative.risks || []).slice(0, 6).length
 
+if (decision === "Apply" && riskCount >= 3) {
+    decision = "Review"
+}
+
+if (decision !== "Pass" && riskCount >= 5) {
+    decision = "Review" // keep as Review, or flip to Pass if you want harsher behavior
+}
     const next_step =
         decision === "Review"
             ? "Review the risk flags carefully before proceeding."
