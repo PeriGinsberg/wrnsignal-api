@@ -99,6 +99,26 @@ function extractOutputText(resp: any): string {
   return ""
 }
 
+function cleanNameValue(s: string) {
+  return String(s || "")
+    .replace(/\t+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    // remove common labels if they somehow got included
+    .replace(/^(first name|last name|name)\s*[:\-]?\s*/i, "")
+    .trim()
+}
+
+function pickLabeledValue(text: string, label: string) {
+  // matches: "First Name: Will" OR "First Name   Will"
+  const re = new RegExp(
+    String.raw`^\s*${label}\s*[:\-]?\s*(.+)\s*$`,
+    "im"
+  )
+  const m = text.match(re)
+  return m?.[1] ? cleanNameValue(m[1]) : ""
+}
+
 function extractContactFromProfileText(profileText: string) {
   const t = String(profileText || "").replace(/\r/g, "\n")
 
@@ -113,16 +133,23 @@ function extractContactFromProfileText(profileText: string) {
   const phone = phoneMatch?.[0]?.trim() || ""
 
   // Name (best effort)
-  // Prefer "Name: First Last"
+
+  // 1) If profile uses First Name / Last Name labels, build full name
+  const first = pickLabeledValue(t, "First\\s*Name")
+  const last = pickLabeledValue(t, "Last\\s*Name")
+  if (first && last) return { full_name: `${first} ${last}`.trim(), email, phone }
+  if (first && !last) return { full_name: first, email, phone }
+
+  // 2) Prefer "Name: First Last"
   const nameLabel = t.match(/^\s*name\s*:\s*(.+)\s*$/im)
   if (nameLabel?.[1]) {
-    const candidate = nameLabel[1].trim()
+    const candidate = cleanNameValue(nameLabel[1])
     if (candidate.split(/\s+/).length >= 2 && candidate.length <= 50) {
       return { full_name: candidate, email, phone }
     }
   }
 
-  // Otherwise take the first line that looks like a name
+  // 3) Otherwise take the first line that looks like a name (existing logic)
   const lines = t
     .split("\n")
     .map((l) => l.trim())
