@@ -479,7 +479,28 @@ function extractRequiredYears(jobText: string): number | null {
 
     return null
 }
+function applyDisplayedRiskPenalty(baseScore: number, risks: string[]) {
+    let score = baseScore
 
+    // If any risks are displayed, it is NOT a near-perfect fit anymore.
+    if (risks.length > 0) {
+        // Guaranteed drop if any risks exist
+        score = Math.min(score, 96)
+
+        // Additional small penalties by count (strict but fair)
+        // 1 risk: -2 (net max 94 if started 96)
+        // 2 risks: -4
+        // 3 risks: -6
+        // 4 risks: -8
+        // 5+ risks: -10 cap
+        const extra = Math.min(risks.length, 5) * 2
+        score -= extra
+    }
+
+    score = clampScore(score)
+    score = Math.min(score, 97)
+    return score
+}
 function profileLooksEarlyCareer(profileText: string) {
     const t = normalizeText(profileText)
     return (
@@ -512,7 +533,8 @@ function computeDeterministicScore(args: {
 }): { score: number; decisionByScore: Decision; explain: ScoreExplain[] } {
     const { jobText, profileText, jobFacts, profileConstraints } = args
 
-    let score = 100
+    // Start at 97 and never exceed 97
+    let score = 97
     const explain: ScoreExplain[] = []
 
     const fam = inferJobFamily(jobText)
@@ -575,7 +597,9 @@ function computeDeterministicScore(args: {
         })
     }
 
+    // Clamp and cap: never 100, never above 97
     score = clampScore(score)
+    score = Math.min(score, 97)
 
     let decisionByScore: Decision = "Review"
     if (score >= 75) decisionByScore = "Apply"
@@ -583,9 +607,7 @@ function computeDeterministicScore(args: {
     else decisionByScore = "Pass"
 
     return { score, decisionByScore, explain }
-}
-
-/* ----------------------- content hygiene filters ----------------------- */
+}/* ----------------------- content hygiene filters ----------------------- */
 function stripAdviceLanguage(items: string[]) {
     const bad = [
         "highlight",
@@ -979,20 +1001,27 @@ export async function runJobFit({
         // keep score as-is, decision is what changes
     }
 
-    // 5) Final score band enforcement consistent with your UI expectations
-    if (decision === "Apply") score = Math.max(score, 75)
-    if (decision === "Review") score = Math.min(Math.max(score, 60), 74)
-    if (decision === "Pass") score = Math.min(score, 59)
+// 5) LLM explanations only (never decides)
+const narrative = await generateNarrative({
+    decision,
+    score,
+    gate,
+    jobText,
+    profileText,
+    location_constraint,
+})
 
-    // 6) LLM explanations only (never decides)
-    const narrative = await generateNarrative({
-        decision,
-        score,
-        gate,
-        jobText,
-        profileText,
-        location_constraint,
-    })
+// 6) Apply deterministic “risk display penalty”
+// Only for Apply/Review since PASS uses pass_reasons separately
+if (decision !== "Pass") {
+    const risks = (narrative.risks || []).slice(0, 6)
+    score = applyDisplayedRiskPenalty(score, risks)
+}
+
+// 7) Final score band enforcement consistent with your UI expectations
+if (decision === "Apply") score = Math.max(score, 75)
+if (decision === "Review") score = Math.min(Math.max(score, 60), 74)
+if (decision === "Pass") score = Math.min(score, 59)
 
     // 7) Output enforcement for PASS: ONLY pass reasons (no mixed positives)
     if (decision === "Pass") {
