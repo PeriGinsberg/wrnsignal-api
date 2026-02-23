@@ -1086,10 +1086,7 @@ if (decision === "Pass") score = Math.min(score, 59)
     const riskFlags = (narrative.risks || []).slice(0, 6)
 // After narrative, enforce decision caps based on displayed risks (strict but fair)
 const riskCount = (narrative.risks || []).slice(0, 6).length
-
-if (decision === "Apply" && riskCount >= 3) {
-    decision = "Review"
-}
+if (riskCount >= 3) decision = "Review"}
 
 if (decision !== "Pass" && riskCount >= 5) {
     decision = "Review" // keep as Review, or flip to Pass if you want harsher behavior
