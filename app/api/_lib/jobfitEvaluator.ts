@@ -642,11 +642,10 @@ function computeDeterministicScore(args: {
         if (score >= 90) return { score, decisionByScore: "Apply", explain }
         return { score: Math.min(Math.max(score, 60), 74), decisionByScore: "Review", explain }
     }
-
     // Clean job: Apply
     return { score, decisionByScore: "Apply", explain }
-}}/* ----------------------- content hygiene filters ----------------------- */
-function stripAdviceLanguage(items: string[]) {
+}
+/* ----------------------- content hygiene filters ----------------------- */function stripAdviceLanguage(items: string[]) {
     const bad = [
         "highlight",
         "tailor",
