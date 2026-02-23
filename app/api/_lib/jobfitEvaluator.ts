@@ -444,7 +444,93 @@ function stripMissingJobInfoRisks(items: string[]) {
     return !bad.some((b) => s.includes(b))
   })
 }
+function stripPositiveOrNeutralWhy(items: string[]) {
+  const positiveCues = [
+    "align",
+    "aligned",
+    "matches",
+    "match",
+    "strong",
+    "relevant",
+    "good fit",
+    "within the candidate’s preferred",
+    "within the candidate's preferred",
+    "feasible",
+    "works for",
+    "benefit",
+    "supports",
+    "collaborative",
+    "fast-paced environment",
+  ]
 
+  return (items || []).filter((s0) => {
+    const s = (s0 || "").toLowerCase()
+
+    // keep if it reads like a disqualifier / hard negative
+    const negativeCues = [
+      "requires",
+      "must",
+      "mismatch",
+      "outside",
+      "lack",
+      "lacks",
+      "missing",
+      "not eligible",
+      "inconsistent",
+      "does not",
+      "doesn't",
+      "no experience",
+      "gap",
+      "graduate",
+      "graduation",
+      "mba",
+      "enrollment",
+      "degree",
+      "timeline",
+    ]
+
+    const isNegative = negativeCues.some((c) => s.includes(c))
+    const isPositive = positiveCues.some((c) => s.includes(c))
+
+    if (isNegative) return true
+    if (isPositive) return false
+
+    // neutral lines are not helpful on PASS
+    return false
+  })
+}
+
+function buildPassReasons(args: {
+  gate: Gate
+  riskFlags: string[]
+  bullets: string[]
+}) {
+  const { gate, riskFlags, bullets } = args
+
+  const out: string[] = []
+
+  // 1) deterministic gate reason always first (best “decisive” reason)
+  if (gate.type === "force_pass" && gate.reason) out.push(gate.reason)
+
+  // 2) then prefer risk flags
+  const rf = stripPositiveOrNeutralWhy(riskFlags)
+
+  // 3) sometimes the model puts “pass reasons” inside bullets
+  const b = stripPositiveOrNeutralWhy(bullets)
+
+  for (const x of [...rf, ...b]) {
+    const s = String(x || "").trim()
+    if (!s) continue
+    if (!out.includes(s)) out.push(s)
+    if (out.length >= 6) break
+  }
+
+  if (!out.length) {
+    out.push("This role has a core mismatch with candidate eligibility or requirements.")
+  }
+
+  return out.slice(0, 6)
+}
 /* ----------------------- 3+ years contamination ----------------------- */
 function containsThreePlusYearsFlag(riskFlags: string[]) {
   return riskFlags.some((r) => {
@@ -806,6 +892,21 @@ Make a JobFit decision. Return JSON only.
 
   // Final score banding
   score = enforceScoreBand(decision, score)
+
+  // -----------------------------------------
+  // PASS OUTPUT ENFORCEMENT (NO MIXED SIGNALS)
+  // If final decision is Pass, return ONLY pass reasons.
+  // -----------------------------------------
+  if (decision === "Pass") {
+    const passReasons = buildPassReasons({ gate, riskFlags, bullets })
+
+    // For PASS: no "why bullets" at all, only pass reasons (in risk_flags)
+    bullets = []
+    riskFlags = passReasons
+
+    // score stays in pass band
+    score = Math.min(score, 59)
+  }
 
   // Final trims
   bullets = bullets.slice(0, 8)
