@@ -98,11 +98,63 @@ function extractOutputText(resp: any): string {
   }
   return ""
 }
+function extractContactFromProfileText(profileText: string) {
+  const t = String(profileText || "").replace(/\r/g, "\n")
+
+  // Email
+  const emailMatch = t.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/)
+  const email = emailMatch?.[1]?.trim() || ""
+
+  // Phone
+  const phoneMatch = t.match(
+    /(\+?\d{1,2}\s*)?(\(\s*\d{3}\s*\)|\d{3})[\s.\-]*\d{3}[\s.\-]*\d{4}/
+  )
+  const phone = phoneMatch?.[0]?.trim() || ""
+
+  // Name (best effort)
+  // Prefer "Name: First Last"
+  const nameLabel = t.match(/^\s*name\s*:\s*(.+)\s*$/im)
+  if (nameLabel?.[1]) {
+    const candidate = nameLabel[1].trim()
+    if (candidate.split(/\s+/).length >= 2 && candidate.length <= 50) {
+      return { full_name: candidate, email, phone }
+    }
+  }
+
+  // Otherwise take the first line that looks like a name
+  const lines = t
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  const looksLikeName = (s: string) => {
+    if (s.length < 5 || s.length > 50) return false
+    if (/@/.test(s)) return false
+    if (/\d/.test(s)) return false
+
+    const parts = s.split(/\s+/)
+    if (parts.length < 2 || parts.length > 4) return false
+
+    const bad = ["education", "experience", "skills", "summary", "profile"]
+    if (bad.some((b) => s.toLowerCase().includes(b))) return false
+
+    const titleCaseWords = parts.filter((p) =>
+      /^[A-Z][a-z]+(?:['-][A-Z][a-z]+)?$/.test(p)
+    ).length
+
+    return titleCaseWords >= 2
+  }
+
+  const full_name = lines.find(looksLikeName) || ""
+
+  return { full_name, email, phone }
+}
 
 export async function POST(req: Request) {
   try {
     // Auth + stored profile (server-side)
     const { profileId, profileText } = await getAuthedProfileText(req)
+const contact = extractContactFromProfileText(profileText)
 
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
@@ -200,7 +252,7 @@ Return JSON only. No markdown. No commentary.
         ? String((parsed as any).letter).trim()
         : String(raw || "").trim()
 
-    const finalResult = { letter }
+    const finalResult = { letter, contact }
 
     // 3) Store (best effort) — use upsert to avoid unique constraint race/double-click issues
     const { error: upsertErr } = await supabaseAdmin
@@ -218,16 +270,17 @@ Return JSON only. No markdown. No commentary.
 
     if (upsertErr) console.warn("coverletter_runs upsert failed:", upsertErr.message)
 
-    return withCorsJson(
-      req,
-      {
-        ...finalResult,
-        fingerprint_code,
-        fingerprint_hash,
-        reused: false,
-      },
-      200
-    )
+ return withCorsJson(
+  req,
+  {
+    ...(existingRun.result_json as any),
+    contact,
+    fingerprint_code,
+    fingerprint_hash,
+    reused: true,
+  },
+  200
+)
   } catch (err: any) {
     const detail = err?.message || String(err)
     const lower = String(detail).toLowerCase()
