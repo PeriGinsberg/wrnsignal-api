@@ -1259,41 +1259,30 @@ function buildRiskBullets(riskSignals: RiskSignal[]) {
 }
 
 function buildPassReasons(args: {
-    gate: Gate
-    gradMismatchReason?: string | null
-    deterministicExplain: ScoreExplain[]
-    riskSignals: RiskSignal[]
+  gate: Gate
+  gradMismatchReason?: string | null
+  riskSignals: RiskSignal[]
 }) {
-    const { gate, gradMismatchReason, deterministicExplain, riskSignals } = args
-    const out: string[] = []
+  const { gate, gradMismatchReason, riskSignals } = args
+  const out: string[] = []
 
-    if (gate.type === "force_pass" && gate.reason) out.push(gate.reason)
-    if (gradMismatchReason) out.push(gradMismatchReason)
+  if (gate.type === "force_pass" && gate.reason) out.push(gate.reason)
+  if (gradMismatchReason) out.push(gradMismatchReason)
 
-    for (const r of riskSignals) {
-        const s = (r.note || "").trim()
-        if (!s) continue
-        if (!out.includes(s)) out.push(s)
-        if (out.length >= 6) break
-    }
+  // Only include clean risk notes. Do NOT include scoring explain notes.
+  for (const r of riskSignals) {
+    const s = (r.note || "").trim()
+    if (!s) continue
+    if (!out.includes(s)) out.push(s)
+    if (out.length >= 6) break
+  }
 
-    if (out.length < 3) {
-        for (const e of deterministicExplain) {
-            if (e.delta >= 0) continue
-            const s = (e.note || e.label || "").trim()
-            if (!s) continue
-            if (!out.includes(s)) out.push(s)
-            if (out.length >= 6) break
-        }
-    }
+  if (!out.length) {
+    out.push("This role has a core mismatch with the candidate’s constraints or eligibility.")
+  }
 
-    if (!out.length) {
-        out.push("This role has a core mismatch with the candidate’s constraints or eligibility.")
-    }
-
-    return out.slice(0, 6)
+  return out.slice(0, 6)
 }
-
 /* ----------------------- main ----------------------- */
 export async function runJobFit({
     profileText,
@@ -1366,23 +1355,24 @@ export async function runJobFit({
             jobLocationTokens,
         })
 
-        const passReasons = buildPassReasons({
-            gate: gate.type === "force_pass" ? gate : { type: "none" },
-            gradMismatchReason,
-            deterministicExplain: det.explain,
-            riskSignals: signals.risks,
-        })
+     const passReasons = buildPassReasons({
+  gate,
+  gradMismatchReason,
+  riskSignals: signals.risks,
+})
 
-        return {
-            decision: "Pass" as Decision,
-            icon: iconForDecision("Pass"),
-            score: PASS_CAP,
-            bullets: [],
-            risk_flags: passReasons.slice(0, 6),
-            next_step:
-                "It is recommended that you do not apply and focus your attention on more aligned positions.",
-            location_constraint,
-        }
+        const passScore = enforceDecisionConsistentScore("Pass", det.score)
+
+return {
+  decision: "Pass" as Decision,
+  icon: iconForDecision("Pass"),
+  score: passScore,
+  bullets: [],
+  risk_flags: passReasons.slice(0, 6),
+  next_step:
+    "It is recommended that you do not apply and focus your attention on more aligned positions.",
+  location_constraint,
+}
     }
 
     // Deterministic scoring + signals
@@ -1432,24 +1422,18 @@ export async function runJobFit({
 
     // Pass path (should be rare here, since force-pass/grad mismatch already handled)
     if (decision === "Pass") {
-        const passReasons = buildPassReasons({
-            gate,
-            gradMismatchReason: null,
-            deterministicExplain: det.explain,
-            riskSignals: det.risks,
-        })
+       const passScore = enforceDecisionConsistentScore("Pass", det.score)
 
-        return {
-            decision,
-            icon: iconForDecision(decision),
-            score: PASS_CAP,
-            bullets: [],
-            risk_flags: passReasons.slice(0, 6),
-            next_step:
-                "It is recommended that you do not apply and focus your attention on more aligned positions.",
-            location_constraint,
-        }
-    }
+return {
+  decision: "Pass" as Decision,
+  icon: iconForDecision("Pass"),
+  score: passScore,
+  bullets: [],
+  risk_flags: passReasons.slice(0, 6),
+  next_step:
+    "It is recommended that you do not apply and focus your attention on more aligned positions.",
+  location_constraint,
+}
 
     const next_step =
         decision === "Review"
