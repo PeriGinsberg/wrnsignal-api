@@ -51,23 +51,31 @@ function toolMissing(profileTools: string[], tool: string): boolean {
 
 function normalizeCity(s: string): string {
   const t = (s || "").trim().toLowerCase()
-  if (t === "nyc" || t === "new york city") return "new york"
+
+  if (t.includes("new york")) return "new york"
+  if (t.includes("nyc")) return "new york"
+
+  if (t.includes("boston")) return "boston"
+  if (t.includes("philadelphia") || t.includes("philly")) return "philadelphia"
+  if (t.includes("washington") && (t.includes("dc") || t.includes("d.c"))) return "washington, d.c."
+
   return t
 }
-
-function locationCityMatches(jobCity: string | null | undefined, preferredCities: string[] | null | undefined) {
-  if (!jobCity) return true // critical: unknown city should never trigger mismatch
-  const prefs = (preferredCities || []).map(normalizeCity)
-  if (prefs.length === 0) return true
-  return prefs.includes(normalizeCity(jobCity))
+function locationCityMatches(jobCity: string, preferredCities: string[]) {
+  const j = normalizeCity(jobCity)
+  const prefs = preferredCities.map(normalizeCity)
+  return prefs.includes(j)
 }
 
 export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfileSignals): ScoreResult {
   const penalties: Penalty[] = []
   const whyCodes: WhyCode[] = []
-  const riskCodes: RiskCode[] = []
 
   const hasExplicitTools = job.requiredTools.length + job.preferredTools.length > 0
+
+  // Define ONCE. Do not redeclare later.
+  const jobCity = (job.location as any)?.city ?? null
+  const preferredCities = (profile.locationPreference as any)?.preferredCities ?? null
 
   // WHY signals
   if (profile.targetFamilies.includes(job.jobFamily)) whyCodes.push("WHY_FAMILY_MATCH")
@@ -75,17 +83,19 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   if (job.analytics.isLight && !job.analytics.isHeavy) whyCodes.push("WHY_MEASUREMENT_LIGHT")
 
   // Location WHY: match based on mode OR (better) city match when available
-  const jobCity = (job.location as any)?.city ?? null
-  const preferredCities = (profile.locationPreference as any)?.preferredCities ?? null
-
-  const cityOk = locationCityMatches(jobCity, preferredCities)
   const modeOk =
     profile.locationPreference.mode !== "unclear" &&
     job.location.mode !== "unclear" &&
     profile.locationPreference.mode === job.location.mode
 
-  // Only claim location match if we have signal to support it
-  if (modeOk || (jobCity && cityOk)) {
+  const cityOk =
+    typeof jobCity === "string" &&
+    Array.isArray(preferredCities) &&
+    preferredCities.length > 0
+      ? locationCityMatches(jobCity, preferredCities)
+      : true
+
+  if (modeOk || (typeof jobCity === "string" && jobCity.trim().length > 0 && cityOk)) {
     whyCodes.push("WHY_LOCATION_MATCH")
   }
 
@@ -102,7 +112,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     whyCodes.push("WHY_SUMMER_INTERNSHIP_MATCH")
   }
 
-  // In-person/hybrid match for no-remote candidates
   if (
     job.internship.isInPersonExplicit &&
     profile.constraints.hardNoFullyRemote &&
@@ -119,34 +128,21 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     whyCodes.push("WHY_MARKETING_ROTATION_MATCH")
   }
 
-  // ---------------- Location mismatch (IMPORTANT FIX) ----------------
-  // Never penalize location when job location is unclear/unknown.
-  // Only penalize when: profile is constrained AND job has an explicit city AND the city is not allowed.
+  // ---------------- Location mismatch (STRICT) ----------------
+  // Never penalize location unless we have:
+  // - explicit job city
+  // - AND explicit preferred city list
+  // - AND profile is constrained
   const profileConstrained = !!profile.locationPreference.constrained
-  const jobCityKnown = !!jobCity
+  const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
+  const hasCityPrefs = Array.isArray(preferredCities) && preferredCities.length > 0
 
-  if (profileConstrained && jobCityKnown) {
-    if (!cityOk) {
+  if (profileConstrained && jobCityKnown && hasCityPrefs) {
+    if (!locationCityMatches(jobCity, preferredCities)) {
       penalties.push({
         key: "location_mismatch_constrained",
         amount: computePenaltyAmount("location_mismatch_constrained"),
         note: `Constrained city mismatch (job: ${jobCity})`,
-        riskCode: "RISK_LOCATION",
-      })
-    }
-  } else {
-    // Optional: mode mismatch penalty only when BOTH modes are explicit (not unclear)
-    // and either side is constrained. This should be secondary to city matching.
-    if (
-      profile.locationPreference.mode !== "unclear" &&
-      job.location.mode !== "unclear" &&
-      profile.locationPreference.mode !== job.location.mode &&
-      (job.location.constrained || profile.locationPreference.constrained)
-    ) {
-      penalties.push({
-        key: "location_mismatch_constrained",
-        amount: computePenaltyAmount("location_mismatch_constrained"),
-        note: "Constrained location mode mismatch",
         riskCode: "RISK_LOCATION",
       })
     }
@@ -162,7 +158,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Sales / Gov mismatches (also enforced by gates upstream)
+  // Sales / Gov mismatches
   if (profile.constraints.hardNoSales && job.isSalesHeavy) {
     penalties.push({
       key: "sales_mismatch",
@@ -209,26 +205,29 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // ---------------- Missing tools (FIX: only when explicit tools exist) ----------------
+  // ---------------- Missing tools (STRICT) ----------------
   if (hasExplicitTools) {
     const requiredMissing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
-    for (const tool of requiredMissing) {
-      penalties.push({
-        key: "missing_core_tool",
-        amount: computePenaltyAmount("missing_core_tool"),
-        note: `Missing required tool: ${tool}`,
-        riskCode: "RISK_MISSING_TOOLS",
-      })
-    }
-
     const preferredMissing = job.preferredTools.filter((t) => toolMissing(profile.tools, t))
-    for (const tool of preferredMissing) {
-      penalties.push({
-        key: "missing_preferred_tool",
-        amount: computePenaltyAmount("missing_preferred_tool"),
-        note: `Missing preferred tool: ${tool}`,
-        riskCode: "RISK_MISSING_TOOLS",
-      })
+
+    if (requiredMissing.length + preferredMissing.length > 0) {
+      for (const tool of requiredMissing) {
+        penalties.push({
+          key: "missing_core_tool",
+          amount: computePenaltyAmount("missing_core_tool"),
+          note: `Missing required tool: ${tool}`,
+          riskCode: "RISK_MISSING_TOOLS",
+        })
+      }
+
+      for (const tool of preferredMissing) {
+        penalties.push({
+          key: "missing_preferred_tool",
+          amount: computePenaltyAmount("missing_preferred_tool"),
+          note: `Missing preferred tool: ${tool}`,
+          riskCode: "RISK_MISSING_TOOLS",
+        })
+      }
     }
   }
 
@@ -254,7 +253,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  // MBA / Grad mismatch risks (gates handle hard stops)
+  // MBA / Grad mismatch risks
   if (job.mbaRequired) {
     penalties.push({
       key: "mba_required",
@@ -285,7 +284,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     if (counts[p.key] <= maxStack) capped.push(p)
   }
 
-  // Total penalty sum with diminishing returns and hard cap
   const rawPenaltySum = capped.reduce((s, p) => s + p.amount, 0)
   const diminished = applyDiminishingReturns(rawPenaltySum)
   const penaltySum = Math.min(POLICY.score.penaltyStackCap, diminished)
@@ -293,13 +291,13 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   let score = POLICY.score.startScore - penaltySum
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
 
-  for (const p of capped) riskCodes.push(p.riskCode)
+  const riskCodes = dedupeStrings(capped.map((p) => p.riskCode)) as RiskCode[]
 
   return {
     score: Math.round(score),
     penalties: capped,
     penaltySum,
     whyCodes: dedupeStrings(whyCodes) as WhyCode[],
-    riskCodes: dedupeStrings(riskCodes) as RiskCode[],
+    riskCodes,
   }
 }
