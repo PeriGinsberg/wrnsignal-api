@@ -629,10 +629,68 @@ function applyDisplayedRiskPenalty(baseScore: number, risks: string[]) {
     return score
 }
 
+function looksLikePro(line: string) {
+    const s = (line || "").trim().toLowerCase()
+    if (!s) return false
+
+    // If the line contains hedging/concern language, it is not a pure pro
+    const hedges = [
+        "may",
+        "might",
+        "could",
+        "however",
+        "but",
+        "although",
+        "limited",
+        "lack",
+        "lacks",
+        "missing",
+        "unclear",
+        "gap",
+        "risk",
+        "concern",
+        "no explicit",
+        "no experience",
+        "require ramp",
+        "requires ramp",
+    ]
+    if (hedges.some((h) => s.includes(h))) return false
+
+    // Strong positive cues
+    const proCues = [
+        "demonstrates",
+        "shows",
+        "proven",
+        "strong",
+        "well aligned",
+        "aligns",
+        "aligned",
+        "matches",
+        "relevant",
+        "experience",
+        "familiarity",
+        "comfortable with",
+        "technical skills",
+        "leadership",
+        "collaborative",
+        "indicates",
+        "supports",
+        "useful",
+        "valuable",
+    ]
+
+    // If it is clearly framed as positive, treat as a pro
+    return proCues.some((p) => s.includes(p))
+}
+
 function looksLikeRisk(line: string) {
     const s = (line || "").trim().toLowerCase()
     if (!s) return false
 
+    // If it reads like a pro, do NOT classify as a risk
+    if (looksLikePro(s)) return false
+
+    // Tightened risk cues (removed "requires" because it creates false positives)
     const riskCues = [
         "risk",
         "concern",
@@ -651,8 +709,15 @@ function looksLikeRisk(line: string) {
         "however",
         "but",
         "would be a challenge",
-        "preferred",
-        "requires",
+        "may require",
+        "might require",
+        "requires ramp",
+        "ramp-up",
+        "ramp up",
+        "not emphasized",
+        "less emphasized",
+        "potentially impacting",
+        "potentially limiting",
     ]
 
     const locationCues = [
@@ -664,11 +729,14 @@ function looksLikeRisk(line: string) {
         "in office",
         "onsite",
         "on-site",
+        "availability",
     ]
 
-    return riskCues.some((c) => s.includes(c)) || locationCues.some((c) => s.includes(c))
+    return (
+        riskCues.some((c) => s.includes(c)) ||
+        locationCues.some((c) => s.includes(c))
+    )
 }
-
 function separateWhyAndRisks(why: string[], risks: string[]) {
     const cleanWhy: string[] = []
     const cleanRisks: string[] = []
@@ -677,6 +745,8 @@ function separateWhyAndRisks(why: string[], risks: string[]) {
         const t = String(r || "").trim()
         if (t) cleanRisks.push(t)
     }
+
+sep.risks = sep.risks.filter((r) => !looksLikePro(r))
 
     for (const w of why || []) {
         const t = String(w || "").trim()
