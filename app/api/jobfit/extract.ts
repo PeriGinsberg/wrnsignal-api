@@ -26,6 +26,21 @@ function includesAny(hay: string, needles: string[]): boolean {
   return needles.some((n) => h.includes(String(n || "").toLowerCase()))
 }
 
+function snippetAround(t: string, idx: number, radius = 70): string {
+  const start = Math.max(0, idx - radius)
+  const end = Math.min(t.length, idx + radius)
+  return t.slice(start, end).trim()
+}
+
+function firstSnippetFor(t: string, phrases: string[]): string | null {
+  for (const p of phrases) {
+    const needle = String(p || "").toLowerCase()
+    const idx = t.indexOf(needle)
+    if (idx >= 0) return snippetAround(t, idx)
+  }
+  return null
+}
+
 function extractYearsRequired(jobText: string): number | null {
   for (const r of POLICY.extraction.years.patterns) {
     const m = jobText.match(r)
@@ -49,22 +64,44 @@ function extractGradYearHint(jobText: string): number | null {
   return null
 }
 
-function detectLocationMode(jobText: string): { mode: LocationMode; constrained: boolean } {
+// City extraction (deterministic heuristic, not magical)
+function extractCity(t: string): string | null {
+  // Most common for your users: NYC spelled multiple ways
+  if (/\bnyc\b/.test(t)) return "New York City"
+  if (t.includes("new york city")) return "New York City"
+  if (t.includes("new york, ny")) return "New York City"
+  if (t.includes("ny office")) return "New York City"
+  if (t.includes("nyc office")) return "New York City"
+
+  // Add more cities later via policy if needed, but keep v1 conservative
+  return null
+}
+
+function detectLocationMode(jobText: string): { mode: LocationMode; constrained: boolean; city?: string | null; evidence?: string | null } {
   const t = jobText
+
   const constrained =
     includesAny(t, POLICY.extraction.location.constrainedPhrases) ||
     t.includes("must be in") ||
-    t.includes("required to be in")
+    t.includes("required to be in") ||
+    t.includes("local candidates only")
 
   const hasRemote = includesAny(t, POLICY.extraction.location.remotePhrases)
   const hasHybrid = includesAny(t, POLICY.extraction.location.hybridPhrases)
-  const hasOnsite = includesAny(t, POLICY.extraction.location.onsitePhrases)
+  const hasOnsite = includesAny(t, POLICY.extraction.location.onsitePhrases) || t.includes("in-person") || t.includes("in person")
 
-  if (hasHybrid) return { mode: "hybrid", constrained }
-  if (hasRemote && !hasOnsite) return { mode: "remote", constrained }
-  if (hasOnsite && !hasRemote) return { mode: "onsite", constrained }
-  if (hasRemote && hasOnsite) return { mode: "hybrid", constrained }
-  return { mode: "unclear", constrained }
+  let mode: LocationMode = "unclear"
+  if (hasHybrid) mode = "hybrid"
+  else if (hasRemote && !hasOnsite) mode = "remote"
+  else if (hasOnsite && !hasRemote) mode = "onsite"
+  else if (hasRemote && hasOnsite) mode = "hybrid"
+
+  const city = extractCity(t)
+  const evidence =
+    firstSnippetFor(t, ["nyc office", "new york city", "in-person", "in person", "hybrid", "remote"]) ||
+    null
+
+  return { mode, constrained, city, evidence }
 }
 
 function detectAnalytics(jobText: string): { isHeavy: boolean; isLight: boolean } {
@@ -88,23 +125,33 @@ function detectJobFamily(jobText: string): JobFamily {
   return "Other"
 }
 
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function hasTool(t: string, tool: string): boolean {
+  // strict whole-token match
+  const pattern = new RegExp(`\\b${escapeRegExp(tool.toLowerCase())}\\b`, "i")
+  return pattern.test(t)
+}
+
 function extractTools(jobText: string): { required: string[]; preferred: string[] } {
   const t = jobText
 
-  const found = (list: string[]) => list.filter((tool) => t.includes(tool.toLowerCase()))
-  const core = found(POLICY.tools.core)
-  const pref = found(POLICY.tools.preferred)
+  const coreFound = POLICY.tools.core.filter((tool) => hasTool(t, tool))
+  const prefFound = POLICY.tools.preferred.filter((tool) => hasTool(t, tool))
 
   const required: string[] = []
   const preferred: string[] = []
 
-  const all = Array.from(new Set([...core, ...pref]))
+  const all = Array.from(new Set([...coreFound, ...prefFound]))
+
   for (const tool of all) {
     const toolLower = tool.toLowerCase()
     const idx = t.indexOf(toolLower)
     if (idx >= 0) {
-      const window = t.slice(Math.max(0, idx - 25), Math.min(t.length, idx + 25))
-      if (window.includes("required") || window.includes("must have")) required.push(tool)
+      const window = t.slice(Math.max(0, idx - 40), Math.min(t.length, idx + 40))
+      if (/\b(required|must have|need to have)\b/i.test(window)) required.push(tool)
       else preferred.push(tool)
     }
   }
@@ -113,6 +160,21 @@ function extractTools(jobText: string): { required: string[]; preferred: string[
     required: Array.from(new Set(required)),
     preferred: Array.from(new Set(preferred.filter((x) => !required.includes(x)))),
   }
+}
+
+function extractInternshipDates(t: string): { dates: string | null; dateLine: string | null } {
+  // e.g. (June 2 - August 6) or June 2 – August 6
+  const m = t.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+\d{1,2}\s*[-–]\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+\d{1,2}\b/i)
+  if (!m) return { dates: null, dateLine: null }
+  const idx = t.indexOf(m[0].toLowerCase())
+  return { dates: m[0], dateLine: idx >= 0 ? snippetAround(t, idx) : m[0] }
+}
+
+function extractPay(t: string): { pay: string | null; payLine: string | null } {
+  const m = t.match(/\$\s*\d+(\.\d+)?\s*\/\s*hr\b/i) || t.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/i)
+  if (!m) return { pay: null, payLine: null }
+  const idx = t.indexOf(m[0].toLowerCase())
+  return { pay: m[0], payLine: idx >= 0 ? snippetAround(t, idx) : m[0] }
 }
 
 function detectInternshipSignals(t: string) {
@@ -126,15 +188,67 @@ function detectInternshipSignals(t: string) {
   const isSummer = summerKeywords.some((k) => t.includes(k))
   const mentionsAITools = aiToolsKeywords.some((k) => t.includes(k))
 
-  const rotationHitCount = rotationKeywords.reduce(
-    (acc, k) => acc + (t.includes(k) ? 1 : 0),
-    0
-  )
+  const rotationHitCount = rotationKeywords.reduce((acc, k) => acc + (t.includes(k) ? 1 : 0), 0)
   const isMarketingRotation = rotationHitCount >= 3
 
   const isInPersonExplicit = inPersonInternKeywords.some((k) => t.includes(k))
 
-  return { isInternship, isSummer, isInPersonExplicit, mentionsAITools, isMarketingRotation }
+  // departments list extraction (deterministic; policy-driven)
+  const departmentUniverse = [
+    "pr",
+    "events",
+    "influencer",
+    "digital marketing",
+    "brand marketing",
+    "global marketing",
+    "partnerships",
+    "visual merchandising",
+    "key accounts",
+  ]
+
+  const departments: string[] = []
+  for (const d of departmentUniverse) {
+    if (t.includes(d)) {
+      // normalize labels for output bullets
+      if (d === "pr") departments.push("PR")
+      else if (d === "events") departments.push("Events")
+      else if (d === "influencer") departments.push("Influencer Marketing")
+      else if (d === "digital marketing") departments.push("Digital Marketing")
+      else if (d === "brand marketing") departments.push("Brand Marketing")
+      else if (d === "global marketing") departments.push("Global Marketing")
+      else if (d === "partnerships") departments.push("Partnerships")
+      else if (d === "visual merchandising") departments.push("Visual Merchandising")
+      else if (d === "key accounts") departments.push("Key Accounts")
+    }
+  }
+
+  const hasCapstone = t.includes("capstone project") || t.includes("capstone")
+
+  const { dates, dateLine } = extractInternshipDates(t)
+  const { pay, payLine } = extractPay(t)
+
+  const evidence = {
+    internshipLine: firstSnippetFor(t, ["marketing internship", "summer 2026", "internship"]) || null,
+    inPersonLine: firstSnippetFor(t, ["in-person", "in person", "nyc office", "new york city office"]) || null,
+    aiLine: firstSnippetFor(t, ["ai tools", "ai platforms"]) || null,
+    deptLine: firstSnippetFor(t, ["pr", "events", "influencer marketing", "digital marketing", "brand marketing"]) || null,
+    capstoneLine: firstSnippetFor(t, ["capstone project", "capstone"]) || null,
+    payLine,
+    dateLine,
+  }
+
+  return {
+    isInternship,
+    isSummer,
+    isInPersonExplicit,
+    mentionsAITools,
+    isMarketingRotation,
+    departments,
+    dates,
+    pay,
+    hasCapstone,
+    evidence,
+  }
 }
 
 export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
@@ -154,7 +268,6 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const isHourly = includesAny(t, POLICY.extraction.hourly.keywords)
 
   const { required, preferred } = extractTools(t)
-console.log("JOBFIT tools found:", { required, preferred })
 
   const reportingStrong = includesAny(t, [
     "weekly reporting",
@@ -207,10 +320,10 @@ export function extractProfileSignals(
   const base: StructuredProfileSignals = {
     rawHash,
 
-    // Default stays conservative; overrides should supply the real structured values.
     targetFamilies: ["Marketing"],
 
-    locationPreference: { mode: "unclear", constrained: false },
+    // Overrides should set constrained + allowedCities for real users
+    locationPreference: { mode: "unclear", constrained: false, allowedCities: undefined },
 
     constraints: {
       hardNoSales,
@@ -227,7 +340,6 @@ export function extractProfileSignals(
     tools: [],
   }
 
-  // Deep merge to avoid clobbering nested objects
   const merged: StructuredProfileSignals = {
     ...base,
     ...(overrides || {}),

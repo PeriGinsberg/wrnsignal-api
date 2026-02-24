@@ -7,7 +7,7 @@ export type WhyCode =
   | "WHY_LOCATION_MATCH"
   | "WHY_EARLY_CAREER_FRIENDLY"
   | "WHY_TOOL_MATCH"
-  // NEW (internship-specific)
+  // internship-specific
   | "WHY_SUMMER_INTERNSHIP_MATCH"
   | "WHY_IN_PERSON_MATCH"
   | "WHY_AI_TOOLS_MATCH"
@@ -43,26 +43,50 @@ export type StructuredJobSignals = {
 
   jobFamily: JobFamily
   analytics: { isHeavy: boolean; isLight: boolean }
-  location: { mode: LocationMode; constrained: boolean }
+
+  // Added city + evidence so bullets can be specific without guessing.
+  location: {
+    mode: LocationMode
+    constrained: boolean
+    city?: string | null
+    evidence?: string | null
+  }
+
   isGovernment: boolean
   isSalesHeavy: boolean
   isContract: boolean
   isHourly: boolean
 
-internship: {
-  isInternship: boolean
-  isSummer: boolean
-  isInPersonExplicit: boolean
-  mentionsAITools: boolean
-  isMarketingRotation: boolean
-}
+  internship: {
+    isInternship: boolean
+    isSummer: boolean
+    isInPersonExplicit: boolean
+    mentionsAITools: boolean
+    isMarketingRotation: boolean
+
+    // New evidence fields to drive non-generic bullets
+    departments?: string[]
+    dates?: string | null
+    pay?: string | null
+    hasCapstone?: boolean
+    evidence?: {
+      internshipLine?: string | null
+      inPersonLine?: string | null
+      aiLine?: string | null
+      deptLine?: string | null
+      capstoneLine?: string | null
+      payLine?: string | null
+      dateLine?: string | null
+    }
+  }
 
   yearsRequired: number | null
   mbaRequired: boolean
+  gradYearHint: number | null
 
-  gradYearHint: number | null // if job explicitly screens for class year or graduation year
-  requiredTools: string[] // normalized tokens
+  requiredTools: string[]
   preferredTools: string[]
+
   reportingSignals: { strong: boolean }
 }
 
@@ -70,7 +94,14 @@ export type StructuredProfileSignals = {
   rawHash: string
 
   targetFamilies: JobFamily[]
-  locationPreference: { mode: LocationMode; constrained: boolean; allowedCities?: string[] }
+
+  // Add allowedCities for constraint matching (you already had it optional)
+  locationPreference: {
+    mode: LocationMode
+    constrained: boolean
+    allowedCities?: string[]
+  }
+
   constraints: {
     hardNoSales: boolean
     hardNoGovernment: boolean
@@ -84,7 +115,7 @@ export type StructuredProfileSignals = {
   gradYear: number | null
   yearsExperienceApprox: number | null
 
-  tools: string[] // normalized tokens
+  tools: string[]
 }
 
 export type WhyItem = { code: WhyCode; text: string }
@@ -99,5 +130,5 @@ export type EvalOutput = {
   location_constraint: "constrained" | "not_constrained" | "unclear"
   why_codes: WhyCode[]
   risk_codes: RiskCode[]
-  gate_triggered: { type: "force_pass" | "floor_review" | "none"; gateCode?: string } // debug
+  gate_triggered: { type: "force_pass" | "floor_review" | "none"; gateCode?: string }
 }
