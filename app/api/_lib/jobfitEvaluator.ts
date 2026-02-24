@@ -437,30 +437,53 @@ function profileTargetsAccounting(profileText: string) {
 function jobIsAnalyticsHeavy(jobText: string) {
     const t = normalizeText(jobText)
 
-    const titleSignal = /\b(marketing analyst|data analyst|analytics\b|business intelligence|bi\b)\b/.test(
-        t
-    )
+    // True analyst/analytics roles (high precision)
+    const analystTitleSignal =
+        /\b(marketing analyst|data analyst|business intelligence|bi analyst|analytics analyst|marketing analytics)\b/.test(
+            t
+        ) ||
+        /\b(analyst intern|analytics intern)\b/.test(t)
 
+    // Hard analytics tooling (not Excel / PowerPoint)
     const hardAnalyticsTools =
-        /\b(sql|tableau|power bi|r\b|python\b|ga4|google analytics)\b/.test(t)
+        /\b(sql|tableau|power bi|r\b|python\b)\b/.test(t)
 
-    const quantLanguage = /\b(statistics|quantitative|modeling|forecasting|regression)\b/.test(t)
+    // Strong quant / modeling language
+    const quantLanguage =
+        /\b(statistics|statistical|quantitative|modeling|forecasting|regression|segmentation|a\/b testing methodology)\b/.test(
+            t
+        )
 
-    const measurementLanguage = /\b(measurement|attribution|dashboard|kpi|roi|reporting|insights)\b/.test(
-        t
-    )
+    // Analytics execution language (stronger than "analytical mindset")
+    const analyticsOpsLanguage =
+        /\b(dashboard|attribution|kpi|roi|incrementality|measurement framework|data pipeline|query)\b/.test(
+            t
+        )
 
-    // High precision rule:
-    // - Title signal alone is enough (analyst/analytics/BI titles)
-    // - Or hard analytics tools + (quant language OR measurement language)
-    // - Or quant language + measurement language together
-    if (titleSignal) return true
-    if (hardAnalyticsTools && (quantLanguage || measurementLanguage)) return true
-    if (quantLanguage && measurementLanguage) return true
+    // Light marketing measurement language (should NOT auto-trigger heavy)
+    const lightMeasurementOnly =
+        /\b(email marketing|e-commerce|campaign|qa testing|creative assets|subject lines)\b/.test(
+            t
+        ) &&
+        /\b(report|reporting|performance report|insights|trend)\b/.test(t) &&
+        !analystTitleSignal &&
+        !hardAnalyticsTools &&
+        !quantLanguage &&
+        !analyticsOpsLanguage
+
+    if (lightMeasurementOnly) return false
+
+    // Deterministic classification:
+    if (analystTitleSignal) return true
+
+    // If job requires hard analytics tools AND also has strong analytics language, treat as heavy
+    if (hardAnalyticsTools && (quantLanguage || analyticsOpsLanguage)) return true
+
+    // If it has both quant + analytics ops language, treat as heavy even without tool list
+    if (quantLanguage && analyticsOpsLanguage) return true
 
     return false
 }
-
 /* ----------------------- deterministic eligibility: years + mba ----------------------- */
 function extractRequiredYears(jobText: string): number | null {
     const t = normalizeText(jobText)
