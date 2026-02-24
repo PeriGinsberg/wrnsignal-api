@@ -654,6 +654,25 @@ function extractToolsFromJob(jobText: string) {
 
     return toolCatalog.filter((tool) => t.includes(tool))
 }
+function jobRequiresEmailMarketing(jobText: string) {
+  const t = normalizeText(jobText)
+  return /\b(email campaigns?|email marketing|segments?|segmentation|customer lists?|a\/b tests?|subject lines?|deliverability|qa testing)\b/.test(t)
+}
+
+function profileShowsEmailMarketing(profileText: string) {
+  const t = normalizeText(profileText)
+  return /\b(email campaigns?|email marketing|mailchimp|klaviyo|hubspot|marketo|pardot|salesforce marketing cloud|sfmc|braze|customer\.io|campaign monitor)\b/.test(t)
+}
+
+function jobRequiresMeasurement(jobText: string) {
+  const t = normalizeText(jobText)
+  return /\b(performance reports?|identify trends?|insights?|campaign performance|marketing data|reporting|measurement|kpi|metrics)\b/.test(t)
+}
+
+function profileShowsMeasurement(profileText: string) {
+  const t = normalizeText(profileText)
+  return /\b(analytics|reporting|insights|metrics|kpi|measurement|dashboard|data analysis|google analytics|ga4|excel)\b/.test(t)
+}
 
 function profileMentionsTool(profileText: string, tool: string) {
     const t = normalizeText(profileText)
@@ -903,6 +922,8 @@ function riskTypeMultiplier(code: string) {
     // floor gate is informational but real
     if (code === "floor_review_gate") return 1.0
     return 1.0
+if (code === "email_marketing_gap") return 1.0
+if (code === "measurement_gap") return 0.8
 }
 
 function computeRiskPoints(risks: RiskSignal[]) {
@@ -942,6 +963,25 @@ function buildSignals(args: {
 
     const jt = normalizeText(jobText)
     const pt = normalizeText(profileText)
+
+// RISKS: email marketing execution gap (only if job explicitly requires it)
+if (jobRequiresEmailMarketing(jobText) && !profileShowsEmailMarketing(profileText)) {
+  risks.push({
+    code: "email_marketing_gap",
+    severity: "medium",
+    note: "Role is email marketing execution heavy (campaigns, segmentation, A/B tests), but the profile does not show direct email marketing experience or platforms.",
+  })
+}
+
+// RISKS: measurement/reporting gap (analytics-light)
+if (jobRequiresMeasurement(jobText) && !profileShowsMeasurement(profileText)) {
+  risks.push({
+    code: "measurement_gap",
+    severity: "low",
+    note: "Role includes recurring performance reporting and trend analysis; the profile does not show explicit reporting/measurement experience.",
+  })
+}
+
 
     // WHY: marketing/communications alignment
     if (/\b(brand marketing|brand|communications|creative strategy|advertising|campaign|email marketing|digital marketing|e-commerce)\b/.test(pt)) {
@@ -1060,6 +1100,7 @@ function buildSignals(args: {
 
     return { why: cleanWhy, risks: cleanRisks }
 }
+
 
 /* ----------------------- deterministic scoring ----------------------- */
 function computeDeterministicScore(args: {
