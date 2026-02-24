@@ -1,7 +1,12 @@
 // app/api/jobfit/scoring.ts
 
 import { POLICY, PenaltyKey } from "./policy"
-import type { StructuredJobSignals, StructuredProfileSignals, RiskCode, WhyCode } from "./signals"
+import type {
+  StructuredJobSignals,
+  StructuredProfileSignals,
+  RiskCode,
+  WhyCode,
+} from "./signals"
 
 export type Penalty = {
   key: PenaltyKey
@@ -44,74 +49,109 @@ function toolMissing(profileTools: string[], tool: string): boolean {
   return !p.includes(tool.toLowerCase())
 }
 
+function normalizeCity(s: string): string {
+  const t = (s || "").trim().toLowerCase()
+  if (t === "nyc" || t === "new york city") return "new york"
+  return t
+}
+
+function locationCityMatches(jobCity: string | null | undefined, preferredCities: string[] | null | undefined) {
+  if (!jobCity) return true // critical: unknown city should never trigger mismatch
+  const prefs = (preferredCities || []).map(normalizeCity)
+  if (prefs.length === 0) return true
+  return prefs.includes(normalizeCity(jobCity))
+}
+
 export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfileSignals): ScoreResult {
   const penalties: Penalty[] = []
   const whyCodes: WhyCode[] = []
   const riskCodes: RiskCode[] = []
+
+  const hasExplicitTools = job.requiredTools.length + job.preferredTools.length > 0
 
   // WHY signals
   if (profile.targetFamilies.includes(job.jobFamily)) whyCodes.push("WHY_FAMILY_MATCH")
   if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) whyCodes.push("WHY_MARKETING_EXECUTION")
   if (job.analytics.isLight && !job.analytics.isHeavy) whyCodes.push("WHY_MEASUREMENT_LIGHT")
 
-  if (
+  // Location WHY: match based on mode OR (better) city match when available
+  const jobCity = (job.location as any)?.city ?? null
+  const preferredCities = (profile.locationPreference as any)?.preferredCities ?? null
+
+  const cityOk = locationCityMatches(jobCity, preferredCities)
+  const modeOk =
     profile.locationPreference.mode !== "unclear" &&
     job.location.mode !== "unclear" &&
     profile.locationPreference.mode === job.location.mode
-  ) {
+
+  // Only claim location match if we have signal to support it
+  if (modeOk || (jobCity && cityOk)) {
     whyCodes.push("WHY_LOCATION_MATCH")
   }
 
   if (!job.yearsRequired || job.yearsRequired <= 1) whyCodes.push("WHY_EARLY_CAREER_FRIENDLY")
 
-  if (job.requiredTools.length > 0) {
+  // Tool WHY only when the job actually lists explicit tools
+  if (hasExplicitTools) {
     const missing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
     if (missing.length <= 1) whyCodes.push("WHY_TOOL_MATCH")
   }
 
-  // Location mismatch
-  if (job.location.mode !== "unclear" && profile.locationPreference.mode !== "unclear") {
-    if (job.location.mode !== profile.locationPreference.mode) {
-      if (job.location.constrained || profile.locationPreference.constrained) {
-        penalties.push({
-          key: "location_mismatch_constrained",
-          amount: computePenaltyAmount("location_mismatch_constrained"),
-          note: "Constrained location mismatch",
-          riskCode: "RISK_LOCATION",
-        })
-      } else {
-        penalties.push({
-          key: "location_mismatch_unclear",
-          amount: computePenaltyAmount("location_mismatch_unclear"),
-          note: "Location mismatch but not explicitly constrained",
-          riskCode: "RISK_LOCATION",
-        })
-      }
+  // ---------------- Internship-specific WHY codes ----------------
+  if (job.internship.isInternship && job.internship.isSummer) {
+    whyCodes.push("WHY_SUMMER_INTERNSHIP_MATCH")
+  }
+
+  // In-person/hybrid match for no-remote candidates
+  if (
+    job.internship.isInPersonExplicit &&
+    profile.constraints.hardNoFullyRemote &&
+    (job.location.mode === "onsite" || job.location.mode === "hybrid")
+  ) {
+    whyCodes.push("WHY_IN_PERSON_MATCH")
+  }
+
+  if (job.internship.mentionsAITools) {
+    whyCodes.push("WHY_AI_TOOLS_MATCH")
+  }
+
+  if (job.internship.isMarketingRotation && profile.targetFamilies.includes("Marketing")) {
+    whyCodes.push("WHY_MARKETING_ROTATION_MATCH")
+  }
+
+  // ---------------- Location mismatch (IMPORTANT FIX) ----------------
+  // Never penalize location when job location is unclear/unknown.
+  // Only penalize when: profile is constrained AND job has an explicit city AND the city is not allowed.
+  const profileConstrained = !!profile.locationPreference.constrained
+  const jobCityKnown = !!jobCity
+
+  if (profileConstrained && jobCityKnown) {
+    if (!cityOk) {
+      penalties.push({
+        key: "location_mismatch_constrained",
+        amount: computePenaltyAmount("location_mismatch_constrained"),
+        note: `Constrained city mismatch (job: ${jobCity})`,
+        riskCode: "RISK_LOCATION",
+      })
+    }
+  } else {
+    // Optional: mode mismatch penalty only when BOTH modes are explicit (not unclear)
+    // and either side is constrained. This should be secondary to city matching.
+    if (
+      profile.locationPreference.mode !== "unclear" &&
+      job.location.mode !== "unclear" &&
+      profile.locationPreference.mode !== job.location.mode &&
+      (job.location.constrained || profile.locationPreference.constrained)
+    ) {
+      penalties.push({
+        key: "location_mismatch_constrained",
+        amount: computePenaltyAmount("location_mismatch_constrained"),
+        note: "Constrained location mode mismatch",
+        riskCode: "RISK_LOCATION",
+      })
     }
   }
-// ---------------- Internship-specific WHY codes ----------------
-if (job.internship.isInternship && job.internship.isSummer) {
-  whyCodes.push("WHY_SUMMER_INTERNSHIP_MATCH")
-}
 
-// Only call in-person match when the job explicitly signals in-person/hybrid AND the profile has no-remote constraint
-if (
-  job.internship.isInPersonExplicit &&
-  profile.constraints.hardNoFullyRemote &&
-  (job.location.mode === "onsite" || job.location.mode === "hybrid")
-) {
-  whyCodes.push("WHY_IN_PERSON_MATCH")
-}
-
-// AI tools mention in the JD. (We do not require the profile to list a tool yet, since many students have training not listed as a "tool".)
-if (job.internship.mentionsAITools) {
-  whyCodes.push("WHY_AI_TOOLS_MATCH")
-}
-
-// Rotation signal only when multiple function keywords show up AND profile is marketing-targeted
-if (job.internship.isMarketingRotation && profile.targetFamilies.includes("Marketing")) {
-  whyCodes.push("WHY_MARKETING_ROTATION_MATCH")
-}
   // Analytics mismatch
   if (profile.constraints.preferNotAnalyticsHeavy && job.analytics.isHeavy) {
     penalties.push({
@@ -122,7 +162,7 @@ if (job.internship.isMarketingRotation && profile.targetFamilies.includes("Marke
     })
   }
 
-  // Sales / Gov mismatches (these are also enforced by gates upstream, but scoring can still record risk)
+  // Sales / Gov mismatches (also enforced by gates upstream)
   if (profile.constraints.hardNoSales && job.isSalesHeavy) {
     penalties.push({
       key: "sales_mismatch",
@@ -169,8 +209,8 @@ if (job.internship.isMarketingRotation && profile.targetFamilies.includes("Marke
     })
   }
 
-  // Missing tools (ONLY if job actually lists tools)
-  if (job.requiredTools.length + job.preferredTools.length > 0) {
+  // ---------------- Missing tools (FIX: only when explicit tools exist) ----------------
+  if (hasExplicitTools) {
     const requiredMissing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
     for (const tool of requiredMissing) {
       penalties.push({
