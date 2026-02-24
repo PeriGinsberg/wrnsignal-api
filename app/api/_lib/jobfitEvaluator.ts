@@ -746,7 +746,7 @@ function separateWhyAndRisks(why: string[], risks: string[]) {
         if (t) cleanRisks.push(t)
     }
 
-sep.risks = sep.risks.filter((r) => !looksLikePro(r))
+
 
     for (const w of why || []) {
         const t = String(w || "").trim()
