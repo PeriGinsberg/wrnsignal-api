@@ -89,9 +89,16 @@ function minDecision(a: Decision, b: Decision): Decision {
 }
 
 function enforceScoreBand(decision: Decision, score: number) {
-    if (decision === "Apply") return Math.max(score, 75)
-    if (decision === "Review") return Math.min(Math.max(score, 60), 74)
-    return Math.min(score, 59)
+  // Score is absolute fit, never forced into a Review band.
+// Only enforce that PASS cannot show as high-fit.
+if (decision === "Pass") score = Math.min(score, 59)
+
+// Optional: if you want APPLY to never show below 75, keep this.
+// I would keep it only if your scoring penalties can produce Apply < 75.
+if (decision === "Apply") score = Math.max(score, 75)
+
+// Review is not capped. It stays whatever the deterministic score says.
+score = Math.min(score, 97)
 }
 
 /* ----------------------- deterministic extraction ----------------------- */
@@ -512,106 +519,163 @@ function profileHasMBA(profileText: string) {
     return /\bmba\b/.test(t) || t.includes("master of business administration")
 }
 
-function computeDeterministicScore(args: {
-    jobText: string
-    profileText: string
-    jobFacts: JobFacts
-    profileConstraints: ProfileConstraints
-}): { score: number; decisionByScore: Decision; explain: ScoreExplain[] } {
-    const { jobText, profileText, jobFacts, profileConstraints } = args
+type ScoreExplain = { label: string; delta: number; note?: string }
 
-    // Start at 97 and never exceed 97
-    let score = 97
-    const explain: ScoreExplain[] = []
+function extractToolsFromJob(jobText: string) {
+  const t = normalizeText(jobText)
 
-    const fam = inferJobFamily(jobText)
+  // Add to this list over time. Keep it curated and intentional.
+  const toolCatalog = [
+    "qualtrics",
+    "spss",
+    "tableau",
+    "power bi",
+    "google analytics",
+    "ga4",
+    "sql",
+    "r",
+    "python",
+    "excel",
+    "gwi",
+    "warc",
+    "statista",
+    "brandwatch",
+    "simmons",
+  ]
 
-    const mbaMismatch = jobRequiresMBA(jobText) && !profileHasMBA(profileText)
-    if (mbaMismatch) {
-        score -= 60
-        explain.push({
-            label: "MBA required mismatch",
-            delta: -60,
-            note: "Job requires MBA but profile does not show MBA.",
-        })
-    }
-
-    const reqYears = extractRequiredYears(jobText)
-    const earlyCareer = profileLooksEarlyCareer(profileText)
-    if (reqYears !== null && earlyCareer) {
-        if (reqYears >= 4) {
-            score -= 50
-            explain.push({
-                label: "Experience requirement mismatch (4+ years)",
-                delta: -50,
-                note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
-            })
-        } else if (reqYears >= 3) {
-            score -= 35
-            explain.push({
-                label: "Experience requirement mismatch (3+ years)",
-                delta: -35,
-                note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
-            })
-        }
-    }
-
-    if (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) {
-        score -= 45
-        explain.push({
-            label: "Job family mismatch",
-            delta: -45,
-            note: "Accounting-focused role vs non-accounting target profile.",
-        })
-    }
-
-    if (profileConstraints.prefFullTime && jobFacts.isContract) {
-        score -= 12
-        explain.push({
-            label: "Contract vs full-time preference",
-            delta: -12,
-            note: "Role appears contract and candidate prefers full-time.",
-        })
-    }
-
-    if (profileConstraints.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
-        score -= 12
-        explain.push({
-            label: "Fully remote constraint",
-            delta: -12,
-            note: "Role is fully remote and candidate prefers not fully remote.",
-        })
-    }
-
-    if (jobFacts.isHourly && !profileConstraints.hardNoHourlyPay) {
-        score -= 18
-        explain.push({
-            label: "Hourly compensation signal",
-            delta: -18,
-            note: "Job signals hourly compensation.",
-        })
-    }
-
-    score = clampScore(score)
-    score = Math.min(score, 97)
-
-    const totalPenalty = explain.reduce((sum, e) => sum + Math.min(0, e.delta), 0)
-    const hasMajorPenalty = explain.some((e) => e.delta <= -35)
-
-    if (mbaMismatch || totalPenalty <= -75) {
-        return { score: Math.min(score, 59), decisionByScore: "Pass", explain }
-    }
-
-    if (hasMajorPenalty) {
-        const cappedScore = Math.min(Math.max(score, 60), 74)
-        return { score: cappedScore, decisionByScore: "Review", explain }
-    }
-
-    // No deterministic penalties: Apply (subject to later risk-based downgrade)
-    return { score, decisionByScore: "Apply", explain }
+  // Only count a tool if job text explicitly mentions it
+  return toolCatalog.filter((tool) => t.includes(tool))
 }
 
-/* ----------------------- display-risk penalty + separation ----------------------- */
+function profileMentionsTool(profileText: string, tool: string) {
+  const t = normalizeText(profileText)
+  return t.includes(tool)
+}
+
+function toolPenalty(missingCount: number) {
+  // Strict but fair. Tools are “nice differentiators” not auto-disqualifiers.
+  if (missingCount <= 0) return 0
+  if (missingCount === 1) return 3
+  if (missingCount === 2) return 6
+  if (missingCount === 3) return 9
+  return 12
+}
+
+function computeDeterministicScore(args: {
+  jobText: string
+  profileText: string
+  jobFacts: JobFacts
+  profileConstraints: ProfileConstraints
+}): { score: number; decisionByScore: Decision; explain: ScoreExplain[] } {
+  const { jobText, profileText, jobFacts, profileConstraints } = args
+
+  let score = 97 // never 100
+  const explain: ScoreExplain[] = []
+
+  const fam = inferJobFamily(jobText)
+
+  // ---- eligibility: MBA
+  const mbaMismatch = jobRequiresMBA(jobText) && !profileHasMBA(profileText)
+  if (mbaMismatch) {
+    score -= 60
+    explain.push({
+      label: "MBA required mismatch",
+      delta: -60,
+      note: "Job requires MBA but profile does not show MBA.",
+    })
+  }
+
+  // ---- eligibility: years required (explicit only)
+  const reqYears = extractRequiredYears(jobText)
+  const earlyCareer = profileLooksEarlyCareer(profileText)
+  if (reqYears !== null && earlyCareer) {
+    if (reqYears >= 4) {
+      score -= 50
+      explain.push({
+        label: "Experience requirement mismatch (4+ years)",
+        delta: -50,
+        note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
+      })
+    } else if (reqYears >= 3) {
+      score -= 35
+      explain.push({
+        label: "Experience requirement mismatch (3+ years)",
+        delta: -35,
+        note: `Job asks for ${reqYears}+ years and profile reads early-career.`,
+      })
+    }
+  }
+
+  // ---- function mismatch
+  if (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) {
+    score -= 45
+    explain.push({
+      label: "Job family mismatch",
+      delta: -45,
+      note: "Accounting-focused role vs non-accounting target profile.",
+    })
+  }
+
+  // ---- work structure penalties
+  if (profileConstraints.prefFullTime && jobFacts.isContract) {
+    score -= 12
+    explain.push({
+      label: "Contract vs full-time preference",
+      delta: -12,
+      note: "Role appears contract and candidate prefers full-time.",
+    })
+  }
+
+  if (profileConstraints.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
+    score -= 12
+    explain.push({
+      label: "Fully remote constraint",
+      delta: -12,
+      note: "Role is fully remote and candidate prefers not fully remote.",
+    })
+  }
+
+  if (jobFacts.isHourly && !profileConstraints.hardNoHourlyPay) {
+    score -= 18
+    explain.push({
+      label: "Hourly compensation signal",
+      delta: -18,
+      note: "Job signals hourly compensation.",
+    })
+  }
+
+  // ---- tool matching (major differentiator across Apply jobs)
+  const tools = extractToolsFromJob(jobText)
+  if (tools.length) {
+    const missing = tools.filter((tool) => !profileMentionsTool(profileText, tool))
+    const p = toolPenalty(missing.length)
+    if (p > 0) {
+      score -= p
+      explain.push({
+        label: "Tooling gap vs job preferences",
+        delta: -p,
+        note:
+          missing.length === 1
+            ? `Job mentions ${missing[0]}; profile does not.`
+            : `Job mentions tools not shown in profile (${missing.slice(0, 4).join(", ")}).`,
+      })
+    }
+  }
+
+  score = clampScore(score)
+  score = Math.min(score, 97)
+
+  // ---- decision by score only (decision layer comes later and can override)
+  let decisionByScore: Decision = "Review"
+  if (score >= 80) decisionByScore = "Apply"
+  else if (score >= 60) decisionByScore = "Review"
+  else decisionByScore = "Pass"
+
+  // If MBA mismatch, do not allow Apply regardless of score rounding
+  if (mbaMismatch && decisionByScore !== "Pass") decisionByScore = "Pass"
+
+  return { score, decisionByScore, explain }
+}/* ----------------------- display-risk penalty + separation ----------------------- */
 function applyDisplayedRiskPenalty(baseScore: number, risks: string[]) {
     let score = baseScore
 
