@@ -107,7 +107,7 @@ export const POLICY: JobFitPolicy = {
 
   // Philosophy: start high, deduct risks, cap stacking, never hit 100.
   score: {
-    startScore: 93,
+    startScore: 78,
     maxScore: 97,
     minScore: 0,
     penaltyStackCap: 55,

@@ -61,10 +61,64 @@ function normalizeCity(s: string): string {
 
   return t
 }
+
 function locationCityMatches(jobCity: string, preferredCities: string[]) {
   const j = normalizeCity(jobCity)
   const prefs = preferredCities.map(normalizeCity)
   return prefs.includes(j)
+}
+
+/**
+ * IMPORTANT:
+ * Old model: score = startScore - penalties
+ * Problem: most internships generate few penalties, so score clusters (93 forever).
+ *
+ * New model:
+ * score = baseFromFitSignals + bonuses - penalties
+ * Still deterministic. Much more spread.
+ */
+function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals): number {
+  // Neutral base for “seems plausible”
+  let base = 72
+
+  // Job family alignment is the biggest positive
+  if (profile.targetFamilies.includes(job.jobFamily)) base += 10
+
+  // Marketing that is NOT analytics-heavy is good for most marketing-target profiles
+  if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) base += 4
+
+  // Early-career friendly
+  if (!job.yearsRequired || job.yearsRequired <= 1) base += 5
+
+  // Internship structure bonuses (only when present)
+  if (job.internship?.isInternship) base += 5
+  if (job.internship?.isSummer) base += 3
+  if (job.internship?.hasCapstone) base += 4
+
+  // Rotation is valuable, but don’t over-reward it
+  if (job.internship?.isMarketingRotation) base += 3
+
+  // Explicit AI comfort callout is a mild signal, not a giant one
+  if (job.internship?.mentionsAITools) base += 2
+
+  // Location positives (strict city match is strongest)
+  const jobCity = job.location?.city ?? null
+  const allowedCities = profile.locationPreference?.allowedCities ?? null
+  const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
+  const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
+
+  if (jobCityKnown && hasCityPrefs && locationCityMatches(jobCity!, allowedCities!)) {
+    base += 6
+  } else {
+    // fallback: mode match (weak)
+    const modeOk =
+      profile.locationPreference.mode !== "unclear" &&
+      job.location.mode !== "unclear" &&
+      profile.locationPreference.mode === job.location.mode
+    if (modeOk) base += 2
+  }
+
+  return base
 }
 
 export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfileSignals): ScoreResult {
@@ -73,78 +127,72 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
 
   const hasExplicitTools = job.requiredTools.length + job.preferredTools.length > 0
 
-  // Define ONCE. Do not redeclare later.
-  const jobCity = (job.location as any)?.city ?? null
-  const preferredCities = (profile.locationPreference as any)?.preferredCities ?? null
-
   // WHY signals
   if (profile.targetFamilies.includes(job.jobFamily)) whyCodes.push("WHY_FAMILY_MATCH")
   if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) whyCodes.push("WHY_MARKETING_EXECUTION")
   if (job.analytics.isLight && !job.analytics.isHeavy) whyCodes.push("WHY_MEASUREMENT_LIGHT")
-
-  // Location WHY: match based on mode OR (better) city match when available
-  const modeOk =
-    profile.locationPreference.mode !== "unclear" &&
-    job.location.mode !== "unclear" &&
-    profile.locationPreference.mode === job.location.mode
-
-  const cityOk =
-    typeof jobCity === "string" &&
-    Array.isArray(preferredCities) &&
-    preferredCities.length > 0
-      ? locationCityMatches(jobCity, preferredCities)
-      : true
-
-  if (modeOk || (typeof jobCity === "string" && jobCity.trim().length > 0 && cityOk)) {
-    whyCodes.push("WHY_LOCATION_MATCH")
-  }
-
   if (!job.yearsRequired || job.yearsRequired <= 1) whyCodes.push("WHY_EARLY_CAREER_FRIENDLY")
 
-  // Tool WHY only when the job actually lists explicit tools
+  // Location WHY: prefer city match when possible
+  {
+    const jobCity = job.location?.city ?? null
+    const allowedCities = profile.locationPreference?.allowedCities ?? null
+    const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
+    const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
+
+    const cityOk = jobCityKnown && hasCityPrefs ? locationCityMatches(jobCity!, allowedCities!) : false
+
+    const modeOk =
+      profile.locationPreference.mode !== "unclear" &&
+      job.location.mode !== "unclear" &&
+      profile.locationPreference.mode === job.location.mode
+
+    if (cityOk || modeOk) whyCodes.push("WHY_LOCATION_MATCH")
+  }
+
+  // Tool WHY only when the job lists explicit tools
   if (hasExplicitTools) {
     const missing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
     if (missing.length <= 1) whyCodes.push("WHY_TOOL_MATCH")
   }
 
-  // ---------------- Internship-specific WHY codes ----------------
-  if (job.internship.isInternship && job.internship.isSummer) {
-    whyCodes.push("WHY_SUMMER_INTERNSHIP_MATCH")
-  }
+  // Internship-specific WHY codes
+  if (job.internship?.isInternship && job.internship?.isSummer) whyCodes.push("WHY_SUMMER_INTERNSHIP_MATCH")
 
   if (
-    job.internship.isInPersonExplicit &&
+    job.internship?.isInPersonExplicit &&
     profile.constraints.hardNoFullyRemote &&
     (job.location.mode === "onsite" || job.location.mode === "hybrid")
   ) {
     whyCodes.push("WHY_IN_PERSON_MATCH")
   }
 
-  if (job.internship.mentionsAITools) {
-    whyCodes.push("WHY_AI_TOOLS_MATCH")
-  }
-
-  if (job.internship.isMarketingRotation && profile.targetFamilies.includes("Marketing")) {
+  if (job.internship?.mentionsAITools) whyCodes.push("WHY_AI_TOOLS_MATCH")
+  if (job.internship?.isMarketingRotation && profile.targetFamilies.includes("Marketing")) {
     whyCodes.push("WHY_MARKETING_ROTATION_MATCH")
   }
 
   // ---------------- Location mismatch (STRICT) ----------------
-  // Never penalize location unless we have:
-  // - explicit job city
-  // - AND explicit preferred city list
-  // - AND profile is constrained
-  const profileConstrained = !!profile.locationPreference.constrained
-  const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
-  const hasCityPrefs = Array.isArray(preferredCities) && preferredCities.length > 0
+  // Only penalize location when:
+  // - profile is constrained
+  // - job city is known
+  // - allowed city list is explicit
+  {
+    const profileConstrained = !!profile.locationPreference.constrained
+    const jobCity = job.location?.city ?? null
+    const allowedCities = profile.locationPreference?.allowedCities ?? null
+    const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
+    const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
 
-  if (profileConstrained && jobCityKnown && hasCityPrefs) {
-    if (!locationCityMatches(jobCity, preferredCities)) {
-      penalties.push({
-        key: "location_mismatch_constrained",
-        amount: computePenaltyAmount("location_mismatch_constrained"),
-        note: `Constrained city mismatch (job: ${jobCity})`,
-        riskCode: "RISK_LOCATION",
-      })
+    if (profileConstrained && jobCityKnown && hasCityPrefs) {
+      if (!locationCityMatches(jobCity!, allowedCities!)) {
+        penalties.push({
+          key: "location_mismatch_constrained",
+          amount: computePenaltyAmount("location_mismatch_constrained"),
+          note: `Constrained city mismatch (job: ${jobCity})`,
+          riskCode: "RISK_LOCATION",
+        })
+      }
     }
   }
 
@@ -205,29 +253,27 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // ---------------- Missing tools (STRICT) ----------------
+  // Missing tools (STRICT)
   if (hasExplicitTools) {
     const requiredMissing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
     const preferredMissing = job.preferredTools.filter((t) => toolMissing(profile.tools, t))
 
-    if (requiredMissing.length + preferredMissing.length > 0) {
-      for (const tool of requiredMissing) {
-        penalties.push({
-          key: "missing_core_tool",
-          amount: computePenaltyAmount("missing_core_tool"),
-          note: `Missing required tool: ${tool}`,
-          riskCode: "RISK_MISSING_TOOLS",
-        })
-      }
+    for (const tool of requiredMissing) {
+      penalties.push({
+        key: "missing_core_tool",
+        amount: computePenaltyAmount("missing_core_tool"),
+        note: `Missing required tool: ${tool}`,
+        riskCode: "RISK_MISSING_TOOLS",
+      })
+    }
 
-      for (const tool of preferredMissing) {
-        penalties.push({
-          key: "missing_preferred_tool",
-          amount: computePenaltyAmount("missing_preferred_tool"),
-          note: `Missing preferred tool: ${tool}`,
-          riskCode: "RISK_MISSING_TOOLS",
-        })
-      }
+    for (const tool of preferredMissing) {
+      penalties.push({
+        key: "missing_preferred_tool",
+        amount: computePenaltyAmount("missing_preferred_tool"),
+        note: `Missing preferred tool: ${tool}`,
+        riskCode: "RISK_MISSING_TOOLS",
+      })
     }
   }
 
@@ -284,11 +330,16 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     if (counts[p.key] <= maxStack) capped.push(p)
   }
 
+  // Total penalty sum with diminishing returns + hard cap
   const rawPenaltySum = capped.reduce((s, p) => s + p.amount, 0)
   const diminished = applyDiminishingReturns(rawPenaltySum)
   const penaltySum = Math.min(POLICY.score.penaltyStackCap, diminished)
 
-  let score = POLICY.score.startScore - penaltySum
+  // NEW score composition
+  const base = computeBaseScore(job, profile)
+  let score = base - penaltySum
+
+  // Clamp to your desired visible band
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
 
   const riskCodes = dedupeStrings(capped.map((p) => p.riskCode)) as RiskCode[]
