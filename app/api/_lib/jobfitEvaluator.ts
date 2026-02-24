@@ -1417,27 +1417,27 @@ return {
     // If any risks are shown, score cannot be max
     if (risk_flags.length > 0 && score === SCORE_MAX) score = SCORE_MAX - 1
 
-  // Pass path (should be rare here, since force-pass/grad mismatch already handled)
-if (decision === "Pass") {
-    const passReasons = buildPassReasons({
-        gate,
-        gradMismatchReason: null,
-        riskSignals: det.risks,
-    })
+      // Pass path (should be rare here, since force-pass/grad mismatch already handled)
+    if (decision === "Pass") {
+        const passReasons = buildPassReasons({
+            gate,
+            gradMismatchReason: null,
+            riskSignals: det.risks,
+        })
 
-    const passScore = enforceDecisionConsistentScore("Pass", det.score)
+        const passScore = enforceDecisionConsistentScore("Pass", det.score)
 
-    return {
-        decision: "Pass" as Decision,
-        icon: iconForDecision("Pass"),
-        score: passScore,
-        bullets: [],
-        risk_flags: passReasons.slice(0, 6),
-        next_step:
-            "It is recommended that you do not apply and focus your attention on more aligned positions.",
-        location_constraint,
+        return {
+            decision: "Pass" as Decision,
+            icon: iconForDecision("Pass"),
+            score: passScore,
+            bullets: [],
+            risk_flags: passReasons.slice(0, 6),
+            next_step:
+                "It is recommended that you do not apply and focus your attention on more aligned positions.",
+            location_constraint,
+        }
     }
-}
 
     const next_step =
         decision === "Review"
