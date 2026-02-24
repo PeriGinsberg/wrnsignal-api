@@ -3,19 +3,21 @@ import OpenAI from "openai"
 import crypto from "crypto"
 
 /**
- * WRNSignal JobFit Evaluator — deterministic-first
+ * WRNSignal JobFit Evaluator — deterministic-first (weighted risks)
  *
- * Non-negotiables enforced:
- * - Deterministic gates + hard exclusions override everything
- * - LLM is NOT used for decision/scoring (and not required for bullets)
- * - Score is truly deterministic, differentiated, never 100 (max 97)
- * - If any risks exist, score cannot remain at max
- * - Risks never include pros; Why never includes risk language
- * - If Pass, output only pass reasons (no positives)
- * - Output shape is stable for frontend
+ * Guarantees:
+ * - Deterministic gates and hard exclusions override everything
+ * - LLM is NOT used for decision/scoring (OpenAI client kept for future, unused here)
+ * - Score is deterministic, differentiated, never 100 (max 97)
+ * - If any risks are shown, score cannot remain at max
+ * - Weighted risk model (severity + type) drives score + Apply downgrade
+ * - Why and Risks are deterministically separated (no mixed bullets)
+ * - If Pass, show only pass reasons (no positives)
+ * - Output JSON shape is stable
  */
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) // kept for optional future use
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+void client // keep compiled even if unused
 
 type Decision = "Apply" | "Review" | "Pass"
 type LocationConstraint = "constrained" | "not_constrained" | "unclear"
@@ -30,26 +32,6 @@ type JobFacts = {
     hourlyEvidence?: string | null
     isContract: boolean
     contractEvidence?: string | null
-}
-
-type ProfileConstraints = {
-    hardNoHourlyPay: boolean
-    prefFullTime: boolean
-    hardNoContract: boolean
-    hardNoSales: boolean
-    hardNoGovernment: boolean
-    hardNoFullyRemote: boolean
-
-    // generalized “infinite constraints” pattern (start with the ones that matter)
-    hardNoAnalytics: boolean
-    hardNoRemote: boolean // “No Remote. OK hybrid/in-person.”
-    hardNoRelocation: boolean
-    hardNoHeavyTravel: boolean
-    hardNoNightsWeekends: boolean
-
-    // location preferences (used for deterministic floor_review on constrained roles)
-    preferredLocations: string[] // normalized tokens like "new york", "boston", "philadelphia", "washington dc"
-    preferredRegions: string[] // coarse: "northeast", "midatlantic", etc (optional)
 }
 
 type YM = { year: number; month: number } // month 1-12
@@ -69,14 +51,32 @@ type WhySignal = {
 
 type ScoreExplain = { label: string; delta: number; note?: string }
 
+type ProfileConstraints = {
+    hardNoHourlyPay: boolean
+    prefFullTime: boolean
+    hardNoContract: boolean
+    hardNoSales: boolean
+    hardNoGovernment: boolean
+    hardNoFullyRemote: boolean
+
+    // scalable constraint catalog (add keys over time without rewriting logic)
+    hardNoAnalytics: boolean
+    hardNoRemote: boolean
+    hardNoRelocation: boolean
+    hardNoHeavyTravel: boolean
+    hardNoNightsWeekends: boolean
+
+    preferredLocations: string[]
+}
+
 /* ----------------------- score policy ----------------------- */
-const SCORE_MAX = 97 // never output 100
+const SCORE_MAX = 97 // never 100
 const APPLY_THRESHOLD = 80
 const REVIEW_THRESHOLD = 60
-const REVIEW_CAP_IF_FLOORED = 79
+const REVIEW_CAP_IF_FLOORED = 79 // only used to prevent Review looking like Apply
 const PASS_CAP = 59
 
-/* ----------------------- basic helpers ----------------------- */
+/* ----------------------- helpers ----------------------- */
 function normalizeText(t: string) {
     return (t || "")
         .replace(/\u202f/g, " ")
@@ -88,7 +88,6 @@ function normalizeText(t: string) {
 function clampScore(n: any) {
     const x = Number(n)
     if (!Number.isFinite(x)) return 0
-    // integer scores only
     return Math.max(0, Math.min(100, Math.round(x)))
 }
 
@@ -99,18 +98,9 @@ function iconForDecision(decision: Decision) {
 }
 
 function stableFingerprint(jobText: string, profileText: string) {
-    // Deterministic fingerprint for caching and stability (not returned to frontend to avoid shape drift)
     const a = normalizeText(jobText)
     const b = normalizeText(profileText)
     return crypto.createHash("sha256").update(a + "\n---\n" + b).digest("hex")
-}
-
-function ensureArrayOfStrings(x: any, max: number) {
-    if (!Array.isArray(x)) return []
-    return x
-        .map((v) => String(v ?? "").trim())
-        .filter(Boolean)
-        .slice(0, max)
 }
 
 function unique(arr: string[]) {
@@ -170,7 +160,7 @@ function jobMentionsHybridOrOnsite(jobText: string) {
         /\bon-?site\b/.test(t) ||
         /\bin office\b/.test(t) ||
         /\b\d+\s*days\s*(on-?site|onsite|in office)\b/.test(t) ||
-        /\boffice\b/.test(t) // “work in our Irvine office”
+        /\boffice\b/.test(t)
     )
 }
 
@@ -185,6 +175,9 @@ const CITY_ALIASES: Record<string, string[]> = {
     boston: ["boston"],
     philadelphia: ["philadelphia", "philly"],
     "washington dc": ["washington dc", "washington, d.c.", "dc", "d.c."],
+    "los angeles": ["los angeles", "la"],
+    "san francisco": ["san francisco", "sf", "bay area"],
+    irvine: ["irvine"],
 }
 
 const STATE_ALIASES: Record<string, string[]> = {
@@ -203,7 +196,6 @@ function jobExtractLocationTokens(jobText: string): string[] {
     const t = normalizeText(jobText)
     const out: string[] = []
 
-    // common “<City>, <State>” patterns
     const cityState =
         t.match(/\b([a-z]+(?:\s+[a-z]+){0,2})\s*,\s*(ca|ny|ma|pa|nj|oh|dc|va|md)\b/) ||
         t.match(/\bin\s+([a-z]+(?:\s+[a-z]+){0,2})\s*,\s*(ca|ny|ma|pa|nj|oh|dc|va|md)\b/)
@@ -212,19 +204,18 @@ function jobExtractLocationTokens(jobText: string): string[] {
         out.push(cityState[2].trim())
     }
 
-    // “in our Irvine, California office” style
-    const officeLoc = t.match(/\bin\s+our\s+([a-z]+(?:\s+[a-z]+){0,2})\s*,\s*(california|new york|massachusetts|pennsylvania)\s+office\b/)
+    const officeLoc = t.match(
+        /\bin\s+our\s+([a-z]+(?:\s+[a-z]+){0,2})\s*,\s*(california|new york|massachusetts|pennsylvania)\s+office\b/
+    )
     if (officeLoc?.[1] && officeLoc?.[2]) {
         out.push(officeLoc[1].trim())
         out.push(officeLoc[2].trim())
     }
 
-    // state mentions
     for (const [abbr, names] of Object.entries(STATE_ALIASES)) {
         if (names.some((n) => t.includes(n))) out.push(abbr)
     }
 
-    // city mentions
     for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
         if (aliases.some((a) => t.includes(a))) out.push(canonical)
     }
@@ -232,40 +223,21 @@ function jobExtractLocationTokens(jobText: string): string[] {
     return unique(out)
 }
 
-function locationPreferenceMismatch(args: {
-    profilePreferred: string[]
-    jobTokens: string[]
-}): boolean {
-    const { profilePreferred, jobTokens } = args
-    const pref = profilePreferred.map((s) => normalizeText(s))
-    const jt = jobTokens.map((s) => normalizeText(s))
-
-    if (!pref.length) return false
-    if (!jt.length) return false // if job location truly unknown, do not enforce mismatch
-
-    // If any preferred token matches any job token, treat as not mismatched.
-    // Otherwise mismatched.
-    const anyMatch = pref.some((p) => jt.some((j) => j === p || j.includes(p) || p.includes(j)))
-    return !anyMatch
-}
-
-/* ----------------------- deterministic extraction: profile constraints ----------------------- */
 function extractPreferredLocations(profileText: string): string[] {
     const t = normalizeText(profileText)
 
-    // capture explicit “Wants to be in …” lists if present
-    const wants = t.match(/\b(wants to be in|prefer(?:s)?|preferred|target(?:s)?)\b[\s:]{0,10}([a-z,\.\s]+)\b/)
-    const fragment = wants?.[2] ? wants[2].slice(0, 140) : ""
+    const wants = t.match(
+        /\b(wants to be in|prefer(?:s)?|preferred|target(?:s)?)\b[\s:]{0,10}([a-z,\.\s]+)\b/
+    )
+    const fragment = wants?.[2] ? wants[2].slice(0, 180) : ""
+    const hay = fragment ? fragment + " " + t : t
 
     const tokens: string[] = []
-
-    // canonical city detection (from either full profile or fragment)
-    const hay = fragment ? fragment + " " + t : t
     for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
         if (aliases.some((a) => hay.includes(a))) tokens.push(canonical)
     }
 
-    // also allow raw tokens “ny”, “boston”, etc
+    // common shorthand
     if (hay.includes("nyc")) tokens.push("new york")
     if (hay.includes("new york")) tokens.push("new york")
     if (hay.includes("boston")) tokens.push("boston")
@@ -276,6 +248,21 @@ function extractPreferredLocations(profileText: string): string[] {
     return unique(tokens)
 }
 
+function locationPreferenceMismatch(args: {
+    profilePreferred: string[]
+    jobTokens: string[]
+}) {
+    const pref = args.profilePreferred.map((s) => normalizeText(s))
+    const jt = args.jobTokens.map((s) => normalizeText(s))
+
+    if (!pref.length) return false
+    if (!jt.length) return false // if job truly doesn't state location, don't enforce mismatch
+
+    const anyMatch = pref.some((p) => jt.some((j) => j === p || j.includes(p) || p.includes(j)))
+    return !anyMatch
+}
+
+/* ----------------------- deterministic extraction: profile constraints ----------------------- */
 function extractProfileConstraints(profileText: string): ProfileConstraints {
     const t0 = normalizeText(profileText)
 
@@ -304,7 +291,8 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
         t0.includes("commission-based")
 
     const hardNoGovernment =
-        (t0.includes("do not want") && (t0.includes("government") || t0.includes("public sector"))) ||
+        (t0.includes("do not want") &&
+            (t0.includes("government") || t0.includes("public sector"))) ||
         t0.includes("no government") ||
         t0.includes("governmental") ||
         t0.includes("public sector")
@@ -351,7 +339,6 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
         (t0.includes("cannot") && t0.includes("nights"))
 
     const preferredLocations = extractPreferredLocations(profileText)
-    const preferredRegions: string[] = [] // reserved (keep stable, do not invent)
 
     return {
         hardNoHourlyPay,
@@ -366,7 +353,6 @@ function extractProfileConstraints(profileText: string): ProfileConstraints {
         hardNoHeavyTravel,
         hardNoNightsWeekends,
         preferredLocations,
-        preferredRegions,
     }
 }
 
@@ -393,14 +379,14 @@ function inferJobFamily(jobText: string): JobFamily {
         return "accounting_finance"
 
     if (
-        /\b(media buying|media buy|brand awareness media|tv\b|billboards?|podcasts?|radio|placements?|allocate marketing budget)\b/.test(
+        /\b(media buying|media buy|programmatic|allocate marketing budget|media planning|media strategy)\b/.test(
             t
         )
     )
         return "brand_marketing_media"
 
     if (
-        /\b(marketing analytics|marketing analyst|analyst intern|campaign outcome measurement|measurement and reporting|consumer data|market data|insights|dashboards?)\b/.test(
+        /\b(marketing analytics|marketing analyst|data analyst|business intelligence|bi\b|analytics intern|analyst intern)\b/.test(
             t
         )
     )
@@ -414,14 +400,12 @@ function inferJobFamily(jobText: string): JobFamily {
         return "customer_success"
 
     if (
-        /\b(program manager|project manager|program management|project management|pm\b)\b/.test(
-            t
-        )
+        /\b(program manager|project manager|program management|project management|pm\b)\b/.test(t)
     )
         return "pm_program"
 
     if (
-        /\b(strategy|operations|biz ops|business operations|strategic planning|operational|strategic partnerships)\b/.test(
+        /\b(strategy|operations|biz ops|business operations|strategic planning|operational)\b/.test(
             t
         )
     )
@@ -438,19 +422,6 @@ function inferJobFamily(jobText: string): JobFamily {
     return "unknown"
 }
 
-function jobIsAnalyticsHeavy(jobText: string) {
-    const t = normalizeText(jobText)
-
-    const strongRole = /\b(analyst|analytics|measurement|reporting|dashboards?|insights)\b/.test(t)
-    const dataVerbs = /\b(analy[sz]e|analysis|measure|track|report|evaluate|metrics?|kpi|roi)\b/.test(t)
-    const dataNouns = /\b(market data|consumer data|data collection|data-driven|statistics|quantitative)\b/.test(t)
-    const tools = /\b(google analytics|ga4|sql|tableau|power bi|r\b|python\b)\b/.test(t)
-
-    // high precision: require at least two categories of signal
-    const buckets = [strongRole, dataVerbs, dataNouns, tools].filter(Boolean).length
-    return buckets >= 2
-}
-
 function profileTargetsAccounting(profileText: string) {
     const t = normalizeText(profileText)
     return /\b(accounting|accountant|ar\b|ap\b|bookkeeping|controller|general ledger|reconciliation)\b/.test(
@@ -458,15 +429,81 @@ function profileTargetsAccounting(profileText: string) {
     )
 }
 
-function profilePrefersCreativeOverAnalytics(profileText: string) {
+/**
+ * Heavy analytics should be HIGH PRECISION.
+ * It should trigger for true analyst/data roles (e.g., "Marketing Analyst Intern"),
+ * not for normal email marketing roles that mention "performance reports" or "A/B tests."
+ */
+function jobIsAnalyticsHeavy(jobText: string) {
+    const t = normalizeText(jobText)
+
+    const titleSignal = /\b(marketing analyst|data analyst|analytics\b|business intelligence|bi\b)\b/.test(
+        t
+    )
+
+    const hardAnalyticsTools =
+        /\b(sql|tableau|power bi|r\b|python\b|ga4|google analytics)\b/.test(t)
+
+    const quantLanguage = /\b(statistics|quantitative|modeling|forecasting|regression)\b/.test(t)
+
+    const measurementLanguage = /\b(measurement|attribution|dashboard|kpi|roi|reporting|insights)\b/.test(
+        t
+    )
+
+    // High precision rule:
+    // - Title signal alone is enough (analyst/analytics/BI titles)
+    // - Or hard analytics tools + (quant language OR measurement language)
+    // - Or quant language + measurement language together
+    if (titleSignal) return true
+    if (hardAnalyticsTools && (quantLanguage || measurementLanguage)) return true
+    if (quantLanguage && measurementLanguage) return true
+
+    return false
+}
+
+/* ----------------------- deterministic eligibility: years + mba ----------------------- */
+function extractRequiredYears(jobText: string): number | null {
+    const t = normalizeText(jobText)
+
+    const plus = t.match(/\b(\d{1,2})\s*\+\s*years?\b/)
+    if (plus?.[1]) return Number(plus[1])
+
+    const min = t.match(/\bminimum\s+(\d{1,2})\s*years?\b/)
+    if (min?.[1]) return Number(min[1])
+
+    const range = t.match(/\b(\d{1,2})\s*[-–]\s*(\d{1,2})\s*years?\b/)
+    if (range?.[1]) return Number(range[1])
+
+    const plain = t.match(/\b(\d{1,2})\s*years?\s+of\s+experience\b/)
+    if (plain?.[1]) return Number(plain[1])
+
+    return null
+}
+
+function profileLooksEarlyCareer(profileText: string) {
     const t = normalizeText(profileText)
-    const creative = /\b(creative strategy|creative|graphic design|visual design|photography|storytelling|brand messaging|communications|pr|media relations)\b/.test(
-        t
+    return (
+        t.includes("class of") ||
+        t.includes("expected graduation") ||
+        t.includes("expected to graduate") ||
+        t.includes("undergraduate") ||
+        t.includes("b.s.") ||
+        t.includes("b.a.") ||
+        t.includes("bachelor") ||
+        t.includes("student") ||
+        t.includes("junior") ||
+        t.includes("sophomore")
     )
-    const quant = /\b(statistics|quantitative|data analysis|sql|tableau|power bi|r\b|python\b)\b/.test(
-        t
-    )
-    return creative && !quant
+}
+
+function jobRequiresMBA(jobText: string) {
+    const t = normalizeText(jobText)
+    return /\bmba\b/.test(t) || t.includes("master of business administration")
+}
+
+function profileHasMBA(profileText: string) {
+    const t = normalizeText(profileText)
+    return /\bmba\b/.test(t) || t.includes("master of business administration")
 }
 
 /* ----------------------- graduation window (deterministic eligibility) ----------------------- */
@@ -545,9 +582,7 @@ function extractCandidateGrad(profileText: string): YM | null {
         if (Number.isFinite(year)) return { year, month: 5 }
     }
 
-    const y = t.match(
-        /\b(graduate|graduating|graduation)\b[^\d]{0,20}\b(20\d{2})\b/i
-    )
+    const y = t.match(/\b(graduate|graduating|graduation)\b[^\d]{0,20}\b(20\d{2})\b/i)
     if (y) {
         const year = Number(y[2])
         if (Number.isFinite(year)) return { year, month: 5 }
@@ -574,18 +609,70 @@ function formatYM(ym: YM) {
     return `${monthNames[ym.month - 1]} ${ym.year}`
 }
 
-/* ----------------------- deterministic “constraint catalog” (scales) ----------------------- */
+/* ----------------------- tools (deterministic + aliases) ----------------------- */
+function extractToolsFromJob(jobText: string) {
+    const t = normalizeText(jobText)
+
+    // curated: keep small and meaningful
+    const toolCatalog = [
+        "google analytics",
+        "ga4",
+        "asana",
+        "sql",
+        "tableau",
+        "power bi",
+        "r",
+        "python",
+        "excel",
+        "powerpoint",
+        "microsoft office",
+        "google workspace",
+    ]
+
+    return toolCatalog.filter((tool) => t.includes(tool))
+}
+
+function profileMentionsTool(profileText: string, tool: string) {
+    const t = normalizeText(profileText)
+    const target = normalizeText(tool)
+
+    // direct match
+    if (t.includes(target)) return true
+
+    // aliases and “implied coverage”
+    const hasMsOffice =
+        t.includes("microsoft office") || t.includes("ms office") || t.includes("office suite")
+    if (hasMsOffice && (target === "excel" || target === "powerpoint")) return true
+
+    const hasGoogleAnalytics = t.includes("google analytics")
+    if (hasGoogleAnalytics && target === "ga4") return true
+
+    const hasAdobeCC = t.includes("adobe creative cloud") || t.includes("adobe cc")
+    if (
+        hasAdobeCC &&
+        (target === "photoshop" || target === "illustrator" || target === "indesign")
+    )
+        return true
+
+    return false
+}
+
+function toolPenalty(missingCount: number) {
+    if (missingCount <= 0) return 0
+    if (missingCount === 1) return 3
+    if (missingCount === 2) return 6
+    if (missingCount === 3) return 9
+    return 12
+}
+
+/* ----------------------- deterministic “constraint catalog” ----------------------- */
 type ConstraintKey =
     | "no_hourly"
     | "no_contract"
     | "no_sales"
     | "no_government"
-    | "no_fully_remote"
     | "no_remote"
     | "no_heavy_analytics"
-    | "no_relocation"
-    | "no_heavy_travel"
-    | "no_nights_weekends"
     | "location_mismatch_constrained"
 
 type ConstraintRule = {
@@ -635,8 +722,7 @@ const CONSTRAINT_RULES: ConstraintRule[] = [
         kind: "force_pass",
         match: ({ jobText, profile }) => {
             if (!profile.hardNoSales) return { matched: false }
-            const fam = inferJobFamily(jobText)
-            if (fam === "sales") {
+            if (inferJobFamily(jobText) === "sales") {
                 return {
                     matched: true,
                     reason:
@@ -651,12 +737,25 @@ const CONSTRAINT_RULES: ConstraintRule[] = [
         kind: "force_pass",
         match: ({ jobText, profile }) => {
             if (!profile.hardNoGovernment) return { matched: false }
-            const fam = inferJobFamily(jobText)
-            if (fam === "government_public") {
+            if (inferJobFamily(jobText) === "government_public") {
                 return {
                     matched: true,
                     reason:
                         "Role appears to be government/public sector, which the candidate explicitly excluded.",
+                }
+            }
+            return { matched: false }
+        },
+    },
+    {
+        key: "no_remote",
+        kind: "force_pass",
+        match: ({ jobText, profile }) => {
+            if (!profile.hardNoRemote) return { matched: false }
+            if (jobIsFullyRemote(jobText)) {
+                return {
+                    matched: true,
+                    reason: "Role is fully remote, and the candidate explicitly excluded remote roles.",
                 }
             }
             return { matched: false }
@@ -671,37 +770,7 @@ const CONSTRAINT_RULES: ConstraintRule[] = [
                 return {
                     matched: true,
                     reason:
-                        "Role is analytics/measurement-heavy (analyst-style responsibilities), and the candidate explicitly excluded heavy analytical roles.",
-                }
-            }
-            return { matched: false }
-        },
-    },
-    {
-        key: "no_remote",
-        kind: "force_pass",
-        match: ({ jobText, profile }) => {
-            if (!profile.hardNoRemote) return { matched: false }
-            if (jobIsFullyRemote(jobText)) {
-                return {
-                    matched: true,
-                    reason:
-                        "Role is fully remote, and the candidate explicitly excluded remote roles.",
-                }
-            }
-            return { matched: false }
-        },
-    },
-    {
-        key: "no_fully_remote",
-        kind: "floor_review",
-        match: ({ jobText, profile }) => {
-            if (!profile.hardNoFullyRemote) return { matched: false }
-            if (jobIsFullyRemote(jobText)) {
-                return {
-                    matched: true,
-                    reason:
-                        "Role is fully remote, and the candidate prefers not to be fully remote.",
+                        "Role is analytics-heavy (analyst/data responsibilities), and the candidate explicitly excluded heavy analytical roles.",
                 }
             }
             return { matched: false }
@@ -711,11 +780,6 @@ const CONSTRAINT_RULES: ConstraintRule[] = [
         key: "location_mismatch_constrained",
         kind: "floor_review",
         match: ({ profile, locationConstraint, jobLocationTokens }) => {
-            // only enforce a mismatch if:
-            // - candidate provided preferred locations, and
-            // - job appears constrained (hybrid/onsite), and
-            // - job location tokens are known, and
-            // - no overlap
             if (locationConstraint !== "constrained") return { matched: false }
             if (!profile.preferredLocations?.length) return { matched: false }
             if (!jobLocationTokens?.length) return { matched: false }
@@ -761,14 +825,11 @@ function evaluateGates(args: {
             locationConstraint,
             jobLocationTokens,
         })
-        if (res.matched) {
-            return { type: "force_pass", reason: res.reason || "Hard constraint triggered." }
-        }
+        if (res.matched) return { type: "force_pass", reason: res.reason || "Hard constraint triggered." }
     }
 
-    // 2) Existing deterministic mismatch gates that are not “candidate constraint” phrased
+    // 2) Non-candidate “hard mismatch” logic
     const fam = inferJobFamily(jobText)
-
     if (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) {
         return {
             type: "force_pass",
@@ -777,29 +838,8 @@ function evaluateGates(args: {
         }
     }
 
-    if (fam === "brand_marketing_media") {
-        // media-buying roles need explicit paid media signals
-        const t = normalizeText(profileText)
-        const hasPaidMedia =
-            t.includes("media buying") ||
-            t.includes("paid media") ||
-            t.includes("programmatic") ||
-            t.includes("media planning") ||
-            t.includes("media strategy") ||
-            t.includes("google ads") ||
-            t.includes("meta ads")
-
-        if (!hasPaidMedia) {
-            return {
-                type: "floor_review",
-                reason:
-                    "Role is media buying/budget allocation focused, but the profile does not show direct paid media or media buying experience.",
-            }
-        }
-    }
-
-    // 3) Floor-review rules next
-    // Contract vs full-time preference is not a hard exclusion, but floors to Review
+    // 3) Floor review next (soft gates)
+    // Contract vs full-time preference floors to Review (unless hardNoContract already would have force-passed)
     if (profile.prefFullTime && jobFacts.isContract && !profile.hardNoContract) {
         const ev = jobFacts.contractEvidence ? ` (signals: ${jobFacts.contractEvidence})` : ""
         return {
@@ -808,7 +848,7 @@ function evaluateGates(args: {
         }
     }
 
-    // Candidate prefers not fully remote (soft floor)
+    // Location mismatch floor
     for (const rule of CONSTRAINT_RULES.filter((r) => r.kind === "floor_review")) {
         const res = rule.match({
             jobText,
@@ -818,103 +858,50 @@ function evaluateGates(args: {
             locationConstraint,
             jobLocationTokens,
         })
-        if (res.matched) {
-            return { type: "floor_review", reason: res.reason || "Constraint floors to Review." }
-        }
+        if (res.matched) return { type: "floor_review", reason: res.reason || "Constraint floors to Review." }
     }
 
     return { type: "none" }
 }
 
-/* ----------------------- deterministic eligibility: years + mba ----------------------- */
-function extractRequiredYears(jobText: string): number | null {
-    const t = normalizeText(jobText)
-
-    const plus = t.match(/\b(\d{1,2})\s*\+\s*years?\b/)
-    if (plus?.[1]) return Number(plus[1])
-
-    const min = t.match(/\bminimum\s+(\d{1,2})\s*years?\b/)
-    if (min?.[1]) return Number(min[1])
-
-    const range = t.match(/\b(\d{1,2})\s*[-–]\s*(\d{1,2})\s*years?\b/)
-    if (range?.[1]) return Number(range[1])
-
-    const plain = t.match(/\b(\d{1,2})\s*years?\s+of\s+experience\b/)
-    if (plain?.[1]) return Number(plain[1])
-
-    return null
-}
-
-function profileLooksEarlyCareer(profileText: string) {
-    const t = normalizeText(profileText)
-    return (
-        t.includes("class of") ||
-        t.includes("expected graduation") ||
-        t.includes("expected to graduate") ||
-        t.includes("undergraduate") ||
-        t.includes("b.s.") ||
-        t.includes("b.a.") ||
-        t.includes("bachelor") ||
-        t.includes("student") ||
-        t.includes("junior") ||
-        t.includes("sophomore")
-    )
-}
-
-function jobRequiresMBA(jobText: string) {
-    const t = normalizeText(jobText)
-    return /\bmba\b/.test(t) || t.includes("master of business administration")
-}
-
-function profileHasMBA(profileText: string) {
-    const t = normalizeText(profileText)
-    return /\bmba\b/.test(t) || t.includes("master of business administration")
-}
-
-/* ----------------------- tools (deterministic) ----------------------- */
-function extractToolsFromJob(jobText: string) {
-    const t = normalizeText(jobText)
-
-    // curated list: only include what you actually care about in scoring
-    const toolCatalog = [
-        "google analytics",
-        "ga4",
-        "asana",
-        "sql",
-        "tableau",
-        "power bi",
-        "r",
-        "python",
-        "excel",
-        "microsoft office",
-        "google workspace",
-    ]
-
-    return toolCatalog.filter((tool) => t.includes(tool))
-}
-
-function profileMentionsTool(profileText: string, tool: string) {
-    const t = normalizeText(profileText)
-    return t.includes(tool)
-}
-
-function toolPenalty(missingCount: number) {
-    // deterministic, monotonic, capped
-    if (missingCount <= 0) return 0
-    if (missingCount === 1) return 3
-    if (missingCount === 2) return 6
-    if (missingCount === 3) return 9
-    return 12
-}
-
-/* ----------------------- deterministic risk/why signals ----------------------- */
-function severityPenalty(sev: Severity) {
-    if (sev === "severe") return 18
-    if (sev === "high") return 12
-    if (sev === "medium") return 7
+/* ----------------------- weighted risk model ----------------------- */
+function riskSeverityValue(sev: Severity) {
+    if (sev === "severe") return 24
+    if (sev === "high") return 14
+    if (sev === "medium") return 8
     return 3
 }
 
+function riskTypeMultiplier(code: string) {
+    // tooling gaps should not blow up decisioning
+    if (code === "tooling_gap") return 0.7
+    // location mismatch is more meaningful on constrained roles
+    if (code === "location_mismatch") return 1.2
+    // floor gate is informational but real
+    if (code === "floor_review_gate") return 1.0
+    return 1.0
+}
+
+function computeRiskPoints(risks: RiskSignal[]) {
+    let points = 0
+    let hasSevere = false
+    let maxSeverity: Severity = "low"
+
+    const rank = (s: Severity) =>
+        s === "severe" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1
+
+    for (const r of risks) {
+        const base = riskSeverityValue(r.severity)
+        const mult = riskTypeMultiplier(r.code)
+        points += base * mult
+        if (r.severity === "severe") hasSevere = true
+        if (rank(r.severity) > rank(maxSeverity)) maxSeverity = r.severity
+    }
+
+    return { points: Math.round(points), hasSevere, maxSeverity }
+}
+
+/* ----------------------- deterministic signals (why + risks) ----------------------- */
 function buildSignals(args: {
     jobText: string
     profileText: string
@@ -930,44 +917,43 @@ function buildSignals(args: {
     const why: WhySignal[] = []
     const risks: RiskSignal[] = []
 
-    const fam = inferJobFamily(jobText)
-    const analyticsHeavy = jobIsAnalyticsHeavy(jobText)
+    const jt = normalizeText(jobText)
+    const pt = normalizeText(profileText)
 
-    // WHY signals (positives)
-    if (fam === "marketing_analytics" || fam === "brand_marketing_media" || fam === "unknown") {
-        if (/\b(marketing|brand|communications|creative strategy|advertising|campaign)\b/.test(
-            normalizeText(profileText)
-        )) {
-            why.push({
-                code: "marketing_interest_alignment",
-                note: "Profile targets brand marketing/communications and consumer-focused work.",
-            })
-        }
+    // WHY: marketing/communications alignment
+    if (/\b(brand marketing|brand|communications|creative strategy|advertising|campaign|email marketing|digital marketing|e-commerce)\b/.test(pt)) {
+        why.push({
+            code: "marketing_interest_alignment",
+            note: "Profile targets brand marketing/communications and consumer-focused work.",
+        })
     }
 
-    if (/\b(adobe|photoshop|illustrator|indesign|canva)\b/.test(normalizeText(profileText))) {
+    // WHY: creative toolkit
+    if (/\b(adobe|photoshop|illustrator|indesign|canva)\b/.test(pt)) {
         why.push({
             code: "creative_tools_strength",
             note: "Strong creative production toolkit (design and content creation).",
         })
     }
 
-    if (/\b(client|stakeholder|presentation|deck|communications audit|strategy)\b/.test(
-        normalizeText(profileText)
-    )) {
+    // WHY: client + coordination
+    if (/\b(client|stakeholder|coordina|presentation|deck|communications audit|strategy)\b/.test(pt)) {
         why.push({
             code: "client_comms_strength",
             note: "Relevant communication and client-facing execution experience (projects and coordination).",
         })
     }
 
-    // RISK signals (gaps/constraints) — strictly negative phrasing
-    // Gate is handled elsewhere, but can still create risks for non-PASS paths
+    // RISKS: floor gate reason becomes a medium risk (still negative, but not auto-kill)
     if (gate.type === "floor_review" && gate.reason) {
-        risks.push({ code: "floor_review_gate", severity: "medium", note: gate.reason })
+        risks.push({
+            code: "floor_review_gate",
+            severity: "medium",
+            note: gate.reason,
+        })
     }
 
-    // Location mismatch for constrained roles (if not already a floor reason)
+    // RISKS: location mismatch (only when we can prove it and role is constrained)
     if (
         locationConstraint === "constrained" &&
         profile.preferredLocations.length &&
@@ -988,42 +974,35 @@ function buildSignals(args: {
         }
     }
 
-    // Analytics mismatch (soft risk) when candidate prefers creative and job is analytics-heavy
-    // Note: if profile.hardNoAnalytics is true, this job would already be force-pass.
-    if (!profile.hardNoAnalytics && analyticsHeavy && profilePrefersCreativeOverAnalytics(profileText)) {
-        risks.push({
-            code: "analytics_heavy_role",
-            severity: "high",
-            note: "Role is measurement/analysis-heavy, but the profile emphasizes creative strengths with limited quantitative evidence.",
-        })
-    }
-
-    // Tooling gaps
+    // RISKS: tooling gaps (deterministic)
     const tools = extractToolsFromJob(jobText)
     if (tools.length) {
         const missing = tools.filter((tool) => !profileMentionsTool(profileText, tool))
         if (missing.length) {
-            // severity by how central these tools are
-            const hasAnalyticsTools = missing.some((m) =>
-                ["google analytics", "ga4", "sql", "tableau", "power bi", "r", "python"].includes(m)
+            const missingHardAnalytics = missing.some((m) =>
+                ["google analytics", "ga4", "sql", "tableau", "power bi", "r", "python"].includes(
+                    normalizeText(m)
+                )
             )
             risks.push({
                 code: "tooling_gap",
-                severity: hasAnalyticsTools ? "high" : "medium",
+                severity: missingHardAnalytics ? "high" : "medium",
                 note:
                     missing.length === 1
                         ? `Job mentions ${missing[0]}, but the profile does not show it.`
-                        : `Job mentions tools not shown in the profile (${missing.slice(0, 5).join(", ")}).`,
+                        : `Job mentions tools not shown in the profile (${missing
+                              .slice(0, 5)
+                              .join(", ")}).`,
             })
         }
     }
 
-    // Hourly/contract signals (if not hard-excluded)
+    // RISKS: hourly/contract signals (if not hard-excluded)
     if (jobFacts.isHourly && !profile.hardNoHourlyPay) {
         risks.push({
             code: "hourly_signal",
             severity: "low",
-            note: "Job signals hourly compensation, which may be less aligned with typical internship expectations.",
+            note: "Job signals hourly compensation.",
         })
     }
 
@@ -1035,23 +1014,25 @@ function buildSignals(args: {
         })
     }
 
-    // De-dupe by code (keep first)
-    const seenRisk = new Set<string>()
+    // Dedupe by code
+    const seenR = new Set<string>()
     const cleanRisks: RiskSignal[] = []
     for (const r of risks) {
-        if (!r?.note) continue
-        if (seenRisk.has(r.code)) continue
-        seenRisk.add(r.code)
-        cleanRisks.push(r)
+        const note = (r.note || "").trim()
+        if (!note) continue
+        if (seenR.has(r.code)) continue
+        seenR.add(r.code)
+        cleanRisks.push({ ...r, note })
     }
 
-    const seenWhy = new Set<string>()
+    const seenW = new Set<string>()
     const cleanWhy: WhySignal[] = []
     for (const w of why) {
-        if (!w?.note) continue
-        if (seenWhy.has(w.code)) continue
-        seenWhy.add(w.code)
-        cleanWhy.push(w)
+        const note = (w.note || "").trim()
+        if (!note) continue
+        if (seenW.has(w.code)) continue
+        seenW.add(w.code)
+        cleanWhy.push({ ...w, note })
     }
 
     return { why: cleanWhy, risks: cleanRisks }
@@ -1073,7 +1054,7 @@ function computeDeterministicScore(args: {
     let score = SCORE_MAX
     const explain: ScoreExplain[] = []
 
-    // Eligibility mismatches (heavy penalties)
+    // Eligibility mismatches (big hits)
     const mbaMismatch = jobRequiresMBA(jobText) && !profileHasMBA(profileText)
     if (mbaMismatch) {
         score -= 60
@@ -1104,7 +1085,7 @@ function computeDeterministicScore(args: {
         }
     }
 
-    // Build deterministic signals (also used to generate bullets)
+    // Signals (deterministic)
     const signals = buildSignals({
         jobText,
         profileText,
@@ -1115,8 +1096,7 @@ function computeDeterministicScore(args: {
         jobLocationTokens,
     })
 
-    // Gate effects on score (deterministic, but not “forced to a number”)
-    // force_pass is handled outside; floor_review caps later if needed.
+    // Small gate score impact (not forced-to-number behavior)
     if (gate.type === "floor_review") {
         score -= 6
         explain.push({
@@ -1126,7 +1106,7 @@ function computeDeterministicScore(args: {
         })
     }
 
-    // Tool penalty (deterministic)
+    // Tool penalty is scored separately from risk points (so tools still differentiate Apply vs Apply)
     const tools = extractToolsFromJob(jobText)
     if (tools.length) {
         const missing = tools.filter((tool) => !profileMentionsTool(profileText, tool))
@@ -1144,100 +1124,43 @@ function computeDeterministicScore(args: {
         }
     }
 
-    // Risk penalties by severity (this is what makes Review scores differentiate)
-    // These penalties are deterministic and come from deterministic risk signals.
-    // IMPORTANT: if any risks exist, score cannot remain at max.
-    let riskPenalty = 0
-    for (const r of signals.risks) riskPenalty += severityPenalty(r.severity)
-
-    // cap risk penalty so it doesn't become absurd, but keep it meaningful
-    riskPenalty = Math.min(riskPenalty, 42)
-
+    // Weighted risk points affect score (this creates real Review differentiation)
+    const rp = computeRiskPoints(signals.risks)
+    // Cap to keep scores sane, but still meaningful
+    const riskPenalty = Math.min(rp.points, 42)
     if (riskPenalty > 0) {
         score -= riskPenalty
         explain.push({
             label: "Risk penalties applied",
             delta: -riskPenalty,
-            note: "Score reduced based on number and severity of deterministic risks.",
+            note: "Score reduced based on weighted risk severity.",
         })
     }
 
-    // Work-structure penalties (distinct from “risk list” to keep scoring richer)
-    if (profile.prefFullTime && jobFacts.isContract) {
-        score -= 8
-        explain.push({
-            label: "Contract vs full-time preference",
-            delta: -8,
-            note: "Role appears contract while candidate prefers full-time.",
-        })
-    }
-
-    if (profile.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
-        score -= 10
-        explain.push({
-            label: "Fully remote preference mismatch",
-            delta: -10,
-            note: "Role is fully remote and candidate prefers not fully remote.",
-        })
-    }
-
-    if (jobFacts.isHourly && !profile.hardNoHourlyPay) {
-        score -= 10
-        explain.push({
-            label: "Hourly compensation signal",
-            delta: -10,
-            note: "Job signals hourly compensation.",
-        })
-    }
-
-    // Final clamp and invariants
     score = clampScore(score)
     score = Math.min(score, SCORE_MAX)
 
-    // Hard invariant: if any risks exist, score must be below max
+    // If any risks exist, score cannot remain at max
     if (signals.risks.length > 0 && score === SCORE_MAX) score = SCORE_MAX - 1
 
     return { score, explain, risks: signals.risks, why: signals.why }
 }
 
 /* ----------------------- deterministic decisioning ----------------------- */
-function decideFinal(args: {
-    baseDecision: Decision
-    score: number
-    gate: Gate
-    gradMismatch: boolean
-}): Decision {
-    const { baseDecision, score, gate, gradMismatch } = args
-
-    if (gate.type === "force_pass") return "Pass"
-    if (gradMismatch) return "Pass"
-
-    // score-based default
-    let d: Decision = "Review"
-    if (score >= APPLY_THRESHOLD) d = "Apply"
-    else if (score >= REVIEW_THRESHOLD) d = "Review"
-    else d = "Pass"
-
-    // floor_review gate prevents Apply regardless of score
-    if (gate.type === "floor_review" && d === "Apply") d = "Review"
-
-    // baseDecision (from other logic) can only push down, not up
-    // (kept for future extension; currently unused)
-    if (baseDecision === "Pass") return "Pass"
-    if (baseDecision === "Review" && d === "Apply") return "Review"
-
-    return d
+function decideByScore(score: number): Decision {
+    if (score >= APPLY_THRESHOLD) return "Apply"
+    if (score >= REVIEW_THRESHOLD) return "Review"
+    return "Pass"
 }
 
-function enforceDecisionConsistentScore(decision: Decision, score: number, gate: Gate) {
+function enforceDecisionConsistentScore(decision: Decision, score: number) {
     let s = clampScore(score)
     s = Math.min(s, SCORE_MAX)
 
     if (decision === "Pass") return Math.min(s, PASS_CAP)
 
     if (decision === "Review") {
-        // DO NOT smash to a single number.
-        // Only cap if it would look like Apply.
+        // keep differentiation: allow 60..79
         if (s >= APPLY_THRESHOLD) s = REVIEW_CAP_IF_FLOORED
         if (s < REVIEW_THRESHOLD) s = REVIEW_THRESHOLD
         return s
@@ -1248,9 +1171,8 @@ function enforceDecisionConsistentScore(decision: Decision, score: number, gate:
     return s
 }
 
-/* ----------------------- deterministic output hygiene ----------------------- */
+/* ----------------------- deterministic output builders ----------------------- */
 function buildWhyBullets(whySignals: WhySignal[]) {
-    // only positives; no hedging/risk language
     const out: string[] = []
     for (const w of whySignals) {
         const s = (w.note || "").trim()
@@ -1262,7 +1184,6 @@ function buildWhyBullets(whySignals: WhySignal[]) {
 }
 
 function buildRiskBullets(riskSignals: RiskSignal[]) {
-    // only negatives; no “but positive” language
     const out: string[] = []
     for (const r of riskSignals) {
         const s = (r.note || "").trim()
@@ -1280,13 +1201,11 @@ function buildPassReasons(args: {
     riskSignals: RiskSignal[]
 }) {
     const { gate, gradMismatchReason, deterministicExplain, riskSignals } = args
-
     const out: string[] = []
 
     if (gate.type === "force_pass" && gate.reason) out.push(gate.reason)
     if (gradMismatchReason) out.push(gradMismatchReason)
 
-    // Prefer explicit risk signals (they are negative by construction)
     for (const r of riskSignals) {
         const s = (r.note || "").trim()
         if (!s) continue
@@ -1294,13 +1213,12 @@ function buildPassReasons(args: {
         if (out.length >= 6) break
     }
 
-    // Fall back to negative explain notes
     if (out.length < 3) {
         for (const e of deterministicExplain) {
             if (e.delta >= 0) continue
-            const line = (e.note || e.label || "").trim()
-            if (!line) continue
-            if (!out.includes(line)) out.push(line)
+            const s = (e.note || e.label || "").trim()
+            if (!s) continue
+            if (!out.includes(s)) out.push(s)
             if (out.length >= 6) break
         }
     }
@@ -1322,7 +1240,7 @@ export async function runJobFit({
     jobText: string
     profileStructured?: any
 }) {
-    // fingerprint exists for deterministic stability/caching (kept internal)
+    // deterministic fingerprint (internal)
     const _fp = stableFingerprint(jobText, profileText)
     void _fp
     void profileStructured
@@ -1338,6 +1256,7 @@ export async function runJobFit({
 
     const gradWindow = extractGradWindow(jobText)
     const candGrad = extractCandidateGrad(profileText)
+
     if (gradWindow && candGrad) {
         const candIdx = ymToIndex(candGrad)
         const startIdx = ymToIndex(gradWindow.start)
@@ -1349,12 +1268,9 @@ export async function runJobFit({
                 gradWindow.start
             )}–${formatYM(gradWindow.end)}; candidate appears to graduate ${formatYM(candGrad)}).`
         }
-    } else if (gradWindow && !candGrad) {
-        // strict window exists but we cannot confirm grad date => do not allow Apply later
-        // handled by floor_review via score cap logic (we keep it deterministic)
     }
 
-    // Gates (deterministic, catalog-driven)
+    // Gates (deterministic)
     const gate = evaluateGates({
         jobFacts,
         profile,
@@ -1364,9 +1280,8 @@ export async function runJobFit({
         jobLocationTokens,
     })
 
-    // Force PASS path immediately
+    // Hard PASS path
     if (gate.type === "force_pass" || gradMismatch) {
-        // build deterministic signals to populate pass reasons
         const signals = buildSignals({
             jobText,
             profileText,
@@ -1417,39 +1332,41 @@ export async function runJobFit({
         jobLocationTokens,
     })
 
-    // Base decision solely by deterministic policy
-    // (baseDecision is reserved for future deterministic layers; keep as "Review" default)
-    const baseDecision: Decision = "Review"
-
-    let decision = decideFinal({
-        baseDecision,
-        score: det.score,
-        gate,
-        gradMismatch: false,
-    })
+    // Initial decision from score
+    let decision: Decision = decideByScore(det.score)
 
     // If job has a strict graduation window but grad date is unknown, never allow Apply
     if (gradWindow && !candGrad && decision === "Apply") decision = "Review"
 
-    // Generate strictly-separated bullets deterministically (no LLM needed)
-    let bullets = buildWhyBullets(det.why)
-    let risk_flags = buildRiskBullets(det.risks)
+    // Floor-review gate prevents Apply regardless of score
+    if (gate.type === "floor_review" && decision === "Apply") decision = "Review"
 
-    // Enforce hygiene: Apply should be clean. If multiple high/severe risks exist, push to Review.
+    // Weighted-risk-based Apply downgrade (NOT “risk count”)
+    const rp = computeRiskPoints(det.risks)
+
     if (decision === "Apply") {
-        const highOrSevere = det.risks.filter((r) => r.severity === "high" || r.severity === "severe")
-        if (highOrSevere.length >= 1 || det.risks.length >= 2) {
+        const hasCriticalCode = det.risks.some((r) => r.code === "location_mismatch")
+        // Rule:
+        // - any severe risk => Review
+        // - riskPoints threshold => Review (weighted)
+        // - critical code => Review
+        // Tuning: 18 means “one high + a little” or “two medium-ish”
+        if (rp.hasSevere || rp.points >= 18 || hasCriticalCode) {
             decision = "Review"
         }
     }
 
-    // Final score must be consistent with final decision, but not smashed to a single number.
-    let score = enforceDecisionConsistentScore(decision, det.score, gate)
+    // Final score consistent with decision, but not smashed to a fixed number
+    let score = enforceDecisionConsistentScore(decision, det.score)
 
-    // Hard invariant: any displayed risks must prevent score from remaining at max
+    // Output bullets deterministically
+    const bullets = buildWhyBullets(det.why)
+    const risk_flags = buildRiskBullets(det.risks)
+
+    // If any risks are shown, score cannot be max
     if (risk_flags.length > 0 && score === SCORE_MAX) score = SCORE_MAX - 1
 
-    // If Pass, show only pass reasons (no positives)
+    // Pass path (should be rare here, since force-pass/grad mismatch already handled)
     if (decision === "Pass") {
         const passReasons = buildPassReasons({
             gate,
@@ -1475,7 +1392,6 @@ export async function runJobFit({
             ? "Review the risk flags carefully before proceeding."
             : "Apply promptly if this role is still open."
 
-    // Keep output shape stable for frontend
     return {
         decision,
         icon: iconForDecision(decision),
