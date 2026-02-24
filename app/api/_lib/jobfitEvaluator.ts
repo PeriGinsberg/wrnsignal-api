@@ -474,8 +474,8 @@ function formatYM(ym: YM) {
     return `${monthNames[ym.month - 1]} ${ym.year}`
 }
 
-/* ----------------------- deterministic scoring (NO LLM) ----------------------- */
-type ScoreExplain = { label: string; delta: number; note?: string }
+/*
+ ----------------------- deterministic scoring (NO LLM) ----------------------- */
 
 function extractRequiredYears(jobText: string): number | null {
     const t = normalizeText(jobText)
