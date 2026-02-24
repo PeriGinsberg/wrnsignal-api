@@ -1,11 +1,11 @@
-// jobfit/evaluator.ts
+// app/api/jobfit/evaluator.ts
 
 import { POLICY, Decision } from "./policy"
 import { extractJobSignals, extractProfileSignals } from "./extract"
 import { evaluateGates } from "./constraints"
 import { scoreJobFit } from "./scoring"
 import { applyGateOverrides, applyRiskDowngrades, decisionFromScore } from "./decision"
-import { EvalOutput, RiskItem, WhyItem, StructuredProfileSignals } from "./signals"
+import type { EvalOutput, RiskItem, WhyItem, StructuredProfileSignals } from "./signals"
 
 function dedupe<T extends string>(xs: T[]): T[] {
   return Array.from(new Set(xs))
@@ -42,10 +42,10 @@ export function evaluateJobFit(input: EvaluateInput): EvalOutput {
   // Presentation layer
   const location_constraint =
     job.location.constrained || profile.locationPreference.constrained
-      ? "constrained"
+      ? ("constrained" as const)
       : job.location.mode === "unclear" && profile.locationPreference.mode === "unclear"
-      ? "unclear"
-      : "not_constrained"
+      ? ("unclear" as const)
+      : ("not_constrained" as const)
 
   // Pass: show only pass reason bullets (no pros/risks mixed)
   if (decision === "Pass") {
@@ -61,16 +61,23 @@ export function evaluateJobFit(input: EvaluateInput): EvalOutput {
       risk_flags: [],
       next_step: nextStepForDecision(decision),
       location_constraint,
-     why_codes: dedupe(scoring.whyCodes),
-risk_codes: dedupe(scoring.riskCodes),
+      why_codes: dedupe(scoring.whyCodes),
+      risk_codes: dedupe(scoring.riskCodes),
       gate_triggered: gate.type === "none" ? { type: "none" } : { type: gate.type, gateCode: gate.gateCode },
     }
   }
 
   // Why bullets
-  const whyItems: WhyItem[] = scoring.whyCodes.map((c) => ({ code: c, text: POLICY.bullets.why[c] }))
+  const whyItems: WhyItem[] = scoring.whyCodes.map((c) => ({
+    code: c,
+    text: POLICY.bullets.why[c],
+  }))
+
   // Risk bullets
-  const riskItems: RiskItem[] = scoring.riskCodes.map((c) => ({ code: c, text: POLICY.bullets.risk[c] }))
+  const riskItems: RiskItem[] = scoring.riskCodes.map((c) => ({
+    code: c,
+    text: POLICY.bullets.risk[c],
+  }))
 
   const bullets = dedupe(whyItems.map((x) => x.text)).slice(0, 6)
   const risk_flags = dedupe(riskItems.map((x) => x.text)).slice(0, 6)

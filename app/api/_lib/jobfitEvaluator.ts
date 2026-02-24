@@ -1,7 +1,7 @@
 // app/api/_lib/jobfitEvaluator.ts
 
 import { evaluateJobFit } from "../jobfit/evaluator"
-import type { EvalOutput } from "../jobfit/signals"
+import type { EvalOutput, StructuredProfileSignals } from "../jobfit/signals"
 
 // Keep legacy UI contract (UI depends on this shape)
 type Decision = "Apply" | "Review" | "Pass"
@@ -15,24 +15,21 @@ function iconForDecision(decision: Decision) {
 
 /**
  * Deterministic JobFit runner.
- * This is now a compatibility wrapper around /jobfit/* engine.
+ * Compatibility wrapper around /jobfit/* engine.
  */
 export async function runJobFit({
   profileText,
   jobText,
+  profileOverrides,
 }: {
   profileText: string
   jobText: string
+  profileOverrides?: Partial<StructuredProfileSignals>
 }) {
-  // If you do NOT yet have structured profile overrides wired from DB,
-  // you can either:
-  // 1) Keep this as text-only for now (engine will use conservative defaults),
-  // 2) Or parse your existing structured profile JSON upstream and pass overrides here.
-
   const out: EvalOutput = evaluateJobFit({
     jobText,
     profileText,
-    // profileOverrides: <optional> pass structured profile here once you wire it
+    profileOverrides,
   })
 
   return {
@@ -43,10 +40,10 @@ export async function runJobFit({
     risk_flags: out.risk_flags.slice(0, 6),
     next_step: out.next_step,
     location_constraint: out.location_constraint as LocationConstraint,
-    // If you want debug info available in dev without breaking UI,
-    // you can optionally include these behind a flag in your API route:
-    // why_codes: out.why_codes,
-    // risk_codes: out.risk_codes,
-    // gate_triggered: out.gate_triggered,
+
+    // dev-only fields (route can choose to expose)
+    why_codes: out.why_codes,
+    risk_codes: out.risk_codes,
+    gate_triggered: out.gate_triggered,
   }
 }

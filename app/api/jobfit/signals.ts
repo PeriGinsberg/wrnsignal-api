@@ -7,6 +7,11 @@ export type WhyCode =
   | "WHY_LOCATION_MATCH"
   | "WHY_EARLY_CAREER_FRIENDLY"
   | "WHY_TOOL_MATCH"
+  // NEW (internship-specific)
+  | "WHY_SUMMER_INTERNSHIP_MATCH"
+  | "WHY_IN_PERSON_MATCH"
+  | "WHY_AI_TOOLS_MATCH"
+  | "WHY_MARKETING_ROTATION_MATCH"
 
 export type RiskCode =
   | "RISK_LOCATION"
@@ -43,6 +48,14 @@ export type StructuredJobSignals = {
   isSalesHeavy: boolean
   isContract: boolean
   isHourly: boolean
+
+internship: {
+  isInternship: boolean
+  isSummer: boolean
+  isInPersonExplicit: boolean
+  mentionsAITools: boolean
+  isMarketingRotation: boolean
+}
 
   yearsRequired: number | null
   mbaRequired: boolean

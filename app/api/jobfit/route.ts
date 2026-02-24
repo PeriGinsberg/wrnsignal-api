@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -90,6 +91,18 @@ export async function POST(req: Request) {
     // Auth + stored profile (server-side, user-bound)
     const { profileId, profileText } = await getAuthedProfileText(req)
 
+// Pull structured profile fields for deterministic overrides
+const { data: profileRowDb, error: profileLookupError } = await supabaseAdmin
+  .from("client_profiles")
+  .select("id, profile_structured, target_roles, preferred_locations, risk_overrides")
+  .eq("id", profileId)
+  .maybeSingle()
+
+if (profileLookupError || !profileRowDb) {
+  return withCorsJson(req, { error: "Profile lookup failed" }, 404)
+}
+// Fetch full structured profile row
+
     // Parse request body
     let body: any
     try {
@@ -142,11 +155,22 @@ jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       })
     }
 
-    // 2) Run JobFit (LLM)
-    const result = await runJobFit({
-      profileText,
-      jobText,
-    })
+    // Build structured overrides from profile row
+const profileOverrides = mapClientProfileToOverrides({
+  profileText,
+  profileStructured: (profileRowDb as any)?.profile_structured ?? null,
+  targetRoles: (profileRowDb as any)?.target_roles ?? null,
+  preferredLocations: (profileRowDb as any)?.preferred_locations ?? null,
+})
+
+console.log("profileOverrides", profileOverrides)
+
+// 2) Run JobFit (deterministic engine)
+const result = await runJobFit({
+  profileText,
+  jobText,
+  profileOverrides,
+})
 
     // 3) Store result (best effort)
     const toStore = {

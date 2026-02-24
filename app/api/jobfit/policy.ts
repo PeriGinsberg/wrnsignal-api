@@ -1,9 +1,8 @@
 // jobfit/policy.ts
 
-import { RiskCode, WhyCode } from "./signals"
+import type { RiskCode, WhyCode } from "./signals"
 
 export type Decision = "Apply" | "Review" | "Pass"
-
 export type LocationConstraint = "constrained" | "not_constrained" | "unclear"
 
 export type Gate =
@@ -33,24 +32,24 @@ export type PenaltyPolicy = {
   label: string
   severity: Severity
   multiplier: number
-  maxStackCount?: number // cap stacking of same penalty type
+  maxStackCount?: number
 }
 
 export type ToolPolicy = {
-  core: string[] // if job requires these and profile lacks them, higher penalty
-  preferred: string[] // softer penalty
+  core: string[]
+  preferred: string[]
 }
 
 export type JobFitPolicy = {
   version: string
 
   score: {
-    startScore: number // starts high
-    maxScore: number // hard ceiling (97)
-    minScore: number // floor (0)
-    penaltyStackCap: number // max total penalty deducted regardless of stacking
-    perPenaltySoftCap: number // soft cap for penalty sum before diminishing returns
-    diminishingReturnsRate: number // 0.0 to 1.0
+    startScore: number
+    maxScore: number
+    minScore: number
+    penaltyStackCap: number
+    perPenaltySoftCap: number
+    diminishingReturnsRate: number
   }
 
   thresholds: {
@@ -71,7 +70,7 @@ export type JobFitPolicy = {
   bullets: {
     why: Record<WhyCode, string>
     risk: Record<RiskCode, string>
-    pass: Record<string, string> // gateCode -> template
+    pass: Record<string, string>
   }
 
   extraction: {
@@ -82,39 +81,33 @@ export type JobFitPolicy = {
       onsitePhrases: string[]
       hybridPhrases: string[]
     }
+    internship: {
+      keywords: string[]
+      summerKeywords: string[]
+      inPersonInternKeywords: string[]
+      aiToolsKeywords: string[]
+      marketingRotationKeywords: string[]
+    }
     analytics: {
       heavyKeywords: string[]
       lightKeywords: string[]
     }
-    government: {
-      keywords: string[]
-    }
-    sales: {
-      keywords: string[]
-    }
-    contract: {
-      keywords: string[]
-    }
-    hourly: {
-      keywords: string[]
-    }
-    mba: {
-      keywords: string[]
-    }
-    years: {
-      patterns: RegExp[]
-    }
-    grad: {
-      patterns: RegExp[]
-    }
+    government: { keywords: string[] }
+    sales: { keywords: string[] }
+    contract: { keywords: string[] }
+    hourly: { keywords: string[] }
+    mba: { keywords: string[] }
+    years: { patterns: RegExp[] }
+    grad: { patterns: RegExp[] }
   }
 }
 
 export const POLICY: JobFitPolicy = {
-  version: "jobfit_policy_v1_2026-02-24",
+  version: "jobfit_policy_v2_2026-02-24",
 
+  // Philosophy: start high, deduct risks, cap stacking, never hit 100.
   score: {
-    startScore: 92,
+    startScore: 93,
     maxScore: 97,
     minScore: 0,
     penaltyStackCap: 55,
@@ -176,10 +169,11 @@ export const POLICY: JobFitPolicy = {
       multiplier: 2.6,
       maxStackCount: 1,
     },
+    // Note: internships being hourly should generally be LOW severity. Hard-exclude only if the profile says so.
     hourly_pay_mismatch: {
       label: "Hourly pay vs preference",
-      severity: 2,
-      multiplier: 1.8,
+      severity: 1,
+      multiplier: 1.6,
       maxStackCount: 1,
     },
     missing_core_tool: {
@@ -195,7 +189,7 @@ export const POLICY: JobFitPolicy = {
       maxStackCount: 4,
     },
     missing_reporting_signals: {
-      label: "Role emphasizes reporting/measurement signals not present",
+      label: "Role emphasizes reporting/measurement ownership",
       severity: 2,
       multiplier: 1.8,
       maxStackCount: 2,
@@ -220,6 +214,7 @@ export const POLICY: JobFitPolicy = {
     },
   },
 
+  // Tools here are only applied if the JOB explicitly lists tools. Do not infer tools from thin air.
   tools: {
     core: ["Excel", "SQL", "Python", "Tableau", "Power BI", "Google Analytics", "GA4"],
     preferred: ["Looker", "Amplitude", "Mixpanel", "HubSpot", "Salesforce", "Marketo", "Klaviyo"],
@@ -227,25 +222,36 @@ export const POLICY: JobFitPolicy = {
 
   bullets: {
     why: {
-      WHY_FAMILY_MATCH: "The role aligns with your target job family and day-to-day work.",
-      WHY_MARKETING_EXECUTION: "The work is execution-oriented and maps to real deliverables you can own.",
-      WHY_MEASUREMENT_LIGHT: "Measurement is present, but it is not positioned as a heavy analytics role.",
-      WHY_LOCATION_MATCH: "The location and work setup match your stated preference.",
+      // Keep your existing codes, but tighten wording so it feels less generic.
+      WHY_FAMILY_MATCH: "The day-to-day work matches what you are targeting.",
+      WHY_MARKETING_EXECUTION: "This is execution work where you can own real deliverables.",
+      WHY_MEASUREMENT_LIGHT: "Measurement shows up, but it is not positioned as a heavy analytics role.",
+      WHY_LOCATION_MATCH: "The work setup and location match your stated preference.",
       WHY_EARLY_CAREER_FRIENDLY: "The requirements look realistic for an early-career candidate.",
-      WHY_TOOL_MATCH: "Your tool stack matches what the role actually uses.",
-    },
+      WHY_TOOL_MATCH: "Your current tools align with what the role actually uses.",
+WHY_SUMMER_INTERNSHIP_MATCH:
+  "The posting is a Summer internship and matches the timeline you are targeting.",
+
+WHY_IN_PERSON_MATCH:
+  "The role is in-person or hybrid, which matches your no-remote constraint.",
+
+WHY_AI_TOOLS_MATCH:
+  "The posting explicitly calls out AI tools, which aligns with your AI experience or training.",
+
+WHY_MARKETING_ROTATION_MATCH:
+  "The internship spans multiple marketing functions, which fits your interest in broader brand and communications work.",    },
     risk: {
       RISK_LOCATION: "Location or work setup looks misaligned with your stated constraints.",
-      RISK_ANALYTICS_HEAVY: "This reads like an analytics-heavy role that may not match what you want to do.",
+      RISK_ANALYTICS_HEAVY: "This reads like an analytics-heavy role that conflicts with your preference.",
       RISK_SALES: "Sales responsibilities show up in the role expectations.",
       RISK_GOVERNMENT: "Government or clearance signals show up in the posting.",
-      RISK_CONTRACT: "The role structure (contract) conflicts with your full-time preference.",
+      RISK_CONTRACT: "The role structure conflicts with your work-type preference.",
       RISK_HOURLY: "Compensation type may not match what you are targeting.",
-      RISK_MISSING_TOOLS: "Some tools in the posting do not show up in your profile.",
+      RISK_MISSING_TOOLS: "The posting lists tools you have not shown yet.",
       RISK_EXPERIENCE: "The experience requirements may be above your current level.",
       RISK_MBA: "The posting indicates an MBA requirement.",
       RISK_GRAD_WINDOW: "The graduation timing does not match what the posting is screening for.",
-      RISK_REPORTING_SIGNALS: "The posting emphasizes reporting and measurement signals that may not be your strength yet.",
+      RISK_REPORTING_SIGNALS: "The posting emphasizes reporting and measurement ownership that may be a stretch right now.",
     },
     pass: {
       GATE_GRAD_MISMATCH: "Pass. The posting is screening for a different graduation window.",
@@ -261,9 +267,29 @@ export const POLICY: JobFitPolicy = {
       constrainedPhrases: ["must be located", "must reside", "required to be in", "local candidates only"],
       notConstrainedPhrases: ["anywhere", "open to location", "nationwide", "across the us"],
       remotePhrases: ["remote", "work from home", "wfh", "distributed"],
-      onsitePhrases: ["on-site", "onsite", "in office", "in-office"],
+      onsitePhrases: ["on-site", "onsite", "in office", "in-office", "in-person", "based in office"],
       hybridPhrases: ["hybrid"],
     },
+
+    // Added: explicit internship-era signals so you can produce better WHY codes later
+    internship: {
+      keywords: ["intern", "internship", "intern program", "capstone project"],
+      summerKeywords: ["summer", "summer 2026", "june", "july", "august"],
+      inPersonInternKeywords: ["in-person", "in person", "based in", "nyc office", "new york city office"],
+      aiToolsKeywords: ["ai tools", "ai platforms", "artificial intelligence"],
+      marketingRotationKeywords: [
+        "pr",
+        "events",
+        "influencer",
+        "digital marketing",
+        "brand marketing",
+        "global marketing",
+        "partnerships",
+        "visual merchandising",
+        "key accounts",
+      ],
+    },
+
     analytics: {
       heavyKeywords: [
         "sql",
@@ -281,17 +307,26 @@ export const POLICY: JobFitPolicy = {
       ],
       lightKeywords: ["reporting", "insights", "measurement", "tracking", "metrics"],
     },
+
     government: { keywords: ["clearance", "dod", "government", "federal", "public sector", "gs-"] },
-    sales: { keywords: ["quota", "commission", "closing", "cold call", "pipeline", "hunters", "business development"] },
+
+    sales: {
+      keywords: ["quota", "commission", "closing", "cold call", "pipeline", "hunters", "business development"],
+    },
+
     contract: { keywords: ["contract", "contractor", "1099", "temporary"] },
+
     hourly: { keywords: ["hourly", "$/hour", "per hour"] },
+
     mba: { keywords: ["mba required", "master of business administration required"] },
+
     years: {
       patterns: [
         /(\d+)\+?\s*(years|yrs)\s*of\s*(experience|exp)/i,
         /minimum\s*(\d+)\s*(years|yrs)/i,
       ],
     },
+
     grad: {
       patterns: [
         /(class of)\s*(20\d{2})/i,
