@@ -78,11 +78,26 @@ function iconForDecision(decision: Decision) {
     return "⛔"
 }
 
+function decisionRank(d: Decision) {
+    if (d === "Pass") return 0
+    if (d === "Review") return 1
+    return 2
+}
+
+function minDecision(a: Decision, b: Decision): Decision {
+    return decisionRank(a) <= decisionRank(b) ? a : b
+}
+
+function enforceScoreBand(decision: Decision, score: number) {
+    if (decision === "Apply") return Math.max(score, 75)
+    if (decision === "Review") return Math.min(Math.max(score, 60), 74)
+    return Math.min(score, 59)
+}
+
 /* ----------------------- deterministic extraction ----------------------- */
 function extractJobFacts(jobText: string): JobFacts {
     const t0 = normalizeText(jobText)
 
-    // Hourly signals
     const isHourly =
         /\$\s*\d+(\.\d+)?\s*\/\s*hr\b/.test(t0) ||
         /\$\s*\d+(\.\d+)?\s*\/\s*hour\b/.test(t0) ||
@@ -95,7 +110,6 @@ function extractJobFacts(jobText: string): JobFacts {
         t0.match(/\$\s*\d+(\.\d+)?\s*\/\s*hour\b/)
     if (mHr?.[0]) hourlyEvidence = mHr[0]
 
-    // Contract signals
     const isContract =
         /\bcontract\b/.test(t0) ||
         /\b3\s*month\b/.test(t0) ||
@@ -269,14 +283,13 @@ function inferLocationConstraint(jobText: string): LocationConstraint {
     return "unclear"
 }
 
-/* ----------------------- gates: PASS for obvious mismatch, REVIEW for real constraints ----------------------- */
+/* ----------------------- gates ----------------------- */
 function evaluateGates(
     job: JobFacts,
     profile: ProfileConstraints,
     jobText: string,
     profileText: string
 ): Gate {
-    // PASS: hourly is explicitly disallowed
     if (profile.hardNoHourlyPay && job.isHourly) {
         const ev = job.hourlyEvidence ? `(${job.hourlyEvidence})` : ""
         return {
@@ -285,7 +298,6 @@ function evaluateGates(
         }
     }
 
-    // REVIEW floor: full-time preference but contract role (unless contract explicitly disallowed)
     if (profile.prefFullTime && job.isContract && !profile.hardNoContract) {
         const ev = job.contractEvidence ? `(signals: ${job.contractEvidence})` : ""
         return {
@@ -294,8 +306,8 @@ function evaluateGates(
         }
     }
 
-    // PASS: sales/commission disallowed and job is clearly sales/commission
     const fam = inferJobFamily(jobText)
+
     if (profile.hardNoSales && fam === "sales") {
         return {
             type: "force_pass",
@@ -304,7 +316,6 @@ function evaluateGates(
         }
     }
 
-    // PASS: government disallowed and job is clearly government/public sector
     if (profile.hardNoGovernment && fam === "government_public") {
         return {
             type: "force_pass",
@@ -313,7 +324,6 @@ function evaluateGates(
         }
     }
 
-    // PASS: obvious function mismatch (accounting job for non-accounting targets)
     if (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) {
         return {
             type: "force_pass",
@@ -322,7 +332,6 @@ function evaluateGates(
         }
     }
 
-    // REVIEW floor: fully remote is disallowed and job is explicitly fully remote
     if (profile.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
         return {
             type: "floor_review",
@@ -331,7 +340,6 @@ function evaluateGates(
         }
     }
 
-    // REVIEW floor: brand media buying roles require hands-on media buying; if not shown, require review (not pass)
     if (fam === "brand_marketing_media") {
         const t = normalizeText(profileText)
         const hasPaidMedia =
@@ -342,6 +350,7 @@ function evaluateGates(
             t.includes("media strategy") ||
             t.includes("google ads") ||
             t.includes("meta ads")
+
         if (!hasPaidMedia) {
             return {
                 type: "floor_review",
@@ -464,7 +473,6 @@ type ScoreExplain = { label: string; delta: number; note?: string }
 function extractRequiredYears(jobText: string): number | null {
     const t = normalizeText(jobText)
 
-    // Examples: "3+ years", "minimum 2 years", "2-4 years"
     const plus = t.match(/\b(\d{1,2})\s*\+\s*years?\b/)
     if (plus?.[1]) return Number(plus[1])
 
@@ -479,28 +487,7 @@ function extractRequiredYears(jobText: string): number | null {
 
     return null
 }
-function applyDisplayedRiskPenalty(baseScore: number, risks: string[]) {
-    let score = baseScore
 
-    // If any risks are displayed, it is NOT a near-perfect fit anymore.
-    if (risks.length > 0) {
-        // Guaranteed drop if any risks exist
-        score = Math.min(score, 96)
-
-        // Additional small penalties by count (strict but fair)
-        // 1 risk: -2 (net max 94 if started 96)
-        // 2 risks: -4
-        // 3 risks: -6
-        // 4 risks: -8
-        // 5+ risks: -10 cap
-        const extra = Math.min(risks.length, 5) * 2
-        score -= extra
-    }
-
-    score = clampScore(score)
-    score = Math.min(score, 97)
-    return score
-}
 function profileLooksEarlyCareer(profileText: string) {
     const t = normalizeText(profileText)
     return (
@@ -539,9 +526,6 @@ function computeDeterministicScore(args: {
 
     const fam = inferJobFamily(jobText)
 
-    // ----- HARD DISQUALIFIERS (deterministic) -----
-    // If these trigger, you should not be applying. Period.
-
     const mbaMismatch = jobRequiresMBA(jobText) && !profileHasMBA(profileText)
     if (mbaMismatch) {
         score -= 60
@@ -552,12 +536,9 @@ function computeDeterministicScore(args: {
         })
     }
 
-    // Years requirement mismatch (only if explicitly present)
     const reqYears = extractRequiredYears(jobText)
     const earlyCareer = profileLooksEarlyCareer(profileText)
-
     if (reqYears !== null && earlyCareer) {
-        // 4+ years for early career is basically a no
         if (reqYears >= 4) {
             score -= 50
             explain.push({
@@ -575,7 +556,6 @@ function computeDeterministicScore(args: {
         }
     }
 
-    // Obvious function mismatch penalty (even if not gated)
     if (fam === "accounting_finance" && !profileTargetsAccounting(profileText)) {
         score -= 45
         explain.push({
@@ -585,7 +565,6 @@ function computeDeterministicScore(args: {
         })
     }
 
-    // Contract preference mismatch (soft penalty; gate handles floor_review)
     if (profileConstraints.prefFullTime && jobFacts.isContract) {
         score -= 12
         explain.push({
@@ -595,7 +574,6 @@ function computeDeterministicScore(args: {
         })
     }
 
-    // Fully remote constraint (soft penalty; gate handles floor_review)
     if (profileConstraints.hardNoFullyRemote && jobIsFullyRemote(jobText)) {
         score -= 12
         explain.push({
@@ -605,7 +583,6 @@ function computeDeterministicScore(args: {
         })
     }
 
-    // Hourly signal (if not hard-excluded, still a penalty)
     if (jobFacts.isHourly && !profileConstraints.hardNoHourlyPay) {
         score -= 18
         explain.push({
@@ -615,37 +592,121 @@ function computeDeterministicScore(args: {
         })
     }
 
-    // Clamp and cap: never above 97
     score = clampScore(score)
     score = Math.min(score, 97)
 
-    // ----- DECISION LOGIC (STRICT + FAIR) -----
-    // 1) If any major deterministic mismatch exists, cap decision hard.
-    const hasMajorPenalty = explain.some((e) => e.delta <= -35) // 3+ years, accounting mismatch, etc.
-    const totalPenalty = explain.reduce((sum, e) => sum + Math.min(0, e.delta), 0) // negative number
+    const totalPenalty = explain.reduce((sum, e) => sum + Math.min(0, e.delta), 0)
+    const hasMajorPenalty = explain.some((e) => e.delta <= -35)
 
-    // Hard pass line: MBA mismatch OR extremely heavy penalty
     if (mbaMismatch || totalPenalty <= -75) {
         return { score: Math.min(score, 59), decisionByScore: "Pass", explain }
     }
 
-    // If major penalty exists, you cannot be Apply
     if (hasMajorPenalty) {
         const cappedScore = Math.min(Math.max(score, 60), 74)
         return { score: cappedScore, decisionByScore: "Review", explain }
     }
 
-    // If any penalties exist at all, be conservative: Review unless score is very high AND penalties are tiny
-    const hasAnyPenalty = explain.length > 0
-    if (hasAnyPenalty) {
-        // Only allow Apply if still extremely strong
-        if (score >= 90) return { score, decisionByScore: "Apply", explain }
-        return { score: Math.min(Math.max(score, 60), 74), decisionByScore: "Review", explain }
-    }
-    // Clean job: Apply
+    // No deterministic penalties: Apply (subject to later risk-based downgrade)
     return { score, decisionByScore: "Apply", explain }
 }
-/* ----------------------- content hygiene filters ----------------------- */function stripAdviceLanguage(items: string[]) {
+
+/* ----------------------- display-risk penalty + separation ----------------------- */
+function applyDisplayedRiskPenalty(baseScore: number, risks: string[]) {
+    let score = baseScore
+
+    if (risks.length > 0) {
+        // If any risks exist, it is not a near-perfect fit
+        score = Math.min(score, 96)
+
+        // Additional penalty by count
+        const extra = Math.min(risks.length, 5) * 2 // 2..10
+        score -= extra
+    }
+
+    score = clampScore(score)
+    score = Math.min(score, 97) // never 100, never above 97
+    return score
+}
+
+function looksLikeRisk(line: string) {
+    const s = (line || "").trim().toLowerCase()
+    if (!s) return false
+
+    const riskCues = [
+        "risk",
+        "concern",
+        "may",
+        "might",
+        "could",
+        "lack",
+        "lacks",
+        "missing",
+        "no explicit",
+        "no mention",
+        "not shown",
+        "limited",
+        "gap",
+        "unclear",
+        "however",
+        "but",
+        "would be a challenge",
+        "preferred",
+        "requires",
+    ]
+
+    const locationCues = [
+        "location preference",
+        "commute",
+        "relocation",
+        "hybrid",
+        "in-office",
+        "in office",
+        "onsite",
+        "on-site",
+    ]
+
+    return riskCues.some((c) => s.includes(c)) || locationCues.some((c) => s.includes(c))
+}
+
+function separateWhyAndRisks(why: string[], risks: string[]) {
+    const cleanWhy: string[] = []
+    const cleanRisks: string[] = []
+
+    for (const r of risks || []) {
+        const t = String(r || "").trim()
+        if (t) cleanRisks.push(t)
+    }
+
+    for (const w of why || []) {
+        const t = String(w || "").trim()
+        if (!t) continue
+        if (looksLikeRisk(t)) cleanRisks.push(t)
+        else cleanWhy.push(t)
+    }
+
+    const dedupe = (arr: string[]) => Array.from(new Set(arr))
+    return {
+        why: dedupe(cleanWhy).slice(0, 8),
+        risks: dedupe(cleanRisks).slice(0, 6),
+    }
+}
+
+function riskIsSevere(r: string) {
+    const s = (r || "").toLowerCase()
+    return (
+        s.includes("lack of direct") ||
+        s.includes("no direct experience") ||
+        s.includes("missing") ||
+        s.includes("no experience") ||
+        (s.includes("requires") && (s.includes("experience") || s.includes("tool") || s.includes("platform"))) ||
+        s.includes("graduation window") ||
+        s.includes("not eligible")
+    )
+}
+
+/* ----------------------- content hygiene filters ----------------------- */
+function stripAdviceLanguage(items: string[]) {
     const bad = [
         "highlight",
         "tailor",
@@ -669,11 +730,9 @@ function stripLocationLanguage(items: string[]) {
     return items.filter((s0) => {
         const s = (s0 || "").toLowerCase()
         return !(
-            s.includes("commute") ||
-            s.includes("commuting") ||
             s.includes("reasonable commuting distance") ||
+            s.includes("within commuting distance") ||
             s.includes("miles away") ||
-            s.includes("mile away") ||
             s.includes("distance") ||
             s.includes("not local") ||
             s.includes("local presence") ||
@@ -681,9 +740,7 @@ function stripLocationLanguage(items: string[]) {
             s.includes("onsite presence required") ||
             s.includes("hybrid location requirement") ||
             s.includes("location mismatch") ||
-            s.includes("location preference mismatch") ||
-            s.includes("location preference") ||
-            s.includes("within commuting distance")
+            s.includes("location preference mismatch")
         )
     })
 }
@@ -713,7 +770,6 @@ function stripNonRiskRiskFlags(items: string[]) {
     })
 }
 
-// remove invented "job doesn't mention / not stated" risks
 function stripMissingJobInfoRisks(items: string[]) {
     const bad = [
         "job: location not stated",
@@ -745,14 +801,11 @@ function stripPositiveOrNeutralWhy(items: string[]) {
         "strong",
         "relevant",
         "good fit",
-        "within the candidate’s preferred",
-        "within the candidate's preferred",
         "feasible",
         "works for",
         "benefit",
         "supports",
         "collaborative",
-        "fast-paced environment",
     ]
 
     return (items || []).filter((s0) => {
@@ -796,18 +849,13 @@ function buildPassReasons(args: {
     gradMismatchReason?: string | null
     modelPassReasons: string[]
 }) {
-    const { gate, deterministicExplain, gradMismatchReason, modelPassReasons } =
-        args
+    const { gate, deterministicExplain, gradMismatchReason, modelPassReasons } = args
 
     const out: string[] = []
 
-    // 1) deterministic gate reason always first if present
     if (gate.type === "force_pass" && gate.reason) out.push(gate.reason)
-
-    // 2) grad mismatch reason if present (very decisive)
     if (gradMismatchReason) out.push(gradMismatchReason)
 
-    // 3) then deterministic scoring penalties (only negatives)
     for (const e of deterministicExplain) {
         if (e.delta >= 0) continue
         const line = e.note ? e.note : e.label
@@ -815,7 +863,6 @@ function buildPassReasons(args: {
         if (out.length >= 6) break
     }
 
-    // 4) then model pass reasons, filtered
     const cleaned = stripPositiveOrNeutralWhy(modelPassReasons || [])
     for (const r of cleaned) {
         const s = String(r || "").trim()
@@ -825,9 +872,7 @@ function buildPassReasons(args: {
     }
 
     if (!out.length) {
-        out.push(
-            "This role has a core mismatch with candidate eligibility or requirements."
-        )
+        out.push("This role has a core mismatch with candidate eligibility or requirements.")
     }
 
     return out.slice(0, 6)
@@ -842,10 +887,8 @@ async function generateNarrative(args: {
     profileText: string
     location_constraint: LocationConstraint
 }) {
-    const { decision, score, gate, jobText, profileText, location_constraint } =
-        args
+    const { decision, score, gate, jobText, profileText, location_constraint } = args
 
-    // PASS: only return pass_reasons
     if (decision === "Pass") {
         const system = `
 You are WRNSignal by Workforce Ready Now.
@@ -866,7 +909,13 @@ Output JSON:
         const user = `
 Decision: Pass
 Score: ${score}
-Gate: ${gate.type === "force_pass" ? gate.reason : gate.type === "floor_review" ? gate.reason : "none"}
+Gate: ${
+            gate.type === "force_pass"
+                ? gate.reason
+                : gate.type === "floor_review"
+                  ? gate.reason
+                  : "none"
+        }
 Location constraint: ${location_constraint}
 
 CLIENT PROFILE:
@@ -892,7 +941,6 @@ ${jobText}
         return { pass_reasons: passReasons, why: [], risks: [] }
     }
 
-    // Apply/Review: return why + risks
     const system = `
 You are WRNSignal by Workforce Ready Now.
 You generate explanations for a deterministic decision and score.
@@ -912,7 +960,13 @@ Output JSON:
     const user = `
 Decision: ${decision}
 Score: ${score}
-Gate: ${gate.type === "force_pass" ? gate.reason : gate.type === "floor_review" ? gate.reason : "none"}
+Gate: ${
+        gate.type === "force_pass"
+            ? gate.reason
+            : gate.type === "floor_review"
+              ? gate.reason
+              : "none"
+    }
 Location constraint: ${location_constraint}
 
 CLIENT PROFILE:
@@ -937,18 +991,21 @@ ${jobText}
     let why = ensureArrayOfStrings(parsed?.why, 12)
     let risks = ensureArrayOfStrings(parsed?.risks, 12)
 
-    // hygiene
     const treatAsConstrained = location_constraint === "constrained"
     if (!treatAsConstrained) {
         why = stripLocationLanguage(why)
         risks = stripLocationLanguage(risks)
     }
+
     why = stripAdviceLanguage(why)
     risks = stripAdviceLanguage(risks)
     risks = stripNonRiskRiskFlags(risks)
     risks = stripMissingJobInfoRisks(risks)
 
-    return { pass_reasons: [], why: why.slice(0, 8), risks: risks.slice(0, 6) }
+    // hard-separate, because the model still mixes them sometimes
+    const sep = separateWhyAndRisks(why, risks)
+
+    return { pass_reasons: [], why: sep.why, risks: sep.risks }
 }
 
 /* ----------------------- main ----------------------- */
@@ -964,10 +1021,9 @@ export async function runJobFit({
     const jobFacts = extractJobFacts(jobText)
     const profileConstraints = extractProfileConstraints(profileText)
     const gate = evaluateGates(jobFacts, profileConstraints, jobText, profileText)
-
     const location_constraint = inferLocationConstraint(jobText)
 
-    // 1) Forced PASS: do not call model
+    // Forced PASS: deterministic, no “Apply/Review narrative”
     if (gate.type === "force_pass") {
         const score = 59
         const narrative = await generateNarrative({
@@ -991,14 +1047,14 @@ export async function runJobFit({
             icon: iconForDecision("Pass"),
             score,
             bullets: [],
-            risk_flags: passReasons,
+            risk_flags: passReasons.slice(0, 6),
             next_step:
                 "It is recommended that you do not apply and focus your attention on more aligned positions.",
             location_constraint,
         }
     }
 
-    // 2) Deterministic score
+    // Deterministic base score + initial decision
     const det = computeDeterministicScore({
         jobText,
         profileText,
@@ -1009,15 +1065,17 @@ export async function runJobFit({
     let decision: Decision = det.decisionByScore
     let score: number = det.score
 
-    // 3) Graduation-window eligibility: mismatch => PASS (deterministic)
+    // Graduation-window mismatch => PASS (deterministic)
     let gradMismatchReason: string | null = null
     const gradWindow = extractGradWindow(jobText)
     const candGrad = extractCandidateGrad(profileText)
+
     if (gradWindow && candGrad) {
         const candIdx = ymToIndex(candGrad)
         const startIdx = ymToIndex(gradWindow.start)
         const endIdx = ymToIndex(gradWindow.end)
         const outside = candIdx < startIdx || candIdx > endIdx
+
         if (outside) {
             decision = "Pass"
             score = Math.min(score, 59)
@@ -1028,40 +1086,26 @@ export async function runJobFit({
             )}).`
         }
     } else if (gradWindow && !candGrad) {
-        // if job has a strict grad window but we cannot find candidate grad, force Review
+        // strict window exists but we cannot confirm grad date => do not allow Apply
         if (decision === "Apply") decision = "Review"
     }
 
-    // 4) REVIEW floor gate always wins over Apply
+    // REVIEW floor gate always wins over Apply
     if (gate.type === "floor_review" && decision === "Apply") {
         decision = "Review"
-        // keep score as-is, decision is what changes
     }
 
-// 5) LLM explanations only (never decides)
-const narrative = await generateNarrative({
-    decision,
-    score,
-    gate,
-    jobText,
-    profileText,
-    location_constraint,
-})
-
-// 6) Apply deterministic “risk display penalty”
-// Only for Apply/Review since PASS uses pass_reasons separately
-if (decision !== "Pass") {
-    const risks = (narrative.risks || []).slice(0, 6)
-    score = applyDisplayedRiskPenalty(score, risks)
-}
-
-// 7) Final score band enforcement consistent with your UI expectations
-if (decision === "Apply") score = Math.max(score, 75)
-if (decision === "Review") score = Math.min(Math.max(score, 60), 74)
-if (decision === "Pass") score = Math.min(score, 59)
-
-    // 7) Output enforcement for PASS: ONLY pass reasons (no mixed positives)
+    // PASS path: generate pass narrative + only pass reasons
     if (decision === "Pass") {
+        const narrative = await generateNarrative({
+            decision: "Pass",
+            score: 59,
+            gate,
+            jobText,
+            profileText,
+            location_constraint,
+        })
+
         const passReasons = buildPassReasons({
             gate,
             deterministicExplain: det.explain,
@@ -1072,7 +1116,7 @@ if (decision === "Pass") score = Math.min(score, 59)
         return {
             decision,
             icon: iconForDecision(decision),
-            score: Math.min(score, 59),
+            score: 59,
             bullets: [],
             risk_flags: passReasons.slice(0, 6),
             next_step:
@@ -1081,22 +1125,34 @@ if (decision === "Pass") score = Math.min(score, 59)
         }
     }
 
-      // 8) Apply/Review output
+    // Apply/Review narrative (explanations only)
+    const narrative = await generateNarrative({
+        decision,
+        score,
+        gate,
+        jobText,
+        profileText,
+        location_constraint,
+    })
+
     let bullets = (narrative.why || []).slice(0, 8)
     let riskFlags = (narrative.risks || []).slice(0, 6)
 
-    // After narrative, enforce decision caps based on displayed risks (strict but fair)
+    // Deterministic risk-based downgrade (strict but fair)
+    // - Any severe risk => at least Review
+    // - 2+ risks => Review (clean Apply should be clean)
     const riskCount = riskFlags.length
+    const hasSevere = riskFlags.some(riskIsSevere)
 
-    // If it's not a clean fit, it is not Apply.
-    if (riskCount >= 3) {
-        decision = "Review"
+    if (decision === "Apply") {
+        if (hasSevere || riskCount >= 2) decision = "Review"
     }
 
-    // Optional: keep this if you want "lots of risks" to stay Review no matter what
-    if (riskCount >= 5) {
-        decision = "Review"
-    }
+    // Risk-based score penalty (never 100, never 97 if any risks)
+    score = applyDisplayedRiskPenalty(score, riskFlags)
+
+    // Enforce score band for the FINAL decision (UI consistency)
+    score = enforceScoreBand(decision, score)
 
     const next_step =
         decision === "Review"
