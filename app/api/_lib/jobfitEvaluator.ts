@@ -915,15 +915,12 @@ function riskSeverityValue(sev: Severity) {
 }
 
 function riskTypeMultiplier(code: string) {
-    // tooling gaps should not blow up decisioning
     if (code === "tooling_gap") return 0.7
-    // location mismatch is more meaningful on constrained roles
     if (code === "location_mismatch") return 1.2
-    // floor gate is informational but real
     if (code === "floor_review_gate") return 1.0
+    if (code === "email_marketing_gap") return 1.0
+    if (code === "measurement_gap") return 0.8
     return 1.0
-if (code === "email_marketing_gap") return 1.0
-if (code === "measurement_gap") return 0.8
 }
 
 function computeRiskPoints(risks: RiskSignal[]) {
@@ -1420,19 +1417,26 @@ return {
     // If any risks are shown, score cannot be max
     if (risk_flags.length > 0 && score === SCORE_MAX) score = SCORE_MAX - 1
 
-    // Pass path (should be rare here, since force-pass/grad mismatch already handled)
-    if (decision === "Pass") {
-       const passScore = enforceDecisionConsistentScore("Pass", det.score)
+  // Pass path (should be rare here, since force-pass/grad mismatch already handled)
+if (decision === "Pass") {
+    const passReasons = buildPassReasons({
+        gate,
+        gradMismatchReason: null,
+        riskSignals: det.risks,
+    })
 
-return {
-  decision: "Pass" as Decision,
-  icon: iconForDecision("Pass"),
-  score: passScore,
-  bullets: [],
-  risk_flags: passReasons.slice(0, 6),
-  next_step:
-    "It is recommended that you do not apply and focus your attention on more aligned positions.",
-  location_constraint,
+    const passScore = enforceDecisionConsistentScore("Pass", det.score)
+
+    return {
+        decision: "Pass" as Decision,
+        icon: iconForDecision("Pass"),
+        score: passScore,
+        bullets: [],
+        risk_flags: passReasons.slice(0, 6),
+        next_step:
+            "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        location_constraint,
+    }
 }
 
     const next_step =
