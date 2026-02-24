@@ -154,6 +154,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const isHourly = includesAny(t, POLICY.extraction.hourly.keywords)
 
   const { required, preferred } = extractTools(t)
+console.log("JOBFIT tools found:", { required, preferred })
 
   const reportingStrong = includesAny(t, [
     "weekly reporting",
