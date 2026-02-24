@@ -88,17 +88,13 @@ function minDecision(a: Decision, b: Decision): Decision {
     return decisionRank(a) <= decisionRank(b) ? a : b
 }
 
-function enforceScoreBand(decision: Decision, score: number) {
-  // Score is absolute fit, never forced into a Review band.
-// Only enforce that PASS cannot show as high-fit.
-if (decision === "Pass") score = Math.min(score, 59)
+function enforceScoreBand(decision: Decision, score: number): number {
+    const s = Number(score)
+    if (!Number.isFinite(s)) return 0
 
-// Optional: if you want APPLY to never show below 75, keep this.
-// I would keep it only if your scoring penalties can produce Apply < 75.
-if (decision === "Apply") score = Math.max(score, 75)
-
-// Review is not capped. It stays whatever the deterministic score says.
-score = Math.min(score, 97)
+    if (decision === "Apply") return Math.max(s, 75)
+    if (decision === "Review") return Math.min(Math.max(s, 60), 74)
+    return Math.min(s, 59)
 }
 
 /* ----------------------- deterministic extraction ----------------------- */
