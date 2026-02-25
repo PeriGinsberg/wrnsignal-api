@@ -1,3 +1,5 @@
+// FILE: app/api/jobfit/route.ts
+
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic"
 
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
-const JOBFIT_LOGIC_VERSION = "rules_v1_2026_02_19"
+const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_24"
 
 const MODEL_ID = "current"
 
@@ -71,14 +73,9 @@ function buildJobFitFingerprint(payload: any) {
   const normalized = normalize(payload)
   const canonical = JSON.stringify(normalized)
 
-  const fingerprint_hash = crypto
-    .createHash("sha256")
-    .update(canonical)
-    .digest("hex")
+  const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
 
-  const fingerprint_code =
-    "JF-" +
-    parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
+  const fingerprint_code = "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
 
   return { fingerprint_hash, fingerprint_code }
 }
@@ -88,20 +85,18 @@ function buildJobFitFingerprint(payload: any) {
  */
 export async function POST(req: Request) {
   try {
-    // Auth + stored profile (server-side, user-bound)
     const { profileId, profileText } = await getAuthedProfileText(req)
 
-// Pull structured profile fields for deterministic overrides
-const { data: profileRowDb, error: profileLookupError } = await supabaseAdmin
-  .from("client_profiles")
-  .select("id, profile_structured, target_roles, preferred_locations, risk_overrides")
-  .eq("id", profileId)
-  .maybeSingle()
+    // Pull structured profile fields for deterministic overrides
+    const { data: profileRowDb, error: profileLookupError } = await supabaseAdmin
+      .from("client_profiles")
+      .select("id, profile_structured, target_roles, preferred_locations, risk_overrides")
+      .eq("id", profileId)
+      .maybeSingle()
 
-if (profileLookupError || !profileRowDb) {
-  return withCorsJson(req, { error: "Profile lookup failed" }, 404)
-}
-// Fetch full structured profile row
+    if (profileLookupError || !profileRowDb) {
+      return withCorsJson(req, { error: "Profile lookup failed" }, 404)
+    }
 
     // Parse request body
     let body: any
@@ -116,32 +111,40 @@ if (profileLookupError || !profileRowDb) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
-    // Fingerprint inputs used for evaluation (job + profile + system pins)
+    // Build structured overrides from profile row
+    const profileOverrides = mapClientProfileToOverrides({
+      profileText,
+      profileStructured: (profileRowDb as any)?.profile_structured ?? null,
+      targetRoles: (profileRowDb as any)?.target_roles ?? null,
+      preferredLocations: (profileRowDb as any)?.preferred_locations ?? null,
+    })
+
+    // Fingerprint inputs used for evaluation (job + profile + overrides + system pins)
     const fingerprintPayload = {
       job: { text: jobText || MISSING },
-      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      profile: {
+        id: profileId || MISSING,
+        text: profileText || MISSING,
+        overrides: profileOverrides || MISSING,
+      },
       system: {
         jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
         model_id: MODEL_ID,
-jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+        jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       },
     }
 
-    const { fingerprint_hash, fingerprint_code } =
-      buildJobFitFingerprint(fingerprintPayload)
+    const { fingerprint_hash, fingerprint_code } = buildJobFitFingerprint(fingerprintPayload)
 
     // 1) Lookup existing run (best effort)
     const { data: existingRun, error: findErr } = await supabaseAdmin
       .from("jobfit_runs")
-      .select(
-        "result_json, verdict, fingerprint_code, fingerprint_hash, created_at"
-      )
+      .select("result_json, verdict, fingerprint_code, fingerprint_hash, created_at")
       .eq("client_profile_id", profileId)
       .eq("fingerprint_hash", fingerprint_hash)
       .maybeSingle()
 
     if (findErr) {
-      // Lookup failure should not block the user.
       console.warn("jobfit_runs lookup failed:", findErr.message)
     }
 
@@ -150,27 +153,17 @@ jobfit_logic_version: JOBFIT_LOGIC_VERSION,
         ...(existingRun.result_json as any),
         fingerprint_code,
         fingerprint_hash,
-jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+        jobfit_logic_version: JOBFIT_LOGIC_VERSION,
         reused: true,
       })
     }
 
-    // Build structured overrides from profile row
-const profileOverrides = mapClientProfileToOverrides({
-  profileText,
-  profileStructured: (profileRowDb as any)?.profile_structured ?? null,
-  targetRoles: (profileRowDb as any)?.target_roles ?? null,
-  preferredLocations: (profileRowDb as any)?.preferred_locations ?? null,
-})
-
-console.log("profileOverrides", profileOverrides)
-
-// 2) Run JobFit (deterministic engine)
-const result = await runJobFit({
-  profileText,
-  jobText,
-  profileOverrides,
-})
+    // 2) Run JobFit (deterministic engine + bullet layer via wrapper)
+    const result = await runJobFit({
+      profileText,
+      jobText,
+      profileOverrides,
+    })
 
     // 3) Store result (best effort)
     const toStore = {
@@ -178,16 +171,11 @@ const result = await runJobFit({
       job_url: null,
       fingerprint_hash,
       fingerprint_code,
-      verdict: String(
-        (result as any)?.decision ?? (result as any)?.verdict ?? "unknown"
-      ),
+      verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
       result_json: result,
     }
 
-    const { error: insertErr } = await supabaseAdmin
-      .from("jobfit_runs")
-      .insert(toStore)
-
+    const { error: insertErr } = await supabaseAdmin.from("jobfit_runs").insert(toStore)
     if (insertErr) {
       console.warn("jobfit_runs insert failed:", insertErr.message)
     }
@@ -196,7 +184,7 @@ const result = await runJobFit({
       ...result,
       fingerprint_code,
       fingerprint_hash,
-  jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+      jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       reused: false,
     })
   } catch (err: any) {

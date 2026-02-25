@@ -1,4 +1,4 @@
-// app/api/jobfit/bulletGenerator.ts
+// FILE: app/api/jobfit/bulletGenerator.ts
 import OpenAI from "openai"
 import { BANNED_PHRASES, validateBullets } from "./bulletValidator"
 
@@ -9,11 +9,11 @@ type BulletOutput = {
 }
 
 type GenerateBulletsOptions = {
-  model?: string // e.g. "gpt-4.1-mini" or whatever you use
-  temperature?: number // keep low
-  maxRetries?: number // validator retries
-  strictGates?: boolean // if true, WHY = 0 when any gates
-  requestId?: string // for logging
+  model?: string
+  temperature?: number
+  maxRetries?: number
+  strictGates?: boolean
+  requestId?: string
 }
 
 function safeJsonParse<T>(raw: string): { ok: true; value: T } | { ok: false; error: string } {
@@ -117,7 +117,6 @@ function deterministicFallback(evidence: any, strictGates: boolean): BulletOutpu
           const jf = w?.job_fact ? String(w.job_fact).trim() : ""
           const pf = w?.profile_fact ? String(w.profile_fact).trim() : ""
           const link = w?.link ? String(w.link).trim() : ""
-          // Keep it crisp and evidence-bound
           return link || (jf && pf ? `${jf}; profile evidence: ${pf}.` : jf || pf || "Direct fit evidence.")
         })
 
@@ -158,14 +157,12 @@ export async function generateJobfitBullets(
   const model = opts.model || process.env.JOBFIT_BULLET_MODEL || "gpt-4.1-mini"
   const temperature = typeof opts.temperature === "number" ? opts.temperature : 0.2
   const maxRetries = typeof opts.maxRetries === "number" ? opts.maxRetries : 2
-  const strictGates = opts.strictGates !== false // default true
+  const strictGates = opts.strictGates !== false
   const requestId = opts.requestId || evidence?.id || "jobfit"
 
-  // quick strict gate enforcement at generator boundary
   const gates = Array.isArray(evidence?.gates) ? evidence.gates : []
   const hasGates = gates.length > 0
   if (strictGates && hasGates) {
-    // force output rules for WHY to 0-0 so LLM cannot produce WHY
     evidence = {
       ...evidence,
       output_rules: { ...(evidence.output_rules || {}), why_min: 0, why_max: 0 },
@@ -175,7 +172,6 @@ export async function generateJobfitBullets(
   let attempts = 0
   let lastViolations: string[] = []
 
-  // First attempt plus repair attempts
   while (attempts <= maxRetries) {
     attempts++
 
@@ -189,7 +185,6 @@ export async function generateJobfitBullets(
           { role: "system", content: buildSystemPrompt() },
           { role: "user", content: userPrompt },
         ],
-        // Encourage JSON-only output
         response_format: { type: "json_object" } as any,
       })
 
@@ -203,12 +198,10 @@ export async function generateJobfitBullets(
 
       const out = parsed.value
 
-      // normalize arrays
       out.why_bullets = Array.isArray(out.why_bullets) ? out.why_bullets.filter(Boolean) : []
       out.risk_bullets = Array.isArray(out.risk_bullets) ? out.risk_bullets.filter(Boolean) : []
       out.reasoning = typeof out.reasoning === "string" ? out.reasoning : ""
 
-      // extra hard cleanup: remove em dashes and trim
       out.why_bullets = out.why_bullets.map((b) => b.replace(/[\u2013\u2014]/g, "-").trim())
       out.risk_bullets = out.risk_bullets.map((b) => b.replace(/[\u2013\u2014]/g, "-").trim())
       out.reasoning = out.reasoning.replace(/[\u2013\u2014]/g, "-").trim()
@@ -220,15 +213,15 @@ export async function generateJobfitBullets(
       }
 
       lastViolations = validation.violations
+      // eslint-disable-next-line no-unused-vars
+      const _rid = requestId
     } catch (e: any) {
       lastViolations = [`LLM call failed: ${e?.message || String(e)}`]
     }
   }
 
-  // If we reach here, use fallback
   const fallback = deterministicFallback(evidence, strictGates)
 
-  // last pass: strip any banned phrases that might appear in fallback links
   const scrub = (s: string) => {
     let t = s
     for (const p of BANNED_PHRASES) {

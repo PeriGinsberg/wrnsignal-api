@@ -1,15 +1,9 @@
-// app/api/_lib/jobfitEvaluator.ts
-
-// app/api/_lib/jobfitEvaluator.ts
+// FILE: app/api/_lib/jobfitEvaluator.ts
 
 import { evaluateJobFit } from "../jobfit/evaluator"
-import type { EvalOutput, StructuredProfileSignals } from "../jobfit/signals"
+import type { EvalOutput, StructuredProfileSignals, Decision, LocationConstraint } from "../jobfit/signals"
 import { buildEvidencePacket } from "../jobfit/evidenceBuilder"
 import { generateJobfitBullets } from "../jobfit/bulletGenerator"
-
-// Keep legacy UI contract (UI depends on this shape)
-type Decision = "Apply" | "Review" | "Pass"
-type LocationConstraint = "constrained" | "not_constrained" | "unclear"
 
 function iconForDecision(decision: Decision) {
   if (decision === "Apply") return "✅"
@@ -17,40 +11,23 @@ function iconForDecision(decision: Decision) {
   return "⛔"
 }
 
-/**
- * Deterministic JobFit runner.
- * Compatibility wrapper around /jobfit/* engine.
- */
-export async function runJobFit({
-  profileText,
-  jobText,
-  profileOverrides,
-}: {
+export async function runJobFit(args: {
   profileText: string
   jobText: string
   profileOverrides?: Partial<StructuredProfileSignals>
 }) {
   const out: EvalOutput = evaluateJobFit({
-    jobText,
-    profileText,
-    profileOverrides,
+    jobText: args.jobText,
+    profileText: args.profileText,
+    profileOverrides: args.profileOverrides,
   })
-
-console.log("JOBFIT DEBUG OUT:", {
-  decision: out.decision,
-  score: out.score,
-  why_codes_type: typeof out.why_codes,
-  why_codes_len: Array.isArray(out.why_codes) ? out.why_codes.length : null,
-  risk_codes_len: Array.isArray(out.risk_codes) ? out.risk_codes.length : null,
-  gate_triggered: out.gate_triggered,
-})
 
   const evidence = buildEvidencePacket({
     out,
-    profileText,
-    jobText,
-    profileOverrides,
-  id: undefined,
+    profileText: args.profileText,
+    jobText: args.jobText,
+    profileOverrides: args.profileOverrides,
+    id: undefined,
   })
 
   const { bullets: llmBullets } = await generateJobfitBullets(evidence, {
@@ -59,22 +36,15 @@ console.log("JOBFIT DEBUG OUT:", {
     temperature: 0.2,
     requestId: evidence.id,
   })
-console.log("JOBFIT V3 DEBUG:", {
-  decision: out.decision,
-  score: out.score,
-  gates: evidence.gates,
-  why_count: llmBullets.why_bullets.length,
-  risk_count: llmBullets.risk_bullets.length,
-})
-    return {
-    decision: out.decision as Decision,
-    icon: iconForDecision(out.decision as Decision),
+
+  return {
+    decision: out.decision,
+    icon: iconForDecision(out.decision),
     score: out.score,
     bullets: llmBullets.why_bullets.slice(0, 8),
     risk_flags: llmBullets.risk_bullets.slice(0, 6),
     next_step: out.next_step,
     location_constraint: out.location_constraint as LocationConstraint,
-
     why_codes: out.why_codes,
     risk_codes: out.risk_codes,
     gate_triggered: out.gate_triggered,

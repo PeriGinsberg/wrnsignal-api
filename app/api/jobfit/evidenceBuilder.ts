@@ -1,14 +1,11 @@
-// app/api/jobfit/evidenceBuilder.ts
+// FILE: app/api/jobfit/evidenceBuilder.ts
+
 import type { EvalOutput, StructuredProfileSignals } from "./signals"
 
 export type JobFitDecision = "Apply" | "Review" | "Pass"
 
 export type Gate =
-  | { type: "constraint_work_model"; detail: string }
   | { type: "constraint_location"; detail: string }
-  | { type: "constraint_timeline"; detail: string }
-  | { type: "constraint_function"; detail: string }
-  | { type: "requirement_major"; detail: string }
   | { type: "other_hard_gate"; detail: string }
 
 export type EvidencePacket = {
@@ -39,12 +36,7 @@ export type EvidencePacket = {
   }
   drivers: {
     why_evidence: Array<{ job_fact: string; profile_fact: string; link: string }>
-    risk_evidence: Array<{
-      job_fact: string
-      profile_fact: string | null
-      risk: string
-      severity: "low" | "medium" | "high"
-    }>
+    risk_evidence: Array<{ job_fact: string; profile_fact: string | null; risk: string; severity: "low" | "medium" | "high" }>
   }
   output_rules: { why_min: number; why_max: number; risk_min: number; risk_max: number }
 }
@@ -60,37 +52,35 @@ export function buildEvidencePacket(args: {
   profileOverrides?: Partial<StructuredProfileSignals>
   id?: string
 }): EvidencePacket {
-  const { out, id } = args
+  const { out } = args
 
   const gates: Gate[] = []
-  if (out.gate_triggered) {
-    // minimal mapping for v1. You can improve classification later.
-    gates.push({ type: "other_hard_gate", detail: safeStr(out.gate_triggered) || "Hard gate triggered" })
+  if (out.gate_triggered && out.gate_triggered.type !== "none") {
+    gates.push({ type: "other_hard_gate", detail: safeStr(out.gate_triggered.detail) || "Gate triggered" })
   }
-  if (out.location_constraint && out.location_constraint !== "unclear" && out.decision === "Pass") {
+
+  if (out.location_constraint !== "unclear" && out.decision === "Pass") {
     gates.push({ type: "constraint_location", detail: `Location constraint: ${out.location_constraint}` })
   }
 
-  // These will get better once your evaluator emits structured facts.
-  // For now we fill with conservative placeholders derived from codes.
   const whyCodes = Array.isArray(out.why_codes) ? out.why_codes : []
   const riskCodes = Array.isArray(out.risk_codes) ? out.risk_codes : []
 
-  const why_evidence = whyCodes.slice(0, 10).map((c: any) => ({
-    job_fact: safeStr(c?.job_fact) || safeStr(c) || "Job requirement",
-    profile_fact: safeStr(c?.profile_fact) || "Profile evidence",
-    link: safeStr(c?.link) || safeStr(c?.note) || "Direct match based on structured evaluation.",
+  const why_evidence = whyCodes.slice(0, 10).map((c) => ({
+    job_fact: safeStr(c.job_fact) || "Job fact",
+    profile_fact: safeStr(c.profile_fact) || "Profile fact",
+    link: safeStr(c.note) || "Direct match based on structured evaluation.",
   }))
 
-  const risk_evidence = riskCodes.slice(0, 10).map((c: any) => ({
-    job_fact: safeStr(c?.job_fact) || safeStr(c) || "Job expectation",
-    profile_fact: safeStr(c?.profile_fact) || null,
-    risk: safeStr(c?.risk) || safeStr(c?.note) || "Execution risk based on structured evaluation.",
-    severity: (c?.severity === "high" || c?.severity === "medium" || c?.severity === "low") ? c.severity : "medium",
+  const risk_evidence = riskCodes.slice(0, 10).map((c) => ({
+    job_fact: safeStr(c.job_fact) || "Job fact",
+    profile_fact: c.profile_fact ? safeStr(c.profile_fact) : null,
+    risk: safeStr(c.risk) || "Execution risk based on structured evaluation.",
+    severity: c.severity,
   }))
 
   return {
-    id: id || `${Date.now()}`,
+    id: args.id || `${Date.now()}`,
     decision: out.decision as JobFitDecision,
     score: out.score,
     gates,

@@ -1,18 +1,13 @@
-// app/api/jobfit/scoring.ts
+// FILE: app/api/jobfit/scoring.ts
 
-import { POLICY, PenaltyKey } from "./policy"
-import type {
-  StructuredJobSignals,
-  StructuredProfileSignals,
-  RiskCode,
-  WhyCode,
-} from "./signals"
+import { POLICY, type PenaltyKey } from "./policy"
+import type { RiskCode, StructuredJobSignals, StructuredProfileSignals, WhyCode } from "./signals"
 
 export type Penalty = {
   key: PenaltyKey
   amount: number
   note: string
-  riskCode: RiskCode
+  risk: RiskCode
 }
 
 export type ScoreResult = {
@@ -40,77 +35,56 @@ function computePenaltyAmount(key: PenaltyKey): number {
   return p.severity * p.multiplier
 }
 
-function dedupeStrings(xs: string[]): string[] {
-  return Array.from(new Set(xs))
+function dedupeByCode<T extends { code: string }>(items: T[]): T[] {
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const it of items) {
+    if (!it?.code) continue
+    if (seen.has(it.code)) continue
+    seen.add(it.code)
+    out.push(it)
+  }
+  return out
 }
 
 function toolMissing(profileTools: string[], tool: string): boolean {
   const p = profileTools.map((x) => x.toLowerCase())
-  return !p.includes(tool.toLowerCase())
+  return !p.includes(String(tool || "").toLowerCase())
 }
 
 function normalizeCity(s: string): string {
   const t = (s || "").trim().toLowerCase()
-
-  if (t.includes("new york")) return "new york"
-  if (t.includes("nyc")) return "new york"
-
+  if (t.includes("new york") || t.includes("nyc")) return "new york"
   if (t.includes("boston")) return "boston"
   if (t.includes("philadelphia") || t.includes("philly")) return "philadelphia"
   if (t.includes("washington") && (t.includes("dc") || t.includes("d.c"))) return "washington, d.c."
-
   return t
 }
 
-function locationCityMatches(jobCity: string, preferredCities: string[]) {
+function locationCityMatches(jobCity: string, preferredCities: string[]): boolean {
   const j = normalizeCity(jobCity)
   const prefs = preferredCities.map(normalizeCity)
   return prefs.includes(j)
 }
 
-/**
- * IMPORTANT:
- * Old model: score = startScore - penalties
- * Problem: most internships generate few penalties, so score clusters (93 forever).
- *
- * New model:
- * score = baseFromFitSignals + bonuses - penalties
- * Still deterministic. Much more spread.
- */
 function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals): number {
-  // Neutral base for “seems plausible”
   let base = 72
 
-  // Job family alignment is the biggest positive
   if (profile.targetFamilies.includes(job.jobFamily)) base += 10
-
-  // Marketing that is NOT analytics-heavy is good for most marketing-target profiles
   if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) base += 4
-
-  // Early-career friendly
   if (!job.yearsRequired || job.yearsRequired <= 1) base += 5
 
-  // Internship structure bonuses (only when present)
   if (job.internship?.isInternship) base += 5
   if (job.internship?.isSummer) base += 3
   if (job.internship?.hasCapstone) base += 4
-
-  // Rotation is valuable, but don’t over-reward it
   if (job.internship?.isMarketingRotation) base += 3
-
-  // Explicit AI comfort callout is a mild signal, not a giant one
   if (job.internship?.mentionsAITools) base += 2
 
-  // Location positives (strict city match is strongest)
   const jobCity = job.location?.city ?? null
-  const allowedCities = profile.locationPreference?.allowedCities ?? null
-  const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
-  const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
-
-  if (jobCityKnown && hasCityPrefs && locationCityMatches(jobCity!, allowedCities!)) {
+  const allowedCities = profile.locationPreference.allowedCities
+  if (jobCity && Array.isArray(allowedCities) && allowedCities.length > 0 && locationCityMatches(jobCity, allowedCities)) {
     base += 6
   } else {
-    // fallback: mode match (weak)
     const modeOk =
       profile.locationPreference.mode !== "unclear" &&
       job.location.mode !== "unclear" &&
@@ -125,94 +99,200 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const penalties: Penalty[] = []
   const whyCodes: WhyCode[] = []
 
-  const hasExplicitTools = job.requiredTools.length + job.preferredTools.length > 0
+  const hasExplicitTools = (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
-  // WHY signals
-  if (profile.targetFamilies.includes(job.jobFamily)) whyCodes.push("WHY_FAMILY_MATCH")
-  if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) whyCodes.push("WHY_MARKETING_EXECUTION")
-  if (job.analytics.isLight && !job.analytics.isHeavy) whyCodes.push("WHY_MEASUREMENT_LIGHT")
-  if (!job.yearsRequired || job.yearsRequired <= 1) whyCodes.push("WHY_EARLY_CAREER_FRIENDLY")
+  // WHY evidence
+  if (profile.targetFamilies.includes(job.jobFamily)) {
+    whyCodes.push({
+      code: "WHY_FAMILY_MATCH",
+      job_fact: `Role family detected as ${job.jobFamily}.`,
+      profile_fact: `Target families include ${profile.targetFamilies.join(", ")}.`,
+      note: "The job family matches what you are targeting.",
+      weight: 10,
+    })
+  }
 
-  // Location WHY: prefer city match when possible
+  if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) {
+    whyCodes.push({
+      code: "WHY_MARKETING_EXECUTION",
+      job_fact: "Marketing role signals without heavy analytics requirements.",
+      profile_fact: "Marketing-target profile.",
+      note: "This reads like execution work with deliverables, not an analytics-first role.",
+      weight: 4,
+    })
+  }
+
+  if (job.analytics.isLight && !job.analytics.isHeavy) {
+    whyCodes.push({
+      code: "WHY_MEASUREMENT_LIGHT",
+      job_fact: "Measurement/reporting signals appear without heavy analytics keywords.",
+      profile_fact: profile.constraints.preferNotAnalyticsHeavy ? "You prefer not analytics-heavy roles." : "No heavy analytics preference detected.",
+      note: "Measurement shows up, but it is not framed as a heavy analytics role.",
+      weight: 2,
+    })
+  }
+
+  if (!job.yearsRequired || job.yearsRequired <= 1) {
+    whyCodes.push({
+      code: "WHY_EARLY_CAREER_FRIENDLY",
+      job_fact: job.yearsRequired ? `Posting suggests ~${job.yearsRequired} years required.` : "No years-of-experience requirement detected.",
+      profile_fact: profile.yearsExperienceApprox !== null ? `Profile experience approx ${profile.yearsExperienceApprox} years.` : "Early-career profile signal.",
+      note: "The requirements look realistic for an early-career candidate.",
+      weight: 5,
+    })
+  }
+
+  // Location WHY
   {
     const jobCity = job.location?.city ?? null
-    const allowedCities = profile.locationPreference?.allowedCities ?? null
-    const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
-    const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
+    const allowedCities = profile.locationPreference.allowedCities
 
-    const cityOk = jobCityKnown && hasCityPrefs ? locationCityMatches(jobCity!, allowedCities!) : false
+    const cityOk =
+      typeof jobCity === "string" &&
+      jobCity.trim().length > 0 &&
+      Array.isArray(allowedCities) &&
+      allowedCities.length > 0 &&
+      locationCityMatches(jobCity, allowedCities)
 
     const modeOk =
       profile.locationPreference.mode !== "unclear" &&
       job.location.mode !== "unclear" &&
       profile.locationPreference.mode === job.location.mode
 
-    if (cityOk || modeOk) whyCodes.push("WHY_LOCATION_MATCH")
+    if (cityOk || modeOk) {
+      whyCodes.push({
+        code: "WHY_LOCATION_MATCH",
+        job_fact: cityOk
+          ? `Job location indicates ${jobCity}.`
+          : `Job work mode indicates ${job.location.mode}.`,
+        profile_fact: cityOk
+          ? `Allowed cities include ${allowedCities!.join(", ")}.`
+          : `Preferred work mode is ${profile.locationPreference.mode}.`,
+        note: "The work setup and location match your stated preference.",
+        weight: cityOk ? 6 : 2,
+      })
+    }
   }
 
-  // Tool WHY only when the job lists explicit tools
+  // Tool WHY (only if job explicitly lists tools)
   if (hasExplicitTools) {
-    const missing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
-    if (missing.length <= 1) whyCodes.push("WHY_TOOL_MATCH")
+    const missing = (job.requiredTools || []).filter((t) => toolMissing(profile.tools || [], t))
+    if (missing.length <= 1) {
+      whyCodes.push({
+        code: "WHY_TOOL_MATCH",
+        job_fact: `Posting lists tools such as: ${[...(job.requiredTools || []), ...(job.preferredTools || [])].slice(0, 6).join(", ")}.`,
+        profile_fact: profile.tools?.length ? `Profile tools include: ${profile.tools.slice(0, 8).join(", ")}.` : "No tools listed in profile.",
+        note: "Your current tools align with what the role actually uses.",
+        weight: 2,
+      })
+    }
   }
 
-  // Internship-specific WHY codes
-  if (job.internship?.isInternship && job.internship?.isSummer) whyCodes.push("WHY_SUMMER_INTERNSHIP_MATCH")
+  // Internship WHY
+  if (job.internship?.isInternship && job.internship?.isSummer) {
+    whyCodes.push({
+      code: "WHY_SUMMER_INTERNSHIP_MATCH",
+      job_fact: "Posting indicates internship and Summer timing.",
+      profile_fact: "Profile text indicates internship targeting.",
+      note: "This matches your Summer internship timeline.",
+      weight: 3,
+    })
+  }
 
   if (
     job.internship?.isInPersonExplicit &&
     profile.constraints.hardNoFullyRemote &&
-    (job.location.mode === "onsite" || job.location.mode === "hybrid")
+    (job.location.mode === "in_person" || job.location.mode === "hybrid")
   ) {
-    whyCodes.push("WHY_IN_PERSON_MATCH")
+    whyCodes.push({
+      code: "WHY_IN_PERSON_MATCH",
+      job_fact: job.internship?.evidence?.inPersonLine || "Posting indicates in-person or hybrid setup.",
+      profile_fact: "You have a no-remote constraint.",
+      note: "The role setup matches your no-remote constraint.",
+      weight: 2,
+    })
   }
 
-  if (job.internship?.mentionsAITools) whyCodes.push("WHY_AI_TOOLS_MATCH")
+  if (job.internship?.mentionsAITools) {
+    whyCodes.push({
+      code: "WHY_AI_TOOLS_MATCH",
+      job_fact: job.internship?.evidence?.aiLine || "Posting explicitly mentions AI tools.",
+      profile_fact: profile.tools?.includes("AI Tools") ? "Profile includes AI tools exposure." : "AI exposure not explicitly listed, but the signal is present.",
+      note: "AI tooling is explicitly part of the role environment.",
+      weight: 1,
+    })
+  }
+
   if (job.internship?.isMarketingRotation && profile.targetFamilies.includes("Marketing")) {
-    whyCodes.push("WHY_MARKETING_ROTATION_MATCH")
+    whyCodes.push({
+      code: "WHY_MARKETING_ROTATION_MATCH",
+      job_fact: job.internship?.evidence?.deptLine || "Posting spans multiple marketing functions.",
+      profile_fact: "Marketing-target profile.",
+      note: "Rotation structure supports broader marketing exposure.",
+      weight: 2,
+    })
   }
 
-  // ---------------- Location mismatch (STRICT) ----------------
-  // Only penalize location when:
-  // - profile is constrained
-  // - job city is known
-  // - allowed city list is explicit
+  // Penalties (each must carry structured RiskCode)
+  // Location mismatch (only when profile is constrained AND has explicit allowedCities AND job city known)
   {
     const profileConstrained = !!profile.locationPreference.constrained
     const jobCity = job.location?.city ?? null
-    const allowedCities = profile.locationPreference?.allowedCities ?? null
-    const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
-    const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
+    const allowedCities = profile.locationPreference.allowedCities
 
-    if (profileConstrained && jobCityKnown && hasCityPrefs) {
-      if (!locationCityMatches(jobCity!, allowedCities!)) {
-        penalties.push({
-          key: "location_mismatch_constrained",
-          amount: computePenaltyAmount("location_mismatch_constrained"),
-          note: `Constrained city mismatch (job: ${jobCity})`,
-          riskCode: "RISK_LOCATION",
-        })
-      }
+    if (
+      profileConstrained &&
+      typeof jobCity === "string" &&
+      jobCity.trim().length > 0 &&
+      Array.isArray(allowedCities) &&
+      allowedCities.length > 0 &&
+      !locationCityMatches(jobCity, allowedCities)
+    ) {
+      penalties.push({
+        key: "location_mismatch_constrained",
+        amount: computePenaltyAmount("location_mismatch_constrained"),
+        note: `Constrained city mismatch (job: ${jobCity})`,
+        risk: {
+          code: "RISK_LOCATION",
+          job_fact: `Job location indicates ${jobCity}.`,
+          profile_fact: `Allowed cities are ${allowedCities.join(", ")}.`,
+          risk: "Your location constraints do not match the job location.",
+          severity: "high",
+          weight: -computePenaltyAmount("location_mismatch_constrained"),
+        },
+      })
     }
   }
 
-  // Analytics mismatch
   if (profile.constraints.preferNotAnalyticsHeavy && job.analytics.isHeavy) {
     penalties.push({
       key: "heavy_analytics_mismatch",
       amount: computePenaltyAmount("heavy_analytics_mismatch"),
       note: "Analytics heavy signals present",
-      riskCode: "RISK_ANALYTICS_HEAVY",
+      risk: {
+        code: "RISK_ANALYTICS_HEAVY",
+        job_fact: "Posting contains heavy analytics keywords (SQL/Python/modeling/experiments).",
+        profile_fact: "You prefer not analytics-heavy roles.",
+        risk: "This role likely expects analytics depth that conflicts with your preference.",
+        severity: "high",
+        weight: -computePenaltyAmount("heavy_analytics_mismatch"),
+      },
     })
   }
 
-  // Sales / Gov mismatches
   if (profile.constraints.hardNoSales && job.isSalesHeavy) {
     penalties.push({
       key: "sales_mismatch",
       amount: computePenaltyAmount("sales_mismatch"),
       note: "Sales signals present",
-      riskCode: "RISK_SALES",
+      risk: {
+        code: "RISK_SALES",
+        job_fact: "Posting contains sales signals (quota/commission/pipeline/cold outreach).",
+        profile_fact: "You have a hard no sales constraint.",
+        risk: "Sales expectations conflict with your constraints.",
+        severity: "high",
+        weight: -computePenaltyAmount("sales_mismatch"),
+      },
     })
   }
 
@@ -221,17 +301,30 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       key: "government_mismatch",
       amount: computePenaltyAmount("government_mismatch"),
       note: "Government signals present",
-      riskCode: "RISK_GOVERNMENT",
+      risk: {
+        code: "RISK_GOVERNMENT",
+        job_fact: "Posting contains government or clearance signals.",
+        profile_fact: "You have a hard no government constraint.",
+        risk: "Government environment conflicts with your constraints.",
+        severity: "high",
+        weight: -computePenaltyAmount("government_mismatch"),
+      },
     })
   }
 
-  // Contract / Hourly mismatches
   if (profile.constraints.prefFullTime && job.isContract) {
     penalties.push({
       key: "contract_mismatch",
       amount: computePenaltyAmount("contract_mismatch"),
       note: "Contract vs full-time preference",
-      riskCode: "RISK_CONTRACT",
+      risk: {
+        code: "RISK_CONTRACT",
+        job_fact: "Posting indicates contract/temporary structure.",
+        profile_fact: "You prefer full-time roles.",
+        risk: "Role structure conflicts with your work-type preference.",
+        severity: "medium",
+        weight: -computePenaltyAmount("contract_mismatch"),
+      },
     })
   }
 
@@ -240,7 +333,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       key: "contract_mismatch",
       amount: computePenaltyAmount("contract_mismatch") + 2,
       note: "Hard no contract",
-      riskCode: "RISK_CONTRACT",
+      risk: {
+        code: "RISK_CONTRACT",
+        job_fact: "Posting indicates contract/temporary structure.",
+        profile_fact: "You have a hard no contract constraint.",
+        risk: "Role structure conflicts with your hard constraint.",
+        severity: "high",
+        weight: -(computePenaltyAmount("contract_mismatch") + 2),
+      },
     })
   }
 
@@ -249,21 +349,34 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       key: "hourly_pay_mismatch",
       amount: computePenaltyAmount("hourly_pay_mismatch"),
       note: "Hourly pay signals present",
-      riskCode: "RISK_HOURLY",
+      risk: {
+        code: "RISK_HOURLY",
+        job_fact: "Posting indicates hourly compensation.",
+        profile_fact: "You have a no hourly constraint.",
+        risk: "Compensation structure conflicts with your preference.",
+        severity: "medium",
+        weight: -computePenaltyAmount("hourly_pay_mismatch"),
+      },
     })
   }
 
-  // Missing tools (STRICT)
   if (hasExplicitTools) {
-    const requiredMissing = job.requiredTools.filter((t) => toolMissing(profile.tools, t))
-    const preferredMissing = job.preferredTools.filter((t) => toolMissing(profile.tools, t))
+    const requiredMissing = (job.requiredTools || []).filter((t) => toolMissing(profile.tools || [], t))
+    const preferredMissing = (job.preferredTools || []).filter((t) => toolMissing(profile.tools || [], t))
 
     for (const tool of requiredMissing) {
       penalties.push({
         key: "missing_core_tool",
         amount: computePenaltyAmount("missing_core_tool"),
         note: `Missing required tool: ${tool}`,
-        riskCode: "RISK_MISSING_TOOLS",
+        risk: {
+          code: "RISK_MISSING_TOOLS",
+          job_fact: `Posting lists ${tool} as required.`,
+          profile_fact: profile.tools?.length ? `Profile tools: ${profile.tools.join(", ")}.` : null,
+          risk: `You have not shown ${tool} yet, and it is listed as required.`,
+          severity: "high",
+          weight: -computePenaltyAmount("missing_core_tool"),
+        },
       })
     }
 
@@ -272,40 +385,65 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         key: "missing_preferred_tool",
         amount: computePenaltyAmount("missing_preferred_tool"),
         note: `Missing preferred tool: ${tool}`,
-        riskCode: "RISK_MISSING_TOOLS",
+        risk: {
+          code: "RISK_MISSING_TOOLS",
+          job_fact: `Posting lists ${tool} as preferred.`,
+          profile_fact: profile.tools?.length ? `Profile tools: ${profile.tools.join(", ")}.` : null,
+          risk: `You have not shown ${tool} yet, and it is listed as preferred.`,
+          severity: "medium",
+          weight: -computePenaltyAmount("missing_preferred_tool"),
+        },
       })
     }
   }
 
-  // Reporting emphasis
   if (job.reportingSignals.strong && !job.analytics.isHeavy) {
     penalties.push({
       key: "missing_reporting_signals",
       amount: computePenaltyAmount("missing_reporting_signals"),
       note: "Strong reporting ownership signals",
-      riskCode: "RISK_REPORTING_SIGNALS",
+      risk: {
+        code: "RISK_REPORTING_SIGNALS",
+        job_fact: "Posting emphasizes reporting/KPI ownership.",
+        profile_fact: "Profile does not show direct reporting ownership evidence.",
+        risk: "Reporting ownership expectations may be a stretch depending on your proof points.",
+        severity: "medium",
+        weight: -computePenaltyAmount("missing_reporting_signals"),
+      },
     })
   }
 
-  // Years experience gap
   if (job.yearsRequired && profile.yearsExperienceApprox !== null) {
     if (profile.yearsExperienceApprox + 0.5 < job.yearsRequired) {
       penalties.push({
         key: "experience_years_gap",
         amount: computePenaltyAmount("experience_years_gap"),
         note: `Years required ${job.yearsRequired}, profile approx ${profile.yearsExperienceApprox}`,
-        riskCode: "RISK_EXPERIENCE",
+        risk: {
+          code: "RISK_EXPERIENCE",
+          job_fact: `Posting suggests ~${job.yearsRequired} years of experience.`,
+          profile_fact: `Profile experience approx ${profile.yearsExperienceApprox} years.`,
+          risk: "Experience requirement may be above your current level.",
+          severity: "medium",
+          weight: -computePenaltyAmount("experience_years_gap"),
+        },
       })
     }
   }
 
-  // MBA / Grad mismatch risks
   if (job.mbaRequired) {
     penalties.push({
       key: "mba_required",
       amount: computePenaltyAmount("mba_required"),
       note: "MBA required",
-      riskCode: "RISK_MBA",
+      risk: {
+        code: "RISK_MBA",
+        job_fact: "Posting indicates MBA required.",
+        profile_fact: null,
+        risk: "MBA requirement likely blocks eligibility.",
+        severity: "high",
+        weight: -computePenaltyAmount("mba_required"),
+      },
     })
   }
 
@@ -316,12 +454,19 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         key: "grad_window_mismatch",
         amount: computePenaltyAmount("grad_window_mismatch"),
         note: "Graduation window mismatch",
-        riskCode: "RISK_GRAD_WINDOW",
+        risk: {
+          code: "RISK_GRAD_WINDOW",
+          job_fact: `Posting screens for graduation year around ${job.gradYearHint}.`,
+          profile_fact: `Profile graduation year is ${profile.gradYear}.`,
+          risk: "Graduation timing likely does not match what the posting is screening for.",
+          severity: "high",
+          weight: -computePenaltyAmount("grad_window_mismatch"),
+        },
       })
     }
   }
 
-  // Apply per-key stacking caps
+  // Stack caps
   const counts: Record<string, number> = {}
   const capped: Penalty[] = []
   for (const p of penalties) {
@@ -330,25 +475,22 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     if (counts[p.key] <= maxStack) capped.push(p)
   }
 
-  // Total penalty sum with diminishing returns + hard cap
   const rawPenaltySum = capped.reduce((s, p) => s + p.amount, 0)
   const diminished = applyDiminishingReturns(rawPenaltySum)
   const penaltySum = Math.min(POLICY.score.penaltyStackCap, diminished)
 
-  // NEW score composition
   const base = computeBaseScore(job, profile)
   let score = base - penaltySum
-
-  // Clamp to your desired visible band
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
 
-  const riskCodes = dedupeStrings(capped.map((p) => p.riskCode)) as RiskCode[]
+  const riskCodes = dedupeByCode(capped.map((p) => p.risk))
+  const whyOut = dedupeByCode(whyCodes)
 
   return {
     score: Math.round(score),
     penalties: capped,
     penaltySum,
-    whyCodes: dedupeStrings(whyCodes) as WhyCode[],
+    whyCodes: whyOut,
     riskCodes,
   }
 }
