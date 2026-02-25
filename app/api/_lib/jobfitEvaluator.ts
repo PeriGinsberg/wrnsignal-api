@@ -35,6 +35,16 @@ export async function runJobFit({
     profileText,
     profileOverrides,
   })
+
+console.log("JOBFIT DEBUG OUT:", {
+  decision: out.decision,
+  score: out.score,
+  why_codes_type: typeof out.why_codes,
+  why_codes_len: Array.isArray(out.why_codes) ? out.why_codes.length : null,
+  risk_codes_len: Array.isArray(out.risk_codes) ? out.risk_codes.length : null,
+  gate_triggered: out.gate_triggered,
+})
+
   const evidence = buildEvidencePacket({
     out,
     profileText,
