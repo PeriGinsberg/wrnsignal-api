@@ -55,9 +55,7 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
 
   // If the candidate explicitly says "no heavy analytics", treat heavy analytics as a hard stop.
   // With your updated extract.ts, "Marketing Insights" style roles will now correctly trip this.
-  if (profile.constraints.preferNotAnalyticsHeavy && job.analytics.isHeavy) {
-    return { type: "force_pass", gateCode: "GATE_HEAVY_ANALYTICS", detail: "Heavy analytics mismatch" }
-  }
+ 
 
   // Graduation window mismatch (job explicitly screening)
   if (profile.gradYear && job.gradYearHint) {

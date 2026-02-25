@@ -2,7 +2,6 @@
 
 export type PenaltyKey =
   | "location_mismatch_constrained"
-  | "heavy_analytics_mismatch"
   | "sales_mismatch"
   | "government_mismatch"
   | "contract_mismatch"
@@ -27,7 +26,7 @@ export type PenaltyPolicy = {
  * Extraction config MUST match what extract.ts reads:
  * - extraction.location.*
  * - extraction.internship.*
- * - extraction.analytics.*
+ * - extraction.analytics.* (if used)
  * - extraction.government/sales/contract/hourly/mba.*
  * - extraction.years.patterns
  * - extraction.grad.patterns
@@ -105,12 +104,6 @@ export const POLICY: JobFitPolicy = {
       label: "Location mismatch (constrained)",
       severity: 4,
       multiplier: 3.2,
-      maxStackCount: 1,
-    },
-    heavy_analytics_mismatch: {
-      label: "Analytics-heavy mismatch",
-      severity: 4,
-      multiplier: 3.0,
       maxStackCount: 1,
     },
     sales_mismatch: {
@@ -191,7 +184,8 @@ export const POLICY: JobFitPolicy = {
       WHY_SUMMER_INTERNSHIP_MATCH: "The posting is a Summer internship and matches the timeline you are targeting.",
       WHY_IN_PERSON_MATCH: "The role is in-person or hybrid, which matches your no-remote constraint.",
       WHY_AI_TOOLS_MATCH: "The posting calls out AI tools, which aligns with your AI experience or training.",
-      WHY_MARKETING_ROTATION_MATCH: "The internship spans multiple marketing functions, which fits broader brand work.",
+      WHY_MARKETING_ROTATION_MATCH:
+        "The internship spans multiple marketing functions, which fits broader brand work.",
     },
     risk: {
       RISK_LOCATION: "Location or work setup looks misaligned with your stated constraints.",
@@ -204,7 +198,8 @@ export const POLICY: JobFitPolicy = {
       RISK_EXPERIENCE: "The experience requirements may be above your current level.",
       RISK_MBA: "The posting indicates an MBA requirement.",
       RISK_GRAD_WINDOW: "The graduation timing does not match what the posting is screening for.",
-      RISK_REPORTING_SIGNALS: "The posting emphasizes reporting and measurement ownership that may be a stretch.",
+      RISK_REPORTING_SIGNALS:
+        "The posting emphasizes reporting and measurement ownership that may be a stretch.",
     },
     pass: {
       GATE_GRAD_MISMATCH: "Pass. The posting is screening for a different graduation window.",
@@ -243,17 +238,13 @@ export const POLICY: JobFitPolicy = {
     },
 
     analytics: {
-      // This is the part that fixes your e.l.f. “Marketing Insights” failure.
-      // These are not “one word causes everything” terms. They are role-family signals that cluster together.
       heavyKeywords: [
-        // classic analytics stack
         "sql",
         "python",
         "tableau",
         "power bi",
         "spss",
         "r studio",
-        "r ",
         "statistics",
         "statistical",
         "regression",
@@ -287,13 +278,9 @@ export const POLICY: JobFitPolicy = {
     },
 
     government: { keywords: ["clearance", "dod", "government", "federal", "public sector", "gs-"] },
-
     sales: { keywords: ["quota", "commission", "closing", "cold call", "pipeline", "hunter", "business development"] },
-
     contract: { keywords: ["contract", "contractor", "1099", "temporary", "temp"] },
-
     hourly: { keywords: ["hourly", "$/hour", "per hour"] },
-
     mba: { keywords: ["mba required", "master of business administration required"] },
 
     years: {
@@ -301,7 +288,11 @@ export const POLICY: JobFitPolicy = {
     },
 
     grad: {
-      patterns: [/(class of)\s*(20\d{2})/i, /(graduat(e|ion))\s*(20\d{2})/i, /(expected)\s*(graduation)\s*(20\d{2})/i],
+      patterns: [
+        /(class of)\s*(20\d{2})/i,
+        /(graduat(e|ion))\s*(20\d{2})/i,
+        /(expected)\s*(graduation)\s*(20\d{2})/i,
+      ],
     },
   },
 }

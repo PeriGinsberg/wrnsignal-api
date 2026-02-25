@@ -70,7 +70,6 @@ function locationCityMatches(jobCity: string, preferredCities: string[]): boolea
 /**
  * Deterministic “Insights” detector:
  * This is intentionally simple and robust because job titles vary endlessly.
- * If we see "insights" + "research" + "data/analysis" signals, treat as analytics-adjacent.
  */
 function looksLikeInsightsRole(job: StructuredJobSignals): boolean {
   // best available structured hints without relying on raw job text
@@ -82,11 +81,11 @@ function looksLikeInsightsRole(job: StructuredJobSignals): boolean {
     toolSignals.includes("power bi") ||
     toolSignals.includes("excel")
 
-  // analytics flags already computed by extractor
-  if (job.analytics.isHeavy) return true
 
-  // if the job family is Analytics, it's obviously analytics-adjacent
-  if (job.jobFamily === "Analytics") return true
+
+
+
+
 
   // market/consumer insights roles frequently show: Excel + SQL + Tableau/PowerBI, plus “insights” behavior
   // We cannot see the raw words here, so we approximate via tool demand + reporting emphasis.
@@ -132,10 +131,7 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
     if (modeOk) base += 2
   }
 
-  // IMPORTANT: remove the old “Marketing without heavy analytics” auto-bonus.
-  // That is how “Marketing Insights” gets incorrectly rewarded.
-  // If you want an execution-marketing boost later, it must be tied to explicit creative/brand signals, not absence of keywords.
-
+  
   return base
 }
 
@@ -313,25 +309,7 @@ if (profile.constraints.hardNoFullyRemote && job.location.mode === "remote") {
   })
 }
 
-  // Analytics mismatch:
-  // Use BOTH extractor heavy flag AND insights-like heuristic.
-  if (profile.constraints.preferNotAnalyticsHeavy && (job.analytics.isHeavy || insightsLike)) {
-    penalties.push({
-      key: "heavy_analytics_mismatch",
-      amount: computePenaltyAmount("heavy_analytics_mismatch"),
-      note: insightsLike ? "Insights/analytics-adjacent role signals present" : "Analytics heavy signals present",
-      risk: {
-        code: "RISK_ANALYTICS_HEAVY",
-        job_fact: insightsLike
-          ? "Role signals consumer/market insights style work with quantitative tools/reporting emphasis."
-          : "Posting contains heavy analytics keywords (SQL/Python/modeling/experiments).",
-        profile_fact: "You prefer not analytics-heavy roles.",
-        risk: "This role likely expects analytics depth that conflicts with your preference.",
-        severity: "high",
-        weight: -computePenaltyAmount("heavy_analytics_mismatch"),
-      },
-    })
-  }
+  
 
   if (profile.constraints.hardNoSales && job.isSalesHeavy) {
     penalties.push({
@@ -451,21 +429,7 @@ if (profile.constraints.hardNoFullyRemote && job.location.mode === "remote") {
     }
   }
 
-  if (job.reportingSignals.strong && !job.analytics.isHeavy) {
-    penalties.push({
-      key: "missing_reporting_signals",
-      amount: computePenaltyAmount("missing_reporting_signals"),
-      note: "Strong reporting ownership signals",
-      risk: {
-        code: "RISK_REPORTING_SIGNALS",
-        job_fact: "Posting emphasizes reporting/KPI ownership.",
-        profile_fact: "Profile does not show direct reporting ownership evidence.",
-        risk: "The role emphasizes reporting ownership that may be a stretch depending on your proof points.",
-        severity: "medium",
-        weight: -computePenaltyAmount("missing_reporting_signals"),
-      },
-    })
-  }
+ 
 
   if (job.yearsRequired && profile.yearsExperienceApprox !== null) {
     if (profile.yearsExperienceApprox + 0.5 < job.yearsRequired) {
