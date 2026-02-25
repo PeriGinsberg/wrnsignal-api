@@ -23,6 +23,43 @@ export type PenaltyPolicy = {
   maxStackCount?: number
 }
 
+/**
+ * Extraction config MUST match what extract.ts reads:
+ * - extraction.location.*
+ * - extraction.internship.*
+ * - extraction.analytics.*
+ * - extraction.government/sales/contract/hourly/mba.*
+ * - extraction.years.patterns
+ * - extraction.grad.patterns
+ */
+export type ExtractionPolicy = {
+  location: {
+    constrainedPhrases: string[]
+    notConstrainedPhrases: string[]
+    remotePhrases: string[]
+    onsitePhrases: string[]
+    hybridPhrases: string[]
+  }
+  internship: {
+    keywords: string[]
+    summerKeywords: string[]
+    inPersonInternKeywords: string[]
+    aiToolsKeywords: string[]
+    marketingRotationKeywords: string[]
+  }
+  analytics: {
+    heavyKeywords: string[]
+    lightKeywords: string[]
+  }
+  government: { keywords: string[] }
+  sales: { keywords: string[] }
+  contract: { keywords: string[] }
+  hourly: { keywords: string[] }
+  mba: { keywords: string[] }
+  years: { patterns: RegExp[] }
+  grad: { patterns: RegExp[] }
+}
+
 export type JobFitPolicy = {
   version: string
   score: {
@@ -41,11 +78,11 @@ export type JobFitPolicy = {
     risk: Record<string, string>
     pass: Record<string, string>
   }
-  extraction: any
+  extraction: ExtractionPolicy
 }
 
 export const POLICY: JobFitPolicy = {
-  version: "jobfit_policy_v3_2026-02-24",
+  version: "jobfit_policy_v3_2026-02-25",
 
   score: {
     maxScore: 97,
@@ -64,18 +101,78 @@ export const POLICY: JobFitPolicy = {
   },
 
   penalties: {
-    location_mismatch_constrained: { label: "Location mismatch (constrained)", severity: 4, multiplier: 3.2, maxStackCount: 1 },
-    heavy_analytics_mismatch: { label: "Analytics-heavy mismatch", severity: 4, multiplier: 3.0, maxStackCount: 1 },
-    sales_mismatch: { label: "Sales mismatch", severity: 5, multiplier: 3.6, maxStackCount: 1 },
-    government_mismatch: { label: "Government mismatch", severity: 5, multiplier: 3.6, maxStackCount: 1 },
-    contract_mismatch: { label: "Contract mismatch", severity: 3, multiplier: 2.6, maxStackCount: 1 },
-    hourly_pay_mismatch: { label: "Hourly mismatch", severity: 1, multiplier: 1.6, maxStackCount: 1 },
-    missing_core_tool: { label: "Missing core tool", severity: 3, multiplier: 2.2, maxStackCount: 3 },
-    missing_preferred_tool: { label: "Missing preferred tool", severity: 1, multiplier: 1.2, maxStackCount: 4 },
-    missing_reporting_signals: { label: "Reporting ownership emphasis", severity: 2, multiplier: 1.8, maxStackCount: 2 },
-    experience_years_gap: { label: "Years gap", severity: 3, multiplier: 2.4, maxStackCount: 1 },
-    mba_required: { label: "MBA required", severity: 5, multiplier: 4.0, maxStackCount: 1 },
-    grad_window_mismatch: { label: "Grad window mismatch", severity: 5, multiplier: 4.0, maxStackCount: 1 },
+    location_mismatch_constrained: {
+      label: "Location mismatch (constrained)",
+      severity: 4,
+      multiplier: 3.2,
+      maxStackCount: 1,
+    },
+    heavy_analytics_mismatch: {
+      label: "Analytics-heavy mismatch",
+      severity: 4,
+      multiplier: 3.0,
+      maxStackCount: 1,
+    },
+    sales_mismatch: {
+      label: "Sales mismatch",
+      severity: 5,
+      multiplier: 3.6,
+      maxStackCount: 1,
+    },
+    government_mismatch: {
+      label: "Government mismatch",
+      severity: 5,
+      multiplier: 3.6,
+      maxStackCount: 1,
+    },
+    contract_mismatch: {
+      label: "Contract mismatch",
+      severity: 3,
+      multiplier: 2.6,
+      maxStackCount: 1,
+    },
+    hourly_pay_mismatch: {
+      label: "Hourly mismatch",
+      severity: 1,
+      multiplier: 1.6,
+      maxStackCount: 1,
+    },
+    missing_core_tool: {
+      label: "Missing core tool",
+      severity: 3,
+      multiplier: 2.2,
+      maxStackCount: 3,
+    },
+    missing_preferred_tool: {
+      label: "Missing preferred tool",
+      severity: 1,
+      multiplier: 1.2,
+      maxStackCount: 4,
+    },
+    missing_reporting_signals: {
+      label: "Reporting ownership emphasis",
+      severity: 2,
+      multiplier: 1.8,
+      maxStackCount: 2,
+    },
+    experience_years_gap: {
+      label: "Years gap",
+      severity: 3,
+      multiplier: 2.4,
+      maxStackCount: 1,
+    },
+    mba_required: {
+      label: "MBA required",
+      severity: 5,
+      multiplier: 4.0,
+      maxStackCount: 1,
+    },
+    grad_window_mismatch: {
+      label: "Grad window mismatch",
+      severity: 5,
+      multiplier: 4.0,
+      maxStackCount: 1,
+    },
   },
 
   tools: {
@@ -118,5 +215,93 @@ export const POLICY: JobFitPolicy = {
     },
   },
 
-  extraction: {}, // keep your existing extraction policy file if separate; otherwise paste your existing extraction config here
+  extraction: {
+    location: {
+      constrainedPhrases: ["must be located", "must reside", "required to be in", "local candidates only"],
+      notConstrainedPhrases: ["anywhere", "open to location", "nationwide", "across the us"],
+      remotePhrases: ["remote", "work from home", "wfh", "distributed"],
+      onsitePhrases: ["on-site", "onsite", "in office", "in-office", "in-person", "based in office", "on site"],
+      hybridPhrases: ["hybrid"],
+    },
+
+    internship: {
+      keywords: ["intern", "internship", "intern program", "capstone project", "summer intern"],
+      summerKeywords: ["summer", "summer 2026", "june", "july", "august"],
+      inPersonInternKeywords: ["in-person", "in person", "based in", "office", "in office", "nyc office"],
+      aiToolsKeywords: ["ai tools", "ai platforms", "artificial intelligence", "genai", "generative ai"],
+      marketingRotationKeywords: [
+        "pr",
+        "events",
+        "influencer",
+        "digital marketing",
+        "brand marketing",
+        "global marketing",
+        "partnerships",
+        "visual merchandising",
+        "key accounts",
+      ],
+    },
+
+    analytics: {
+      // This is the part that fixes your e.l.f. “Marketing Insights” failure.
+      // These are not “one word causes everything” terms. They are role-family signals that cluster together.
+      heavyKeywords: [
+        // classic analytics stack
+        "sql",
+        "python",
+        "tableau",
+        "power bi",
+        "spss",
+        "r studio",
+        "r ",
+        "statistics",
+        "statistical",
+        "regression",
+        "forecast",
+        "modeling",
+        "model development",
+        "experiment",
+        "experimentation",
+        "a/b",
+        "ab test",
+        "attribution",
+        "data pipeline",
+        "dashboard ownership",
+        "kpi ownership",
+        "quantitative",
+        "quantitative surveys",
+        "survey design",
+        "survey analysis",
+        "consumer research",
+        "market research",
+        "consumer behavior",
+        "marketing insights",
+        "insights role",
+        "insights intern",
+        "analytics tools",
+        "data visualization",
+        "pivot tables",
+        "social listening tools",
+      ],
+      lightKeywords: ["reporting", "insights", "measurement", "tracking", "metrics"],
+    },
+
+    government: { keywords: ["clearance", "dod", "government", "federal", "public sector", "gs-"] },
+
+    sales: { keywords: ["quota", "commission", "closing", "cold call", "pipeline", "hunter", "business development"] },
+
+    contract: { keywords: ["contract", "contractor", "1099", "temporary", "temp"] },
+
+    hourly: { keywords: ["hourly", "$/hour", "per hour"] },
+
+    mba: { keywords: ["mba required", "master of business administration required"] },
+
+    years: {
+      patterns: [/(\d+)\+?\s*(years|yrs)\s*of\s*(experience|exp)/i, /minimum\s*(\d+)\s*(years|yrs)/i],
+    },
+
+    grad: {
+      patterns: [/(class of)\s*(20\d{2})/i, /(graduat(e|ion))\s*(20\d{2})/i, /(expected)\s*(graduation)\s*(20\d{2})/i],
+    },
+  },
 }

@@ -11,9 +11,13 @@ import type {
 } from "./signals"
 
 /**
- * NOTE:
- * This file is strict-TS safe.
- * Any POLICY-driven arrays are treated as string[] at the boundary to avoid implicit-any issues.
+ * Strict-TS safe.
+ * POLICY-driven arrays are sanitized at boundaries (string[]).
+ * No implicit any.
+ *
+ * IMPORTANT:
+ * This file intentionally does NOT return any fields that are not in signals.ts.
+ * (No function_tags, no signal_debug)
  */
 
 function stableHash(input: string): string {
@@ -35,7 +39,20 @@ function asStringArray(x: unknown): string[] {
 
 function includesAny(hay: string, needles: string[]): boolean {
   const h = hay || ""
-  return needles.some((n: string) => h.includes(String(n || "").toLowerCase()))
+  return needles.some((n: string) => {
+    const needle = String(n || "").toLowerCase()
+    return needle ? h.includes(needle) : false
+  })
+}
+
+function countHits(hay: string, needles: string[]): number {
+  const h = hay || ""
+  let c = 0
+  for (const n of needles) {
+    const needle = String(n || "").toLowerCase()
+    if (needle && h.includes(needle)) c++
+  }
+  return c
 }
 
 function snippetAround(t: string, idx: number, radius = 70): string {
@@ -61,7 +78,7 @@ function extractYearsRequired(jobText: string): number | null {
   for (const r of patterns) {
     const m = jobText.match(r)
     if (m && m[1]) {
-      const v = parseInt(m[1], 10)
+      const v = parseInt(String(m[1]), 10)
       if (!Number.isNaN(v) && v >= 0 && v <= 20) return v
     }
   }
@@ -84,9 +101,129 @@ function extractGradYearHint(jobText: string): number | null {
   return null
 }
 
+/* ------------------------ internal function tags (NOT exported) ------------------------ */
+
+type FunctionTag =
+  | "brand_marketing"
+  | "communications_pr"
+  | "creative_design"
+  | "content_social"
+  | "consumer_insights_research"
+  | "data_analytics_bi"
+  | "growth_performance"
+  | "product_marketing"
+  | "sales_bd"
+  | "government_cleared"
+  | "finance_corp"
+  | "accounting_finops"
+  | "premed_clinical"
+  | "operations_general"
+
+type TagRule = { tag: FunctionTag; phrases: string[]; minHits?: number }
+
+const TAG_RULES: TagRule[] = [
+  { tag: "brand_marketing", phrases: ["brand marketing", "campaign", "lifecycle", "go-to-market", "g2m", "positioning"] },
+  { tag: "communications_pr", phrases: ["communications", "corporate communications", "pr", "public relations", "media relations", "press release", "peso"] },
+  { tag: "creative_design", phrases: ["graphic design", "designer", "visual design", "creative design", "photoshop", "illustrator", "indesign"] },
+  { tag: "content_social", phrases: ["social media", "content", "tiktok", "instagram", "creator", "copywriting"] },
+
+  // Key fix: require >=2 hits so one stray "insights" does not flip the world.
+  {
+    tag: "consumer_insights_research",
+    phrases: [
+      "consumer insights",
+      "marketing insights",
+      "market research",
+      "consumer behavior",
+      "survey",
+      "quantitative",
+      "qualitative",
+      "focus group",
+      "social listening",
+      "sentiment",
+      "trend analysis",
+      "emerging trends",
+      "research findings",
+    ],
+    minHits: 2,
+  },
+  {
+    tag: "data_analytics_bi",
+    phrases: [
+      "sql",
+      "spss",
+      "tableau",
+      "power bi",
+      "dashboard",
+      "pivot table",
+      "pivottable",
+      "data visualization",
+      "data analysis",
+      "kpi",
+      "statistics",
+      "regression",
+      "modeling",
+      "forecast",
+      "attribution",
+      "experiment",
+      "a/b",
+    ],
+    minHits: 2,
+  },
+
+  { tag: "growth_performance", phrases: ["performance marketing", "paid media", "acquisition", "retention", "crm", "email marketing", "klaviyo", "meta ads", "google ads"] },
+  { tag: "product_marketing", phrases: ["product marketing", "pmm", "value proposition", "launch strategy", "competitive intel"] },
+
+  { tag: "sales_bd", phrases: ["sales", "account executive", "bdr", "sdr", "quota", "pipeline", "business development"] },
+  { tag: "government_cleared", phrases: ["clearance", "dod", "federal", "public sector", "gs-"] },
+  { tag: "finance_corp", phrases: ["investment", "asset management", "valuation", "lbo", "portfolio", "financial modeling"] },
+  { tag: "accounting_finops", phrases: ["accounting", "audit", "tax", "general ledger", "reconciliation"] },
+  { tag: "premed_clinical", phrases: ["clinical", "patient", "scribe", "pre-med", "research assistant", "medical"] },
+
+  { tag: "operations_general", phrases: ["operations", "program management", "project management", "process improvement"] },
+]
+
+function computeFunctionTags(jobText: string): FunctionTag[] {
+  const t = jobText
+  const tags: FunctionTag[] = []
+
+  for (const r of TAG_RULES) {
+    const phrases = r.phrases.map((p) => String(p || "").toLowerCase()).filter(Boolean)
+    const h = countHits(t, phrases)
+    const min = typeof r.minHits === "number" ? r.minHits : 1
+    if (h >= min) tags.push(r.tag)
+  }
+
+  return Array.from(new Set(tags))
+}
+
+function decideJobFamilyFromTags(tags: FunctionTag[], fallback: JobFamily): JobFamily {
+  if (tags.includes("government_cleared")) return "Government"
+  if (tags.includes("sales_bd")) return "Sales"
+  if (tags.includes("finance_corp")) return "Finance"
+  if (tags.includes("accounting_finops")) return "Accounting"
+  if (tags.includes("premed_clinical")) return "PreMed"
+
+  // Your Samantha + e.l.f. fix:
+  // Insights/Research/BI classifies as Analytics, even if "Marketing" appears.
+  if (tags.includes("data_analytics_bi") || tags.includes("consumer_insights_research")) return "Analytics"
+
+  if (
+    tags.includes("brand_marketing") ||
+    tags.includes("communications_pr") ||
+    tags.includes("creative_design") ||
+    tags.includes("content_social") ||
+    tags.includes("growth_performance") ||
+    tags.includes("product_marketing")
+  ) {
+    return "Marketing"
+  }
+
+  return fallback
+}
+
 /* ------------------------ job text extractors ------------------------ */
 
-// City extraction (deterministic heuristic)
 function extractCity(t: string): string | null {
   if (/\bnyc\b/.test(t)) return "New York City"
   if (t.includes("new york city")) return "New York City"
@@ -126,22 +263,31 @@ function detectLocationMode(jobText: string): {
   else if (hasRemote && hasInPerson) mode = "hybrid"
 
   const city = extractCity(t)
-  const evidence =
-    firstSnippetFor(t, ["nyc office", "new york city", "in-person", "in person", "hybrid", "remote"]) || null
+  const evidence = firstSnippetFor(t, ["nyc office", "new york city", "in-person", "in person", "hybrid", "remote"]) || null
 
   return { mode, constrained, city, evidence }
 }
 
-function detectAnalytics(jobText: string): { isHeavy: boolean; isLight: boolean } {
+function detectAnalytics(jobText: string, tags: FunctionTag[]): { isHeavy: boolean; isLight: boolean } {
   const t = jobText
+
   const heavyKeywords = asStringArray((POLICY as any)?.extraction?.analytics?.heavyKeywords)
   const lightKeywords = asStringArray((POLICY as any)?.extraction?.analytics?.lightKeywords)
-  const heavy = includesAny(t, heavyKeywords)
-  const light = includesAny(t, lightKeywords)
-  return { isHeavy: heavy, isLight: light && !heavy }
+
+  const heavyByKeywords = includesAny(t, heavyKeywords)
+
+  // Tag-based bump: if this is BI/insights-research, treat as heavy enough for "no heavy analytics".
+  const heavyByTags = tags.includes("data_analytics_bi") || tags.includes("consumer_insights_research")
+
+  const isHeavy = heavyByKeywords || heavyByTags
+
+  // "Light" only matters if NOT heavy.
+  const isLight = !isHeavy && includesAny(t, lightKeywords)
+
+  return { isHeavy, isLight }
 }
 
-function detectJobFamily(jobText: string): JobFamily {
+function detectJobFamilyFallback(jobText: string): JobFamily {
   const t = jobText
   const gov = asStringArray((POLICY as any)?.extraction?.government?.keywords)
 
@@ -183,8 +329,8 @@ function extractTools(jobText: string): { required: string[]; preferred: string[
     const toolLower = tool.toLowerCase()
     const idx = t.indexOf(toolLower)
     if (idx >= 0) {
-      const window = t.slice(Math.max(0, idx - 40), Math.min(t.length, idx + 40))
-      if (/\b(required|must have|need to have)\b/i.test(window)) required.push(tool)
+      const window = t.slice(Math.max(0, idx - 60), Math.min(t.length, idx + 60))
+      if (/\b(required|must have|need to have|proficient in)\b/i.test(window)) required.push(tool)
       else preferred.push(tool)
     }
   }
@@ -262,8 +408,7 @@ function detectInternshipSignals(t: string) {
     internshipLine: firstSnippetFor(t, ["marketing internship", "summer 2026", "internship"]) || null,
     inPersonLine: firstSnippetFor(t, ["in-person", "in person", "nyc office", "new york city office"]) || null,
     aiLine: firstSnippetFor(t, ["ai tools", "ai platforms", "artificial intelligence"]) || null,
-    deptLine:
-      firstSnippetFor(t, ["pr", "events", "influencer marketing", "digital marketing", "brand marketing"]) || null,
+    deptLine: firstSnippetFor(t, ["pr", "events", "influencer marketing", "digital marketing", "brand marketing"]) || null,
     capstoneLine: firstSnippetFor(t, ["capstone project", "capstone"]) || null,
     payLine,
     dateLine,
@@ -289,8 +434,12 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const t = norm(jobTextRaw)
   const rawHash = stableHash(t)
 
-  const jobFamily = detectJobFamily(t)
-  const analytics = detectAnalytics(t)
+  const tags = computeFunctionTags(t)
+
+  const fallbackFamily = detectJobFamilyFallback(t)
+  const jobFamily = decideJobFamilyFromTags(tags, fallbackFamily)
+
+  const analytics = detectAnalytics(t, tags)
   const location = detectLocationMode(t)
   const yearsRequired = extractYearsRequired(t)
   const gradYearHint = extractGradYearHint(t)
@@ -321,19 +470,25 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
   return {
     rawHash,
+
     jobFamily,
     analytics,
     location,
+
     isGovernment,
     isSalesHeavy,
     isContract,
     isHourly,
+
     yearsRequired,
     mbaRequired,
     gradYearHint,
+
     requiredTools: required,
     preferredTools: preferred,
+
     reportingSignals: { strong: reportingStrong },
+
     internship,
   }
 }
@@ -345,7 +500,6 @@ export function extractProfileSignals(
   overrides?: Partial<StructuredProfileSignals>
 ): StructuredProfileSignals {
   const t = norm(profileTextRaw)
-
   const wantsInternship = t.includes("internship") || t.includes("internships") || t.includes("summer 2026")
 
   const base: StructuredProfileSignals = {

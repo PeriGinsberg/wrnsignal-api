@@ -48,7 +48,7 @@ function dedupeByCode<T extends { code: string }>(items: T[]): T[] {
 }
 
 function toolMissing(profileTools: string[], tool: string): boolean {
-  const p = profileTools.map((x) => x.toLowerCase())
+  const p = (profileTools || []).map((x) => String(x || "").toLowerCase())
   return !p.includes(String(tool || "").toLowerCase())
 }
 
@@ -67,22 +67,62 @@ function locationCityMatches(jobCity: string, preferredCities: string[]): boolea
   return prefs.includes(j)
 }
 
-function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals): number {
-  let base = 72
+/**
+ * Deterministic “Insights” detector:
+ * This is intentionally simple and robust because job titles vary endlessly.
+ * If we see "insights" + "research" + "data/analysis" signals, treat as analytics-adjacent.
+ */
+function looksLikeInsightsRole(job: StructuredJobSignals): boolean {
+  // best available structured hints without relying on raw job text
+  const toolSignals = (job.requiredTools || []).concat(job.preferredTools || []).map((t) => t.toLowerCase())
+  const hasQuantTools =
+    toolSignals.includes("sql") ||
+    toolSignals.includes("python") ||
+    toolSignals.includes("tableau") ||
+    toolSignals.includes("power bi") ||
+    toolSignals.includes("excel")
 
-  if (profile.targetFamilies.includes(job.jobFamily)) base += 10
-  if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) base += 4
+  // analytics flags already computed by extractor
+  if (job.analytics.isHeavy) return true
+
+  // if the job family is Analytics, it's obviously analytics-adjacent
+  if (job.jobFamily === "Analytics") return true
+
+  // market/consumer insights roles frequently show: Excel + SQL + Tableau/PowerBI, plus “insights” behavior
+  // We cannot see the raw words here, so we approximate via tool demand + reporting emphasis.
+  if (hasQuantTools && job.reportingSignals?.strong) return true
+
+  // internship pattern: marketing + quant tools frequently means insights
+  if (job.jobFamily === "Marketing" && hasQuantTools) return true
+
+  return false
+}
+
+function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals): number {
+  // Neutral base
+  let base = 70
+
+  const familyMatch = profile.targetFamilies.includes(job.jobFamily)
+
+  // Biggest positive: true family match
+  if (familyMatch) base += 10
+  else base -= 10 // stop “wrong family” roles from drifting into Apply
+
+  // Early-career friendly
   if (!job.yearsRequired || job.yearsRequired <= 1) base += 5
 
+  // Internship structure bonuses
   if (job.internship?.isInternship) base += 5
   if (job.internship?.isSummer) base += 3
-  if (job.internship?.hasCapstone) base += 4
-  if (job.internship?.isMarketingRotation) base += 3
-  if (job.internship?.mentionsAITools) base += 2
+  if (job.internship?.hasCapstone) base += 3
+  if (job.internship?.isMarketingRotation) base += 2
+  if (job.internship?.mentionsAITools) base += 1
 
+  // Location positives
   const jobCity = job.location?.city ?? null
   const allowedCities = profile.locationPreference.allowedCities
-  if (jobCity && Array.isArray(allowedCities) && allowedCities.length > 0 && locationCityMatches(jobCity, allowedCities)) {
+  const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
+  if (jobCity && hasCityPrefs && locationCityMatches(jobCity, allowedCities!)) {
     base += 6
   } else {
     const modeOk =
@@ -91,6 +131,10 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
       profile.locationPreference.mode === job.location.mode
     if (modeOk) base += 2
   }
+
+  // IMPORTANT: remove the old “Marketing without heavy analytics” auto-bonus.
+  // That is how “Marketing Insights” gets incorrectly rewarded.
+  // If you want an execution-marketing boost later, it must be tied to explicit creative/brand signals, not absence of keywords.
 
   return base
 }
@@ -101,34 +145,18 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
 
   const hasExplicitTools = (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
-  // WHY evidence
-  if (profile.targetFamilies.includes(job.jobFamily)) {
+  const familyMatch = profile.targetFamilies.includes(job.jobFamily)
+  const insightsLike = looksLikeInsightsRole(job)
+
+  // ---------------- WHY evidence ----------------
+
+  if (familyMatch) {
     whyCodes.push({
       code: "WHY_FAMILY_MATCH",
       job_fact: `Role family detected as ${job.jobFamily}.`,
       profile_fact: `Target families include ${profile.targetFamilies.join(", ")}.`,
-      note: "The job family matches what you are targeting.",
+      note: "The day-to-day work matches what you are targeting.",
       weight: 10,
-    })
-  }
-
-  if (job.jobFamily === "Marketing" && !job.analytics.isHeavy) {
-    whyCodes.push({
-      code: "WHY_MARKETING_EXECUTION",
-      job_fact: "Marketing role signals without heavy analytics requirements.",
-      profile_fact: "Marketing-target profile.",
-      note: "This reads like execution work with deliverables, not an analytics-first role.",
-      weight: 4,
-    })
-  }
-
-  if (job.analytics.isLight && !job.analytics.isHeavy) {
-    whyCodes.push({
-      code: "WHY_MEASUREMENT_LIGHT",
-      job_fact: "Measurement/reporting signals appear without heavy analytics keywords.",
-      profile_fact: profile.constraints.preferNotAnalyticsHeavy ? "You prefer not analytics-heavy roles." : "No heavy analytics preference detected.",
-      note: "Measurement shows up, but it is not framed as a heavy analytics role.",
-      weight: 2,
     })
   }
 
@@ -162,22 +190,20 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     if (cityOk || modeOk) {
       whyCodes.push({
         code: "WHY_LOCATION_MATCH",
-        job_fact: cityOk
-          ? `Job location indicates ${jobCity}.`
-          : `Job work mode indicates ${job.location.mode}.`,
-        profile_fact: cityOk
-          ? `Allowed cities include ${allowedCities!.join(", ")}.`
-          : `Preferred work mode is ${profile.locationPreference.mode}.`,
+        job_fact: cityOk ? `Job location indicates ${jobCity}.` : `Job work mode indicates ${job.location.mode}.`,
+        profile_fact: cityOk ? `Allowed cities include ${allowedCities!.join(", ")}.` : `Preferred work mode is ${profile.locationPreference.mode}.`,
         note: "The work setup and location match your stated preference.",
         weight: cityOk ? 6 : 2,
       })
     }
   }
 
-  // Tool WHY (only if job explicitly lists tools)
+  // Tool WHY (only if job explicitly lists tools AND alignment is real)
   if (hasExplicitTools) {
-    const missing = (job.requiredTools || []).filter((t) => toolMissing(profile.tools || [], t))
-    if (missing.length <= 1) {
+    const requiredMissing = (job.requiredTools || []).filter((t) => toolMissing(profile.tools || [], t))
+    const preferredMissing = (job.preferredTools || []).filter((t) => toolMissing(profile.tools || [], t))
+
+    if (requiredMissing.length === 0 && preferredMissing.length <= 2) {
       whyCodes.push({
         code: "WHY_TOOL_MATCH",
         job_fact: `Posting lists tools such as: ${[...(job.requiredTools || []), ...(job.preferredTools || [])].slice(0, 6).join(", ")}.`,
@@ -193,8 +219,8 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     whyCodes.push({
       code: "WHY_SUMMER_INTERNSHIP_MATCH",
       job_fact: "Posting indicates internship and Summer timing.",
-      profile_fact: "Profile text indicates internship targeting.",
-      note: "This matches your Summer internship timeline.",
+      profile_fact: "Profile indicates Summer internship targeting.",
+      note: "The posting is a Summer internship and matches the timeline you are targeting.",
       weight: 3,
     })
   }
@@ -208,7 +234,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       code: "WHY_IN_PERSON_MATCH",
       job_fact: job.internship?.evidence?.inPersonLine || "Posting indicates in-person or hybrid setup.",
       profile_fact: "You have a no-remote constraint.",
-      note: "The role setup matches your no-remote constraint.",
+      note: "The role is in-person or hybrid, which matches your no-remote constraint.",
       weight: 2,
     })
   }
@@ -217,8 +243,8 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     whyCodes.push({
       code: "WHY_AI_TOOLS_MATCH",
       job_fact: job.internship?.evidence?.aiLine || "Posting explicitly mentions AI tools.",
-      profile_fact: profile.tools?.includes("AI Tools") ? "Profile includes AI tools exposure." : "AI exposure not explicitly listed, but the signal is present.",
-      note: "AI tooling is explicitly part of the role environment.",
+      profile_fact: profile.tools?.includes("AI Tools") ? "Profile includes AI tools exposure." : "AI exposure not explicitly listed.",
+      note: "The posting explicitly calls out AI tools, which aligns with your AI experience or training.",
       weight: 1,
     })
   }
@@ -228,13 +254,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       code: "WHY_MARKETING_ROTATION_MATCH",
       job_fact: job.internship?.evidence?.deptLine || "Posting spans multiple marketing functions.",
       profile_fact: "Marketing-target profile.",
-      note: "Rotation structure supports broader marketing exposure.",
+      note: "The internship spans multiple marketing functions, which fits your interest in broader brand and communications work.",
       weight: 2,
     })
   }
 
-  // Penalties (each must carry structured RiskCode)
-  // Location mismatch (only when profile is constrained AND has explicit allowedCities AND job city known)
+  // ---------------- Penalties ----------------
+
+  // Location mismatch (strict city list only)
   {
     const profileConstrained = !!profile.locationPreference.constrained
     const jobCity = job.location?.city ?? null
@@ -264,14 +291,40 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  if (profile.constraints.preferNotAnalyticsHeavy && job.analytics.isHeavy) {
+// Remote mismatch penalty (scoring alignment with gates)
+// Your policy union does not include "remote_policy_mismatch" right now.
+// Treat remote vs hard no-remote as a constrained location mismatch.
+if (profile.constraints.hardNoFullyRemote && job.location.mode === "remote") {
+  const k: PenaltyKey = "location_mismatch_constrained"
+  const amt = computePenaltyAmount(k)
+
+  penalties.push({
+    key: k,
+    amount: amt,
+    note: "Hard no remote vs remote role",
+    risk: {
+      code: "RISK_LOCATION",
+      job_fact: "Posting indicates remote work setup.",
+      profile_fact: "You have a no-remote constraint.",
+      risk: "Work setup conflicts with your stated constraint.",
+      severity: "high",
+      weight: -amt,
+    },
+  })
+}
+
+  // Analytics mismatch:
+  // Use BOTH extractor heavy flag AND insights-like heuristic.
+  if (profile.constraints.preferNotAnalyticsHeavy && (job.analytics.isHeavy || insightsLike)) {
     penalties.push({
       key: "heavy_analytics_mismatch",
       amount: computePenaltyAmount("heavy_analytics_mismatch"),
-      note: "Analytics heavy signals present",
+      note: insightsLike ? "Insights/analytics-adjacent role signals present" : "Analytics heavy signals present",
       risk: {
         code: "RISK_ANALYTICS_HEAVY",
-        job_fact: "Posting contains heavy analytics keywords (SQL/Python/modeling/experiments).",
+        job_fact: insightsLike
+          ? "Role signals consumer/market insights style work with quantitative tools/reporting emphasis."
+          : "Posting contains heavy analytics keywords (SQL/Python/modeling/experiments).",
         profile_fact: "You prefer not analytics-heavy roles.",
         risk: "This role likely expects analytics depth that conflicts with your preference.",
         severity: "high",
@@ -360,6 +413,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
+  // Missing tools
   if (hasExplicitTools) {
     const requiredMissing = (job.requiredTools || []).filter((t) => toolMissing(profile.tools || [], t))
     const preferredMissing = (job.preferredTools || []).filter((t) => toolMissing(profile.tools || [], t))
@@ -406,7 +460,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         code: "RISK_REPORTING_SIGNALS",
         job_fact: "Posting emphasizes reporting/KPI ownership.",
         profile_fact: "Profile does not show direct reporting ownership evidence.",
-        risk: "Reporting ownership expectations may be a stretch depending on your proof points.",
+        risk: "The role emphasizes reporting ownership that may be a stretch depending on your proof points.",
         severity: "medium",
         weight: -computePenaltyAmount("missing_reporting_signals"),
       },
@@ -466,7 +520,8 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  // Stack caps
+  // ---------------- stack caps + score ----------------
+
   const counts: Record<string, number> = {}
   const capped: Penalty[] = []
   for (const p of penalties) {

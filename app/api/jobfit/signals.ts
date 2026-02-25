@@ -1,7 +1,7 @@
 // FILE: app/api/jobfit/signals.ts
 //
 // Canonical JobFit V3 signals + evidence contract.
-// This file MUST match what extract.ts produces and what scoring/gates/evaluator consume.
+// MUST match what extract.ts produces and what scoring/gates/evaluator consume.
 // No UI display fields here (title/company/responsibilities). Those belong in evidenceBuilder / LLM layer.
 
 export type Decision = "Apply" | "Review" | "Pass"
@@ -21,6 +21,27 @@ export type LocationMode = "in_person" | "hybrid" | "remote" | "unclear"
 
 export type Severity = "low" | "medium" | "high"
 
+/**
+ * Small durable taxonomy used to classify function, not titles.
+ * This is how you avoid chasing thousands of keywords.
+ */
+export type FunctionTag =
+  | "brand_marketing"
+  | "communications_pr"
+  | "creative_design"
+  | "content_social"
+  | "consumer_insights_research"
+  | "data_analytics_bi"
+  | "growth_performance"
+  | "product_marketing"
+  | "sales_bd"
+  | "government_cleared"
+  | "finance_corp"
+  | "accounting_finops"
+  | "premed_clinical"
+  | "operations_general"
+  | "other"
+
 export type ProfileConstraints = {
   hardNoHourlyPay: boolean
   prefFullTime: boolean
@@ -37,18 +58,34 @@ export type StructuredProfileSignals = {
   locationPreference: {
     constrained: boolean
     mode: LocationMode
-    allowedCities?: string[] // optional, NOT required
+    allowedCities?: string[]
   }
   tools: string[]
   gradYear: number | null
   yearsExperienceApprox: number | null
+
+  // Optional, for future: lets you tag profile intent without relying on jobFamily only
+  function_tags?: FunctionTag[]
 }
 
 export type StructuredJobSignals = {
   rawHash: string
 
   jobFamily: JobFamily
+
+  // "analytics" is a coarse signal.
+  // Function tags are how you scale classification reliably.
   analytics: { isHeavy: boolean; isLight: boolean }
+
+  // Optional but strongly recommended: computed by extract.ts
+  function_tags?: FunctionTag[]
+
+  // Optional debug: makes it obvious why a role was tagged
+  signal_debug?: {
+    hits?: Record<string, number>
+    notes?: string[]
+  }
+
   location: {
     mode: LocationMode
     constrained: boolean
