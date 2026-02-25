@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic"
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
 const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_24"
-
 const MODEL_ID = "current"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -67,6 +66,17 @@ function normalize(value: any): any {
 }
 
 /**
+ * Hash helpers for debug visibility
+ */
+function sha256Hex(s: string): string {
+  return crypto.createHash("sha256").update(s).digest("hex")
+}
+
+function hash16(s: string): string {
+  return sha256Hex(s).slice(0, 16)
+}
+
+/**
  * Build JobFit fingerprint
  */
 function buildJobFitFingerprint(payload: any) {
@@ -74,10 +84,29 @@ function buildJobFitFingerprint(payload: any) {
   const canonical = JSON.stringify(normalized)
 
   const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
-
   const fingerprint_code = "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
 
   return { fingerprint_hash, fingerprint_code }
+}
+
+/**
+ * Enforce client-facing output rules (even for cached results).
+ * Rule: if gate_triggered.type === "force_pass", then why_codes=[], bullets=[]
+ * and we only show pass reason + risks.
+ */
+function enforceClientFacingRules(result: any) {
+  const gateType = result?.gate_triggered?.type
+  if (gateType !== "force_pass") return result
+
+  return {
+    ...result,
+    decision: "Pass",
+    icon: result?.icon ?? "⛔",
+    bullets: [],
+    why_codes: [],
+    // keep risk_codes and risk_flags if present
+    next_step: "Pass. Do not apply. Put that effort into a better-fit role.",
+  }
 }
 
 /**
@@ -85,6 +114,9 @@ function buildJobFitFingerprint(payload: any) {
  */
 export async function POST(req: Request) {
   try {
+    const url = new URL(req.url)
+    const forceFromQuery = url.searchParams.get("force") === "1" || url.searchParams.get("force") === "true"
+
     const { profileId, profileText } = await getAuthedProfileText(req)
 
     // Pull structured profile fields for deterministic overrides
@@ -99,7 +131,7 @@ export async function POST(req: Request) {
     }
 
     // Parse request body
-    let body: any
+    let body: any = {}
     try {
       body = await req.json()
     } catch {
@@ -110,6 +142,9 @@ export async function POST(req: Request) {
     if (!jobText) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
+
+    const forceFromBody = body?.force_rerun === true || body?.force === true
+    const forceRerun = forceFromQuery || forceFromBody
 
     // Build structured overrides from profile row
     const profileOverrides = mapClientProfileToOverrides({
@@ -136,36 +171,55 @@ export async function POST(req: Request) {
 
     const { fingerprint_hash, fingerprint_code } = buildJobFitFingerprint(fingerprintPayload)
 
-    // 1) Lookup existing run (best effort)
-    const { data: existingRun, error: findErr } = await supabaseAdmin
-      .from("jobfit_runs")
-      .select("result_json, verdict, fingerprint_code, fingerprint_hash, created_at")
-      .eq("client_profile_id", profileId)
-      .eq("fingerprint_hash", fingerprint_hash)
-      .maybeSingle()
-
-    if (findErr) {
-      console.warn("jobfit_runs lookup failed:", findErr.message)
+    // Debug fields (kills the “same job illusion”)
+    const debug = {
+      job_text_len: jobText.length,
+      profile_text_len: (profileText || "").length,
+      job_text_hash16: hash16(jobText),
+      profile_text_hash16: hash16(profileText || ""),
+      fingerprint_hash16: fingerprint_hash.slice(0, 16),
+      cache_key: `${fingerprint_hash}::${JOBFIT_LOGIC_VERSION}`,
+      cache_bypassed: forceRerun,
     }
 
-    if (existingRun?.result_json) {
-      return withCorsJson(req, {
-        ...(existingRun.result_json as any),
-        fingerprint_code,
-        fingerprint_hash,
-        jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-        reused: true,
-      })
+    // 1) Lookup existing run unless forced
+    if (!forceRerun) {
+      const { data: existingRun, error: findErr } = await supabaseAdmin
+        .from("jobfit_runs")
+        .select("result_json, verdict, fingerprint_code, fingerprint_hash, created_at")
+        .eq("client_profile_id", profileId)
+        .eq("fingerprint_hash", fingerprint_hash)
+        .maybeSingle()
+
+      if (findErr) {
+        console.warn("jobfit_runs lookup failed:", findErr.message)
+      }
+
+      if (existingRun?.result_json) {
+        const cleaned = enforceClientFacingRules(existingRun.result_json as any)
+        return withCorsJson(req, {
+          ...(cleaned as any),
+          fingerprint_code,
+          fingerprint_hash,
+          jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+          reused: true,
+          debug: { ...debug, cache_hit: true },
+        })
+      }
     }
 
     // 2) Run JobFit (deterministic engine + bullet layer via wrapper)
-    const result = await runJobFit({
+    const resultRaw = await runJobFit({
       profileText,
       jobText,
       profileOverrides,
     })
 
+    const result = enforceClientFacingRules(resultRaw as any)
+
     // 3) Store result (best effort)
+    // If cache is bypassed and this fingerprint already exists, insert will hit the unique constraint.
+    // That is fine for testing: we ignore the insert error and still return the fresh result.
     const toStore = {
       client_profile_id: profileId,
       job_url: null,
@@ -181,11 +235,12 @@ export async function POST(req: Request) {
     }
 
     return withCorsJson(req, {
-      ...result,
+      ...(result as any),
       fingerprint_code,
       fingerprint_hash,
       jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       reused: false,
+      debug: { ...debug, cache_hit: false },
     })
   } catch (err: any) {
     const detail = err?.message || String(err)

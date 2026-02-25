@@ -1,3 +1,5 @@
+// FILE: app/api/_lib/authProfile.ts
+
 import { createClient } from "@supabase/supabase-js"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -8,12 +10,11 @@ function requireEnv(name: string, v?: string) {
   return v
 }
 
-const url = requireEnv("SUPABASE_URL", SUPABASE_URL)
-const service = requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY)
-
-const supabaseAdmin = createClient(url, service, {
-  auth: { persistSession: false, autoRefreshToken: false },
-})
+const supabaseAdmin = createClient(
+  requireEnv("SUPABASE_URL", SUPABASE_URL),
+  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
 
 function getBearerToken(req: Request) {
   const h = req.headers.get("authorization") || ""
@@ -25,7 +26,6 @@ function getBearerToken(req: Request) {
 
 async function getAuthedUser(req: Request) {
   const token = getBearerToken(req)
-
   const { data, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
 
@@ -40,7 +40,6 @@ type ClientProfileRow = {
   email: string | null
   user_id: string | null
   profile_text: string | null
-  risk_overrides?: any
 }
 
 function isDuplicateConstraint(err: any, constraintName?: string) {
@@ -52,9 +51,7 @@ function isDuplicateConstraint(err: any, constraintName?: string) {
 
   const hitConstraint =
     constraintName &&
-    (msg.includes(constraintName) ||
-      details.includes(constraintName) ||
-      hint.includes(constraintName))
+    (msg.includes(constraintName) || details.includes(constraintName) || hint.includes(constraintName))
 
   return code === "23505" || hitConstraint
 }
@@ -69,9 +66,7 @@ function isDuplicateConstraint(err: any, constraintName?: string) {
  * - else lookup by email; attach only if user_id is null
  * - else create; if create hits duplicate email, re-fetch by email and attach
  */
-export async function getAuthedProfileText(
-  req: Request
-): Promise<{ profileId: string; profileText: string }> {
+export async function getAuthedProfileText(req: Request): Promise<{ profileId: string; profileText: string }> {
   const { userId, email } = await getAuthedUser(req)
 
   // 1) Prefer lookup by user_id
@@ -99,10 +94,7 @@ export async function getAuthedProfileText(
       .select("id,user_id,email,profile_text")
       .single<ClientProfileRow>()
 
-    if (createErr || !created) {
-      throw new Error(`Profile create failed: ${createErr?.message || "unknown"}`)
-    }
-
+    if (createErr || !created) throw new Error(`Profile create failed: ${createErr?.message || "unknown"}`)
     return { profileId: created.id, profileText: created.profile_text || "" }
   }
 
@@ -121,14 +113,12 @@ export async function getAuthedProfileText(
       return { profileId: byEmail.id, profileText: byEmail.profile_text || "" }
     }
 
-    // If attached to SOME OTHER user, do NOT attach. This should never happen in a healthy flow.
+    // If attached to SOME OTHER user, do NOT attach.
     if (byEmail.user_id && byEmail.user_id !== userId) {
-      throw new Error(
-        `Profile email conflict: a profile row for ${email} is already attached to a different user_id.`
-      )
+      throw new Error(`Profile email conflict: a profile row for ${email} is attached to a different user_id.`)
     }
 
-    // If unowned, attach it to this user_id (unique user_id is safe here because we already confirmed no row exists for userId)
+    // If unowned, attach it
     const { data: attached, error: attachErr } = await supabaseAdmin
       .from("client_profiles")
       .update({ user_id: userId, updated_at: new Date().toISOString() })
@@ -137,7 +127,7 @@ export async function getAuthedProfileText(
       .single<ClientProfileRow>()
 
     if (attachErr || !attached) {
-      // If user_id unique violation happens here, it means a row for this user_id appeared between our checks (race).
+      // race: user_id unique violation means another row for userId appeared
       if (isDuplicateConstraint(attachErr, "client_profiles_user_id_key")) {
         const { data: raced, error: racedErr } = await supabaseAdmin
           .from("client_profiles")
@@ -155,7 +145,7 @@ export async function getAuthedProfileText(
     return { profileId: attached.id, profileText: attached.profile_text || "" }
   }
 
-  // 3) Create fresh row. If this races with intake insert, email unique may trip.
+  // 3) Create fresh row; handle email uniqueness races
   const { data: created, error: createErr } = await supabaseAdmin
     .from("client_profiles")
     .insert({
@@ -168,7 +158,6 @@ export async function getAuthedProfileText(
     .single<ClientProfileRow>()
 
   if (createErr) {
-    // If we lost a race on email uniqueness, re-fetch by email and attach if unowned.
     if (isDuplicateConstraint(createErr, "client_profiles_email_key")) {
       const { data: existingByEmail, error: reErr } = await supabaseAdmin
         .from("client_profiles")
@@ -177,19 +166,14 @@ export async function getAuthedProfileText(
         .maybeSingle<ClientProfileRow>()
 
       if (reErr) throw new Error(`Profile lookup by email failed: ${reErr.message}`)
-      if (!existingByEmail?.id) throw new Error(`Profile create failed: duplicate email, but could not re-fetch.`)
+      if (!existingByEmail?.id) throw new Error("Profile create failed: duplicate email, but could not re-fetch.")
 
       if (existingByEmail.user_id === userId) {
-        return {
-          profileId: existingByEmail.id,
-          profileText: existingByEmail.profile_text || "",
-        }
+        return { profileId: existingByEmail.id, profileText: existingByEmail.profile_text || "" }
       }
 
       if (existingByEmail.user_id && existingByEmail.user_id !== userId) {
-        throw new Error(
-          `Profile email conflict: a profile row for ${email} is already attached to a different user_id.`
-        )
+        throw new Error(`Profile email conflict: a profile row for ${email} is attached to a different user_id.`)
       }
 
       const { data: attached, error: attachErr } = await supabaseAdmin
@@ -199,10 +183,7 @@ export async function getAuthedProfileText(
         .select("id,user_id,email,profile_text")
         .single<ClientProfileRow>()
 
-      if (attachErr || !attached) {
-        throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
-      }
-
+      if (attachErr || !attached) throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
       return { profileId: attached.id, profileText: attached.profile_text || "" }
     }
 
@@ -210,6 +191,5 @@ export async function getAuthedProfileText(
   }
 
   if (!created) throw new Error("Profile create failed: unknown")
-
   return { profileId: created.id, profileText: created.profile_text || "" }
 }
