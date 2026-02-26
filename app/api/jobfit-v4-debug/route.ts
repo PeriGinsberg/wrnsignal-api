@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      v: "jobfit_v4_debug_job_extract_only",
+ v: "jobfit_v4_debug_job_extract_only__2026_02_26a",
       job,
     })
   } catch (e: any) {
