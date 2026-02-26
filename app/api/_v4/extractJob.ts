@@ -376,6 +376,26 @@ export function extractJobV4(rawJobText: string): JobStructured {
   for (const c of TAXONOMY) {
     const phrases = (c.example_phrases || []).map((p) => normalize(p))
    let hits = 0
+// DEBUG: confirm QA suppression logic runs
+if (c.id.toLowerCase().includes("qa") || c.id.toLowerCase().includes("testing")) {
+  console.log("QA CLUSTER CHECK HIT", {
+    cluster_id: c.id,
+    hasExplicitQA: [
+      "qa",
+      "quality assurance",
+      "test case",
+      "test plan",
+      "regression",
+      "bug",
+      "defect",
+      "uat",
+      "validation testing",
+      "software testing",
+      "manual testing",
+      "automated testing",
+    ].some((m) => jobTextNorm.includes(m)),
+  })
+}
 let bestPhrase = ""
 let bestCt = 0
 
