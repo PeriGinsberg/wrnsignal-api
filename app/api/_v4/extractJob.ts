@@ -91,6 +91,25 @@ function findEvidenceSnippet(corpusText: string, phrase: string): string {
 
   const isHeadingLine = (line: string) => {
     const ln = normalize(line).replace(/[:\-–—]+$/, "").trim()
+
+ // Block role title lines like "Associate (Intern), Summer 2026"
+const hasSeasonOrTerm =
+  /\b(summer|fall|spring|winter)\b/.test(ln) || /\b202\d\b/.test(ln)
+
+const looksLikeRoleTitle =
+  // common role words OR parentheses pattern used in titles
+  /(intern|associate|analyst|coordinator|specialist|manager)\b/.test(ln) ||
+  /\([^)]*\)/.test(ln)
+
+const hasNoActionVerb =
+  !/(assist|conduct|create|manage|prepare|support|maintain|format|utiliz|analy|research|coordinate|develop|build|track|report|present|model|forecast|gather|interview)\b/.test(
+    ln
+  )
+
+if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80) {
+  return true
+}
+
     const headings = new Set([
       "about the job",
       "responsibilities",
@@ -103,6 +122,7 @@ function findEvidenceSnippet(corpusText: string, phrase: string): string {
       "culture",
     ])
     if (headings.has(ln)) return true
+
     if (
       ln.length <= 18 &&
       (ln.includes("about") ||
@@ -111,6 +131,7 @@ function findEvidenceSnippet(corpusText: string, phrase: string): string {
     ) {
       return true
     }
+
     return false
   }
 
@@ -304,10 +325,7 @@ function inferDomain(jobTextNorm: string): {
   return { tag, intensity: "none" }
 }
 
-function extractTools(jobTextNorm: string): {
-  required_tools: string[]
-  preferred_tools: string[]
-} {
+function extractTools(jobTextNorm: string): { required_tools: string[]; preferred_tools: string[] } {
   const toolsDict = [
     "excel",
     "powerpoint",
@@ -341,14 +359,7 @@ function extractTools(jobTextNorm: string): {
   const preferred: string[] = []
 
   for (const t of found) {
-    const requiredMarkers = [
-      "required",
-      "must",
-      "mandatory",
-      "proficiency",
-      "proficient",
-      "strong proficiency",
-    ]
+    const requiredMarkers = ["required", "must", "mandatory", "proficiency", "proficient", "strong proficiency"]
     const preferredMarkers = ["preferred", "a plus", "nice to have", "bonus", "plus"]
 
     const idx = jobTextNorm.indexOf(t)
@@ -378,7 +389,6 @@ function extractTools(jobTextNorm: string): {
       .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))
       .join(" ")
       .replace("Sql", "SQL")
-      .replace("R", "R")
   }
 
   return {
@@ -429,27 +439,10 @@ export function extractJobV4(rawJobText: string): JobStructured {
     }
 
     if (hits <= 0) continue
-// V4 v1: hard-disable QA cluster (too many false positives)
-if (c.id === "CLUSTER_QA_TESTING") continue
-    // HARD SUPPRESSION: QA requires explicit QA language
-    if (c.id === "CLUSTER_QA_TESTING") {
-      const qaExplicit = [
-        "qa",
-        "quality assurance",
-        "test case",
-        "test plan",
-        "regression",
-        "bug",
-        "defect",
-        "uat",
-        "validation testing",
-        "software testing",
-        "manual testing",
-        "automated testing",
-      ]
-      const hasExplicitQA = qaExplicit.some((m) => jobTextNorm.includes(m))
-      if (!hasExplicitQA) continue
-    }
+
+    // V4 v1: hard-disable QA/testing clusters (false positives)
+    const idLower = c.id.toLowerCase()
+    if (idLower.includes("qa") || idLower.includes("test")) continue
 
     let weight_tier: WeightTier = "supporting"
     if (hits >= 3) weight_tier = "core"
@@ -477,17 +470,15 @@ if (c.id === "CLUSTER_QA_TESTING") continue
   const analytical_intensity = inferAnalyticalIntensity(jobTextNorm)
   const domain = inferDomain(jobTextNorm)
 
-  // Sort by confidence DESC (stable tie-breaker)
   clusters.sort(
     (a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id)
   )
 
-  // LOCKED POLICY: top 2 are core, all others important
   for (let i = 0; i < clusters.length; i++) {
     clusters[i].weight_tier = i < 2 ? "core" : "important"
   }
 
-  const job: JobStructured = {
+  return {
     clusters,
     required_tools: tools.required_tools,
     preferred_tools: tools.preferred_tools,
@@ -505,6 +496,4 @@ if (c.id === "CLUSTER_QA_TESTING") continue
       },
     },
   }
-
-  return job
 }
