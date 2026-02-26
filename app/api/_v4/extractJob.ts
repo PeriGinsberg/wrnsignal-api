@@ -33,160 +33,16 @@ function countOccurrences(haystack: string, needle: string): number {
 }
 
 // -----------------------------
-// Evidence: responsibilities-first snippet selection
+// Evidence: DUTY-LINES ONLY (no headers, no marketing, no benefits, no reqs)
 // -----------------------------
 
-function extractSection(raw: string, headingPatterns: RegExp[]): string | null {
-  const text = raw || ""
-  const lower = text.toLowerCase()
-
-  let startIdx = -1
-  let matchedLen = 0
-
-  for (const re of headingPatterns) {
-    const m = re.exec(lower)
-    if (m && (startIdx === -1 || m.index < startIdx)) {
-      startIdx = m.index
-      matchedLen = m[0].length
-    }
-  }
-
-  if (startIdx < 0) return null
-
-  const after = text.slice(startIdx + matchedLen)
-
-  const stopHeadings = [
-    /(^|\n)\s*(qualifications|requirements|education|about\s+us|about\s+the\s+company|who\s+we\s+are|equal\s+opportunity|eeo|benefits)\s*[:\n]/i,
-    /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities)\s*[:\n]/i,
-  ]
-
-  let stopIdx = after.length
-  for (const re of stopHeadings) {
-    const m = re.exec(after)
-    if (m && m.index >= 0) stopIdx = Math.min(stopIdx, m.index)
-  }
-
-  const section = after.slice(0, stopIdx).trim()
-  return section.length ? section : null
-}
-
-function getEvidenceCorpus(raw: string): { primary: string; fallback: string } {
-  
-
-const responsibilities = extractSection(raw, [
-  /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities|duties|role\s+responsibilities|job\s+duties|the\s+role|what\s+you\s+do)\s*[:\n]/i,
-])
-  // If no responsibilities section, build a "bullet-only" corpus from the full text
-  const lines = (raw || "")
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean)
-
-  const bulletish = lines.filter((l) => /^[-•*]\s+/.test(l))
-  const bulletCorpus = bulletish.length ? bulletish.join("\n") : raw
-
-  return {
-    primary: responsibilities || bulletCorpus,
-    fallback: raw,
-  }
-}
-function findEvidenceSnippet(corpusText: string, phrase: string): string {
- 
-const DEBUG = true
-const dbg = (msg: string, obj?: any) => {
-  if (!DEBUG) return
-  console.log("[evidence_debug]", msg, obj ?? "")
-}
-
- const lines = (corpusText || "")
+function findEvidenceSnippet(rawText: string, phrase: string): string {
+  const lines = (rawText || "")
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
 
   const phraseNorm = normalize(phrase)
-
-  const isHeadingLine = (line: string) => {
-    const ln = normalize(line).replace(/[:\-–—]+$/, "").trim()
-
- // Block role title lines like "Associate (Intern), Summer 2026"
-const hasSeasonOrTerm =
-  /\b(summer|fall|spring|winter)\b/.test(ln) || /\b202\d\b/.test(ln)
-
-const looksLikeRoleTitle =
-  // common role words OR parentheses pattern used in titles
-  /(intern|associate|analyst|coordinator|specialist|manager)\b/.test(ln) ||
-  /\([^)]*\)/.test(ln)
-
-const hasNoActionVerb =
-  !/(assist|conduct|create|manage|prepare|support|maintain|format|utiliz|analy|research|coordinate|develop|build|track|report|present|model|forecast|gather|interview)\b/.test(
-    ln
-  )
-
-if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80) {
-  return true
-}
-
- const headings = new Set([
-  "about the job",
-  "company introduction",
-  "introduction",
-  "overview",
-  "role overview",
-  "position overview",
-  "job overview",
-  "responsibilities",
-  "qualifications",
-  "requirements",
-  "education",
-  "about us",
-  "who we are",
-  "benefits",
-  "culture",
-"job description summary",
-"job summary",
-"role summary",
-"position summary",
-])
-    if (headings.has(ln)) return true
-
-    if (
-      ln.length <= 18 &&
-      (ln.includes("about") ||
-        ln.includes("requirements") ||
-        ln.includes("qualifications"))
-    ) {
-      return true
-    }
-
-    return false
-  }
-
-  const isFluffLine = (ln: string) =>
-  includesAny(ln, [
-    "with respect to culture",
-    "works collaboratively across offices",
-    "one global team",
-    "our mission",
-    "our values",
-    "award-winning",
-    "cutting-edge",
-    "market leader",
-    "founded in",
-    "brand awareness",
-    // benefits / comp
-    "compensation",
-    "highly competitive",
-    "benefits",
-    "401k",
-    "paid time off",
-    "pto",
-    "medical",
-    "dental",
-    "vision",
-    "wellness",
-    "equal opportunity",
-    "eeo",
-  ])
 
   const dutyVerbs = [
     "assist",
@@ -197,8 +53,8 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
     "support",
     "maintain",
     "format",
-    "utiliz",
-    "analy",
+    "utiliz", // utilize/utilizing
+    "analy", // analyze/analysis
     "research",
     "coordinate",
     "develop",
@@ -209,22 +65,93 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
     "model",
     "forecast",
     "gather",
+    "synthesize",
+    "draft",
+    "write",
     "interview",
+    "evaluate",
   ]
 
-  const looksLikeBullet = (l: string) => /^[-•*]\s+/.test(l)
+  const isHeadingLine = (line: string) => {
+    const ln = normalize(line).replace(/[:\-–—]+$/, "").trim()
 
-  const isObviousMarketingOrAbout = (ln: string) =>
+    // common headings
+    const headings = new Set([
+      "about the job",
+      "company introduction",
+      "introduction",
+      "overview",
+      "job description summary",
+      "job summary",
+      "role summary",
+      "position summary",
+      "responsibilities",
+      "qualifications",
+      "requirements",
+      "education",
+      "about us",
+      "who we are",
+      "benefits",
+      "culture",
+      "equal opportunity",
+      "eeo",
+    ])
+    if (headings.has(ln)) return true
+
+    // title-ish lines with season/year and role words, no verbs
+    const hasSeasonOrTerm =
+      /\b(summer|fall|spring|winter)\b/.test(ln) || /\b202\d\b/.test(ln)
+    const looksLikeRoleTitle =
+      /(intern|associate|analyst|coordinator|specialist|manager)\b/.test(ln) ||
+      /\([^)]*\)/.test(ln)
+    const hasNoActionVerb = !dutyVerbs.some((v) => ln.includes(v))
+    if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 90)
+      return true
+
+    // short "About/Requirements" type stubs
+    if (
+      ln.length <= 25 &&
+      (ln.includes("about") || ln.includes("requirements") || ln.includes("qualifications"))
+    ) {
+      return true
+    }
+
+    return false
+  }
+
+  const isMarketingOrFluff = (ln: string) =>
     includesAny(ln, [
-      "is a specialized",
-      "is an iconic",
-      "we are a",
-      "our mission",
-      "brand",
-      "market leader",
-      "cutting-edge",
+      // marketing fluff
       "award-winning",
-      "90% brand awareness",
+      "cutting-edge",
+      "market leader",
+      "founded in",
+      "our mission",
+      "our values",
+      "brand awareness",
+      "is a specialized",
+      "we are a",
+      "one global team",
+      "works collaboratively",
+      // benefits/comp
+      "compensation",
+      "highly competitive",
+      "commensurate",
+      "benefits",
+      "401k",
+      "paid time off",
+      "pto",
+      "medical",
+      "dental",
+      "vision",
+      "wellness",
+      "equal opportunity",
+      "eeo",
+      // internship boilerplate
+      "working experience of an intern",
+      "essentially identical to that of a full-time",
+      "internship experience",
+      "this internship",
     ])
 
   const isRequirementLine = (ln: string) =>
@@ -234,55 +161,50 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
       "master",
       "degree",
       "gpa",
-      "preferred qualification",
+      "required",
+      "preferred",
+      "must have",
       "qualification",
       "requirements",
     ])
 
-  // Pass 1: phrase appears + bullet/duty verb + NOT headings/fluff/marketing/requirements
+  const looksLikeBullet = (l: string) => /^[-•*]\s+/.test(l)
+
+  const isDutyLine = (line: string) => {
+    const ln = normalize(line)
+    if (isHeadingLine(line)) return false
+    if (isMarketingOrFluff(ln)) return false
+    if (isRequirementLine(ln)) return false
+
+    // must be bullet OR must contain a duty verb
+    const bullet = looksLikeBullet(line)
+    const verb = dutyVerbs.some((v) => ln.includes(v))
+    return bullet || verb
+  }
+
+  // Pass 1: phrase + duty line
   for (const line of lines) {
     const ln = normalize(line)
-    if (isHeadingLine(line)) continue
-    if (isFluffLine(ln)) continue
     if (!phraseNorm) continue
     if (!ln.includes(phraseNorm)) continue
-    if (!looksLikeBullet(line) && !dutyVerbs.some((v) => ln.includes(v))) continue
-    if (isObviousMarketingOrAbout(ln)) continue
-    if (isRequirementLine(ln)) continue
-dbg("RETURN pass1", { line, phraseNorm })
+    if (!isDutyLine(line)) continue
     return line.slice(0, 220)
   }
 
-  // Pass 2: any line containing phrase, still filtered
-  for (const line of lines) {
-    const ln = normalize(line)
-    if (isHeadingLine(line)) continue
-    if (isFluffLine(ln)) continue
-    if (!phraseNorm) continue
-    if (!ln.includes(phraseNorm)) continue
-    if (isObviousMarketingOrAbout(ln)) continue
-    if (isRequirementLine(ln)) continue
-dbg("RETURN pass2", { line, phraseNorm })
-    return line.slice(0, 220)
+  // Pass 2: any duty line containing part of phrase (fallback for normalized phrase mismatch)
+  if (phraseNorm) {
+    const parts = phraseNorm.split(" ").filter((p) => p.length >= 5)
+    for (const line of lines) {
+      const ln = normalize(line)
+      if (!isDutyLine(line)) continue
+      if (parts.some((p) => ln.includes(p))) return line.slice(0, 220)
+    }
   }
 
-  // Final fallback: first "safe" line (never return headings)
-// Final fallback: first DUTY-like line only (never return headings/summaries)
-const safeDuty = lines.find((l) => {
-  const ln = normalize(l)
-  if (isHeadingLine(l)) return false
-  if (isFluffLine(ln)) return false
-  if (isObviousMarketingOrAbout(ln)) return false
-  if (isRequirementLine(ln)) return false
-
-  const isBullet = /^[-•*]\s+/.test(l)
-  const hasDutyVerb = dutyVerbs.some((v) => ln.includes(v))
-  return isBullet || hasDutyVerb
-})
-
-dbg("RETURN fallback", { safeDuty })
-
-return (safeDuty || "").trim().slice(0, 220)}
+  // Final fallback: first duty line only, else empty string
+  const safeDuty = lines.find((l) => isDutyLine(l))
+  return (safeDuty || "").trim().slice(0, 220)
+}
 
 // -----------------------------
 // Other extractors
@@ -449,7 +371,6 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
 export function extractJobV4(rawJobText: string): JobStructured {
   const raw = rawJobText || ""
   const jobTextNorm = normalize(raw)
-  const corpus = getEvidenceCorpus(raw)
 
   const sectionBoostPhrases = [
     "responsibilities",
@@ -505,7 +426,7 @@ export function extractJobV4(rawJobText: string): JobStructured {
       weight_tier,
       confidence,
       evidence_snippet: findEvidenceSnippet(
-        corpus.primary,
+        raw,
         bestPhrase || (c.example_phrases?.[0] || "")
       ),
     })
@@ -519,6 +440,7 @@ export function extractJobV4(rawJobText: string): JobStructured {
     (a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id)
   )
 
+  // LOCKED POLICY: top 2 are core, all others important
   for (let i = 0; i < clusters.length; i++) {
     clusters[i].weight_tier = i < 2 ? "core" : "important"
   }
