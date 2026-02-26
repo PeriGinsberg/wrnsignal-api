@@ -32,8 +32,8 @@ function countOccurrences(haystack: string, needle: string): number {
 // Extract a short evidence snippet that *must* exist in the job text.
 // We pick the best matching line or sentence where the phrase appears.
 
-function findEvidenceSnippet(rawJobText: string, phrase: string): string {
-  const lines = rawJobText
+function findEvidenceSnippet(corpusText: string, phrase: string): string {
+  const lines = corpusText
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
@@ -49,46 +49,77 @@ function findEvidenceSnippet(rawJobText: string, phrase: string): string {
     "support",
     "maintain",
     "format",
-    "utiliz", // utilize/utilizing
-    "analy",  // analyze/analysis
+    "utiliz",
+    "analy",
     "research",
     "coordinate",
     "develop",
     "build",
     "track",
     "report",
+    "present",
+    "model",
+    "forecast",
   ]
 
-  // Pass 1: phrase appears AND line looks like responsibilities
+  const looksLikeBullet = (l: string) => /^[-•*]\s+/.test(l) || /^[a-z].+/.test(l)
+  const isObviousMarketingOrAbout = (ln: string) =>
+    includesAny(ln, [
+      "is a specialized",
+      "is an iconic",
+      "founded in",
+      "we are a",
+      "our mission",
+      "brand",
+      "market leader",
+      "cutting-edge",
+      "award-winning",
+      "90% brand awareness",
+    ])
+
+  const isRequirementLine = (ln: string) =>
+    includesAny(ln, [
+      "pursuit of",
+      "bachelor",
+      "master",
+      "degree",
+      "gpa",
+      "required",
+      "preferred qualification",
+      "must have",
+      "qualification",
+      "requirements",
+    ])
+
+  // Pass 1: phrase appears + bullet/duty verb + NOT marketing/requirements
   for (const line of lines) {
     const ln = normalize(line)
-    if (phraseNorm && ln.includes(phraseNorm) && dutyVerbs.some((v) => ln.includes(v))) {
-      return line.slice(0, 220)
-    }
+    if (!phraseNorm) continue
+    if (!ln.includes(phraseNorm)) continue
+    if (!looksLikeBullet(line)) continue
+    if (!dutyVerbs.some((v) => ln.includes(v))) continue
+    if (isObviousMarketingOrAbout(ln)) continue
+    if (isRequirementLine(ln)) continue
+    return line.slice(0, 220)
   }
 
-  // Pass 2: any line containing phrase
+  // Pass 2: phrase appears + NOT marketing/requirements
   for (const line of lines) {
     const ln = normalize(line)
-    if (phraseNorm && ln.includes(phraseNorm)) return line.slice(0, 220)
+    if (!phraseNorm) continue
+    if (!ln.includes(phraseNorm)) continue
+    if (isObviousMarketingOrAbout(ln)) continue
+    if (isRequirementLine(ln)) continue
+    return line.slice(0, 220)
   }
 
-  // Pass 3: sentence fallback
-  const sentences = rawJobText
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-
-  for (const s of sentences) {
-    const sn = normalize(s)
-    if (phraseNorm && sn.includes(phraseNorm)) return s.slice(0, 220)
-  }
-
-  // Worst-case fallback
-  return rawJobText.trim().slice(0, 220)
-}
-
-function inferAnalyticalIntensity(jobTextNorm: string): AnalyticalIntensity {
+  // Worst-case fallback: first non-marketing line
+  const safe = lines.find((l) => {
+    const ln = normalize(l)
+    return !isObviousMarketingOrAbout(ln) && !isRequirementLine(ln)
+  })
+  return (safe || corpusText || "").trim().slice(0, 220)
+}function inferAnalyticalIntensity(jobTextNorm: string): AnalyticalIntensity {
   const highSignals = [
     "financial model",
     "model development",
@@ -245,6 +276,53 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
 // Core: extractJobV4
 // -----------------------------
 
+function extractSection(raw: string, headingPatterns: RegExp[]): string | null {
+  const text = raw || ""
+  const lower = text.toLowerCase()
+
+  // Find the first heading match
+  let startIdx = -1
+  let matchedLen = 0
+  for (const re of headingPatterns) {
+    const m = re.exec(lower)
+    if (m && (startIdx === -1 || m.index < startIdx)) {
+      startIdx = m.index
+      matchedLen = m[0].length
+    }
+  }
+  if (startIdx < 0) return null
+
+  const after = text.slice(startIdx + matchedLen)
+
+  // Stop at the next common heading
+  const stopHeadings = [
+    /(^|\n)\s*(qualifications|requirements|education|about\s+us|about\s+the\s+company|who\s+we\s+are|equal\s+opportunity|eeo|benefits)\s*[:\n]/i,
+    /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities)\s*[:\n]/i,
+  ]
+
+  let stopIdx = after.length
+  for (const re of stopHeadings) {
+    const m = re.exec(after)
+    if (m && m.index >= 0) stopIdx = Math.min(stopIdx, m.index)
+  }
+
+  const section = after.slice(0, stopIdx).trim()
+  return section.length ? section : null
+}
+
+function getEvidenceCorpus(raw: string): { primary: string; fallback: string } {
+  const responsibilities = extractSection(raw, [
+    /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities)\s*[:\n]/i,
+  ])
+
+  // If no responsibilities section exists, fall back to full raw,
+  // but we will still avoid obvious marketing + requirements lines in snippet selection.
+  return {
+    primary: responsibilities || raw,
+    fallback: raw,
+  }
+}
+
 export function extractJobV4(rawJobText: string): JobStructured {
   const raw = rawJobText || ""
   const jobTextNorm = normalize(raw)
@@ -313,10 +391,10 @@ for (const p of phrases) {
 
   // For V4 v1, eligibility is minimal. We can expand later.
   const job: JobStructured = {
-    clusters: clusters.sort((a, b) => {
-      const wt = (x: WeightTier) => (x === "core" ? 3 : x === "important" ? 2 : 1)
-      return wt(b.weight_tier) - wt(a.weight_tier) || b.confidence - a.confidence
-    }),
+   // 1) confidence sort only (stable tie-breaker)
+clusters: clusters.sort(
+  (a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id)
+),
     required_tools: tools.required_tools,
     preferred_tools: tools.preferred_tools,
     analytical_intensity,
