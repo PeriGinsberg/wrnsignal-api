@@ -109,12 +109,26 @@ export const TAXONOMY: ClusterDef[] = [
     definition: "Supporting deployment, adoption, training, or rollout of tools/processes.",
     example_phrases: ["rollout", "implementation", "adoption", "enablement", "training materials"],
   },
-  {
-    id: "CLUSTER_QA_TESTING",
-    label: "Testing and QA",
-    definition: "Testing systems, processes, or deliverables to ensure quality.",
-    example_phrases: ["testing", "qa", "test cases", "validate", "systematic testing"],
-  },
+{
+  id: "CLUSTER_QA_TESTING",
+  label: "Software / System Testing",
+  definition: "Testing software systems, applications, or technical implementations to ensure quality and performance.",
+  example_phrases: [
+    "quality assurance",
+    "qa ",
+    "test cases",
+    "test plans",
+    "user acceptance testing",
+    "uat",
+    "regression testing",
+    "bug tracking",
+    "defect",
+    "issue tracking",
+    "jira",
+    "automation testing",
+    "manual testing"
+  ],
+},
 
   // Communication + client work
   {
