@@ -40,6 +40,33 @@ function findEvidenceSnippet(corpusText: string, phrase: string): string {
 
   const phraseNorm = normalize(phrase)
 
+const isHeadingLine = (line: string) => {
+  const ln = normalize(line)
+  const headings = [
+    "about the job",
+    "responsibilities",
+    "qualifications",
+    "requirements",
+    "education",
+    "about us",
+    "who we are",
+    "benefits",
+    "culture",
+  ]
+  return headings.some((h) => ln === h || ln === h + ":" || ln.startsWith(h + ":"))
+}
+
+const isFluffLine = (ln: string) =>
+  includesAny(ln, [
+    "with respect to culture",
+    "works collaboratively across offices",
+    "one global team",
+    "our mission",
+    "our values",
+    "award-winning",
+    "cutting-edge",
+  ])
+
   const dutyVerbs = [
     "assist",
     "conduct",
@@ -94,6 +121,8 @@ function findEvidenceSnippet(corpusText: string, phrase: string): string {
   // Pass 1: phrase appears + bullet/duty verb + NOT marketing/requirements
   for (const line of lines) {
     const ln = normalize(line)
+if (isHeadingLine(line)) continue
+if (isFluffLine(ln)) continue
     if (!phraseNorm) continue
     if (!ln.includes(phraseNorm)) continue
     if (!looksLikeBullet(line)) continue
@@ -106,6 +135,8 @@ function findEvidenceSnippet(corpusText: string, phrase: string): string {
   // Pass 2: phrase appears + NOT marketing/requirements
   for (const line of lines) {
     const ln = normalize(line)
+if (isHeadingLine(line)) continue
+if (isFluffLine(ln)) continue
     if (!phraseNorm) continue
     if (!ln.includes(phraseNorm)) continue
     if (isObviousMarketingOrAbout(ln)) continue
@@ -361,6 +392,25 @@ for (const p of phrases) {
 
     if (hits <= 0) continue
 
+if (c.id === "CLUSTER_QA_TESTING") {
+  const qaExplicit = [
+    "qa",
+    "quality assurance",
+    "test case",
+    "test plan",
+    "regression",
+    "bug",
+    "defect",
+    "uat",
+    "validation testing",
+    "software testing",
+    "manual testing",
+    "automated testing",
+  ]
+  const hasExplicitQA = qaExplicit.some((m) => jobTextNorm.includes(m))
+  if (!hasExplicitQA) continue
+}
+
     // Weight tier: hybrid of frequency + section awareness
     let weight_tier: WeightTier = "supporting"
     if (hits >= 3) weight_tier = "core"
@@ -390,11 +440,17 @@ for (const p of phrases) {
   const domain = inferDomain(jobTextNorm)
 
   // For V4 v1, eligibility is minimal. We can expand later.
-  const job: JobStructured = {
-   // 1) confidence sort only (stable tie-breaker)
-clusters: clusters.sort(
+  clusters.sort(
   (a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id)
-),
+)
+
+for (let i = 0; i < clusters.length; i++) {
+  clusters[i].weight_tier = i < 2 ? "core" : "important"
+}
+
+const job: JobStructured = {
+   // 1) confidence sort only (stable tie-breaker)
+clusters,
     required_tools: tools.required_tools,
     preferred_tools: tools.preferred_tools,
     analytical_intensity,
