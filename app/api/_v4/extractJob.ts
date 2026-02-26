@@ -18,11 +18,9 @@ import { TAXONOMY } from "./taxonomy"
  *    - If none, allow qualification/requirement lines
  *    - Never allow headings/marketing/benefits boilerplate
  *    - If none, evidence is ""
+ * 4) Evidence uniqueness:
+ *    - If a snippet is already used by a higher-ranked cluster, blank it out ("")
  */
-
-// -----------------------------
-// Helpers
-// -----------------------------
 
 function normalize(text: string): string {
   return (text || "").toLowerCase().replace(/\s+/g, " ").trim()
@@ -119,7 +117,6 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
       return true
     }
 
-    // role title lines like "Associate (Intern), Summer 2026"
     const hasSeasonOrTerm =
       /\b(summer|fall|spring|winter)\b/.test(ln) || /\b202\d\b/.test(ln)
     const looksLikeRoleTitle =
@@ -134,7 +131,6 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
 
   const isMarketingOrBenefits = (ln: string) =>
     includesAny(ln, [
-      // marketing fluff
       "award-winning",
       "cutting-edge",
       "market leader",
@@ -146,7 +142,6 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
       "we are a",
       "one global team",
       "works collaboratively",
-      // benefits/comp
       "compensation",
       "highly competitive",
       "commensurate",
@@ -158,11 +153,9 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
       "dental",
       "vision",
       "wellness",
-      // generic boilerplate we never want as evidence
       "equal opportunity",
       "eeo",
       "accommodation",
-      // internship boilerplate
       "working experience of an intern",
       "essentially identical to that of a full-time",
       "internship experience",
@@ -183,9 +176,6 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
       "qualification",
       "qualifications",
       "requirements",
-      "analytical mindset",
-      "problem-solving skills",
-      "problem solving skills",
     ])
 
   const looksLikeBullet = (l: string) => /^[-•*]\s+/.test(l)
@@ -217,7 +207,7 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
     return line.slice(0, 220)
   }
 
-  // Pass 2: phrase match on QUAL lines (allowed if no duty match exists)
+  // Pass 2: phrase match on QUAL lines
   for (const line of lines) {
     const ln = normalize(line)
     if (!phraseNorm) continue
@@ -226,7 +216,7 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
     return line.slice(0, 220)
   }
 
-  // Pass 3: partial phrase fallback on duty lines (helps with normalization mismatch)
+  // Pass 3: partial phrase fallback on duty lines
   if (phraseNorm) {
     const parts = phraseNorm.split(" ").filter((p) => p.length >= 5)
     for (const line of lines) {
@@ -444,11 +434,9 @@ export function extractJobV4(rawJobText: string): JobStructured {
 
     if (hits <= 0) continue
 
-    // V4 v1: hard-disable QA/testing clusters (false positives)
     const idLower = c.id.toLowerCase()
     if (idLower.includes("qa") || idLower.includes("test")) continue
 
-    // weight_tier based on hits (later overwritten by locked top-2 policy)
     let weight_tier: WeightTier = "supporting"
     if (hits >= 3) weight_tier = "core"
     else if (hits === 2) weight_tier = "important"
@@ -476,6 +464,15 @@ export function extractJobV4(rawJobText: string): JobStructured {
   clusters.sort(
     (a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id)
   )
+
+  // Evidence uniqueness: avoid repeating the same snippet across clusters
+  const used = new Set<string>()
+  for (const cl of clusters) {
+    const key = normalize(cl.evidence_snippet || "")
+    if (!key) continue
+    if (used.has(key)) cl.evidence_snippet = ""
+    else used.add(key)
+  }
 
   // LOCKED POLICY: top 2 are core, all others important
   for (let i = 0; i < clusters.length; i++) {
