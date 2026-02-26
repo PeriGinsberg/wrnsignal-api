@@ -71,10 +71,11 @@ function extractSection(raw: string, headingPatterns: RegExp[]): string | null {
 }
 
 function getEvidenceCorpus(raw: string): { primary: string; fallback: string } {
-  const responsibilities = extractSection(raw, [
-    /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities)\s*[:\n]/i,
-  ])
+  
 
+const responsibilities = extractSection(raw, [
+  /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities|duties|role\s+responsibilities|job\s+duties|the\s+role|what\s+you\s+do)\s*[:\n]/i,
+])
   // If no responsibilities section, build a "bullet-only" corpus from the full text
   const lines = (raw || "")
     .split(/\r?\n/)
@@ -90,7 +91,14 @@ function getEvidenceCorpus(raw: string): { primary: string; fallback: string } {
   }
 }
 function findEvidenceSnippet(corpusText: string, phrase: string): string {
-  const lines = (corpusText || "")
+ 
+const DEBUG = true
+const dbg = (msg: string, obj?: any) => {
+  if (!DEBUG) return
+  console.log("[evidence_debug]", msg, obj ?? "")
+}
+
+ const lines = (corpusText || "")
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
@@ -154,18 +162,31 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
   }
 
   const isFluffLine = (ln: string) =>
-    includesAny(ln, [
-      "with respect to culture",
-      "works collaboratively across offices",
-      "one global team",
-      "our mission",
-      "our values",
-      "award-winning",
-      "cutting-edge",
-      "market leader",
-      "founded in",
-      "brand awareness",
-    ])
+  includesAny(ln, [
+    "with respect to culture",
+    "works collaboratively across offices",
+    "one global team",
+    "our mission",
+    "our values",
+    "award-winning",
+    "cutting-edge",
+    "market leader",
+    "founded in",
+    "brand awareness",
+    // benefits / comp
+    "compensation",
+    "highly competitive",
+    "benefits",
+    "401k",
+    "paid time off",
+    "pto",
+    "medical",
+    "dental",
+    "vision",
+    "wellness",
+    "equal opportunity",
+    "eeo",
+  ])
 
   const dutyVerbs = [
     "assist",
@@ -228,6 +249,7 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
     if (!looksLikeBullet(line) && !dutyVerbs.some((v) => ln.includes(v))) continue
     if (isObviousMarketingOrAbout(ln)) continue
     if (isRequirementLine(ln)) continue
+dbg("RETURN pass1", { line, phraseNorm })
     return line.slice(0, 220)
   }
 
@@ -240,6 +262,7 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
     if (!ln.includes(phraseNorm)) continue
     if (isObviousMarketingOrAbout(ln)) continue
     if (isRequirementLine(ln)) continue
+dbg("RETURN pass2", { line, phraseNorm })
     return line.slice(0, 220)
   }
 
@@ -251,14 +274,15 @@ const safeDuty = lines.find((l) => {
   if (isFluffLine(ln)) return false
   if (isObviousMarketingOrAbout(ln)) return false
   if (isRequirementLine(ln)) return false
-  // must look like a duty (bullet OR has a duty verb)
+
   const isBullet = /^[-•*]\s+/.test(l)
   const hasDutyVerb = dutyVerbs.some((v) => ln.includes(v))
   return isBullet || hasDutyVerb
 })
 
-return (safeDuty || "").trim().slice(0, 220)
-}
+dbg("RETURN fallback", { safeDuty })
+
+return (safeDuty || "").trim().slice(0, 220)}
 
 // -----------------------------
 // Other extractors
