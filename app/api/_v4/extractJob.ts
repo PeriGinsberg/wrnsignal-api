@@ -230,16 +230,20 @@ export function extractJobV4(rawJobText: string): JobStructured {
 
   for (const c of TAXONOMY) {
     const phrases = (c.example_phrases || []).map((p) => normalize(p))
-    let hits = 0
-    let bestPhrase = ""
+   let hits = 0
+let bestPhrase = ""
+let bestCt = 0
 
-    for (const p of phrases) {
-      const ct = countOccurrences(jobTextNorm, p)
-      if (ct > 0) {
-        hits += ct
-        if (!bestPhrase) bestPhrase = p
-      }
+for (const p of phrases) {
+  const ct = countOccurrences(jobTextNorm, p)
+  if (ct > 0) {
+    hits += ct
+    if (ct > bestCt) {
+      bestCt = ct
+      bestPhrase = p
     }
+  }
+}
 
     if (hits <= 0) continue
 
