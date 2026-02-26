@@ -75,12 +75,20 @@ function getEvidenceCorpus(raw: string): { primary: string; fallback: string } {
     /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities)\s*[:\n]/i,
   ])
 
+  // If no responsibilities section, build a "bullet-only" corpus from the full text
+  const lines = (raw || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  const bulletish = lines.filter((l) => /^[-•*]\s+/.test(l))
+  const bulletCorpus = bulletish.length ? bulletish.join("\n") : raw
+
   return {
-    primary: responsibilities || raw,
+    primary: responsibilities || bulletCorpus,
     fallback: raw,
   }
 }
-
 function findEvidenceSnippet(corpusText: string, phrase: string): string {
   const lines = (corpusText || "")
     .split(/\r?\n/)
@@ -110,17 +118,23 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
   return true
 }
 
-    const headings = new Set([
-      "about the job",
-      "responsibilities",
-      "qualifications",
-      "requirements",
-      "education",
-      "about us",
-      "who we are",
-      "benefits",
-      "culture",
-    ])
+ const headings = new Set([
+  "about the job",
+  "company introduction",
+  "introduction",
+  "overview",
+  "role overview",
+  "position overview",
+  "job overview",
+  "responsibilities",
+  "qualifications",
+  "requirements",
+  "education",
+  "about us",
+  "who we are",
+  "benefits",
+  "culture",
+])
     if (headings.has(ln)) return true
 
     if (
