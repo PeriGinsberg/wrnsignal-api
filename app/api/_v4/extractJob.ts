@@ -429,7 +429,8 @@ export function extractJobV4(rawJobText: string): JobStructured {
     }
 
     if (hits <= 0) continue
-
+// V4 v1: hard-disable QA cluster (too many false positives)
+if (c.id === "CLUSTER_QA_TESTING") continue
     // HARD SUPPRESSION: QA requires explicit QA language
     if (c.id === "CLUSTER_QA_TESTING") {
       const qaExplicit = [
