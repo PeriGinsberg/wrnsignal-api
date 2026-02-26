@@ -134,6 +134,10 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
   "who we are",
   "benefits",
   "culture",
+"job description summary",
+"job summary",
+"role summary",
+"position summary",
 ])
     if (headings.has(ln)) return true
 
@@ -240,17 +244,20 @@ if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 80)
   }
 
   // Final fallback: first "safe" line (never return headings)
-  const safe = lines.find((l) => {
-    const ln = normalize(l)
-    return (
-      !isHeadingLine(l) &&
-      !isFluffLine(ln) &&
-      !isObviousMarketingOrAbout(ln) &&
-      !isRequirementLine(ln)
-    )
-  })
+// Final fallback: first DUTY-like line only (never return headings/summaries)
+const safeDuty = lines.find((l) => {
+  const ln = normalize(l)
+  if (isHeadingLine(l)) return false
+  if (isFluffLine(ln)) return false
+  if (isObviousMarketingOrAbout(ln)) return false
+  if (isRequirementLine(ln)) return false
+  // must look like a duty (bullet OR has a duty verb)
+  const isBullet = /^[-•*]\s+/.test(l)
+  const hasDutyVerb = dutyVerbs.some((v) => ln.includes(v))
+  return isBullet || hasDutyVerb
+})
 
-  return (safe || "").trim().slice(0, 220)
+return (safeDuty || "").trim().slice(0, 220)
 }
 
 // -----------------------------
