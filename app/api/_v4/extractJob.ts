@@ -31,24 +31,60 @@ function countOccurrences(haystack: string, needle: string): number {
 
 // Extract a short evidence snippet that *must* exist in the job text.
 // We pick the best matching line or sentence where the phrase appears.
+
 function findEvidenceSnippet(rawJobText: string, phrase: string): string {
-  const lines = rawJobText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  const lines = rawJobText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+
   const phraseNorm = normalize(phrase)
 
-  // Prefer line-level evidence if present
+  const dutyVerbs = [
+    "assist",
+    "conduct",
+    "create",
+    "manage",
+    "prepare",
+    "support",
+    "maintain",
+    "format",
+    "utiliz", // utilize/utilizing
+    "analy",  // analyze/analysis
+    "research",
+    "coordinate",
+    "develop",
+    "build",
+    "track",
+    "report",
+  ]
+
+  // Pass 1: phrase appears AND line looks like responsibilities
+  for (const line of lines) {
+    const ln = normalize(line)
+    if (phraseNorm && ln.includes(phraseNorm) && dutyVerbs.some((v) => ln.includes(v))) {
+      return line.slice(0, 220)
+    }
+  }
+
+  // Pass 2: any line containing phrase
   for (const line of lines) {
     const ln = normalize(line)
     if (phraseNorm && ln.includes(phraseNorm)) return line.slice(0, 220)
   }
 
-  // Fall back to sentence-ish evidence
-  const sentences = rawJobText.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean)
+  // Pass 3: sentence fallback
+  const sentences = rawJobText
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
   for (const s of sentences) {
     const sn = normalize(s)
     if (phraseNorm && sn.includes(phraseNorm)) return s.slice(0, 220)
   }
 
-  // Worst-case: return a short beginning slice (still from job text)
+  // Worst-case fallback
   return rawJobText.trim().slice(0, 220)
 }
 
