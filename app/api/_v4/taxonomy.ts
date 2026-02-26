@@ -109,7 +109,19 @@ export const TAXONOMY: ClusterDef[] = [
     id: "CLUSTER_VISUAL_DESIGN",
     label: "Visual design",
     definition: "Design work across graphics, layout, brand assets, or visual production.",
-    example_phrases: ["design", "photoshop", "illustrator", "indesign", "figma", "creative assets"],
+    example_phrases: [
+  "photoshop",
+  "illustrator",
+  "indesign",
+  "figma",
+  "adobe creative cloud",
+  "graphic design",
+  "brand assets",
+  "creative assets",
+  "visual design",
+  "layout",
+  "typography"
+]
   },
 
   // Commercial
@@ -131,7 +143,19 @@ export const TAXONOMY: ClusterDef[] = [
     id: "CLUSTER_LEADERSHIP_OWNERSHIP",
     label: "Leadership and ownership",
     definition: "Leading teams, owning outcomes, managing operations, or running an org/function.",
-    example_phrases: ["led", "managed", "president", "owner", "accountable", "executive board"],
+  example_phrases: [
+  "president",
+  "executive board",
+  "assistant captain",
+  "led",
+  "managed",
+  "supervised",
+  "directed",
+  "hired",
+  "recruited",
+  "accountable for",
+  "owned"
+],
   },
   {
     id: "CLUSTER_BUDGET_OWNERSHIP",
