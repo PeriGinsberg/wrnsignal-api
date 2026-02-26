@@ -143,18 +143,24 @@ export const TAXONOMY: ClusterDef[] = [
     id: "CLUSTER_LEADERSHIP_OWNERSHIP",
     label: "Leadership and ownership",
     definition: "Leading teams, owning outcomes, managing operations, or running an org/function.",
-  example_phrases: [
+ example_phrases: [
   "president",
   "executive board",
   "assistant captain",
-  "led",
+  "captain",
+  "team lead",
+  "managed a team",
   "managed",
   "supervised",
   "directed",
   "hired",
   "recruited",
-  "accountable for",
-  "owned"
+  "oversaw",
+  "led a",
+  "led an",
+  "founded",
+  "co-founder",
+  "chair"
 ],
   },
   {
