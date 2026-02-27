@@ -2,6 +2,10 @@
 // Core Enums
 // -----------------------------
 
+
+export const TYPES_V4_STAMP = "TYPES_V4_STAMP__2026_02_26__A"
+console.log("[types v4] loaded:", TYPES_V4_STAMP)
+
 export type WeightTier = "core" | "important" | "supporting"
 
 export type ExecLevel = 0 | 1 | 2 | 3

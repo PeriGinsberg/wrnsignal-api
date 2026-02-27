@@ -8,6 +8,9 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 
+import { TAXONOMY_V4_STAMP } from "../_v4/taxonomy"
+import { TYPES_V4_STAMP } from "../_v4/types"
+
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
@@ -208,6 +211,8 @@ export async function POST(req: Request) {
       fingerprint_hash16: fingerprint_hash.slice(0, 16),
       cache_key: `${fingerprint_hash}::${JOBFIT_LOGIC_VERSION}`,
       cache_bypassed: forceRerun,
+taxonomy_v4_stamp: TAXONOMY_V4_STAMP,
+types_v4_stamp: TYPES_V4_STAMP,
     }
 
     // 1) Lookup existing run unless forced

@@ -5,6 +5,9 @@ export type ClusterDef = {
   example_phrases: string[]
 }
 
+export const TAXONOMY_V4_STAMP = "TAXONOMY_V4_STAMP__2026_02_26__A"
+console.log("[taxonomy v4] loaded:", TAXONOMY_V4_STAMP)
+
 export const TAXONOMY: ClusterDef[] = [
   // Analytical + Quant
   {
