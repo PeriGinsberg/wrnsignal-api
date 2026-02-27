@@ -177,13 +177,15 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   if (hasExplicitTools) {
     const { overlap } = toolOverlap(job, profile)
     if (overlap.length > 0) {
-      whyCodes.push({
-        code: "WHY_TOOL_MATCH",
-        job_fact: `Posting lists tools such as: ${[...(job.requiredTools || []), ...(job.preferredTools || [])].slice(0, 6).join(", ")}.`,
-       profile_fact: profile.tools?.length ? `Profile tools include: ${profile.tools.slice(0, 8).join(", ")}.` : "Profile tools not provided.",
-        note: "Your current tools align with what the role actually uses.",
-        weight: 0, // weight can be 0 because renderer uses priority rules; this is a legit bullet either way
-      })
+    whyCodes.push({
+  code: "WHY_TOOL_MATCH",
+  job_fact: `Posting lists tools such as: ${[...(job.requiredTools || []), ...(job.preferredTools || [])].slice(0, 6).join(", ")}.`,
+  profile_fact: profile.tools?.length
+    ? `Profile tools include: ${profile.tools.slice(0, 8).join(", ")}.`
+    : "Tools not explicitly listed in your profile.",
+  note: "Your current tools align with what the role actually uses.",
+  weight: 4, // was 0
+})
     }
   }
 
