@@ -47,7 +47,7 @@ const ALLOWED_WHY_CODES = new Set<string>([
  */
 const BANNED_WHY_CODES = new Set<string>([
   "WHY_EARLY_CAREER_FRIENDLY",
-  "WHY_TOOL_MATCH",
+  
   "WHY_LOCATION_MATCH",
   "WHY_IN_PERSON_MATCH",
   "WHY_SUMMER_INTERNSHIP_MATCH",
@@ -61,6 +61,13 @@ type Group = "core_work_match" | "tools" | "location" | "internship" | "other"
 
 function whyGroup(code: string): Group {
   if (code === "WHY_FAMILY_MATCH") return "core_work_match"
+  if (code === "WHY_TOOL_MATCH") return "tools"
+  if (code === "WHY_LOCATION_MATCH" || code === "WHY_IN_PERSON_MATCH") return "location"
+  if (
+    code === "WHY_SUMMER_INTERNSHIP_MATCH" ||
+    code === "WHY_MARKETING_ROTATION_MATCH" ||
+    code === "WHY_AI_TOOLS_MATCH"
+  ) return "internship"
   return "other"
 }
 
