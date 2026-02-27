@@ -1,10 +1,14 @@
 // FILE: app/api/_lib/jobfitProfileAdapter.ts
 // CLEAN REWRITE: deterministic, V4-compatible tool ingestion (tools map -> tools list)
-// Key fix: Prefer structured tools map (ProfileStructured.tools) over any fallback inference.
+// Fixes:
+// - tools map support: { Excel: true } -> ["Excel"]
+// - prevents Canva-only fallback when structured tools exist
+// - JobFamily typing: sanitize structured targetFamilies to valid JobFamily[]
+// - adds explicit stamp for deployment verification
 
 import type { JobFamily, LocationMode, StructuredProfileSignals, ProfileConstraints } from "../jobfit/signals"
 
-export const PROFILE_ADAPTER_STAMP = "PROFILE_ADAPTER_STAMP__TOOLS_MAP_FIX__V1"
+export const PROFILE_ADAPTER_STAMP = "PROFILE_ADAPTER_STAMP__TOOLS_MAP_FIX__V2"
 
 type AnyObj = Record<string, any>
 
@@ -14,6 +18,35 @@ function norm(x: any): string {
 
 function lower(x: any): string {
   return norm(x).toLowerCase()
+}
+
+/* ------------------------------ JobFamily sanitizer ------------------------------ */
+
+const JOB_FAMILY_ALLOWLIST: JobFamily[] = [
+  "Marketing",
+  "Analytics",
+  "Finance",
+  "Accounting",
+  "Sales",
+  "Government",
+  "PreMed",
+  "Other",
+]
+
+function isJobFamily(x: any): x is JobFamily {
+  return JOB_FAMILY_ALLOWLIST.includes(x as JobFamily)
+}
+
+function sanitizeTargetFamilies(x: any): JobFamily[] | null {
+  if (!Array.isArray(x)) return null
+  const out: JobFamily[] = []
+  for (const v of x) {
+    const vv = norm(v)
+    if (isJobFamily(vv)) {
+      if (!out.includes(vv)) out.push(vv)
+    }
+  }
+  return out.length ? out : null
 }
 
 /* ------------------------------ cities ------------------------------ */
@@ -64,7 +97,6 @@ function pickAllowedCities(args: {
 function inferTargetFamilies(profileText: string, targetRoles?: string | null): JobFamily[] {
   const t = lower(profileText + " " + (targetRoles || ""))
 
-  // Keep deterministic and simple.
   if (t.includes("marketing") || t.includes("brand") || t.includes("communications") || t.includes("pr")) return ["Marketing"]
   if (t.includes("accounting") || t.includes("accountant")) return ["Accounting"]
   if (t.includes("finance") || t.includes("asset management") || t.includes("investment")) return ["Finance"]
@@ -131,17 +163,14 @@ function normalizeMode(x: any): LocationMode {
 /* ------------------------------ tools (CRITICAL FIX) ------------------------------ */
 
 /**
- * V4 structured profile uses tools as a boolean dictionary:
- *   tools: { Excel: true, R: true, SQL: false, ... }
- *
- * Older/other code may use tools as a string[].
- *
- * This adapter supports both and NEVER falls back to the Canva-only inference if a structured tools map exists.
+ * Supports:
+ * 1) tools map: { Excel: true, SQL: false }
+ * 2) tools list: ["Excel","SQL"]
  */
 function toolsFromStructured(ps: AnyObj): string[] {
   const raw = ps?.tools
 
-  // Case 1: boolean map { ToolName: true/false }
+  // Case 1: boolean map
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const out = Object.entries(raw)
       .filter(([, v]) => v === true)
@@ -151,7 +180,7 @@ function toolsFromStructured(ps: AnyObj): string[] {
     return out
   }
 
-  // Case 2: string[] tools
+  // Case 2: string[]
   if (Array.isArray(raw)) {
     return raw.map(norm).filter(Boolean).sort((a, b) => a.localeCompare(b))
   }
@@ -160,8 +189,7 @@ function toolsFromStructured(ps: AnyObj): string[] {
 }
 
 /**
- * Last-resort inference from raw text (ONLY used when structured tools are absent).
- * This should be broad enough to catch Excel etc, not just Canva.
+ * Last resort inference from raw text (ONLY when no structured tools exist).
  */
 function inferToolsFromText(profileText: string): string[] {
   const t = lower(profileText)
@@ -170,7 +198,6 @@ function inferToolsFromText(profileText: string): string[] {
     if (!tools.includes(x)) tools.push(x)
   }
 
-  // Core business tools
   if (/\bexcel\b/.test(t) || /\bmicrosoft\s+excel\b/.test(t)) add("Excel")
   if (/\bpower\s*point\b/.test(t) || /\bpowerpoint\b/.test(t)) add("PowerPoint")
   if (/\bgoogle\s+sheets\b/.test(t)) add("Google Sheets")
@@ -178,16 +205,14 @@ function inferToolsFromText(profileText: string): string[] {
   if (/\bpower\s*bi\b/.test(t) || /\bpowerbi\b/.test(t)) add("Power BI")
   if (/\bsql\b/.test(t) || /\bmysql\b/.test(t) || /\bpostgres\b/.test(t)) add("SQL")
   if (/\bpython\b/.test(t)) add("Python")
-  if (/\br\b/.test(t) || /\b r \(/.test(t) || t.includes("programming language), r")) add("R")
+  if (/\br\b/.test(t) || t.includes("programming language), r")) add("R")
 
-  // Design/creative
   if (t.includes("adobe")) add("Adobe Creative Cloud")
   if (t.includes("photoshop")) add("Photoshop")
   if (t.includes("illustrator")) add("Illustrator")
   if (t.includes("indesign")) add("InDesign")
   if (t.includes("canva")) add("Canva")
 
-  // General
   if (t.includes("google workspace")) add("Google Workspace")
   if (t.includes("microsoft office")) add("Microsoft Office")
 
@@ -217,10 +242,8 @@ export function mapClientProfileToOverrides(args: {
 }): Partial<StructuredProfileSignals> {
   const ps = (args.profileStructured || {}) as AnyObj
 
-  const targetFamilies: JobFamily[] =
-    (Array.isArray(ps?.targetFamilies) && ps.targetFamilies.length > 0
-      ? (ps.targetFamilies as any[]).map(norm).filter(Boolean)
-      : null) || inferTargetFamilies(args.profileText, args.targetRoles)
+  const structuredFamilies = sanitizeTargetFamilies(ps?.targetFamilies)
+  const targetFamilies: JobFamily[] = structuredFamilies ?? inferTargetFamilies(args.profileText, args.targetRoles)
 
   const constraints: ProfileConstraints =
     (ps?.constraints && typeof ps.constraints === "object" ? (ps.constraints as ProfileConstraints) : null) ||
@@ -235,7 +258,7 @@ export function mapClientProfileToOverrides(args: {
     profileText: args.profileText,
   })
 
-  // ✅ CRITICAL: prefer structured tools map/list first
+  // ✅ prefer structured tools map/list first
   const structuredTools = toolsFromStructured(ps)
   const tools = structuredTools.length > 0 ? structuredTools : inferToolsFromText(args.profileText)
 
