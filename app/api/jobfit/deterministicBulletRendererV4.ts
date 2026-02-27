@@ -168,7 +168,7 @@ function renderWhyBullet(out: EvalOutput, w: WhyCode): string | null {
 
   // Weight rule: if weight exists and is <= 0, never render
   const weight = (w as any)?.weight
-  if (typeof weight === "number" && weight <= 0) return null
+if (typeof weight === "number" && weight < 0) return null
 
   const job = out.job_signals
   const profile = out.profile_signals
