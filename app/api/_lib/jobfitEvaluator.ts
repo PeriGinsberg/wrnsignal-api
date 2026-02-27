@@ -1,319 +1,182 @@
-// FILE: app/api/jobfit/route.ts
+// FILE: app/api/_lib/jobfitEvaluator.ts
 
-import crypto from "crypto"
-import { createClient } from "@supabase/supabase-js"
-import { getAuthedProfileText } from "../_lib/authProfile"
-import { runJobFit } from "../_lib/jobfitEvaluator"
-import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
-import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
-import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
+import { evaluateJobFit } from "../jobfit/evaluator"
+import type { EvalOutput, StructuredProfileSignals, Decision, LocationConstraint } from "../jobfit/signals"
+import { buildEvidencePacket } from "../jobfit/evidenceBuilder"
+import { generateJobfitBullets } from "../jobfit/bulletGenerator"
+import { POLICY } from "../jobfit/policy"
 
 export const JOBFIT_EVAL_WRAPPER_STAMP = "JOBFIT_EVAL_WRAPPER_STAMP__2026_02_26__A"
 console.log("[jobfitEvaluator] loaded:", JOBFIT_EVAL_WRAPPER_STAMP)
 
-export const runtime = "nodejs"
-export const dynamic = "force-dynamic"
-
-const MISSING = "__MISSING__"
-const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
-const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_24"
-const MODEL_ID = "current"
-
-const ROUTE_JOBFIT_STAMP = "ROUTE_JOBFIT_STAMP__V4_PROFILE_FRESHNESS__V2"
-
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-function requireEnv(name: string, v?: string) {
-  if (!v) throw new Error(`Missing server env: ${name}`)
-  return v
+function iconForDecision(decision: Decision) {
+  if (decision === "Apply") return "✅"
+  if (decision === "Review") return "⚠️"
+  return "⛔"
 }
 
-const supabaseAdmin = createClient(
-  requireEnv("SUPABASE_URL", SUPABASE_URL),
-  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
-  { auth: { persistSession: false, autoRefreshToken: false } }
-)
-
-/**
- * CORS preflight
- */
-export async function OPTIONS(req: Request) {
-  return corsOptionsResponse(req.headers.get("origin"))
+function decisionNextStep(decision: Decision): string {
+  if (decision === "Apply") return "Apply. Then send 2 targeted networking messages within 24 hours."
+  if (decision === "Review") return "Review. Apply only if you can reduce the risks fast."
+  return "Pass. Do not apply. Put that effort into a better-fit role."
 }
 
-/**
- * Normalize values for deterministic fingerprinting
- */
-function normalize(value: any): any {
-  if (typeof value === "string") {
-    const cleaned = value.trim()
-    if (cleaned === "") return MISSING
-    return cleaned.toLowerCase().replace(/\s+/g, " ")
+function riskFlagsFromCodes(risk_codes: Array<{ code: string; risk?: string }> | undefined): string[] {
+  if (!Array.isArray(risk_codes) || risk_codes.length === 0) return []
+  const out: string[] = []
+  for (const r of risk_codes) {
+    const key = String(r?.code || "").trim()
+    if (!key) continue
+    const mapped = (POLICY as any)?.bullets?.risk?.[key]
+    out.push(String(mapped || r?.risk || "").trim())
+  }
+  return out.filter(Boolean).slice(0, 6)
+}
+
+/* ----------------------- bullet policy enforcement ----------------------- */
+
+const BANNED_PHRASES = [
+  "evidence packet",
+  "as indicated",
+  "correspond",
+  "reinforcing",
+  "supporting a review decision",
+  "supporting the review decision",
+  "this supports",
+  "this suggests",
+]
+
+function norm(s: string): string {
+  return String(s || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function sanitizeBullet(s: string): string {
+  let t = norm(s)
+  t = t.replace(/^[\-\u2022•\s]+/, "")
+  t = t.replace(/\s{2,}/g, " ").trim()
+  if (t.length > 0) t = t[0].toUpperCase() + t.slice(1)
+  return t
+}
+
+function isUsableBullet(s: string): boolean {
+  const t = norm(s)
+  if (!t) return false
+  if (t.length < 12) return false
+  const low = t.toLowerCase()
+  for (const bad of BANNED_PHRASES) {
+    if (low.includes(bad)) return false
+  }
+  return true
+}
+
+function dedupeKey(s: string): string {
+  const low = norm(s).toLowerCase()
+  const cleaned = low.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim()
+  const stop = new Set(["the", "a", "an", "and", "or", "to", "of", "in", "for", "with", "on", "at", "by", "from", "as"])
+  const toks = cleaned
+    .split(" ")
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .filter((t) => !stop.has(t))
+  return toks.slice(0, 10).join(" ")
+}
+
+function maxWhyBullets(decision: Decision): number {
+  if (decision === "Review") return 3
+  if (decision === "Apply") return 3
+  return 0
+}
+
+function maxRiskBullets(decision: Decision): number {
+  if (decision === "Apply") return 3
+  if (decision === "Review") return 4
+  return 0
+}
+
+function postProcess(raw: string[], cap: number): string[] {
+  if (cap <= 0) return []
+  const cleaned: string[] = []
+  for (const b of raw) {
+    const s = sanitizeBullet(b)
+    if (!isUsableBullet(s)) continue
+    cleaned.push(s)
   }
 
-  if (Array.isArray(value)) {
-    return value.map(normalize).sort()
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const b of cleaned) {
+    const k = dedupeKey(b)
+    if (!k) continue
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(b)
+    if (out.length >= cap) break
+  }
+  return out
+}
+
+/* ----------------------- MAIN EXPORT ----------------------- */
+
+export async function runJobFit(args: {
+  profileText: string
+  jobText: string
+  profileOverrides?: Partial<StructuredProfileSignals>
+}) {
+  const out: EvalOutput = evaluateJobFit({
+    jobText: args.jobText,
+    profileText: args.profileText,
+    profileOverrides: args.profileOverrides,
+  })
+
+  // Enforce: if force_pass, do not show WHY bullets/codes client-facing.
+  const isForcePass = out?.gate_triggered?.type === "force_pass"
+
+  if (isForcePass) {
+    return {
+      decision: "Pass" as Decision,
+      icon: iconForDecision("Pass"),
+      score: out.score,
+      bullets: [],
+      risk_flags: riskFlagsFromCodes(out.risk_codes),
+      next_step: decisionNextStep("Pass"),
+      location_constraint: out.location_constraint as LocationConstraint,
+      why_codes: [],
+      risk_codes: out.risk_codes,
+      gate_triggered: out.gate_triggered,
+    }
   }
 
-  if (value && typeof value === "object") {
-    return Object.keys(value)
-      .sort()
-      .reduce((acc: any, key) => {
-        const v = value[key]
-        if (v !== null && v !== undefined) {
-          acc[key] = normalize(v)
-        }
-        return acc
-      }, {})
-  }
+  const evidence = buildEvidencePacket({
+    out,
+    profileText: args.profileText,
+    jobText: args.jobText,
+    profileOverrides: args.profileOverrides,
+    id: undefined,
+  })
 
-  return value
-}
+  const { bullets: llmBullets } = await generateJobfitBullets(evidence, {
+    strictGates: true,
+    maxRetries: 2,
+    temperature: 0.2,
+    requestId: evidence.id,
+  })
 
-/**
- * Hash helpers for debug visibility
- */
-function sha256Hex(s: string): string {
-  return crypto.createHash("sha256").update(s).digest("hex")
-}
+  const whyRaw = Array.isArray(llmBullets?.why_bullets) ? llmBullets.why_bullets : []
+  const riskRaw = Array.isArray(llmBullets?.risk_bullets) ? llmBullets.risk_bullets : []
 
-function hash16(s: string): string {
-  return sha256Hex(s).slice(0, 16)
-}
-
-/**
- * Build JobFit fingerprint
- */
-function buildJobFitFingerprint(payload: any) {
-  const normalized = normalize(payload)
-  const canonical = JSON.stringify(normalized)
-
-  const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
-  const fingerprint_code = "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
-
-  return { fingerprint_hash, fingerprint_code }
-}
-
-/**
- * Enforce client-facing output rules (even for cached results).
- * Rule: if gate_triggered.type === "force_pass", then why_codes=[], bullets=[]
- * and we only show pass reason + risks.
- */
-function enforceClientFacingRules(result: any) {
-  const gateType = result?.gate_triggered?.type
-  if (gateType !== "force_pass") return result
+  const why = postProcess(whyRaw, maxWhyBullets(out.decision))
+  const risk = postProcess(riskRaw, maxRiskBullets(out.decision))
 
   return {
-    ...result,
-    decision: "Pass",
-    icon: result?.icon ?? "⛔",
-    bullets: [],
-    why_codes: [],
-    // keep risk_codes and risk_flags if present
-    next_step: "Pass. Do not apply. Put that effort into a better-fit role.",
-  }
-}
-
-function getStructuredMeta(ps: any): { stamp?: string; source_hash16?: string } {
-  if (!ps || typeof ps !== "object") return {}
-  const meta = (ps as any)?._meta
-  if (!meta || typeof meta !== "object") return {}
-  return {
-    stamp: typeof (meta as any).stamp === "string" ? (meta as any).stamp : undefined,
-    source_hash16: typeof (meta as any).source_hash16 === "string" ? (meta as any).source_hash16 : undefined,
-  }
-}
-
-/**
- * Run JobFit for an authenticated user, with caching by fingerprint.
- */
-export async function POST(req: Request) {
-  try {
-    const url = new URL(req.url)
-    const forceFromQuery = url.searchParams.get("force") === "1" || url.searchParams.get("force") === "true"
-
-    const { profileId, profileText } = await getAuthedProfileText(req)
-
-    // Pull structured profile fields for deterministic overrides
-    const { data: profileRowDb, error: profileLookupError } = await supabaseAdmin
-      .from("client_profiles")
-      .select("id, profile_structured, target_roles, preferred_locations, risk_overrides")
-      .eq("id", profileId)
-      .maybeSingle()
-
-    if (profileLookupError || !profileRowDb) {
-      return withCorsJson(req, { error: "Profile lookup failed" }, 404)
-    }
-
-    // Parse request body
-    let body: any = {}
-    try {
-      body = await req.json()
-    } catch {
-      return withCorsJson(req, { error: "Invalid JSON body" }, 400)
-    }
-
-    const jobText = String(body?.job || "").trim()
-    if (!jobText) {
-      return withCorsJson(req, { error: "Missing job" }, 400)
-    }
-
-    const forceFromBody = body?.force_rerun === true || body?.force === true
-    const forceRerun = forceFromQuery || forceFromBody
-
-    // -------------------- structured profile freshness (V4) --------------------
-    const profileTextHash16 = hash16(profileText || "")
-
-    const psDb = (profileRowDb as any)?.profile_structured ?? null
-    const meta = getStructuredMeta(psDb)
-
-    const shouldRebuildStructured =
-      !psDb || meta.stamp !== PROFILE_V4_STAMP || meta.source_hash16 !== profileTextHash16 || forceRerun
-
-    let profileStructuredResolved = psDb
-    let profileStructuredSource: "db" | "computed_v4" = "db"
-
-    if (shouldRebuildStructured) {
-      profileStructuredResolved = extractProfileV4(profileText || "")
-      profileStructuredSource = "computed_v4"
-
-      // Attach meta to prevent stale DB poisoning
-      ;(profileStructuredResolved as any)._meta = {
-        stamp: PROFILE_V4_STAMP,
-        source_hash16: profileTextHash16,
-        built_at: new Date().toISOString(),
-      }
-
-      // Best effort persist
-      const { error: upErr } = await supabaseAdmin
-        .from("client_profiles")
-        .update({ profile_structured: profileStructuredResolved })
-        .eq("id", profileId)
-
-      if (upErr) {
-        console.warn("client_profiles update profile_structured failed:", upErr.message)
-      }
-    }
-
-    // Build structured overrides from profile row + resolved structured profile
-    const profileOverrides = mapClientProfileToOverrides({
-      profileText,
-      profileStructured: profileStructuredResolved,
-      targetRoles: (profileRowDb as any)?.target_roles ?? null,
-      preferredLocations: (profileRowDb as any)?.preferred_locations ?? null,
-    })
-
-    // Fingerprint inputs used for evaluation (job + profile + overrides + system pins)
-    const fingerprintPayload = {
-      job: { text: jobText || MISSING },
-      profile: {
-        id: profileId || MISSING,
-        text: profileText || MISSING,
-        overrides: profileOverrides || MISSING,
-        profile_structured: profileStructuredResolved || MISSING,
-      },
-      system: {
-        jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
-        model_id: MODEL_ID,
-        jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-        profile_v4_stamp: PROFILE_V4_STAMP,
-        route_jobfit_stamp: ROUTE_JOBFIT_STAMP,
-      },
-    }
-
-    const { fingerprint_hash, fingerprint_code } = buildJobFitFingerprint(fingerprintPayload)
-
-    // Debug fields (kills the “same job illusion” + proves V4 integration is live)
-    const debug = {
-      route_jobfit_stamp: ROUTE_JOBFIT_STAMP,
-      profile_v4_stamp: PROFILE_V4_STAMP,
-      profile_structured_source: profileStructuredSource,
-      profile_structured_db_stamp: meta.stamp ?? null,
-      profile_text_hash16: profileTextHash16,
-
-      job_text_len: jobText.length,
-      profile_text_len: (profileText || "").length,
-      job_text_hash16: hash16(jobText),
-      fingerprint_hash16: fingerprint_hash.slice(0, 16),
-      cache_key: `${fingerprint_hash}::${JOBFIT_LOGIC_VERSION}`,
-      cache_bypassed: forceRerun,
-    }
-
-    // 1) Lookup existing run unless forced
-    if (!forceRerun) {
-      const { data: existingRun, error: findErr } = await supabaseAdmin
-        .from("jobfit_runs")
-        .select("result_json, verdict, fingerprint_code, fingerprint_hash, created_at")
-        .eq("client_profile_id", profileId)
-        .eq("fingerprint_hash", fingerprint_hash)
-        .maybeSingle()
-
-      if (findErr) {
-        console.warn("jobfit_runs lookup failed:", findErr.message)
-      }
-
-      if (existingRun?.result_json) {
-        const cleaned = enforceClientFacingRules(existingRun.result_json as any)
-        return withCorsJson(req, {
-          ...(cleaned as any),
-          fingerprint_code,
-          fingerprint_hash,
-          jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-          reused: true,
-          debug: { ...debug, cache_hit: true },
-        })
-      }
-    }
-
-    // 2) Run JobFit
-    const resultRaw = await runJobFit({
-      profileText,
-      jobText,
-      profileOverrides,
-    })
-
-    const result = enforceClientFacingRules(resultRaw as any)
-
-    // 3) Store result (best effort)
-    const toStore = {
-      client_profile_id: profileId,
-      job_url: null,
-      fingerprint_hash,
-      fingerprint_code,
-      verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
-      result_json: result,
-    }
-
-    const { error: insertErr } = await supabaseAdmin.from("jobfit_runs").insert(toStore)
-    if (insertErr) {
-      console.warn("jobfit_runs insert failed:", insertErr.message)
-    }
-
-    return withCorsJson(req, {
-      ...(result as any),
-      fingerprint_code,
-      fingerprint_hash,
-      jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-      reused: false,
-      debug: { ...debug, cache_hit: false },
-    })
-  } catch (err: any) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("JobFit POST error:", err)
-    }
-
-    const detail = err?.message || String(err)
-    const lower = String(detail).toLowerCase()
-
-    const status = lower.includes("unauthorized")
-      ? 401
-      : lower.includes("profile not found")
-        ? 404
-        : lower.includes("access disabled")
-          ? 403
-          : 500
-
-    return withCorsJson(req, { error: "JobFit failed", detail }, status)
+    decision: out.decision,
+    icon: iconForDecision(out.decision),
+    score: out.score,
+    bullets: why,
+    risk_flags: risk,
+    next_step: out.next_step || decisionNextStep(out.decision),
+    location_constraint: out.location_constraint as LocationConstraint,
+    why_codes: out.why_codes,
+    risk_codes: out.risk_codes,
+    gate_triggered: out.gate_triggered,
   }
 }
