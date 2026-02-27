@@ -169,6 +169,10 @@ export async function POST(req: Request) {
         console.warn("client_profiles update profile_structured failed:", upErr.message)
       }
     }
+const extractedToolsTrue = Object.entries((profileStructuredResolved as any)?.tools ?? {})
+  .filter(([, v]) => v === true)
+  .map(([k]) => k)
+  .sort()
 
     // Build structured overrides from profile row + resolved structured profile
     const profileOverrides = mapClientProfileToOverrides({
@@ -211,6 +215,7 @@ export async function POST(req: Request) {
       fingerprint_hash16: fingerprint_hash.slice(0, 16),
       cache_key: `${fingerprint_hash}::${JOBFIT_LOGIC_VERSION}`,
       cache_bypassed: forceRerun,
+extracted_tools_true: extractedToolsTrue,
 taxonomy_v4_stamp: TAXONOMY_V4_STAMP,
 types_v4_stamp: TYPES_V4_STAMP,
     }
