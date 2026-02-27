@@ -308,7 +308,7 @@ export function renderBulletsV4(out: EvalOutput): {
     }
   }
 
-  const why_trace = whyCodes.map((w) => {
+  const why_trace = whyCodesIn.map((w) => {
     const code = String(w?.code || "").trim()
     const g = code ? whyGroup(code) : "other"
     const rendered = code ? renderWhyBullet(out, w) : null
