@@ -308,6 +308,9 @@ export function renderBulletsV4(out: EvalOutput): {
     }
   }
 
+const whyCodes = whyCodesIn
+const riskCodes = riskCodesIn
+
   const why_trace = whyCodesIn.map((w) => {
     const code = String(w?.code || "").trim()
     const g = code ? whyGroup(code) : "other"
@@ -331,8 +334,8 @@ export function renderBulletsV4(out: EvalOutput): {
       renderer_stamp: RENDERER_V4_STAMP,
       decision: out.decision,
       location_constraint: out.location_constraint,
-      why_codes_in: whyCodes.map((x) => x.code),
-      risk_codes_in: riskCodes.map((x) => x.code),
+     why_codes_in: whyCodesIn.map((x) => x.code),
+risk_codes_in: riskCodesIn.map((x) => x.code),
       why_count: why.length,
       risk_count: risk.length,
       why_trace,
