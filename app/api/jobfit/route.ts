@@ -11,11 +11,12 @@ import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const ROUTE_JOBFIT_STAMP = "ROUTE_JOBFIT_STAMP__V4_PROFILE_INTEGRATION__V1"
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
 const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_24"
 const MODEL_ID = "current"
+
+const ROUTE_JOBFIT_STAMP = "ROUTE_JOBFIT_STAMP__V4_PROFILE_INTEGRATION__V1"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -132,6 +133,22 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Profile lookup failed" }, 404)
     }
 
+    // Parse request body
+    let body: any = {}
+    try {
+      body = await req.json()
+    } catch {
+      return withCorsJson(req, { error: "Invalid JSON body" }, 400)
+    }
+
+    const jobText = String(body?.job || "").trim()
+    if (!jobText) {
+      return withCorsJson(req, { error: "Missing job" }, 400)
+    }
+
+    const forceFromBody = body?.force_rerun === true || body?.force === true
+    const forceRerun = forceFromQuery || forceFromBody
+
     // Ensure we have a structured profile (compute V4 deterministically if missing)
     const hadStructuredInDb = Boolean((profileRowDb as any)?.profile_structured)
     let profileStructuredResolved = (profileRowDb as any)?.profile_structured ?? null
@@ -150,23 +167,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Parse request body
-    let body: any = {}
-    try {
-      body = await req.json()
-    } catch {
-      return withCorsJson(req, { error: "Invalid JSON body" }, 400)
-    }
-
-    const jobText = String(body?.job || "").trim()
-    if (!jobText) {
-      return withCorsJson(req, { error: "Missing job" }, 400)
-    }
-
-    const forceFromBody = body?.force_rerun === true || body?.force === true
-    const forceRerun = forceFromQuery || forceFromBody
-
-    // Build structured overrides from profile row
+    // Build structured overrides from profile row + resolved structured profile
     const profileOverrides = mapClientProfileToOverrides({
       profileText,
       profileStructured: profileStructuredResolved,
@@ -188,13 +189,18 @@ export async function POST(req: Request) {
         model_id: MODEL_ID,
         jobfit_logic_version: JOBFIT_LOGIC_VERSION,
         profile_v4_stamp: PROFILE_V4_STAMP,
+        route_jobfit_stamp: ROUTE_JOBFIT_STAMP,
       },
     }
 
     const { fingerprint_hash, fingerprint_code } = buildJobFitFingerprint(fingerprintPayload)
 
-    // Debug fields (kills the “same job illusion”)
+    // Debug fields (kills the “same job illusion” + proves V4 integration is live)
     const debug = {
+      route_jobfit_stamp: ROUTE_JOBFIT_STAMP,
+      profile_v4_stamp: PROFILE_V4_STAMP,
+      profile_structured_source: hadStructuredInDb ? "db" : "computed_v4",
+
       job_text_len: jobText.length,
       profile_text_len: (profileText || "").length,
       job_text_hash16: hash16(jobText),
@@ -202,11 +208,6 @@ export async function POST(req: Request) {
       fingerprint_hash16: fingerprint_hash.slice(0, 16),
       cache_key: `${fingerprint_hash}::${JOBFIT_LOGIC_VERSION}`,
       cache_bypassed: forceRerun,
-      profile_v4_stamp: PROFILE_V4_STAMP,
-      profile_structured_source: hadStructuredInDb ? "db" : "computed_v4",
-route_jobfit_stamp: ROUTE_JOBFIT_STAMP,
-profile_v4_stamp: PROFILE_V4_STAMP,
-profile_structured_source: hadStructuredInDb ? "db" : "computed_v4",
     }
 
     // 1) Lookup existing run unless forced
