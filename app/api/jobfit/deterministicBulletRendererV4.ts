@@ -35,8 +35,9 @@ function capsForDecision(d: Decision): RenderCaps {
  * So: allow-list WHY codes that are *substantive*.
  * Everything else is excluded from WHY rendering (even if present in why_codes).
  */
-const ALLOWED_WHY_CODES = new Set<string>([
+const ALLOWED_WHY_CODES = new Set([
   "WHY_FAMILY_MATCH",
+  "WHY_TOOL_MATCH",
   "WHY_MARKETING_EXECUTION",
   "WHY_MEASUREMENT_LIGHT",
 ])
