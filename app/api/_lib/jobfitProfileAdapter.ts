@@ -23,6 +23,7 @@ function lower(x: any): string {
 /* ------------------------------ JobFamily sanitizer ------------------------------ */
 
 const JOB_FAMILY_ALLOWLIST: JobFamily[] = [
+  "Consulting",
   "Marketing",
   "Analytics",
   "Finance",
@@ -96,6 +97,19 @@ function pickAllowedCities(args: {
 
 function inferTargetFamilies(profileText: string, targetRoles?: string | null): JobFamily[] {
   const t = lower(profileText + " " + (targetRoles || ""))
+  // Consulting/strategy intent must be detected first so it doesn't get swallowed by finance keywords
+  if (
+    t.includes("consulting") ||
+    t.includes("strategy") ||
+    t.includes("strategy intern") ||
+    t.includes("consulting intern") ||
+    t.includes("case interview") ||
+    t.includes("casework") ||
+    t.includes("client engagements") ||
+    t.includes("management consulting")
+  ) {
+    return ["Consulting"]
+  }
 
   if (t.includes("marketing") || t.includes("brand") || t.includes("communications") || t.includes("pr")) return ["Marketing"]
   if (t.includes("accounting") || t.includes("accountant")) return ["Accounting"]

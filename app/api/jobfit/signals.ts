@@ -8,6 +8,7 @@ export type Decision = "Apply" | "Review" | "Pass"
 export type LocationConstraint = "constrained" | "not_constrained" | "unclear"
 
 export type JobFamily =
+  | "Consulting"
   | "Marketing"
   | "Finance"
   | "Accounting"

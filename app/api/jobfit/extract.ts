@@ -118,6 +118,7 @@ type FunctionTag =
   | "accounting_finops"
   | "premed_clinical"
   | "operations_general"
+  | "consulting_strategy"
 
 type TagRule = { tag: FunctionTag; phrases: string[]; minHits?: number }
 
@@ -126,6 +127,21 @@ const TAG_RULES: TagRule[] = [
   { tag: "communications_pr", phrases: ["communications", "corporate communications", "pr", "public relations", "media relations", "press release", "peso"] },
   { tag: "creative_design", phrases: ["graphic design", "designer", "visual design", "creative design", "photoshop", "illustrator", "indesign"] },
   { tag: "content_social", phrases: ["social media", "content", "tiktok", "instagram", "creator", "copywriting"] },
+{
+  tag: "consulting_strategy",
+  phrases: [
+    "consulting",
+    "client engagements",
+    "hypothesis testing",
+    "solution development",
+    "strategic recommendation",
+    "market research",
+    "author presentations",
+    "presentations and reports",
+    "advisory services",
+  ],
+  minHits: 2,
+},
 
   // Key fix: require >=2 hits so one stray "insights" does not flip the world.
   {
@@ -203,6 +219,7 @@ function decideJobFamilyFromTags(tags: FunctionTag[], fallback: JobFamily): JobF
   if (tags.includes("finance_corp")) return "Finance"
   if (tags.includes("accounting_finops")) return "Accounting"
   if (tags.includes("premed_clinical")) return "PreMed"
+  if (tags.includes("consulting_strategy")) return "Consulting"
 
   // Your Samantha + e.l.f. fix:
   // Insights/Research/BI classifies as Analytics, even if "Marketing" appears.
