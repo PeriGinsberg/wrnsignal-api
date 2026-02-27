@@ -237,14 +237,14 @@ types_v4_stamp: TYPES_V4_STAMP,
 
       if (existingRun?.result_json) {
         const cleaned = enforceClientFacingRules(existingRun.result_json as any)
-        return withCorsJson(req, {
-          ...(cleaned as any),
-          fingerprint_code,
-          fingerprint_hash,
-          jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-          reused: true,
-          debug: { ...debug, cache_hit: true },
-        })
+       return withCorsJson(req, {
+  ...(cleaned as any),
+  fingerprint_code,
+  fingerprint_hash,
+  jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+  reused: true,
+  debug: { ...(cleaned as any)?.debug, ...debug, cache_hit: true },
+})
       }
     }
 
@@ -274,14 +274,14 @@ types_v4_stamp: TYPES_V4_STAMP,
       console.warn("jobfit_runs insert failed:", insertErr.message)
     }
 
-    return withCorsJson(req, {
-      ...(result as any),
-      fingerprint_code,
-      fingerprint_hash,
-      jobfit_logic_version: JOBFIT_LOGIC_VERSION,
-      reused: false,
-      debug: { ...debug, cache_hit: false },
-    })
+ return withCorsJson(req, {
+  ...(result as any),
+  fingerprint_code,
+  fingerprint_hash,
+  jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+  reused: false,
+  debug: { ...(result as any)?.debug, ...debug, cache_hit: false },
+})
   } catch (err: any) {
     // Never swallow stack traces silently in dev
     if (process.env.NODE_ENV !== "production") {
