@@ -15,10 +15,10 @@ import { TYPES_V4_STAMP } from "../_v4/types"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const MISSING = "__MISSING__"
-const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
-const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_27__renderer_v4"const MODEL_ID = "current"
-
+const MISSING = "__MISSING__";
+const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07";
+const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_27__renderer_v4";
+const MODEL_ID = "current";
 const ROUTE_JOBFIT_STAMP = "ROUTE_JOBFIT_STAMP__V4_PROFILE_INTEGRATION__V1"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
