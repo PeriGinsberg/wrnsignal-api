@@ -17,9 +17,8 @@ import { TAXONOMY } from "./taxonomy"
  *    - Prefer duty/responsibility lines
  *    - If none, allow qualification/requirement lines
  *    - Never allow headings/marketing/benefits boilerplate
- *    - If none, evidence is ""
  * 4) Evidence uniqueness:
- *    - If a snippet is already used by a higher-ranked cluster, blank it out ("")
+ *    - Do NOT blank everything out. If a snippet is already used, pick next-best line for that cluster.
  */
 
 function normalize(text: string): string {
@@ -44,18 +43,166 @@ function countOccurrences(haystack: string, needle: string): number {
 }
 
 // -----------------------------
-// Evidence selection (deterministic)
+// Section extraction (responsibilities-first)
 // -----------------------------
 
-function findEvidenceSnippet(rawText: string, phrase: string): string {
-  const text = rawText || ""
-  const lines = text
+function extractSection(raw: string, headingPatterns: RegExp[]): string | null {
+  const text = raw || ""
+  const lower = text.toLowerCase()
+
+  let startIdx = -1
+  let matchedLen = 0
+
+  for (const re of headingPatterns) {
+    const m = re.exec(lower)
+    if (m && (startIdx === -1 || m.index < startIdx)) {
+      startIdx = m.index
+      matchedLen = m[0].length
+    }
+  }
+  if (startIdx < 0) return null
+
+  const after = text.slice(startIdx + matchedLen)
+
+  // Stop at next common heading
+  const stopHeadings = [
+    /(^|\n)\s*(qualifications|requirements|education|about\s+us|about\s+the\s+company|who\s+we\s+are|equal\s+opportunity|eeo|benefits)\s*[:\n]/i,
+    /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities|job\s+description\s+summary|job\s+summary|role\s+summary|position\s+summary)\s*[:\n]/i,
+  ]
+
+  let stopIdx = after.length
+  for (const re of stopHeadings) {
+    const m = re.exec(after)
+    if (m && m.index >= 0) stopIdx = Math.min(stopIdx, m.index)
+  }
+
+  const section = after.slice(0, stopIdx).trim()
+  return section.length ? section : null
+}
+
+function getEvidenceCorpus(raw: string): { duties: string; quals: string; full: string } {
+  const duties =
+    extractSection(raw, [
+      /(^|\n)\s*(responsibilities|what\s+you('|’)?ll\s+do|what\s+you\s+will\s+do|key\s+responsibilities)\s*[:\n]/i,
+    ]) || ""
+
+  const quals =
+    extractSection(raw, [
+      /(^|\n)\s*(qualifications|requirements|education)\s*[:\n]/i,
+    ]) || ""
+
+  return { duties, quals, full: raw || "" }
+}
+
+// -----------------------------
+// Evidence selection
+// -----------------------------
+
+function buildEvidenceLines(rawText: string): string[] {
+  return (rawText || "")
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
+}
 
+function isHeadingLine(line: string, dutyVerbs: string[]): boolean {
+  const ln = normalize(line).replace(/[:\-–—]+$/, "").trim()
+
+  const headings = new Set([
+    "about the job",
+    "company introduction",
+    "introduction",
+    "overview",
+    "job description summary",
+    "job summary",
+    "role summary",
+    "position summary",
+    "responsibilities",
+    "qualifications",
+    "requirements",
+    "education",
+    "about us",
+    "who we are",
+    "benefits",
+    "culture",
+    "equal opportunity",
+    "eeo",
+  ])
+  if (headings.has(ln)) return true
+
+  if (ln.length <= 30 && (ln.includes("summary") || ln.includes("introduction") || ln.includes("overview"))) {
+    return true
+  }
+
+  const hasSeasonOrTerm = /\b(summer|fall|spring|winter)\b/.test(ln) || /\b202\d\b/.test(ln)
+  const looksLikeRoleTitle =
+    /(intern|associate|analyst|coordinator|specialist|manager)\b/.test(ln) || /\([^)]*\)/.test(ln)
+  const hasNoActionVerb = !dutyVerbs.some((v) => ln.includes(v))
+  if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 110) return true
+
+  return false
+}
+
+function isMarketingOrBenefits(ln: string): boolean {
+  return includesAny(ln, [
+    "award-winning",
+    "cutting-edge",
+    "market leader",
+    "founded in",
+    "our mission",
+    "our values",
+    "brand awareness",
+    "is a specialized",
+    "we are a",
+    "one global team",
+    "works collaboratively",
+    "compensation",
+    "highly competitive",
+    "commensurate",
+    "benefits",
+    "401k",
+    "paid time off",
+    "pto",
+    "medical",
+    "dental",
+    "vision",
+    "wellness",
+    "equal opportunity",
+    "eeo",
+    "accommodation",
+    "working experience of an intern",
+    "essentially identical to that of a full-time",
+    "internship experience",
+    "this internship",
+  ])
+}
+
+function isRequirementLine(ln: string): boolean {
+  return includesAny(ln, [
+    "pursuit of",
+    "bachelor",
+    "master",
+    "degree",
+    "gpa",
+    "required",
+    "preferred",
+    "must have",
+    "must be",
+    "qualification",
+    "qualifications",
+    "requirements",
+  ])
+}
+
+function looksLikeBullet(l: string): boolean {
+  return /^[-•*]\s+/.test(l)
+}
+
+function pickEvidenceCandidates(
+  corpus: { duties: string; quals: string; full: string },
+  phrase: string
+): string[] {
   const phraseNorm = normalize(phrase)
-
   const dutyVerbs = [
     "assist",
     "conduct",
@@ -85,150 +232,88 @@ function findEvidenceSnippet(rawText: string, phrase: string): string {
     "recommend",
   ]
 
-  const isHeadingLine = (line: string) => {
-    const ln = normalize(line).replace(/[:\-–—]+$/, "").trim()
+  const scan = (text: string, allowReq: boolean): string[] => {
+    const lines = buildEvidenceLines(text)
 
-    const headings = new Set([
-      "about the job",
-      "company introduction",
-      "introduction",
-      "overview",
-      "job description summary",
-      "job summary",
-      "role summary",
-      "position summary",
-      "responsibilities",
-      "qualifications",
-      "requirements",
-      "education",
-      "about us",
-      "who we are",
-      "benefits",
-      "culture",
-      "equal opportunity",
-      "eeo",
-    ])
-    if (headings.has(ln)) return true
-
-    if (
-      ln.length <= 30 &&
-      (ln.includes("summary") || ln.includes("introduction") || ln.includes("overview"))
-    ) {
-      return true
-    }
-
-    const hasSeasonOrTerm =
-      /\b(summer|fall|spring|winter)\b/.test(ln) || /\b202\d\b/.test(ln)
-    const looksLikeRoleTitle =
-      /(intern|associate|analyst|coordinator|specialist|manager)\b/.test(ln) ||
-      /\([^)]*\)/.test(ln)
-    const hasNoActionVerb = !dutyVerbs.some((v) => ln.includes(v))
-    if (hasSeasonOrTerm && looksLikeRoleTitle && hasNoActionVerb && ln.length <= 110)
-      return true
-
-    return false
-  }
-
-  const isMarketingOrBenefits = (ln: string) =>
-    includesAny(ln, [
-      "award-winning",
-      "cutting-edge",
-      "market leader",
-      "founded in",
-      "our mission",
-      "our values",
-      "brand awareness",
-      "is a specialized",
-      "we are a",
-      "one global team",
-      "works collaboratively",
-      "compensation",
-      "highly competitive",
-      "commensurate",
-      "benefits",
-      "401k",
-      "paid time off",
-      "pto",
-      "medical",
-      "dental",
-      "vision",
-      "wellness",
-      "equal opportunity",
-      "eeo",
-      "accommodation",
-      "working experience of an intern",
-      "essentially identical to that of a full-time",
-      "internship experience",
-      "this internship",
-    ])
-
-  const isRequirementLine = (ln: string) =>
-    includesAny(ln, [
-      "pursuit of",
-      "bachelor",
-      "master",
-      "degree",
-      "gpa",
-      "required",
-      "preferred",
-      "must have",
-      "must be",
-      "qualification",
-      "qualifications",
-      "requirements",
-    ])
-
-  const looksLikeBullet = (l: string) => /^[-•*]\s+/.test(l)
-
-  const isDutyLine = (line: string) => {
-    const ln = normalize(line)
-    if (isHeadingLine(line)) return false
-    if (isMarketingOrBenefits(ln)) return false
-    if (isRequirementLine(ln)) return false
-
-    const bullet = looksLikeBullet(line)
-    const verb = dutyVerbs.some((v) => ln.includes(v))
-    return bullet || verb
-  }
-
-  const isQualLine = (line: string) => {
-    const ln = normalize(line)
-    if (isHeadingLine(line)) return false
-    if (isMarketingOrBenefits(ln)) return false
-    return isRequirementLine(ln)
-  }
-
-  // Pass 1: phrase match on DUTY lines only
-  for (const line of lines) {
-    const ln = normalize(line)
-    if (!phraseNorm) continue
-    if (!ln.includes(phraseNorm)) continue
-    if (!isDutyLine(line)) continue
-    return line.slice(0, 220)
-  }
-
-  // Pass 2: phrase match on QUAL lines
-  for (const line of lines) {
-    const ln = normalize(line)
-    if (!phraseNorm) continue
-    if (!ln.includes(phraseNorm)) continue
-    if (!isQualLine(line)) continue
-    return line.slice(0, 220)
-  }
-
-  // Pass 3: partial phrase fallback on duty lines
-  if (phraseNorm) {
-    const parts = phraseNorm.split(" ").filter((p) => p.length >= 5)
-    for (const line of lines) {
+    const filtered = lines.filter((line) => {
       const ln = normalize(line)
-      if (!isDutyLine(line)) continue
-      if (parts.some((p) => ln.includes(p))) return line.slice(0, 220)
+      if (isHeadingLine(line, dutyVerbs)) return false
+      if (isMarketingOrBenefits(ln)) return false
+      if (!allowReq && isRequirementLine(ln)) return false
+      return true
+    })
+
+    // Match phrase first
+    const phraseMatches = filtered.filter((line) => {
+      const ln = normalize(line)
+      if (!phraseNorm) return false
+      if (!ln.includes(phraseNorm)) return false
+      return true
+    })
+
+    // Prefer duty-ish lines when scanning duties
+    const dutyish = phraseMatches
+      .filter((line) => {
+        const ln = normalize(line)
+        return looksLikeBullet(line) || dutyVerbs.some((v) => ln.includes(v))
+      })
+      .map((x) => x.slice(0, 220))
+
+    const anyPhrase = phraseMatches.map((x) => x.slice(0, 220))
+
+    // Partial fallback (avoid tiny words)
+    const parts = phraseNorm.split(" ").filter((p) => p.length >= 5)
+    const partial = parts.length
+      ? filtered
+          .filter((line) => {
+            const ln = normalize(line)
+            return parts.some((p) => ln.includes(p))
+          })
+          .map((x) => x.slice(0, 220))
+      : []
+
+    // Final: first safe line (still filtered)
+    const firstSafe = filtered.length ? [filtered[0].slice(0, 220)] : []
+
+    // Order matters
+    const all = [...dutyish, ...anyPhrase, ...partial, ...firstSafe]
+
+    // De-dupe while preserving order
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const s of all) {
+      const k = normalize(s)
+      if (!k) continue
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(s)
+    }
+    return out
+  }
+
+  // 1) duties phrase match (no requirements)
+  const fromDuties = corpus.duties ? scan(corpus.duties, false) : []
+
+  // 2) quals phrase match (requirements allowed)
+  const fromQuals = corpus.quals ? scan(corpus.quals, true) : []
+
+  // 3) full fallback (requirements allowed)
+  const fromFull = scan(corpus.full, true)
+
+  // Merge in order
+  const merged: string[] = []
+  const seen = new Set<string>()
+  for (const arr of [fromDuties, fromQuals, fromFull]) {
+    for (const s of arr) {
+      const k = normalize(s)
+      if (!k) continue
+      if (seen.has(k)) continue
+      seen.add(k)
+      merged.push(s)
     }
   }
 
-  // Final fallback: first duty line, else blank
-  const safeDuty = lines.find((l) => isDutyLine(l))
-  return (safeDuty || "").trim().slice(0, 220)
+  return merged
 }
 
 // -----------------------------
@@ -279,12 +364,7 @@ function inferDomain(jobTextNorm: string): {
   intensity: DomainIntensity
   evidence_snippet?: string
 } {
-  const strongMarkers = [
-    "strong interest in",
-    "passion for",
-    "deep interest in",
-    "must be passionate about",
-  ]
+  const strongMarkers = ["strong interest in", "passion for", "deep interest in", "must be passionate about"]
   const moderateMarkers = ["interest in", "exposure to", "familiarity with"]
 
   const domainTags: Array<{ tag: string; markers: string[] }> = [
@@ -292,10 +372,7 @@ function inferDomain(jobTextNorm: string): {
     { tag: "healthcare", markers: ["healthcare", "clinical", "patient", "medical"] },
     { tag: "fintech", markers: ["fintech", "payments", "blockchain", "crypto", "web3"] },
     { tag: "luxury", markers: ["luxury", "cartier", "richemont", "jewelry", "timepiece"] },
-    {
-      tag: "real_estate",
-      markers: ["commercial real estate", "real estate", "multifamily", "leasing", "brokerage"],
-    },
+    { tag: "real_estate", markers: ["commercial real estate", "real estate", "multifamily", "leasing", "brokerage"] },
   ]
 
   let tag: string | null = null
@@ -329,7 +406,6 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
     "google workspace",
     "gsuite",
     "sql",
-    "r",
     "python",
     "tableau",
     "power bi",
@@ -350,6 +426,12 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
   ]
 
   const found = toolsDict.filter((t) => jobTextNorm.includes(t))
+
+  // Special handling for "R" to avoid the ghost-R bug:
+  // Only count R if it appears as a standalone token OR explicitly "R language".
+  const hasR = /\br\b/.test(jobTextNorm) || /\br language\b/.test(jobTextNorm)
+  if (hasR) found.push("r")
+
   const required: string[] = []
   const preferred: string[] = []
 
@@ -357,7 +439,7 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
     const requiredMarkers = ["required", "must", "mandatory", "proficiency", "proficient", "strong proficiency"]
     const preferredMarkers = ["preferred", "a plus", "nice to have", "bonus", "plus"]
 
-    const idx = jobTextNorm.indexOf(t)
+    const idx = jobTextNorm.indexOf(t === "r" ? " r " : t)
     const window =
       idx >= 0
         ? jobTextNorm.slice(Math.max(0, idx - 80), Math.min(jobTextNorm.length, idx + 120))
@@ -374,21 +456,29 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
   }
 
   const normalizeTool = (t: string) => {
+    if (t === "r") return "R"
     if (t === "monday.com") return "Monday.com"
     if (t === "power bi") return "Power BI"
     if (t === "google sheets") return "Google Sheets"
     if (t === "google workspace") return "Google Workspace"
     if (t === "gsuite") return "GSuite"
+    if (t === "sql") return "SQL"
     return t
       .split(" ")
       .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))
       .join(" ")
-      .replace("Sql", "SQL")
+  }
+
+  // De-dupe stable
+  const dedupe = (arr: string[]) => {
+    const out: string[] = []
+    for (const x of arr.map(normalizeTool)) if (!out.includes(x)) out.push(x)
+    return out
   }
 
   return {
-    required_tools: required.map(normalizeTool),
-    preferred_tools: preferred.map(normalizeTool),
+    required_tools: dedupe(required),
+    preferred_tools: dedupe(preferred),
   }
 }
 
@@ -399,22 +489,14 @@ function extractTools(jobTextNorm: string): { required_tools: string[]; preferre
 export function extractJobV4(rawJobText: string): JobStructured {
   const raw = rawJobText || ""
   const jobTextNorm = normalize(raw)
-
-  const sectionBoostPhrases = [
-    "responsibilities",
-    "what you'll do",
-    "what you’ll do",
-    "what you will do",
-    "job responsibilities",
-    "key responsibilities",
-    "qualifications",
-    "requirements",
-  ]
-  const hasSections = sectionBoostPhrases.some((p) => jobTextNorm.includes(p))
+  const corpus = getEvidenceCorpus(raw)
 
   const clusters: JobCluster[] = []
 
   for (const c of TAXONOMY) {
+    const idLower = (c.id || "").toLowerCase()
+    if (idLower.includes("qa") || idLower.includes("test")) continue
+
     const phrases = (c.example_phrases || []).map((p) => normalize(p))
 
     let hits = 0
@@ -434,26 +516,22 @@ export function extractJobV4(rawJobText: string): JobStructured {
 
     if (hits <= 0) continue
 
-    const idLower = c.id.toLowerCase()
-    if (idLower.includes("qa") || idLower.includes("test")) continue
-
-    let weight_tier: WeightTier = "supporting"
-    if (hits >= 3) weight_tier = "core"
-    else if (hits === 2) weight_tier = "important"
-    else weight_tier = "supporting"
-
-    if (hasSections && hits === 1) weight_tier = "important"
-
     const confidence = clamp01(0.45 + Math.min(0.45, hits * 0.12))
+
+    // Initial tier (will be overwritten by top-2 cap later)
+    let weight_tier: WeightTier = hits >= 3 ? "core" : hits === 2 ? "important" : "supporting"
+
+    // Evidence candidates ordered best -> worst
+    const candidates = pickEvidenceCandidates(
+      corpus,
+      bestPhrase || (c.example_phrases?.[0] || "")
+    )
 
     clusters.push({
       cluster_id: c.id,
       weight_tier,
       confidence,
-      evidence_snippet: findEvidenceSnippet(
-        raw,
-        bestPhrase || (c.example_phrases?.[0] || "")
-      ),
+      evidence_snippet: candidates[0] || "",
     })
   }
 
@@ -461,20 +539,38 @@ export function extractJobV4(rawJobText: string): JobStructured {
   const analytical_intensity = inferAnalyticalIntensity(jobTextNorm)
   const domain = inferDomain(jobTextNorm)
 
-  clusters.sort(
-    (a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id)
-  )
+  // Sort by confidence DESC (stable tie-breaker)
+  clusters.sort((a, b) => b.confidence - a.confidence || a.cluster_id.localeCompare(b.cluster_id))
 
-  // Evidence uniqueness: avoid repeating the same snippet across clusters
+  // Evidence uniqueness WITHOUT blanking everything:
+  // If snippet already used, pick next-best candidate for that cluster.
   const used = new Set<string>()
   for (const cl of clusters) {
-    const key = normalize(cl.evidence_snippet || "")
-    if (!key) continue
-    if (used.has(key)) cl.evidence_snippet = ""
-    else used.add(key)
+    const tax = TAXONOMY.find((t) => t.id === cl.cluster_id)
+    const phrase = normalize((tax?.example_phrases?.[0] || ""))
+    const candidates = pickEvidenceCandidates(corpus, phrase)
+
+    let chosen = cl.evidence_snippet || ""
+    let key = normalize(chosen)
+
+    if (key && used.has(key)) {
+      chosen = ""
+      key = ""
+      for (const cand of candidates) {
+        const k = normalize(cand)
+        if (!k) continue
+        if (used.has(k)) continue
+        chosen = cand
+        key = k
+        break
+      }
+    }
+
+    cl.evidence_snippet = chosen
+    if (key) used.add(key)
   }
 
-  // LOCKED POLICY: top 2 are core, all others important
+  // LOCKED POLICY: top 2 core, all others important
   for (let i = 0; i < clusters.length; i++) {
     clusters[i].weight_tier = i < 2 ? "core" : "important"
   }
@@ -491,10 +587,10 @@ export function extractJobV4(rawJobText: string): JobStructured {
           jobTextNorm.includes("in-office") || jobTextNorm.includes("in person")
             ? "in_person"
             : jobTextNorm.includes("hybrid")
-              ? "hybrid"
-              : jobTextNorm.includes("remote")
-                ? "remote"
-                : "unknown",
+            ? "hybrid"
+            : jobTextNorm.includes("remote")
+            ? "remote"
+            : "unknown",
       },
     },
   }

@@ -6,10 +6,12 @@ import { getAuthedProfileText } from "../_lib/authProfile"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
+import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+const ROUTE_JOBFIT_STAMP = "ROUTE_JOBFIT_STAMP__V4_PROFILE_INTEGRATION__V1"
 const MISSING = "__MISSING__"
 const JOBFIT_PROMPT_VERSION = "jobfit_v1_2026_02_07"
 const JOBFIT_LOGIC_VERSION = "rules_v3_2026_02_24"
@@ -130,6 +132,24 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Profile lookup failed" }, 404)
     }
 
+    // Ensure we have a structured profile (compute V4 deterministically if missing)
+    const hadStructuredInDb = Boolean((profileRowDb as any)?.profile_structured)
+    let profileStructuredResolved = (profileRowDb as any)?.profile_structured ?? null
+
+    if (!profileStructuredResolved) {
+      profileStructuredResolved = extractProfileV4(profileText || "")
+
+      // Best effort: persist so future runs are deterministic + fast
+      const { error: upErr } = await supabaseAdmin
+        .from("client_profiles")
+        .update({ profile_structured: profileStructuredResolved })
+        .eq("id", profileId)
+
+      if (upErr) {
+        console.warn("client_profiles update profile_structured failed:", upErr.message)
+      }
+    }
+
     // Parse request body
     let body: any = {}
     try {
@@ -149,7 +169,7 @@ export async function POST(req: Request) {
     // Build structured overrides from profile row
     const profileOverrides = mapClientProfileToOverrides({
       profileText,
-      profileStructured: (profileRowDb as any)?.profile_structured ?? null,
+      profileStructured: profileStructuredResolved,
       targetRoles: (profileRowDb as any)?.target_roles ?? null,
       preferredLocations: (profileRowDb as any)?.preferred_locations ?? null,
     })
@@ -161,11 +181,13 @@ export async function POST(req: Request) {
         id: profileId || MISSING,
         text: profileText || MISSING,
         overrides: profileOverrides || MISSING,
+        profile_structured: profileStructuredResolved || MISSING,
       },
       system: {
         jobfit_prompt_version: JOBFIT_PROMPT_VERSION,
         model_id: MODEL_ID,
         jobfit_logic_version: JOBFIT_LOGIC_VERSION,
+        profile_v4_stamp: PROFILE_V4_STAMP,
       },
     }
 
@@ -180,6 +202,11 @@ export async function POST(req: Request) {
       fingerprint_hash16: fingerprint_hash.slice(0, 16),
       cache_key: `${fingerprint_hash}::${JOBFIT_LOGIC_VERSION}`,
       cache_bypassed: forceRerun,
+      profile_v4_stamp: PROFILE_V4_STAMP,
+      profile_structured_source: hadStructuredInDb ? "db" : "computed_v4",
+route_jobfit_stamp: ROUTE_JOBFIT_STAMP,
+profile_v4_stamp: PROFILE_V4_STAMP,
+profile_structured_source: hadStructuredInDb ? "db" : "computed_v4",
     }
 
     // 1) Lookup existing run unless forced
@@ -243,6 +270,11 @@ export async function POST(req: Request) {
       debug: { ...debug, cache_hit: false },
     })
   } catch (err: any) {
+    // Never swallow stack traces silently in dev
+    if (process.env.NODE_ENV !== "production") {
+      console.error("JobFit POST error:", err)
+    }
+
     const detail = err?.message || String(err)
     const lower = String(detail).toLowerCase()
 
