@@ -308,19 +308,34 @@ export function renderBulletsV4(out: EvalOutput): {
     }
   }
 
+  const why_trace = whyCodes.map((w) => {
+    const code = String(w?.code || "").trim()
+    const g = code ? whyGroup(code) : "other"
+    const rendered = code ? renderWhyBullet(out, w) : null
+    return {
+      code,
+      group: g,
+      banned: BANNED_WHY_CODES.has(code),
+      location_constraint: out.location_constraint,
+      rendered,
+      rendered_usable: rendered ? usable(rendered) : false,
+      job_fact: w?.job_fact ?? null,
+      profile_fact: w?.profile_fact ?? null,
+    }
+  })
+
   return {
     why,
     risk,
-    renderer_debug: {
+        renderer_debug: {
       renderer_stamp: RENDERER_V4_STAMP,
       decision: out.decision,
       location_constraint: out.location_constraint,
-      why_codes_in: whyCodesIn.map((x) => x.code),
-      risk_codes_in: riskCodesIn.map((x) => x.code),
+      why_codes_in: whyCodes.map((x) => x.code),
+      risk_codes_in: riskCodes.map((x) => x.code),
       why_count: why.length,
       risk_count: risk.length,
-      why_allowed_codes: Array.from(ALLOWED_WHY_CODES),
-      why_banned_codes: Array.from(BANNED_WHY_CODES),
+      why_trace,
     },
   }
 }
