@@ -1,0 +1,47 @@
+Case_ID,Profile_ID,Job_ID,Job_Title,Company,Expected_Decision,Expected_Alignment,Expected_Exposure,Structural_Risk_Codes,Tier2_Risk_Count,Misalignment_Cap_Applied,Hard_Gate_Triggered,GPA_Flag,Notes
+C01,P01,J01,Entry Consulting Role,GenericCo,PRIORITY_APPLY,STRONG,EXECUTED,None,0,N,N,None,Clean direct fit
+C02,P01,J02,Consulting 2 Years Req,GenericCo,APPLY,STRONG,EXECUTED,None,1,N,N,None,Minor experience stretch
+C03,P01,J03,Marketing Role,GenericCo,REVIEW,WEAK,ADJACENT,None,2,N,N,None,Transferable but not target
+C04,P01,J04,Data Internship,GenericCo,APPLY,MODERATE,EXECUTED,None,1,N,N,None,Strong analytics overlap
+C05,P01,J05,Senior Consulting Role,GenericCo,PASS,STRONG,EXECUTED,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Senior mismatch
+C06,P01,J06,GPA Required 3.5,GenericCo,APPLY,STRONG,EXECUTED,None,0,N,N,None,Meets GPA
+C07,P01,J07,Healthcare Ops Role,GenericCo,PASS,MISALIGNED,ADJACENT,None,0,Y,N,None,Misaligned industry
+C08,P01,J08,Aerospace Analytics,GenericCo,PASS,WEAK,THEORETICAL,RISK_DOMAIN_SPECIALIZATION_REQUIRED,0,N,N,None,No aerospace exposure
+C09,P02,J01,Entry Consulting Role,GenericCo,REVIEW,WEAK,ADJACENT,None,2,N,N,None,Transferable but not target
+C10,P02,J02,Consulting 2 Years Req,GenericCo,PASS,WEAK,ADJACENT,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Experience shortfall + not target
+C11,P02,J03,Marketing Role,GenericCo,PRIORITY_APPLY,STRONG,EXECUTED,None,0,N,N,None,Direct marketing execution fit
+C12,P02,J04,Data Internship,GenericCo,REVIEW,MODERATE,THEORETICAL,None,3,N,N,None,Analytics mostly theoretical
+C13,P02,J05,Senior Consulting Role,GenericCo,PASS,WEAK,ADJACENT,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Senior mismatch
+C14,P02,J06,GPA Required 3.5,GenericCo,PASS,STRONG,EXECUTED,None,0,N,Y,Below_Min,GPA below requirement
+C15,P02,J07,Healthcare Ops Role,GenericCo,PASS,MISALIGNED,ADJACENT,None,0,Y,N,None,Misaligned domain
+C16,P02,J08,Aerospace Analytics,GenericCo,PASS,WEAK,THEORETICAL,RISK_DOMAIN_SPECIALIZATION_REQUIRED,0,N,N,None,No aerospace background
+C17,P03,J01,Entry Consulting Role,GenericCo,REVIEW,MODERATE,THEORETICAL,None,3,N,N,None,Strong academics but no execution
+C18,P03,J02,Consulting 2 Years Req,GenericCo,PASS,MODERATE,THEORETICAL,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Experience requirement fail
+C19,P03,J03,Marketing Role,GenericCo,PASS,WEAK,NONE,RISK_EXPOSURE_NONE,0,N,N,None,No marketing exposure
+C20,P03,J04,Data Internship,GenericCo,REVIEW,STRONG,THEORETICAL,None,2,N,N,None,Theoretical analytics fit
+C21,P03,J05,Senior Consulting Role,GenericCo,PASS,MODERATE,THEORETICAL,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Senior mismatch
+C22,P03,J06,GPA Required 3.5,GenericCo,PASS,STRONG,THEORETICAL,None,0,N,Y,Below_Min,GPA below required
+C23,P03,J07,Healthcare Ops Role,GenericCo,PASS,MISALIGNED,NONE,RISK_EXPOSURE_NONE,0,Y,N,None,No healthcare exposure
+C24,P03,J08,Aerospace Analytics,GenericCo,PASS,WEAK,THEORETICAL,RISK_DOMAIN_SPECIALIZATION_REQUIRED,0,N,N,None,No aerospace specialization
+C25,P04,J01,Entry Consulting Role,GenericCo,PASS,MISALIGNED,ADJACENT,None,0,Y,N,None,Consulting not target industry
+C26,P04,J02,Consulting 2 Years Req,GenericCo,PASS,MISALIGNED,ADJACENT,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Mismatch + not target
+C27,P04,J03,Marketing Role,GenericCo,PASS,MISALIGNED,NONE,RISK_EXPOSURE_NONE,0,Y,N,None,No marketing exposure
+C28,P04,J04,Data Internship,GenericCo,PASS,MISALIGNED,THEORETICAL,None,3,Y,N,None,Analytics not target domain
+C29,P04,J05,Senior Consulting Role,GenericCo,PASS,MISALIGNED,ADJACENT,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Senior mismatch
+C30,P04,J06,GPA Required 3.5,GenericCo,REVIEW,MISALIGNED,ADJACENT,None,0,Y,N,Missing,GPA required but missing
+C31,P04,J07,Healthcare Ops Role,GenericCo,PRIORITY_APPLY,STRONG,EXECUTED,None,0,N,N,None,Direct healthcare execution match
+C32,P04,J08,Aerospace Analytics,GenericCo,PASS,MISALIGNED,NONE,RISK_DOMAIN_SPECIALIZATION_REQUIRED,0,Y,N,None,Wrong industry + no exposure
+C33,P05,J01,Entry Consulting Role,GenericCo,APPLY,STRONG,EXECUTED,None,1,N,N,None,Strong intern but limited years
+C34,P05,J02,Consulting 2 Years Req,GenericCo,PASS,STRONG,EXECUTED,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Experience shortfall
+C35,P05,J03,Marketing Role,GenericCo,REVIEW,WEAK,ADJACENT,None,2,N,N,None,Transferable but not target
+C36,P05,J04,Data Internship,GenericCo,PRIORITY_APPLY,STRONG,EXECUTED,None,0,N,N,None,Strong intern-level analytics fit
+C37,P05,J05,Senior Consulting Role,GenericCo,PASS,STRONG,EXECUTED,RISK_EXPERIENCE_MISMATCH,0,N,Y,None,Senior mismatch
+C38,P05,J06,GPA Required 3.5,GenericCo,APPLY,STRONG,EXECUTED,None,0,N,N,None,Meets GPA requirement
+C39,P05,J07,Healthcare Ops Role,GenericCo,PASS,MISALIGNED,ADJACENT,None,0,Y,N,None,Not healthcare target
+C40,P05,J08,Aerospace Analytics,GenericCo,PASS,WEAK,THEORETICAL,RISK_DOMAIN_SPECIALIZATION_REQUIRED,0,N,N,None,No aerospace domain
+C41,P01,J09,Business Analyst,GenericCo,APPLY,STRONG,EXECUTED,None,1,N,N,None,Solid but not elite
+C42,P02,J10,Growth Marketing Analyst,GenericCo,APPLY,STRONG,EXECUTED,None,1,N,N,None,Marketing analytics crossover
+C43,P03,J09,Business Analyst,GenericCo,REVIEW,MODERATE,THEORETICAL,None,3,N,N,None,Academic but thin execution
+C44,P05,J09,Business Analyst,GenericCo,APPLY,STRONG,ADJACENT,None,1,N,N,None,Strong intern adjacency
+C45,P02,J11,Operations Analyst,GenericCo,APPLY,MODERATE,EXECUTED,None,2,N,N,None,Transferable ops exposure
+C46,P04,J11,Operations Analyst,GenericCo,REVIEW,MODERATE,EXECUTED,None,2,N,N,None,Transferable but not healthcare target

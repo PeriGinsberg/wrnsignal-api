@@ -1,0 +1,14 @@
+{
+  "name": "jobfit-engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx tests/generateFromCsv.ts",
+    "regression": "tsx tests/runRegression.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4"
+  }
+}

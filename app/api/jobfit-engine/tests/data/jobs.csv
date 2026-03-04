@@ -1,0 +1,12 @@
+Job_ID,Role_Family,Seniority,Min_Years,GPA_Required,Location_Type,Location_Hard,Core_Clusters,Required_Tools,Notes
+J01,Consulting,entry_level,0,None,remote,FALSE,Structured Problem Solving|Research Synthesis|Executive Communication,Excel|PowerPoint,Direct entry consulting role
+J02,Consulting,entry_level,2,None,remote,FALSE,Structured Problem Solving|Quantitative Analysis|Executive Communication,Excel|PowerPoint,Requires 2 years experience
+J03,Marketing,entry_level,0,None,remote,FALSE,Content Creation|Campaign Execution|Social Analytics,Canva|Meta Ads,Entry marketing execution role
+J04,Data Analytics,internship,0,None,remote,FALSE,Quantitative Analysis|Data Analysis|Dashboards,Python|SQL|Excel,Data internship
+J05,Consulting,senior,4,None,onsite,TRUE,Structured Problem Solving|Client Leadership|Project Ownership,Excel|PowerPoint,Senior role requiring leadership
+J06,Consulting,entry_level,0,3.5,remote,FALSE,Structured Problem Solving|Research Synthesis,Excel|PowerPoint,GPA 3.5 required
+J07,Healthcare,entry_level,0,None,onsite,TRUE,Operations Coordination|Client Facing|Scheduling,Scheduling Tools|Excel,Healthcare onsite only
+J08,Aerospace Analytics,entry_level,2,None,remote,FALSE,Aerospace Modeling|Maintenance Planning|Advanced Analytics,Python|SQL,Requires aerospace domain
+J09,Business Analytics,entry_level,1,None,remote,FALSE,Quantitative Analysis|Research Synthesis|Reporting,Excel|PowerPoint,Moderate business analytics role
+J10,Marketing,entry_level,1,None,remote,FALSE,Campaign Analysis|Reporting|Experimentation,Excel|Google Analytics,Marketing analytics hybrid
+J11,Operations,entry_level,1,None,remote,FALSE,Process Analysis|Reporting|Coordination,Excel,General operations analyst
