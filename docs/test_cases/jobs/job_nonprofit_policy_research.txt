@@ -1,0 +1,21 @@
+JOB_ID: job_nonprofit_policy_research
+
+COMPANY:
+Urban Policy Institute
+
+ROLE:
+Policy Research Associate
+
+LOCATION:
+Washington DC
+
+JOB_TYPE:
+Full Time
+
+DESCRIPTION:
+Conduct research on urban policy issues, analyze data, and publish policy reports.
+
+REQUIREMENTS:
+Public policy or economics background
+Quantitative research
+Strong writing ability

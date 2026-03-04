@@ -1,0 +1,41 @@
+﻿PROFILE_ID: profile_jacob_cohen_finance_investing
+
+NAME:
+Jacob Cohen
+
+CURRENT_STATUS:
+Junior
+
+EDUCATION:
+NYU Stern
+B.S. Finance
+Expected Graduation: May 2027
+GPA: 3.76
+
+TARGET_JOB_FAMILIES:
+Finance
+Investment
+Asset Management
+
+PRIMARY_TARGET_ROLES:
+Investment Banking Intern
+Private Equity Intern
+Equity Research Intern
+
+LOCATION_PREFERENCES:
+New York City
+
+TOOLS:
+Excel
+Financial Modeling
+PowerPoint
+Bloomberg Terminal
+
+CORE_SKILLS:
+Valuation
+Financial modeling
+Market analysis
+Investment research
+
+YEARS_EXPERIENCE_APPROX:
+1

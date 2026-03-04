@@ -1,0 +1,42 @@
+﻿PROFILE_ID: profile_maya_patel_startup_ops
+
+NAME:
+Maya Patel
+
+CURRENT_STATUS:
+Early Career Professional
+
+EDUCATION:
+University of Southern California
+B.S. Business Administration
+Graduated 2024
+
+TARGET_JOB_FAMILIES:
+Operations
+Startup
+Strategy
+
+PRIMARY_TARGET_ROLES:
+Operations Analyst
+Business Operations Associate
+Startup Strategy Associate
+
+LOCATION_PREFERENCES:
+San Francisco
+NYC
+
+TOOLS:
+Excel
+SQL
+Notion
+HubSpot
+Airtable
+
+CORE_SKILLS:
+Operations strategy
+Process design
+Growth analytics
+Startup execution
+
+YEARS_EXPERIENCE_APPROX:
+2

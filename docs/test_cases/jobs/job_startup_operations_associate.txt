@@ -1,0 +1,22 @@
+JOB_ID: job_startup_operations_associate
+
+COMPANY:
+GrowthTech Startup
+
+ROLE:
+Business Operations Associate
+
+LOCATION:
+San Francisco
+
+JOB_TYPE:
+Full Time
+
+DESCRIPTION:
+Support growth initiatives, operational improvements, and strategic planning across a fast-growing technology company.
+
+REQUIREMENTS:
+Strong analytical ability
+Startup interest
+Operations mindset
+Excel and data analysis

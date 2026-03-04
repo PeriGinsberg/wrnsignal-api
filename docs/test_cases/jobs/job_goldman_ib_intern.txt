@@ -1,0 +1,22 @@
+JOB_ID: job_goldman_ib_intern
+
+COMPANY:
+Goldman Sachs
+
+ROLE:
+Investment Banking Summer Analyst
+
+LOCATION:
+New York
+
+JOB_TYPE:
+Internship
+
+DESCRIPTION:
+Support deal teams on M&A transactions, financial modeling, valuation analysis, and preparation of client presentations.
+
+REQUIREMENTS:
+Finance knowledge
+Financial modeling
+Strong Excel skills
+Interest in capital markets

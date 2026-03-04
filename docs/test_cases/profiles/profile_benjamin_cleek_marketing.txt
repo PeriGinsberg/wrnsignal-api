@@ -1,0 +1,141 @@
+﻿PROFILE_ID: profile_benjamin_cleek_marketing
+
+NAME:
+Benjamin Cleek
+
+EDUCATION:
+Butler University – Lacy School of Business
+Bachelor of Business Administration, Marketing
+Expected Graduation: May 2027
+
+TARGET_JOB_FAMILIES:
+Marketing
+Brand Management
+Digital Marketing
+
+TARGET_FUNCTION_TAGS:
+brand_management
+brand_strategy
+digital_marketing
+creative_marketing
+consumer_marketing
+product_marketing
+event_marketing
+trade_show_marketing
+
+PRIMARY_TARGET_ROLES:
+Brand Management Intern
+Brand Marketing Intern
+Digital Marketing Intern
+Creative Marketing Intern
+Product Marketing Intern
+Marketing Strategy Intern
+
+SECONDARY_ROLES:
+Marketing Analyst Intern
+Consumer Insights Intern
+Marketing Operations Intern
+Sales Enablement Intern
+Event Marketing Intern
+
+TARGET_INDUSTRIES:
+Automotive
+Motorsports
+Consumer Products
+
+LOCATION_PREFERENCES:
+Indianapolis
+Chicago
+Chicago Suburbs
+Southeastern Wisconsin
+
+LOCATION_MODE:
+In Person
+Hybrid
+
+START_DATE:
+End of May 2026
+
+CONSTRAINTS:
+prefFullTime=false
+prefInternship=true
+hardNoRemote=true
+hardNoCommission=true
+hardNoSales=false
+hardNoGovernment=false
+
+TOOLS:
+Microsoft Excel
+PowerPoint
+HubSpot
+Canva
+Adobe Photoshop
+Adobe Illustrator
+Adobe Lightroom
+Adobe Premiere
+SurveyMonkey
+ZoomInfo
+Shopify (beginner)
+
+LANGUAGES:
+German (Intermediate)
+
+CORE_SKILLS:
+Brand strategy
+Marketing communications
+Market research
+Consumer insights
+Product positioning
+Trade show marketing
+Customer engagement
+Content development
+Sales enablement
+Competitive analysis
+
+YEARS_EXPERIENCE_APPROX:
+1
+
+GRAD_YEAR:
+2027
+
+PROFESSIONAL_EXPERIENCE:
+
+Sales & Marketing Intern – Trulli Audio
+May 2025 – Aug 2025
+Represented the brand at trade shows, delivered product demos, and generated qualified sales leads.
+Supported early B2B and D2C sales calls and development of the company’s first sales process.
+Conducted market research to identify prospective dealers and installers and presented findings to leadership.
+
+Marketing Intern – Trulli Audio
+May 2024 – Aug 2024
+Helped build early-stage marketing infrastructure for a pre-revenue hardware startup.
+Organized product and sales data in Excel to support marketing strategy.
+Tested wireless audio product features and reported usability issues prior to launch.
+
+PROJECT EXPERIENCE:
+
+Brand Strategy Project – Jaguar Motors
+Conducted a brand audit analyzing segmentation, targeting, and positioning.
+Developed refreshed messaging and EV-focused positioning to attract younger consumers.
+
+Team Business – Lap It Up Drinkware (R.B.E.)
+Designed and managed the team’s e-commerce website.
+Collaborated with a 5-person team to market a real product and generate $1,128 in revenue.
+
+PERSONAL_STRENGTHS:
+Strong interpersonal communication
+Comfortable representing products at trade shows
+Natural product promoter
+Strong curiosity about brands and marketing strategy
+Collaborative team player
+
+CAREER_CONCERN:
+Limited professional experience entering the internship market
+
+INTERESTS:
+Automotive
+Motorsports
+Brand Strategy
+Tennis
+Golf
+Travel
