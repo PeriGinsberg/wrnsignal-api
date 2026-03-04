@@ -1,23 +1,41 @@
-// FILE: app/api/_lib/jobfitProfileAdapter.ts
-// CLEAN REWRITE: deterministic, V4-compatible tool ingestion (tools map -> tools list)
-// Fixes:
-// - tools map support: { Excel: true } -> ["Excel"]
-// - prevents Canva-only fallback when structured tools exist
-// - JobFamily typing: sanitize structured targetFamilies to valid JobFamily[]
-// - adds explicit stamp for deployment verification
+// app/api/_lib/jobfitProfileAdapter.ts
+//
+// Purpose
+// - Accepts "structured profile" blobs coming from the client (JobFit intake)
+// - Produces deterministic overrides used by the JobFit evaluator
+// - CRITICAL: tools must survive the adapter -> evaluator signal flow
+//
+// Notes
+// - This file is intentionally dependency-light and defensive. The client payload can be messy.
+// - We keep the existing exported function name `mapClientProfileToOverrides` to avoid breaking imports.
+//
+// Stamp for easy runtime verification
+export const PROFILE_ADAPTER_STAMP = "PROFILE_ADAPTER_STAMP__TOOLS_FLOW_FIX__V3"
 
-import type { JobFamily, LocationMode, StructuredProfileSignals, ProfileConstraints } from "../jobfit/signals"
-
-export const PROFILE_ADAPTER_STAMP = "PROFILE_ADAPTER_STAMP__TOOLS_MAP_FIX__V2"
+import type {
+  JobFamily,
+  LocationMode,
+  StructuredProfileSignals,
+  ProfileConstraints,
+} from "../jobfit/signals"
 
 type AnyObj = Record<string, any>
+
+/* ------------------------------ small utils ------------------------------ */
 
 function norm(x: any): string {
   return String(x ?? "").trim()
 }
-
 function lower(x: any): string {
   return norm(x).toLowerCase()
+}
+function uniq<T>(xs: T[]): T[] {
+  const out: T[] = []
+  for (const x of xs) if (!out.includes(x)) out.push(x)
+  return out
+}
+function uniqStrings(xs: string[]): string[] {
+  return uniq(xs.map((x) => norm(x)).filter(Boolean))
 }
 
 /* ------------------------------ JobFamily sanitizer ------------------------------ */
@@ -43,14 +61,12 @@ function sanitizeTargetFamilies(x: any): JobFamily[] | null {
   const out: JobFamily[] = []
   for (const v of x) {
     const vv = norm(v)
-    if (isJobFamily(vv)) {
-      if (!out.includes(vv)) out.push(vv)
-    }
+    if (isJobFamily(vv) && !out.includes(vv)) out.push(vv)
   }
   return out.length ? out : null
 }
 
-/* ------------------------------ cities ------------------------------ */
+/* ------------------------------ locations / cities ------------------------------ */
 
 function parseCities(text: string): string[] {
   const t = lower(text)
@@ -59,20 +75,21 @@ function parseCities(text: string): string[] {
     if (!out.includes(x)) out.push(x)
   }
 
+  // Keep intentionally small; evaluator also has its own location logic.
   if (t.includes("new york") || t.includes("nyc")) add("New York")
   if (t.includes("boston")) add("Boston")
   if (t.includes("philadelphia") || t.includes("philly")) add("Philadelphia")
-  if (t.includes("washington") || t.includes("d.c") || t.includes("dc")) add("Washington, D.C.")
+  if (t.includes("washington") || t.includes("d.c") || t.includes(" dc")) add("Washington, D.C.")
   if (t.includes("miami")) add("Miami")
   if (t.includes("chicago")) add("Chicago")
-  if (t.includes("new jersey") || t.includes("nj")) add("New Jersey")
+  if (t.includes("new jersey") || /\bnj\b/.test(t)) add("New Jersey")
 
   return out
 }
 
 function normalizeAllowedCities(xs: any): string[] | undefined {
   if (!Array.isArray(xs)) return undefined
-  const cleaned = xs.map(norm).filter(Boolean)
+  const cleaned = uniqStrings(xs)
   return cleaned.length ? cleaned : undefined
 }
 
@@ -82,47 +99,52 @@ function pickAllowedCities(args: {
   profileText: string
 }): string[] | undefined {
   const fromStructured = normalizeAllowedCities(args.structuredAllowedCities)
+  if (fromStructured && fromStructured.length) return fromStructured
 
   const fromPreferred = parseCities(args.preferredLocations || "")
-  const fromText = parseCities(args.profileText)
-
-  if (fromStructured && fromStructured.length) return fromStructured
   if (fromPreferred.length) return fromPreferred
+
+  const fromText = parseCities(args.profileText)
   if (fromText.length) return fromText
 
   return undefined
 }
 
-/* ------------------------------ families ------------------------------ */
+/* ------------------------------ families inference ------------------------------ */
 
 function inferTargetFamilies(profileText: string, targetRoles?: string | null): JobFamily[] {
   const t = lower(profileText + " " + (targetRoles || ""))
-  // Consulting/strategy intent must be detected first so it doesn't get swallowed by finance keywords
+
+  // Order matters: consulting/strategy first so it doesn't get swallowed by finance keywords.
   if (
     t.includes("consulting") ||
+    t.includes("management consulting") ||
     t.includes("strategy") ||
-    t.includes("strategy intern") ||
-    t.includes("consulting intern") ||
-    t.includes("case interview") ||
-    t.includes("casework") ||
-    t.includes("client engagements") ||
-    t.includes("management consulting")
+    t.includes("case interview")
   ) {
     return ["Consulting"]
   }
 
-  if (t.includes("marketing") || t.includes("brand") || t.includes("communications") || t.includes("pr")) return ["Marketing"]
+  if (t.includes("marketing") || t.includes("brand") || t.includes("communications") || t.includes("pr"))
+    return ["Marketing"]
+
   if (t.includes("accounting") || t.includes("accountant")) return ["Accounting"]
+
   if (t.includes("finance") || t.includes("asset management") || t.includes("investment")) return ["Finance"]
+
   if (t.includes("analytics") || t.includes("analyst") || t.includes("data")) return ["Analytics"]
+
   if (t.includes("sales") || t.includes("business development")) return ["Sales"]
+
   if (t.includes("government") || t.includes("public sector")) return ["Government"]
-  if (t.includes("clinical") || t.includes("patient") || t.includes("pre-med") || t.includes("research assistant")) return ["PreMed"]
+
+  if (t.includes("clinical") || t.includes("patient") || t.includes("pre-med") || t.includes("research assistant"))
+    return ["PreMed"]
 
   return ["Other"]
 }
 
-/* ------------------------------ constraints ------------------------------ */
+/* ------------------------------ constraints inference ------------------------------ */
 
 function inferConstraints(profileText: string): ProfileConstraints {
   const t = lower(profileText)
@@ -150,7 +172,7 @@ function inferConstraints(profileText: string): ProfileConstraints {
   }
 }
 
-/* ------------------------------ location mode ------------------------------ */
+/* ------------------------------ location mode inference ------------------------------ */
 
 function inferWorkMode(profileText: string): { mode: LocationMode; constrained: boolean } {
   const t = lower(profileText)
@@ -167,36 +189,108 @@ function inferWorkMode(profileText: string): { mode: LocationMode; constrained: 
 
 function normalizeMode(x: any): LocationMode {
   const s = lower(x)
-  if (s === "in_person" || s === "in-person") return "in_person"
+  if (s === "in_person" || s === "in-person" || s === "onsite" || s === "on-site" || s === "on_site")
+    return "in_person"
   if (s === "hybrid") return "hybrid"
   if (s === "remote") return "remote"
-  if (s === "onsite" || s === "on_site" || s === "on-site") return "in_person"
   return "unclear"
 }
 
-/* ------------------------------ tools (CRITICAL FIX) ------------------------------ */
+/* ------------------------------ tools (MOST IMPORTANT) ------------------------------ */
+
+// Canonical tokens should match the evaluator's tool extraction/matching conventions:
+// - lower-case
+// - common names (e.g., "power bi", "google analytics", "adobe")
+// - no punctuation
+const TOOL_ALIASES: Record<string, string> = {
+  "ms excel": "excel",
+  "microsoft excel": "excel",
+  excel: "excel",
+
+  powerpoint: "powerpoint",
+  "power point": "powerpoint",
+  "ms powerpoint": "powerpoint",
+  "microsoft powerpoint": "powerpoint",
+
+  "google sheets": "google sheets",
+  sheets: "google sheets",
+
+  tableau: "tableau",
+  "power bi": "power bi",
+  powerbi: "power bi",
+
+  sql: "sql",
+  mysql: "sql",
+  postgres: "sql",
+  postgresql: "sql",
+
+  python: "python",
+  "r programming": "r",
+  "programming language r": "r",
+  r: "r",
+
+  "google analytics": "google analytics",
+  ga4: "google analytics",
+
+  salesforce: "salesforce",
+  hubspot: "hubspot",
+
+  figma: "figma",
+  canva: "canva",
+
+  "adobe creative cloud": "adobe",
+  adobe: "adobe",
+  photoshop: "photoshop",
+  illustrator: "illustrator",
+  indesign: "indesign",
+}
+
+function canonToolName(x: any): string | null {
+  const raw = lower(x)
+  if (!raw) return null
+
+  // normalize whitespace + punctuation noise
+  const cleaned = raw.replace(/[_\-\/]+/g, " ").replace(/\s+/g, " ").trim()
+  if (!cleaned) return null
+
+  // direct alias hit
+  if (TOOL_ALIASES[cleaned]) return TOOL_ALIASES[cleaned]
+
+  // heuristic: remove leading "ms"/"microsoft"
+  const stripped = cleaned.replace(/^(ms|microsoft)\s+/, "")
+  if (TOOL_ALIASES[stripped]) return TOOL_ALIASES[stripped]
+
+  // fallback: keep cleaned token (lowercase)
+  return cleaned
+}
 
 /**
  * Supports:
- * 1) tools map: { Excel: true, SQL: false }
- * 2) tools list: ["Excel","SQL"]
+ * 1) tools map: { Excel: true, SQL: false }   -> ["excel"]
+ * 2) tools list: ["Excel","SQL"]             -> ["excel","sql"]
  */
 function toolsFromStructured(ps: AnyObj): string[] {
   const raw = ps?.tools
 
   // Case 1: boolean map
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    const out = Object.entries(raw)
-      .filter(([, v]) => v === true)
-      .map(([k]) => norm(k))
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b))
-    return out
+    const out: string[] = []
+    for (const [k, v] of Object.entries(raw)) {
+      if (v !== true) continue
+      const c = canonToolName(k)
+      if (c && !out.includes(c)) out.push(c)
+    }
+    return out.sort((a, b) => a.localeCompare(b))
   }
 
   // Case 2: string[]
   if (Array.isArray(raw)) {
-    return raw.map(norm).filter(Boolean).sort((a, b) => a.localeCompare(b))
+    const out: string[] = []
+    for (const item of raw) {
+      const c = canonToolName(item)
+      if (c && !out.includes(c)) out.push(c)
+    }
+    return out.sort((a, b) => a.localeCompare(b))
   }
 
   return []
@@ -209,26 +303,31 @@ function inferToolsFromText(profileText: string): string[] {
   const t = lower(profileText)
   const tools: string[] = []
   const add = (x: string) => {
-    if (!tools.includes(x)) tools.push(x)
+    const c = canonToolName(x)
+    if (c && !tools.includes(c)) tools.push(c)
   }
 
-  if (/\bexcel\b/.test(t) || /\bmicrosoft\s+excel\b/.test(t)) add("Excel")
-  if (/\bpower\s*point\b/.test(t) || /\bpowerpoint\b/.test(t)) add("PowerPoint")
-  if (/\bgoogle\s+sheets\b/.test(t)) add("Google Sheets")
-  if (/\btableau\b/.test(t)) add("Tableau")
-  if (/\bpower\s*bi\b/.test(t) || /\bpowerbi\b/.test(t)) add("Power BI")
-  if (/\bsql\b/.test(t) || /\bmysql\b/.test(t) || /\bpostgres\b/.test(t)) add("SQL")
-  if (/\bpython\b/.test(t)) add("Python")
-  if (/\br\b/.test(t) || t.includes("programming language), r")) add("R")
+  if (/\bexcel\b/.test(t) || /\bmicrosoft\s+excel\b/.test(t)) add("excel")
+  if (/\bpower\s*point\b/.test(t) || /\bpowerpoint\b/.test(t)) add("powerpoint")
+  if (/\bgoogle\s+sheets\b/.test(t)) add("google sheets")
+  if (/\btableau\b/.test(t)) add("tableau")
+  if (/\bpower\s*bi\b/.test(t) || /\bpowerbi\b/.test(t)) add("power bi")
+  if (/\bsql\b/.test(t) || /\bmysql\b/.test(t) || /\bpostgres\b/.test(t)) add("sql")
+  if (/\bpython\b/.test(t)) add("python")
+  if (/\br\b/.test(t) && (t.includes("r,") || t.includes(" r ") || t.includes("r programming"))) add("r")
 
-  if (t.includes("adobe")) add("Adobe Creative Cloud")
-  if (t.includes("photoshop")) add("Photoshop")
-  if (t.includes("illustrator")) add("Illustrator")
-  if (t.includes("indesign")) add("InDesign")
-  if (t.includes("canva")) add("Canva")
+  if (t.includes("google analytics") || t.includes("ga4")) add("google analytics")
 
-  if (t.includes("google workspace")) add("Google Workspace")
-  if (t.includes("microsoft office")) add("Microsoft Office")
+  if (t.includes("salesforce")) add("salesforce")
+  if (t.includes("hubspot")) add("hubspot")
+
+  if (t.includes("figma")) add("figma")
+  if (t.includes("canva")) add("canva")
+
+  if (t.includes("adobe")) add("adobe")
+  if (t.includes("photoshop")) add("photoshop")
+  if (t.includes("illustrator")) add("illustrator")
+  if (t.includes("indesign")) add("indesign")
 
   return tools.sort((a, b) => a.localeCompare(b))
 }
@@ -236,17 +335,18 @@ function inferToolsFromText(profileText: string): string[] {
 /* ------------------------------ grad year ------------------------------ */
 
 function parseGradYear(profileText: string): number | null {
-  const t = lower(profileText)
+  const t = (profileText || "").replace(/\u202f/g, " ")
   const m =
-    t.match(/\bgraduat(e|ing|ion)\b[^\d]{0,20}\b(20\d{2})\b/i) ||
-    t.match(/\bclass of\s*(20\d{2})\b/i)
+    t.match(/\bclass of\s*(20\d{2})\b/i) ||
+    t.match(/\bgraduat(?:e|ing|ion)\b[^\d]{0,20}\b(20\d{2})\b/i)
 
   if (!m) return null
-  const y = Number(m[m.length - 1])
+  const yearStr = m[m.length - 1]
+  const y = Number(yearStr)
   return Number.isFinite(y) ? y : null
 }
 
-/* ------------------------------ export ------------------------------ */
+/* ------------------------------ export (keep name stable) ------------------------------ */
 
 export function mapClientProfileToOverrides(args: {
   profileText: string
@@ -272,7 +372,7 @@ export function mapClientProfileToOverrides(args: {
     profileText: args.profileText,
   })
 
-  // ✅ prefer structured tools map/list first
+  // ✅ prefer structured tools map/list first; fall back to text inference
   const structuredTools = toolsFromStructured(ps)
   const tools = structuredTools.length > 0 ? structuredTools : inferToolsFromText(args.profileText)
 
@@ -282,7 +382,9 @@ export function mapClientProfileToOverrides(args: {
     allowedCities,
   }
 
-  const gradYear = (Number.isFinite(ps?.gradYear) ? Number(ps.gradYear) : null) || parseGradYear(args.profileText)
+  const gradYear =
+    (Number.isFinite(ps?.gradYear) ? Number(ps.gradYear) : null) ||
+    parseGradYear(args.profileText)
 
   return {
     targetFamilies,
@@ -294,4 +396,5 @@ export function mapClientProfileToOverrides(args: {
   }
 }
 
+// eslint-disable-next-line no-console
 console.log(`[jobfitProfileAdapter] loaded: ${PROFILE_ADAPTER_STAMP}`)

@@ -1,60 +1,129 @@
-// FILE: app/api/jobfit/evaluator.ts
+// app/api/jobfit/evaluator.ts
+//
+// Fix: adapter -> evaluator signal flow for tools (and other structured signals)
+// Problem observed:
+// - The deterministic evaluator extracts required tools from the JOB text,
+//   then checks whether the PROFILE text mentions them.
+// - If the profile text is generated from a structured profile blob and does not include tool tokens,
+//   "missing tool" detection collapses (and decisions can collapse to Pass/Review incorrectly).
+//
+// Approach:
+// - Keep the current engine (runJobFit) unchanged.
+// - Augment profileText deterministically using the structured overrides produced by mapClientProfileToOverrides.
+// - This makes tool tokens visible to downstream regex/heuristics without changing scoring code.
 
-import type { Decision, EvalOutput, StructuredProfileSignals } from "./signals"
-import { extractJobSignals, extractProfileSignals } from "./extract"
-import { evaluateGates } from "./constraints"
-import { scoreJobFit } from "./scoring"
-import { applyGateOverrides, applyRiskDowngrades, decisionFromScore } from "./decision"
+import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
+import { runJobFit } from "../_lib/jobfitEvaluator"
 
-function nextStepForDecision(d: Decision): string {
-  if (d === "Apply") return "Apply. Then send 2 targeted networking messages within 24 hours."
-  if (d === "Review") return "Only proceed if you can reduce the top risks. If yes, apply and network immediately."
-  return "Pass. Do not apply. Put that effort into a better-fit role."
+type AnyObj = Record<string, any>
+
+function norm(x: any): string {
+  return String(x ?? "").trim()
 }
 
-export type EvaluateInput = {
-  jobText: string
-  profileText?: string
-  profileOverrides?: Partial<StructuredProfileSignals>
+function uniqStrings(xs: string[]): string[] {
+  const out: string[] = []
+  for (const x of xs.map((v) => norm(v)).filter(Boolean)) if (!out.includes(x)) out.push(x)
+  return out
 }
 
-function clampScoreToDecision(d: Decision, s: number): number {
-  if (d === "Pass") return Math.min(s, 39)
-  if (d === "Review") return Math.max(40, Math.min(s, 69))
-  return Math.max(70, Math.min(s, 97))
+function appendSignalBlock(profileText: string, lines: string[]): string {
+  const cleanLines = lines.map((s) => (s || "").trim()).filter(Boolean)
+  if (!cleanLines.length) return profileText
+
+  // Always append (never replace) to preserve raw resume content and existing extraction behavior.
+  const block =
+    "\n\n" +
+    "----- PROFILE SIGNAL OVERRIDES (DETERMINISTIC) -----\n" +
+    cleanLines.join("\n") +
+    "\n----- END PROFILE SIGNAL OVERRIDES -----\n"
+
+  // Avoid double-appending in case upstream mistakenly calls twice.
+  if (profileText.includes("PROFILE SIGNAL OVERRIDES (DETERMINISTIC)")) return profileText
+
+  return (profileText || "").trim() + block
 }
 
-export function evaluateJobFit(input: EvaluateInput): EvalOutput {
-  const job = extractJobSignals(input.jobText)
-  const profile = extractProfileSignals(input.profileText || "", input.profileOverrides)
+function buildAugmentedProfileText(args: {
+  profileText: string
+  profileStructured?: AnyObj | null
+  targetRoles?: string | null
+  preferredLocations?: string | null
+}): { augmentedProfileText: string; overrides: AnyObj } {
+  const { profileText, profileStructured, targetRoles, preferredLocations } = args
 
-  const gate = evaluateGates(job, profile)
-  const scoring = scoreJobFit(job, profile)
+  const overrides = mapClientProfileToOverrides({
+    profileText: profileText || "",
+    profileStructured: (profileStructured || null) as AnyObj | null,
+    targetRoles: targetRoles ?? null,
+    preferredLocations: preferredLocations ?? null,
+  }) as AnyObj
 
-  let decision = decisionFromScore(scoring.score)
-  decision = applyGateOverrides(decision, gate)
-  decision = applyRiskDowngrades(decision, scoring.penaltySum)
+  const lines: string[] = []
 
-  const location_constraint =
-    job.location.constrained || profile.locationPreference.constrained
-      ? "constrained"
-      : job.location.mode === "unclear" && profile.locationPreference.mode === "unclear"
-        ? "unclear"
-        : "not_constrained"
-
-  const clampedScore = clampScoreToDecision(decision, scoring.score)
-
-  return {
-    decision,
-    score: clampedScore,
-    bullets: [],
-    risk_flags: [],
-    next_step: nextStepForDecision(decision),
-    location_constraint,
-    why_codes: scoring.whyCodes,
-    risk_codes: scoring.riskCodes,
-    gate_triggered: gate,
-    job_signals: job,
-    profile_signals: profile,
+  // Tools are the top priority: the evaluator checks profile text for these tokens.
+  const tools = Array.isArray(overrides?.tools) ? uniqStrings(overrides.tools) : []
+  if (tools.length) {
+    // Use lower-case tokens (adapter already canonicalizes), but keep as-is to avoid surprises.
+    lines.push(`TOOLS: ${tools.join(", ")}`)
   }
+
+  // Families / targets: helpful for other deterministic checks (now and future)
+  const targetFamilies = Array.isArray(overrides?.targetFamilies) ? uniqStrings(overrides.targetFamilies) : []
+  if (targetFamilies.length) lines.push(`TARGET_FAMILIES: ${targetFamilies.join(", ")}`)
+
+  // Constraints: emit only true booleans so we don't spam tokens.
+  const c = overrides?.constraints && typeof overrides.constraints === "object" ? overrides.constraints : null
+  if (c) {
+    const keys = Object.keys(c).filter((k) => c[k] === true)
+    if (keys.length) lines.push(`CONSTRAINTS_TRUE: ${keys.join(", ")}`)
+  }
+
+  // Location preference: keep simple so evaluator regex doesn't get confused.
+  const lp = overrides?.locationPreference && typeof overrides.locationPreference === "object" ? overrides.locationPreference : null
+  if (lp) {
+    const mode = norm(lp.mode) || "unclear"
+    const constrained = lp.constrained === true ? "true" : lp.constrained === false ? "false" : "unknown"
+    const allowedCities = Array.isArray(lp.allowedCities) ? uniqStrings(lp.allowedCities) : []
+    const cityStr = allowedCities.length ? `; allowedCities=${allowedCities.join(", ")}` : ""
+    lines.push(`LOCATION_PREFERENCE: mode=${mode}; constrained=${constrained}${cityStr}`)
+  }
+
+  const gradYear = Number.isFinite(Number(overrides?.gradYear)) ? Number(overrides.gradYear) : null
+  if (gradYear) lines.push(`GRAD_YEAR: ${gradYear}`)
+
+  const yearsExp = Number.isFinite(Number(overrides?.yearsExperienceApprox)) ? Number(overrides.yearsExperienceApprox) : null
+  if (yearsExp !== null) lines.push(`YEARS_EXPERIENCE_APPROX: ${yearsExp}`)
+
+  const augmentedProfileText = appendSignalBlock(profileText || "", lines)
+
+  return { augmentedProfileText, overrides }
+}
+
+/**
+ * Public entry used by the route handler.
+ * Keep signature compatible with your current route as much as possible.
+ */
+export async function evaluateJobFit(args: {
+  jobText: string
+  profileText: string
+  profileStructured?: AnyObj | null
+  targetRoles?: string | null
+  preferredLocations?: string | null
+}) {
+  const { augmentedProfileText, overrides } = buildAugmentedProfileText({
+    profileText: args.profileText,
+    profileStructured: args.profileStructured ?? null,
+    targetRoles: args.targetRoles ?? null,
+    preferredLocations: args.preferredLocations ?? null,
+  })
+
+  // runJobFit is the deterministic engine; it primarily reads profileText + jobText.
+  const result = await runJobFit({
+    jobText: args.jobText || "",
+    profileText: augmentedProfileText || "",
+    profileStructured: overrides, // keep passing overrides for future use (engine currently "void"s it in some versions)
+  })
+
+  return result
 }
