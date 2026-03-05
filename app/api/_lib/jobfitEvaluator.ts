@@ -34,7 +34,7 @@ export async function runJobFit(args: {
   jobText: string
   profileOverrides?: Partial<StructuredProfileSignals>
 }) {
-  const out: EvalOutput = evaluateJobFit({
+  const out = await evaluateJobFit({
     jobText: args.jobText,
     profileText: args.profileText,
     profileOverrides: args.profileOverrides,
