@@ -31,7 +31,9 @@ const supabaseAdmin = createClient(
  * CORS preflight
  */
 export async function OPTIONS(req: Request) {
-  return corsOptionsResponse(req.headers.get("origin"))
+  const res = corsOptionsResponse(req.headers.get("origin"))
+  res.headers.set("x-api-canary", "JOBFIT_ROUTE_CANARY__2026_03_05__A")
+  return res
 }
 
 /**
