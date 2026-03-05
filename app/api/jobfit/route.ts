@@ -274,7 +274,7 @@ types_v4_stamp: TYPES_V4_STAMP,
       console.warn("jobfit_runs insert failed:", insertErr.message)
     }
 
- return withCorsJson(req, {
+const res = withCorsJson(req, {
   ...(result as any),
   fingerprint_code,
   fingerprint_hash,
@@ -282,7 +282,12 @@ types_v4_stamp: TYPES_V4_STAMP,
   reused: false,
   debug: { ...(result as any)?.debug, ...debug, cache_hit: false },
 })
-  } catch (err: any) {
+
+res.headers.set("x-wrn-diag", "jobfit-route-ts__DEV_TRACE__2026-03-05")
+
+return res  
+
+} catch (err: any) {
     // Never swallow stack traces silently in dev
     if (process.env.NODE_ENV !== "production") {
       console.error("JobFit POST error:", err)
