@@ -1,4 +1,4 @@
-﻿// FILE: app/api/_lib/jobfitEvaluator.ts
+// FILE: app/api/_lib/jobfitEvaluator.ts
 // Deterministic JobFit orchestrator.
 // This file is the real engine wrapper used by routes.
 // No circular calls back into app/api/jobfit/evaluator.ts.
@@ -23,7 +23,7 @@ console.log("[jobfitEvaluator] loaded:", JOBFIT_EVAL_WRAPPER_STAMP)
 function iconForDecision(decision: Decision) {
   if (decision === "Priority Apply") return "🔥"
   if (decision === "Apply") return "✅"
-  if (decision === "Review") return "⚠️"
+  if (decision === "Review") return "⚠"
   return "⛔"
 }
 
