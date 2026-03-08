@@ -3,7 +3,7 @@
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
-import { runJobFit } from "../_lib/jobfitEvaluator"
+import { evaluateJobFit } from "./evaluator"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     // Pull structured profile fields for deterministic overrides
     const { data: profileRowDb, error: profileLookupError } = await supabaseAdmin
       .from("client_profiles")
-      .select("id, profile_structured, target_roles, preferred_locations, risk_overrides")
+     .select("id, profile_text, resume_text, profile_structured, target_roles, target_locations, preferred_locations, timeline, job_type, risk_overrides")
       .eq("id", profileId)
       .maybeSingle()
 
@@ -249,11 +249,27 @@ types_v4_stamp: TYPES_V4_STAMP,
     }
 
     // 2) Run JobFit (deterministic engine + bullet layer via wrapper)
-    const resultRaw = await runJobFit({
-      profileText,
-      jobText,
-      profileOverrides,
-    })
+    const resultRaw = await evaluateJobFit({
+  jobText,
+
+  profileText: (profileRowDb as any)?.profile_text ?? profileText ?? "",
+
+  resumeText: (profileRowDb as any)?.resume_text ?? "",
+  profileStructured: profileStructuredResolved ?? null,
+  targetRoles: (profileRowDb as any)?.target_roles ?? "",
+  preferredLocations:
+    (profileRowDb as any)?.preferred_locations ??
+    (profileRowDb as any)?.target_locations ??
+    "",
+  targetLocations: (profileRowDb as any)?.target_locations ?? "",
+  timeline: (profileRowDb as any)?.timeline ?? "",
+  jobType: (profileRowDb as any)?.job_type ?? "",
+  constraints:
+    typeof (profileRowDb as any)?.risk_overrides === "string"
+      ? (profileRowDb as any).risk_overrides
+      : JSON.stringify((profileRowDb as any)?.risk_overrides ?? {}),
+  extraContext: "",
+})
 
     const result = enforceClientFacingRules(resultRaw as any)
 

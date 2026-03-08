@@ -23,34 +23,47 @@ export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
+// ---------- Types ----------
+type IntakeBody = {
+  name?: string | null
+  current_status?: string | null
+  university?: string | null
+  major?: string | null
+  grad_year?: string | null
+
+  job_type?: string | null
+  target_roles?: string | null
+  target_locations?: string | null
+  preferred_locations?: string | null
+  timeline?: string | null
+
+  strong_skills?: string | null
+  biggest_concern?: string | null
+  entry_openness?: string | null
+  hard_nos?: string | null
+  constraints?: string | null
+
+  resume_text?: string | null
+  writing_samples?: string | null
+  extra_context?: string | null
+
+  risk_overrides?: Record<string, any> | null
+}
+
 // ---------- Helpers ----------
-function toText(v: any) {
+function toText(v: unknown): string {
   if (v === null || v === undefined) return ""
   if (typeof v === "string") return v.trim()
   return String(v).trim()
 }
 
-function clampText(v: any, max = 20000) {
+function clampText(v: unknown, max = 20000): string {
   const t = toText(v)
   if (!t) return ""
   return t.length > max ? t.slice(0, max) : t
 }
-function parseGpa(raw: any): number | null {
-  const s = toText(raw).replace(/[^\d.]/g, "")
-  const n = Number(s)
-  if (!Number.isFinite(n)) return null
-  if (n <= 0 || n > 4.5) return null
-  return Math.round(n * 100) / 100
-}
 
-function gpaBand(gpa: number | null): string {
-  if (gpa === null) return "unknown"
-  if (gpa >= 3.8) return "3.8_plus"
-  if (gpa >= 3.5) return "3.5_3.79"
-  return "below_3.5"
-}
-
-function splitList(raw: any, max = 12): string[] {
+function splitList(raw: unknown, max = 20): string[] {
   const s = toText(raw)
   if (!s) return []
   return s
@@ -60,6 +73,203 @@ function splitList(raw: any, max = 12): string[] {
     .slice(0, max)
 }
 
+function uniqueLower(items: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const item of items) {
+    const key = item.toLowerCase()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(item)
+  }
+  return out
+}
+
+function parseGradYear(raw: unknown): number | null {
+  const s = toText(raw).replace(/[^\d]/g, "")
+  if (!s) return null
+  const n = Number(s)
+  if (!Number.isFinite(n)) return null
+  if (n < 2020 || n > 2035) return null
+  return n
+}
+
+function getCurrentYearUtc(): number {
+  return new Date().getUTCFullYear()
+}
+
+function inferYearsExperienceApprox(resumeText: string): number {
+  const lower = resumeText.toLowerCase()
+
+  const monthYearMatches = Array.from(
+    lower.matchAll(
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+20\d{2}\b/g
+    )
+  )
+
+  const yearMatches = Array.from(lower.matchAll(/\b20(2\d)\b/g))
+  const internships =
+    (lower.match(/\bintern\b/g) || []).length +
+    (lower.match(/\binternship\b/g) || []).length
+
+  // Conservative deterministic estimate:
+  // enough to distinguish 0 vs 1 vs 2+ without pretending precision.
+  if (monthYearMatches.length >= 4) return 2
+  if (monthYearMatches.length >= 2) return 1
+  if (internships >= 2) return 2
+  if (internships >= 1) return 1
+  if (yearMatches.length >= 4) return 2
+  return 0
+}
+
+function extractTools(resumeText: string): string[] {
+  const t = resumeText.toLowerCase()
+  const tools: string[] = []
+
+  const map: Array<[string, RegExp]> = [
+    ["canva", /\bcanva\b/i],
+    ["capcut", /\bcapcut\b/i],
+    ["meta business suite", /\bmeta business suite\b/i],
+    ["hubspot", /\bhubspot\b/i],
+    ["shopify", /\bshopify\b/i],
+    ["google analytics", /\bgoogle analytics\b|\bga4\b/i],
+    ["amazon marketplace", /\bamazon marketplace\b/i],
+    ["excel", /\bexcel\b|\bmicrosoft excel\b/i],
+    ["google sheets", /\bgoogle sheets\b/i],
+    ["powerpoint", /\bpowerpoint\b|\bmicrosoft powerpoint\b/i],
+    ["sql", /\bsql\b/i],
+    ["r", /(^|[^a-z])r([^a-z]|$)/i],
+    ["power bi", /\bpower\s*bi\b/i],
+    ["looker", /\blooker\b/i],
+  ]
+
+  for (const [label, rx] of map) {
+    if (rx.test(t)) tools.push(label)
+  }
+
+  return uniqueLower(tools)
+}
+
+function inferTargetFamilies(targetRoles: string[]): string[] {
+  const joined = targetRoles.join(" | ").toLowerCase()
+  const out: string[] = []
+
+  if (/\b(marketing|brand|content|social|growth|ecommerce)\b/.test(joined)) {
+    out.push("Marketing")
+  }
+  if (/\b(finance|investment|banking|wealth|asset)\b/.test(joined)) {
+    out.push("Finance")
+  }
+  if (/\b(consulting|strategy|business strategy)\b/.test(joined)) {
+    out.push("Consulting")
+  }
+  if (/\b(policy|regulatory|government|legislative|compliance)\b/.test(joined)) {
+    out.push("Government")
+  }
+  if (/\b(design|creative|visual)\b/.test(joined)) {
+    out.push("Design")
+  }
+
+  return out.length ? out : ["Other"]
+}
+
+function inferLocationPreference(
+  targetLocations: string,
+  preferredLocations: string
+) {
+  const combined = [targetLocations, preferredLocations].filter(Boolean).join(" | ")
+  const allowedCities = uniqueLower(splitList(combined, 20))
+
+  return {
+    mode: allowedCities.length ? "unclear" : "unknown",
+    constrained: false,
+    allowedCities,
+  }
+}
+
+function buildCanonicalProfileText(body: IntakeBody): string {
+  const blocks = [
+    line("Name", body.name),
+    line("Current status", body.current_status),
+    line("University", body.university),
+    line("Major", body.major),
+    line("Graduation year", body.grad_year),
+
+    line("Job type", body.job_type),
+    line("Target roles", body.target_roles),
+    line("Target locations", body.target_locations),
+    line("Preferred locations", body.preferred_locations),
+    line("Timeline", body.timeline),
+
+    line("Strong skills", body.strong_skills),
+    line("Biggest concern", body.biggest_concern),
+    line("Openness to non-obvious entry points", body.entry_openness),
+    line("Hard no's", body.hard_nos),
+    line("Constraints", body.constraints),
+
+    section("Resume", body.resume_text),
+    section("Writing samples", body.writing_samples),
+    section("Extra context", body.extra_context),
+  ].filter(Boolean)
+
+  return blocks.join("\n\n").trim()
+}
+
+function line(label: string, value: unknown): string {
+  const t = toText(value)
+  return t ? `${label}: ${t}` : ""
+}
+
+function section(label: string, value: unknown): string {
+  const t = clampText(value, 120000)
+  return t ? `${label}:\n${t}` : ""
+}
+
+function buildProfileStructuredForJobFit(body: IntakeBody) {
+  const resumeText = clampText(body.resume_text, 120000)
+  const targetRoles = splitList(body.target_roles, 20)
+  const targetLocations = clampText(body.target_locations, 4000)
+  const preferredLocations = clampText(body.preferred_locations, 4000)
+  const gradYear = parseGradYear(body.grad_year)
+  const yearsExperienceApprox = inferYearsExperienceApprox(resumeText)
+  const tools = extractTools(resumeText)
+  const targetFamilies = inferTargetFamilies(targetRoles)
+
+  return {
+    tools,
+    gradYear,
+    yearsExperienceApprox,
+    targetFamilies,
+    statedInterests: {
+      targetRoles,
+      adjacentRoles: [],
+      targetIndustries: [],
+    },
+    locationPreference: inferLocationPreference(
+      targetLocations,
+      preferredLocations
+    ),
+    constraints: {
+      hardNoSales: /\bcommission|commission-only|cold calling|cold outreach\b/i.test(
+        toText(body.hard_nos)
+      ),
+      prefFullTime: /full[\s-]*time/i.test(toText(body.job_type)),
+      hardNoContract: /\bcontract\b/i.test(toText(body.hard_nos)),
+      hardNoHourlyPay: /\bhourly\b/i.test(toText(body.hard_nos)),
+      hardNoGovernment: /\bgovernment\b/i.test(toText(body.hard_nos)),
+      hardNoFullyRemote: /\bfully remote\b/i.test(toText(body.hard_nos)),
+      preferNotAnalyticsHeavy: /\bnot analytics-heavy\b/i.test(
+        toText(body.constraints)
+      ),
+    },
+    intakeMeta: {
+      currentStatus: toText(body.current_status) || null,
+      university: toText(body.university) || null,
+      major: toText(body.major) || null,
+      timeline: toText(body.timeline) || null,
+    },
+  }
+}
 
 function getBearer(req: Request) {
   const h = req.headers.get("authorization") || ""
@@ -68,15 +278,13 @@ function getBearer(req: Request) {
 }
 
 async function resolveProfileIdentity(req: Request) {
-  // Locked rule: call auth helper first
   let authed: any = null
   try {
     authed = await getAuthedProfileText(req)
   } catch {
-    // we will fall back below
+    // fall through
   }
 
-  // Try many plausible shapes
   const profile =
     authed?.profile ||
     authed?.client_profile ||
@@ -107,7 +315,6 @@ async function resolveProfileIdentity(req: Request) {
     authed?.user?.user?.email ||
     null
 
-  // If we still don't have identity, decode token via Supabase
   if (!user_id || !email) {
     const token = getBearer(req)
     if (token) {
@@ -119,7 +326,6 @@ async function resolveProfileIdentity(req: Request) {
     }
   }
 
-  // If we have user_id but not profile id, look up client_profiles
   if (user_id && !client_profile_id) {
     const { data, error } = await supabaseAdmin
       .from("client_profiles")
@@ -133,7 +339,6 @@ async function resolveProfileIdentity(req: Request) {
     }
   }
 
-  // As a last resort, look up by email (should still be unique)
   if (email && !client_profile_id) {
     const { data, error } = await supabaseAdmin
       .from("client_profiles")
@@ -167,51 +372,103 @@ export async function POST(req: Request) {
       )
     }
 
-    const body = await req.json().catch(() => ({} as any))
+    const body = (await req.json().catch(() => ({}))) as IntakeBody
 
-    // Required core input
-    const profile_text = clampText(body.profile_text, 80000)
-    if (!profile_text) {
+    // Required fields for clean intake
+    const resume_text = clampText(body.resume_text, 120000)
+    const target_roles = clampText(body.target_roles, 4000)
+    const job_type = clampText(body.job_type, 200)
+
+    const missing: string[] = []
+    if (!resume_text) missing.push("resume_text")
+    if (!target_roles) missing.push("target_roles")
+    if (!job_type) missing.push("job_type")
+
+    if (missing.length) {
       return withCorsJson(
         req,
-        { ok: false, error: "missing_required_fields", required: ["profile_text"] },
+        {
+          ok: false,
+          error: "missing_required_fields",
+          required: missing,
+        },
         400
       )
     }
 
-    // Optional fields aligned to your client_profiles schema
     const name = clampText(body.name, 200)
-    const job_type = clampText(body.job_type, 200)
-    const target_roles = clampText(body.target_roles, 4000)
+    const current_status = clampText(body.current_status, 200)
+    const university = clampText(body.university, 300)
+    const major = clampText(body.major, 300)
+    const grad_year = clampText(body.grad_year, 20)
+
     const target_locations = clampText(body.target_locations, 4000)
     const preferred_locations = clampText(body.preferred_locations, 4000)
     const timeline = clampText(body.timeline, 200)
-    const resume_text = clampText(body.resume_text || body.profile_text, 120000)
 
-// ---- structured profile (server-owned; no new user effort) ----
-// If you already collect GPA or school elsewhere later, you can add it here.
-// For now we only use what exists in the intake payload.
-const gpa = parseGpa(body.gpa || body.GPA || body.grade_point_average || null)
+    const strong_skills = clampText(body.strong_skills, 4000)
+    const biggest_concern = clampText(body.biggest_concern, 4000)
+    const entry_openness = clampText(body.entry_openness, 200)
+    const hard_nos = clampText(body.hard_nos, 4000)
+    const constraints = clampText(body.constraints, 4000)
 
-const profile_structured = {
-  // These may be unknown until you enrich later. That's fine.
-  school_tier: toText(body.school_tier) || "unknown",
-  gpa,
-  gpa_band: gpaBand(gpa),
+    const writing_samples = clampText(body.writing_samples, 60000)
+    const extra_context = clampText(body.extra_context, 20000)
 
-  // Targets: can come from target_roles text you already store
-  targets_raw: target_roles || "",
-  target_roles_list: splitList(target_roles, 20),
+    const risk_overrides =
+      body.risk_overrides && typeof body.risk_overrides === "object"
+        ? body.risk_overrides
+        : {}
 
-  // Helpful, but optional
-  job_type: job_type || "",
-  target_locations_list: splitList(target_locations, 20),
-  preferred_locations_list: splitList(preferred_locations, 20),
+    const canonicalProfileText = buildCanonicalProfileText({
+      name,
+      current_status,
+      university,
+      major,
+      grad_year,
 
-  // Explicit boundary decisions
-  work_auth_assumed: true,
-}
+      job_type,
+      target_roles,
+      target_locations,
+      preferred_locations,
+      timeline,
 
+      strong_skills,
+      biggest_concern,
+      entry_openness,
+      hard_nos,
+      constraints,
+
+      resume_text,
+      writing_samples,
+      extra_context,
+      risk_overrides,
+    })
+
+    const profile_structured = buildProfileStructuredForJobFit({
+      name,
+      current_status,
+      university,
+      major,
+      grad_year,
+
+      job_type,
+      target_roles,
+      target_locations,
+      preferred_locations,
+      timeline,
+
+      strong_skills,
+      biggest_concern,
+      entry_openness,
+      hard_nos,
+      constraints,
+
+      resume_text,
+      writing_samples,
+      extra_context,
+      risk_overrides,
+    })
 
     const { error: upErr } = await supabaseAdmin
       .from("client_profiles")
@@ -222,9 +479,10 @@ const profile_structured = {
         target_locations: target_locations || null,
         preferred_locations: preferred_locations || null,
         timeline: timeline || null,
-        profile_text,
+        profile_text: canonicalProfileText,
         resume_text: resume_text || null,
-profile_structured,
+        risk_overrides,
+        profile_structured,
         updated_at: new Date().toISOString(),
       })
       .eq("id", client_profile_id)
@@ -234,8 +492,28 @@ profile_structured,
       return withCorsJson(req, { ok: false, error: upErr.message }, 400)
     }
 
-    return withCorsJson(req, { ok: true, client_profile_id }, 200)
+    return withCorsJson(
+      req,
+      {
+        ok: true,
+        client_profile_id,
+        saved: {
+          email,
+          has_resume_text: Boolean(resume_text),
+          target_roles_count: splitList(target_roles, 20).length,
+          profile_text_len: canonicalProfileText.length,
+          tools_count: Array.isArray(profile_structured.tools)
+            ? profile_structured.tools.length
+            : 0,
+        },
+      },
+      200
+    )
   } catch (err: any) {
-    return withCorsJson(req, { ok: false, error: err?.message || "server_error" }, 500)
+    return withCorsJson(
+      req,
+      { ok: false, error: err?.message || "server_error" },
+      500
+    )
   }
 }
