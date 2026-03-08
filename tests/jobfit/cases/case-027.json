@@ -1,0 +1,26 @@
+{
+  "id": "case-027",
+  "label": "Hybrid location conflict probe",
+  "profileText": "Marketing student targeting in-person roles in New York City only. Experience with campaign support, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Hybrid Marketing Coordinator role. Local candidates only. Must be located in San Francisco. Role supports campaign execution, reporting, content calendars, and stakeholder communication. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

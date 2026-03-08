@@ -1,0 +1,54 @@
+﻿PROFILE_ID: profile_sophia_nguyen_data_analytics
+
+NAME:
+Sophia Nguyen
+
+CURRENT_STATUS:
+Junior
+
+EDUCATION:
+University of Texas
+B.S. Data Science
+Expected Graduation: May 2027
+GPA: 3.85
+
+TARGET_JOB_FAMILIES:
+Data
+Analytics
+Technology
+
+TARGET_FUNCTION_TAGS:
+data_analytics
+business_intelligence
+data_science
+product_analytics
+
+PRIMARY_TARGET_ROLES:
+Data Analyst Intern
+Business Intelligence Intern
+Product Analytics Intern
+
+LOCATION_PREFERENCES:
+Austin
+NYC
+Remote
+
+START_DATE:
+Summer 2026
+
+TOOLS:
+Python
+SQL
+R
+Excel
+Tableau
+Power BI
+
+CORE_SKILLS:
+Data analysis
+Statistical modeling
+Data visualization
+Business insights
+
+YEARS_EXPERIENCE_APPROX:
+1

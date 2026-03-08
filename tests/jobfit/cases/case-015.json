@@ -1,0 +1,26 @@
+{
+  "id": "case-015",
+  "label": "Contract mismatch standalone case",
+  "profileText": "Marketing student targeting full-time marketing roles. No contract roles. Experience with campaign support, content calendars, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Marketing Project Coordinator role supporting campaign execution, stakeholder updates, and reporting. This is a 6-month contract role. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": true,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

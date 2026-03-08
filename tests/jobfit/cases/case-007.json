@@ -1,0 +1,26 @@
+{
+  "id": "case-007",
+  "label": "Moderate-fit marketing role discovery case",
+  "profileText": "Marketing student targeting full-time marketing roles. Experience with social media coordination, campaign support, Canva, and basic Excel. Class of 2026.",
+  "jobText": "Marketing Coordinator role supporting campaign execution, reporting, content planning, stakeholder communication, and performance tracking. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

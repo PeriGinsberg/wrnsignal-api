@@ -1,0 +1,26 @@
+{
+  "id": "case-023",
+  "label": "True analytics BI role probe",
+  "profileText": "Marketing student targeting broader business roles. Experience with Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Business Intelligence Analyst role supporting SQL queries, Tableau dashboards, KPI analysis, data visualization, and reporting for growth teams. Preferred tools include SQL, Tableau, and Excel.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": true
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

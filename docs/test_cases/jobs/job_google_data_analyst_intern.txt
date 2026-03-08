@@ -1,0 +1,22 @@
+JOB_ID: job_google_data_analyst_intern
+
+COMPANY:
+Google
+
+ROLE:
+Data Analyst Intern
+
+LOCATION:
+NYC
+
+JOB_TYPE:
+Internship
+
+DESCRIPTION:
+Analyze large datasets to support product and business decisions. Build dashboards, conduct statistical analysis, and communicate insights to product teams.
+
+REQUIREMENTS:
+SQL
+Python or R
+Data visualization
+Statistics background

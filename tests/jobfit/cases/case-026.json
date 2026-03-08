@@ -1,0 +1,26 @@
+{
+  "id": "case-026",
+  "label": "Remote job allowed by profile probe",
+  "profileText": "Marketing student targeting remote marketing roles. Experience with campaign support, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Remote Marketing Associate role supporting campaign execution, reporting, stakeholder updates, and content coordination. Preferred tools include Excel and Google Analytics. This is a fully remote role.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "remote",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

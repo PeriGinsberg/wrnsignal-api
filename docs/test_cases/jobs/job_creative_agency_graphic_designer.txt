@@ -1,0 +1,22 @@
+JOB_ID: job_creative_agency_graphic_designer
+
+COMPANY:
+Creative Studio NYC
+
+ROLE:
+Graphic Designer
+
+LOCATION:
+NYC
+
+JOB_TYPE:
+Full Time
+
+DESCRIPTION:
+Develop visual brand systems, marketing campaigns, and digital content for consumer brands.
+
+REQUIREMENTS:
+Adobe Creative Suite
+Brand identity experience
+Digital marketing design
+Portfolio required

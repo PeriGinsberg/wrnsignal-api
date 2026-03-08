@@ -1,0 +1,37 @@
+﻿PROFILE_ID: profile_daniel_kim_premed_healthcare
+
+NAME:
+Daniel Kim
+
+CURRENT_STATUS:
+Sophomore
+
+EDUCATION:
+UCLA
+B.S. Biology
+Pre-Med Track
+Expected Graduation: May 2028
+GPA: 3.91
+
+TARGET_JOB_FAMILIES:
+Healthcare
+Research
+Clinical
+
+PRIMARY_TARGET_ROLES:
+Clinical Research Intern
+Medical Research Assistant
+Healthcare Policy Intern
+
+LOCATION_PREFERENCES:
+Los Angeles
+San Diego
+
+CORE_SKILLS:
+Scientific research
+Data analysis
+Laboratory procedures
+Scientific writing
+
+YEARS_EXPERIENCE_APPROX:
+0

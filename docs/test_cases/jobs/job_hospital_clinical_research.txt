@@ -1,0 +1,21 @@
+JOB_ID: job_hospital_clinical_research
+
+COMPANY:
+UCLA Medical Center
+
+ROLE:
+Clinical Research Assistant
+
+LOCATION:
+Los Angeles
+
+JOB_TYPE:
+Full Time
+
+DESCRIPTION:
+Support medical research studies through data collection, patient coordination, and literature reviews.
+
+REQUIREMENTS:
+Biology or pre-med background
+Research skills
+Attention to detail

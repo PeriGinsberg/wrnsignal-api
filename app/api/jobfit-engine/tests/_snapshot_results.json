@@ -1,0 +1,846 @@
+[
+  {
+    "case_id": "C01",
+    "profile_id": "P01",
+    "job_id": "J01",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C02",
+    "profile_id": "P01",
+    "job_id": "J02",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C03",
+    "profile_id": "P01",
+    "job_id": "J03",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C04",
+    "profile_id": "P01",
+    "job_id": "J04",
+    "got": {
+      "decision": "REVIEW",
+      "score": 56,
+      "alignment": "WEAK",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C05",
+    "profile_id": "P01",
+    "job_id": "J05",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C06",
+    "profile_id": "P01",
+    "job_id": "J06",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C07",
+    "profile_id": "P01",
+    "job_id": "J07",
+    "got": {
+      "decision": "REVIEW",
+      "score": 59,
+      "alignment": "WEAK",
+      "exposure": "ADJACENT",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 1,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C08",
+    "profile_id": "P01",
+    "job_id": "J08",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C09",
+    "profile_id": "P02",
+    "job_id": "J01",
+    "got": {
+      "decision": "REVIEW",
+      "score": 56,
+      "alignment": "WEAK",
+      "exposure": "ADJACENT",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C10",
+    "profile_id": "P02",
+    "job_id": "J02",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C11",
+    "profile_id": "P02",
+    "job_id": "J03",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C12",
+    "profile_id": "P02",
+    "job_id": "J04",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C13",
+    "profile_id": "P02",
+    "job_id": "J05",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C14",
+    "profile_id": "P02",
+    "job_id": "J06",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "FLAG_GPA_REQUIRED_BELOW_MIN"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "FLAG_GPA_REQUIRED_BELOW_MIN"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C15",
+    "profile_id": "P02",
+    "job_id": "J07",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C16",
+    "profile_id": "P02",
+    "job_id": "J08",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C17",
+    "profile_id": "P03",
+    "job_id": "J01",
+    "got": {
+      "decision": "PASS",
+      "score": 22,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 1,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C18",
+    "profile_id": "P03",
+    "job_id": "J02",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C19",
+    "profile_id": "P03",
+    "job_id": "J03",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C20",
+    "profile_id": "P03",
+    "job_id": "J04",
+    "got": {
+      "decision": "REVIEW",
+      "score": 56,
+      "alignment": "MODERATE",
+      "exposure": "THEORETICAL",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C21",
+    "profile_id": "P03",
+    "job_id": "J05",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C22",
+    "profile_id": "P03",
+    "job_id": "J06",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "FLAG_GPA_REQUIRED_BELOW_MIN"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "FLAG_GPA_REQUIRED_BELOW_MIN"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C23",
+    "profile_id": "P03",
+    "job_id": "J07",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C24",
+    "profile_id": "P03",
+    "job_id": "J08",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C25",
+    "profile_id": "P04",
+    "job_id": "J01",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C26",
+    "profile_id": "P04",
+    "job_id": "J02",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C27",
+    "profile_id": "P04",
+    "job_id": "J03",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C28",
+    "profile_id": "P04",
+    "job_id": "J04",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C29",
+    "profile_id": "P04",
+    "job_id": "J05",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C30",
+    "profile_id": "P04",
+    "job_id": "J06",
+    "got": {
+      "decision": "REVIEW",
+      "score": 56,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": [
+        "FLAG_GPA_REQUIRED_MISSING"
+      ]
+    }
+  },
+  {
+    "case_id": "C31",
+    "profile_id": "P04",
+    "job_id": "J07",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C32",
+    "profile_id": "P04",
+    "job_id": "J08",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C33",
+    "profile_id": "P05",
+    "job_id": "J01",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C34",
+    "profile_id": "P05",
+    "job_id": "J02",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C35",
+    "profile_id": "P05",
+    "job_id": "J03",
+    "got": {
+      "decision": "PASS",
+      "score": 19,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C36",
+    "profile_id": "P05",
+    "job_id": "J04",
+    "got": {
+      "decision": "REVIEW",
+      "score": 56,
+      "alignment": "WEAK",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 2,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C37",
+    "profile_id": "P05",
+    "job_id": "J05",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C38",
+    "profile_id": "P05",
+    "job_id": "J06",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C39",
+    "profile_id": "P05",
+    "job_id": "J07",
+    "got": {
+      "decision": "PASS",
+      "score": 22,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 1,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C40",
+    "profile_id": "P05",
+    "job_id": "J08",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C41",
+    "profile_id": "P01",
+    "job_id": "J09",
+    "got": {
+      "decision": "APPLY",
+      "score": 82,
+      "alignment": "MODERATE",
+      "exposure": "EXECUTED",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 0,
+      "structural_codes": [],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C42",
+    "profile_id": "P02",
+    "job_id": "J10",
+    "got": {
+      "decision": "PASS",
+      "score": 22,
+      "alignment": "MODERATE",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 1,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C43",
+    "profile_id": "P03",
+    "job_id": "J09",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C44",
+    "profile_id": "P05",
+    "job_id": "J09",
+    "got": {
+      "decision": "PASS",
+      "score": 25,
+      "alignment": "WEAK",
+      "exposure": "NONE",
+      "hard_fail": true,
+      "hard_fail_reasons": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "t2_count": 0,
+      "structural_codes": [
+        "RISK_HARDREQ_EXPERIENCE_MISMATCH"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C45",
+    "profile_id": "P02",
+    "job_id": "J11",
+    "got": {
+      "decision": "PASS",
+      "score": 22,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 1,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  },
+  {
+    "case_id": "C46",
+    "profile_id": "P04",
+    "job_id": "J11",
+    "got": {
+      "decision": "PASS",
+      "score": 22,
+      "alignment": "MISALIGNED",
+      "exposure": "NONE",
+      "hard_fail": false,
+      "hard_fail_reasons": [],
+      "t2_count": 1,
+      "structural_codes": [
+        "RISK_EXPOSURE_NONE"
+      ],
+      "flags": []
+    }
+  }
+]

@@ -1,0 +1,144 @@
+﻿PROFILE_ID: profile_zoe_siegel_policy
+
+NAME:
+Zoe Siegel
+
+EDUCATION:
+The Ohio State University
+Bachelor of Arts and Sciences – Philosophy, Politics, and Economics
+Expected Graduation: Spring 2026
+GPA: 3.62
+
+HONORS:
+Dean's List (Spring 2024, Fall 2022, Fall 2024, Fall 2025)
+National Buckeye Scholarship
+
+TARGET_JOB_FAMILIES:
+Government
+Legal
+Consulting
+Compliance
+Cybersecurity Policy
+Data Privacy
+
+TARGET_FUNCTION_TAGS:
+public_policy
+government_affairs
+legislative_policy
+regulatory_affairs
+legal_services
+compliance
+data_privacy
+information_governance
+cyber_policy
+
+PRIMARY_TARGET_ROLES:
+Policy Analyst
+Junior Policy Analyst
+Regulatory Affairs Analyst
+Legislative Assistant
+Legislative Aide
+Public Policy Associate
+Government Affairs Assistant
+Compliance Analyst
+Privacy Analyst
+Cybersecurity Policy Analyst
+Information Governance Analyst
+
+SECONDARY_ROLES:
+Government Consulting Analyst
+Public Sector Consultant
+Regulatory Consultant
+Policy Consulting Associate
+Risk & Compliance Consultant
+Government Affairs Consultant
+Public Administration Analyst
+State & Local Government Consultant
+
+LOCATION_PREFERENCES:
+Washington DC
+Chicago
+Cleveland
+South Florida
+California
+
+LOCATION_MODE:
+Hybrid
+In Person
+
+START_DATE:
+Summer 2026
+Open to Fall 2026
+
+CONSTRAINTS:
+prefFullTime=true
+hardNoSales=true
+hardNoGovernment=false
+hardNoContract=false
+hardNoHourlyPay=false
+preferNotAnalyticsHeavy=false
+
+TOOLS:
+Microsoft Office
+Policy research databases
+Legislative research
+Excel
+Data tracking
+
+LANGUAGES:
+American Sign Language (Conversational)
+
+CORE_SKILLS:
+Policy research
+Legal analysis
+Legislative advocacy
+Public policy writing
+Cross-cultural communication
+Stakeholder engagement
+Public speaking
+Analytical reasoning
+
+YEARS_EXPERIENCE_APPROX:
+1
+
+GRAD_YEAR:
+2026
+
+PROFESSIONAL_EXPERIENCE:
+
+National CASA/GAL Association for Children – Legal Intern
+Aug 2024 – Present
+Analyze child welfare case files, prepare legal summaries, support attorneys, observe court hearings.
+
+Eight District Court of Appeals – Court Clerk Intern
+May 2025 – Jul 2025
+Reviewed briefs, researched appellate issues, drafted bench memorandum for Judge Sheehan.
+
+American Israel Public Affairs Committee – Political Advocacy Intern
+May 2024 – Aug 2024
+Prepared policy briefings, researched candidates and voting records, tracked 1,500+ congressional lobby interactions.
+
+OSU Hillel – Campus Engagement Intern
+Aug 2023 – Aug 2024
+Organized campus events, analyzed engagement data, increased membership by 60%.
+
+LEADERSHIP:
+
+BUCiPAC – Political Director
+Aug 2024 – Present
+Conduct lobbying meetings with elected officials and represent student advocacy interests.
+
+The Lantern – Freelance Writer
+Aug 2024 – Aug 2025
+Published articles and op-eds on campus issues and culture.
+
+PERSONAL_STRENGTHS:
+Highly personable
+Curious about policy impact
+Strong attention to detail
+Resilient problem solver
+Quick learner in unfamiliar environments
+Able to analyze issues from multiple perspectives
+
+CAREER_CONCERN:
+Finding work that is meaningful and allows long-term growth

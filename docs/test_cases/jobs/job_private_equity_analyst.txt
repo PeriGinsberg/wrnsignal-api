@@ -1,0 +1,21 @@
+JOB_ID: job_private_equity_analyst
+
+COMPANY:
+Summit Private Equity
+
+ROLE:
+Investment Analyst
+
+LOCATION:
+New York
+
+JOB_TYPE:
+Full Time
+
+DESCRIPTION:
+Evaluate potential acquisitions through financial modeling, market research, and due diligence.
+
+REQUIREMENTS:
+Finance background
+Advanced Excel
+Valuation experience

@@ -1,0 +1,26 @@
+{
+  "id": "case-030",
+  "label": "Clear lifecycle marketing role probe",
+  "profileText": "Marketing student targeting lifecycle and brand marketing roles. Experience with campaign execution, lifecycle email support, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Lifecycle Marketing Coordinator role supporting campaign execution, lifecycle programs, content planning, reporting, and cross-functional coordination. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

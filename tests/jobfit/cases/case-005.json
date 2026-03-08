@@ -1,0 +1,26 @@
+{
+  "id": "case-005",
+  "label": "Remote job conflicts with hard no remote constraint",
+  "profileText": "Marketing student targeting in-person or hybrid marketing roles. No remote roles. Experience with campaign execution, Canva, Excel, and Google Analytics. Class of 2026.",
+  "jobText": "Remote Brand Marketing Associate role. Full-time position supporting brand campaigns, digital content coordination, reporting, and cross-functional execution. Preferred tools include Excel and Google Analytics. This is a fully remote role.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "in_person",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": true,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

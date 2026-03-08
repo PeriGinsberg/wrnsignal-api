@@ -1,0 +1,26 @@
+{
+  "id": "case-012",
+  "label": "Sales hard gate standalone case",
+  "profileText": "Marketing student targeting brand marketing roles. No sales roles. Experience with campaign support, content calendars, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Business Development Representative role supporting outbound pipeline generation, cold call activity, quota attainment, and prospecting. Preferred tools include Salesforce and Excel.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": true,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Canva", "Google Analytics"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

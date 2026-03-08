@@ -1,0 +1,137 @@
+﻿PROFILE_ID: profile_william_friedman_consulting
+
+NAME:
+William Friedman
+
+EDUCATION:
+University of Michigan – College of Literature, Science, and the Arts
+B.A. Economics, Minor in Statistics
+Expected Graduation: May 2027
+GPA: 3.98
+
+HONORS:
+University Honors (all semesters)
+James B. Angell Scholar (all semesters)
+
+TARGET_JOB_FAMILIES:
+Consulting
+Strategy
+Analytics
+
+TARGET_FUNCTION_TAGS:
+management_consulting
+strategy_consulting
+corporate_strategy
+business_analysis
+data_analysis
+financial_modeling
+
+PRIMARY_TARGET_ROLES:
+Consulting Intern
+Strategy Intern
+Management Consulting Intern
+Business Analyst Intern
+Strategy Analyst Intern
+
+SECONDARY_ROLES:
+Economics Consulting Intern
+Operations Strategy Intern
+Corporate Strategy Intern
+Private Equity / Investment Strategy Intern (adjacent)
+Research Analyst Intern (quant-focused)
+
+TARGET_INDUSTRIES:
+Top consulting firms (short-term target)
+Open to exploring long-term
+
+LOCATION_PREFERENCES:
+New York City
+Boston
+Chicago
+Miami
+
+LOCATION_MODE:
+In Person
+Hybrid
+
+START_DATE:
+Summer 2026
+
+CONSTRAINTS:
+prefFullTime=false
+prefInternship=true
+hardNoRemote=false
+hardNoCommission=true
+hardNoSales=false
+hardNoGovernment=false
+
+TOOLS:
+Microsoft Excel (Advanced)
+R
+SQL
+PowerPoint
+Google Sheets
+Canva
+
+CORE_SKILLS:
+Structured problem solving
+Quantitative analysis
+Financial modeling (DCF, P&L, Sources & Uses)
+Market research and due diligence
+Data collection in ambiguous environments
+Clear executive communication
+Team leadership and operations
+
+YEARS_EXPERIENCE_APPROX:
+1
+
+GRAD_YEAR:
+2027
+
+PROFESSIONAL_EXPERIENCE:
+
+Aspen Academies (Private Investment Firm – M&A Strategy) – Summer Strategy Analyst
+May 2025 – Aug 2025
+Supported M&A diligence through market research and operational/financial analysis on early childcare targets.
+Designed a “mystery shopping” data collection approach, organized results in Excel, and built usable datasets from scratch.
+Led targeted seller outreach using personalized, data-driven emails to convert prospects into diligence pipeline.
+Performed DCF modeling and financial reviews and presented insights to executives.
+
+Boston Consulting Group (BCG) – Launch Program Participant
+May 2025 – Jun 2025
+Completed consulting exposure program focused on casework, structured thinking, and recruiting process.
+
+Selected Project – Advanced Statistical Modeling
+Built linear regression in R analyzing variables impacting car prices and produced written report and data visualization.
+
+ADDITIONAL_EXPERIENCE:
+Sales Associate – Alo (Full-Time)
+May – Aug 2024
+Sales Associate – Brooks Brothers
+Jun – Aug 2023
+Client-facing retail roles building rapport, adapting quickly, and operating under pressure.
+
+LEADERSHIP:
+
+University of Michigan Men’s Club Ice Hockey – President / Assistant Captain / Executive Board
+May 2025 – Present
+Leads operations for 30-athlete organization and manages compliance across multiple governing bodies.
+Led hiring for new Assistant Coach including recruiting and interviewing.
+Serves as primary liaison for prospective players and onboarding.
+
+Vice President of Operations and Finance
+Sep 2023 – May 2025
+Built and managed $150,000 annual budget in Google Sheets.
+Secured $1,600 in org funding and led fundraising generating nearly $5,000.
+Coordinated logistics for 30-game season including scheduling and multi-region travel.
+
+PERSONAL_STRENGTHS:
+Teamwork focused
+Personable
+Reliable
+Adaptable
+Hardworking
+
+CAREER_CONCERNS:
+Limited experience
+Interviewing skills

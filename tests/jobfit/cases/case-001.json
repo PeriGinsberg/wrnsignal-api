@@ -1,0 +1,26 @@
+{
+  "id": "case-001",
+  "label": "Basic marketing fit sanity check",
+  "profileText": "Marketing student targeting full-time brand marketing roles in New York City. Experience with social media, campaign execution, Canva, Excel, and Google Analytics. Class of 2026. Wants full-time work in NYC.",
+  "jobText": "Brand Marketing Coordinator role based in New York City. Full-time position supporting campaign execution, content calendars, cross-functional coordination, and performance tracking. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

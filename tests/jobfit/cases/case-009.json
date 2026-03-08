@@ -1,0 +1,26 @@
+{
+  "id": "case-009",
+  "label": "Review-to-pass downgrade discovery case",
+  "profileText": "Recent graduate targeting marketing roles. Prefers full-time work, no contract roles, no hourly roles, no sales roles, and no government roles. Experience with campaign support, Canva, and basic Excel. Class of 2024.",
+  "jobText": "Business Development and Marketing Analyst for a government contractor. Temporary hourly role supporting proposal reporting, pipeline updates, dashboard maintenance, and outreach support. Requires 3+ years of experience. Preferred tools include SQL, Tableau, and Excel. Work involves federal clients and business development coordination.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": true,
+      "prefFullTime": true,
+      "hardNoContract": true,
+      "hardNoSales": true,
+      "hardNoGovernment": true,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Canva"],
+    "gradYear": 2024,
+    "yearsExperienceApprox": 1
+  }
+}

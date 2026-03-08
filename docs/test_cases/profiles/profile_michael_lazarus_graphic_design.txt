@@ -1,0 +1,139 @@
+﻿PROFILE_ID: profile_michael_lazarus_graphic_design
+
+NAME:
+Michael Lazarus
+
+CURRENT_STATUS:
+Early Career Professional (Design / Creative)
+
+EDUCATION:
+Florida State University
+Studio Art coursework
+
+Dreyfoos School of the Arts
+Digital Media coursework
+
+TARGET_JOB_FAMILIES:
+Design
+Creative
+Brand
+Marketing
+
+TARGET_FUNCTION_TAGS:
+graphic_design
+brand_identity
+visual_design
+creative_marketing
+digital_design
+campaign_design
+brand_systems
+marketing_design
+
+PRIMARY_TARGET_ROLES:
+Graphic Designer
+Brand Designer
+Visual Designer
+Marketing Designer
+Brand Identity Designer
+
+TARGET_ENVIRONMENTS:
+Startups
+Media companies
+Consumer brands
+Marketing teams inside product companies
+
+LOCATION_PREFERENCES:
+New York City
+East Coast
+
+LOCATION_MODE:
+In Person
+Hybrid
+
+START_DATE:
+Immediate
+
+CONSTRAINTS:
+prefFullTime=true
+hardNoRemote=false
+hardNoCommission=true
+hardNoSales=true
+
+CORE_SKILLS:
+Brand identity design
+Visual systems
+Marketing campaign design
+Creative strategy collaboration
+Digital and print production
+Social media creative
+Pitch decks and sales collateral
+Photography and videography
+
+TOOLS:
+Adobe Illustrator
+Adobe Photoshop
+Adobe InDesign
+Canva
+Figma (light)
+Asana
+Monday.com
+Microsoft Office
+Google Workspace
+
+YEARS_EXPERIENCE_APPROX:
+4
+
+PROFESSIONAL_EXPERIENCE:
+
+Graphic Designer / Brand Manager – Sagemont Advisors & Tax Now
+2023 – 2024
+Built brand identities including logos, typography systems, color palettes, and layout standards.
+Designed trade show booths, pitch decks, banners, and marketing collateral.
+Created paid advertising and social media design assets supporting lead generation.
+Managed design deliverables across multiple marketing initiatives.
+
+Multimedia Designer – Music Choice
+2022 – 2023
+Designed visual assets for cable TV channels and streaming applications.
+Created campaign thumbnails, branded backgrounds, and social media graphics.
+Worked with marketing, streaming, and IT teams to maintain visual consistency.
+
+Graphic Designer – Liberty Health Sciences
+2020 – 2021
+Designed retail signage and educational infographics for cannabis dispensaries.
+Maintained digital menu displays with product and strain information.
+
+Brand Identity Coordinator – Two Degrees App
+2019 – 2020
+Supported brand development for an early stage consumer app.
+Produced marketing assets and contributed to visual brand guidelines.
+
+Graphic Designer / Bulk Orders Lead – DivvyUp Socks
+2018 – 2019
+Designed custom graphics for corporate orders and edited customer photography.
+Managed design communication with corporate clients through production.
+
+EARLY_DESIGN_EXPERIENCE:
+
+Grova Creative Marketing – Graphic Design Intern
+2018
+
+Florida State University Division of Student Affairs – Graphic Designer
+2015 – 2018
+Designed promotional materials and event marketing assets.
+
+ADDITIONAL_EXPERIENCE:
+
+Brooklyn Brewery – Bartender
+2024 – Present
+Customer facing role in high traffic hospitality environment.
+
+PERSONAL_STRENGTHS:
+Strong collaborator
+Excellent listener and interpreter of creative direction
+Enjoys creative strategy participation
+Strong attention to visual detail
+
+CAREER_CONCERNS:
+Finding the right creative environment
+Competition within the design market

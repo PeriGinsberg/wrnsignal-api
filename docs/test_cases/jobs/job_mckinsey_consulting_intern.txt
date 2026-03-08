@@ -1,0 +1,28 @@
+JOB_ID: job_mckinsey_consulting_intern
+
+COMPANY:
+McKinsey & Company
+
+ROLE:
+Summer Business Analyst Intern
+
+LOCATION:
+New York
+
+JOB_TYPE:
+Internship
+
+DESCRIPTION:
+Work with consulting teams to solve complex strategic and operational problems for global clients. Conduct research, build quantitative models, analyze market data, and develop client-ready presentations.
+
+REQUIREMENTS:
+Strong analytical ability
+Excel and data analysis
+Leadership experience
+Top academic performance
+
+TARGET_FIELDS:
+Economics
+Business
+Engineering
+Statistics

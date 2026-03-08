@@ -1,0 +1,82 @@
+﻿{
+    "id":  "real-011",
+    "label":  "Mikaela Moskowitz - Business Process Analyst Global Services \u0026 Support",
+    "profileText":  "current_status: Early stage professional (\u003c 5 years)\nuniversity: Northeastern University\njob_type_preference: Full Time Role\ntarget_roles: Business Operations Analyst; Process Transformation / Process Improvement Analyst; Strategy Analyst (Internal / Corporate Strategy); Post-Merger Integration (PMI) Analyst / Associate; Internal Consulting / Transformation Analyst; Operations \u0026 Strategy Analyst\nadjacent_roles: Business Analyst; Internal Consultant or Transformation Enablement Analyst; Change Management or Organizational Development Analyst; Implementation / Solutions Analyst (non-sales); International or Cross-Border Operations Analyst\ntarget_industries: Asset Management; Consulting (Management/Strategy); Financial Services (General); Private Equity; Venture Capital; Wealth Management; Professional Services (General); FinTech; eCommerce; Commercial Real Estate; Real Estate Development; Real Estate Private Equity; Healthcare Services; Hospitality; Travel and Tourism; Manufacturing; Aerospace and Defense; Supply Chain and Logistics; Startups (Growth Stage); Small/Founder-Led Companies\nspecific_companies: Accenture; Deloitte; SAP; ServiceNow; Airbnb\ndo_not_want: Sales or commission-based roles; highly technical finance roles; data or analytics roles requiring programming; roles with primary focus on coding software engineering or technical development; aggressive high-pressure finance environments with limited collaboration or mentorship; administrative roles without strategic cross-functional work\nopenness_to_non_obvious_entry_points: Somewhat open\nlocation_preferences: Boston; Miami; Orlando; Charlotte; Chicago; East Coast\ntimeline_for_starting_work: Fall 2026\nstrongest_skills: systems thinking; communication; cross-functional coordination; process improvement; explaining complex concepts clearly; working in ambiguity; bridging finance and departments\njob_search_concerns: interview performance\nfeedback_style: Balanced (honest but encouraging)\nresume_paste: Mikaela Moskowitz 617.306.5288 | mikaelamoskowitz55@gmail.com | linkedin.com/in/mikaela-moskowitz SUMMARY Process transformation professional focused on modernizing finance accounting and operational systems in complex regulated environments. Proven record leading end-to-end process redesign close optimization and cross-functional change initiatives across global organizations. U.S. citizen actively relocating to Orlando, FL. CORE COMPETENCIES Finance \u0026 Accounting Process Optimization | End-to-End Process Redesign \u0026 Standardization | Cross-Functional Transformation \u0026 Stakeholder Alignment | KPI Definition Reporting \u0026 Performance Tracking | Process Mapping Documentation \u0026 RACI Design | Change Management | ERP \u0026 Systems Enablement | Operational Controls Governance \u0026 Audit Readiness | Post-Merger Integration \u0026 Scalable Operating Models RELEVANT EXPERIENCE TTIS Germany GmbH Berlin Germany Post-Merger Integration Specialist Dec 2024 ? Present Lead cross-functional post-merger integration of two acquired entities, standardizing finance HR purchasing and administrative processes to improve scalability and control. Redesigned and operationalized the month-end close, establishing clear RACI ownership and reducing close cycle time by ~67%. Re-engineered end-to-end project lifecycle from bid through billing, eliminating fragmented workflows and control gaps. Built standardized business case and pricing framework, replacing ad hoc estimates with finance-supported auditable models. Implemented first budgeting and approval framework for acquired entities, creating a proactive expense management process. Standardized cross-entity reporting, eliminating duplication and reducing errors by ~50% while strengthening data governance. Redesigned forecasting and revenue-tracking processes to improve margin pipeline and cash-flow visibility. Partner with IT to translate current- and future-state processes into technical specifications, enabling ERP automation across pricing forecasting and billing. Serve as primary liaison between operations and leadership, driving change management and cross-functional alignment. Developing a scalable post-merger integration playbook to support future acquisitions and system rollouts. Ernst \u0026 Young Munich Germany US Real Estate Tax Compliance Analyst Jan 2024 ? Aug 2024 Supported U.S.-German tax compliance for corporate and partnership clients with \u003e ?200M in assets, ensuring accuracy across cross-border reporting requirements. Redesigned onboarding materials and peer training workflows, accelerating new-hire ramp-up and improving team productivity. Coordinated across international teams to resolve complex cross-border compliance tax issues, improving turnaround time by 30%. Tip-Top Industrial Solutions Berlin Germany Merger Organization \u0026 Process Specialist May 2016 ? Aug 2023 Supported post-merger organizational and process integration for LAWA/WKH, aligning budgeting and reporting structures with parent-company standards. Documented and standardized ERP workflows to support system transition and staff onboarding. Performed budget variance analysis on 24M+ RUB infrastructure projects, partnering with senior leadership in decision making. Spearheaded ERP (1C) implementation, helping automate workflows, develop training materials and organize system documentation. EDUCATION Northeastern University D?Amore-McKim School of Business Boston MA Dec 2024 Bachelor of Science in International Business: Finance | Minor in History cum laude SKILLS \u0026 INTERESTS Tools: Excel (X/V Lookup, Index Match, Pivot Tables \u0026 Charts, Sum/Count/Average Ifs, Power Query, Data Validation, Scenario Tables \u0026 Forecast Models). Financial \u0026 Process Systems (ERP (1C), GoSystems, CSV/API/ASCII Integrations) Languages: English (Native), Russian (Fluent), German (Intermediate), Spanish (Beginner)\ncover_letter: \nextra_context: Looking to move into a more clearly defined specialized role where she can build depth. Learns best in environments with strong peer groups mentorship collaboration and clear progression.",
+    "jobText":  "The Business Process Analyst for Global Services \u0026 Support is responsible for analyzing designing and optimizing end-to-end service and support processes to translate service strategy into coordinated cross-functional execution. The role acts as a bridge between Global Services \u0026 Support Finance Manufacturing and IT, ensuring operational needs are converted into scalable repeatable and well-governed systems. Responsibilities include owning end-to-end process design documentation and governance; identifying inefficiencies and friction points across workflows; facilitating alignment when tradeoffs arise; ensuring processes support internal controls audit readiness and operational rigor; partnering with stakeholders; serving as translator between business users and IT; owning intake and prioritization for system enhancements; translating business problems into functional requirements; collaborating with BizOps Insights on metrics; overseeing UAT; driving structured change management; establishing process governance standards; and ensuring documentation controls and ownership are defined. Qualifications include bachelor?s degree in business operations or related field, experience owning or materially contributing to enterprise-scale process design and/or system implementations, experience in scaled audit-aware or regulated environments, strong working knowledge of CRMs ERPs MRPs and related systems, ability to work through ambiguity and drive alignment, and exceptional communication organization and attention to detail.",
+    "profileOverrides":  {
+                             "targetFamilies":  [
+                                                    "Consulting"
+                                                ],
+                             "locationPreference":  {
+                                                        "constrained":  true,
+                                                        "mode":  "unclear",
+                                                        "allowedCities":  [
+                                                                              "Boston",
+                                                                              "Miami",
+                                                                              "Orlando",
+                                                                              "Charlotte",
+                                                                              "Chicago",
+                                                                              "East Coast"
+                                                                          ]
+                                                    },
+                             "constraints":  {
+                                                 "hardNoHourlyPay":  false,
+                                                 "prefFullTime":  true,
+                                                 "hardNoContract":  false,
+                                                 "hardNoSales":  true,
+                                                 "hardNoGovernment":  false,
+                                                 "hardNoFullyRemote":  false,
+                                                 "preferNotAnalyticsHeavy":  true
+                                             },
+                             "statedInterests":  {
+                                                     "targetRoles":  [
+                                                                         "Business Operations Analyst",
+                                                                         "Process Transformation / Process Improvement Analyst",
+                                                                         "Strategy Analyst (Internal / Corporate Strategy)",
+                                                                         "Post-Merger Integration (PMI) Analyst / Associate",
+                                                                         "Internal Consulting / Transformation Analyst",
+                                                                         "Operations \u0026 Strategy Analyst"
+                                                                     ],
+                                                     "adjacentRoles":  [
+                                                                           "Business Analyst",
+                                                                           "Internal Consultant or Transformation Enablement Analyst",
+                                                                           "Change Management or Organizational Development Analyst",
+                                                                           "Implementation / Solutions Analyst (non-sales)",
+                                                                           "International or Cross-Border Operations Analyst"
+                                                                       ],
+                                                     "targetIndustries":  [
+                                                                              "Asset Management",
+                                                                              "Consulting (Management/Strategy)",
+                                                                              "Financial Services (General)",
+                                                                              "Private Equity",
+                                                                              "Venture Capital",
+                                                                              "Wealth Management",
+                                                                              "Professional Services (General)",
+                                                                              "FinTech",
+                                                                              "eCommerce",
+                                                                              "Commercial Real Estate",
+                                                                              "Real Estate Development",
+                                                                              "Real Estate Private Equity",
+                                                                              "Healthcare Services",
+                                                                              "Hospitality",
+                                                                              "Travel and Tourism",
+                                                                              "Manufacturing",
+                                                                              "Aerospace and Defense",
+                                                                              "Supply Chain and Logistics",
+                                                                              "Startups (Growth Stage)",
+                                                                              "Small/Founder-Led Companies"
+                                                                          ]
+                                                 },
+                             "tools":  [
+                                           "Excel"
+                                       ],
+                             "gradYear":  2016,
+                             "yearsExperienceApprox":  3
+                         },
+    "metadata":  {
+                     "profile_id":  "profile-mikaela-moskowitz",
+                     "job_id":  "job-mikaela-002",
+                     "job_label":  "Business Process Analyst Global Services \u0026 Support",
+                     "expected_direction":  "likely strong fit"
+                 }
+}

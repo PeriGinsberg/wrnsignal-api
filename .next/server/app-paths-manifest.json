@@ -1,0 +1,21 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/canary/route": "app/api/canary/route.js",
+  "/api/coverletter/route": "app/api/coverletter/route.js",
+  "/api/jobfit-intake/route": "app/api/jobfit-intake/route.js",
+  "/api/jobfit-run-trial/route": "app/api/jobfit-run-trial/route.js",
+  "/api/jobfit-v4-debug/route": "app/api/jobfit-v4-debug/route.js",
+  "/api/jobfit/route": "app/api/jobfit/route.js",
+  "/api/networking/route": "app/api/networking/route.js",
+  "/api/ping/route": "app/api/ping/route.js",
+  "/api/positioning/route": "app/api/positioning/route.js",
+  "/api/profile-intake/route": "app/api/profile-intake/route.js",
+  "/api/profile-risk-overrides/route": "app/api/profile-risk-overrides/route.js",
+  "/api/seat-create/route": "app/api/seat-create/route.js",
+  "/api/seat-verify/route": "app/api/seat-verify/route.js",
+  "/api/send-magic-link/route": "app/api/send-magic-link/route.js",
+  "/api/version/route": "app/api/version/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
+}

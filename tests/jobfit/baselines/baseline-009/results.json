@@ -1,0 +1,1673 @@
+[
+  {
+    "id": "real-001",
+    "label": "Ryan Rudnet - Equitable Advisors Financial Professional",
+    "metadata": {
+      "profile_id": "profile-ryan-rudnet",
+      "job_id": "job-ryan-001",
+      "job_label": "Equitable Advisors Financial Professional",
+      "expected_direction": "likely misaligned / sales-heavy wealth advisor role"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Finance.",
+        "profile_fact": "Target families include Finance.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "4e7d0a22d7f932d5",
+      "jobFamily": "Finance",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "in_person",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Events"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "cess communication skills strong interpersonal abilities mindset entrepreneurial spirit collaboration ability to work with top performers wo",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Finance"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "West Palm Beach Florida",
+          "Boca Raton Florida",
+          "Fort Lauderdale Florida",
+          "Jupiter Florida",
+          "Boynton Beach Florida"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Access"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-002",
+    "label": "Ryan Rudnet - Merrill Wealth Management Client Associate ADP",
+    "metadata": {
+      "profile_id": "profile-ryan-rudnet",
+      "job_id": "job-ryan-002",
+      "job_label": "Merrill Wealth Management Client Associate ADP",
+      "expected_direction": "borderline sales path but potentially viable wealth management entry"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Finance.",
+        "profile_fact": "Target families include Finance.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "1e07a9cd58080c27",
+      "jobFamily": "Finance",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "merrill wealth management client associate  advisor development program role supporting financial advisors with client service operati",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Finance"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "West Palm Beach Florida",
+          "Boca Raton Florida",
+          "Fort Lauderdale Florida",
+          "Jupiter Florida",
+          "Boynton Beach Florida"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-003",
+    "label": "Ryan Rudnet - Bank Statement Review / Underwriting Support Analyst",
+    "metadata": {
+      "profile_id": "profile-ryan-rudnet",
+      "job_id": "job-ryan-003",
+      "job_label": "Bank Statement Review / Underwriting Support Analyst",
+      "expected_direction": "adjacent analytical operations role; likely review"
+    },
+    "decision_initial": "Pass",
+    "decision_after_gate": "Pass",
+    "decision_final": "Pass",
+    "score": 42,
+    "penaltySum": 7.800000000000001,
+    "gate_triggered": {
+      "type": "floor_review",
+      "gateCode": "GATE_FLOOR_REVIEW_CONTRACT",
+      "detail": "Pref full-time vs contract"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel.",
+        "profile_fact": "Profile tools include: Excel, PowerPoint, Word, Access, Financial Edge.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [
+      {
+        "code": "RISK_CONTRACT",
+        "job_fact": "Posting indicates contract/temporary structure.",
+        "profile_fact": "You prefer full-time roles.",
+        "risk": "Role structure conflicts with your work-type preference.",
+        "severity": "medium",
+        "weight": -7.800000000000001
+      }
+    ],
+    "job_signals": {
+      "rawHash": "ac3d7a02890fe1be",
+      "jobFamily": "Accounting",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "in_person",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": true,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [
+        "Excel"
+      ],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "s successfully meet or exceed all company established performance and production metrics proven time management skills proven ability to wor",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Finance"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "West Palm Beach Florida",
+          "Boca Raton Florida",
+          "Fort Lauderdale Florida",
+          "Jupiter Florida",
+          "Boynton Beach Florida"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "PowerPoint",
+        "Word",
+        "Access",
+        "Financial Edge"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-004",
+    "label": "Benjamin Cleek - Eiteljorg Museum Marketing and Communications Internship",
+    "metadata": {
+      "profile_id": "profile-ben-cleek",
+      "job_id": "job-ben-001",
+      "job_label": "Eiteljorg Museum Marketing and Communications Internship",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "7bb6ae00d485b0e2",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "in_person",
+        "constrained": false,
+        "city": null,
+        "evidence": "experience with website builders and design. internship is primarily in-person in indianapolis though some work may be done remotely with s"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": true,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": true,
+        "isSummer": true,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": true,
+        "departments": [
+          "PR",
+          "Events",
+          "Digital Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": "ms events exhibits and programs during summer 2026. through this paid marketing internship a student can learn practical valuable workplace",
+          "inPersonLine": "experience with website builders and design. internship is primarily in-person in indianapolis though some work may be done remotely with s",
+          "aiLine": null,
+          "deptLine": "assist the marketing and communications department in its efforts to promote and raise awareness of the museums events exhibits and program",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "Indianapolis (ideally)",
+          "Chicago (both city and suburbs)",
+          "southeastern Wisconsin"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": false,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Canva",
+        "PowerPoint",
+        "Adobe Photoshop",
+        "Illustrator",
+        "Premiere",
+        "HubSpot",
+        "Shopify",
+        "ZoomInfo",
+        "Photoshop"
+      ],
+      "gradYear": 2027,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-005",
+    "label": "Benjamin Cleek - dormakaba Product Marketing Intern",
+    "metadata": {
+      "profile_id": "profile-ben-cleek",
+      "job_id": "job-ben-002",
+      "job_label": "dormakaba Product Marketing Intern",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "5a6a9cdf30b7a0bc",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": true,
+        "isLight": false
+      },
+      "location": {
+        "mode": "in_person",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": true,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": true,
+        "isSummer": true,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": "dormakaba is seeking a product marketing intern to join the summer 2026 rising talent program in indianapolis. this role reports t",
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "dormakaba is seeking a product marketing intern to join the summer 2026 rising talent program",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "Indianapolis (ideally)",
+          "Chicago (both city and suburbs)",
+          "southeastern Wisconsin"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": false,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Canva",
+        "PowerPoint",
+        "Adobe Photoshop",
+        "Illustrator",
+        "Premiere",
+        "HubSpot",
+        "Shopify",
+        "ZoomInfo",
+        "Photoshop"
+      ],
+      "gradYear": 2027,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-006",
+    "label": "Benjamin Cleek - Missner Group Marketing and Communications Intern",
+    "metadata": {
+      "profile_id": "profile-ben-cleek",
+      "job_id": "job-ben-003",
+      "job_label": "Missner Group Marketing and Communications Intern",
+      "expected_direction": "likely viable fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "73540e2b4eca3424",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": true,
+        "isSummer": true,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Events"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": "nd adaptable marketing and communications intern to join the team for summer 2026. the intern reports directly to the director of marketing",
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "lude assisting with social media and content creation helping develop project case studies and marketing materials supporting company events",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "Indianapolis (ideally)",
+          "Chicago (both city and suburbs)",
+          "southeastern Wisconsin"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": false,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Canva",
+        "PowerPoint",
+        "Adobe Photoshop",
+        "Illustrator",
+        "Premiere",
+        "HubSpot",
+        "Shopify",
+        "ZoomInfo",
+        "Photoshop"
+      ],
+      "gradYear": 2027,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-007",
+    "label": "Spencer Levine - BlackRock Associate UX/UI Designer",
+    "metadata": {
+      "profile_id": "profile-spencer-levine",
+      "job_id": "job-spencer-001",
+      "job_label": "BlackRock Associate UX/UI Designer",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Other.",
+        "profile_fact": "Target families include Other.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "bc83461a88804f35",
+      "jobFamily": "Other",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "existing components identifying areas of evolution managing timelines presenting design solutions to cross-functional partners delivering hi",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Other"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "NYC",
+          "Long Island",
+          "New Jersey",
+          "Westchester",
+          "Connecticut"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Illustrator",
+        "Premiere",
+        "After Effects",
+        "Figma",
+        "Framer",
+        "Sketch",
+        "Access",
+        "Photoshop"
+      ],
+      "gradYear": null,
+      "yearsExperienceApprox": 3
+    }
+  },
+  {
+    "id": "real-008",
+    "label": "Spencer Levine - Amazon Autos Product Designer",
+    "metadata": {
+      "profile_id": "profile-spencer-levine",
+      "job_id": "job-spencer-002",
+      "job_label": "Amazon Autos Product Designer",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Other.",
+        "profile_fact": "Target families include Other.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "ae00129e4c8e23de",
+      "jobFamily": "Other",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "amazon autos is seeking a product designer to shape the future of automotive experiences. respon",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Other"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "NYC",
+          "Long Island",
+          "New Jersey",
+          "Westchester",
+          "Connecticut"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Illustrator",
+        "Premiere",
+        "After Effects",
+        "Figma",
+        "Framer",
+        "Sketch",
+        "Access",
+        "Photoshop"
+      ],
+      "gradYear": null,
+      "yearsExperienceApprox": 3
+    }
+  },
+  {
+    "id": "real-009",
+    "label": "Spencer Levine - Gensler Brand Design Environmental Graphics",
+    "metadata": {
+      "profile_id": "profile-spencer-levine",
+      "job_id": "job-spencer-003",
+      "job_label": "Gensler Brand Design Environmental Graphics",
+      "expected_direction": "adjacent / likely viable"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Other.",
+        "profile_fact": "Target families include Other.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "2ffb275aa9dc1269",
+      "jobFamily": "Other",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": true,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "an entry level candidate with a background in graphic design and some prior experience designing and documenting environmental graphics crea",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Other"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "NYC",
+          "Long Island",
+          "New Jersey",
+          "Westchester",
+          "Connecticut"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Illustrator",
+        "Premiere",
+        "After Effects",
+        "Figma",
+        "Framer",
+        "Sketch",
+        "Access",
+        "Photoshop"
+      ],
+      "gradYear": null,
+      "yearsExperienceApprox": 3
+    }
+  },
+  {
+    "id": "real-010",
+    "label": "Mikaela Moskowitz - Ambit Associate",
+    "metadata": {
+      "profile_id": "profile-mikaela-moskowitz",
+      "job_id": "job-mikaela-001",
+      "job_label": "Ambit Associate",
+      "expected_direction": "likely misaligned due to analytics / life sciences consulting emphasis"
+    },
+    "decision_initial": "Pass",
+    "decision_after_gate": "Pass",
+    "decision_final": "Pass",
+    "score": 37,
+    "penaltySum": 12.8,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel.",
+        "profile_fact": "Profile tools include: Excel.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [
+      {
+        "code": "RISK_LOCATION",
+        "job_fact": "Job location indicates New York City.",
+        "profile_fact": "Allowed cities are Boston, Miami, Orlando, Charlotte, Chicago, East Coast.",
+        "risk": "Your location constraints do not match the job location.",
+        "severity": "high",
+        "weight": -12.8
+      },
+      {
+        "code": "RISK_ANALYTICS_HEAVY",
+        "job_fact": "Posting contains analytics-heavy signals.",
+        "profile_fact": "You prefer not analytics-heavy roles.",
+        "risk": "This reads like an analytics-heavy role that conflicts with your stated preference.",
+        "severity": "medium",
+        "weight": 0
+      }
+    ],
+    "job_signals": {
+      "rawHash": "dbb0ba73af7e8d40",
+      "jobFamily": "PreMed",
+      "analytics": {
+        "isHeavy": true,
+        "isLight": false
+      },
+      "location": {
+        "mode": "in_person",
+        "constrained": false,
+        "city": "New York City",
+        "evidence": "of experience in life science consulting ability to work in-person in new york city at least three days per week and ability to start within"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": 1,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": "ams 1+ years of experience in life science consulting ability to work in-person in new york city at least three days per week and ability to",
+          "aiLine": null,
+          "deptLine": "ambit is a data and tech-enabled biopharma services company providing advanced analytics consulting and patient identification sol",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Consulting"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "Boston",
+          "Miami",
+          "Orlando",
+          "Charlotte",
+          "Chicago",
+          "East Coast"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": true
+      },
+      "tools": [
+        "Excel"
+      ],
+      "gradYear": 2016,
+      "yearsExperienceApprox": 3
+    }
+  },
+  {
+    "id": "real-011",
+    "label": "Mikaela Moskowitz - Business Process Analyst Global Services & Support",
+    "metadata": {
+      "profile_id": "profile-mikaela-moskowitz",
+      "job_id": "job-mikaela-002",
+      "job_label": "Business Process Analyst Global Services & Support",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Consulting.",
+        "profile_fact": "Target families include Consulting.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "6f3ab095a7262fb9",
+      "jobFamily": "Consulting",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": true,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "the business process analyst for global services  support is responsible for analyz",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Consulting"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "Boston",
+          "Miami",
+          "Orlando",
+          "Charlotte",
+          "Chicago",
+          "East Coast"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": true
+      },
+      "tools": [
+        "Excel"
+      ],
+      "gradYear": 2016,
+      "yearsExperienceApprox": 3
+    }
+  },
+  {
+    "id": "real-012",
+    "label": "Mikaela Moskowitz - Process Improvement Analyst II Process Excellence",
+    "metadata": {
+      "profile_id": "profile-mikaela-moskowitz",
+      "job_id": "job-mikaela-003",
+      "job_label": "Process Improvement Analyst II Process Excellence",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Consulting.",
+        "profile_fact": "Target families include Consulting.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "6cc6018916bbbf84",
+      "jobFamily": "Consulting",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "remote",
+        "constrained": false,
+        "city": null,
+        "evidence": "excellence. candidates based in florida are highly preferred or fully remote open to est and cst candidates. required 2-4 years process anal"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "process improvement analyst ii  process excellence. candidates based i",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Consulting"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "Boston",
+          "Miami",
+          "Orlando",
+          "Charlotte",
+          "Chicago",
+          "East Coast"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": true
+      },
+      "tools": [
+        "Excel"
+      ],
+      "gradYear": 2016,
+      "yearsExperienceApprox": 3
+    }
+  },
+  {
+    "id": "real-013",
+    "label": "Zoe Siegel - Florida Policy Analyst Blind Services",
+    "metadata": {
+      "profile_id": "profile-zoe-siegel",
+      "job_id": "job-zoe-001",
+      "job_label": "Florida Policy Analyst Blind Services",
+      "expected_direction": "likely strong fit"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Government.",
+        "profile_fact": "Target families include Other, Government.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "b7e44ae54f616e81",
+      "jobFamily": "Government",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": true,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "nducting detailed analyses and collaborating with various bureaus for process improvement. ideal candidates will have a bachelors degree in",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Other",
+        "Government"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "south florida",
+          "cleveland",
+          "chicago",
+          "washington dc",
+          "california"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-014",
+    "label": "Zoe Siegel - Policy Analyst Human Resources Department",
+    "metadata": {
+      "profile_id": "profile-zoe-siegel",
+      "job_id": "job-zoe-002",
+      "job_label": "Policy Analyst Human Resources Department",
+      "expected_direction": "borderline / likely too senior"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Government.",
+        "profile_fact": "Target families include Other, Government.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "168001dd777942b0",
+      "jobFamily": "Government",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": true,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "urces department. responsibilities include planning and administering projects or programs supervising activities of personnel monitoring bu",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Other",
+        "Government"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "south florida",
+          "cleveland",
+          "chicago",
+          "washington dc",
+          "california"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "real-015",
+    "label": "Zoe Siegel - Entry Level Legal Assistant",
+    "metadata": {
+      "profile_id": "profile-zoe-siegel",
+      "job_id": "job-zoe-003",
+      "job_label": "Entry Level Legal Assistant",
+      "expected_direction": "likely viable"
+    },
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 72,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Other.",
+        "profile_fact": "Target families include Other, Government.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "e141a9960ed38dc2",
+      "jobFamily": "Other",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "ision of attorneys and paralegals. bilingual spanish is a plus. after probationary period paid time off and health insurance offered. pay in",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Other",
+        "Government"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": true,
+        "allowedCities": [
+          "south florida",
+          "cleveland",
+          "chicago",
+          "washington dc",
+          "california"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  }
+]

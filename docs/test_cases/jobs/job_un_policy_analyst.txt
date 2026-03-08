@@ -1,0 +1,22 @@
+JOB_ID: job_un_policy_analyst
+
+COMPANY:
+United Nations
+
+ROLE:
+Policy Analyst
+
+LOCATION:
+New York
+
+JOB_TYPE:
+Full Time
+
+DESCRIPTION:
+Conduct policy research on international development, draft reports, and analyze global policy trends.
+
+REQUIREMENTS:
+Public policy or political science background
+Strong writing
+Research experience
+International relations knowledge

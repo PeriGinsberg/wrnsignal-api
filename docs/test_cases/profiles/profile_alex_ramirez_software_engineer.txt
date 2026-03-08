@@ -1,0 +1,43 @@
+﻿PROFILE_ID: profile_alex_ramirez_software_engineer
+
+NAME:
+Alex Ramirez
+
+CURRENT_STATUS:
+New Graduate
+
+EDUCATION:
+Georgia Tech
+B.S. Computer Science
+Graduated 2025
+
+TARGET_JOB_FAMILIES:
+Software Engineering
+Technology
+
+PRIMARY_TARGET_ROLES:
+Software Engineer
+Backend Engineer
+Full Stack Engineer
+
+LOCATION_PREFERENCES:
+San Francisco
+Seattle
+NYC
+
+TOOLS:
+Python
+Java
+React
+Node.js
+AWS
+SQL
+
+CORE_SKILLS:
+Backend development
+API design
+System architecture
+Cloud infrastructure
+
+YEARS_EXPERIENCE_APPROX:
+2

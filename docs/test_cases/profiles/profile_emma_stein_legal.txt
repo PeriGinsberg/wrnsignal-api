@@ -1,0 +1,134 @@
+﻿PROFILE_ID: profile_emma_stein_legal
+
+NAME:
+Emma Stein
+
+EDUCATION:
+University of Florida
+Bachelor of Arts – History and Political Science (Pre-Law Track)
+Expected Graduation: May 2028
+GPA: 3.78
+
+HONORS:
+Dean’s List (every semester)
+Florida Bright Futures Full Tuition Scholarship
+
+TARGET_JOB_FAMILIES:
+Legal
+Government
+Policy
+Research
+Analytics
+
+TARGET_FUNCTION_TAGS:
+legal_services
+legal_intake
+legal_admin
+government_policy
+public_policy
+research_writing
+compliance
+case_support
+
+PRIMARY_TARGET_ROLES:
+Legal Intern
+Legal Assistant Intern
+Legal Intake Intern
+Legal Services Intern
+Case Analyst Intern
+Paralegal Intern (Entry / Intern)
+Judicial Intern (if available)
+Law Firm Intern (General)
+
+SECONDARY_ROLES:
+Policy Intern
+Research Intern
+Analyst Intern
+Compliance Intern
+Government Affairs Intern (only if clearly connected to legal)
+
+TARGET_ENVIRONMENTS:
+In-house legal departments
+Private practice
+Legal services / public interest organizations
+Government-adjacent legal/policy offices (only if clearly connected)
+
+LOCATION_PREFERENCES:
+South Florida (Boca Raton / Delray Beach / Fort Lauderdale)
+
+LOCATION_MODE:
+In Person
+Hybrid
+
+START_DATE:
+Summer 2026
+
+CONSTRAINTS:
+prefFullTime=false
+prefInternship=true
+hardNoRemote=false
+hardNoCommission=true
+hardNoSales=false
+hardNoGovernment=false
+preferNotAnalyticsHeavy=false
+
+TOOLS:
+Microsoft Office
+Writing and research (formal citations)
+Task tracking and coordination
+
+CORE_SKILLS:
+Strong writing and structured argumentation
+Research (primary and secondary sources)
+Policy communication for non-specialist audiences
+Organization and accountability tracking
+Fast learner, observant, quick on her feet
+Event operations and logistics
+
+YEARS_EXPERIENCE_APPROX:
+0-1
+
+GRAD_YEAR:
+2028
+
+RELEVANT_EXPERIENCE:
+
+Florida Blue Homecoming and Gator Growl – Deputy Chief of Staff, Accountability
+Feb 2026 – Present
+Coordinates across 50+ staff members, owns task tracking, assigns ownership, monitors deadlines, ensures execution.
+
+UF Student Government Cabinet – Assistant Director, Student Engagement
+Aug 2025 – Present
+Supports campus-wide program execution, coordinates logistics and communications, drafts written summaries of policies and initiatives.
+
+UF Student Government Senate – Off Campus Senator
+Aug 2025 – Present
+Represents students, reviews proposals, documents concerns, tracks follow-ups with other senators.
+
+Florida Blue Key Speech and Debate – Assistant Director, Round Robin
+Aug 2025 – Present
+Runs logistics for ~200-participant tournament, manages scheduling and judge assignments, resolves issues under deadlines.
+
+RESEARCH_AND_WRITING:
+Academic Research and Writing – University of Florida
+Conducted archival and journal research, analyzed complex sources, produced long-form papers with formal citation.
+
+ADDITIONAL_EXPERIENCE:
+Pizzeria Sophia – Server and Hostess
+Sep 2023 – Apr 2024
+High-volume service, accuracy, time management, cash/card handling.
+
+LEADERSHIP:
+Dance Marathon UF – Morale Captain and Emerging Leader (Aug 2024 – Present)
+Delta Phi Epsilon – Secretary (Jan 2025 – Dec 2025)
+Jewish Student Union UF – Assistant Director (Aug 2025 – Present)
+UF Panhellenic Council – Panhellenic Counselor (Aug 2025 – Present)
+
+PERSONAL_STRENGTHS:
+Hungry to learn
+Quick on her feet
+Very observant
+Fast learner
+
+CAREER_CONCERN:
+Competition for legal internships / roles

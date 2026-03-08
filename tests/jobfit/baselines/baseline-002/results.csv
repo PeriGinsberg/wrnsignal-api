@@ -1,0 +1,6 @@
+id,label,score,penaltySum,decision_initial,decision_after_gate,decision_final,gate_type,gate_code,gate_detail,why_code_list,risk_code_list,job_family,job_location_mode,job_location_city,profile_location_mode,profile_location_constrained
+case-001,Basic marketing fit sanity check,76,0,Review,Review,Review,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,New York City,in_person,TRUE
+case-002,Strong marketing fit with explicit tool overlap,76,0,Review,Review,Review,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,New York City,in_person,TRUE
+case-003,Marketing role with analytics-heavy signals,48,0,Pass,Pass,Pass,none,,,,RISK_MISSING_TOOLS|RISK_ANALYTICS_HEAVY,Analytics,unclear,,unclear,FALSE
+case-004,Constrained location mismatch should floor to review,76,0,Review,Review,Review,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,,in_person,TRUE
+case-005,Remote job conflicts with hard no remote constraint,63,12.8,Pass,Pass,Pass,force_pass,GATE_REMOTE_MISMATCH,Hard no remote vs remote job,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_LOCATION,Marketing,remote,,in_person,FALSE

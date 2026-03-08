@@ -1,0 +1,35 @@
+﻿PROFILE_ID: profile_ethan_brooks_public_policy
+
+NAME:
+Ethan Brooks
+
+CURRENT_STATUS:
+Early Career Professional
+
+EDUCATION:
+Georgetown University
+B.A. Public Policy
+Graduated 2024
+
+TARGET_JOB_FAMILIES:
+Public Policy
+Nonprofit
+Government
+
+PRIMARY_TARGET_ROLES:
+Policy Analyst
+Research Analyst
+Public Affairs Associate
+
+LOCATION_PREFERENCES:
+Washington DC
+NYC
+
+CORE_SKILLS:
+Policy research
+Public affairs strategy
+Quantitative policy analysis
+Program evaluation
+
+YEARS_EXPERIENCE_APPROX:
+2

@@ -1,0 +1,26 @@
+{
+  "id": "case-013",
+  "label": "Graduation window mismatch hard gate case",
+  "profileText": "Marketing student targeting full-time marketing roles. Experience with campaign execution, social media support, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Marketing Associate development program for Class of 2024. Full-time role supporting campaign execution, reporting, and brand coordination. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "case-017",
+  "label": "Missing tools standalone case",
+  "profileText": "Marketing student targeting analytics-adjacent marketing roles. Experience with Canva, PowerPoint, and social media execution. Class of 2026.",
+  "jobText": "Marketing Operations Analyst role supporting dashboard maintenance, performance reporting, and campaign measurement. Required tools include Excel, SQL, and Tableau. Preferred tools include Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Canva", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

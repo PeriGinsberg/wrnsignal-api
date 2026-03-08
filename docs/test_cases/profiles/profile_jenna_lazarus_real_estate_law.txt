@@ -1,0 +1,159 @@
+﻿PROFILE_ID: profile_jenna_lazarus_real_estate_law
+
+NAME:
+Jenna M. Lazarus
+
+CURRENT_STATUS:
+Early Career Professional (3 years legal experience)
+
+EDUCATION:
+University of Florida Levin College of Law
+Juris Doctor – Magna Cum Laude
+May 2022
+
+Florida State University Honors College
+Bachelor of Science – Finance
+Dual Minors: International Affairs, Spanish
+Magna Cum Laude
+
+BAR_ADMISSIONS:
+Florida (2022)
+New York (Pending)
+
+TARGET_JOB_FAMILIES:
+Legal
+Real Estate Finance
+Corporate Finance
+Commercial Real Estate
+Asset Management
+
+TARGET_FUNCTION_TAGS:
+real_estate_law
+real_estate_finance
+debt_finance
+corporate_finance
+project_finance
+commercial_real_estate
+real_estate_private_equity
+asset_management
+commercial_banking
+
+PRIMARY_TARGET_ROLES:
+Real Estate Associate Attorney
+Real Estate Finance Associate Attorney
+Corporate Finance Associate Attorney
+Debt Finance Associate Attorney
+Finance Associate Attorney
+
+SECONDARY_ROLES:
+Project Finance Associate Attorney
+Real Estate Transactions Associate
+Real Estate Investment Counsel
+Commercial Real Estate Counsel
+
+TARGET_ENVIRONMENTS:
+Private practice law firms
+In-house legal teams
+Commercial real estate investment firms
+Real estate private equity
+Commercial banking legal groups
+
+TARGET_COMPANIES:
+DLA Piper
+Proskauer Rose
+Cooley LLP
+JP Morgan Chase
+Oaktree
+
+LOCATION_PREFERENCES:
+New York City
+Jersey City NJ
+South Florida
+
+LOCATION_MODE:
+In Person
+Hybrid
+
+START_DATE:
+ASAP
+
+CONSTRAINTS:
+prefFullTime=true
+hardNoRemote=true
+hardNoCommission=true
+hardNoSales=true
+
+CORE_SKILLS:
+Real estate finance transactions
+Mortgage and structured financing
+Loan documentation and negotiation
+Capital stack structuring
+Intercreditor agreements
+Joint venture agreements
+Debt and equity transaction structuring
+Complex deal coordination
+Client management
+Legal drafting and negotiation
+
+TOOLS:
+Microsoft Office
+Legal drafting and document management systems
+Financial and deal modeling familiarity
+
+LANGUAGES:
+English (Native)
+Spanish (Fluent)
+
+YEARS_EXPERIENCE_APPROX:
+3
+
+PROFESSIONAL_EXPERIENCE:
+
+Nelson Mullins Riley & Scarborough LLP – Real Estate Finance Associate
+Sep 2022 – May 2025
+Represented developers and borrowers in complex real estate finance transactions involving layered capital stacks.
+Drafted and negotiated loan agreements, term sheets, intercreditor agreements, and governance documentation.
+Advised on securities disclosures related to bond issuances and investor communications.
+Managed multi-party transaction closings coordinating lenders, investors, public agencies, and counsel.
+
+Representative Transactions:
+Closed $100M+ layered financing transactions combining investor equity and government incentives.
+Negotiated financing structures including senior loans, mezzanine debt, investor equity, and public financing tools.
+Handled documentation for credit facilities, guarantees, subordination agreements, and intercreditor arrangements.
+
+Selected Transactions:
+Grandview Terrace Apartments – Jersey City NJ
+$73M acquisition and rehabilitation of 283-unit senior housing tower.
+
+Drexel Court & Lake Park East – Chicago IL
+$59M multi-property rehabilitation financed with IHDA bonds and LIHTC.
+
+801 Residence – Philadelphia PA
+$20M rehabilitation of 300-unit senior property financed through bridge debt.
+
+Reserve at Saratoga Springs – Saratoga Springs NY
+$78M new construction workforce housing development with tax-exempt bonds and investor equity.
+
+Homer Bonner Jacobs Ortiz – Summer Associate
+Jun 2021 – Aug 2021
+Researched insider trading, trade secrets, and SEC regulatory matters and drafted supporting memoranda.
+
+Office Depot – In-House Legal Extern
+May 2020 – Jul 2020
+Reviewed commercial agreements for risk allocation and supported lease portfolio management.
+
+HLP Integration – Business Development Associate
+May 2017 – May 2018
+Prepared executive client presentations explaining AI software and business applications.
+
+PERSONAL_STRENGTHS:
+Very hard worker
+Highly motivated and driven
+Quick learner
+Strong attention to detail
+Strong client communication
+Dependable
+Strong mix of finance and legal experience
+
+CAREER_CONCERNS:
+Resume gap and how transferable skills will be perceived in new roles
