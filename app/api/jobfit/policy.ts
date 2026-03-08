@@ -91,7 +91,7 @@ export const POLICY: JobFitPolicy = {
     diminishingReturnsRate: 0.35,
   },
 
-  thresholds: { apply: 80, review: 65 },
+  thresholds: { apply: 78, review: 65 },
 
   downgrade: {
     enabled: true,

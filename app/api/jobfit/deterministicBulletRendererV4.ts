@@ -127,10 +127,31 @@ function normalizeWhyJobFact(s: string): string {
     .replace(/^under administrative direction,\s*/i, "")
     .replace(/^responsible for\s+/i, "")
     .replace(/^supporting\s+/i, "")
+    .replace(/^what you[’'`]ll do[:\s]+/i, "")
+    .replace(/^assist in\s+/i, "")
+    .replace(/^assisting with\s+/i, "")
+    .replace(/^engagement[:\s]+/i, "")
+    .replace(/^essential functions include\s+/i, "")
+    .replace(/^conduct\s+/i, "")
+    .replace(/^partners with\s+/i, "")
+    .replace(/^the legislative affairs team to\s+/i, "")
+.replace(/^developing\s+/i, "develop ")
+.replace(/^contributing from concept to execution of\s+/i, "contribute to ")
+.replace(/the process design and documentation work this role requires/i, "design and document processes")
+.replace(/the cross-functional execution this role requires/i, "execute cross-functionally")
+.replace(/the compliance and analysis work this role requires/i, "perform compliance and analysis work")
+.replace(/the market research and growth strategy work this role requires/i, "conduct market research and support growth strategy").replace(/^develops and maintains\s+/i, "develop and maintain ")
+.replace(
+  /develop and maintain expertise in tracking emerging and complex issues related to health care finance/i,
+  "develop and maintain expertise in emerging health care finance issues"
+)
+.replace(/^analyze\s+/i, "analyze ")
+.replace(/develop and maintain expertise in and tracks/i, "develop and maintain expertise in tracking")
+.replace(/^planning and administering\s+/i, "plan and administer ")
     .trim()
 
   if (/ensuring compliance with state and federal regulations/i.test(t)) {
-    return "the compliance and analysis work this role requires"
+    return "perform compliance and analysis work"
   }
 
   if (/conducting detailed analyses/i.test(t) && /process improvement/i.test(t)) {
@@ -138,22 +159,31 @@ function normalizeWhyJobFact(s: string): string {
   }
 
   if (/process design documentation and governance/i.test(t)) {
-    return "the process design and documentation work this role requires"
+    return "design and document processes"
   }
 
   if (/service strategy into coordinated cross-functional execution/i.test(t)) {
-    return "the cross-functional execution this role requires"
+    return "execute cross-functionally"
   }
 
   if (/market research/i.test(t) && /growth opportunities/i.test(t)) {
-    return "the market research and growth strategy work this role requires"
+    return "conduct market research and support growth strategy"
   }
 
   if (/gathering data and analyzing business challenges/i.test(t)) {
     return "the product strategy and analytical work this role requires"
   }
 
-  return t
+  t = t
+  .split(/;|\s+\|\s+|,\s+(?=[a-z])/i)[0]
+  .replace(/\s+(including|especially|such as)\s+.*$/i, "")
+  .trim()
+
+if (t.length > 140) {
+  t = t.slice(0, 140).replace(/\s+\S*$/, "").trim()
+}
+
+return t
 }
 
 function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): string | null {
@@ -193,13 +223,15 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
     return sentence("This position aligns with your stated interest in marketing roles.")
   }
 
-  if (
-    hasAny(["finance", "investment", "wealth management", "asset management", "client associate"]) ||
-    familyIs("Finance") ||
+ if (
+  /\b(finance|investment|wealth management|asset management)\b/.test(roleText) ||
+  (
+    hasAny(["finance", "investment", "wealth management", "asset management", "client associate"]) &&
     /\b(finance|investment|wealth management|asset management)\b/.test(roleText)
-  ) {
-    return sentence("This position aligns with your stated interest in finance roles.")
-  }
+  )
+) {
+  return sentence("This position aligns with your stated interest in finance roles.")
+}
 
   if (
     hasAny(["private practice", "legal assistant", "legal services", "privacy analyst", "data protection"]) ||
@@ -219,35 +251,93 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
 
   return null
 }
+
+function toGerundStart(s: string): string {
+  let t = norm(s)
+
+t = t.replace(/^Gathered and analyzed\b/i, "gathering and analyzing")
+t = t.replace(/^Gathered and analyzed\s+/i, "gathering and analyzing ")
+  t = t.replace(/^Conducted\b/i, "conducting")
+  t = t.replace(/^Prepared\b/i, "preparing")
+  t = t.replace(/^Led\b/i, "leading")
+  t = t.replace(/^Developed\b/i, "developing")
+  t = t.replace(/^Coordinated\b/i, "coordinating")
+  t = t.replace(/^Supported\b/i, "supporting")
+  t = t.replace(/^Gathered\b/i, "gathering")
+  t = t.replace(/^Analyzed\b/i, "analyzing")
+  t = t.replace(/^Engaged\b/i, "engaging")
+  t = t.replace(/^Partnered\b/i, "partnering")
+  t = t.replace(/^Spearheaded\b/i, "spearheading")
+  t = t.replace(/^Standardized\b/i, "standardizing")
+t = t.replace(/^Led\s+cross-functional team\b/i, "leading a cross-functional team")
+t = t.replace(/^Led\b/i, "leading a")
+t = t.replace(/^Proven record leading\b/i, "leading")
+t = t.replace(/^Strong focus on\b/i, "focusing on")
+t = t.replace(/^Gathered and analyzed\s+/i, "gathering and analyzing ")
+t = t.replace(/^Led cross-functional team\b/i, "leading a cross-functional team")
+
+  return t
+}
+
 function renderWhyBullet(
   w: WhyCode,
   profileSignals?: EvalOutput["profile_signals"],
   jobSignals?: EvalOutput["job_signals"]
 ): string | null {
- const jobFact = normalizeWhyJobFact(w.job_fact || "")
-  const profileFact = cleanClause(w.profile_fact || "")
+  const jobFact = normalizeWhyJobFact(w.job_fact || "")
+
+  let profileFact = toGerundStart(cleanClause(w.profile_fact || ""))
+  profileFact = profileFact
+    .split(/;|\s+\|\s+/)[0]
+    .replace(/\s+(including|especially|such as)\s+.*$/i, "")
+    .trim()
+
+  if (profileFact.length > 160) {
+    profileFact = profileFact.slice(0, 160).replace(/\s+\S*$/, "").trim()
+  }
+
+  if (
+    /^(what you'll do|what you will do|major responsibilities include|ideal qualifications include|this job reports to|major in\b|duties include\b|the intern reports directly\b|throughout your work with\b|two years of equivalent education\b|2-4 years\b|[0-9]+\+?\s*years\b|work as a member of\b|small sized commercial litigation law firm\b)/i.test(
+      jobFact
+    )
+  ) {
+    return null
+  }
 
   if (!usable(jobFact) || !usable(profileFact)) return null
 
+  const pf = profileFact.charAt(0).toLowerCase() + profileFact.slice(1)
+  const jf = jobFact.charAt(0).toLowerCase() + jobFact.slice(1)
+
   if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
-  return sentence(`${profileFact} gives you real proof for ${jobFact}.`)
-}
-  
+    return sentence(
+      `Your experience ${pf} directly supports this role's responsibility to ${jf}.`
+    )
+  }
 
   if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
-    return sentence(`${profileFact} is relevant adjacent proof for ${jobFact}.`)
+    return sentence(
+      `Your experience ${pf} is relevant adjacent evidence for this role's responsibility to ${jf}.`
+    )
   }
 
   if (w.code === "WHY_EXECUTION_PROOF") {
-    return sentence(`${profileFact} also shows the structured execution this role depends on, especially ${jobFact}.`)
+    return sentence(
+      `Your experience ${pf} also supports this role's need to ${jf}.`
+    )
   }
 
   if (w.code === "WHY_TOOL_PROOF") {
-    return sentence(`${profileFact} supports the tool workflow this role calls for, especially ${jobFact}.`)
+    return sentence(
+      `Your experience ${pf} supports the workflow this role calls for, especially the responsibility to ${jf}.`
+    )
   }
 
-  return sentence(`${profileFact} is relevant proof for ${jobFact}.`)
+  return sentence(
+    `Your experience ${pf} supports this role's responsibility to ${jf}.`
+  )
 }
+
 function renderRiskBullet(r: RiskCode): string | null {
   const code = norm(r.code)
   const jobEv = sentence(r.job_fact || "")
@@ -255,39 +345,55 @@ function renderRiskBullet(r: RiskCode): string | null {
   const riskText = sentence(r.risk || "")
 
   if (!usable(jobEv)) return null
+
   if (code === "RISK_ANALYTICS_HEAVY") {
-    return sentence("This role appears more analytics-heavy than your stated preferences suggest.")
+    return sentence(
+      "This role appears more analytics-heavy than your stated preferences suggest."
+    )
   }
 
-if (code === "RISK_MISSING_PROOF") {
-  return sentence(`This role emphasizes ${cleanClause(r.job_fact || "")}, and your profile does not yet show clear direct proof in that area.`)
-}
+  if (code === "RISK_MISSING_PROOF") {
+    return sentence(
+      `This role emphasizes ${cleanClause(r.job_fact || "")}, and your profile does not yet show clear direct proof in that area.`
+    )
+  }
 
   if (code === "RISK_CONTRACT") {
-    return sentence("This role appears to be contract-based, which does not align with your preference for full-time roles.")
+    return sentence(
+      "This role appears to be contract-based, which does not align with your preference for full-time roles."
+    )
   }
 
   if (code === "RISK_LOCATION") {
-    return sentence("This role’s location does not align with the cities you are targeting.")
+    return sentence(
+      "This role's location does not align with the cities you are targeting."
+    )
   }
 
   if (code === "RISK_SALES") {
-    return sentence("This role includes sales expectations that conflict with your stated constraints.")
+    return sentence(
+      "This role includes sales expectations that conflict with your stated constraints."
+    )
   }
 
   if (code === "RISK_MISSING_TOOLS") {
-    return sentence("The posting calls for tools you have not clearly shown in your profile yet.")
+    return sentence(
+      "The posting calls for tools you have not clearly shown in your profile yet."
+    )
   }
 
-
-  if (code === "RISK_MISSING_TOOLS") {
-    if (usable(profileEv)) return sentence(`${jobEv} ${profileEv}`)
-    return jobEv
+  if (usable(riskText) && usable(profileEv)) {
+    return sentence(`${riskText} ${jobEv} ${profileEv}`)
   }
 
-  if (usable(riskText) && usable(profileEv)) return sentence(`${riskText} ${jobEv} ${profileEv}`)
-  if (usable(riskText)) return sentence(`${riskText} ${jobEv}`)
-  if (usable(profileEv)) return sentence(`${jobEv} ${profileEv}`)
+  if (usable(riskText)) {
+    return sentence(`${riskText} ${jobEv}`)
+  }
+
+  if (usable(profileEv)) {
+    return sentence(`${jobEv} ${profileEv}`)
+  }
+
   return jobEv
 }
 
@@ -317,7 +423,7 @@ export function renderBulletsV4(out: EvalOutput): {
   const usedRiskJobFacts = new Set<string>()
   const usedRiskProfileFacts = new Set<string>()
 
-    const interestAlign = buildInterestAlignmentClause(
+  const interestAlign = buildInterestAlignmentClause(
     out.profile_signals,
     out.job_signals
   )
@@ -325,8 +431,8 @@ export function renderBulletsV4(out: EvalOutput): {
   if (interestAlign && whyMax > 0) {
     why.push(interestAlign)
   }
- 
- if (whyMax > 0) {
+
+  if (whyMax > 0) {
     for (const w of whyCodesIn) {
       if (why.length >= whyMax) break
 
@@ -336,12 +442,18 @@ export function renderBulletsV4(out: EvalOutput): {
       const renderedKey = norm(rendered || "")
       const jobFactKey = norm(w.job_fact || "").slice(0, 180)
       const profileFactKey = norm(w.profile_fact || "").slice(0, 180)
- 
+      const normalizedWhyJobFactKey = norm(
+        normalizeWhyJobFact(w.job_fact || "")
+      ).slice(0, 180)
+
       if (!rendered || !usable(rendered)) continue
       if (renderedKey && usedWhyRendered.has(renderedKey)) continue
+      if (normalizedWhyJobFactKey && usedWhyJobFacts.has(normalizedWhyJobFactKey)) continue
 
       if (jobFactKey && usedWhyJobFacts.has(jobFactKey)) {
-        const sameJobFactAlreadyUsed = why.some((existing) => norm(existing).includes(jobFactKey))
+        const sameJobFactAlreadyUsed = why.some((existing) =>
+          norm(existing).includes(jobFactKey)
+        )
         const allowSameJobFactVariant =
           w.code === "WHY_EXECUTION_PROOF" || w.code === "WHY_TOOL_PROOF"
 
@@ -351,20 +463,25 @@ export function renderBulletsV4(out: EvalOutput): {
       if (profileFactKey && usedProfileFacts.has(profileFactKey)) continue
       if (matchKey && usedWhyKeys.has(matchKey)) continue
       if (group === "tools" && usedWhyGroups.has("tools")) continue
-      if (group === "execution" && Array.from(usedWhyGroups).filter((g) => g === "execution").length >= 2) continue
+      if (
+        group === "execution" &&
+        Array.from(usedWhyGroups).filter((g) => g === "execution").length >= 2
+      ) {
+        continue
+      }
 
-    why.push(rendered)
+      why.push(rendered)
 
-if (renderedKey) usedWhyRendered.add(renderedKey)
-if (jobFactKey) usedWhyJobFacts.add(jobFactKey)
-if (profileFactKey) usedProfileFacts.add(profileFactKey)
-if (matchKey) usedWhyKeys.add(matchKey)
+      if (renderedKey) usedWhyRendered.add(renderedKey)
+      if (normalizedWhyJobFactKey) usedWhyJobFacts.add(normalizedWhyJobFactKey)
+      if (profileFactKey) usedProfileFacts.add(profileFactKey)
+      if (matchKey) usedWhyKeys.add(matchKey)
 
-usedWhyGroups.add(group)
+      usedWhyGroups.add(group)
     }
   }
 
-    if (riskMax > 0) {
+  if (riskMax > 0) {
     for (const r of riskCodesIn) {
       if (risk.length >= riskMax) break
 
@@ -391,6 +508,12 @@ usedWhyGroups.add(group)
     }
   }
 
+  if (out.decision === "Pass" && risk.length === 0) {
+    risk.push(
+      "The posting emphasizes work where your current experience does not yet show clear direct proof."
+    )
+  }
+
   return {
     why,
     risk,
@@ -413,3 +536,6 @@ usedWhyGroups.add(group)
     },
   }
 }
+
+
+

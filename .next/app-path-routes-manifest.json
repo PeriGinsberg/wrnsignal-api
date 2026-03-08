@@ -1,0 +1,21 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/canary/route": "/api/canary",
+  "/api/coverletter/route": "/api/coverletter",
+  "/api/jobfit-intake/route": "/api/jobfit-intake",
+  "/api/jobfit-run-trial/route": "/api/jobfit-run-trial",
+  "/api/jobfit-v4-debug/route": "/api/jobfit-v4-debug",
+  "/api/jobfit/route": "/api/jobfit",
+  "/api/networking/route": "/api/networking",
+  "/api/ping/route": "/api/ping",
+  "/api/positioning/route": "/api/positioning",
+  "/api/profile-intake/route": "/api/profile-intake",
+  "/api/profile-risk-overrides/route": "/api/profile-risk-overrides",
+  "/api/seat-create/route": "/api/seat-create",
+  "/api/seat-verify/route": "/api/seat-verify",
+  "/api/send-magic-link/route": "/api/send-magic-link",
+  "/api/version/route": "/api/version",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/canary": {},
+    "/api/coverletter": {},
+    "/api/jobfit": {},
+    "/api/jobfit-intake": {},
+    "/api/jobfit-run-trial": {},
+    "/api/networking": {},
+    "/api/positioning": {},
+    "/api/version": {}
+  }
+}

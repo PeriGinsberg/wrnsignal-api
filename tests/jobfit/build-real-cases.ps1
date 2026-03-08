@@ -131,8 +131,10 @@ extra_context: $($row.extra_context)
         $gradYear = 2027
     }
 
-    $yearsExperienceApprox = 1
-    if ($row.current_status -match "Early stage professional") { $yearsExperienceApprox = 3 }
+   $yearsExperienceApprox = 1
+if ($row.current_status -match "Senior") { $yearsExperienceApprox = 2 }
+elseif ($row.current_status -match "Junior") { $yearsExperienceApprox = 2 }
+elseif ($row.current_status -match "Early stage professional") { $yearsExperienceApprox = 3 }
 
     $caseObject = [ordered]@{
         id = $row.case_id

@@ -1,35 +1,34 @@
 // FILE: app/api/jobfit/deterministicBulletRendererV4.ts
 //
-// CLEAN REWRITE: V4 deterministic bullet renderer (million-dollar output)
-// Core rules:
-// - WHY bullets = real reasons to apply (not table stakes).
-// - Table-stakes (internship/summer/location/early-career) never become WHY.
-// - Tools are a WHY only when the job explicitly mentions them AND the profile shows them.
-// - Tools are risk-only when job explicitly mentions them AND the profile does not show them.
-// - Omission is never a negative: risk bullets require job-side proof.
-// - Bullets are 1 sentence, human, interview-usable, not corporate.
-//
-// Output strategy (universal):
-//   {Profile proof}; {Role demand}.
-// Example:
-//   "You’ve built DCF models and done diligence; this role requires financial modeling and hypothesis-driven research."
+// Thin deterministic renderer.
+// It should not rescue weak upstream evidence.
+// It should render matched proof cleanly.
 
 import type {
   EvalOutput,
   Decision,
   WhyCode,
   RiskCode,
-  StructuredJobSignals,
-  StructuredProfileSignals,
 } from "./signals"
 
-export const RENDERER_V4_STAMP = "RENDERER_V4_STAMP__2026_02_27__MILLION_DOLLAR__A"
+export const RENDERER_V4_STAMP =
+  "RENDERER_V4_STAMP__2026_03_07__THIN_EVIDENCE_RENDERER__B"
 
 type RenderCaps = { whyMax: number; riskMax: number }
+
 function capsForDecision(d: Decision): RenderCaps {
-  if (d === "Apply") return { whyMax: 4, riskMax: 3 }
-  if (d === "Review") return { whyMax: 4, riskMax: 4 }
+  if (d === "Priority Apply") return { whyMax: 6, riskMax: 3 }
+  if (d === "Apply") return { whyMax: 6, riskMax: 3 }
+  if (d === "Review") return { whyMax: 5, riskMax: 4 }
   return { whyMax: 0, riskMax: 4 }
+}
+
+type Group = "proof" | "tools" | "execution" | "other"
+
+function whyGroup(w: WhyCode): Group {
+  if (w.code === "WHY_TOOL_PROOF") return "tools"
+  if (w.code === "WHY_EXECUTION_PROOF") return "execution"
+  return "proof"
 }
 
 /* ------------------------------ TABLE-STAKES RULES ------------------------------ */
@@ -320,25 +319,41 @@ export function renderBulletsV4(out: EvalOutput): {
   }
 
   // RISK selection with redundancy control
-  if (riskMax > 0) {
+    if (riskMax > 0) {
     for (const r of riskCodesIn) {
       if (risk.length >= riskMax) break
-      const code = norm(r?.code)
-      if (!code) continue
 
-      const g = riskGroup(code)
-      if (usedRiskGroups.has(g) && g !== "other") continue
+      const group = riskGroup(r.code)
+      const rendered = renderRiskBullet(r)
+      const renderedKey = norm(rendered || "")
+      const jobFactKey = norm(r.job_fact || "").slice(0, 180)
+      const profileFactKey = norm(r.profile_fact || "").slice(0, 180)
 
-      // Tool gap cannot be top risk unless high severity
-      if (code === "RISK_MISSING_TOOLS" && risk.length === 0 && r.severity !== "high") continue
+      if (usedRiskGroups.has(group) && group !== "other") continue
+      if (r.code === "RISK_MISSING_TOOLS" && risk.length === 0 && r.severity !== "high") continue
+      if (!rendered || !usable(rendered)) continue
+      if (renderedKey && usedRiskRendered.has(renderedKey)) continue
+      if (jobFactKey && usedRiskJobFacts.has(jobFactKey)) continue
+      if (profileFactKey && usedRiskProfileFacts.has(profileFactKey)) continue
 
-      const b = renderRiskBullet(out, r)
-      if (!b || !usable(b)) continue
+      risk.push(rendered)
 
-      usedRiskGroups.add(g)
-      risk.push(b)
+      if (renderedKey) usedRiskRendered.add(renderedKey)
+      if (jobFactKey) usedRiskJobFacts.add(jobFactKey)
+      if (profileFactKey) usedRiskProfileFacts.add(profileFactKey)
+
+            usedRiskGroups.add(group)
     }
   }
+
+  if (out.decision === "Pass" && risk.length === 0) {
+    risk.push("This role shows a core mismatch with your current background or stated direction")
+  }
+
+  return {
+    why,
+    risk,
+    renderer_debug: {
 
   // Debug trace so you can see exactly what was excluded and why
   const why_trace = whyCodesIn.map((w) => {

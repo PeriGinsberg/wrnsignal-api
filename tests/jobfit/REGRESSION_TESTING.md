@@ -3746,3 +3746,328 @@ real-case output refinement
 
 rather than a formal accepted recalibration snapshot across the full synthetic baseline process.
 
+68. Current Active Regression Workflow and Source-of-Truth Update
+
+The regression system now has two distinct input modes, and it is critical not to confuse them.
+
+Synthetic case pack
+
+Synthetic cases continue to live in:
+
+tests/jobfit/cases/*.json
+
+These are hand-authored deterministic regression scenarios used to validate controlled logic behavior.
+
+Real case pack
+
+The real-case regression pack is now generated from:
+
+tests/jobfit/real_cases_input.csv
+
+Important clarification:
+
+tests/jobfit/real_cases/*.json is not the source of truth
+
+those JSON files are generated artifacts
+
+they are rebuilt from the CSV every time the real-case builder runs
+
+This means:
+
+manually creating a new real-0XX.json file is not sufficient
+
+the next run of build-real-cases.ps1 will delete and recreate the folder contents from CSV
+
+new real cases must be added by appending rows to real_cases_input.csv
+
+This is now the active real-case workflow.
+
+69. Real-Case Builder Behavior: Generated JSON Files Are Rebuilt from CSV
+
+The current real-case builder script is:
+
+tests/jobfit/build-real-cases.ps1
+
+Its behavior is now confirmed to be:
+
+read tests/jobfit/real_cases_input.csv
+
+clear existing JSON files in tests/jobfit/real_cases/
+
+regenerate JSON files from the CSV rows
+
+write one JSON file per row
+
+This means the following behavior is intentional and expected:
+
+existing JSON files in tests/jobfit/real_cases/ are deleted before rebuild
+
+the count of built files equals the number of rows in real_cases_input.csv
+
+manually added JSON files that are not represented in the CSV will be removed on rebuild
+
+Operational rule
+
+When adding a new real regression case:
+
+append a row to tests/jobfit/real_cases_input.csv
+
+run:
+
+.\tests\jobfit\build-real-cases.ps1
+
+verify the generated JSON appears in:
+
+tests/jobfit/real_cases/
+
+run:
+
+npx tsx tests/jobfit/runRealCases.ts
+
+Do not treat tests/jobfit/real_cases/*.json as manually maintained source files.
+
+70. Real Regression Expansion: Added New Anchor Cases for Will, Zoe, and Jacob
+
+The real-case regression pack was expanded with three additional anchor scenarios based on active product testing.
+
+New cases added:
+
+real-016 — Will Friedman / Alton Aviation Management Consulting Intern
+
+real-017 — Zoe Siegel / Planned Parenthood Policy Analyst
+
+real-018 — Jacob Kanterman / GeistM Growth Marketing Analyst
+
+These were added to:
+
+tests/jobfit/real_cases_input.csv
+
+and then generated into:
+
+tests/jobfit/real_cases/
+
+Why these three cases matter
+
+These cases were chosen because they expose three different classes of engine behavior:
+
+real-016 — strong early-career consulting fit
+
+Purpose:
+
+validate that a strong internship-level consulting candidate can reach a viable high-confidence outcome
+
+test direct proof in market research, analytics, and finance fundamentals
+
+Observed behavior at current state:
+
+score = 82
+
+no risk codes
+
+Interpretation:
+This behaves like a healthy Apply-type early-career consulting case.
+
+real-017 — policy-adjacent candidate vs. specialized policy role
+
+Purpose:
+
+validate that a policy/legal student with advocacy and legislative research experience does not get over-promoted into a highly specialized health-policy role
+
+test missing domain-specific proof behavior
+
+Observed behavior at current state:
+
+score = 76
+
+no risk codes
+
+Interpretation:
+The case still exposes a known weakness:
+the decision band is plausible, but the engine is still under-surfacing meaningful domain/specialization risks.
+
+real-018 — direct growth-marketing fit
+
+Purpose:
+
+validate that a direct-fit entry-level growth/digital marketing candidate is not scored too conservatively
+
+test campaign, content, analytics, and NYC-location alignment
+
+Observed behavior at current state:
+
+score = 81
+
+risk codes included:
+
+RISK_EXPERIENCE
+
+RISK_MISSING_TOOLS
+
+Interpretation:
+This case is useful, but it also exposed a test-harness distortion:
+the builder currently underestimates years of experience for some student profiles, which can generate misleading experience-gap risk output.
+
+71. Real-Case Testing Revealed a Builder-Layer Experience Approximation Distortion
+
+The addition of the new anchor cases revealed that some apparent JobFit issues were actually coming from the real-case builder rather than the engine itself.
+
+Problem observed
+
+In real-018 (Jacob / GeistM), the regression result included:
+
+RISK_EXPERIENCE
+
+profile experience approximated as 1 years
+
+This was not a trustworthy reflection of the intended candidate scenario.
+
+Root cause
+
+tests/jobfit/build-real-cases.ps1 currently contains a simplified approximation:
+
+default yearsExperienceApprox = 1
+
+Early stage professional -> 3
+
+This is too coarse for many student cases.
+
+It can artificially create:
+
+experience-gap risks
+
+lower scores
+
+distorted decision outcomes
+
+especially for strong seniors and juniors who have multiple relevant internships, projects, or direct role proof.
+
+Current interpretation
+
+This is not yet a solved engine change.
+
+It is currently documented as an identified builder-layer limitation that can distort real-case interpretation.
+
+This matters because the real-case suite is intended to reveal engine behavior, and builder distortion can make a case appear worse than the engine logic actually is.
+
+72. Active Real-Case Validation Sequence
+
+The current standard validation flow for real-case regression is now:
+
+npx tsc --noEmit
+.\tests\jobfit\build-real-cases.ps1
+npx tsx tests/jobfit/runRealCases.ts
+
+This validates:
+
+TypeScript integrity
+
+CSV-driven real-case generation
+
+deterministic extraction
+
+scoring
+
+gate behavior
+
+downgrade behavior
+
+live rendered WHY/RISK output
+
+Direct inspection pattern
+
+After running the real-case suite, targeted cases should be inspected directly from:
+
+tests/jobfit/results/real_case_results.json
+
+Typical inspection fields include:
+
+decision
+
+score
+
+risk_codes
+
+bullets
+
+risk_bullets_joined
+
+This remains the fastest way to inspect specific real-case behavior without relying on the UI.
+
+73. Current Product Direction: Score Remains Internal, Decision Is User-Facing
+
+During current ship-readiness work, product direction was clarified:
+
+the student should not see the numeric score
+
+the score remains useful internally for:
+
+debugging
+
+regression analysis
+
+calibration
+
+decision ladder logic
+
+Implication
+
+Going forward, regression testing should continue to track score internally, but product quality should be judged primarily by:
+
+correct decision bucket
+
+high-quality Why bullets
+
+high-quality Risk bullets
+
+This is especially important for a student and entry-level product, because numeric scores create false precision and can encourage over-filtering.
+
+74. Current Ship-Readiness Focus
+
+The active ship-readiness focus has now narrowed to three engine outputs:
+
+scoring and decision correctness
+
+“Why this works” bullet quality
+
+risk bullet quality
+
+Other concerns such as UI rendering, score display, and route orchestration are temporarily secondary.
+
+Current working objective
+
+For the next iteration window, the JobFit engine should be treated as ship-ready only when it consistently delivers:
+
+correct Apply / Review / Pass judgment for student and early-career candidates
+
+Why bullets that sound like hiring judgment, not debug text
+
+Risk bullets that surface meaningful competitiveness gaps without over-penalizing normal entry-level limitations
+
+This is now the active optimization target for the next few hours of work.
+
+75. Locked Workflow for Adding New Real Regression Cases
+
+A new operating rule was established for future real-case additions.
+
+When adding any new real JobFit regression case:
+
+use the existing tests/jobfit/real_cases_input.csv workflow
+
+use a PowerShell-first workflow to append and verify rows
+
+rebuild JSON cases from the CSV
+
+verify the generated cases before running the suite
+
+Locked standard
+
+Future additions of JobFit real regression cases should use:
+
+the existing tests/jobfit/real_cases_input.csv source-of-truth pattern
+
+the generated tests/jobfit/real_cases/*.json artifact pattern
+
+a PowerShell-first workflow to create and verify them
+
+This should be treated as the standard real-case workflow going forward.
+
