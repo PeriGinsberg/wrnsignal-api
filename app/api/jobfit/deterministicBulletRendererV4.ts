@@ -33,6 +33,32 @@ function whyGroup(w: WhyCode): Group {
 
 function riskGroup(code: string): Group {
   if (code === "RISK_MISSING_TOOLS") return "tools"
+
+  if (
+    code === "RISK_GRAD_WINDOW" ||
+    code === "RISK_MBA" ||
+    code === "RISK_GOVERNMENT"
+  ) {
+    return "proof"
+  }
+
+  if (
+    code === "RISK_LOCATION" ||
+    code === "RISK_CONTRACT" ||
+    code === "RISK_HOURLY"
+  ) {
+    return "execution"
+  }
+
+  if (
+    code === "RISK_EXPERIENCE" ||
+    code === "RISK_ANALYTICS_HEAVY" ||
+    code === "RISK_REPORTING_SIGNALS" ||
+    code === "RISK_SALES"
+  ) {
+    return "other"
+  }
+
   return "other"
 }
 
@@ -229,6 +255,30 @@ function renderRiskBullet(r: RiskCode): string | null {
   const riskText = sentence(r.risk || "")
 
   if (!usable(jobEv)) return null
+  if (code === "RISK_ANALYTICS_HEAVY") {
+    return sentence("This role appears more analytics-heavy than your stated preferences suggest.")
+  }
+
+if (code === "RISK_MISSING_PROOF") {
+  return sentence(`This role emphasizes ${cleanClause(r.job_fact || "")}, and your profile does not yet show clear direct proof in that area.`)
+}
+
+  if (code === "RISK_CONTRACT") {
+    return sentence("This role appears to be contract-based, which does not align with your preference for full-time roles.")
+  }
+
+  if (code === "RISK_LOCATION") {
+    return sentence("This role’s location does not align with the cities you are targeting.")
+  }
+
+  if (code === "RISK_SALES") {
+    return sentence("This role includes sales expectations that conflict with your stated constraints.")
+  }
+
+  if (code === "RISK_MISSING_TOOLS") {
+    return sentence("The posting calls for tools you have not clearly shown in your profile yet.")
+  }
+
 
   if (code === "RISK_MISSING_TOOLS") {
     if (usable(profileEv)) return sentence(`${jobEv} ${profileEv}`)
@@ -263,6 +313,9 @@ export function renderBulletsV4(out: EvalOutput): {
   const usedWhyRendered = new Set<string>()
   const usedWhyJobFacts = new Set<string>()
   const usedProfileFacts = new Set<string>()
+  const usedRiskRendered = new Set<string>()
+  const usedRiskJobFacts = new Set<string>()
+  const usedRiskProfileFacts = new Set<string>()
 
     const interestAlign = buildInterestAlignmentClause(
     out.profile_signals,
@@ -311,18 +364,29 @@ usedWhyGroups.add(group)
     }
   }
 
-  if (riskMax > 0) {
+    if (riskMax > 0) {
     for (const r of riskCodesIn) {
       if (risk.length >= riskMax) break
 
       const group = riskGroup(r.code)
+      const rendered = renderRiskBullet(r)
+      const renderedKey = norm(rendered || "")
+      const jobFactKey = norm(r.job_fact || "").slice(0, 180)
+      const profileFactKey = norm(r.profile_fact || "").slice(0, 180)
+
       if (usedRiskGroups.has(group) && group !== "other") continue
       if (r.code === "RISK_MISSING_TOOLS" && risk.length === 0 && r.severity !== "high") continue
-
-      const rendered = renderRiskBullet(r)
       if (!rendered || !usable(rendered)) continue
+      if (renderedKey && usedRiskRendered.has(renderedKey)) continue
+      if (jobFactKey && usedRiskJobFacts.has(jobFactKey)) continue
+      if (profileFactKey && usedRiskProfileFacts.has(profileFactKey)) continue
 
       risk.push(rendered)
+
+      if (renderedKey) usedRiskRendered.add(renderedKey)
+      if (jobFactKey) usedRiskJobFacts.add(jobFactKey)
+      if (profileFactKey) usedRiskProfileFacts.add(profileFactKey)
+
       usedRiskGroups.add(group)
     }
   }

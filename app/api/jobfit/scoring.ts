@@ -290,6 +290,54 @@ function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProf
   return dedupeByMatch(matches).sort((a, b) => b.weight - a.weight)
 }
 
+function buildMajorGapRisks(
+  job: StructuredJobSignals,
+  allMatches: WhyEvidenceMatch[]
+): RiskCode[] {
+  const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
+
+  const matchedKeys = new Set(
+    allMatches
+      .map((m) => norm(m.match_key || ""))
+      .filter(Boolean)
+  )
+
+  const majorKinds = new Set(["function", "execution", "deliverable", "stakeholder"])
+
+  const unmatchedMajorUnits = jobUnits.filter((ju) => {
+    const key = norm(ju.key || "")
+    if (!key) return false
+    if (matchedKeys.has(key)) return false
+    if (!majorKinds.has(ju.kind)) return false
+    if (!(ju.requiredness === "core" || ju.strength >= 8)) return false
+    return true
+  })
+
+  const deduped = new Map<string, JobRequirementUnit>()
+  for (const ju of unmatchedMajorUnits) {
+    const key = norm(ju.key || "")
+    if (!key || deduped.has(key)) continue
+    deduped.set(key, ju)
+  }
+
+  return Array.from(deduped.values())
+    .sort((a, b) => {
+      const aCore = a.requiredness === "core" ? 1 : 0
+      const bCore = b.requiredness === "core" ? 1 : 0
+      if (bCore !== aCore) return bCore - aCore
+      return b.strength - a.strength
+    })
+    .slice(0, 2)
+    .map((ju) => ({
+      code: "RISK_MISSING_PROOF",
+            job_fact: ju.label,
+      profile_fact: null,
+      risk: "The role emphasizes work where your profile does not yet show clear direct proof.",
+      severity: ju.requiredness === "core" ? "high" : "medium",
+      weight: 0,
+    }))
+}
+
 function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenceMatch[] {
   const picked: WhyEvidenceMatch[] = []
   const usedKeys = new Set<string>()
@@ -424,6 +472,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const riskOnlyCodes: RiskCode[] = []
 
   const allMatches = buildEvidenceMatches(job, profile)
+  const majorGapRisks = buildMajorGapRisks(job, allMatches)
   const selectedMatches = selectWhyMatches(allMatches, 3, 6)
   const whyCodes = whyCodesFromMatches(selectedMatches)
 
@@ -713,7 +762,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   let score = base - penaltySum
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
 
-  const riskCodes = dedupeRiskCodes([...capped.map((p) => p.risk), ...riskOnlyCodes])
+   const riskCodes = dedupeRiskCodes([...capped.map((p) => p.risk), ...riskOnlyCodes, ...majorGapRisks])
 
   return {
     score: Math.round(score),
