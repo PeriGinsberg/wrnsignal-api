@@ -1,0 +1,26 @@
+{
+  "id": "case-006",
+  "label": "High-fit marketing role discovery case",
+  "profileText": "Marketing student targeting full-time brand marketing and product marketing roles in New York City. Experience with campaign execution, launch support, reporting, cross-functional coordination, content calendars, presentation development, Excel reporting, Google Analytics, Canva, and PowerPoint. Class of 2026. Wants full-time work in NYC.",
+  "jobText": "Assistant Brand Marketing Manager based in New York City. Full-time role supporting campaign launches, cross-functional coordination, content calendars, brand reporting, presentation development, and performance tracking. Required tools include Excel and Google Analytics. Preferred tools include Canva and PowerPoint.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 2
+  }
+}

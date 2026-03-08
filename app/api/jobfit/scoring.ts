@@ -1,15 +1,22 @@
 // FILE: app/api/jobfit/scoring.ts
-// V4 RULES:
-// - No table-stakes positive scoring (internship/summer/early-career/location/tools).
-// - Table-stakes only matter when NOT met, and only when mismatch proof exists.
-// - Tools are NEVER score penalties. Tools are risk flags only when the job explicitly lists them and the profile does not.
-// - Omission of info is never a negative.
+//
+// Evidence-first scoring for WHY pipeline.
+// WHY bullets are created from matched proof objects, not category overlap.
 
 import { POLICY, type PenaltyKey } from "./policy"
-import type { RiskCode, StructuredJobSignals, StructuredProfileSignals, WhyCode } from "./signals"
+import type {
+  EvidenceKind,
+  JobRequirementUnit,
+  MatchStrength,
+  ProfileEvidenceUnit,
+  RiskCode,
+  StructuredJobSignals,
+  StructuredProfileSignals,
+  WhyCode,
+} from "./signals"
 
-export const SCORING_V4_STAMP = "SCORING_V4_STAMP__2026_02_27__TABLE_STAKES_NEUTRAL__TOOLS_RISK_ONLY__A"
-console.log("[jobfit/scoring] loaded:", SCORING_V4_STAMP)
+export const SCORING_V4_STAMP =
+  "SCORING_V4_STAMP__2026_03_07__EVIDENCE_MATCH_PIPELINE__B"
 
 export type Penalty = {
   key: PenaltyKey
@@ -26,8 +33,73 @@ export type ScoreResult = {
   riskCodes: RiskCode[]
 }
 
+type Severity = "low" | "medium" | "high"
+
+type ToolOverlapResult = {
+  overlap: string[]
+  required: string[]
+  preferred: string[]
+  profile: string[]
+}
+
+type WhyEvidenceMatch = {
+  code: string
+  match_key: string
+  match_kind: EvidenceKind
+  match_strength: MatchStrength
+  job_unit: JobRequirementUnit
+  profile_unit: ProfileEvidenceUnit
+  job_fact: string
+  profile_fact: string
+  note: string
+  weight: number
+}
+
+const ADJACENCY: Record<string, string[]> = {
+  brand_messaging: ["content_execution", "visual_communication", "communications_writing"],
+  communications_writing: ["drafting_documentation", "stakeholder_coordination"],
+  visual_communication: ["brand_messaging", "content_execution"],
+  content_execution: ["brand_messaging", "visual_communication", "performance_optimization"],
+  consumer_research: ["analysis_reporting", "policy_regulatory_research", "strategy_problem_solving"],
+  analysis_reporting: ["financial_analysis", "performance_optimization", "consumer_research"],
+  performance_optimization: ["analysis_reporting", "content_execution"],
+  product_positioning: ["brand_messaging", "communications_writing"],
+  client_commercial_work: ["stakeholder_coordination", "financial_analysis"],
+  policy_regulatory_research: ["drafting_documentation", "analysis_reporting", "communications_writing"],
+  financial_analysis: ["analysis_reporting", "client_commercial_work"],
+  accounting_operations: ["analysis_reporting", "operations_execution"],
+   operations_execution: ["stakeholder_coordination", "analysis_reporting", "drafting_documentation", "policy_regulatory_research"],
+  strategy_problem_solving: ["analysis_reporting", "consumer_research", "stakeholder_coordination"],
+  stakeholder_coordination: ["operations_execution", "client_commercial_work", "communications_writing"],
+  drafting_documentation: ["communications_writing", "policy_regulatory_research"],
+}
+
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n))
+}
+
+function norm(s: string | null | undefined): string {
+  return String(s || "")
+    .trim()
+    .toLowerCase()
+}
+
+function uniqueLower(xs: string[] | null | undefined): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const x of xs || []) {
+    const t = norm(x)
+    if (!t) continue
+    if (seen.has(t)) continue
+    seen.add(t)
+    out.push(t)
+  }
+  return out
+}
+
+function computePenaltyAmount(key: PenaltyKey): number {
+  const p = POLICY.penalties[key]
+  return p.severity * p.multiplier
 }
 
 function applyDiminishingReturns(penaltySum: number): number {
@@ -38,160 +110,326 @@ function applyDiminishingReturns(penaltySum: number): number {
   return softCap + reduced
 }
 
-function computePenaltyAmount(key: PenaltyKey): number {
-  const p = POLICY.penalties[key]
-  return p.severity * p.multiplier
-}
-
-function dedupeByCode<T extends { code: string }>(items: T[]): T[] {
-  const seen = new Set<string>()
-  const out: T[] = []
-  for (const it of items) {
-    if (!it?.code) continue
-    if (seen.has(it.code)) continue
-    seen.add(it.code)
-    out.push(it)
-  }
-  return out
-}
-
-function toolMissing(profileTools: string[], tool: string): boolean {
-  const p = (profileTools || []).map((x) => String(x || "").toLowerCase())
-  return !p.includes(String(tool || "").toLowerCase())
-}
-
-function hasAdjacentToolProof(profileTools: string[], missingTool: string): boolean {
-  const p = (profileTools || []).map((x) => String(x || "").toLowerCase())
-  const m = String(missingTool || "").toLowerCase()
-
-  // adjacency map: “close enough” proof that reduces risk severity
-  if (m === "python") return p.includes("r") || p.includes("sql")
-  if (m === "tableau" || m === "power bi") return p.includes("excel") || p.includes("sql")
-  if (m === "sql") return p.includes("python") || p.includes("r") || p.includes("excel")
-  if (m === "google analytics" || m === "ga4") return p.includes("excel") || p.includes("sql")
-
-  return false
-}
-
-function downgradeSeverity(sev: "low" | "medium" | "high"): "low" | "medium" | "high" {
-  if (sev === "high") return "medium"
-  if (sev === "medium") return "low"
-  return "low"
-}
-
-function normalizeCity(s: string): string {
-  const t = (s || "").trim().toLowerCase()
+function normalizeCity(s: string | null | undefined): string {
+  const t = norm(s)
+  if (!t) return ""
   if (t.includes("new york") || t.includes("nyc")) return "new york"
   if (t.includes("boston")) return "boston"
   if (t.includes("philadelphia") || t.includes("philly")) return "philadelphia"
   if (t.includes("washington") && (t.includes("dc") || t.includes("d.c"))) return "washington, d.c."
   if (t.includes("chicago")) return "chicago"
   if (t.includes("miami")) return "miami"
+  if (t.includes("atlanta")) return "atlanta"
+  if (t.includes("charlotte")) return "charlotte"
+  if (t.includes("austin")) return "austin"
+  if (t.includes("los angeles") || t === "la") return "los angeles"
   return t
 }
 
 function locationCityMatches(jobCity: string, preferredCities: string[]): boolean {
   const j = normalizeCity(jobCity)
-  const prefs = preferredCities.map(normalizeCity)
+  if (!j) return false
+  const prefs = (preferredCities || []).map(normalizeCity).filter(Boolean)
   return prefs.includes(j)
 }
 
-function normTool(s: string): string {
-  return String(s || "").trim().toLowerCase()
+function toolMissing(profileTools: string[], tool: string): boolean {
+  const p = uniqueLower(profileTools)
+  return !p.includes(norm(tool))
 }
 
-function uniqueLower(xs: string[]): string[] {
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const x of xs || []) {
-    const t = normTool(x)
-    if (!t) continue
-    if (seen.has(t)) continue
-    seen.add(t)
-    out.push(t)
-  }
-  return out
+function hasAdjacentToolProof(profileTools: string[], missingTool: string): boolean {
+  const p = uniqueLower(profileTools)
+  const m = norm(missingTool)
+
+  if (m === "python") return p.includes("r") || p.includes("sql")
+  if (m === "tableau" || m === "power bi") return p.includes("excel") || p.includes("sql")
+  if (m === "sql") return p.includes("python") || p.includes("r") || p.includes("excel")
+  if (m === "google analytics") return p.includes("excel") || p.includes("sql")
+
+  return false
 }
 
-function toolOverlap(job: StructuredJobSignals, profile: StructuredProfileSignals): {
-  overlap: string[]
-  required: string[]
-  preferred: string[]
-} {
+function downgradeSeverity(sev: Severity): Severity {
+  if (sev === "high") return "medium"
+  if (sev === "medium") return "low"
+  return "low"
+}
+
+function toolOverlap(job: StructuredJobSignals, profile: StructuredProfileSignals): ToolOverlapResult {
   const profileTools = uniqueLower(profile.tools || [])
   const required = uniqueLower(job.requiredTools || [])
   const preferred = uniqueLower(job.preferredTools || [])
   const jobTools = uniqueLower([...required, ...preferred])
-
   const overlap = jobTools.filter((t) => profileTools.includes(t))
-  return { overlap, required, preferred }
+
+  return {
+    overlap,
+    required,
+    preferred,
+    profile: profileTools,
+  }
 }
 
-/**
- * Base score is intentionally conservative.
- * Family match can move it upward.
- * Everything else is neutral unless mismatch proof exists (penalty) or job explicitly lists a risk (risk flag).
- */
-function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals): number {
-  let base = 60
+function cleanFactSnippet(s: string): string {
+  return String(s || "")
+    .replace(/\s+/g, " ")
+    .replace(/[.;:\s]+$/, "")
+    .trim()
+}
 
-  const familyMatch = profile.targetFamilies.includes(job.jobFamily)
-  if (familyMatch) base += 12
-  else base -= 12
+function profileFactFromUnit(unit: ProfileEvidenceUnit): string {
+  return cleanFactSnippet(unit.snippet)
+}
 
-  // Tools positive ONLY when job explicitly lists tools AND profile overlaps.
-  const hasExplicitTools = (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
-  if (hasExplicitTools) {
-    const { overlap } = toolOverlap(job, profile)
+function jobFactFromUnit(unit: JobRequirementUnit): string {
+  let text = cleanFactSnippet(unit.snippet)
 
-    // Small bump. This is “you can do the work”, not “you’re special”.
-    // Cap it so tools can’t dominate.
-    const bump = Math.min(6, overlap.length * 2) // 1 match = +2, 2 matches = +4, 3+ = +6 cap
-    base += bump
+  text = text
+    .replace(/^(you will|responsibilities include|responsible for)\s+/i, "")
+    .replace(/^to\s+/i, "")
+    .trim()
+
+  return text || unit.label
+}
+
+function isAdjacent(jobKey: string, profileKey: string): boolean {
+  const jobAdj = ADJACENCY[jobKey] || []
+  const profileAdj = ADJACENCY[profileKey] || []
+  return jobAdj.includes(profileKey) || profileAdj.includes(jobKey)
+}
+
+function dedupeByMatch(items: WhyEvidenceMatch[]): WhyEvidenceMatch[] {
+  const seen = new Set<string>()
+  const out: WhyEvidenceMatch[] = []
+
+  for (const item of items) {
+    const k = `${item.code}|${item.match_key}|${item.job_unit.id}|${item.profile_unit.id}`
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(item)
   }
 
-  return base
+  return out
+}
+
+function dedupeRiskCodes(risks: RiskCode[]): RiskCode[] {
+  const seen = new Set<string>()
+  const out: RiskCode[] = []
+
+  for (const risk of risks) {
+    const key = `${risk.code}|${risk.job_fact}|${risk.profile_fact || ""}|${risk.risk}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(risk)
+  }
+
+  return out
+}
+
+function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProfileSignals): WhyEvidenceMatch[] {
+  const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
+  const profileUnits = Array.isArray(profile.profile_evidence_units) ? profile.profile_evidence_units : []
+  const matches: WhyEvidenceMatch[] = []
+
+  for (const ju of jobUnits) {
+    for (const pu of profileUnits) {
+      let matchStrength: MatchStrength | null = null
+
+      if (ju.key === pu.key) {
+        matchStrength = "direct"
+      } else if (isAdjacent(ju.key, pu.key)) {
+        matchStrength = "adjacent"
+      }
+
+      if (!matchStrength) continue
+
+      const base =
+        matchStrength === "direct" ? 78 : 62
+
+      const kindBonus =
+        ju.kind === "function" ? 10 :
+        ju.kind === "execution" ? 9 :
+        ju.kind === "deliverable" ? 8 :
+        ju.kind === "stakeholder" ? 7 :
+        ju.kind === "tool" ? 5 :
+        4
+
+      const requirednessBonus = ju.requiredness === "core" ? 10 : 4
+      const strengthBonus = Math.min(10, Math.floor((ju.strength + pu.strength) / 2))
+
+      const weight = base + kindBonus + requirednessBonus + strengthBonus
+
+      const code =
+        ju.kind === "tool"
+          ? "WHY_TOOL_PROOF"
+          : matchStrength === "direct"
+          ? "WHY_DIRECT_EXPERIENCE_PROOF"
+          : ju.kind === "execution" || ju.kind === "deliverable" || ju.kind === "stakeholder"
+          ? "WHY_EXECUTION_PROOF"
+          : "WHY_ADJACENT_EXPERIENCE_PROOF"
+
+      matches.push({
+        code,
+        match_key: ju.key,
+        match_kind: ju.kind,
+        match_strength: matchStrength,
+        job_unit: ju,
+        profile_unit: pu,
+        job_fact: jobFactFromUnit(ju),
+        profile_fact: profileFactFromUnit(pu),
+        note:
+          matchStrength === "direct"
+            ? "Profile proof directly matches a concrete job requirement."
+            : "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+        weight,
+      })
+    }
+  }
+
+  return dedupeByMatch(matches).sort((a, b) => b.weight - a.weight)
+}
+
+function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenceMatch[] {
+  const picked: WhyEvidenceMatch[] = []
+  const usedKeys = new Set<string>()
+  const kindCounts: Record<string, number> = {}
+
+  const ranked = [...all].sort((a, b) => {
+    const priority = (m: WhyEvidenceMatch) => {
+      let p = 0
+
+      if (m.match_strength === "direct") p += 100
+      else p += 40
+
+      if (m.match_kind === "function") p += 40
+      else if (m.match_kind === "deliverable") p += 28
+      else if (m.match_kind === "execution") p += 20
+      else if (m.match_kind === "stakeholder") p += 12
+      else if (m.match_kind === "tool") p += 8
+
+      if (m.code === "WHY_DIRECT_EXPERIENCE_PROOF") p += 20
+      if (m.match_key === "policy_regulatory_research") p += 12
+      if (m.match_key === "product_positioning") p += 10
+
+      return p + (m.weight || 0)
+    }
+
+    return priority(b) - priority(a)
+  })	
+
+  function badProfileFact(s: string): boolean {
+    const t = norm(s)
+    if (!t) return true
+    if (t.length < 35) return true
+    if (t.length > 320) return true
+    if (t.includes("education")) return true
+    if (t.includes("core competencies")) return true
+    if (t.includes("linkedin")) return true
+    if (t.includes("portfolio")) return true
+    if (/@/.test(t)) return true
+    if (/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/.test(t)) return true
+    if (/\|\s*[A-Z][a-z]+/.test(s)) return true
+if (/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\b.*\b20\d{2}\b/.test(s)) return true
+    return false
+  }
+
+  function badJobFact(s: string): boolean {
+    const t = norm(s)
+    if (!t) return true
+    if (t.length < 18) return true
+    if (t.length > 700) return true
+    if (t.includes("about us")) return true
+    if (t.includes("equal opportunity")) return true
+    if (t.includes("benefits")) return true
+    if (t.includes("bachelor's degree")) return true
+    if (t.includes("bachelors degree")) return true
+    if (t.includes("degree in")) return true
+    return false
+  }
+
+for (const match of ranked) {
+    if (picked.length >= max) break
+    if (!match.job_fact || !match.profile_fact) continue
+    if (badProfileFact(match.profile_fact)) continue
+    if (badJobFact(match.job_fact)) continue
+    if (usedKeys.has(match.match_key)) {
+  const alreadyPickedSameKey = picked.filter((p) => p.match_key === match.match_key)
+  const allowSecondSameKey =
+    alreadyPickedSameKey.length === 1 &&
+    alreadyPickedSameKey[0].profile_fact !== match.profile_fact &&
+    alreadyPickedSameKey[0].job_fact !== match.job_fact &&
+    match.match_strength === "direct"
+
+  if (!allowSecondSameKey) continue
+}
+
+    const kindKey = match.match_kind
+    if ((kindCounts[kindKey] || 0) >= 2 && match.match_kind !== "function") continue
+
+    picked.push(match)
+    usedKeys.add(match.match_key)
+    kindCounts[kindKey] = (kindCounts[kindKey] || 0) + 1
+  }
+
+  if (picked.length < min) {
+    for (const match of ranked) {
+      if (picked.length >= min) break
+      if (picked.some((p) => p.job_unit.id === match.job_unit.id && p.profile_unit.id === match.profile_unit.id)) continue
+      if (!match.job_fact || !match.profile_fact) continue
+      if (badProfileFact(match.profile_fact)) continue
+      if (badJobFact(match.job_fact)) continue
+      if (usedKeys.has(match.match_key)) continue
+      picked.push(match)
+      usedKeys.add(match.match_key)
+    }
+  }
+
+  return picked.slice(0, max)
+}
+function whyCodesFromMatches(matches: WhyEvidenceMatch[]): WhyCode[] {
+  return matches.map((m) => ({
+    code: m.code,
+    job_fact: m.job_fact,
+    profile_fact: m.profile_fact,
+    note: m.note,
+    weight: m.weight,
+    match_key: m.match_key,
+    match_kind: m.match_kind,
+    match_strength: m.match_strength,
+  }))
+}
+
+function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals, whyMatches: WhyEvidenceMatch[]): number {
+  let base = 58
+
+  const familyMatch = profile.targetFamilies.includes(job.jobFamily)
+  if (familyMatch) base += 10
+
+  const directCount = whyMatches.filter((m) => m.match_strength === "direct").length
+  const adjacentCount = whyMatches.filter((m) => m.match_strength === "adjacent").length
+  const toolCount = whyMatches.filter((m) => m.match_kind === "tool").length
+  const coreProofCount = whyMatches.filter((m) => m.job_unit.requiredness === "core").length
+
+  base += Math.min(18, directCount * 6)
+  base += Math.min(8, adjacentCount * 3)
+  base += Math.min(4, toolCount * 2)
+  base += Math.min(6, coreProofCount * 2)
+
+  return clamp(base, POLICY.score.minScore, POLICY.score.maxScore)
 }
 
 export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfileSignals): ScoreResult {
   const penalties: Penalty[] = []
-  const whyCodes: WhyCode[] = []
   const riskOnlyCodes: RiskCode[] = []
 
-  const hasExplicitTools = (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
+  const allMatches = buildEvidenceMatches(job, profile)
+  const selectedMatches = selectWhyMatches(allMatches, 3, 6)
+  const whyCodes = whyCodesFromMatches(selectedMatches)
 
-  const familyMatch = profile.targetFamilies.includes(job.jobFamily)
+  const hasExplicitTools =
+    (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
-  /* ---------------- WHY (deterministic, non-table-stakes) ---------------- */
-
-  if (familyMatch) {
-    whyCodes.push({
-      code: "WHY_FAMILY_MATCH",
-      job_fact: `Role family detected as ${job.jobFamily}.`,
-      profile_fact: `Target families include ${profile.targetFamilies.join(", ")}.`,
-      note: "The day-to-day work matches what you are targeting.",
-      weight: 12,
-    })
-  }
-  // Tool WHY (only when job explicitly lists tools AND there is real overlap)
-  if (hasExplicitTools) {
-    const { overlap } = toolOverlap(job, profile)
-    if (overlap.length > 0) {
-    whyCodes.push({
-  code: "WHY_TOOL_MATCH",
-  job_fact: `Posting lists tools such as: ${[...(job.requiredTools || []), ...(job.preferredTools || [])].slice(0, 6).join(", ")}.`,
-  profile_fact: profile.tools?.length
-    ? `Profile tools include: ${profile.tools.slice(0, 8).join(", ")}.`
-    : "Tools not explicitly listed in your profile.",
-  note: "Your current tools align with what the role actually uses.",
-  weight: 4, // was 0
-})
-    }
-  }
-
-  /* ---------------- Penalties (ONLY with mismatch proof) ---------------- */
-
-  // Location mismatch (only when profile is constrained AND job city is known AND mismatch is proven)
   {
     const profileConstrained = !!profile.locationPreference.constrained
     const jobCity = job.location?.city ?? null
@@ -222,7 +460,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  // Remote mismatch (only when job explicitly indicates remote AND profile hard-no-remote is true)
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
     const k: PenaltyKey = "location_mismatch_constrained"
     const amt = computePenaltyAmount(k)
@@ -241,7 +478,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Sales mismatch (only when job has explicit sales-heavy signal AND profile has hard-no-sales)
   if (profile.constraints.hardNoSales && job.isSalesHeavy) {
     const amt = computePenaltyAmount("sales_mismatch")
     penalties.push({
@@ -250,7 +486,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       note: "Sales signals present",
       risk: {
         code: "RISK_SALES",
-        job_fact: "Posting contains sales signals (quota/commission/pipeline/cold outreach).",
+        job_fact: "Posting contains sales signals such as quota, commission, pipeline, or cold outreach.",
         profile_fact: "You have a hard no-sales constraint.",
         risk: "Sales expectations conflict with your constraints.",
         severity: "high",
@@ -259,7 +495,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Government mismatch (only when job has explicit gov signal AND profile has hard-no-government)
   if (profile.constraints.hardNoGovernment && job.isGovernment) {
     const amt = computePenaltyAmount("government_mismatch")
     penalties.push({
@@ -277,7 +512,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Contract mismatch (only when job explicitly indicates contract AND profile has full-time preference or hard-no-contract)
   if (job.isContract && profile.constraints.hardNoContract) {
     const amt = computePenaltyAmount("contract_mismatch") + 2
     penalties.push({
@@ -286,7 +520,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       note: "Hard no contract",
       risk: {
         code: "RISK_CONTRACT",
-        job_fact: "Posting indicates contract/temporary structure.",
+        job_fact: "Posting indicates contract or temporary structure.",
         profile_fact: "You have a hard no-contract constraint.",
         risk: "Role structure conflicts with your hard constraint.",
         severity: "high",
@@ -301,7 +535,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       note: "Contract vs full-time preference",
       risk: {
         code: "RISK_CONTRACT",
-        job_fact: "Posting indicates contract/temporary structure.",
+        job_fact: "Posting indicates contract or temporary structure.",
         profile_fact: "You prefer full-time roles.",
         risk: "Role structure conflicts with your work-type preference.",
         severity: "medium",
@@ -310,7 +544,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Hourly mismatch (only when job explicitly indicates hourly AND profile has hard-no-hourly)
   if (profile.constraints.hardNoHourlyPay && job.isHourly) {
     const amt = computePenaltyAmount("hourly_pay_mismatch")
     penalties.push({
@@ -328,7 +561,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Experience gap (only when BOTH job yearsRequired and profile yearsExperienceApprox exist)
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     if (profile.yearsExperienceApprox + 0.5 < job.yearsRequired) {
       const amt = computePenaltyAmount("experience_years_gap")
@@ -338,8 +570,8 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         note: `Years required ${job.yearsRequired}, profile approx ${profile.yearsExperienceApprox}`,
         risk: {
           code: "RISK_EXPERIENCE",
-          job_fact: `Posting suggests ~${job.yearsRequired} years of experience.`,
-          profile_fact: `Profile experience approx ${profile.yearsExperienceApprox} years.`,
+          job_fact: `Posting suggests about ${job.yearsRequired} years of experience.`,
+          profile_fact: `Profile experience approximates ${profile.yearsExperienceApprox} years.`,
           risk: "Experience requirement may be above your current level.",
           severity: "medium",
           weight: -amt,
@@ -348,7 +580,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  // MBA required (explicit posting signal)
   if (job.mbaRequired) {
     const amt = computePenaltyAmount("mba_required")
     penalties.push({
@@ -366,7 +597,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  // Grad window mismatch (only when BOTH exist)
   if (job.gradYearHint !== null && profile.gradYear !== null) {
     const delta = Math.abs(profile.gradYear - job.gradYearHint)
     if (delta >= 2) {
@@ -387,16 +617,13 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  /* ---------------- Risk-only flags (NO SCORE IMPACT) ---------------- */
-
-  // Tools: ONLY when the job explicitly lists tools.
   if (hasExplicitTools) {
     const profileTools = profile.tools || []
     const requiredMissing = (job.requiredTools || []).filter((t) => toolMissing(profileTools, t))
     const preferredMissing = (job.preferredTools || []).filter((t) => toolMissing(profileTools, t))
 
     for (const tool of requiredMissing) {
-      let sev: "low" | "medium" | "high" = "high"
+      let sev: Severity = "high"
       if (hasAdjacentToolProof(profileTools, tool)) sev = downgradeSeverity(sev)
 
       riskOnlyCodes.push({
@@ -410,7 +637,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
 
     for (const tool of preferredMissing) {
-      let sev: "low" | "medium" | "high" = "medium"
+      let sev: Severity = "medium"
       if (hasAdjacentToolProof(profileTools, tool)) sev = downgradeSeverity(sev)
 
       riskOnlyCodes.push({
@@ -424,7 +651,6 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
-  // Analytics-heavy risk-only (only when profile explicitly prefers not analytics-heavy AND job is tagged heavy)
   if (profile.constraints.preferNotAnalyticsHeavy && job.analytics?.isHeavy) {
     riskOnlyCodes.push({
       code: "RISK_ANALYTICS_HEAVY",
@@ -436,10 +662,43 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  /* ---------------- stack caps + score ---------------- */
+  if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
+    if (profile.yearsExperienceApprox + 1 < job.yearsRequired) {
+      riskOnlyCodes.push({
+        code: "RISK_SENIORITY_MISMATCH",
+        job_fact: `Posting suggests ${job.yearsRequired}+ years experience.`,
+        profile_fact: `Profile shows about ${profile.yearsExperienceApprox} years.`,
+        risk: "This role may expect a more experienced candidate.",
+        severity: "medium",
+        weight: 0,
+      })
+    }
+  }
+
+  if (
+    (job.requirement_units?.length || 0) === 0 &&
+    job.yearsRequired === null &&
+    (job.requiredTools?.length || 0) === 0 &&
+    (job.preferredTools?.length || 0) === 0 &&
+    job.location?.mode === "unclear" &&
+    !job.isContract &&
+    !job.isHourly &&
+    !job.mbaRequired &&
+    job.gradYearHint === null
+  ) {
+    riskOnlyCodes.push({
+      code: "RISK_AMBIGUOUS_ROLE",
+      job_fact: "Posting provides limited concrete detail on requirements or structure.",
+      profile_fact: null,
+      risk: "The role description is vague, which makes fit harder to evaluate confidently.",
+      severity: "low",
+      weight: 0,
+    })
+  }
 
   const counts: Record<string, number> = {}
   const capped: Penalty[] = []
+
   for (const p of penalties) {
     const maxStack = POLICY.penalties[p.key].maxStackCount ?? 999
     counts[p.key] = (counts[p.key] || 0) + 1
@@ -450,19 +709,17 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const diminished = applyDiminishingReturns(rawPenaltySum)
   const penaltySum = Math.min(POLICY.score.penaltyStackCap, diminished)
 
-  const base = computeBaseScore(job, profile)
+  const base = computeBaseScore(job, profile, selectedMatches)
   let score = base - penaltySum
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
 
-  // Risk codes include penalty-tied risks plus risk-only flags.
-  const riskCodes = dedupeByCode([...capped.map((p) => p.risk), ...riskOnlyCodes])
-  const whyOut = dedupeByCode(whyCodes)
+  const riskCodes = dedupeRiskCodes([...capped.map((p) => p.risk), ...riskOnlyCodes])
 
   return {
     score: Math.round(score),
     penalties: capped,
     penaltySum,
-    whyCodes: whyOut,
+    whyCodes,
     riskCodes,
   }
 }

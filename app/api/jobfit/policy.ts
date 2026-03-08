@@ -91,7 +91,7 @@ export const POLICY: JobFitPolicy = {
     diminishingReturnsRate: 0.35,
   },
 
-  thresholds: { apply: 82, review: 65 },
+  thresholds: { apply: 80, review: 65 },
 
   downgrade: {
     enabled: true,
@@ -257,8 +257,6 @@ export const POLICY: JobFitPolicy = {
         "ab test",
         "attribution",
         "data pipeline",
-        "dashboard ownership",
-        "kpi ownership",
         "quantitative",
         "quantitative surveys",
         "survey design",
@@ -280,7 +278,7 @@ export const POLICY: JobFitPolicy = {
     government: { keywords: ["clearance", "dod", "government", "federal", "public sector", "gs-"] },
     sales: { keywords: ["quota", "commission", "closing", "cold call", "pipeline", "hunter", "business development"] },
     contract: { keywords: ["contract", "contractor", "1099", "temporary", "temp"] },
-    hourly: { keywords: ["hourly", "$/hour", "per hour"] },
+   hourly: { keywords: ["hourly", "/hour", "per hour", "/hr"] },
     mba: { keywords: ["mba required", "master of business administration required"] },
 
     years: {

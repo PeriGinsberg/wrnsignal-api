@@ -1,0 +1,31 @@
+id,label,score,penaltySum,decision_initial,decision_after_gate,decision_final,gate_type,gate_code,gate_detail,why_code_list,risk_code_list,job_family,job_location_mode,job_location_city,profile_location_mode,profile_location_constrained
+case-001,Basic marketing fit sanity check,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,New York City,in_person,true
+case-002,Strong marketing fit with explicit tool overlap,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,New York City,in_person,true
+case-003,Marketing role with analytics-heavy signals,48,0,Pass,Pass,Pass,none,,,,RISK_MISSING_TOOLS|RISK_ANALYTICS_HEAVY,Analytics,unclear,,unclear,false
+case-004,Constrained location mismatch should floor to review,71,12.8,Review,Review,Review,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_LOCATION,Marketing,unclear,Chicago,in_person,true
+case-005,Remote job conflicts with hard no remote constraint,73,12.8,Review,Pass,Pass,force_pass,GATE_REMOTE_MISMATCH,Hard no remote vs remote job,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_LOCATION,Marketing,remote,,in_person,false
+case-006,High-fit marketing role discovery case,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,New York City,in_person,true
+case-007,Moderate-fit marketing role discovery case,82,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_MISSING_TOOLS,Marketing,unclear,,unclear,false
+case-008,Apply-to-review downgrade discovery case,35,17,Pass,Pass,Pass,floor_review,GATE_FLOOR_REVIEW_CONTRACT,Pref full-time vs contract,WHY_TOOL_MATCH,RISK_CONTRACT|RISK_EXPERIENCE|RISK_MISSING_TOOLS,Analytics,unclear,New York City,in_person,true
+case-009,Review-to-pass downgrade discovery case,2,47.739999999999995,Pass,Pass,Pass,force_pass,GATE_HARD_SALES,Hard no sales,WHY_TOOL_MATCH,RISK_SALES|RISK_GOVERNMENT|RISK_CONTRACT|RISK_HOURLY|RISK_EXPERIENCE|RISK_MISSING_TOOLS,Government,unclear,,unclear,false
+case-010,MBA required hard gate discovery case,64,20,Pass,Pass,Pass,force_pass,GATE_MBA_REQUIRED,MBA required,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_MBA,Marketing,unclear,,unclear,false
+case-011,Government hard gate standalone case,32,18,Pass,Pass,Pass,force_pass,GATE_HARD_GOV,Hard no government,WHY_TOOL_MATCH,RISK_GOVERNMENT,Government,unclear,,unclear,false
+case-012,Sales hard gate standalone case,32,18,Pass,Pass,Pass,force_pass,GATE_HARD_SALES,Hard no sales,WHY_TOOL_MATCH,RISK_SALES|RISK_MISSING_TOOLS,Sales,unclear,,unclear,false
+case-013,Graduation window mismatch hard gate case,64,20,Pass,Pass,Pass,force_pass,GATE_GRAD_MISMATCH,Graduation window mismatch,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_GRAD_WINDOW,Marketing,unclear,,unclear,false
+case-014,Hourly mismatch standalone case,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,,unclear,false
+case-015,Contract mismatch standalone case,74,9.8,Review,Review,Review,floor_review,GATE_FLOOR_REVIEW_CONTRACT,Pref full-time vs contract,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_CONTRACT,Marketing,unclear,,unclear,false
+case-016,Experience gap standalone case,79,7.199999999999999,Review,Review,Review,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_EXPERIENCE,Marketing,unclear,,unclear,false
+case-017,Missing tools standalone case,48,0,Pass,Pass,Pass,none,,,,RISK_MISSING_TOOLS,Consulting,unclear,,unclear,false
+case-018,Constrained location gate probe with explicit city constraint,71,12.8,Review,Review,Review,floor_review,GATE_FLOOR_REVIEW_LOCATION,Constrained city mismatch,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_LOCATION,Marketing,unclear,Boston,in_person,true
+case-019,Remote plus constrained city probe,73,12.8,Review,Pass,Pass,force_pass,GATE_REMOTE_MISMATCH,Hard no remote vs remote job,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_LOCATION,Marketing,remote,Austin,in_person,true
+case-020,Marketing-labeled but analytics-heavy hybrid probe,52,0,Pass,Pass,Pass,none,,,WHY_TOOL_MATCH,RISK_MISSING_TOOLS|RISK_ANALYTICS_HEAVY,Analytics,unclear,,unclear,false
+case-021,Marketing role with strong reporting signals probe,52,0,Pass,Pass,Pass,none,,,WHY_TOOL_MATCH,,Other,unclear,,unclear,false
+case-022,Marketing role with single SQL mention,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_MISSING_TOOLS,Marketing,unclear,,unclear,false
+case-023,True analytics BI role probe,50,0,Pass,Pass,Pass,none,,,WHY_TOOL_MATCH,RISK_MISSING_TOOLS|RISK_ANALYTICS_HEAVY,Analytics,unclear,,unclear,false
+case-024,Consumer insights research role probe,52,0,Pass,Pass,Pass,none,,,WHY_TOOL_MATCH,RISK_ANALYTICS_HEAVY,Analytics,unclear,,unclear,false
+case-025,Marketing reporting without analytics tools probe,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,,unclear,false
+case-026,Remote job allowed by profile probe,86,0,Priority Apply,Priority Apply,Priority Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,remote,,remote,false
+case-027,Hybrid location conflict probe,86,0,Priority Apply,Priority Apply,Priority Apply,floor_review,GATE_FLOOR_REVIEW_LOCATION,Location mismatch (constrained),WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,hybrid,,in_person,true
+case-028,Graduation year too early probe,64,20,Pass,Pass,Pass,force_pass,GATE_GRAD_MISMATCH,Graduation window mismatch,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,RISK_GRAD_WINDOW,Marketing,unclear,,unclear,false
+case-029,Heavy missing tools probe,48,0,Pass,Pass,Pass,none,,,,RISK_MISSING_TOOLS,Analytics,unclear,,unclear,false
+case-030,Clear lifecycle marketing role probe,84,0,Apply,Apply,Apply,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,,unclear,false

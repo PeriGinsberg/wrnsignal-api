@@ -1,0 +1,2 @@
+id,label,score,penaltySum,decision_initial,decision_after_gate,decision_final,gate_type,gate_code,gate_detail,why_code_list,risk_code_list,job_family,job_location_mode,job_location_city,profile_location_mode,profile_location_constrained
+case-001,Basic marketing fit sanity check,76,0,Review,Review,Review,none,,,WHY_FAMILY_MATCH|WHY_TOOL_MATCH,,Marketing,unclear,New York City,in_person,true

@@ -1,0 +1,26 @@
+{
+  "id": "case-003",
+  "label": "Marketing role with analytics-heavy signals",
+  "profileText": "Marketing student targeting brand marketing roles. Prefers creative and execution-oriented work and does not want heavy analytics roles. Experience with campaign execution, content calendars, Canva, Excel, and Google Analytics. Class of 2026.",
+  "jobText": "Marketing Insights Analyst role supporting attribution modeling, SQL queries, Python analysis, Tableau dashboards, KPI ownership, consumer research, forecast modeling, experiment design, and survey analysis. Preferred background includes marketing analytics and data visualization experience.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": true
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

@@ -1,10 +1,10 @@
-// FILE: app/api/jobfit/signals.ts
+﻿// FILE: app/api/jobfit/signals.ts
 //
 // Canonical JobFit V3 signals + evidence contract.
-// MUST match what extract.ts produces and what scoring/gates/evaluator consume.
-// No UI display fields here (title/company/responsibilities). Those belong in evidenceBuilder / LLM layer.
+// Evidence-first WHY pipeline.
+// Deterministic only. No prose generation logic here.
 
-export type Decision = "Apply" | "Review" | "Pass"
+export type Decision = "Priority Apply" | "Apply" | "Review" | "Pass"
 export type LocationConstraint = "constrained" | "not_constrained" | "unclear"
 
 export type JobFamily =
@@ -22,10 +22,6 @@ export type LocationMode = "in_person" | "hybrid" | "remote" | "unclear"
 
 export type Severity = "low" | "medium" | "high"
 
-/**
- * Small durable taxonomy used to classify function, not titles.
- * This is how you avoid chasing thousands of keywords.
- */
 export type FunctionTag =
   | "brand_marketing"
   | "communications_pr"
@@ -37,11 +33,24 @@ export type FunctionTag =
   | "product_marketing"
   | "sales_bd"
   | "government_cleared"
+  | "legal_regulatory"
   | "finance_corp"
   | "accounting_finops"
   | "premed_clinical"
   | "operations_general"
+  | "consulting_strategy"
   | "other"
+
+export type EvidenceKind =
+  | "function"
+  | "execution"
+  | "tool"
+  | "domain"
+  | "deliverable"
+  | "stakeholder"
+  | "environment"
+
+export type MatchStrength = "direct" | "adjacent"
 
 export type ProfileConstraints = {
   hardNoHourlyPay: boolean
@@ -51,6 +60,30 @@ export type ProfileConstraints = {
   hardNoGovernment: boolean
   hardNoFullyRemote: boolean
   preferNotAnalyticsHeavy: boolean
+}
+
+export type ProfileEvidenceUnit = {
+  id: string
+  kind: EvidenceKind
+  key: string
+  label: string
+  snippet: string
+  source: "resume" | "profile"
+  strength: number
+  functionTag?: FunctionTag
+  tags?: string[]
+}
+
+export type JobRequirementUnit = {
+  id: string
+  kind: EvidenceKind
+  key: string
+  label: string
+  snippet: string
+  requiredness: "core" | "supporting"
+  strength: number
+  functionTag?: FunctionTag
+  tags?: string[]
 }
 
 export type StructuredProfileSignals = {
@@ -65,49 +98,43 @@ export type StructuredProfileSignals = {
   gradYear: number | null
   yearsExperienceApprox: number | null
 
-  // Optional, for future: lets you tag profile intent without relying on jobFamily only
+  statedInterests?: {
+    targetRoles?: string[]
+    adjacentRoles?: string[]
+    targetIndustries?: string[]
+  }
+
   function_tags?: FunctionTag[]
+  function_tag_evidence?: Partial<Record<FunctionTag, string[]>>
+  profile_evidence_units?: ProfileEvidenceUnit[]
 }
 
 export type StructuredJobSignals = {
   rawHash: string
-
   jobFamily: JobFamily
-
-  // "analytics" is a coarse signal.
-  // Function tags are how you scale classification reliably.
   analytics: { isHeavy: boolean; isLight: boolean }
-
-  // Optional but strongly recommended: computed by extract.ts
   function_tags?: FunctionTag[]
-
-  // Optional debug: makes it obvious why a role was tagged
   signal_debug?: {
     hits?: Record<string, number>
     notes?: string[]
   }
-
   location: {
     mode: LocationMode
     constrained: boolean
     city: string | null
     evidence: string | null
   }
-
   isGovernment: boolean
   isSalesHeavy: boolean
   isContract: boolean
   isHourly: boolean
-
   yearsRequired: number | null
   mbaRequired: boolean
   gradYearHint: number | null
-
   requiredTools: string[]
   preferredTools: string[]
-
   reportingSignals: { strong: boolean }
-
+  requirement_units?: JobRequirementUnit[]
   internship?: {
     isInternship: boolean
     isSummer: boolean
@@ -130,13 +157,15 @@ export type StructuredJobSignals = {
   }
 }
 
-// Evidence objects emitted by deterministic scoring (no prose bullets here)
 export type WhyCode = {
   code: string
   job_fact: string
   profile_fact: string
   note: string
   weight?: number
+  match_key?: string
+  match_kind?: EvidenceKind
+  match_strength?: MatchStrength
 }
 
 export type RiskCode = {
@@ -148,37 +177,27 @@ export type RiskCode = {
   weight?: number
 }
 
-// Gates
 export type GateTriggered =
   | { type: "none" }
   | { type: "force_pass"; gateCode: string; detail: string }
   | { type: "floor_review"; gateCode: string; detail: string }
 
-// Optional score breakdown (debug)
 export type ScoreBreakdown = {
   components?: Array<{ label: string; points: number; note: string }>
   raw_score?: number
   clamped_score?: number
 }
 
-// Evaluator output contract (engine output; wrapper fills bullets/risk_flags via bullet generator)
 export type EvalOutput = {
   decision: Decision
   score: number
-
-  // Legacy UI fields (engine returns [])
   bullets: string[]
   risk_flags: string[]
-
   next_step: string
   location_constraint: LocationConstraint
-
   why_codes: WhyCode[]
   risk_codes: RiskCode[]
-
   gate_triggered: GateTriggered
-
-  // Optional debug/trace fields
   job_signals?: StructuredJobSignals
   profile_signals?: StructuredProfileSignals
   score_breakdown?: ScoreBreakdown

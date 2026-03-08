@@ -1,0 +1,85 @@
+﻿{
+    "id":  "real-009",
+    "label":  "Spencer Levine - Gensler Brand Design Environmental Graphics",
+    "profileText":  "current_status: Early stage professional (\u003c 5 years)\nuniversity: Northwestern University; Farmingdale State University\njob_type_preference: Full Time Role\ntarget_roles: Product Designer; UI Designer; UI/UX Designer; Visual Designer; Graphic Designer; UX Designer\nadjacent_roles: Media Designer; Graphical Designer; Motion Designer; Print Designer\ntarget_industries: Software/SaaS; FinTech; HealthTech; AI/Data; Advertising; Digital Marketing; Media and Publishing; PR/Communications; Branding / Creative Agencies; Social Media / Influencer Marketing; Content and Production; Healthcare Services; Hospitals and Health Systems; Medical Devices; Data and Analytics; Startups (Early Stage); Startups (Growth Stage); Small/Founder-Led Companies\nspecific_companies: Amazon; Google; Fanatics; Perpetual; Work \u0026 Co; BBDO; DD.NYC; Wold\u0026Whale\ndo_not_want: \nopenness_to_non_obvious_entry_points: Very open\nlocation_preferences: NYC; Long Island; New Jersey; Westchester; Connecticut\ntimeline_for_starting_work: Immediate\nstrongest_skills: UI/UX Design; Visual Design; Graphical Design; Figma; Adobe Illustrator \u0026 Photoshop; Framer\njob_search_concerns: Resume strength\nfeedback_style: Balanced (honest but encouraging)\nresume_paste: SPENCER LEVINE Graphic Designer | Visual and Brand Systems Melville, NY • 631-241-1170 • spencer@slevinedesign.com Portfolio: slevinedesign.com • LinkedIn: linkedin.com/in/spencer-levine-262b05283 SUMMARY Graphic Designer with 5+ years of experience creating visual systems, marketing assets, and digital brand experiences across healthcare and agency environments. Strong focus on layout, typography, brand consistency, and translating business goals into clear visual communication across web, social, and video. CORE DESIGN SKILLS Graphic and Visual Design Visual Design • Brand Systems • Layout and Composition • Typography • Color Systems • Marketing and Campaign Design • Digital and Web Graphics • Social Media Design • Video and Motion Assets • Design Consistency Supporting UX Skills Interface Design • Wireframing • Prototyping • Accessibility Fundamentals • User Feedback Review Tools \u0026 Technology Adobe Creative Suite Photoshop Illustrator InDesign Lightroom Premiere Pro After Effects • Figma • Framer • Sketch • Notion • Google Workspace • Microsoft Office PROFESSIONAL EXPERIENCE Graphic and Visual Designer - Brand Systems | Straight Set Orthodontics - Garden City, NY June 2021 – Present Design marketing websites and visual assets for 24 orthodontic locations Create page layouts, typography systems, and UI components aligned to brand standards Develop and maintain visual systems across 10 affiliated brands Produce full visual execution for glencoveortho.com from layout through final design handoff Apply demographic and market research to inform visual hierarchy and messaging Collaborate with owners, marketers, and developers to align creative output with business goals Support orthodontic lab acquisition and rebrand contributing to an 800 percent increase in monthly sales Videographer, Content \u0026 Brand Designer | PH Event Group - Plainview, NY September 2019 – Present Produce digital video and visual content supporting brand storytelling and audience engagement across social platforms Collaborate with internal stakeholders to align creative output with brand positioning and business goals Evaluate social media performance metrics to refine content strategy, with campaigns exceeding 100,000 views Orthodontic \u0026 Media Assistant | Newman Orthodontics - Roslyn Heights, NY March 2017 – June 2019 Created early digital marketing assets and social media content to support patient acquisition and brand visibility Reviewed engagement analytics to assess content performance and improve communication clarity Gained foundational experience in healthcare communication, user needs, and user-facing digital touchpoints SELECTED DESIGN WORK Simply Smart Ortho – Healthcare marketing websites and brand systems for multi location practices Orthodontic Lab Acquisition – Digital rebrand for orthodontic lab acquisition supporting business growth Simpli Smart Home – Social and video content designed for audience engagement and campaign reach EDUCATION Northwestern University June 2025 M.S. Information Design \u0026 Strategy (UI/UX Specialization) | 3.9 GPA Farmingdale State University B.S. Business Management January 2024\ncover_letter: \nextra_context:",
+    "jobText":  "Gensler\u0027s Brand Design studio is seeking an entry level candidate with a background in graphic design and some prior experience designing and documenting environmental graphics, creating illustrations and murals. Responsibilities include contributing from concept to execution of environmental graphic design, illustration, and murals for projects in the built environment, supporting multiple design teams, supporting design intent packages with specifications materials details and locations, and collaborating with multiple internal design practices including workplace retail education and health and wellness. Qualifications include a Bachelor\u0027s degree in Graphic Design Industrial Design Interior Design or similar, 1 to 3 years of related experience in environmental graphics illustration murals and designing user-experience based environments, proficiency in Adobe Creative Suite Illustrator InDesign Photoshop and CAD tools, with Sketchup and Revit as a plus.",
+    "profileOverrides":  {
+                             "targetFamilies":  [
+                                                    "Other"
+                                                ],
+                             "locationPreference":  {
+                                                        "constrained":  true,
+                                                        "mode":  "unclear",
+                                                        "allowedCities":  [
+                                                                              "NYC",
+                                                                              "Long Island",
+                                                                              "New Jersey",
+                                                                              "Westchester",
+                                                                              "Connecticut"
+                                                                          ]
+                                                    },
+                             "constraints":  {
+                                                 "hardNoHourlyPay":  false,
+                                                 "prefFullTime":  true,
+                                                 "hardNoContract":  false,
+                                                 "hardNoSales":  false,
+                                                 "hardNoGovernment":  false,
+                                                 "hardNoFullyRemote":  false,
+                                                 "preferNotAnalyticsHeavy":  false
+                                             },
+                             "statedInterests":  {
+                                                     "targetRoles":  [
+                                                                         "Product Designer",
+                                                                         "UI Designer",
+                                                                         "UI/UX Designer",
+                                                                         "Visual Designer",
+                                                                         "Graphic Designer",
+                                                                         "UX Designer"
+                                                                     ],
+                                                     "adjacentRoles":  [
+                                                                           "Media Designer",
+                                                                           "Graphical Designer",
+                                                                           "Motion Designer",
+                                                                           "Print Designer"
+                                                                       ],
+                                                     "targetIndustries":  [
+                                                                              "Software/SaaS",
+                                                                              "FinTech",
+                                                                              "HealthTech",
+                                                                              "AI/Data",
+                                                                              "Advertising",
+                                                                              "Digital Marketing",
+                                                                              "Media and Publishing",
+                                                                              "PR/Communications",
+                                                                              "Branding / Creative Agencies",
+                                                                              "Social Media / Influencer Marketing",
+                                                                              "Content and Production",
+                                                                              "Healthcare Services",
+                                                                              "Hospitals and Health Systems",
+                                                                              "Medical Devices",
+                                                                              "Data and Analytics",
+                                                                              "Startups (Early Stage)",
+                                                                              "Startups (Growth Stage)",
+                                                                              "Small/Founder-Led Companies"
+                                                                          ]
+                                                 },
+                             "tools":  [
+                                           "Illustrator",
+                                           "Premiere",
+                                           "After Effects",
+                                           "Figma",
+                                           "Framer",
+                                           "Sketch",
+                                           "Access",
+                                           "Photoshop"
+                                       ],
+                             "gradYear":  null,
+                             "yearsExperienceApprox":  3
+                         },
+    "metadata":  {
+                     "profile_id":  "profile-spencer-levine",
+                     "job_id":  "job-spencer-003",
+                     "job_label":  "Gensler Brand Design Environmental Graphics",
+                     "expected_direction":  "adjacent / likely viable"
+                 }
+}

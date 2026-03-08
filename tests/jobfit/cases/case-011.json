@@ -1,0 +1,26 @@
+{
+  "id": "case-011",
+  "label": "Government hard gate standalone case",
+  "profileText": "Marketing student targeting full-time marketing roles. No government roles. Experience with campaign coordination, social media support, Excel, and Canva. Class of 2026.",
+  "jobText": "Communications Analyst supporting federal public sector communications, stakeholder reporting, and campaign support for government clients. Preferred tools include Excel and PowerPoint. This role supports federal and public sector accounts.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": true,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Canva", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

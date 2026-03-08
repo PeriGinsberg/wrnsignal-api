@@ -1,0 +1,26 @@
+{
+  "id": "case-018",
+  "label": "Constrained location gate probe with explicit city constraint",
+  "profileText": "Marketing student targeting full-time marketing roles in New York City only. Experience with campaign support, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Marketing Coordinator role. Local candidates only. Must be located in Boston. Full-time role supporting campaign execution, reporting, and content calendars. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

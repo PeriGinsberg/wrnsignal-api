@@ -1,4 +1,4 @@
-// app/api/jobfit/evaluator.ts
+﻿// app/api/jobfit/evaluator.ts
 //
 // Fix: adapter -> evaluator signal flow for tools (and other structured signals)
 // Problem observed:
@@ -122,7 +122,7 @@ export async function evaluateJobFit(args: {
   const result = await runJobFit({
     jobText: args.jobText || "",
     profileText: augmentedProfileText || "",
-    profileStructured: overrides, // keep passing overrides for future use (engine currently "void"s it in some versions)
+    profileOverrides: overrides, // keep passing overrides for future use (engine currently "void"s it in some versions)
   })
 
   return result

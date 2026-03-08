@@ -1,0 +1,26 @@
+{
+  "id": "case-004",
+  "label": "Constrained location mismatch should floor to review",
+  "profileText": "Marketing student targeting full-time marketing roles in New York City only. Experience with campaign execution, social media support, Excel, and Google Analytics. Class of 2026.",
+  "jobText": "Marketing Coordinator role based in Chicago. Full-time position supporting campaign execution, content planning, event coordination, reporting, and cross-functional communication. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

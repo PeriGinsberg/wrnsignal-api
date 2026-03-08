@@ -1,0 +1,26 @@
+{
+  "id": "case-025",
+  "label": "Marketing reporting without analytics tools probe",
+  "profileText": "Marketing student targeting full-time marketing roles. Experience with campaign support, reporting, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Marketing Reporting Coordinator role supporting weekly reporting, monthly reporting, campaign summaries, stakeholder updates, and content performance recaps. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

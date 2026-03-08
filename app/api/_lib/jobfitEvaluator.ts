@@ -1,75 +1,112 @@
-// FILE: app/api/_lib/jobfitEvaluator.ts
-// CLEAN REWRITE: V4 deterministic renderer only (no LLM substance)
-// - Uses renderBulletsV4 for Apply/Review/Pass
-// - Force-pass: NEVER shows WHY bullets (only risks)
-// - Explicit debug stamps
+﻿// FILE: app/api/_lib/jobfitEvaluator.ts
+// Deterministic JobFit orchestrator.
+// This file is the real engine wrapper used by routes.
+// No circular calls back into app/api/jobfit/evaluator.ts.
 
-import { evaluateJobFit } from "../jobfit/evaluator"
-import type { EvalOutput, StructuredProfileSignals, Decision, LocationConstraint } from "../jobfit/signals"
+import { extractJobSignals, extractProfileSignals } from "../jobfit/extract"
+import { evaluateGates } from "../jobfit/constraints"
+import { scoreJobFit } from "../jobfit/scoring"
+import { decisionFromScore, applyGateOverrides, applyRiskDowngrades } from "../jobfit/decision"
+import type {
+  EvalOutput,
+  StructuredProfileSignals,
+  Decision,
+  LocationConstraint,
+} from "../jobfit/signals"
 import { renderBulletsV4, RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
 
 export const JOBFIT_EVAL_WRAPPER_STAMP =
-  "JOBFIT_EVAL_WRAPPER_STAMP__2026_02_27__V4_RENDERER_ONLY__A"
+  "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B"
+
 console.log("[jobfitEvaluator] loaded:", JOBFIT_EVAL_WRAPPER_STAMP)
 
-/* ----------------------- UI helpers ----------------------- */
-
 function iconForDecision(decision: Decision) {
+  if (decision === "Priority Apply") return "🔥"
   if (decision === "Apply") return "✅"
   if (decision === "Review") return "⚠️"
   return "⛔"
 }
 
 function decisionNextStep(decision: Decision): string {
-  if (decision === "Apply") return "Apply. Then send 2 targeted networking messages within 24 hours."
-  if (decision === "Review")
+  if (decision === "Priority Apply") {
+    return "Apply now. Then send 2 targeted networking messages within 24 hours."
+  }
+  if (decision === "Apply") {
+    return "Apply. Then send 2 targeted networking messages within 24 hours."
+  }
+  if (decision === "Review") {
     return "Only proceed if you can reduce the top risks. If yes, apply and network immediately."
+  }
   return "Pass. Do not apply. Put that effort into a better-fit role."
 }
 
-/* ----------------------- MAIN EXPORT ----------------------- */
+function locationConstraintFromProfile(
+  profileOverrides?: Partial<StructuredProfileSignals>
+): LocationConstraint {
+  if (!profileOverrides || !profileOverrides.locationPreference) return "unclear"
+  return profileOverrides.locationPreference.constrained ? "constrained" : "not_constrained"
+}
 
 export async function runJobFit(args: {
   profileText: string
   jobText: string
   profileOverrides?: Partial<StructuredProfileSignals>
-}) {
-  const out = await evaluateJobFit({
-    jobText: args.jobText,
-    profileText: args.profileText,
-    profileOverrides: args.profileOverrides,
-  })
+}): Promise<
+  EvalOutput & {
+    icon: string
+    debug: Record<string, unknown>
+  }
+> {
+  const jobSignals = extractJobSignals(args.jobText || "")
+  const profileSignals = extractProfileSignals(args.profileText || "", args.profileOverrides || {})
 
-  const isForcePass = out?.gate_triggered?.type === "force_pass"
+  const gate = evaluateGates(jobSignals, profileSignals)
+  const scored = scoreJobFit(jobSignals, profileSignals)
 
-  // Single deterministic renderer for all outcomes
-  // For force-pass we still render risks, but we never show WHY bullets.
-  const rendered = renderBulletsV4(out)
-  const why = isForcePass ? [] : rendered.why
-  const risk = rendered.risk
+  const decisionInitial = decisionFromScore(scored.score)
+  const decisionAfterGate = applyGateOverrides(decisionInitial, gate)
+  const decisionFinal = applyRiskDowngrades(decisionAfterGate, scored.penaltySum)
 
-  const finalDecision: Decision = isForcePass ? ("Pass" as Decision) : out.decision
+  const baseOut: EvalOutput = {
+    decision: decisionFinal,
+    score: scored.score,
+    bullets: [],
+    risk_flags: [],
+    next_step: decisionNextStep(decisionFinal),
+    location_constraint: locationConstraintFromProfile(args.profileOverrides),
+    why_codes: gate.type === "force_pass" ? [] : scored.whyCodes,
+    risk_codes: scored.riskCodes,
+    gate_triggered: gate,
+    job_signals: jobSignals,
+    profile_signals: profileSignals,
+    score_breakdown: {
+      raw_score: scored.score,
+      clamped_score: scored.score,
+      components: [
+        { label: "decision_initial", points: 0, note: decisionInitial },
+        { label: "decision_after_gate", points: 0, note: decisionAfterGate },
+        { label: "decision_final", points: 0, note: decisionFinal },
+        { label: "penalty_sum", points: -Math.round(scored.penaltySum), note: String(scored.penaltySum) },
+      ],
+    },
+  }
+
+  const rendered = renderBulletsV4(baseOut)
 
   return {
-    decision: finalDecision,
-    icon: iconForDecision(finalDecision),
-    score: out.score,
-    bullets: why,
-    risk_flags: risk,
-    next_step: out.next_step || decisionNextStep(finalDecision),
-    location_constraint: out.location_constraint as LocationConstraint,
-    why_codes: isForcePass ? [] : out.why_codes,
-    risk_codes: out.risk_codes,
-    gate_triggered: out.gate_triggered,
+    ...baseOut,
+    icon: iconForDecision(decisionFinal),
+    bullets: rendered.why,
+    risk_flags: rendered.risk,
     debug: {
       eval_wrapper_stamp: JOBFIT_EVAL_WRAPPER_STAMP,
-      bullets_mode: "renderer_v4_deterministic",
       renderer_stamp: RENDERER_V4_STAMP,
-      force_pass: isForcePass,
-      why_count: why.length,
-      risk_count: risk.length,
-      why_codes_count: Array.isArray(out.why_codes) ? out.why_codes.length : 0,
-      risk_codes_count: Array.isArray(out.risk_codes) ? out.risk_codes.length : 0,
+      decision_initial: decisionInitial,
+      decision_after_gate: decisionAfterGate,
+      decision_final: decisionFinal,
+      why_count: rendered.why.length,
+      risk_count: rendered.risk.length,
+      penalty_sum: scored.penaltySum,
       ...rendered.renderer_debug,
     },
   }

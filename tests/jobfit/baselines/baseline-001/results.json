@@ -1,0 +1,112 @@
+[
+  {
+    "id": "case-001",
+    "label": "Basic marketing fit sanity check",
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 76,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics, Canva.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "9cb3a7877bb09589",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": "New York City",
+        "evidence": "brand marketing coordinator role based in new york city. full-time position supporting campaign execution conten"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Brand Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "ent calendars cross-functional coordination and performance tracking. preferred tools include excel and google analytics.",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "New York City",
+          "NYC"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  }
+]

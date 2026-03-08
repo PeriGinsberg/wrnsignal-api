@@ -1,0 +1,26 @@
+{
+  "id": "case-008",
+  "label": "Apply-to-review downgrade discovery case",
+  "profileText": "Marketing student targeting full-time marketing roles in New York City. Experience with campaign execution, reporting, content calendars, Excel, Google Analytics, Canva, and PowerPoint. Class of 2026. Wants full-time work in NYC and no contract roles.",
+  "jobText": "Brand Marketing Associate based in New York City. Full-time contract role supporting campaign execution, reporting, content calendars, stakeholder updates, performance tracking, and cross-functional coordination. Required tools include Excel and Google Analytics. Preferred tools include Power BI and Tableau. Posting notes 3+ years of experience preferred.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": true,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

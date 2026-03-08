@@ -1,0 +1,26 @@
+{
+  "id": "case-020",
+  "label": "Marketing-labeled but analytics-heavy hybrid probe",
+  "profileText": "Marketing student targeting brand marketing roles. Does not want heavy analytics roles. Experience with campaign execution, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Marketing Insights Coordinator role supporting SQL queries, Tableau dashboards, attribution analysis, KPI ownership, consumer research, and experiment design. Preferred tools include Excel, SQL, Tableau, and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": true
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

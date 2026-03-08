@@ -4,6 +4,7 @@ import type { Decision, GateTriggered } from "./signals"
 import { POLICY } from "./policy"
 
 export function decisionFromScore(score: number): Decision {
+  if (score >= 85) return "Priority Apply"
   if (score >= POLICY.thresholds.apply) return "Apply"
   if (score >= POLICY.thresholds.review) return "Review"
   return "Pass"

@@ -1,0 +1,1063 @@
+[
+  {
+    "id": "case-001",
+    "label": "Basic marketing fit sanity check",
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 76,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics, Canva.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "9cb3a7877bb09589",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": "New York City",
+        "evidence": "brand marketing coordinator role based in new york city. full-time position supporting campaign execution conten"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Brand Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "ent calendars cross-functional coordination and performance tracking. preferred tools include excel and google analytics.",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "New York City",
+          "NYC"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "case-002",
+    "label": "Strong marketing fit with explicit tool overlap",
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 76,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics, Canva, PowerPoint.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "30026139cd530f90",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": "New York City",
+        "evidence": "associate brand marketing coordinator based in new york city. full-time role supporting campaign execution content ca"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Brand Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "formance tracking. required tools include excel and google analytics. preferred tools include canva.",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "New York City",
+          "NYC"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva",
+        "PowerPoint"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 2
+    }
+  },
+  {
+    "id": "case-003",
+    "label": "Marketing role with analytics-heavy signals",
+    "decision_initial": "Pass",
+    "decision_after_gate": "Pass",
+    "decision_final": "Pass",
+    "score": 48,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_MISSING_TOOLS",
+        "job_fact": "Posting lists SQL as preferred.",
+        "profile_fact": "Profile tools: Excel, Google Analytics, Canva.",
+        "risk": "You have not shown SQL yet, and it is called out in the posting.",
+        "severity": "low",
+        "weight": 0
+      },
+      {
+        "code": "RISK_ANALYTICS_HEAVY",
+        "job_fact": "Posting contains analytics-heavy signals.",
+        "profile_fact": "You prefer not analytics-heavy roles.",
+        "risk": "This reads like an analytics-heavy role that conflicts with your stated preference.",
+        "severity": "medium",
+        "weight": 0
+      }
+    ],
+    "job_signals": {
+      "rawHash": "87fd1122ce44598c",
+      "jobFamily": "Analytics",
+      "analytics": {
+        "isHeavy": true,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "SQL",
+        "Python",
+        "Tableau"
+      ],
+      "reportingSignals": {
+        "strong": true
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "mer research forecast modeling experiment design and survey analysis. preferred background includes marketing analytics and data visualizati",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": false
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": true
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "case-004",
+    "label": "Constrained location mismatch should floor to review",
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 76,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "0b1b920278242b6e",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "ning event coordination reporting and cross-functional communication. preferred tools include excel and google analytics.",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "New York City",
+          "NYC"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "case-005",
+    "label": "Remote job conflicts with hard no remote constraint",
+    "decision_initial": "Pass",
+    "decision_after_gate": "Pass",
+    "decision_final": "Pass",
+    "score": 63,
+    "penaltySum": 12.8,
+    "gate_triggered": {
+      "type": "force_pass",
+      "gateCode": "GATE_REMOTE_MISMATCH",
+      "detail": "Hard no remote vs remote job"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics, Canva.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [
+      {
+        "code": "RISK_LOCATION",
+        "job_fact": "Posting indicates remote work setup.",
+        "profile_fact": "You have a no-remote constraint.",
+        "risk": "Work setup conflicts with your stated constraint.",
+        "severity": "high",
+        "weight": -12.8
+      }
+    ],
+    "job_signals": {
+      "rawHash": "07a99d142174ff80",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "remote",
+        "constrained": false,
+        "city": null,
+        "evidence": "remote brand marketing associate role. full-time position supporting b"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Brand Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "igital content coordination reporting and cross-functional execution. preferred tools include excel and google analytics. this is a fully re",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": false
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": true,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "case-006",
+    "label": "High-fit marketing role discovery case",
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 76,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics, Canva, PowerPoint.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [],
+    "job_signals": {
+      "rawHash": "c9421d664c816289",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": "New York City",
+        "evidence": "assistant brand marketing manager based in new york city. full-time role supporting campaign launches cross-funct"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "preferredTools": [],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Brand Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "nches cross-functional coordination content calendars brand reporting presentation development and performance tracking. required tools incl",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "New York City",
+          "NYC"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva",
+        "PowerPoint"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 2
+    }
+  },
+  {
+    "id": "case-007",
+    "label": "Moderate-fit marketing role discovery case",
+    "decision_initial": "Review",
+    "decision_after_gate": "Review",
+    "decision_final": "Review",
+    "score": 74,
+    "penaltySum": 0,
+    "gate_triggered": {
+      "type": "none"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_FAMILY_MATCH",
+        "job_fact": "Role family detected as Marketing.",
+        "profile_fact": "Target families include Marketing.",
+        "note": "The day-to-day work matches what you are targeting.",
+        "weight": 12
+      },
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics.",
+        "profile_fact": "Profile tools include: Excel, Canva.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [
+      {
+        "code": "RISK_MISSING_TOOLS",
+        "job_fact": "Posting lists Google Analytics as preferred.",
+        "profile_fact": "Profile tools: Excel, Canva.",
+        "risk": "You have not shown Google Analytics yet, and it is called out in the posting.",
+        "severity": "low",
+        "weight": 0
+      }
+    ],
+    "job_signals": {
+      "rawHash": "c640004469bf17d3",
+      "jobFamily": "Marketing",
+      "analytics": {
+        "isHeavy": false,
+        "isLight": true
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": false,
+      "isHourly": false,
+      "yearsRequired": null,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "content planning stakeholder communication and performance tracking. preferred tools include excel and google analytics.",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": false
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": false,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Canva"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "case-008",
+    "label": "Apply-to-review downgrade discovery case",
+    "decision_initial": "Pass",
+    "decision_after_gate": "Pass",
+    "decision_final": "Pass",
+    "score": 35,
+    "penaltySum": 17,
+    "gate_triggered": {
+      "type": "floor_review",
+      "gateCode": "GATE_FLOOR_REVIEW_CONTRACT",
+      "detail": "Pref full-time vs contract"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, Google Analytics, Tableau, Power BI.",
+        "profile_fact": "Profile tools include: Excel, Google Analytics, Canva, PowerPoint.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [
+      {
+        "code": "RISK_CONTRACT",
+        "job_fact": "Posting indicates contract/temporary structure.",
+        "profile_fact": "You have a hard no-contract constraint.",
+        "risk": "Role structure conflicts with your hard constraint.",
+        "severity": "high",
+        "weight": -9.8
+      },
+      {
+        "code": "RISK_EXPERIENCE",
+        "job_fact": "Posting suggests ~3 years of experience.",
+        "profile_fact": "Profile experience approx 1 years.",
+        "risk": "Experience requirement may be above your current level.",
+        "severity": "medium",
+        "weight": -7.199999999999999
+      },
+      {
+        "code": "RISK_MISSING_TOOLS",
+        "job_fact": "Posting lists Tableau as preferred.",
+        "profile_fact": "Profile tools: Excel, Google Analytics, Canva, PowerPoint.",
+        "risk": "You have not shown Tableau yet, and it is called out in the posting.",
+        "severity": "low",
+        "weight": 0
+      }
+    ],
+    "job_signals": {
+      "rawHash": "45e372a47865dbb5",
+      "jobFamily": "Analytics",
+      "analytics": {
+        "isHeavy": true,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": "New York City",
+        "evidence": "brand marketing associate based in new york city. full-time contract role supporting campaign execution r"
+      },
+      "isGovernment": false,
+      "isSalesHeavy": false,
+      "isContract": true,
+      "isHourly": false,
+      "yearsRequired": 3,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [
+        "Excel",
+        "Google Analytics"
+      ],
+      "preferredTools": [
+        "Tableau",
+        "Power BI"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": true,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR",
+          "Brand Marketing"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "onal coordination. required tools include excel and google analytics. preferred tools include power bi and tableau. posting notes 3+ years o",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "in_person",
+        "constrained": true,
+        "allowedCities": [
+          "New York City",
+          "NYC"
+        ]
+      },
+      "constraints": {
+        "hardNoSales": false,
+        "hardNoGovernment": false,
+        "hardNoContract": true,
+        "hardNoHourlyPay": false,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Google Analytics",
+        "Canva",
+        "PowerPoint"
+      ],
+      "gradYear": 2026,
+      "yearsExperienceApprox": 1
+    }
+  },
+  {
+    "id": "case-009",
+    "label": "Review-to-pass downgrade discovery case",
+    "decision_initial": "Pass",
+    "decision_after_gate": "Pass",
+    "decision_final": "Pass",
+    "score": 2,
+    "penaltySum": 47.739999999999995,
+    "gate_triggered": {
+      "type": "force_pass",
+      "gateCode": "GATE_HARD_SALES",
+      "detail": "Hard no sales"
+    },
+    "why_codes": [
+      {
+        "code": "WHY_TOOL_MATCH",
+        "job_fact": "Posting lists tools such as: Excel, SQL, Tableau.",
+        "profile_fact": "Profile tools include: Excel, Canva.",
+        "note": "Your current tools align with what the role actually uses.",
+        "weight": 4
+      }
+    ],
+    "risk_codes": [
+      {
+        "code": "RISK_SALES",
+        "job_fact": "Posting contains sales signals (quota/commission/pipeline/cold outreach).",
+        "profile_fact": "You have a hard no-sales constraint.",
+        "risk": "Sales expectations conflict with your constraints.",
+        "severity": "high",
+        "weight": -18
+      },
+      {
+        "code": "RISK_GOVERNMENT",
+        "job_fact": "Posting contains government or clearance signals.",
+        "profile_fact": "You have a hard no-government constraint.",
+        "risk": "Government environment conflicts with your constraints.",
+        "severity": "high",
+        "weight": -18
+      },
+      {
+        "code": "RISK_CONTRACT",
+        "job_fact": "Posting indicates contract/temporary structure.",
+        "profile_fact": "You have a hard no-contract constraint.",
+        "risk": "Role structure conflicts with your hard constraint.",
+        "severity": "high",
+        "weight": -9.8
+      },
+      {
+        "code": "RISK_HOURLY",
+        "job_fact": "Posting indicates hourly compensation.",
+        "profile_fact": "You have a no-hourly constraint.",
+        "risk": "Compensation structure conflicts with your preference.",
+        "severity": "medium",
+        "weight": -1.6
+      },
+      {
+        "code": "RISK_EXPERIENCE",
+        "job_fact": "Posting suggests ~3 years of experience.",
+        "profile_fact": "Profile experience approx 1 years.",
+        "risk": "Experience requirement may be above your current level.",
+        "severity": "medium",
+        "weight": -7.199999999999999
+      },
+      {
+        "code": "RISK_MISSING_TOOLS",
+        "job_fact": "Posting lists SQL as preferred.",
+        "profile_fact": "Profile tools: Excel, Canva.",
+        "risk": "You have not shown SQL yet, and it is called out in the posting.",
+        "severity": "low",
+        "weight": 0
+      }
+    ],
+    "job_signals": {
+      "rawHash": "84f5ad635a5bb032",
+      "jobFamily": "Government",
+      "analytics": {
+        "isHeavy": true,
+        "isLight": false
+      },
+      "location": {
+        "mode": "unclear",
+        "constrained": false,
+        "city": null,
+        "evidence": null
+      },
+      "isGovernment": true,
+      "isSalesHeavy": true,
+      "isContract": true,
+      "isHourly": true,
+      "yearsRequired": 3,
+      "mbaRequired": false,
+      "gradYearHint": null,
+      "requiredTools": [],
+      "preferredTools": [
+        "Excel",
+        "SQL",
+        "Tableau"
+      ],
+      "reportingSignals": {
+        "strong": false
+      },
+      "internship": {
+        "isInternship": false,
+        "isSummer": false,
+        "isInPersonExplicit": false,
+        "mentionsAITools": false,
+        "isMarketingRotation": false,
+        "departments": [
+          "PR"
+        ],
+        "dates": null,
+        "pay": null,
+        "hasCapstone": false,
+        "evidence": {
+          "internshipLine": null,
+          "inPersonLine": null,
+          "aiLine": null,
+          "deptLine": "analyst for a government contractor. temporary hourly role supporting proposal reporting pipeline updates dashboard maintenance and outreach",
+          "capstoneLine": null,
+          "payLine": null,
+          "dateLine": null
+        }
+      }
+    },
+    "profile_signals": {
+      "targetFamilies": [
+        "Marketing"
+      ],
+      "locationPreference": {
+        "mode": "unclear",
+        "constrained": false
+      },
+      "constraints": {
+        "hardNoSales": true,
+        "hardNoGovernment": true,
+        "hardNoContract": true,
+        "hardNoHourlyPay": true,
+        "hardNoFullyRemote": false,
+        "prefFullTime": true,
+        "preferNotAnalyticsHeavy": false
+      },
+      "tools": [
+        "Excel",
+        "Canva"
+      ],
+      "gradYear": 2024,
+      "yearsExperienceApprox": 1
+    }
+  }
+]

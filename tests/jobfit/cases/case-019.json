@@ -1,0 +1,26 @@
+{
+  "id": "case-019",
+  "label": "Remote plus constrained city probe",
+  "profileText": "Marketing student targeting in-person roles in New York City only. No remote roles. Experience with campaign execution, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Remote Marketing Associate role supporting campaign reporting, content coordination, and stakeholder updates. Open to candidates based in Austin. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": true,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

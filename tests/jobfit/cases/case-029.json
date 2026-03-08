@@ -1,0 +1,26 @@
+{
+  "id": "case-029",
+  "label": "Heavy missing tools probe",
+  "profileText": "Marketing student targeting analytics-adjacent marketing roles. Experience with Canva, PowerPoint, and social media execution. Class of 2026.",
+  "jobText": "Marketing Analytics Associate role supporting SQL queries, Tableau dashboards, Power BI reporting, attribution analysis, and data visualization. Required tools include SQL, Tableau, Power BI, and Excel. Preferred tools include Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Canva", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

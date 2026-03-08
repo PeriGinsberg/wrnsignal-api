@@ -1,0 +1,26 @@
+{
+  "id": "case-028",
+  "label": "Graduation year too early probe",
+  "profileText": "Marketing student targeting full-time marketing roles. Experience with campaign support, Excel, Google Analytics, and Canva. Class of 2021.",
+  "jobText": "Marketing Development Program for Class of 2024. Full-time role supporting campaign execution, reporting, and brand coordination. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2021,
+    "yearsExperienceApprox": 3
+  }
+}

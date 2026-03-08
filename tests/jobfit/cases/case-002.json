@@ -1,0 +1,26 @@
+{
+  "id": "case-002",
+  "label": "Strong marketing fit with explicit tool overlap",
+  "profileText": "Marketing student targeting full-time brand marketing and product marketing roles in New York City. Experience running campaign execution, content calendars, performance tracking, presentation development, Excel reporting, Google Analytics, and Canva. Class of 2026. Wants full-time work in NYC.",
+  "jobText": "Associate Brand Marketing Coordinator based in New York City. Full-time role supporting campaign execution, content calendars, cross-functional coordination, launch planning, reporting, and brand performance tracking. Required tools include Excel and Google Analytics. Preferred tools include Canva.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": true,
+      "mode": "in_person",
+      "allowedCities": ["New York City", "NYC"]
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 2
+  }
+}

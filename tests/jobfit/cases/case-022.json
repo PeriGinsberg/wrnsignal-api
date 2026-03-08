@@ -1,0 +1,26 @@
+{
+  "id": "case-022",
+  "label": "Marketing role with single SQL mention",
+  "profileText": "Marketing student targeting full-time marketing roles. Experience with campaign support, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Marketing Coordinator role supporting campaign execution, content planning, stakeholder communication, and reporting. Nice to have: basic familiarity with SQL for pulling occasional campaign reports. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

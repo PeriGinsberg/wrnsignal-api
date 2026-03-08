@@ -1,0 +1,178 @@
+import fs from "fs"
+import path from "path"
+
+import { extractJobSignals, extractProfileSignals } from "../../app/api/jobfit/extract"
+import { evaluateGates } from "../../app/api/jobfit/constraints"
+import { scoreJobFit } from "../../app/api/jobfit/scoring"
+import { decisionFromScore, applyGateOverrides, applyRiskDowngrades } from "../../app/api/jobfit/decision"
+import { renderBulletsV4 } from "../../app/api/jobfit/deterministicBulletRendererV4"
+
+type ProfileOverrides = {
+  targetFamilies?: string[]
+  locationPreference?: {
+    constrained?: boolean
+    mode?: "in_person" | "hybrid" | "remote" | "unclear"
+    allowedCities?: string[]
+  }
+  constraints?: {
+    hardNoHourlyPay?: boolean
+    prefFullTime?: boolean
+    hardNoContract?: boolean
+    hardNoSales?: boolean
+    hardNoGovernment?: boolean
+    hardNoFullyRemote?: boolean
+    preferNotAnalyticsHeavy?: boolean
+  }
+  tools?: string[]
+  gradYear?: number | null
+  yearsExperienceApprox?: number | null
+}
+
+type RegressionCase = {
+  id: string
+  label: string
+  profileText: string
+  jobText: string
+  profileOverrides?: ProfileOverrides
+}
+
+type ResultRow = {
+  id: string
+  label: string
+  score: number
+  penaltySum: number
+  decision_initial: string
+  decision_after_gate: string
+  decision_final: string
+  gate_type: string
+  gate_code: string
+  gate_detail: string
+  why_code_list: string
+  risk_code_list: string
+  job_family: string
+  job_location_mode: string
+  job_location_city: string
+  profile_location_mode: string
+  profile_location_constrained: boolean
+}
+
+function loadCases(dir: string): RegressionCase[] {
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"))
+  return files.map((file) => {
+    const fullPath = path.join(dir, file)
+    const raw = fs.readFileSync(fullPath, "utf8")
+    return JSON.parse(raw) as RegressionCase
+  })
+}
+
+function csvEscape(value: unknown): string {
+  const s = String(value ?? "")
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`
+  }
+  return s
+}
+
+function toCsv(rows: ResultRow[]): string {
+  if (rows.length === 0) return ""
+
+  const headers = Object.keys(rows[0]) as Array<keyof ResultRow>
+  const lines = [
+    headers.join(","),
+    ...rows.map((row) => headers.map((h) => csvEscape(row[h])).join(",")),
+  ]
+  return lines.join("\n")
+}
+
+function runCase(testCase: RegressionCase) {
+  const jobSignals = extractJobSignals(testCase.jobText)
+  const profileSignals = extractProfileSignals(
+    testCase.profileText,
+    testCase.profileOverrides as any
+  )
+
+  const gate = evaluateGates(jobSignals, profileSignals)
+  const scoreResult = scoreJobFit(jobSignals, profileSignals)
+
+  const initialDecision = decisionFromScore(scoreResult.score)
+  const afterGateDecision = applyGateOverrides(initialDecision, gate)
+  const finalDecision = applyRiskDowngrades(afterGateDecision, scoreResult.penaltySum)
+
+  const fullResult = {
+    id: testCase.id,
+    label: testCase.label,
+    decision_initial: initialDecision,
+    decision_after_gate: afterGateDecision,
+    decision_final: finalDecision,
+    score: scoreResult.score,
+    penaltySum: scoreResult.penaltySum,
+    gate_triggered: gate,
+    why_codes: scoreResult.whyCodes,
+    risk_codes: scoreResult.riskCodes,
+    job_signals: jobSignals,
+    profile_signals: profileSignals,
+  }
+
+ const rendered = renderBulletsV4(fullResult)
+
+  const summaryRow: ResultRow = {
+    id: testCase.id,
+    label: testCase.label,
+    score: scoreResult.score,
+    penaltySum: scoreResult.penaltySum,
+    decision_initial: initialDecision,
+    decision_after_gate: afterGateDecision,
+    decision_final: finalDecision,
+    gate_type: gate.type,
+    gate_code: "gateCode" in gate ? gate.gateCode : "",
+    gate_detail: "detail" in gate ? gate.detail : "",
+    why_code_list: scoreResult.whyCodes.map((x) => x.code).join("|"),
+    risk_code_list: scoreResult.riskCodes.map((x) => x.code).join("|"),
+    rendered_why_bullets: rendered.why,
+    rendered_risk_bullets: rendered.risk,
+    why_bullet_count: rendered.why.length,
+    risk_bullet_count: rendered.risk.length,
+    why_bullets_joined: rendered.why.join(" | "),
+    risk_bullets_joined: rendered.risk.join(" | "),
+    job_family: jobSignals.jobFamily,
+    job_location_mode: jobSignals.location?.mode ?? "",
+    job_location_city: jobSignals.location?.city ?? "",
+    profile_location_mode: profileSignals.locationPreference?.mode ?? "",
+    profile_location_constrained: Boolean(profileSignals.locationPreference?.constrained),
+  }
+
+  return { fullResult, summaryRow }
+}
+
+function main() {
+  const repoRoot = process.cwd()
+  const casesDir = path.join(repoRoot, "tests", "jobfit", "cases")
+  const resultsDir = path.join(repoRoot, "tests", "jobfit", "results")
+  const jsonPath = path.join(resultsDir, "results.json")
+  const csvPath = path.join(resultsDir, "results.csv")
+
+  if (!fs.existsSync(resultsDir)) {
+    fs.mkdirSync(resultsDir, { recursive: true })
+  }
+
+  const cases = loadCases(casesDir)
+  const executed = cases.map(runCase)
+
+  const fullResults = executed.map((x) => x.fullResult)
+  const summaryRows = executed.map((x) => x.summaryRow)
+
+  fs.writeFileSync(jsonPath, JSON.stringify(fullResults, null, 2), "utf8")
+  fs.writeFileSync(csvPath, toCsv(summaryRows), "utf8")
+
+  console.log(`Ran ${fullResults.length} case(s).`)
+  for (const r of summaryRows) {
+    console.log(
+      `${r.id} | score=${r.score} | final=${r.decision_final} | gate=${r.gate_type}${r.gate_code ? `:${r.gate_code}` : ""}`
+    )
+  }
+
+  console.log(`JSON written to: ${jsonPath}`)
+  console.log(`CSV written to: ${csvPath}`)
+}
+
+main()

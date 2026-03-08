@@ -1,0 +1,26 @@
+{
+  "id": "case-024",
+  "label": "Consumer insights research role probe",
+  "profileText": "Marketing student targeting brand marketing roles. Prefers execution work over heavy analytics. Experience with Excel, Google Analytics, presentations, and campaign support. Class of 2026.",
+  "jobText": "Consumer Insights Associate role supporting market research, consumer behavior analysis, survey design, survey analysis, trend analysis, and research findings for brand teams. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": true
+    },
+    "tools": ["Excel", "Google Analytics", "PowerPoint"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}

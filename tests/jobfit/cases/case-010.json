@@ -1,0 +1,26 @@
+{
+  "id": "case-010",
+  "label": "MBA required hard gate discovery case",
+  "profileText": "Marketing student targeting full-time brand marketing roles. Experience with campaign execution, content calendars, Excel, Google Analytics, and Canva. Class of 2026.",
+  "jobText": "Brand Strategy Associate role supporting campaign planning, performance reporting, and cross-functional brand execution. MBA required. Preferred tools include Excel and Google Analytics.",
+  "profileOverrides": {
+    "targetFamilies": ["Marketing"],
+    "locationPreference": {
+      "constrained": false,
+      "mode": "unclear",
+      "allowedCities": []
+    },
+    "constraints": {
+      "hardNoHourlyPay": false,
+      "prefFullTime": true,
+      "hardNoContract": false,
+      "hardNoSales": false,
+      "hardNoGovernment": false,
+      "hardNoFullyRemote": false,
+      "preferNotAnalyticsHeavy": false
+    },
+    "tools": ["Excel", "Google Analytics", "Canva"],
+    "gradYear": 2026,
+    "yearsExperienceApprox": 1
+  }
+}
