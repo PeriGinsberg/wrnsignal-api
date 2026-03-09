@@ -799,9 +799,9 @@ export function renderBulletsV4(out: EvalOutput): {
   }
 
 if (out.decision !== "Pass" && risk.length === 0) {
-  const whyText = (why || []).join(" | ").toLowerCase()
-  const jobText = norm(out.job_signals?.job_text || "")
-  const combined = `${whyText} ${jobText}`
+ const whyText = (why || []).join(" | ").toLowerCase()
+const jobText = JSON.stringify(out.job_signals || {}).toLowerCase()
+const combined = `${whyText} ${jobText}`
 
   if (/designer|design|portfolio|adobe|figma|photoshop|creative/i.test(combined)) {
     risk.push(

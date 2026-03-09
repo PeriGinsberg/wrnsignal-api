@@ -5,7 +5,7 @@
     "score": 79,
     "decision_final": "Apply",
     "why_bullets_joined": "Your EMT experience gives you credible clinical context for collaborating with the clinical sales team to drive utilization | Your high-volume B2B sales experience shows you can operate in a real commercial environment, which matters for supporting regional awareness and procedure adoption efforts",
-    "risk_bullets_joined": "",
+    "risk_bullets_joined": "Your resume does not yet make strategy especially explicit, which may matter in a competitive review process",
     "raw": {
       "decision": "Apply",
       "score": 79,
@@ -13,7 +13,9 @@
         "Your EMT experience gives you credible clinical context for collaborating with the clinical sales team to drive utilization",
         "Your high-volume B2B sales experience shows you can operate in a real commercial environment, which matters for supporting regional awareness and procedure adoption efforts"
       ],
-      "risk_flags": [],
+      "risk_flags": [
+        "Your resume does not yet make strategy especially explicit, which may matter in a competitive review process"
+      ],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
@@ -68,7 +70,16 @@
           "match_strength": "adjacent"
         }
       ],
-      "risk_codes": [],
+      "risk_codes": [
+        {
+          "code": "RISK_MISSING_PROOF",
+          "job_fact": "strategy, synthesis, and problem-solving work",
+          "profile_fact": null,
+          "risk": "The role expects stronger direct proof than your background currently shows.",
+          "severity": "medium",
+          "weight": 0
+        }
+      ],
       "gate_triggered": {
         "type": "none"
       },
@@ -522,12 +533,12 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_07__THIN_EVIDENCE_RENDERER__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
         "why_count": 2,
-        "risk_count": 0,
+        "risk_count": 1,
         "penalty_sum": 0,
         "decision": "Apply",
         "why_codes_in": [
@@ -567,13 +578,2211 @@
             "weight": 85
           }
         ],
-        "risk_codes_in": [],
+        "risk_codes_in": [
+          {
+            "code": "RISK_MISSING_PROOF",
+            "severity": "medium"
+          }
+        ],
         "evaluator_profile_source": {
           "used_resume_text": true,
           "used_profile_structured": true,
           "used_raw_profile_text_fallback": false,
           "base_profile_text_len": 3387,
           "augmented_profile_text_len": 3630
+        }
+      }
+    }
+  },
+  {
+    "id": "real-102",
+    "label": "Michael Lazarus - NYC Council Graphics Designer",
+    "score": 86,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "Your portfolio-level design work shows the kind of execution discipline this team expects from a designer who can contribute immediately | Your experience producing real-world brand and marketing assets shows range across deliverables that should translate well to the portfolio expectations of this role | Your fluency with Adobe, Canva, and Photoshop gives you the tool readiness this design workflow depends on",
+    "risk_bullets_joined": "Your background shows strong design execution, but the resume does not yet make portfolio depth and presentation of past work fully explicit, which could matter in a hiring process where visual proof carries as much weight as the resume itself.",
+    "raw": {
+      "decision": "Priority Apply",
+      "score": 86,
+      "bullets": [
+        "Your portfolio-level design work shows the kind of execution discipline this team expects from a designer who can contribute immediately",
+        "Your experience producing real-world brand and marketing assets shows range across deliverables that should translate well to the portfolio expectations of this role",
+        "Your fluency with Adobe, Canva, and Photoshop gives you the tool readiness this design workflow depends on"
+      ],
+      "risk_flags": [
+        "Your background shows strong design execution, but the resume does not yet make portfolio depth and presentation of past work fully explicit, which could matter in a hiring process where visual proof carries as much weight as the resume itself."
+      ],
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_TOOL_PROOF",
+          "job_fact": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required",
+          "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "photoshop",
+          "match_kind": "tool",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_TOOL_PROOF",
+          "job_fact": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required",
+          "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "illustrator",
+          "match_kind": "tool",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Able to supply portfolio of past work/demonstrate skills",
+          "profile_fact": "Produced pitch decks, trade show booths, banners, and print collateral used across sales and marketing initiatives",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 80,
+          "match_key": "financial_analysis",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        },
+        {
+          "code": "WHY_EXECUTION_PROOF",
+          "job_fact": "Regular reporting on personal workflow and status of all projects",
+          "profile_fact": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 82,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "adjacent"
+        },
+        {
+          "code": "WHY_EXECUTION_PROOF",
+          "job_fact": "Regular reporting on personal workflow and status of all projects",
+          "profile_fact": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 82,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [
+        {
+          "code": "RISK_MISSING_TOOLS",
+          "job_fact": "Posting lists excel as preferred.",
+          "profile_fact": "Profile tools: figma, photoshop, illustrator, indesign, canva, adobe.",
+          "risk": "You have not shown excel yet, and it is called out in the posting.",
+          "severity": "medium",
+          "weight": 0
+        },
+        {
+          "code": "RISK_MISSING_TOOLS",
+          "job_fact": "Posting lists word as preferred.",
+          "profile_fact": "Profile tools: figma, photoshop, illustrator, indesign, canva, adobe.",
+          "risk": "You have not shown word yet, and it is called out in the posting.",
+          "severity": "medium",
+          "weight": 0
+        }
+      ],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "a73ef6df8ca16d4f",
+        "jobFamily": "Finance",
+        "analytics": {
+          "isHeavy": true,
+          "isLight": false
+        },
+        "function_tags": [
+          "data_analytics_bi",
+          "operations_general",
+          "finance_corp"
+        ],
+        "signal_debug": {
+          "hits": {
+            "analysis_reporting": 1,
+            "operations_execution": 1,
+            "tool:photoshop": 1,
+            "tool:illustrator": 1,
+            "tool:indesign": 1,
+            "tool:canva": 1,
+            "financial_analysis": 1,
+            "tool:excel": 1,
+            "tool:word": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth."
+          ]
+        },
+        "location": {
+          "mode": "in_person",
+          "constrained": false,
+          "city": "New York City",
+          "evidence": "The New York City Council, an equal opportunity employer, is seeking a Graphics Designer to serve in the Community Engagement Division."
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [
+          "photoshop",
+          "illustrator",
+          "indesign"
+        ],
+        "preferredTools": [
+          "canva",
+          "excel",
+          "word"
+        ],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "3d6bb0dfa55e3488",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required.",
+            "strength": 6,
+            "requiredness": "core"
+          },
+          {
+            "id": "f7566354467e0c49",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required.",
+            "strength": 6,
+            "requiredness": "core"
+          },
+          {
+            "id": "d50fb948991710ed",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required.",
+            "strength": 6,
+            "requiredness": "core"
+          },
+          {
+            "id": "c1635ce649cbbc5f",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Regular reporting on personal workflow and status of all projects.",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "517d4e24cd2ec859",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Regular reporting on personal workflow and status of all projects.",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "e84a055d9895fb7d",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Working knowledge of Canva helpful.",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "b166e7b5bea8c34e",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Able to supply portfolio of past work/demonstrate skills.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "dc865a0946e550fa",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Proficiency in Microsoft Office suite � especially Word and Excel.",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "f9cd5ddf81ddf03c",
+            "kind": "tool",
+            "key": "word",
+            "label": "word tool usage",
+            "snippet": "Proficiency in Microsoft Office suite � especially Word and Excel.",
+            "strength": 4,
+            "requiredness": "supporting"
+          }
+        ],
+        "internship": {
+          "isInternship": false,
+          "isSummer": false,
+          "isInPersonExplicit": true,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR",
+            "Events"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": "Proficiency in Microsoft Office suite � especially Word and Excel.",
+            "aiLine": null,
+            "deptLine": "Participation in the planning and production of events (meeting attendance, determination and documenting of graphics needs, monitoring of related progress).",
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Marketing"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": true,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "figma",
+          "photoshop",
+          "illustrator",
+          "indesign",
+          "canva",
+          "adobe"
+        ],
+        "gradYear": 2024,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "brand_marketing",
+          "content_social",
+          "sales_bd",
+          "operations_general",
+          "accounting_finops",
+          "communications_pr",
+          "creative_design"
+        ],
+        "function_tag_evidence": {
+          "brand_marketing": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Created thumbnails, photo collages, and branded backgrounds for campaign driven content"
+          ],
+          "content_social": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "Produced social media graphics for Instagram and Facebook"
+          ],
+          "sales_bd": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Produced pitch decks, trade show booths, banners, and print collateral used across sales and marketing initiatives"
+          ],
+          "operations_general": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables"
+          ],
+          "accounting_finops": [
+            "Graphic Designer / Brand Manager | Sagemont Advisors and Tax Now | 2023 � 2024",
+            "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands"
+          ],
+          "communications_pr": [
+            "Prepared production ready files and coordinated with print vendors to ensure accurate execution",
+            "Supported campaigns, events, and branded communications"
+          ],
+          "creative_design": [
+            "Grova Creative Marketing | Graphic Design Intern | 2018"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "fe2edc13110e64be",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "47aa0f7b99550a78",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "cdaf15ff3adb346c",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "3af77ab4289ff1e4",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "6962baf40ec9cae5",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Prepared production ready files and coordinated with print vendors to ensure accurate execution",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "6fcc4717410bafbc",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Supported campaigns, events, and branded communications",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "3ebe8583b5645214",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Graphic Designer / Brand Manager | Sagemont Advisors and Tax Now | 2023 � 2024",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "0116f6ea0660f075",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "5701fce2421733bf",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "009d2897559031a5",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Produced social media graphics for Instagram and Facebook",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "f731b578904db773",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "5cfe91329271edcf",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1afb4585b6a5b300",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Grova Creative Marketing | Graphic Design Intern | 2018",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "f7b6550afcf54afe",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "fbbfb2225174f7d6",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "8831b09e896ba348",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "9a08f143a5fccacd",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "bd774108322154d7",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "86f8b0936e2809dd",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Produced pitch decks, trade show booths, banners, and print collateral used across sales and marketing initiatives",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "bbbb72a0b2d1944c",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "55d0746811168c3b",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "71863d5a1322febc",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "375baa7aba4ee0ac",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "af5e5cc2b53c4b45",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "3fd717de1bae9fac",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 86,
+        "clamped_score": 86,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "🔥",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
+        "why_count": 3,
+        "risk_count": 1,
+        "penalty_sum": 0,
+        "decision": "Priority Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_EXECUTION_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "adjacent",
+            "weight": 82
+          },
+          {
+            "code": "WHY_EXECUTION_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "adjacent",
+            "weight": 82
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "financial_analysis",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 80
+          },
+          {
+            "code": "WHY_TOOL_PROOF",
+            "match_key": "photoshop",
+            "match_kind": "tool",
+            "match_strength": "direct",
+            "weight": 98
+          },
+          {
+            "code": "WHY_TOOL_PROOF",
+            "match_key": "illustrator",
+            "match_kind": "tool",
+            "match_strength": "direct",
+            "weight": 98
+          }
+        ],
+        "risk_codes_in": [
+          {
+            "code": "RISK_MISSING_TOOLS",
+            "severity": "medium"
+          },
+          {
+            "code": "RISK_MISSING_TOOLS",
+            "severity": "medium"
+          }
+        ],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3573,
+          "augmented_profile_text_len": 3892
+        }
+      }
+    }
+  },
+  {
+    "id": "real-103",
+    "label": "Will Friedman - RSM Strategy and Management Consulting Intern",
+    "score": 78,
+    "decision_final": "Apply",
+    "why_bullets_joined": "Your research and analytical experience maps well to the structured analytical work this role depends on",
+    "risk_bullets_joined": "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments.",
+    "raw": {
+      "decision": "Apply",
+      "score": 78,
+      "bullets": [
+        "Your research and analytical experience maps well to the structured analytical work this role depends on"
+      ],
+      "risk_flags": [
+        "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments."
+      ],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "As a Strategy and Management Consulting intern at RSM, you will work with mid-sized businesses in diverse industries and receive hands-on client experience with direct access to executive management",
+          "profile_fact": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 108,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Conduct benchmarking research and analysis for IT spending, trends and industry practices",
+          "profile_fact": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 102,
+          "match_key": "consumer_research",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Prepare reports on consulting services performed for clients, delivering reports where appropriate and discussing results and recommendations with clients",
+          "profile_fact": "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Prepare reports on consulting services performed for clients, delivering reports where appropriate and discussing results and recommendations with clients",
+          "profile_fact": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "drafting_documentation",
+          "match_kind": "deliverable",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Conduct benchmarking research and analysis for IT spending, trends and industry practices",
+          "profile_fact": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Work with clients to provide analysis, development and documentation of improvement opportunities",
+          "profile_fact": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "ef3b71fee3736f8f",
+        "jobFamily": "Analytics",
+        "analytics": {
+          "isHeavy": true,
+          "isLight": false
+        },
+        "function_tags": [
+          "sales_bd",
+          "consulting_strategy",
+          "consumer_insights_research",
+          "data_analytics_bi",
+          "communications_pr"
+        ],
+        "signal_debug": {
+          "hits": {
+            "client_commercial_work": 5,
+            "strategy_problem_solving": 4,
+            "consumer_research": 1,
+            "analysis_reporting": 2,
+            "drafting_documentation": 2
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": null,
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": true,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "43af9fe79a1f1fad",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "As a Strategy and Management Consulting intern at RSM, you will work with mid-sized businesses in diverse industries and receive hands-on client experience with direct access to executive management.",
+            "strength": 10,
+            "requiredness": "core",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "5a5e36ecd4f42d2c",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "As a Strategy and Management Consulting intern at RSM, you will work with mid-sized businesses in diverse industries and receive hands-on client experience with direct access to executive management.",
+            "strength": 10,
+            "requiredness": "core",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "738b1af0fa397e4c",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Conduct benchmarking research and analysis for IT spending, trends and industry practices",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "acb195c4bd7cdb35",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Conduct benchmarking research and analysis for IT spending, trends and industry practices",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "d32d699fa3fab25a",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Prepare reports on consulting services performed for clients, delivering reports where appropriate and discussing results and recommendations with clients",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "444da045cf640059",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Prepare reports on consulting services performed for clients, delivering reports where appropriate and discussing results and recommendations with clients",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "b3ae037bbbcaa4a0",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Travel to client locations as required",
+            "strength": 7,
+            "requiredness": "core",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "b1088ccd13dac1f7",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Travel to assigned client locations locally and nationally is required",
+            "strength": 7,
+            "requiredness": "core",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "9fec102bd9e4ca46",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Meet with clients and conducting management consulting projects based on client needs",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "63ff72e1da6dc23d",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Meet with clients and conducting management consulting projects based on client needs",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "952a58c7cc3663f9",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Work with clients to provide analysis, development and documentation of improvement opportunities",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "81e9c787fbea8612",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Work with clients to provide analysis, development and documentation of improvement opportunities",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "e877508a6402ae7a",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Complete client projects effectively and efficiently and maintaining a high level of proficiency",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": "As a Strategy and Management Consulting intern at RSM, you will work with mid-sized businesses in diverse industries and receive hands-on client experience with direct access to executive management.",
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Consulting"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York",
+            "Boston",
+            "Miami",
+            "Chicago"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": true,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "excel",
+          "powerpoint",
+          "sql",
+          "r",
+          "canva",
+          "google sheets"
+        ],
+        "gradYear": 2027,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "consulting_strategy",
+          "finance_corp",
+          "consumer_insights_research",
+          "data_analytics_bi",
+          "sales_bd",
+          "operations_general",
+          "communications_pr",
+          "legal_regulatory"
+        ],
+        "function_tag_evidence": {
+          "consulting_strategy": [
+            "Target roles: Consulting intern, Strategy intern",
+            "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "Aspen Academies (Private Investment Firm - M&A Strategy Focus)",
+            "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "Participated in an intensive program to gain exposure to management consulting, BCG's culture, and career development pathways."
+          ],
+          "finance_corp": [
+            "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives."
+          ],
+          "consumer_insights_research": [
+            "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization."
+          ],
+          "data_analytics_bi": [
+            "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives.",
+            "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance."
+          ],
+          "sales_bd": [
+            "Led targeted seller outreach, crafting personalized, data driven emails to convert prospects into the diligence pipeline.",
+            "Luxury Retail Sales & Operations (Alo & Brooks Brothers)"
+          ],
+          "operations_general": [
+            "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
+            "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "Vice President of Operations and Finance"
+          ],
+          "communications_pr": [
+            "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization."
+          ],
+          "legal_regulatory": [
+            "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance."
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "f114abfc3a674cc8",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "a9f2d6671e3b0c8e",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "34c5239ca038f745",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Designed and executed a proprietary data collection approach using mystery shopping calls to obtain hard to access operational and financial data, organizing results in Excel.",
+            "source": "resume",
+            "strength": 10
+          },
+          {
+            "id": "b5f5b9e1e368990c",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "e28e31ec70e6bdc5",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "2f61b31f0ddb2e75",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "e94300233bc98fd3",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "1fd2ca728ef7916f",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "1b38459467ea4392",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "856d00fe3748982d",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "ca6a5032910b42fa",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Led targeted seller outreach, crafting personalized, data driven emails to convert prospects into the diligence pipeline.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "83b6e382866ec785",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "4d39b48eabd54679",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "020eb4e4e45bff96",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "df70fbee4717c3fd",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Target roles: Consulting intern, Strategy intern",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "fb78e2792e964661",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Aspen Academies (Private Investment Firm - M&A Strategy Focus)",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "a13d185c37000287",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Participated in an intensive program to gain exposure to management consulting, BCG's culture, and career development pathways.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "1a57f7633df959db",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "e56e000a91ced551",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "Applied Linear Regression in R to analyze key variables impacting car prices (horsepower, RPM, weight, body type)",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "a5f4a0d1b39a2d64",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "ee8ee4d2024686b5",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "ef42000ea337cd55",
+            "kind": "tool",
+            "key": "powerpoint",
+            "label": "powerpoint tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "8dc129a1fb5ebbce",
+            "kind": "tool",
+            "key": "sql",
+            "label": "sql tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "93150d7aee5b6e59",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "c5ecf50a5a8d5210",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "755f9308cafeed34",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "86feeb910d699211",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "c4f9e870eb309e97",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "107f7e112f99a6a8",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "6610de78626ac15a",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "653e0cc2c6d02bf6",
+            "kind": "tool",
+            "key": "powerpoint",
+            "label": "powerpoint tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "6117bd7fb6758c7e",
+            "kind": "tool",
+            "key": "sql",
+            "label": "sql tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "b914b7a1f219bb96",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "471a9325b9c977d5",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "b7f7f74e9984c399",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Vice President of Operations and Finance",
+            "source": "resume",
+            "strength": 3,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 78,
+        "clamped_score": 78,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "✅",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "why_count": 1,
+        "risk_count": 1,
+        "penalty_sum": 0,
+        "decision": "Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 108
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "consumer_research",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 102
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "drafting_documentation",
+            "match_kind": "deliverable",
+            "match_strength": "direct",
+            "weight": 98
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 98
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3797,
+          "augmented_profile_text_len": 4135
+        }
+      }
+    }
+  },
+  {
+    "id": "real-104",
+    "label": "Catherine Lees - tarte Summer 2026 Marketing Internship",
+    "score": 77,
+    "decision_final": "Review",
+    "why_bullets_joined": "Your marketing and communications experience gives you relevant proof of cross-functional execution in a client-facing project environment",
+    "risk_bullets_joined": "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments.",
+    "raw": {
+      "decision": "Review",
+      "score": 77,
+      "bullets": [
+        "Your marketing and communications experience gives you relevant proof of cross-functional execution in a client-facing project environment"
+      ],
+      "risk_flags": [
+        "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments."
+      ],
+      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
+          "profile_fact": "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 96,
+          "match_key": "stakeholder_coordination",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_EXECUTION_PROOF",
+          "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
+          "profile_fact": "Presented findings through a professional client deck and written report",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 83,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "a948c26a1ab04add",
+        "jobFamily": "Consulting",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": false
+        },
+        "function_tags": [
+          "operations_general"
+        ],
+        "signal_debug": {
+          "hits": {
+            "operations_execution": 1,
+            "stakeholder_coordination": 2
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth."
+          ]
+        },
+        "location": {
+          "mode": "in_person",
+          "constrained": false,
+          "city": "New York City",
+          "evidence": "tarte cosmetics is seeking enthusiastic rising seniors for an in-person Summer 2026 Marketing Internship in New York City."
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "6bae124b6c76e158",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "8f18f38c69a19689",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": true,
+          "isInPersonExplicit": true,
+          "mentionsAITools": true,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR",
+            "Events"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": true,
+          "evidence": {
+            "internshipLine": "tarte cosmetics is seeking enthusiastic rising seniors for an in-person Summer 2026 Marketing Internship in New York City.",
+            "inPersonLine": "tarte cosmetics is seeking enthusiastic rising seniors for an in-person Summer 2026 Marketing Internship in New York City.",
+            "aiLine": "Comfortable using AI tools and platforms",
+            "deptLine": "Collaborate with cross-functional teams on brand initiatives and events",
+            "capstoneLine": "Work closely with interns in various departments to complete an independent Capstone Project",
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Consulting"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "photoshop",
+          "illustrator",
+          "indesign",
+          "canva",
+          "adobe"
+        ],
+        "gradYear": 2027,
+        "yearsExperienceApprox": 1,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "communications_pr",
+          "content_social",
+          "finance_corp",
+          "creative_design",
+          "brand_marketing",
+          "consumer_insights_research",
+          "sales_bd",
+          "consulting_strategy",
+          "accounting_finops",
+          "operations_general",
+          "data_analytics_bi"
+        ],
+        "function_tag_evidence": {
+          "communications_pr": [
+            "Target roles: Creative internship, marketing internship, communication internship, social media internship, editorial internship, public relations internship, web design internship, production internships, design internships, advertising internship",
+            "Muck Rack Fundamentals of Media Relations Certification",
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "Lead photographer for editorial shoots, managing creative direction and execution",
+            "Client Communications & Brand Strategy"
+          ],
+          "content_social": [
+            "Target roles: Creative internship, marketing internship, communication internship, social media internship, editorial internship, public relations internship, web design internship, production internships, design internships, advertising internship",
+            "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "Merchandise Committee | Social Media Coordinator | Feb 2024 � Present",
+            "Created and scheduled social media content to support engagement and brand consistency"
+          ],
+          "finance_corp": [
+            "Summit, NJ | lees.65@osu.edu | 908.477.5138 | LinkedIn | Portfolio",
+            "Produced a professional writing portfolio including press releases and feature articles"
+          ],
+          "creative_design": [
+            "Focus: Visual Design, Fashion Design, Photography, Architecture",
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "Visual Communication & Creative Design"
+          ],
+          "brand_marketing": [
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "Client Communications & Brand Strategy",
+            "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities"
+          ],
+          "consumer_insights_research": [
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography"
+          ],
+          "sales_bd": [
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "Delivered photography for 30+ client events, managing creative execution and client communication",
+            "Client Communications & Brand Strategy",
+            "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
+            "Presented findings through a professional client deck and written report"
+          ],
+          "consulting_strategy": [
+            "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "Client Communications & Brand Strategy",
+            "Developed an integrated PESO communications strategy aligned with brand voice and audience insights"
+          ],
+          "accounting_finops": [
+            "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews"
+          ],
+          "operations_general": [
+            "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews"
+          ],
+          "data_analytics_bi": [
+            "Presented findings through a professional client deck and written report"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "926f9e7ad7c30bad",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "7c5bc4c909a9eb42",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Developed an integrated PESO communications strategy aligned with brand voice and audience insights",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "c5843bb8b39deb14",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Developed an integrated PESO communications strategy aligned with brand voice and audience insights",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "69c4b154bf0f6059",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Presented findings through a professional client deck and written report",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "933fbcc78d96e300",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Presented findings through a professional client deck and written report",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "cbe52c312e36f4d5",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Presented findings through a professional client deck and written report",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "24a3d9adbcf865a3",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Created and scheduled social media content to support engagement and brand consistency",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "eb6ff0780397371b",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Summit, NJ | lees.65@osu.edu | 908.477.5138 | LinkedIn | Portfolio",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "cad53180dbebe830",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "03ff34b5370792eb",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "14bb35f0103700ea",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "43c411bb16406a5e",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "c7a60ca5aff138fe",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Delivered photography for 30+ client events, managing creative execution and client communication",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "1ab18fe8780093f2",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "3728d6d7f7346a3a",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "770ba549c3168b47",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Produced a professional writing portfolio including press releases and feature articles",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "d58acff8071da8ca",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "ee90286f7cffd36a",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "6a2b19db996e12bc",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "30fb111a25cd063a",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "52886223de462e3c",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Target roles: Creative internship, marketing internship, communication internship, social media internship, editorial internship, public relations internship, web design internship, production internships, design internships, advertising internship",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "3d3a5de7b3acf4e7",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "46d98300f6e93be7",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Lead photographer for editorial shoots, managing creative direction and execution",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "269937f9dcbedf82",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Client Communications & Brand Strategy",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "0f00b846a9a8017c",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Client Communications & Brand Strategy",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "0885ffc4e4618b6c",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Client Communications & Brand Strategy",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "36c754b5bcbe4366",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Produced polished creative work using Adobe Photoshop across multiple formats",
+            "source": "resume",
+            "strength": 6
+          },
+          {
+            "id": "7579902b546ccfec",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Practiced media relations and message control through simulated press conference scenarios",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "335f38312748f4b2",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Merchandise Committee | Social Media Coordinator | Feb 2024 � Present",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "5cbaa34655609511",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Target roles: Creative internship, marketing internship, communication internship, social media internship, editorial internship, public relations internship, web design internship, production internships, design internships, advertising internship",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "29a26bd50f23571e",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Focus: Visual Design, Fashion Design, Photography, Architecture",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "cbebf589d2218e75",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Muck Rack Fundamentals of Media Relations Certification",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "855e23ff2bf51d50",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Adobe Creative Cloud (Photoshop, InDesign, Illustrator)",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "c6d70519e4bdf87d",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Adobe Creative Cloud (Photoshop, InDesign, Illustrator)",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "e8af3c469c0aeb77",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Adobe Creative Cloud (Photoshop, InDesign, Illustrator)",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "029dd23cdbd2e2d3",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Client Communications & Brand Strategy",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "cfa028813f6aeb07",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "f052e0039704a65d",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Visual Communication & Creative Design",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "b50da35bec1da12d",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Wrote AP-style news releases with emphasis on clarity, ethics, and audience alignment",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "f007d851d500fda1",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "TOOLS: adobe, canva, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "5aad74933eeef4bf",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "TOOLS: adobe, canva, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "9c0d9cd122c1e825",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "TOOLS: adobe, canva, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "fd4cbdeb54640e88",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "TOOLS: adobe, canva, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 4
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 77,
+        "clamped_score": 77,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "⚠",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "decision_initial": "Review",
+        "decision_after_gate": "Review",
+        "decision_final": "Review",
+        "why_count": 1,
+        "risk_count": 1,
+        "penalty_sum": 0,
+        "decision": "Review",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "stakeholder_coordination",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 96
+          },
+          {
+            "code": "WHY_EXECUTION_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "adjacent",
+            "weight": 83
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 4044,
+          "augmented_profile_text_len": 4326
         }
       }
     }
