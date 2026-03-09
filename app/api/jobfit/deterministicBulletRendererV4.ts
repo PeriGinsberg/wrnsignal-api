@@ -1,9 +1,3 @@
-// FILE: app/api/jobfit/deterministicBulletRendererV4.ts
-//
-// Thin deterministic renderer.
-// It should not rescue weak upstream evidence.
-// It should render matched proof cleanly.
-
 import type {
   EvalOutput,
   Decision,
@@ -12,9 +6,13 @@ import type {
 } from "./signals"
 
 export const RENDERER_V4_STAMP =
-  "RENDERER_V4_STAMP__2026_03_07__THIN_EVIDENCE_RENDERER__B"
+  "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A"
 
 type RenderCaps = { whyMax: number; riskMax: number }
+type Group = "proof" | "tools" | "execution" | "other"
+
+const TOOL_PATTERN =
+  /\b(adobe(?:\s+creative\s+suite)?|photoshop|illustrator|indesign|figma|canva|excel|powerpoint|sql|python|r|arcgis|autocad|tableau|google analytics|meta ads|google ads)\b/i
 
 function capsForDecision(d: Decision): RenderCaps {
   if (d === "Priority Apply") return { whyMax: 6, riskMax: 3 }
@@ -23,108 +21,10 @@ function capsForDecision(d: Decision): RenderCaps {
   return { whyMax: 0, riskMax: 4 }
 }
 
-type Group = "proof" | "tools" | "execution" | "other"
-
 function whyGroup(w: WhyCode): Group {
   if (w.code === "WHY_TOOL_PROOF") return "tools"
   if (w.code === "WHY_EXECUTION_PROOF") return "execution"
   return "proof"
-}
-
-function cleanClause(s: string): string {
-  return norm(s)
-    .replace(/\.$/, "")
-    .replace(/^your experience\s+/i, "")
-    .replace(/^experience\s+/i, "")
-    .trim()
-}
-
-function evidenceLead(profileFact: string): string {
-  const pf = cleanClause(profileFact || "")
-
-  if (!pf) return ""
-
-  if (/emt experience|emergency medical technician|special events emt/i.test(pf)) {
-    return "Your EMT experience"
-  }
-
-  if (/physicians|medical teams|operating room|orthopedic surgical|patient consultations|medical equipment|hospital settings|physical therapy intern/i.test(pf)) {
-    return "Your clinical exposure"
-  }
-
-  if (/pipeline|cold calls|outbound|prospects|accounts|sales presentations|client communication|outreach/i.test(pf)) {
-    return "Your high-volume B2B sales experience"
-  }
-
-  if (/market research|policy research|analytics|data/i.test(pf)) {
-    return "Your research and analytical experience"
-  }
-
-  if (/cross-functional|coordinating|stakeholder|teams|leadership/i.test(pf)) {
-    return "Your cross-functional execution experience"
-  }
-
-  return capitalizeClause(pf)
-}
-
-function interpretDirectProof(profileFact: string, jobFact: string): string {
-  const lead = evidenceLead(profileFact || "")
-  const jf = capabilityPhrase(jobFact || "")
-
-  if (!lead) return ""
-  if (!jf) return sentence(lead)
-
-  if (/emt experience|clinical exposure/i.test(lead)) {
-    return sentence(
-      `${lead} gives you credible clinical context for ${jf}.`
-    )
-  }
-
-  if (/b2b sales experience/i.test(lead)) {
-    return sentence(
-      `${lead} shows you can operate in a real commercial environment, which matters for ${jf}.`
-    )
-  }
-
-  if (/research and analytical experience/i.test(lead)) {
-    return sentence(
-      `${lead} shows analytical strength that supports ${jf}.`
-    )
-  }
-
-  if (/cross-functional execution experience/i.test(lead)) {
-    return sentence(
-      `${lead} shows execution strength that supports ${jf}.`
-    )
-  }
-
-  return sentence(
-    `${lead} gives you relevant proof for ${jf}.`
-  )
-}
-
-function interpretAdjacentProof(profileFact: string, jobFact: string): string {
-  const lead = evidenceLead(profileFact || "")
-  const jf = capabilityPhrase(jobFact || "")
-
-  if (!lead) return ""
-  if (!jf) return sentence(lead)
-
-  if (/research and analytical experience/i.test(lead)) {
-    return sentence(
-      `${lead} is adjacent evidence that can transfer into ${jf}.`
-    )
-  }
-
-  if (/cross-functional execution experience|clinical exposure|emt experience/i.test(lead)) {
-    return sentence(
-      `${lead} is adjacent experience that can transfer into ${jf}.`
-    )
-  }
-
-  return sentence(
-    `${lead} is adjacent evidence that can transfer into ${jf}.`
-  )
 }
 
 function riskGroup(code: string): Group {
@@ -144,15 +44,6 @@ function riskGroup(code: string): Group {
     code === "RISK_HOURLY"
   ) {
     return "execution"
-  }
-
-  if (
-    code === "RISK_EXPERIENCE" ||
-    code === "RISK_ANALYTICS_HEAVY" ||
-    code === "RISK_REPORTING_SIGNALS" ||
-    code === "RISK_SALES"
-  ) {
-    return "other"
   }
 
   return "other"
@@ -176,9 +67,11 @@ function whyPriority(w: WhyCode): number {
 }
 
 function riskPriority(code: string, r: RiskCode): number {
-  const sev = r.severity
-  const sevWeight = sev === "high" ? 100 : sev === "medium" ? 60 : 30
-  const toolPenalty = code === "RISK_MISSING_TOOLS" && sev !== "high" ? -20 : 0
+  const sevWeight =
+    r.severity === "high" ? 100 :
+    r.severity === "medium" ? 60 :
+    30
+  const toolPenalty = code === "RISK_MISSING_TOOLS" && r.severity !== "high" ? -20 : 0
   return sevWeight + toolPenalty
 }
 
@@ -190,9 +83,11 @@ function norm(s: unknown): string {
 }
 
 function sentence(s: string): string {
-  let t = norm(s)
-  t = t.replace(/^[•\-\s]+/, "")
-  t = t.replace(/\s*[.;:]+$/, "")
+  const t = norm(s)
+    .replace(/^[•\-\s]+/, "")
+    .replace(/\s*[.;:]+$/, "")
+    .trim()
+
   if (!t) return ""
   return t[0].toUpperCase() + t.slice(1)
 }
@@ -200,9 +95,48 @@ function sentence(s: string): string {
 function usable(s: string): boolean {
   const t = norm(s)
   if (!t) return false
-  if (t.length < 20) return false
-  if (/^\w+(,\s*\w+){0,2}$/.test(t)) return false
+  if (t.length < 18) return false
+  if (/^\w+(,\s*\w+){0,3}$/.test(t)) return false
   return true
+}
+
+function cleanClause(s: string): string {
+  return norm(s)
+    .replace(/\.$/, "")
+    .replace(/^your experience\s+/i, "")
+    .replace(/^experience\s+/i, "")
+    .trim()
+}
+
+function stripLeadingVerbNoise(s: string): string {
+  return norm(s)
+    .replace(/^supports\s+/i, "")
+    .replace(/^supporting\s+/i, "")
+    .replace(/^as a\s+/i, "")
+    .replace(/^as an\s+/i, "")
+    .replace(/^is adjacent evidence that can transfer into\s+/i, "")
+    .replace(/^gives you adjacent experience that should translate well to\s+/i, "")
+    .replace(/^provides practical experience that supports\s+/i, "")
+    .replace(/^tools:\s*/i, "")
+    .trim()
+}
+
+function cleanProfileFact(s: string): string {
+  let t = stripLeadingVerbNoise(cleanClause(s))
+
+  t = t
+    .replace(/^TOOLS:\s*/i, "")
+    .replace(/^what you.?ll do:?/i, "")
+    .replace(/^responsibilities:?/i, "")
+    .replace(/^job description:?/i, "")
+    .replace(/^able to\s+/i, "")
+    .replace(/^ability to\s+/i, "")
+    .replace(/^proficiency (?:and creativity )?in\s+/i, "")
+    .replace(/\s+(including|especially|such as)\s+.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return t
 }
 
 function cleanJobFact(s: string): string {
@@ -210,43 +144,44 @@ function cleanJobFact(s: string): string {
 
   if (!t) return ""
 
-  // remove common JD headers and broken apostrophe variants
-  t = t.replace(/what\s+you.?ll\s+do:?/gi, "")
-  t = t.replace(/responsibilities:?/gi, "")
-  t = t.replace(/job description:?/gi, "")
-  t = t.replace(/primary function of position:?/gi, "")
-  t = t.replace(/you will:?/gi, "")
-  t = t.replace(/^as\s+[^,]+,\s*/i, "")
+  t = t
+    .replace(/what\s+you.?ll\s+do:?/gi, "")
+    .replace(/responsibilities:?/gi, "")
+    .replace(/job description:?/gi, "")
+    .replace(/primary function of position:?/gi, "")
+    .replace(/you will:?/gi, "")
+    .replace(/^as\s+[^,.;]+(?:,|$)\s*/i, "")
+    .replace(/^be\s+/i, "")
+    .replace(/^responsible for\s+/i, "")
+    .replace(/^supporting with\s+/i, "supporting ")
+    .replace(/^able to\s+/i, "")
+    .replace(/^ability to\s+/i, "")
+    .replace(/^proficiency (?:and creativity )?in\s+/i, "")
+    .replace(/^work with\s+/i, "collaborating with ")
+    .replace(/^support\s+/i, "supporting ")
+    .replace(/^assist\s+/i, "assisting ")
+    .replace(/^help\s+/i, "helping ")
+    .replace(/^manage\s+/i, "managing ")
+    .replace(/^develop\s+/i, "developing ")
+    .replace(/^analyze\s+/i, "analyzing ")
+    .replace(/^conduct\s+/i, "conducting ")
+    .replace(/^execute\s+/i, "executing ")
+    .replace(/^perform\s+/i, "performing ")
+    .replace(/^prepare\s+/i, "preparing ")
+    .replace(/^contribute to\s+/i, "contributing to ")
+    .replace(/^plan and administer\s+/i, "planning and administering ")
+    .replace(/\s+(including|especially|such as)\s+.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
 
-  // clean awkward helper phrases
-  t = t.replace(/^be\s+/i, "")
-  t = t.replace(/^responsible for\s+/i, "")
-  t = t.replace(/^supporting with\s+/i, "supporting ")
-  t = t.replace(/\s+/g, " ").trim()
-
-  // normalize leading verbs into cleaner capability language
-  t = t.replace(/^work with\s+/i, "collaborating with ")
-  t = t.replace(/^support\s+/i, "supporting ")
-  t = t.replace(/^assist\s+/i, "assisting ")
-  t = t.replace(/^help\s+/i, "helping ")
-  t = t.replace(/^manage\s+/i, "managing ")
-  t = t.replace(/^develop\s+/i, "developing ")
-  t = t.replace(/^analyze\s+/i, "analyzing ")
-  t = t.replace(/^conduct\s+/i, "conducting ")
-  t = t.replace(/^execute\s+/i, "executing ")
-  t = t.replace(/^perform\s+/i, "performing ")
-  t = t.replace(/^contribute to\s+/i, "contributing to ")
-  t = t.replace(/^plan and administer\s+/i, "planning and administering ")
-
-  return t.trim()
+  return t
 }
 
 function capabilityPhrase(jobFact: string): string {
   const t = cleanJobFact(jobFact)
-
   if (!t) return ""
 
-  if (/^collaborating with .* drive .*utilization/i.test(t)) {
+  if (/collaborating with .* drive .*utilization/i.test(t)) {
     return "collaborating with the clinical sales team to drive utilization"
   }
 
@@ -254,32 +189,32 @@ function capabilityPhrase(jobFact: string): string {
     return "supporting regional awareness and procedure adoption efforts"
   }
 
-  if (/conducting market research|growth strategy/i.test(t)) {
+  if (/prepare reports on consulting services performed for clients|client reporting/i.test(t)) {
+    return "client reporting and written analysis"
+  }
+
+  if (/benchmarking research|it spending|research and analysis/i.test(t)) {
+    return "benchmarking research and analysis"
+  }
+
+  if (/portfolio|past work|demonstrate skills/i.test(t)) {
+    return "a portfolio that demonstrates visual design range"
+  }
+
+  if (/adobe|figma|canva|illustrator|indesign|photoshop/i.test(t)) {
+    return "design tool fluency"
+  }
+
+  if (/cross-functional|execute cross-functionally/i.test(t)) {
+    return "cross-functional execution"
+  }
+
+  if (/market research|growth strategy/i.test(t)) {
     return "market research and growth strategy support"
   }
 
   if (/social media|content creation/i.test(t)) {
     return "social media and content development"
-  }
-
-  if (/execute cross-functionally|cross-functional/i.test(t)) {
-    return "cross-functional execution"
-  }
-
-  if (/process evaluation and design|design and document processes/i.test(t)) {
-    return "process evaluation and design"
-  }
-
-  if (/performing compliance and analysis work/i.test(t)) {
-    return "compliance and analysis work"
-  }
-
-  if (/planning and administering .*policy analysis/i.test(t)) {
-    return "policy analysis and program support"
-  }
-
-  if (/research$/i.test(t)) {
-    return "research"
   }
 
   if (/campaign performance|optimization|scale/i.test(t)) {
@@ -290,13 +225,34 @@ function capabilityPhrase(jobFact: string): string {
     return "forecasting and scenario planning"
   }
 
+  if (/compliance|state and federal regulations/i.test(t)) {
+    return "compliance and analysis work"
+  }
+
+  if (/process evaluation and design|design and document processes|process design documentation/i.test(t)) {
+    return "process evaluation and design"
+  }
+
+  if (/policy analysis|planning and administering/i.test(t)) {
+    return "policy analysis and program support"
+  }
+
   if (/reporting/i.test(t)) {
     return "reporting and analytics support"
   }
 
-  return t
-}
+  if (/research$/i.test(t)) {
+    return "research"
+  }
 
+  const clipped = t
+    .split(/;|\s+\|\s+|,\s+(?=[a-z])/i)[0]
+    .trim()
+
+  return clipped.length > 140
+    ? clipped.slice(0, 140).replace(/\s+\S*$/, "").trim()
+    : clipped
+}
 
 function capitalizeClause(s: string): string {
   const t = norm(s)
@@ -304,8 +260,196 @@ function capitalizeClause(s: string): string {
   return t[0].toUpperCase() + t.slice(1)
 }
 
+function isToolFact(s: string): boolean {
+  const t = cleanProfileFact(s)
+  if (!t) return false
+
+  const stripped = t
+    .replace(/^your fluency with\s+/i, "")
+    .replace(/^tools:\s*/i, "")
+    .trim()
+
+  const looksLikeList = /,/.test(stripped) && !/[.!?]/.test(stripped)
+  const toolHits = stripped.match(new RegExp(TOOL_PATTERN.source, "gi")) || []
+
+  return toolHits.length >= 2 || (toolHits.length >= 1 && looksLikeList)
+}
+
+function extractTools(profileFact: string): string[] {
+  const raw = cleanProfileFact(profileFact)
+    .replace(/^tools:\s*/i, "")
+    .split(/,|\/|\band\b/)
+    .map((x) => norm(x))
+    .filter(Boolean)
+
+  const cleaned: string[] = []
+  for (const item of raw) {
+    if (!TOOL_PATTERN.test(item)) continue
+    const normalized = item
+      .replace(/^adobe\s+creative\s+suite$/i, "Adobe Creative Suite")
+      .replace(/^figma$/i, "Figma")
+      .replace(/^canva$/i, "Canva")
+      .replace(/^illustrator$/i, "Illustrator")
+      .replace(/^indesign$/i, "InDesign")
+      .replace(/^photoshop$/i, "Photoshop")
+      .replace(/^excel$/i, "Excel")
+      .replace(/^powerpoint$/i, "PowerPoint")
+      .replace(/^sql$/i, "SQL")
+      .replace(/^python$/i, "Python")
+      .replace(/^arcgis$/i, "ArcGIS")
+      .replace(/^autocad$/i, "AutoCAD")
+.replace(/^adobe$/i, "Adobe")
+.replace(/^adobe creative suite$/i, "Adobe Creative Suite")
+
+    if (!cleaned.includes(normalized)) cleaned.push(normalized)
+  }
+
+  return cleaned
+}
+
+function extractEvidenceSource(profileFact: string): string {
+  const pf = profileFact || ""
+
+  const atMatch = pf.match(/\bat\s+([A-Z][A-Za-z0-9&.\-\s]{2,})/)
+  if (atMatch) return `at ${atMatch[1].trim()}`
+
+  const withMatch = pf.match(/\bwith\s+([A-Z][A-Za-z0-9&.\-\s]{2,})/)
+  if (withMatch) return `with ${withMatch[1].trim()}`
+
+  if (/capstone/i.test(pf)) return "in a capstone project"
+  if (/research project/i.test(pf)) return "in a research project"
+  if (/university/i.test(pf)) return "in an academic project"
+
+  return ""
+}
+
+function evidenceLead(profileFact: string): string {
+  const pf = cleanProfileFact(profileFact)
+  const src = extractEvidenceSource(profileFact)
+
+  if (!pf) return ""
+
+  if (/emt experience|emergency medical technician|special events emt/i.test(pf)) {
+    return src ? `Your EMT experience ${src}` : "Your EMT experience"
+  }
+
+  if (/physicians|medical teams|operating room|orthopedic surgical|patient consultations|medical equipment|hospital settings|physical therapy intern/i.test(pf)) {
+    return "Your clinical exposure"
+  }
+
+  if (/pipeline|cold calls|outbound|prospects|accounts|sales presentations|client communication|outreach|b2b sales/i.test(pf)) {
+    return src ? `Your high-volume B2B sales experience ${src}` : "Your high-volume B2B sales experience"
+  }
+
+  if (/influencer|consumer behavior|advertising strategy/i.test(pf)) {
+    return src ? `Your consumer behavior research ${src}` : "Your consumer behavior research"
+  }
+
+if (/campaign|digital marketing|growth marketing|paid media/i.test(pf)) {
+  return "Your marketing campaign execution experience"
+}
+
+  if (/market research|policy research|analytics|data|financial analysis|quantitative analysis|written report|benchmark/i.test(pf)) {
+    return "Your research and analytical experience"
+  }
+
+  if (/cross-functional|coordinating|stakeholder|teams|leadership/i.test(pf)) {
+    return "Your cross-functional execution experience"
+  }
+
+  if (/designed end-to-end brand identity|visual systems/i.test(pf)) {
+    return "Your portfolio-level design work"
+  }
+
+  if (/produced pitch decks|trade show booths|banners|print collateral/i.test(pf)) {
+    return "Your experience producing real-world brand and marketing assets"
+  }
+
+  if (/communications audit|communications|marketing/i.test(pf)) {
+    return "Your marketing and communications experience"
+  }
+
+  if (/conducting financial analysis/i.test(pf)) {
+    return "Your financial analysis background"
+  }
+
+  if (/conducting quantitative analysis|detailed written report/i.test(pf)) {
+    return "Your quantitative project work, including written analytical reporting"
+  }
+
+  return capitalizeClause(pf)
+}
+
+function interpretDirectProof(profileFact: string, jobFact: string): string {
+  const lead = evidenceLead(profileFact)
+  const jf = capabilityPhrase(jobFact)
+
+  if (!lead) return ""
+  if (!jf) return sentence(lead)
+
+  if (lead.toLowerCase().includes(jf.toLowerCase())) {
+    return sentence(`${lead} is directly relevant to this role.`)
+  }
+
+  if (/EMT experience|clinical exposure/i.test(lead)) {
+    return sentence(`${lead} gives you credible clinical context for ${jf}.`)
+  }
+
+  if (/B2B sales experience/i.test(lead)) {
+    return sentence(`${lead} shows you can operate in a real commercial environment, which matters for ${jf}.`)
+  }
+
+  if (/research and analytical experience/i.test(lead)) {
+    return sentence(`${lead} maps well to the structured analytical work this role depends on.`)
+  }
+
+  if (/portfolio-level design work/i.test(lead)) {
+    return sentence(`${lead} shows the kind of execution discipline this team expects from a designer who can contribute immediately.`)
+  }
+
+  if (/financial analysis background/i.test(lead)) {
+    return sentence(`${lead} gives you relevant proof of ${jf} in business decision contexts.`)
+  }
+
+  if (/quantitative project work/i.test(lead)) {
+    return sentence(`${lead} supports the client-ready research and reporting demands of this role.`)
+  }
+
+  if (/marketing and communications experience/i.test(lead)) {
+    return sentence(`${lead} gives you relevant proof of ${jf} in a client-facing project environment.`)
+  }
+
+  if (/cross-functional execution experience/i.test(lead)) {
+    return sentence(`${lead} shows execution strength that supports ${jf}.`)
+  }
+
+  return sentence(`${lead} gives you relevant proof of ${jf}.`)
+}
+
+function interpretAdjacentProof(profileFact: string, jobFact: string): string {
+  const lead = evidenceLead(profileFact)
+  const jf = capabilityPhrase(jobFact)
+
+  if (!lead) return ""
+  if (!jf) return sentence(lead)
+
+  if (/experience producing real-world brand and marketing assets/i.test(lead)) {
+    return sentence(`${lead} shows range across deliverables that should translate well to the portfolio expectations of this role.`)
+  }
+
+  if (/research and analytical experience/i.test(lead)) {
+    return sentence(`${lead} gives you relevant analytical proof that should translate well to ${jf}.`)
+  }
+
+  if (/marketing and communications experience|cross-functional execution experience|clinical exposure|EMT experience/i.test(lead)) {
+    return sentence(`${lead} should translate well to ${jf}.`)
+  }
+
+return sentence(`${lead} should translate well to the ${jf} this role emphasizes.`)
+}
+
 function normalizeWhyJobFact(s: string): string {
-  let t = cleanClause(s || "")
+  let t = cleanClause(s)
     .replace(/^ideal candidates will have\s+/i, "")
     .replace(/^qualifications include\s+/i, "")
     .replace(/^required[:\s]+/i, "")
@@ -322,55 +466,31 @@ function normalizeWhyJobFact(s: string): string {
     .replace(/^conduct\s+/i, "")
     .replace(/^partners with\s+/i, "")
     .replace(/^the legislative affairs team to\s+/i, "")
-.replace(/^developing\s+/i, "develop ")
-.replace(/^contributing from concept to execution of\s+/i, "contribute to ")
-.replace(/the process design and documentation work this role requires/i, "design and document processes")
-.replace(/the cross-functional execution this role requires/i, "execute cross-functionally")
-.replace(/the compliance and analysis work this role requires/i, "perform compliance and analysis work")
-.replace(/the market research and growth strategy work this role requires/i, "conduct market research and support growth strategy").replace(/^develops and maintains\s+/i, "develop and maintain ")
-.replace(
-  /develop and maintain expertise in tracking emerging and complex issues related to health care finance/i,
-  "develop and maintain expertise in emerging health care finance issues"
-)
-.replace(/^analyze\s+/i, "analyze ")
-.replace(/develop and maintain expertise in and tracks/i, "develop and maintain expertise in tracking")
-.replace(/^planning and administering\s+/i, "plan and administer ")
+    .replace(/^as a\s+[^,.;]+(?:,|$)\s*/i, "")
+    .replace(/^able to\s+/i, "")
+    .replace(/^ability to\s+/i, "")
+    .replace(/^prepare reports on consulting services performed for clients$/i, "client reporting and written analysis")
+    .replace(/^supply portfolio of past work\/demonstrate skills$/i, "a portfolio that demonstrates visual design range")
     .trim()
 
   if (/ensuring compliance with state and federal regulations/i.test(t)) {
     return "perform compliance and analysis work"
   }
 
-  if (/conducting detailed analyses/i.test(t) && /process improvement/i.test(t)) {
-    return "the analytical and process-improvement work this role requires"
-  }
-
-  if (/process design documentation and governance/i.test(t)) {
-    return "design and document processes"
-  }
-
-  if (/service strategy into coordinated cross-functional execution/i.test(t)) {
-    return "execute cross-functionally"
-  }
-
   if (/market research/i.test(t) && /growth opportunities/i.test(t)) {
     return "conduct market research and support growth strategy"
   }
 
-  if (/gathering data and analyzing business challenges/i.test(t)) {
-    return "the product strategy and analytical work this role requires"
+  t = t
+    .split(/;|\s+\|\s+|,\s+(?=[a-z])/i)[0]
+    .replace(/\s+(including|especially|such as)\s+.*$/i, "")
+    .trim()
+
+  if (t.length > 140) {
+    t = t.slice(0, 140).replace(/\s+\S*$/, "").trim()
   }
 
-  t = t
-  .split(/;|\s+\|\s+|,\s+(?=[a-z])/i)[0]
-  .replace(/\s+(including|especially|such as)\s+.*$/i, "")
-  .trim()
-
-if (t.length > 140) {
-  t = t.slice(0, 140).replace(/\s+\S*$/, "").trim()
-}
-
-return t
+  return t
 }
 
 function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): string | null {
@@ -381,7 +501,6 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
   const jobFamily = norm(jobSignals?.jobFamily || jobSignals?.job_family || "")
 
   const roleText = roles.map((r) => norm(r)).join(" | ")
-  const industryText = industries.map((i) => norm(i)).join(" | ")
 
   const hasAny = (phrases: string[]) => phrases.some((p) => jobText.includes(p))
   const familyIs = (x: string) => jobFamily === norm(x)
@@ -410,24 +529,14 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
     return sentence("This position aligns with your stated interest in marketing roles.")
   }
 
- if (
-  /\b(finance|investment|wealth management|asset management)\b/.test(roleText) ||
-  (
-    hasAny(["finance", "investment", "wealth management", "asset management", "client associate"]) &&
-    /\b(finance|investment|wealth management|asset management)\b/.test(roleText)
-  )
-) {
-  return sentence("This position aligns with your stated interest in finance roles.")
-}
-
   if (
-    hasAny(["private practice", "legal assistant", "legal services", "privacy analyst", "data protection"]) ||
-    /\b(legal assistant|legal services|privacy analyst|data protection|case analyst)\b/.test(roleText)
+    /\b(finance|investment|wealth management|asset management)\b/.test(roleText) ||
+    (hasAny(["finance", "investment", "wealth management", "asset management", "client associate"]) && /\b(finance|investment|wealth management|asset management)\b/.test(roleText))
   ) {
-    return sentence("This position aligns with your stated interest in legal and policy-adjacent roles.")
+    return sentence("This position aligns with your stated interest in finance roles.")
   }
 
-  const industryMatch = industries.find((i: string) => {
+  const industryMatch = industries.find((i) => {
     const t = norm(i)
     return t && jobText.includes(t)
   })
@@ -440,10 +549,9 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
 }
 
 function toGerundStart(s: string): string {
-  let t = norm(s)
+  let t = cleanProfileFact(s)
 
-t = t.replace(/^Gathered and analyzed\b/i, "gathering and analyzing")
-t = t.replace(/^Gathered and analyzed\s+/i, "gathering and analyzing ")
+  t = t.replace(/^Gathered and analyzed\b/i, "gathering and analyzing")
   t = t.replace(/^Conducted\b/i, "conducting")
   t = t.replace(/^Prepared\b/i, "preparing")
   t = t.replace(/^Led\b/i, "leading")
@@ -456,12 +564,6 @@ t = t.replace(/^Gathered and analyzed\s+/i, "gathering and analyzing ")
   t = t.replace(/^Partnered\b/i, "partnering")
   t = t.replace(/^Spearheaded\b/i, "spearheading")
   t = t.replace(/^Standardized\b/i, "standardizing")
-t = t.replace(/^Led\s+cross-functional team\b/i, "leading a cross-functional team")
-t = t.replace(/^Led\b/i, "leading a")
-t = t.replace(/^Proven record leading\b/i, "leading")
-t = t.replace(/^Strong focus on\b/i, "focusing on")
-t = t.replace(/^Gathered and analyzed\s+/i, "gathering and analyzing ")
-t = t.replace(/^Led cross-functional team\b/i, "leading a cross-functional team")
 
   return t
 }
@@ -473,52 +575,71 @@ function renderWhyBullet(
 ): string | null {
   const jobFact = normalizeWhyJobFact(w.job_fact || "")
 
-  let profileFact = toGerundStart(cleanClause(w.profile_fact || ""))
+  let profileFact = toGerundStart(w.profile_fact || "")
   profileFact = profileFact
     .split(/;|\s+\|\s+/)[0]
     .replace(/\s+(including|especially|such as)\s+.*$/i, "")
     .trim()
 
-  if (profileFact.length > 160) {
-    profileFact = profileFact.slice(0, 160).replace(/\s+\S*$/, "").trim()
+  if (profileFact.length > 180) {
+    profileFact = profileFact.slice(0, 180).replace(/\s+\S*$/, "").trim()
   }
 
   if (
-    /^(what you'll do|what you will do|major responsibilities include|ideal qualifications include|this job reports to|major in\b|duties include\b|the intern reports directly\b|throughout your work with\b|two years of equivalent education\b|2-4 years\b|[0-9]+\+?\s*years\b|work as a member of\b|small sized commercial litigation law firm\b)/i.test(
-      jobFact
-    )
+    /^(what you'll do|what you will do|major responsibilities include|ideal qualifications include|this job reports to|major in\b|duties include\b|the intern reports directly\b|throughout your work with\b|two years of equivalent education\b|2-4 years\b|[0-9]+\+?\s*years\b|work as a member of\b|small sized commercial litigation law firm\b)/i.test(jobFact)
   ) {
     return null
   }
 
   if (!usable(jobFact) || !usable(profileFact)) return null
 
-  const pf = profileFact.charAt(0).toLowerCase() + profileFact.slice(1)
- const jf = capabilityPhrase(jobFact)
+  if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
+    return interpretDirectProof(profileFact, jobFact)
+  }
 
-if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
-  return interpretDirectProof(profileFact, jobFact)
+  if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
+    return interpretAdjacentProof(profileFact, jobFact)
+  }
+
+  if (w.code === "WHY_EXECUTION_PROOF") {
+    const lead = evidenceLead(profileFact)
+    if (/portfolio-level design work/i.test(lead)) {
+      return sentence("Your portfolio-level design work shows the kind of execution discipline this team expects from a designer who can contribute immediately.")
+    }
+    return sentence(`${lead || capitalizeClause(profileFact)} shows the kind of execution discipline this team will expect from someone stepping into the role.`)
+  }
+
+  if (w.code === "WHY_TOOL_PROOF") {
+    const tools = extractTools(profileFact)
+    if (tools.length > 0) {
+      const list = tools.length > 3
+        ? `${tools.slice(0, 2).join(", ")}, and ${tools[tools.length - 1]}`
+        : tools.join(", ").replace(/, ([^,]*)$/, ", and $1")
+      return sentence(`Your fluency with ${list} gives you the tool readiness this design workflow depends on.`)
+    }
+
+    const lead = evidenceLead(profileFact)
+    const jf = capabilityPhrase(jobFact)
+    return sentence(`${lead || capitalizeClause(profileFact)} gives you relevant proof that should translate well to ${jf}.`)
+  }
+
+  const lead = evidenceLead(profileFact)
+  const jf = capabilityPhrase(jobFact)
+  return sentence(`${lead || capitalizeClause(profileFact)} supports the capabilities this role expects, particularly around ${jf}.`)
 }
 
-if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
-  return interpretAdjacentProof(profileFact, jobFact)
-}
-
-if (w.code === "WHY_EXECUTION_PROOF") {
-  return sentence(
-    `${capitalizeClause(pf)} shows the execution discipline this role depends on.`
+function isSoftSkillRisk(jf: string): boolean {
+  const t = (jf || "").toLowerCase()
+  return (
+    t.includes("strategy") ||
+    t.includes("problem-solving") ||
+    t.includes("problem solving") ||
+    t.includes("judgment") ||
+    t.includes("stakeholder") ||
+    t.includes("leadership") ||
+    t.includes("collaboration") ||
+    t.includes("cross-functional")
   )
-}
-
-if (w.code === "WHY_TOOL_PROOF") {
-  return sentence(
-    `${capitalizeClause(pf)} supports the workflow this role depends on, especially this part of the role: ${jf}.`
-  )
-}
-
-return sentence(
-  `${capitalizeClause(pf)} supports the capabilities this role expects, particularly around ${jf}.`
-)
 }
 
 function renderRiskBullet(r: RiskCode): string | null {
@@ -526,43 +647,56 @@ function renderRiskBullet(r: RiskCode): string | null {
   const jobEv = sentence(r.job_fact || "")
   const profileEv = sentence(r.profile_fact || "")
   const riskText = sentence(r.risk || "")
+  const jf = capabilityPhrase(r.job_fact || "")
 
   if (!usable(jobEv)) return null
 
   if (code === "RISK_ANALYTICS_HEAVY") {
-    return sentence(
-      "This role appears more analytics-heavy than your stated preferences suggest."
-    )
-  }
-
-  if (code === "RISK_MISSING_PROOF") {
-    return sentence(
-      `This role emphasizes ${cleanClause(r.job_fact || "")}, and your profile does not yet show clear direct proof in that area.`
-    )
+    return sentence("This role appears more analytics-heavy than your stated preferences suggest.")
   }
 
   if (code === "RISK_CONTRACT") {
-    return sentence(
-      "This role appears to be contract-based, which does not align with your preference for full-time roles."
-    )
+    return sentence("This role appears to be contract-based, which does not align with your preference for full-time roles.")
   }
 
   if (code === "RISK_LOCATION") {
-    return sentence(
-      "This role's location does not align with the cities you are targeting."
-    )
+    return sentence("This role appears location-constrained, and your stated preferences do not clearly line up with that requirement.")
   }
 
   if (code === "RISK_SALES") {
-    return sentence(
-      "This role includes sales expectations that conflict with your stated constraints."
-    )
+    return sentence("This role has clear sales expectations that conflict with the constraints stated in your profile.")
+  }
+
+  if (code === "RISK_MISSING_PROOF") {
+    if (isSoftSkillRisk(jf)) {
+      return sentence(`Your resume does not yet make ${jf} especially explicit, which may matter in a competitive review process.`)
+    }
+
+    if (/clinical|patient|surgical|operating room|surgeon/i.test(jf)) {
+      return sentence("This role leans heavily on direct clinical credibility, and your background does not yet show the strongest hands-on proof in that environment.")
+    }
+
+    if (/research|analysis|analytics|reporting/i.test(jf)) {
+      return sentence("Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger.")
+    }
+
+    if (/policy|legislative|compliance/i.test(jf)) {
+      return sentence("This role rewards more direct policy and compliance experience than is currently visible in your background.")
+    }
+
+    if (/forecasting|scenario planning|financial/i.test(jf)) {
+      return sentence("This role expects stronger direct proof in forecasting and planning work than your background currently shows.")
+    }
+
+    if (/content|social media|creative/i.test(jf)) {
+      return sentence("This role requires clearer proof of day-to-day content execution than is currently visible in your background.")
+    }
+
+    return sentence(`This role emphasizes ${jf}, and your background does not yet show clear direct proof in that area.`)
   }
 
   if (code === "RISK_MISSING_TOOLS") {
-    return sentence(
-      "The posting calls for tools you have not clearly shown in your profile yet."
-    )
+    return sentence("The posting calls for tools you have not clearly shown in your profile yet.")
   }
 
   if (usable(riskText) && usable(profileEv)) {
@@ -606,14 +740,8 @@ export function renderBulletsV4(out: EvalOutput): {
   const usedRiskJobFacts = new Set<string>()
   const usedRiskProfileFacts = new Set<string>()
 
-  const interestAlign = buildInterestAlignmentClause(
-    out.profile_signals,
-    out.job_signals
-  )
-
-  if (interestAlign && whyMax > 0) {
-    why.push(interestAlign)
-  }
+  const interestAlign = buildInterestAlignmentClause(out.profile_signals, out.job_signals)
+  if (interestAlign && whyMax > 0) why.push(interestAlign)
 
   if (whyMax > 0) {
     for (const w of whyCodesIn) {
@@ -623,43 +751,24 @@ export function renderBulletsV4(out: EvalOutput): {
       const matchKey = norm(w.match_key || "")
       const rendered = renderWhyBullet(w, out.profile_signals, out.job_signals)
       const renderedKey = norm(rendered || "")
-      const jobFactKey = norm(w.job_fact || "").slice(0, 180)
-      const profileFactKey = norm(w.profile_fact || "").slice(0, 180)
-      const normalizedWhyJobFactKey = norm(
-        normalizeWhyJobFact(w.job_fact || "")
-      ).slice(0, 180)
+      const normalizedWhyJobFactKey = norm(normalizeWhyJobFact(w.job_fact || "")).slice(0, 180)
+      const profileFactKey = norm(cleanProfileFact(w.profile_fact || "")).slice(0, 180)
 
       if (!rendered || !usable(rendered)) continue
       if (renderedKey && usedWhyRendered.has(renderedKey)) continue
       if (normalizedWhyJobFactKey && usedWhyJobFacts.has(normalizedWhyJobFactKey)) continue
-
-      if (jobFactKey && usedWhyJobFacts.has(jobFactKey)) {
-        const sameJobFactAlreadyUsed = why.some((existing) =>
-          norm(existing).includes(jobFactKey)
-        )
-        const allowSameJobFactVariant =
-          w.code === "WHY_EXECUTION_PROOF" || w.code === "WHY_TOOL_PROOF"
-
-        if (sameJobFactAlreadyUsed && !allowSameJobFactVariant) continue
-      }
-
       if (profileFactKey && usedProfileFacts.has(profileFactKey)) continue
       if (matchKey && usedWhyKeys.has(matchKey)) continue
       if (group === "tools" && usedWhyGroups.has("tools")) continue
-      if (
-        group === "execution" &&
-        Array.from(usedWhyGroups).filter((g) => g === "execution").length >= 2
-      ) {
+      if (group === "execution" && Array.from(usedWhyGroups).filter((g) => g === "execution").length >= 2) {
         continue
       }
 
       why.push(rendered)
-
       if (renderedKey) usedWhyRendered.add(renderedKey)
       if (normalizedWhyJobFactKey) usedWhyJobFacts.add(normalizedWhyJobFactKey)
       if (profileFactKey) usedProfileFacts.add(profileFactKey)
       if (matchKey) usedWhyKeys.add(matchKey)
-
       usedWhyGroups.add(group)
     }
   }
@@ -671,8 +780,8 @@ export function renderBulletsV4(out: EvalOutput): {
       const group = riskGroup(r.code)
       const rendered = renderRiskBullet(r)
       const renderedKey = norm(rendered || "")
-      const jobFactKey = norm(r.job_fact || "").slice(0, 180)
-      const profileFactKey = norm(r.profile_fact || "").slice(0, 180)
+      const jobFactKey = norm(capabilityPhrase(r.job_fact || "")).slice(0, 180)
+      const profileFactKey = norm(cleanProfileFact(r.profile_fact || "")).slice(0, 180)
 
       if (usedRiskGroups.has(group) && group !== "other") continue
       if (r.code === "RISK_MISSING_TOOLS" && risk.length === 0 && r.severity !== "high") continue
@@ -682,16 +791,45 @@ export function renderBulletsV4(out: EvalOutput): {
       if (profileFactKey && usedRiskProfileFacts.has(profileFactKey)) continue
 
       risk.push(rendered)
-
       if (renderedKey) usedRiskRendered.add(renderedKey)
       if (jobFactKey) usedRiskJobFacts.add(jobFactKey)
       if (profileFactKey) usedRiskProfileFacts.add(profileFactKey)
-
       usedRiskGroups.add(group)
     }
   }
 
-  if (out.decision === "Pass" && risk.length === 0) {
+if (out.decision !== "Pass" && risk.length === 0) {
+  const whyText = (why || []).join(" | ").toLowerCase()
+  const jobText = norm(out.job_signals?.job_text || "")
+  const combined = `${whyText} ${jobText}`
+
+  if (/designer|design|portfolio|adobe|figma|photoshop|creative/i.test(combined)) {
+    risk.push(
+      "Your background shows strong design execution, but the resume does not yet make portfolio depth and presentation of past work fully explicit, which could matter in a hiring process where visual proof carries as much weight as the resume itself."
+    )
+  } else if (/consulting|benchmarking|client reporting|analysis|analytical|research/i.test(combined)) {
+    risk.push(
+      "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments."
+    )
+  } else if (/marketing|communications|campaign|content|social media|brand/i.test(combined)) {
+    risk.push(
+      "Your experience supports marketing and communications work, but the resume does not yet show enough depth in campaign ownership or results-driven execution to remove doubt in a competitive internship pool."
+    )
+  } else if (/clinical sales|clinical|procedure|utilization|medical device|sales/i.test(combined)) {
+    risk.push(
+      "Your background brings credible clinical and commercial exposure, but the resume does not yet show direct proof of medical device sales execution in environments where adoption, utilization, and surgeon-facing credibility matter."
+    )
+  } else {
+    risk.push(
+      "Your background shows relevant preparation, but the resume does not yet show enough direct proof in the core work this role is hiring for."
+    )
+  }
+} else if (out.decision === "Pass" && risk.length === 0) {
+  risk.push(
+    "The posting emphasizes work where your current experience does not yet show clear direct proof."
+  )
+} 
+else if (out.decision === "Pass" && risk.length === 0) {
     risk.push(
       "The posting emphasizes work where your current experience does not yet show clear direct proof."
     )
@@ -719,6 +857,3 @@ export function renderBulletsV4(out: EvalOutput): {
     },
   }
 }
-
-
-
