@@ -8,6 +8,7 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 import { RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
+import { enforceClientFacingRules } from "./enforceClientFacingRules"
 
 import { TAXONOMY_V4_STAMP } from "../_v4/taxonomy"
 import { TYPES_V4_STAMP } from "../_v4/types"
@@ -100,20 +101,7 @@ function buildJobFitFingerprint(payload: any) {
  * Rule: if gate_triggered.type === "force_pass", then why_codes=[], bullets=[]
  * and we only show pass reason + risks.
  */
-function enforceClientFacingRules(result: any) {
-  const gateType = result?.gate_triggered?.type
-  if (gateType !== "force_pass") return result
 
-  return {
-    ...result,
-    decision: "Pass",
-    icon: result?.icon ?? "⛔",
-    bullets: [],
-    why_codes: [],
-    // keep risk_codes and risk_flags if present
-    next_step: "Pass. Do not apply. Put that effort into a better-fit role.",
-  }
-}
 
 /**
  * Run JobFit for an authenticated user, with caching by fingerprint.
