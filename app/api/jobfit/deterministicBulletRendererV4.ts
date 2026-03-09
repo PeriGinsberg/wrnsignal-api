@@ -39,6 +39,66 @@ function cleanClause(s: string): string {
     .trim()
 }
 
+function interpretDirectProof(profileFact: string, jobFact: string): string {
+  const pf = cleanClause(profileFact || "")
+  const jf = cleanJobFact(jobFact || "")
+
+  if (!pf) return ""
+  if (!jf) return capitalizeClause(pf)
+
+  if (/emt|clinical sales representative|physicians|medical teams|hospital|orthopedic|surgical|patient/i.test(pf)) {
+    return sentence(
+      `${capitalizeClause(pf)} gives you credible clinical context for ${jf}.`
+    )
+  }
+
+  if (/pipeline|cold calls|outbound|sales presentations|accounts|prospects|client communication|outreach/i.test(pf)) {
+    return sentence(
+      `${capitalizeClause(pf)} shows you can operate in a real commercial environment, which matters for ${jf}.`
+    )
+  }
+
+  if (/research|analysis|analytics|policy research|market research|data/i.test(pf)) {
+    return sentence(
+      `${capitalizeClause(pf)} shows analytical experience that supports ${jf}.`
+    )
+  }
+
+  if (/cross-functional|coordinating|stakeholder|teams|leadership/i.test(pf)) {
+    return sentence(
+      `${capitalizeClause(pf)} shows cross-functional execution that supports ${jf}.`
+    )
+  }
+
+  return sentence(
+    `${capitalizeClause(pf)} gives you relevant proof for ${jf}.`
+  )
+}
+
+function interpretAdjacentProof(profileFact: string, jobFact: string): string {
+  const pf = cleanClause(profileFact || "")
+  const jf = cleanJobFact(jobFact || "")
+
+  if (!pf) return ""
+  if (!jf) return capitalizeClause(pf)
+
+  if (/research|analysis|analytics|policy|market research|data/i.test(pf)) {
+    return sentence(
+      `${capitalizeClause(pf)} is adjacent analytical experience that can transfer into ${jf}.`
+    )
+  }
+
+  if (/client communication|outreach|stakeholder|coordination|cross-functional/i.test(pf)) {
+    return sentence(
+      `${capitalizeClause(pf)} is adjacent execution experience that can transfer into ${jf}.`
+    )
+  }
+
+  return sentence(
+    `${capitalizeClause(pf)} is adjacent experience that can transfer into ${jf}.`
+  )
+}
+
 function riskGroup(code: string): Group {
   if (code === "RISK_MISSING_TOOLS") return "tools"
 
@@ -338,15 +398,11 @@ function renderWhyBullet(
   const jf = cleanJobFact(jobFact)
 
 if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
-  return sentence(
-    `${capitalizeClause(pf)} shows credible experience that translates directly to this part of the role: ${jf}.`
-  )
+  return interpretDirectProof(profileFact, jobFact)
 }
 
 if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
-  return sentence(
-    `${capitalizeClause(pf)} is adjacent experience that can transfer into this part of the role: ${jf}.`
-  )
+  return interpretAdjacentProof(profileFact, jobFact)
 }
 
 if (w.code === "WHY_EXECUTION_PROOF") {
