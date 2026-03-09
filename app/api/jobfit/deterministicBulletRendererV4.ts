@@ -39,63 +39,91 @@ function cleanClause(s: string): string {
     .trim()
 }
 
-function interpretDirectProof(profileFact: string, jobFact: string): string {
+function evidenceLead(profileFact: string): string {
   const pf = cleanClause(profileFact || "")
-  const jf = cleanJobFact(jobFact || "")
 
   if (!pf) return ""
-  if (!jf) return capitalizeClause(pf)
 
-  if (/emt|clinical sales representative|physicians|medical teams|hospital|orthopedic|surgical|patient/i.test(pf)) {
-    return sentence(
-      `${capitalizeClause(pf)} gives you credible clinical context for ${jf}.`
-    )
+  if (/emt experience|emergency medical technician|special events emt/i.test(pf)) {
+    return "Your EMT experience"
   }
 
-  if (/pipeline|cold calls|outbound|sales presentations|accounts|prospects|client communication|outreach/i.test(pf)) {
-    return sentence(
-      `${capitalizeClause(pf)} shows you can operate in a real commercial environment, which matters for ${jf}.`
-    )
+  if (/physicians|medical teams|operating room|orthopedic surgical|patient consultations|medical equipment|hospital settings|physical therapy intern/i.test(pf)) {
+    return "Your clinical exposure"
   }
 
-  if (/research|analysis|analytics|policy research|market research|data/i.test(pf)) {
-    return sentence(
-      `${capitalizeClause(pf)} shows analytical experience that supports ${jf}.`
-    )
+  if (/pipeline|cold calls|outbound|prospects|accounts|sales presentations|client communication|outreach/i.test(pf)) {
+    return "Your high-volume B2B sales experience"
+  }
+
+  if (/market research|policy research|analytics|data/i.test(pf)) {
+    return "Your research and analytical experience"
   }
 
   if (/cross-functional|coordinating|stakeholder|teams|leadership/i.test(pf)) {
+    return "Your cross-functional execution experience"
+  }
+
+  return capitalizeClause(pf)
+}
+
+function interpretDirectProof(profileFact: string, jobFact: string): string {
+  const lead = evidenceLead(profileFact || "")
+  const jf = capabilityPhrase(jobFact || "")
+
+  if (!lead) return ""
+  if (!jf) return sentence(lead)
+
+  if (/emt experience|clinical exposure/i.test(lead)) {
     return sentence(
-      `${capitalizeClause(pf)} shows cross-functional execution that supports ${jf}.`
+      `${lead} gives you credible clinical context for ${jf}.`
+    )
+  }
+
+  if (/b2b sales experience/i.test(lead)) {
+    return sentence(
+      `${lead} shows you can operate in a real commercial environment, which matters for ${jf}.`
+    )
+  }
+
+  if (/research and analytical experience/i.test(lead)) {
+    return sentence(
+      `${lead} shows analytical strength that supports ${jf}.`
+    )
+  }
+
+  if (/cross-functional execution experience/i.test(lead)) {
+    return sentence(
+      `${lead} shows execution strength that supports ${jf}.`
     )
   }
 
   return sentence(
-    `${capitalizeClause(pf)} gives you relevant proof for ${jf}.`
+    `${lead} gives you relevant proof for ${jf}.`
   )
 }
 
 function interpretAdjacentProof(profileFact: string, jobFact: string): string {
-  const pf = cleanClause(profileFact || "")
-  const jf = cleanJobFact(jobFact || "")
+  const lead = evidenceLead(profileFact || "")
+  const jf = capabilityPhrase(jobFact || "")
 
-  if (!pf) return ""
-  if (!jf) return capitalizeClause(pf)
+  if (!lead) return ""
+  if (!jf) return sentence(lead)
 
-  if (/research|analysis|analytics|policy|market research|data/i.test(pf)) {
+  if (/research and analytical experience/i.test(lead)) {
     return sentence(
-      `${capitalizeClause(pf)} is adjacent analytical experience that can transfer into ${jf}.`
+      `${lead} is adjacent evidence that can transfer into ${jf}.`
     )
   }
 
-  if (/client communication|outreach|stakeholder|coordination|cross-functional/i.test(pf)) {
+  if (/cross-functional execution experience|clinical exposure|emt experience/i.test(lead)) {
     return sentence(
-      `${capitalizeClause(pf)} is adjacent execution experience that can transfer into ${jf}.`
+      `${lead} is adjacent experience that can transfer into ${jf}.`
     )
   }
 
   return sentence(
-    `${capitalizeClause(pf)} is adjacent experience that can transfer into ${jf}.`
+    `${lead} is adjacent evidence that can transfer into ${jf}.`
   )
 }
 
@@ -182,12 +210,21 @@ function cleanJobFact(s: string): string {
 
   if (!t) return ""
 
-  // remove common JD headers
-  t = t.replace(/what you'll do:?/gi, "")
+  // remove common JD headers and broken apostrophe variants
+  t = t.replace(/what\s+you.?ll\s+do:?/gi, "")
   t = t.replace(/responsibilities:?/gi, "")
+  t = t.replace(/job description:?/gi, "")
+  t = t.replace(/primary function of position:?/gi, "")
   t = t.replace(/you will:?/gi, "")
+  t = t.replace(/^as\s+[^,]+,\s*/i, "")
 
-  // normalize leading verbs into capability phrases
+  // clean awkward helper phrases
+  t = t.replace(/^be\s+/i, "")
+  t = t.replace(/^responsible for\s+/i, "")
+  t = t.replace(/^supporting with\s+/i, "supporting ")
+  t = t.replace(/\s+/g, " ").trim()
+
+  // normalize leading verbs into cleaner capability language
   t = t.replace(/^work with\s+/i, "collaborating with ")
   t = t.replace(/^support\s+/i, "supporting ")
   t = t.replace(/^assist\s+/i, "assisting ")
@@ -195,9 +232,71 @@ function cleanJobFact(s: string): string {
   t = t.replace(/^manage\s+/i, "managing ")
   t = t.replace(/^develop\s+/i, "developing ")
   t = t.replace(/^analyze\s+/i, "analyzing ")
+  t = t.replace(/^conduct\s+/i, "conducting ")
+  t = t.replace(/^execute\s+/i, "executing ")
+  t = t.replace(/^perform\s+/i, "performing ")
+  t = t.replace(/^contribute to\s+/i, "contributing to ")
+  t = t.replace(/^plan and administer\s+/i, "planning and administering ")
 
   return t.trim()
 }
+
+function capabilityPhrase(jobFact: string): string {
+  const t = cleanJobFact(jobFact)
+
+  if (!t) return ""
+
+  if (/^collaborating with .* drive .*utilization/i.test(t)) {
+    return "collaborating with the clinical sales team to drive utilization"
+  }
+
+  if (/regional sales and marketing events|system awareness|procedure adoption/i.test(t)) {
+    return "supporting regional awareness and procedure adoption efforts"
+  }
+
+  if (/conducting market research|growth strategy/i.test(t)) {
+    return "market research and growth strategy support"
+  }
+
+  if (/social media|content creation/i.test(t)) {
+    return "social media and content development"
+  }
+
+  if (/execute cross-functionally|cross-functional/i.test(t)) {
+    return "cross-functional execution"
+  }
+
+  if (/process evaluation and design|design and document processes/i.test(t)) {
+    return "process evaluation and design"
+  }
+
+  if (/performing compliance and analysis work/i.test(t)) {
+    return "compliance and analysis work"
+  }
+
+  if (/planning and administering .*policy analysis/i.test(t)) {
+    return "policy analysis and program support"
+  }
+
+  if (/research$/i.test(t)) {
+    return "research"
+  }
+
+  if (/campaign performance|optimization|scale/i.test(t)) {
+    return "campaign analysis and performance optimization"
+  }
+
+  if (/forecasting|scenario planning|kpis|financial goals/i.test(t)) {
+    return "forecasting and scenario planning"
+  }
+
+  if (/reporting/i.test(t)) {
+    return "reporting and analytics support"
+  }
+
+  return t
+}
+
 
 function capitalizeClause(s: string): string {
   const t = norm(s)
@@ -395,7 +494,7 @@ function renderWhyBullet(
   if (!usable(jobFact) || !usable(profileFact)) return null
 
   const pf = profileFact.charAt(0).toLowerCase() + profileFact.slice(1)
-  const jf = cleanJobFact(jobFact)
+ const jf = capabilityPhrase(jobFact)
 
 if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
   return interpretDirectProof(profileFact, jobFact)
