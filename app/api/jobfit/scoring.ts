@@ -320,7 +320,7 @@ function buildMajorGapRisks(
     deduped.set(key, ju)
   }
 
-  return Array.from(deduped.values())
+  const unmatchedRisks: RiskCode[] = Array.from(deduped.values())
     .sort((a, b) => {
       const aCore = a.requiredness === "core" ? 1 : 0
       const bCore = b.requiredness === "core" ? 1 : 0
@@ -329,13 +329,45 @@ function buildMajorGapRisks(
     })
     .slice(0, 2)
     .map((ju) => ({
-      code: "RISK_MISSING_PROOF",
-            job_fact: ju.label,
+      code: "RISK_MISSING_PROOF" as const,
+      job_fact: ju.label,
       profile_fact: null,
       risk: "The role emphasizes work where your profile does not yet show clear direct proof.",
-      severity: ju.requiredness === "core" ? "high" : "medium",
+      severity: ju.requiredness === "core" ? "high" as const : "medium" as const,
       weight: 0,
     }))
+
+  const adjacentOnlyRisks: RiskCode[] = []
+
+  const bestMatchStrengthForKey = (key: string): MatchStrength | null => {
+    const keyNorm = norm(key || "")
+    const matchesForKey = allMatches.filter((m) => norm(m.match_key || "") === keyNorm)
+    if (matchesForKey.some((m) => m.match_strength === "direct")) return "direct"
+    if (matchesForKey.some((m) => m.match_strength === "adjacent")) return "adjacent"
+    return null
+  }
+
+  for (const ju of jobUnits) {
+    const key = norm(ju.key || "")
+    if (!key) continue
+
+    // Engine-level rule: adjacent-only strategy proof should still surface a risk.
+    if (key === "strategy_problem_solving") {
+      const best = bestMatchStrengthForKey(key)
+      if (best === "adjacent") {
+        adjacentOnlyRisks.push({
+          code: "RISK_MISSING_PROOF",
+          job_fact: ju.label,
+          profile_fact: null,
+          risk: "The role expects stronger direct proof than your background currently shows.",
+          severity: ju.requiredness === "core" ? "high" : "medium",
+          weight: 0,
+        })
+      }
+    }
+  }
+
+  return [...unmatchedRisks, ...adjacentOnlyRisks]
 }
 
 function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenceMatch[] {
