@@ -1,0 +1,581 @@
+[
+  {
+    "id": "real-101",
+    "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
+    "score": 79,
+    "decision_final": "Apply",
+    "why_bullets_joined": "Your experience clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology directly supports this role's responsibility to work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization | Your experience managed approximately 400 active B2B prospects within a rotating pipeline directly supports this role's responsibility to support regional Sales and Marketing events that create system awareness and procedure adoption",
+    "risk_bullets_joined": "",
+    "raw": {
+      "decision": "Apply",
+      "score": 79,
+      "bullets": [
+        "Your experience clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology directly supports this role's responsibility to work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+        "Your experience managed approximately 400 active B2B prospects within a rotating pipeline directly supports this role's responsibility to support regional Sales and Marketing events that create system awareness and procedure adoption"
+      ],
+      "risk_flags": [],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+          "profile_fact": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "clinical_patient_work",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory",
+          "profile_fact": "Experienced communicating directly with physicians and medical teams in fast paced care environments and documenting clinical information accurately",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 97,
+          "match_key": "clinical_patient_work",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+          "profile_fact": "Supported advisors by scheduling client meetings and maintaining client communication",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 97,
+          "match_key": "client_commercial_work",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Support regional Sales and Marketing events that create system awareness and procedure adoption",
+          "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 97,
+          "match_key": "client_commercial_work",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+          "profile_fact": "Supported advisors by scheduling client meetings and maintaining client communication",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 85,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "e5d29e333b6636cf",
+        "jobFamily": "Sales",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": false
+        },
+        "function_tags": [
+          "sales_bd",
+          "premed_clinical",
+          "consulting_strategy"
+        ],
+        "signal_debug": {
+          "hits": {
+            "client_commercial_work": 6,
+            "clinical_patient_work": 2,
+            "strategy_problem_solving": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": null,
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": true,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "1d7ea47f41dab14e",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "94b907726009d0f5",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "3bf1d437d7ff70e0",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Work with the Clinical Sales Manager to develop a sales strategy to drive robot utilization",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "d441d61993b8eb83",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Support regional Sales and Marketing events that create system awareness and procedure adoption",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "3316801a34a84349",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Drive the sales of instruments and accessories",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "13763c8f2f1fe35d",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Responsibly manage administrative tasks; sales activities, submission of expense reports, etc",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "12506de331537c44",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Responsibly manage administrative tasks; sales activities, submission of expense reports, etc.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "cc4ab246b55b4bb4",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "596974e7732f9a72",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory.",
+            "strength": 3,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          }
+        ],
+        "internship": {
+          "isInternship": false,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR",
+            "Events"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": "Support regional Sales and Marketing events that create system awareness and procedure adoption",
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Marketing"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": true,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "r"
+        ],
+        "gradYear": 2026,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "sales_bd",
+          "premed_clinical",
+          "operations_general"
+        ],
+        "function_tag_evidence": {
+          "sales_bd": [
+            "Target roles: Associate sales representative, Sales representative, clinical sales, medical sales, orthopedic sales, trauma sales, spinal sales, prostetic sales, onsite specialist",
+            "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology.",
+            "Brings prior B2B sales experience initiating professional conversations and building new accounts.",
+            "Communicated directly with nurse practitioners, physician assistants, sales representatives, and scrub technicians",
+            "Managed approximately 400 active B2B prospects within a rotating pipeline"
+          ],
+          "premed_clinical": [
+            "Target roles: Associate sales representative, Sales representative, clinical sales, medical sales, orthopedic sales, trauma sales, spinal sales, prostetic sales, onsite specialist",
+            "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology.",
+            "Experienced communicating directly with physicians and medical teams in fast paced care environments and documenting clinical information accurately.",
+            "Comfortable operating around medical equipment and navigating hospital settings.",
+            "Provide on site emergency medical care at large scale venues including Madison Square Garden and Radio City Music Hall"
+          ],
+          "operations_general": [
+            "Present in operating room observing orthopedic surgical procedures and overall surgical workflow",
+            "Supported advisors by scheduling client meetings and maintaining client communication"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "da72516a369a2de2",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "Collected and analyzed physiological data using paired t tests in R and presented findings to faculty and peers",
+            "source": "resume",
+            "strength": 10
+          },
+          {
+            "id": "48277ab11b3b1353",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Supported advisors by scheduling client meetings and maintaining client communication",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "b33ab6028aafaebd",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Supported advisors by scheduling client meetings and maintaining client communication",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "8e74fd65429685e9",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Managed approximately 400 active B2B prospects within a rotating pipeline",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "aa91f3c06153df83",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "4cd1b54715fc5399",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Experienced communicating directly with physicians and medical teams in fast paced care environments and documenting clinical information accurately.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "28f5d85b5cdba51c",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Certified Emergency Medical Technician | EMT Utah | July 2025",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "c3ea62356c9614c7",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Target roles: Associate sales representative, Sales representative, clinical sales, medical sales, orthopedic sales, trauma sales, spinal sales, prostetic sales, onsite specialist",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "2d0715cc89276583",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Provide on site emergency medical care at large scale venues including Madison Square Garden and Radio City Music Hall",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "bff4739f23eaaded",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Document patient care reports and communicated findings to receiving medical personnel",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "181ec8d428a9bca8",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Coordinate with event staff and supervisors to manage medical incidents in high traffic environments",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "60f39c0138e19674",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Assisted with equipment setup and patient flow during treatment sessions",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "4ae4d6ee5d3944be",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Shadowed patient evaluations and rehabilitation sessions in an outpatient clinical setting",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "9556404a3c104896",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "7ecaccd3d3a439c8",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Comfortable operating around medical equipment and navigating hospital settings.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "0bc24469e1b5f9d2",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Communicated directly with nurse practitioners, physician assistants, sales representatives, and scrub technicians",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "5e0e938696e0ae14",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "17ea0eaf820ba3e1",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Closed new advertising accounts through direct outreach and sales presentations",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "5d64bc8e34b6e65a",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Target roles: Associate sales representative, Sales representative, clinical sales, medical sales, orthopedic sales, trauma sales, spinal sales, prostetic sales, onsite specialist",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "74295144d448324f",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Brings prior B2B sales experience initiating professional conversations and building new accounts.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "27edc041b416fecb",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 79,
+        "clamped_score": 79,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "✅",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_07__THIN_EVIDENCE_RENDERER__B",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "why_count": 2,
+        "risk_count": 0,
+        "penalty_sum": 0,
+        "decision": "Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "clinical_patient_work",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 99
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "clinical_patient_work",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 97
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "client_commercial_work",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 97
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "client_commercial_work",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 97
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 85
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3387,
+          "augmented_profile_text_len": 3630
+        }
+      }
+    }
+  }
+]
