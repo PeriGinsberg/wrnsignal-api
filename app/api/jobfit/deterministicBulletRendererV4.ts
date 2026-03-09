@@ -117,6 +117,12 @@ function cleanClause(s: string): string {
     .trim()
 }
 
+function capitalizeClause(s: string): string {
+  const t = norm(s)
+  if (!t) return ""
+  return t[0].toUpperCase() + t.slice(1)
+}
+
 function normalizeWhyJobFact(s: string): string {
   let t = cleanClause(s || "")
     .replace(/^ideal candidates will have\s+/i, "")
@@ -310,32 +316,32 @@ function renderWhyBullet(
   const jf = jobFact.charAt(0).toLowerCase() + jobFact.slice(1)
 
   if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
-    return sentence(
-      `Your experience ${pf} directly supports this role's responsibility to ${jf}.`
-    )
-  }
-
-  if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
-    return sentence(
-      `Your experience ${pf} is relevant adjacent evidence for this role's responsibility to ${jf}.`
-    )
-  }
-
-  if (w.code === "WHY_EXECUTION_PROOF") {
-    return sentence(
-      `Your experience ${pf} also supports this role's need to ${jf}.`
-    )
-  }
-
-  if (w.code === "WHY_TOOL_PROOF") {
-    return sentence(
-      `Your experience ${pf} supports the workflow this role calls for, especially the responsibility to ${jf}.`
-    )
-  }
-
   return sentence(
-    `Your experience ${pf} supports this role's responsibility to ${jf}.`
+    `${capitalizeClause(pf)} gives you real proof for ${jf}.`
   )
+}
+
+if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
+  return sentence(
+    `${capitalizeClause(pf)} is relevant adjacent proof for ${jf}.`
+  )
+}
+
+if (w.code === "WHY_EXECUTION_PROOF") {
+  return sentence(
+    `${capitalizeClause(pf)} also shows the structured execution this role depends on.`
+  )
+}
+
+if (w.code === "WHY_TOOL_PROOF") {
+  return sentence(
+    `${capitalizeClause(pf)} supports the workflow this role depends on, especially around ${jf}.`
+  )
+}
+
+return sentence(
+  `${capitalizeClause(pf)} gives you usable proof for ${jf}.`
+)
 }
 
 function renderRiskBullet(r: RiskCode): string | null {
