@@ -31,6 +31,14 @@ function whyGroup(w: WhyCode): Group {
   return "proof"
 }
 
+function cleanClause(s: string): string {
+  return norm(s)
+    .replace(/\.$/, "")
+    .replace(/^your experience\s+/i, "")
+    .replace(/^experience\s+/i, "")
+    .trim()
+}
+
 function riskGroup(code: string): Group {
   if (code === "RISK_MISSING_TOOLS") return "tools"
 
@@ -109,12 +117,26 @@ function usable(s: string): boolean {
   return true
 }
 
-function cleanClause(s: string): string {
-  return norm(s)
-    .replace(/\.$/, "")
-    .replace(/^your experience\s+/i, "")
-    .replace(/^experience\s+/i, "")
-    .trim()
+function cleanJobFact(s: string): string {
+  let t = norm(s)
+
+  if (!t) return ""
+
+  // remove common JD headers
+  t = t.replace(/what you'll do:?/gi, "")
+  t = t.replace(/responsibilities:?/gi, "")
+  t = t.replace(/you will:?/gi, "")
+
+  // normalize leading verbs into capability phrases
+  t = t.replace(/^work with\s+/i, "collaborating with ")
+  t = t.replace(/^support\s+/i, "supporting ")
+  t = t.replace(/^assist\s+/i, "assisting ")
+  t = t.replace(/^help\s+/i, "helping ")
+  t = t.replace(/^manage\s+/i, "managing ")
+  t = t.replace(/^develop\s+/i, "developing ")
+  t = t.replace(/^analyze\s+/i, "analyzing ")
+
+  return t.trim()
 }
 
 function capitalizeClause(s: string): string {
@@ -313,34 +335,34 @@ function renderWhyBullet(
   if (!usable(jobFact) || !usable(profileFact)) return null
 
   const pf = profileFact.charAt(0).toLowerCase() + profileFact.slice(1)
-  const jf = jobFact.charAt(0).toLowerCase() + jobFact.slice(1)
+  const jf = cleanJobFact(jobFact)
 
-  if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
+if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
   return sentence(
-    `${capitalizeClause(pf)} gives you real proof for ${jf}.`
+    `${capitalizeClause(pf)} shows credible experience that translates directly to this part of the role: ${jf}.`
   )
 }
 
 if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
   return sentence(
-    `${capitalizeClause(pf)} is relevant adjacent proof for ${jf}.`
+    `${capitalizeClause(pf)} is adjacent experience that can transfer into this part of the role: ${jf}.`
   )
 }
 
 if (w.code === "WHY_EXECUTION_PROOF") {
   return sentence(
-    `${capitalizeClause(pf)} also shows the structured execution this role depends on.`
+    `${capitalizeClause(pf)} shows the execution discipline this role depends on.`
   )
 }
 
 if (w.code === "WHY_TOOL_PROOF") {
   return sentence(
-    `${capitalizeClause(pf)} supports the workflow this role depends on, especially around ${jf}.`
+    `${capitalizeClause(pf)} supports the workflow this role depends on, especially this part of the role: ${jf}.`
   )
 }
 
 return sentence(
-  `${capitalizeClause(pf)} gives you usable proof for ${jf}.`
+  `${capitalizeClause(pf)} supports the capabilities this role expects, particularly around ${jf}.`
 )
 }
 
