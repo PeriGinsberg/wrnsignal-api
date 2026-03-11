@@ -516,31 +516,46 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     const jobCity = job.location?.city ?? null
     const allowedCities = profile.locationPreference.allowedCities
 
-    if (
-      profileConstrained &&
-      typeof jobCity === "string" &&
-      jobCity.trim().length > 0 &&
-      Array.isArray(allowedCities) &&
-      allowedCities.length > 0 &&
+    const hasJobCity =
+      typeof jobCity === "string" && jobCity.trim().length > 0
+
+    const hasAllowedCities =
+      Array.isArray(allowedCities) && allowedCities.length > 0
+
+    const cityMismatch =
+      hasJobCity &&
+      hasAllowedCities &&
       !locationCityMatches(jobCity, allowedCities)
-    ) {
-      const amt = computePenaltyAmount("location_mismatch_constrained")
-      penalties.push({
-        key: "location_mismatch_constrained",
-        amount: amt,
-        note: `Constrained city mismatch (job: ${jobCity})`,
-        risk: {
+
+    if (cityMismatch) {
+      if (profileConstrained) {
+        const amt = computePenaltyAmount("location_mismatch_constrained")
+
+        penalties.push({
+          key: "location_mismatch_constrained",
+          amount: amt,
+          note: `Constrained city mismatch (job: ${jobCity})`,
+          risk: {
+            code: "RISK_LOCATION",
+            job_fact: `Job location indicates ${jobCity}.`,
+            profile_fact: `Allowed cities are ${allowedCities.join(", ")}.`,
+            risk: "Your location constraints do not match the job location.",
+            severity: "high",
+            weight: -amt,
+          },
+        })
+      } else {
+        riskOnlyCodes.push({
           code: "RISK_LOCATION",
           job_fact: `Job location indicates ${jobCity}.`,
-          profile_fact: `Allowed cities are ${allowedCities.join(", ")}.`,
-          risk: "Your location constraints do not match the job location.",
-          severity: "high",
-          weight: -amt,
-        },
-      })
+          profile_fact: `Preferred cities are ${allowedCities.join(", ")}.`,
+          risk: "The job location sits outside your stated preferred cities.",
+          severity: "medium",
+          weight: 0,
+        })
+      }
     }
   }
-
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
     const k: PenaltyKey = "location_mismatch_constrained"
     const amt = computePenaltyAmount(k)
