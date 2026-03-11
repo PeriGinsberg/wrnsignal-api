@@ -194,6 +194,62 @@ function cleanJobFact(s: string): string {
   return t
 }
 
+function directCapabilityPhrase(jobFact: string): string {
+  const raw = String(jobFact || "").trim()
+
+  if (!raw) return ""
+
+  const jf = raw
+    .replace(/^work with the clinical sales manager to /i, "")
+    .replace(/^work with /i, "")
+    .replace(/^support /i, "")
+    .replace(/^responsibly manage /i, "")
+    .replace(/^the focus of .*? is to /i, "")
+    .replace(/^focus of .*? is to /i, "")
+    .replace(/^assist with /i, "")
+    .replace(/^help /i, "")
+    .replace(/^participate in /i, "")
+    .replace(/^prepare /i, "")
+    .replace(/^conduct /i, "")
+    .replace(/^drive the sales of /i, "sales execution for ")
+    .replace(/^develop a sales strategy to /i, "")
+    .replace(/^clinically sell to maximize /i, "clinical selling to support ")
+    .replace(/^collect and examine data relevant to /i, "")
+    .replace(/^analyze /i, "")
+    .replace(/\.$/, "")
+    .trim()
+
+  if (/da vinci|surgical system|robot utilization|procedure adoption|clinical sales manager/i.test(raw)) {
+    return "clinical selling, provider-facing support, and utilization growth"
+  }
+
+  if (/sales and marketing events|system awareness|procedure adoption/i.test(raw)) {
+    return "field-facing commercial support and procedure adoption"
+  }
+
+  if (/client presentations|boards of directors|executives|senior management|hr leaders/i.test(raw)) {
+    return "client-ready presentations and recommendations"
+  }
+
+  if (/research and analysis to understand industry and organization-specific issues/i.test(raw)) {
+    return "research, analysis, and structured problem-solving"
+  }
+
+  if (/develop client recommendations|client engagements|client interaction/i.test(raw)) {
+    return "client-facing analytical work and recommendations"
+  }
+
+  if (/excel and powerpoint/i.test(raw)) {
+    return "analytical work supported by Excel and PowerPoint"
+  }
+
+  if (/storytelling with data|presentation design/i.test(raw)) {
+    return "data storytelling and presentation development"
+  }
+
+  return jf
+}
+
 function capabilityPhrase(jobFact: string): string {
   const t = cleanJobFact(jobFact)
   if (!t) return ""
@@ -362,12 +418,28 @@ function evidenceLead(profileFact: string): string {
     return src ? `Your consumer behavior research ${src}` : "Your consumer behavior research"
   }
 
-if (/campaign|digital marketing|growth marketing|paid media/i.test(pf)) {
-  return "Your marketing campaign execution experience"
-}
+  if (/campaign|digital marketing|growth marketing|paid media/i.test(pf)) {
+    return "Your marketing campaign execution experience"
+  }
 
-  if (/market research|policy research|analytics|data|financial analysis|quantitative analysis|written report|benchmark/i.test(pf)) {
-    return "Your research and analytical experience"
+  if (/market research|user research|consumer research|due diligence/i.test(pf)) {
+    return "Your market research and due diligence experience"
+  }
+
+  if (/strategy|problem-solving|problem solving|consulting casework|m&a strategy/i.test(pf)) {
+    return "Your strategy and problem-solving experience"
+  }
+
+  if (/financial analysis|dcf|p&l|sources and uses|modeling/i.test(pf)) {
+    return "Your financial analysis experience"
+  }
+
+  if (/written report|data visualization|presenting investment insights|client presentations|recommendations|drafting|documentation/i.test(pf)) {
+    return "Your written analysis and presentation work"
+  }
+
+  if (/analytics|data|quantitative analysis|analytical/i.test(pf)) {
+    return "Your analytical and quantitative experience"
   }
 
   if (/cross-functional|coordinating|stakeholder|teams|leadership/i.test(pf)) {
@@ -386,79 +458,169 @@ if (/campaign|digital marketing|growth marketing|paid media/i.test(pf)) {
     return "Your marketing and communications experience"
   }
 
-  if (/conducting financial analysis/i.test(pf)) {
-    return "Your financial analysis background"
-  }
-
-  if (/conducting quantitative analysis|detailed written report/i.test(pf)) {
-    return "Your quantitative project work, including written analytical reporting"
-  }
-
   return capitalizeClause(pf)
 }
 
 function interpretDirectProof(profileFact: string, jobFact: string) {
   const pf = norm(profileFact)
+  const capability = directCapabilityPhrase(jobFact)
+
+  if (/emt experience|emergency medical technician|special events emt|clinical sales representative candidate with active emt experience|certified emergency medical technician/.test(pf)) {
+    if (/provider|clinical|procedure|utilization|surgical|medical/i.test(capability)) {
+      return sentence(
+        `Your EMT experience gives you credible clinical exposure for work that depends on ${capability}.`
+      )
+    }
+
+    return sentence(
+      "Your EMT experience gives you credible clinical exposure for a role that depends on provider-facing credibility and procedural support."
+    )
+  }
+
+  if (/physicians|medical teams|patient care reports|receiving medical personnel|medical equipment|hospital settings|outpatient clinical setting|patient consultations|treatment planning|operating room|orthopedic surgical procedures|clinical setting/.test(pf)) {
+    if (/provider|clinical|procedure|utilization|surgical|medical/i.test(capability)) {
+      return sentence(
+        `Your clinical exposure gives you relevant proof for work that depends on ${capability}.`
+      )
+    }
+
+    return sentence(
+      "Your clinical exposure gives you relevant proof for a role that depends on comfort in medical environments and credibility with clinical stakeholders."
+    )
+  }
 
   if (/market research|user research|consumer research|due diligence/.test(pf)) {
+    if (/research|analysis|strategy|insight/i.test(capability)) {
+      return sentence(
+        `Your market research and due diligence experience maps well to work that depends on ${capability}.`
+      )
+    }
+
     return sentence(
       "Your market research and due diligence experience maps well to the research and analytical work this role depends on."
     )
   }
 
   if (/strategy|problem-solving|problem solving|consulting casework|m&a strategy/.test(pf)) {
+    if (/strategy|problem|analysis|planning/i.test(capability)) {
+      return sentence(
+        `Your strategy and problem-solving experience gives you relevant proof for work that depends on ${capability}.`
+      )
+    }
+
     return sentence(
       "Your strategy and problem-solving experience gives you relevant proof for the structured problem-solving this role requires."
     )
   }
 
   if (/financial analysis|dcf|p&l|sources and uses|modeling/.test(pf)) {
+    if (/analysis|planning|reporting|financial/i.test(capability)) {
+      return sentence(
+        `Your financial analysis experience gives you strong analytical proof for work that depends on ${capability}.`
+      )
+    }
+
     return sentence(
       "Your financial analysis experience gives you strong analytical proof that should translate well to this role."
     )
   }
 
-  if (/written report|data visualization|presenting investment insights|client presentations|recommendations/.test(pf)) {
+  if (/written report|data visualization|presenting investment insights|client presentations|recommendations|drafting|documentation/.test(pf)) {
+    if (/presentation|communication|recommendation|client/i.test(capability)) {
+      return sentence(
+        `Your experience translating analysis into written deliverables and presentations aligns well with work that depends on ${capability}.`
+      )
+    }
+
     return sentence(
-      "Your written analysis and presentation work aligns with the client-ready communication and deliverable expectations in this role."
+      "Your experience translating analysis into written deliverables and presentations aligns well with the communication and client-facing output expected in this role."
     )
   }
 
   if (/client|stakeholder|senior stakeholders|firm executives|prospects|outreach/.test(pf)) {
+    if (/client|relationship|stakeholder|commercial|sales/i.test(capability)) {
+      return sentence(
+        `Your experience working directly with clients and stakeholders provides relevant proof for work that depends on ${capability}.`
+      )
+    }
+
     return sentence(
-      "Your client-facing and stakeholder experience is relevant to a role that involves team-based client work and recommendations."
+      "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers."
     )
   }
 
-  if (/analysis|analytical|quantitative/.test(pf)) {
+  if (/analysis|analytical|quantitative|modeling|data analysis/.test(pf)) {
+    if (/analysis|problem|strategy|planning/i.test(capability)) {
+      return sentence(
+        `Your analytical and quantitative work provides strong proof for work that depends on ${capability}.`
+      )
+    }
+
     return sentence(
-      "Your analytical and quantitative experience supports the structured analytical and synthesis demands of this role."
+      "Your analytical and quantitative work provides strong proof for the structured analysis and problem-solving this role requires."
     )
   }
 
   return ""
-}function interpretAdjacentProof(profileFact: string, jobFact: string): string {
+}
+
+function interpretAdjacentProof(profileFact: string, jobFact: string): string {
   const lead = evidenceLead(profileFact)
   const jf = capabilityPhrase(jobFact)
 
   if (!lead) return ""
   if (!jf) return sentence(lead)
 
+  if (/portfolio-level design work/i.test(lead)) {
+    return sentence(
+      `${lead} shows the kind of execution discipline this team expects from a designer who can contribute immediately.`
+    )
+  }
+
   if (/experience producing real-world brand and marketing assets/i.test(lead)) {
-    return sentence(`${lead} shows range across deliverables that should translate well to the portfolio expectations of this role.`)
+    return sentence(
+      `${lead} shows range across deliverables that should translate well to the portfolio expectations of this role.`
+    )
   }
 
-  if (/research and analytical experience/i.test(lead)) {
-    return sentence(`${lead} gives you relevant analytical proof that should translate well to ${jf}.`)
+  if (/market research and due diligence experience|analytical and quantitative experience|financial analysis experience/i.test(lead)) {
+    return sentence(
+      `${lead} gives you relevant analytical proof that should translate well to the core demands of this role.`
+    )
   }
 
-  if (/marketing and communications experience|cross-functional execution experience|clinical exposure|EMT experience/i.test(lead)) {
-    return sentence(`${lead} should translate well to ${jf}.`)
-  }
-
-return sentence(`${lead} should translate well to the ${jf} this role emphasizes.`)
+// EMT / clinical proof should never fall into generic translation
+if (/EMT experience/i.test(lead)) {
+  return sentence(
+    "Your EMT experience gives you credible clinical exposure for a role that depends on provider-facing credibility and procedural support."
+  )
 }
 
+if (/clinical exposure/i.test(lead)) {
+  return sentence(
+    "Your clinical exposure gives you relevant context for a role that depends on credibility in medical environments and provider-facing interactions."
+  )
+}
+
+if (/high-volume B2B sales experience/i.test(lead)) {
+  return sentence(
+    "Your high-volume B2B sales experience gives you relevant commercial proof for a role that depends on relationship-building and field-facing execution."
+  )
+}
+
+if (/client-facing and stakeholder experience/i.test(lead)) {
+  return sentence(
+    "Your client-facing and stakeholder experience is relevant to a role that depends on building relationships and coordinating with decision-makers."
+  )
+}
+
+if (/marketing and communications experience|cross-functional execution experience/i.test(lead)) {
+  return sentence(
+    `${lead} should translate well to the execution and coordination demands of this role.`
+  )
+}
+  return sentence(`${lead} should translate well to the core demands of this role.`)
+}
 function normalizeWhyJobFact(s: string): string {
   let t = cleanClause(s)
     .replace(/^ideal candidates will have\s+/i, "")
@@ -704,10 +866,24 @@ if (r.code === "RISK_LOCATION") {
     return sentence("This role has clear sales expectations that conflict with the constraints stated in your profile.")
   }
 
-  if (code === "RISK_MISSING_PROOF") {
-    if (isSoftSkillRisk(jf)) {
-      return sentence(`Your resume does not yet make ${jf} especially explicit, which may matter in a competitive review process.`)
+ if (code === "RISK_MISSING_PROOF") {
+  if (isSoftSkillRisk(jf)) {
+    if (/strategy|problem-solving|problem solving/i.test(jf)) {
+      return sentence(
+        "Your background is relevant, but the resume does not yet make direct strategy and problem-solving proof especially explicit."
+      )
     }
+
+    if (/client|stakeholder|communication|presentation|collaboration/i.test(jf)) {
+      return sentence(
+        "Your background is relevant, but the resume does not yet make the strongest client-facing and communication proof especially explicit."
+      )
+    }
+
+    return sentence(
+      "Your background is relevant, but the resume does not yet make the most role-specific proof especially explicit."
+    )
+  }
 
     if (/clinical|patient|surgical|operating room|surgeon/i.test(jf)) {
       return sentence("This role leans heavily on direct clinical credibility, and your background does not yet show the strongest hands-on proof in that environment.")

@@ -4,17 +4,18 @@
     "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
     "score": 79,
     "decision_final": "Apply",
-    "why_bullets_joined": "Your EMT experience gives you credible clinical context for collaborating with the clinical sales team to drive utilization | Your high-volume B2B sales experience shows you can operate in a real commercial environment, which matters for supporting regional awareness and procedure adoption efforts",
-    "risk_bullets_joined": "Your resume does not yet make strategy especially explicit, which may matter in a competitive review process",
+    "why_bullets_joined": "Your clinical exposure gives you relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth | Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers | Your high-volume B2B sales experience gives you relevant commercial proof for a role that depends on relationship-building and field-facing execution",
+    "risk_bullets_joined": "Your background is relevant, but the resume does not yet make direct strategy and problem-solving proof especially explicit",
     "raw": {
       "decision": "Apply",
       "score": 79,
       "bullets": [
-        "Your EMT experience gives you credible clinical context for collaborating with the clinical sales team to drive utilization",
-        "Your high-volume B2B sales experience shows you can operate in a real commercial environment, which matters for supporting regional awareness and procedure adoption efforts"
+        "Your clinical exposure gives you relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth",
+        "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers",
+        "Your high-volume B2B sales experience gives you relevant commercial proof for a role that depends on relationship-building and field-facing execution"
       ],
       "risk_flags": [
-        "Your resume does not yet make strategy especially explicit, which may matter in a competitive review process"
+        "Your background is relevant, but the resume does not yet make direct strategy and problem-solving proof especially explicit"
       ],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
@@ -537,7 +538,7 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
-        "why_count": 2,
+        "why_count": 3,
         "risk_count": 1,
         "penalty_sum": 0,
         "decision": "Apply",
@@ -600,7 +601,7 @@
     "score": 86,
     "decision_final": "Priority Apply",
     "why_bullets_joined": "Your portfolio-level design work shows the kind of execution discipline this team expects from a designer who can contribute immediately | Your experience producing real-world brand and marketing assets shows range across deliverables that should translate well to the portfolio expectations of this role | Your fluency with Adobe, Canva, and Photoshop gives you the tool readiness this design workflow depends on",
-    "risk_bullets_joined": "Your background shows strong design execution, but the resume does not yet make portfolio depth and presentation of past work fully explicit, which could matter in a hiring process where visual proof carries as much weight as the resume itself.",
+    "risk_bullets_joined": "",
     "raw": {
       "decision": "Priority Apply",
       "score": 86,
@@ -609,9 +610,7 @@
         "Your experience producing real-world brand and marketing assets shows range across deliverables that should translate well to the portfolio expectations of this role",
         "Your fluency with Adobe, Canva, and Photoshop gives you the tool readiness this design workflow depends on"
       ],
-      "risk_flags": [
-        "Your background shows strong design execution, but the resume does not yet make portfolio depth and presentation of past work fully explicit, which could matter in a hiring process where visual proof carries as much weight as the resume itself."
-      ],
+      "risk_flags": [],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
@@ -1204,7 +1203,7 @@
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
         "why_count": 3,
-        "risk_count": 1,
+        "risk_count": 0,
         "penalty_sum": 0,
         "decision": "Priority Apply",
         "why_codes_in": [
@@ -1269,17 +1268,17 @@
     "label": "Will Friedman - RSM Strategy and Management Consulting Intern",
     "score": 78,
     "decision_final": "Apply",
-    "why_bullets_joined": "Your research and analytical experience maps well to the structured analytical work this role depends on",
-    "risk_bullets_joined": "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments.",
+    "why_bullets_joined": "Your market research and due diligence experience maps well to the research and analytical work this role depends on | Your financial analysis experience gives you strong analytical proof for work that depends on benchmarking research and analysis for IT spending | Your experience translating analysis into written deliverables and presentations aligns well with work that depends on reports on consulting services performed for clients",
+    "risk_bullets_joined": "",
     "raw": {
       "decision": "Apply",
       "score": 78,
       "bullets": [
-        "Your research and analytical experience maps well to the structured analytical work this role depends on"
+        "Your market research and due diligence experience maps well to the research and analytical work this role depends on",
+        "Your financial analysis experience gives you strong analytical proof for work that depends on benchmarking research and analysis for IT spending",
+        "Your experience translating analysis into written deliverables and presentations aligns well with work that depends on reports on consulting services performed for clients"
       ],
-      "risk_flags": [
-        "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments."
-      ],
+      "risk_flags": [],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
@@ -2010,8 +2009,8 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
-        "why_count": 1,
-        "risk_count": 1,
+        "why_count": 3,
+        "risk_count": 0,
         "penalty_sum": 0,
         "decision": "Apply",
         "why_codes_in": [
@@ -2074,17 +2073,15 @@
     "label": "Catherine Lees - tarte Summer 2026 Marketing Internship",
     "score": 77,
     "decision_final": "Review",
-    "why_bullets_joined": "Your marketing and communications experience gives you relevant proof of cross-functional execution in a client-facing project environment",
-    "risk_bullets_joined": "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments.",
+    "why_bullets_joined": "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers",
+    "risk_bullets_joined": "",
     "raw": {
       "decision": "Review",
       "score": 77,
       "bullets": [
-        "Your marketing and communications experience gives you relevant proof of cross-functional execution in a client-facing project environment"
+        "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers"
       ],
-      "risk_flags": [
-        "Your background shows strong analytical capability, but the resume offers limited direct evidence of client-facing consulting delivery, which may raise questions in firms expecting interns to contribute quickly in structured client-service environments."
-      ],
+      "risk_flags": [],
       "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
       "location_constraint": "not_constrained",
       "why_codes": [
@@ -2757,7 +2754,7 @@
         "decision_after_gate": "Review",
         "decision_final": "Review",
         "why_count": 1,
-        "risk_count": 1,
+        "risk_count": 0,
         "penalty_sum": 0,
         "decision": "Review",
         "why_codes_in": [
@@ -2783,6 +2780,973 @@
           "used_raw_profile_text_fallback": false,
           "base_profile_text_len": 4044,
           "augmented_profile_text_len": 4326
+        }
+      }
+    }
+  },
+  {
+    "id": "real-105",
+    "label": "William Friedman vs Mercer Summer Intern Analyst",
+    "score": 86,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "Your market research and due diligence experience maps well to work that depends on research, analysis, and structured problem-solving | Your strategy and problem-solving experience gives you relevant proof for the structured problem-solving this role requires | Your experience translating analysis into written deliverables and presentations aligns well with work that depends on client-ready presentations and recommendations",
+    "risk_bullets_joined": "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston",
+    "raw": {
+      "decision": "Priority Apply",
+      "score": 86,
+      "bullets": [
+        "Your market research and due diligence experience maps well to work that depends on research, analysis, and structured problem-solving",
+        "Your strategy and problem-solving experience gives you relevant proof for the structured problem-solving this role requires",
+        "Your experience translating analysis into written deliverables and presentations aligns well with work that depends on client-ready presentations and recommendations"
+      ],
+      "risk_flags": [
+        "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston"
+      ],
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Conduct research and analysis to understand industry and organization-specific issues that could include business strategy, corporate performance, compensation and rewards practices and trends, global expansion, and best practices in talent management",
+          "profile_fact": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 102,
+          "match_key": "consumer_research",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Conduct research and analysis to understand industry and organization-specific issues that could include business strategy, corporate performance, compensation and rewards practices and trends, global expansion, and best practices in talent management",
+          "profile_fact": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 102,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "The role combines hands-on research, modeling, and problem solving with client interaction, working with senior clients and internal experts in a collaborative, learning-oriented environment",
+          "profile_fact": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "consumer_research",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "You’ll help diagnose client challenges and contribute to the design of strategic talent solutions across Rewards, HR Transformation, Talent Strategy, Workforce Planning & Analytics, and Communications",
+          "profile_fact": "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Prepare client presentations, including recommendations to be presented to boards of directors, executives, senior management, and HR leaders",
+          "profile_fact": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "drafting_documentation",
+          "match_kind": "deliverable",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Conduct research and analysis to understand industry and organization-specific issues that could include business strategy, corporate performance, compensation and rewards practices and trends, global expansion, and best practices in talent management",
+          "profile_fact": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        }
+      ],
+      "risk_codes": [
+        {
+          "code": "RISK_LOCATION",
+          "job_fact": "Job location indicates Washington DC.",
+          "profile_fact": "Preferred cities are NYC, Chicago, Boston.",
+          "risk": "The job location sits outside your stated preferred cities.",
+          "severity": "medium",
+          "weight": 0
+        }
+      ],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "c155f6c27285f439",
+        "jobFamily": "Consulting",
+        "analytics": {
+          "isHeavy": true,
+          "isLight": false
+        },
+        "function_tags": [
+          "consulting_strategy",
+          "sales_bd",
+          "communications_pr",
+          "consumer_insights_research",
+          "data_analytics_bi",
+          "operations_general"
+        ],
+        "signal_debug": {
+          "hits": {
+            "strategy_problem_solving": 7,
+            "client_commercial_work": 7,
+            "communications_writing": 1,
+            "consumer_research": 4,
+            "analysis_reporting": 3,
+            "drafting_documentation": 1,
+            "tool:excel": 1,
+            "tool:powerpoint": 1,
+            "stakeholder_coordination": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth."
+          ]
+        },
+        "location": {
+          "mode": "hybrid",
+          "constrained": false,
+          "city": "Washington DC",
+          "evidence": "This is a hybrid role that has a requirement of working at least three days a week in the office."
+        },
+        "isGovernment": false,
+        "isSalesHeavy": true,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [
+          "excel",
+          "powerpoint"
+        ],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "217776a74e865ac5",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Conduct research and analysis to understand industry and organization-specific issues that could include business strategy, corporate performance, compensation and rewards practices and trends, global expansion, and best practices in talent management",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "43a4510725aab655",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Conduct research and analysis to understand industry and organization-specific issues that could include business strategy, corporate performance, compensation and rewards practices and trends, global expansion, and best practices in talent management",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "5a184bab18e10123",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "As a Summer Intern Analyst on Mercer’s Career team, you will support client engagements across industries as an integral member of project teams.",
+            "strength": 9,
+            "requiredness": "core",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f3fc97d9dff44a42",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Conduct research and analysis to understand industry and organization-specific issues that could include business strategy, corporate performance, compensation and rewards practices and trends, global expansion, and best practices in talent management",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "e21e7c64a10ef25a",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Participate in team brainstorming sessions to develop client recommendations",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "ddc903802f73f2e7",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Prepare client presentations, including recommendations to be presented to boards of directors, executives, senior management, and HR leaders",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "0bf84e22f0f5e9be",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Prepare client presentations, including recommendations to be presented to boards of directors, executives, senior management, and HR leaders",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "9c4595f68d4ac292",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Ability to collaborate with diverse teams and communicate with others in a skillful, engaging, and proactive manner",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "ab8c36c3e331ea02",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "You’ll help diagnose client challenges and contribute to the design of strategic talent solutions across Rewards, HR Transformation, Talent Strategy, Workforce Planning & Analytics, and Communications.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "c93e5defd1522bf3",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "You’ll help diagnose client challenges and contribute to the design of strategic talent solutions across Rewards, HR Transformation, Talent Strategy, Workforce Planning & Analytics, and Communications.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "4bb603b66431e06b",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "The role combines hands-on research, modeling, and problem solving with client interaction, working with senior clients and internal experts in a collaborative, learning-oriented environment.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "cf02d2e66a12c876",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "The role combines hands-on research, modeling, and problem solving with client interaction, working with senior clients and internal experts in a collaborative, learning-oriented environment.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "5d62bd1213de2cb4",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Knowledge of data analysis, storytelling with data, and presentation design",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "28e5b59f82b542c2",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Knowledge of data analysis, storytelling with data, and presentation design",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "c49b8c880a568faa",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "You’ll help diagnose client challenges and contribute to the design of strategic talent solutions across Rewards, HR Transformation, Talent Strategy, Workforce Planning & Analytics, and Communications.",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f5fddf91b4256915",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "The role combines hands-on research, modeling, and problem solving with client interaction, working with senior clients and internal experts in a collaborative, learning-oriented environment.",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "a2ad6cb2b0ed5c23",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Collect and examine data relevant to developing solutions tailored to the client’s needs",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "4e73cea763dd51c4",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "1bf1afb0f6204d04",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Strong time management skills, with the flexibility to work under tight deadlines and adapt to changing client needs",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "349a96b7f9a83287",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "We are seeking a talented individual to join our Career Consulting team at Mercer as a Summer Intern Analyst.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "56d350decb928bc5",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "We provide best-in-class consulting, rigorous analytics, and data-driven insights that help organizations make fact-based decisions.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "fb14bb4f82c68f41",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "A strong interest in human capital consulting",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "546be6eb8ca3148c",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "a90c5b2e460ed8ee",
+            "kind": "tool",
+            "key": "powerpoint",
+            "label": "powerpoint tool usage",
+            "snippet": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
+            "strength": 4,
+            "requiredness": "supporting"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": true,
+          "isInPersonExplicit": true,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": "We are seeking a talented individual to join our Career Consulting team at Mercer as a Summer Intern Analyst.",
+            "inPersonLine": "This is a hybrid role that has a requirement of working at least three days a week in the office.",
+            "aiLine": null,
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Consulting"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "NYC",
+            "Chicago",
+            "Boston"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "excel",
+          "powerpoint",
+          "sql",
+          "r",
+          "canva",
+          "google sheets"
+        ],
+        "gradYear": 2027,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "consulting_strategy",
+          "finance_corp",
+          "consumer_insights_research",
+          "data_analytics_bi",
+          "sales_bd",
+          "operations_general",
+          "communications_pr",
+          "legal_regulatory"
+        ],
+        "function_tag_evidence": {
+          "consulting_strategy": [
+            "Target roles: consulting internships, strategy consulting",
+            "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "Aspen Academies (Private Investment Firm - M&A Strategy Focus) Denver, CO",
+            "Summer Strategy Analyst May 2025 – Aug 2025",
+            "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance."
+          ],
+          "finance_corp": [
+            "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives."
+          ],
+          "consumer_insights_research": [
+            "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization."
+          ],
+          "data_analytics_bi": [
+            "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives.",
+            "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance."
+          ],
+          "sales_bd": [
+            "Led targeted seller outreach, crafting personalized, data driven emails to convert prospects into the diligence pipeline.",
+            "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "Sales Associate (Full-Time) May – August 2024 (Alo);"
+          ],
+          "operations_general": [
+            "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
+            "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "Vice President of Operations and Finance Sep 2023 – May 2025"
+          ],
+          "communications_pr": [
+            "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization."
+          ],
+          "legal_regulatory": [
+            "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance."
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "f114abfc3a674cc8",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "a9f2d6671e3b0c8e",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "4ae2b69d2cb18331",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Designed and executed a proprietary data collection approach using “mystery shopping” calls to obtain hard to access operational and financial data, organizing results in Excel.",
+            "source": "resume",
+            "strength": 10
+          },
+          {
+            "id": "b5f5b9e1e368990c",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "e28e31ec70e6bdc5",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "2f61b31f0ddb2e75",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "e94300233bc98fd3",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "1fd2ca728ef7916f",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "1b38459467ea4392",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "856d00fe3748982d",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "ca6a5032910b42fa",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Led targeted seller outreach, crafting personalized, data driven emails to convert prospects into the diligence pipeline.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "83b6e382866ec785",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "46038ef028fcff9b",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Target roles: consulting internships, strategy consulting",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "4d39b48eabd54679",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Analytical economics student who brings experience in strategy, financial modeling, and data driven problem solving across private investments and consulting exposure programs.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "020eb4e4e45bff96",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Proven ability to break down ambiguous questions, conduct rigorous quantitative analysis, and communicate insights to senior stakeholders.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "ee4c8f1116db28b4",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Aspen Academies (Private Investment Firm - M&A Strategy Focus) Denver, CO",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "4cfbc4e5198f5638",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Summer Strategy Analyst May 2025 – Aug 2025",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "a13d185c37000287",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Participated in an intensive program to gain exposure to management consulting, BCG's culture, and career development pathways.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "1a57f7633df959db",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "e56e000a91ced551",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "Applied Linear Regression in R to analyze key variables impacting car prices (horsepower, RPM, weight, body type)",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "a5f4a0d1b39a2d64",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "88456a38eb37e9aa",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Vice President of Operations and Finance Sep 2023 – May 2025",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "ee8ee4d2024686b5",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "ef42000ea337cd55",
+            "kind": "tool",
+            "key": "powerpoint",
+            "label": "powerpoint tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "8dc129a1fb5ebbce",
+            "kind": "tool",
+            "key": "sql",
+            "label": "sql tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "93150d7aee5b6e59",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "c5ecf50a5a8d5210",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva.",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "17d79c721f99391d",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "The Boston Consulting Group (BCG) Boston, MA",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "755f9308cafeed34",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "86feeb910d699211",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "c4f9e870eb309e97",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "505d074a1cef9466",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Sales Associate (Full-Time) May – August 2024 (Alo);",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "107f7e112f99a6a8",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Directed all operational and strategic aspects for a 30-athlete organization, reporting to three distinct governing bodies (University, ACHA, TSCHL) to ensure full compliance.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "6610de78626ac15a",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "653e0cc2c6d02bf6",
+            "kind": "tool",
+            "key": "powerpoint",
+            "label": "powerpoint tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "6117bd7fb6758c7e",
+            "kind": "tool",
+            "key": "sql",
+            "label": "sql tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "b914b7a1f219bb96",
+            "kind": "tool",
+            "key": "r",
+            "label": "r tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          },
+          {
+            "id": "471a9325b9c977d5",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "TOOLS: canva, excel, google sheets, powerpoint, r, sql",
+            "source": "resume",
+            "strength": 4
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 86,
+        "clamped_score": 86,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "🔥",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
+        "why_count": 3,
+        "risk_count": 1,
+        "penalty_sum": 0,
+        "decision": "Priority Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "consumer_research",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 102
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 102
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "consumer_research",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 99
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "drafting_documentation",
+            "match_kind": "deliverable",
+            "match_strength": "direct",
+            "weight": 99
+          }
+        ],
+        "risk_codes_in": [
+          {
+            "code": "RISK_LOCATION",
+            "severity": "medium"
+          }
+        ],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 4186,
+          "augmented_profile_text_len": 4481
         }
       }
     }
