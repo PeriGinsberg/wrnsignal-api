@@ -196,28 +196,41 @@ function cleanJobFact(s: string): string {
 
 function directCapabilityPhrase(jobFact: string): string {
   const raw = String(jobFact || "").trim()
-
   if (!raw) return ""
 
-  const jf = raw
-    .replace(/^work with the clinical sales manager to /i, "")
-    .replace(/^work with /i, "")
-    .replace(/^support /i, "")
-    .replace(/^responsibly manage /i, "")
-    .replace(/^the focus of .*? is to /i, "")
-    .replace(/^focus of .*? is to /i, "")
-    .replace(/^assist with /i, "")
-    .replace(/^help /i, "")
-    .replace(/^participate in /i, "")
-    .replace(/^prepare /i, "")
-    .replace(/^conduct /i, "")
-    .replace(/^drive the sales of /i, "sales execution for ")
-    .replace(/^develop a sales strategy to /i, "")
-    .replace(/^clinically sell to maximize /i, "clinical selling to support ")
-    .replace(/^collect and examine data relevant to /i, "")
-    .replace(/^analyze /i, "")
+  const normalized = raw
+    .replace(/^moreover,\s*/i, "")
+    .replace(/^additionally,\s*/i, "")
+    .replace(/^furthermore,\s*/i, "")
+    .replace(/^in addition,\s*/i, "")
+    .replace(/^the incumbent holds responsibility for\s*/i, "")
+    .replace(/^responsible for\s*/i, "")
+    .replace(/^work with the clinical sales manager to\s*/i, "")
+    .replace(/^work with\s*/i, "")
+    .replace(/^support\s*/i, "")
+    .replace(/^supports\s*/i, "")
+    .replace(/^supporting\s*/i, "")
+    .replace(/^responsibly manage\s*/i, "")
+    .replace(/^the focus of .*? is to\s*/i, "")
+    .replace(/^focus of .*? is to\s*/i, "")
+    .replace(/^assist with\s*/i, "")
+    .replace(/^assisting with\s*/i, "")
+    .replace(/^help\s*/i, "")
+    .replace(/^participate in\s*/i, "")
+    .replace(/^prepare\s*/i, "")
+    .replace(/^conduct\s*/i, "")
+    .replace(/^analyze\s*/i, "")
+    .replace(/^collect and examine data relevant to\s*/i, "")
+    .replace(/^develop a sales strategy to\s*/i, "")
+    .replace(/^drive the sales of\s*/i, "sales execution for ")
+    .replace(/^clinically sell to maximize\s*/i, "clinical selling to support ")
     .replace(/\.$/, "")
     .trim()
+
+  if (!normalized) return ""
+
+  if (/^moreover$/i.test(normalized)) return ""
+  if (/^the incumbent$/i.test(normalized)) return ""
 
   if (/da vinci|surgical system|robot utilization|procedure adoption|clinical sales manager/i.test(raw)) {
     return "clinical selling, provider-facing support, and utilization growth"
@@ -247,9 +260,27 @@ function directCapabilityPhrase(jobFact: string): string {
     return "data storytelling and presentation development"
   }
 
-  return jf
+  if (/evaluating current processes|recommendations for improvement/i.test(raw)) {
+    return "evaluating processes and recommending improvements"
+  }
+
+  if (/planning, implementing, and tracking a variety of projects and initiatives/i.test(raw)) {
+    return "planning, implementing, and tracking transformation initiatives"
+  }
+
+  if (/execution of the overall finance process transformation/i.test(raw)) {
+    return "finance process transformation and execution"
+  }
+
+if (
+  normalized.length < 12 ||
+  /^(you will|collaborate with|work with|reports on|prepare reports on|moreover|the incumbent|support regional|responsibly manage|participate in)\b/i.test(normalized)
+) {
+  return ""
 }
 
+  return normalized
+}
 function capabilityPhrase(jobFact: string): string {
   const t = cleanJobFact(jobFact)
   if (!t) return ""
@@ -461,60 +492,159 @@ function evidenceLead(profileFact: string): string {
   return capitalizeClause(pf)
 }
 
-function interpretDirectProof(profileFact: string, jobFact: string) {
+function interpretDirectProof(profileFact: string, jobFact: string, matchKey?: string) {
   const pf = norm(profileFact)
   const capability = directCapabilityPhrase(jobFact)
+  const mk = norm(matchKey || "")
 
-  if (/emt experience|emergency medical technician|special events emt|clinical sales representative candidate with active emt experience|certified emergency medical technician/.test(pf)) {
-    if (/provider|clinical|procedure|utilization|surgical|medical/i.test(capability)) {
+  const hasCapability = capability.length > 0
+
+  if (mk === "clinical_patient_work") {
+    if (/emt experience|emergency medical technician|special events emt|certified emergency medical technician/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your EMT experience gives you credible clinical exposure for work that depends on ${capability}.`
+        )
+      }
+
       return sentence(
-        `Your EMT experience gives you credible clinical exposure for work that depends on ${capability}.`
+        "Your EMT experience gives you credible clinical exposure for a role that depends on provider-facing credibility and procedural support."
+      )
+    }
+
+    if (/physicians|medical teams|patient care reports|receiving medical personnel|medical equipment|hospital settings|outpatient clinical setting|patient consultations|treatment planning|operating room|orthopedic surgical procedures|clinical setting/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your clinical exposure gives you relevant proof for work that depends on ${capability}.`
+        )
+      }
+
+      return sentence(
+        "Your clinical exposure gives you relevant proof for a role that depends on comfort in medical environments and credibility with clinical stakeholders."
       )
     }
 
     return sentence(
-      "Your EMT experience gives you credible clinical exposure for a role that depends on provider-facing credibility and procedural support."
+      "Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments."
     )
   }
 
-  if (/physicians|medical teams|patient care reports|receiving medical personnel|medical equipment|hospital settings|outpatient clinical setting|patient consultations|treatment planning|operating room|orthopedic surgical procedures|clinical setting/.test(pf)) {
-    if (/provider|clinical|procedure|utilization|surgical|medical/i.test(capability)) {
+  if (mk === "strategy_problem_solving") {
+    if (/process transformation|process improvement|internal consulting|operations & strategy analyst|strategy analyst|post-merger integration|decision-making|prioritization|evaluating processes|recommendations for improvement/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your strategy and transformation experience gives you relevant proof for work that depends on ${capability}.`
+        )
+      }
+
       return sentence(
-        `Your clinical exposure gives you relevant proof for work that depends on ${capability}.`
+        "Your strategy and transformation experience gives you relevant proof for structured problem-solving and improvement work."
+      )
+    }
+
+    if (/market research|user research|consumer research|due diligence/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your market research and due diligence experience maps well to work that depends on ${capability}.`
+        )
+      }
+
+      return sentence(
+        "Your market research and due diligence experience maps well to the research and analytical work this role depends on."
       )
     }
 
     return sentence(
-      "Your clinical exposure gives you relevant proof for a role that depends on comfort in medical environments and credibility with clinical stakeholders."
+      "Your experience evaluating processes and recommending improvements aligns with the strategic problem-solving work this role requires."
     )
   }
 
-  if (/market research|user research|consumer research|due diligence/.test(pf)) {
-    if (/research|analysis|strategy|insight/i.test(capability)) {
+  if (mk === "operations_execution") {
+    if (/operations|workflow|process redesign|standardization|implementation|transformation|project management|performance improvement|cross-functional change|liaison|process mapping|documentation|raci|tracking initiatives|successful completion/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your operations and process transformation experience gives you relevant proof for work that depends on ${capability}.`
+        )
+      }
+
       return sentence(
-        `Your market research and due diligence experience maps well to work that depends on ${capability}.`
+        "Your operations and process transformation experience is relevant to a role that depends on execution, implementation, and process improvement."
       )
     }
 
     return sentence(
-      "Your market research and due diligence experience maps well to the research and analytical work this role depends on."
+      "Your experience implementing process improvements and coordinating initiatives aligns with the execution and transformation work this role requires."
     )
   }
 
-  if (/strategy|problem-solving|problem solving|consulting casework|m&a strategy/.test(pf)) {
-    if (/strategy|problem|analysis|planning/i.test(capability)) {
+  if (mk === "analysis_reporting") {
+    if (/financial analysis|dcf|p&l|sources and uses|modeling/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your financial analysis experience gives you strong analytical proof for work that depends on ${capability}.`
+        )
+      }
+
       return sentence(
-        `Your strategy and problem-solving experience gives you relevant proof for work that depends on ${capability}.`
+        "Your financial analysis experience gives you strong analytical proof that should translate well to this role."
+      )
+    }
+
+    if (/analysis|analytical|quantitative|modeling|data analysis|kpi|reporting|variance analysis/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your analytical and reporting experience provides strong proof for work that depends on ${capability}.`
+        )
+      }
+
+      return sentence(
+        "Your analytical and reporting experience provides strong proof for structured analysis and process-focused work."
       )
     }
 
     return sentence(
-      "Your strategy and problem-solving experience gives you relevant proof for the structured problem-solving this role requires."
+      "Your analytical and reporting experience provides strong proof for structured analysis and process-focused work."
     )
   }
 
-  if (/financial analysis|dcf|p&l|sources and uses|modeling/.test(pf)) {
-    if (/analysis|planning|reporting|financial/i.test(capability)) {
+  if (mk === "drafting_documentation" || mk === "communications_writing") {
+    if (/written report|data visualization|presenting investment insights|client presentations|recommendations|drafting|documentation|training materials/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your experience translating analysis into written deliverables and presentations aligns well with work that depends on ${capability}.`
+        )
+      }
+
+      return sentence(
+        "Your experience translating analysis into written deliverables and presentations aligns well with the communication and client-facing output expected in this role."
+      )
+    }
+
+    return sentence(
+      "Your written communication and documentation experience supports the deliverable and communication demands of this role."
+    )
+  }
+
+  if (mk === "client_commercial_work" || mk === "stakeholder_coordination") {
+    if (/client|stakeholder|senior stakeholders|firm executives|prospects|outreach/.test(pf)) {
+      if (hasCapability) {
+        return sentence(
+          `Your experience working directly with clients and stakeholders provides relevant proof for work that depends on ${capability}.`
+        )
+      }
+
+      return sentence(
+        "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers."
+      )
+    }
+
+    return sentence(
+      "Your client-facing and stakeholder experience provides relevant proof for collaborative, cross-functional work."
+    )
+  }
+
+  if (mk === "financial_analysis") {
+    if (hasCapability) {
       return sentence(
         `Your financial analysis experience gives you strong analytical proof for work that depends on ${capability}.`
       )
@@ -525,45 +655,68 @@ function interpretDirectProof(profileFact: string, jobFact: string) {
     )
   }
 
-  if (/written report|data visualization|presenting investment insights|client presentations|recommendations|drafting|documentation/.test(pf)) {
-    if (/presentation|communication|recommendation|client/i.test(capability)) {
+  if (mk === "consumer_research") {
+    if (hasCapability) {
       return sentence(
-        `Your experience translating analysis into written deliverables and presentations aligns well with work that depends on ${capability}.`
+        `Your research experience maps well to work that depends on ${capability}.`
       )
     }
 
     return sentence(
-      "Your experience translating analysis into written deliverables and presentations aligns well with the communication and client-facing output expected in this role."
+      "Your research experience maps well to the research and analytical work this role depends on."
+    )
+  }
+
+  if (/emt experience|emergency medical technician|special events emt|certified emergency medical technician/.test(pf)) {
+    return sentence(
+      "Your EMT experience gives you credible clinical exposure for provider-facing work."
+    )
+  }
+
+  if (/market research|user research|consumer research|due diligence/.test(pf)) {
+    return sentence(
+      "Your market research and due diligence experience maps well to research and analytical work."
+    )
+  }
+
+  if (/process transformation|process improvement|internal consulting|operations & strategy analyst|strategy analyst|post-merger integration/.test(pf)) {
+    return sentence(
+      "Your strategy and transformation experience gives you relevant proof for structured problem-solving and improvement work."
+    )
+  }
+
+  if (/operations|workflow|process redesign|standardization|implementation|transformation|project management|performance improvement/.test(pf)) {
+    return sentence(
+      "Your operations and process transformation experience is relevant to execution and process improvement work."
+    )
+  }
+
+  if (/financial analysis|dcf|p&l|sources and uses|modeling/.test(pf)) {
+    return sentence(
+      "Your financial analysis experience gives you strong analytical proof that should translate well to this role."
+    )
+  }
+
+  if (/written report|data visualization|client presentations|recommendations|drafting|documentation|training materials/.test(pf)) {
+    return sentence(
+      "Your experience translating analysis into written deliverables and presentations aligns well with the communication and deliverable expectations of this role."
     )
   }
 
   if (/client|stakeholder|senior stakeholders|firm executives|prospects|outreach/.test(pf)) {
-    if (/client|relationship|stakeholder|commercial|sales/i.test(capability)) {
-      return sentence(
-        `Your experience working directly with clients and stakeholders provides relevant proof for work that depends on ${capability}.`
-      )
-    }
-
     return sentence(
-      "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers."
+      "Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work."
     )
   }
 
-  if (/analysis|analytical|quantitative|modeling|data analysis/.test(pf)) {
-    if (/analysis|problem|strategy|planning/i.test(capability)) {
-      return sentence(
-        `Your analytical and quantitative work provides strong proof for work that depends on ${capability}.`
-      )
-    }
-
+  if (/analysis|analytical|quantitative|modeling|data analysis|kpi|reporting|variance analysis/.test(pf)) {
     return sentence(
-      "Your analytical and quantitative work provides strong proof for the structured analysis and problem-solving this role requires."
+      "Your analytical and reporting experience provides strong proof for structured analytical work."
     )
   }
 
   return ""
 }
-
 function interpretAdjacentProof(profileFact: string, jobFact: string): string {
   const lead = evidenceLead(profileFact)
   const jf = capabilityPhrase(jobFact)
@@ -764,15 +917,16 @@ function renderWhyBullet(
     return null
   }
 
-  if (!usable(jobFact) || !usable(profileFact)) return null
+if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
+  if (!profileFact) return null
+  return interpretDirectProof(profileFact, jobFact, w.match_key)
+}
 
-  if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
-    return interpretDirectProof(profileFact, jobFact)
-  }
+if (!usable(jobFact) || !usable(profileFact)) return null
 
-  if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
-    return interpretAdjacentProof(profileFact, jobFact)
-  }
+if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
+  return interpretAdjacentProof(profileFact, jobFact)
+}
 
   if (w.code === "WHY_EXECUTION_PROOF") {
     const lead = evidenceLead(profileFact)
@@ -1032,8 +1186,11 @@ export function renderBulletsV4(out: EvalOutput): {
     }
   }
 
-   const requiredWhyCount =
-    out.decision === "Priority Apply" || out.decision === "Apply" ? 3 : 1
+  const requiredWhyCount =
+  out.decision === "Priority Apply" ? 3 :
+  out.decision === "Apply" ? 3 :
+  out.decision === "Review" ? 2 :
+  1
 
   if (why.length < requiredWhyCount) {
     for (const item of deferredWhy) {
