@@ -4,15 +4,15 @@
     "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
     "score": 79,
     "decision_final": "Apply",
-    "why_bullets_joined": "Your clinical exposure gives you relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth | Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers | Your high-volume B2B sales experience gives you relevant commercial proof for a role that depends on relationship-building and field-facing execution",
+    "why_bullets_joined": "Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments | Your experience working directly with clients and stakeholders provides relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth | Your clinical exposure gives you relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth",
     "risk_bullets_joined": "Your background is relevant, but the resume does not yet make direct strategy and problem-solving proof especially explicit",
     "raw": {
       "decision": "Apply",
       "score": 79,
       "bullets": [
-        "Your clinical exposure gives you relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth",
-        "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers",
-        "Your high-volume B2B sales experience gives you relevant commercial proof for a role that depends on relationship-building and field-facing execution"
+        "Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments",
+        "Your experience working directly with clients and stakeholders provides relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth",
+        "Your clinical exposure gives you relevant proof for work that depends on clinical selling, provider-facing support, and utilization growth"
       ],
       "risk_flags": [
         "Your background is relevant, but the resume does not yet make direct strategy and problem-solving proof especially explicit"
@@ -1268,7 +1268,7 @@
     "label": "Will Friedman - RSM Strategy and Management Consulting Intern",
     "score": 78,
     "decision_final": "Apply",
-    "why_bullets_joined": "Your market research and due diligence experience maps well to the research and analytical work this role depends on | Your financial analysis experience gives you strong analytical proof for work that depends on benchmarking research and analysis for IT spending | Your experience translating analysis into written deliverables and presentations aligns well with work that depends on reports on consulting services performed for clients",
+    "why_bullets_joined": "Your market research and due diligence experience maps well to the research and analytical work this role depends on | Your financial analysis experience gives you strong analytical proof for work that depends on benchmarking research and analysis for IT spending | Your experience translating analysis into written deliverables and presentations aligns well with the communication and client-facing output expected in this role",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Apply",
@@ -1276,7 +1276,7 @@
       "bullets": [
         "Your market research and due diligence experience maps well to the research and analytical work this role depends on",
         "Your financial analysis experience gives you strong analytical proof for work that depends on benchmarking research and analysis for IT spending",
-        "Your experience translating analysis into written deliverables and presentations aligns well with work that depends on reports on consulting services performed for clients"
+        "Your experience translating analysis into written deliverables and presentations aligns well with the communication and client-facing output expected in this role"
       ],
       "risk_flags": [],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
@@ -2072,17 +2072,18 @@
     "id": "real-104",
     "label": "Catherine Lees - tarte Summer 2026 Marketing Internship",
     "score": 77,
-    "decision_final": "Review",
-    "why_bullets_joined": "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers",
+    "decision_final": "Apply",
+    "why_bullets_joined": "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers | Your written analysis and presentation work shows the kind of execution discipline this team will expect from someone stepping into the role",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Review",
+      "decision": "Apply",
       "score": 77,
       "bullets": [
-        "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers"
+        "Your experience working directly with clients and stakeholders provides relevant proof for a role that depends on collaboration, communication, and trust with decision-makers",
+        "Your written analysis and presentation work shows the kind of execution discipline this team will expect from someone stepping into the role"
       ],
       "risk_flags": [],
-      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -2727,17 +2728,17 @@
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -2746,17 +2747,17 @@
           }
         ]
       },
-      "icon": "⚠",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
         "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
-        "decision_initial": "Review",
-        "decision_after_gate": "Review",
-        "decision_final": "Review",
-        "why_count": 1,
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "why_count": 2,
         "risk_count": 0,
         "penalty_sum": 0,
-        "decision": "Review",
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -2789,14 +2790,14 @@
     "label": "William Friedman vs Mercer Summer Intern Analyst",
     "score": 86,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "Your market research and due diligence experience maps well to work that depends on research, analysis, and structured problem-solving | Your strategy and problem-solving experience gives you relevant proof for the structured problem-solving this role requires | Your experience translating analysis into written deliverables and presentations aligns well with work that depends on client-ready presentations and recommendations",
+    "why_bullets_joined": "Your research experience maps well to work that depends on research, analysis, and structured problem-solving | Your experience evaluating processes and recommending improvements aligns with the strategic problem-solving work this role requires | Your experience translating analysis into written deliverables and presentations aligns well with work that depends on client-ready presentations and recommendations",
     "risk_bullets_joined": "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston",
     "raw": {
       "decision": "Priority Apply",
       "score": 86,
       "bullets": [
-        "Your market research and due diligence experience maps well to work that depends on research, analysis, and structured problem-solving",
-        "Your strategy and problem-solving experience gives you relevant proof for the structured problem-solving this role requires",
+        "Your research experience maps well to work that depends on research, analysis, and structured problem-solving",
+        "Your experience evaluating processes and recommending improvements aligns with the strategic problem-solving work this role requires",
         "Your experience translating analysis into written deliverables and presentations aligns well with work that depends on client-ready presentations and recommendations"
       ],
       "risk_flags": [
@@ -3747,6 +3748,890 @@
           "used_raw_profile_text_fallback": false,
           "base_profile_text_len": 4186,
           "augmented_profile_text_len": 4481
+        }
+      }
+    }
+  },
+  {
+    "id": "real-106",
+    "label": null,
+    "score": 78,
+    "decision_final": "Review",
+    "why_bullets_joined": "Your strategy and transformation experience gives you relevant proof for structured problem-solving and improvement work | Your experience implementing process improvements and coordinating initiatives aligns with the execution and transformation work this role requires",
+    "risk_bullets_joined": "This role appears to be contract-based, which does not align with your preference for full-time roles",
+    "raw": {
+      "decision": "Review",
+      "score": 78,
+      "bullets": [
+        "Your strategy and transformation experience gives you relevant proof for structured problem-solving and improvement work",
+        "Your experience implementing process improvements and coordinating initiatives aligns with the execution and transformation work this role requires"
+      ],
+      "risk_flags": [
+        "This role appears to be contract-based, which does not align with your preference for full-time roles"
+      ],
+      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Moreover, the incumbent holds responsibility for evaluating current processes and making recommendations for improvement, while ensuring a solid communication strategy to keep all stakeholders involved and informed",
+          "profile_fact": "Terms And Conditions I understand that WRNSignal is designed to guide decision-making, prioritization, and strategy",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Monitors the progress of projects/initiatives and adjusts scope/strategy/timelines as needed to adapt to changes to ensure successful completion",
+          "profile_fact": "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 97,
+          "match_key": "strategy_problem_solving",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "The Senior Analyst, Finance Transformation – Process – Central (H) enables efficient and effective finance operations by planning, implementing, and tracking a variety of projects and initiatives to ensure their successful development, completion, and sustainability",
+          "profile_fact": "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 97,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "* The Senior Analyst, Finance Transformation - Process - Central (H) supports the execution of the overall finance process transformation for UHealth/MSOM through project management, performance improvement initiatives, and strategic communication",
+          "profile_fact": "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 96,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        }
+      ],
+      "risk_codes": [
+        {
+          "code": "RISK_CONTRACT",
+          "job_fact": "Posting indicates contract or temporary structure.",
+          "profile_fact": "You prefer full-time roles.",
+          "risk": "Role structure conflicts with your work-type preference.",
+          "severity": "medium",
+          "weight": -7.800000000000001
+        }
+      ],
+      "gate_triggered": {
+        "type": "floor_review",
+        "gateCode": "GATE_FLOOR_REVIEW_CONTRACT",
+        "detail": "Pref full-time vs contract"
+      },
+      "job_signals": {
+        "rawHash": "54b6b2a440620e1e",
+        "jobFamily": "Consulting",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": true
+        },
+        "function_tags": [
+          "operations_general",
+          "consulting_strategy"
+        ],
+        "signal_debug": {
+          "hits": {
+            "operations_execution": 7,
+            "strategy_problem_solving": 2
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": "Miami",
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": true,
+        "isHourly": false,
+        "yearsRequired": 5,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "f3b2c67ca75de1e2",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "The Senior Analyst, Finance Transformation – Process – Central (H) enables efficient and effective finance operations by planning, implementing, and tracking a variety of projects and initiatives to ensure their successful development, completion, and sustainability.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "de82cb948eba31b5",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "* The Senior Analyst, Finance Transformation - Process - Central (H) supports the execution of the overall finance process transformation for UHealth/MSOM through project management, performance improvement initiatives, and strategic communication.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "656c0cc939efc051",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Moreover, the incumbent holds responsibility for evaluating current processes and making recommendations for improvement, while ensuring a solid communication strategy to keep all stakeholders involved and informed.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "e477558d03c5d34b",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Monitors the progress of projects/initiatives and adjusts scope/strategy/timelines as needed to adapt to changes to ensure successful completion.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "a2fb5ccf916dc2a0",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Position: Senior Analyst, Finance Transformation - Process - Central",
+            "strength": 3,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "49f4cd6c57ae7368",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "* If you are a current Staff, Faculty or Temporary employee at the University of Miami, please click to log in to Workday to use the internal application process.",
+            "strength": 3,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "fe7b465171800476",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "To learn how to apply for a faculty or staff position using the Career worklet, please review this .The UHealth system at the University of Miami has an exciting opportunity for a full time Senior Analyst, Finance Transformation - Process in the UHealth Finance Department.",
+            "strength": 3,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Consulting"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "Boston",
+            "Miami",
+            "Chicago"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": true,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "excel"
+        ],
+        "gradYear": 2026,
+        "yearsExperienceApprox": 5,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "operations_general",
+          "consulting_strategy",
+          "sales_bd",
+          "finance_corp",
+          "data_analytics_bi",
+          "accounting_finops",
+          "communications_pr",
+          "legal_regulatory"
+        ],
+        "function_tag_evidence": {
+          "operations_general": [
+            "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
+            "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
+            "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "My strongest skills are systems thinking, communication, and cross-functional coordination.",
+            "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews."
+          ],
+          "consulting_strategy": [
+            "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
+            "Business and Finance Asset Management Consulting (Management/Strategy) Financial Services (General) Private Equity Venture Capital Wealth Management Professional Services (General)",
+            "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews.",
+            "Terms And Conditions I understand that WRNSignal is designed to guide decision-making, prioritization, and strategy."
+          ],
+          "sales_bd": [
+            "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
+            "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "Redesigned forecasting & revenue-tracking processes to improve margin, pipeline, & cash-flow visibility."
+          ],
+          "finance_corp": [
+            "Business and Finance Asset Management Consulting (Management/Strategy) Financial Services (General) Private Equity Venture Capital Wealth Management Professional Services (General)",
+            "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work"
+          ],
+          "data_analytics_bi": [
+            "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "Standardized cross-entity reporting, eliminating duplication & reducing errors by ~50% while strengthening data governance.",
+            "Supported U.S. - German tax compliance for corporate & partnership clients with > €200M in assets, ensuring accuracy across cross-border reporting requirements.",
+            "Supported post-merger organizational & proves integration for LAWA/WKH, aligning budgeting & reporting structures with parent-company standards."
+          ],
+          "accounting_finops": [
+            "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "Process transformation professional focused on modernizing finance, accounting, & operational systems in complex, regulated environments.",
+            "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "Change Management | ERP & Systems Enablement | Operational Controls, Governance, & Audit Readiness |",
+            "US Real Estate Tax Compliance Analyst at EY-Steuerberatungsgesellschaft Jan 2024– Aug 2024"
+          ],
+          "communications_pr": [
+            "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "Spearheaded ERP (1C) implementation, helping automate workflows, develop training materials & organizing system documentation."
+          ],
+          "legal_regulatory": [
+            "US Real Estate Tax Compliance Analyst at EY-Steuerberatungsgesellschaft Jan 2024– Aug 2024",
+            "Supported U.S. - German tax compliance for corporate & partnership clients with > €200M in assets, ensuring accuracy across cross-border reporting requirements.",
+            "Coordinated across international teams to resolve complex cross-border compliance tax issues, improving turnaround time by 30% & improving team productivity."
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "205c9e3fe1a47d67",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Supported U.S. - German tax compliance for corporate & partnership clients with > €200M in assets, ensuring accuracy across cross-border reporting requirements.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "30db6f4c5f239474",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Supported U.S. - German tax compliance for corporate & partnership clients with > €200M in assets, ensuring accuracy across cross-border reporting requirements.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "753cb47f93568f92",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Supported U.S. - German tax compliance for corporate & partnership clients with > €200M in assets, ensuring accuracy across cross-border reporting requirements.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "4589784143ee55c8",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Coordinated across international teams to resolve complex cross-border compliance tax issues, improving turnaround time by 30% & improving team productivity.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "381ebdd4edfae8b3",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Coordinated across international teams to resolve complex cross-border compliance tax issues, improving turnaround time by 30% & improving team productivity.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "4e96d816d5744400",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Supported post-merger organizational & proves integration for LAWA/WKH, aligning budgeting & reporting structures with parent-company standards.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "4bffe227a7b135d4",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "b0fd1e21cbbb5db8",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Terms And Conditions I understand that WRNSignal is designed to guide decision-making, prioritization, and strategy.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "3259b58672a9fcbc",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "8cc52b02cbeb4220",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "c9b970a61b0f9970",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "bb37fca79ad0cec0",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "daf484c661c968c3",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "ef93dca134069c61",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "36121374c823bc86",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "f1df754afac6ab17",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "2634472b81af282c",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Standardized cross-entity reporting, eliminating duplication & reducing errors by ~50% while strengthening data governance.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "a4b1d1ee158e7a63",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Performed budget variance analysis 24M+ RUB infrastructure projects, partnering with senior leadership in decision making.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "a54eb9576ef6e4b9",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "776891bffd45695f",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "1b5a4114b149a2d8",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "Business and Finance Asset Management Consulting (Management/Strategy) Financial Services (General) Private Equity Venture Capital Wealth Management Professional Services (General)",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "0618dcdabed14fef",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "dded7aeb4ba70e43",
+            "kind": "function",
+            "key": "strategy_problem_solving",
+            "label": "strategy, synthesis, and problem-solving work",
+            "snippet": "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "consulting_strategy"
+          },
+          {
+            "id": "c0f0efa65c24f754",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Proven record leading end-to-end process redesign, close optimization, & cross-functional change initiatives across global organizations.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "bb6ab26b449c7233",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "c42ebc7337f6461d",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Finance & Accounting Process Optimization | End-to-End Process Redesign & Standardization | Cross-Functional Transformation & Stakeholder Alignment | KPI Definition, Reporting, & Performance Tracking | Process Mapping, Documentation, & RACI Design |",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "a36c4b8b4131ac29",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "US Real Estate Tax Compliance Analyst at EY-Steuerberatungsgesellschaft Jan 2024– Aug 2024",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "77939942b5005256",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "US Real Estate Tax Compliance Analyst at EY-Steuerberatungsgesellschaft Jan 2024– Aug 2024",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "e2539a6c4bca2c49",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Business and Finance Asset Management Consulting (Management/Strategy) Financial Services (General) Private Equity Venture Capital Wealth Management Professional Services (General)",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "ca555fbaf503d5c1",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "My strongest skills are systems thinking, communication, and cross-functional coordination.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "be5d38c66fe3a958",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "02c0517848364f90",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Process transformation professional focused on modernizing finance, accounting, & operational systems in complex, regulated environments.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "0206209a5b2e963e",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Proven record leading end-to-end process redesign, close optimization, & cross-functional change initiatives across global organizations.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "eee2d8ef6bd074b4",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Change Management | ERP & Systems Enablement | Operational Controls, Governance, & Audit Readiness |",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "2ebc1b1c2937c623",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Implemented first budgeting & approval framework for acquired entities, creating a proactive expense management process.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "f0e7d7578f8696e4",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Serve as primary liaison between operations & leadership, driving change management & cross-functional alignment.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "ecd4caab6ca5c97f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Merger Organization & Process Specialist May 2016 – Aug 2023",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "16ce88bdef8348f5",
+            "kind": "tool",
+            "key": "excel",
+            "label": "excel tool usage",
+            "snippet": "Tools: Excel (X/V Lookup, Index Match, Pivot Tables & Charts, Sum/Count/Average Ifs, Power Query, Data Validation, Scenario Tables & Forecast Models).",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "6b3a1e1c76d2cdd1",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "I learn best in environments with strong peer groups, mentorship, and opportunities for collaboration.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "6a6931ac7296d0c2",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f4f9e45d07d34d21",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "3cc66b5606933b72",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "My strongest skills are systems thinking, communication, and cross-functional coordination.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "b69a62d2472352a7",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Process transformation professional focused on modernizing finance, accounting, & operational systems in complex, regulated environments.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "093051c32a6b32d4",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Lead cross-functional post-merger integration of two acquired entities, standardizing finance, HR, purchasing, & administrative processes to improve scalability & control.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "4c62d94232c17c5f",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Lead cross-functional post-merger integration of two acquired entities, standardizing finance, HR, purchasing, & administrative processes to improve scalability & control.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "6efb006823934256",
+            "kind": "stakeholder",
+            "key": "client_commercial_work",
+            "label": "client-facing, sales, or commercial support work",
+            "snippet": "Redesigned forecasting & revenue-tracking processes to improve margin, pipeline, & cash-flow visibility.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "4a7f0a7d8a2fd292",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Serve as primary liaison between operations & leadership, driving change management & cross-functional alignment.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "ccffb7487ed5c78a",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Spearheaded ERP (1C) implementation, helping automate workflows, develop training materials & organizing system documentation.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "480c298db506798a",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Tools: Excel (X/V Lookup, Index Match, Pivot Tables & Charts, Sum/Count/Average Ifs, Power Query, Data Validation, Scenario Tables & Forecast Models).",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "c3afd8fabbdfe41c",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Financial & Process Systems (ERP (1C), GoSystems, CSV/API/ASCII Integrations)",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 78,
+        "clamped_score": 78,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "penalty_sum",
+            "points": -8,
+            "note": "7.800000000000001"
+          }
+        ]
+      },
+      "icon": "⚠",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Review",
+        "decision_final": "Review",
+        "why_count": 2,
+        "risk_count": 1,
+        "penalty_sum": 7.800000000000001,
+        "decision": "Review",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 98
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "strategy_problem_solving",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 97
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 97
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 96
+          }
+        ],
+        "risk_codes_in": [
+          {
+            "code": "RISK_CONTRACT",
+            "severity": "medium"
+          }
+        ],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 8462,
+          "augmented_profile_text_len": 8748
         }
       }
     }
