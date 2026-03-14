@@ -76,7 +76,8 @@ function enforceSignalStyle(text: string) {
   return String(text || "")
     .replace(/—/g, ", ")
     .replace(/–/g, ", ")
-    .replace(/\s{2,}/g, " ")
+    .replace(/[ \t]{2,}/g, " ")   // collapse spaces but NOT newlines
+    .replace(/\n{3,}/g, "\n\n")   // normalize paragraph spacing
     .trim()
 }
 
