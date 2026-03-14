@@ -72,6 +72,14 @@ function safeJsonParse(raw: string) {
   }
 }
 
+function enforceSignalStyle(text: string) {
+  return String(text || "")
+    .replace(/—/g, ", ")
+    .replace(/–/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+}
+
 function isNonEmptyString(x: any): x is string {
   return typeof x === "string" && x.trim().length > 0
 }
@@ -269,15 +277,18 @@ function summarizePositioning(positioning: any) {
         .filter((x: any) => x.before || x.after || x.rationale)
     : []
 
-  const keyword_analysis = positioning?.keyword_analysis && typeof positioning.keyword_analysis === "object"
-    ? {
-        coverage_pct:
-          typeof positioning.keyword_analysis.coverage_pct === "number"
-            ? positioning.keyword_analysis.coverage_pct
-            : null,
-        missing_high_priority: asStringArray(positioning.keyword_analysis.missing_high_priority).slice(0, 8),
-      }
-    : null
+  const keyword_analysis =
+    positioning?.keyword_analysis && typeof positioning.keyword_analysis === "object"
+      ? {
+          coverage_pct:
+            typeof positioning.keyword_analysis.coverage_pct === "number"
+              ? positioning.keyword_analysis.coverage_pct
+              : null,
+          missing_high_priority: asStringArray(
+            positioning.keyword_analysis.missing_high_priority
+          ).slice(0, 8),
+        }
+      : null
 
   if (
     !role_angle.label &&
@@ -320,7 +331,10 @@ export async function POST(req: Request) {
         writingSample = extractWritingSample(profileRow)
       }
     } catch (profileErr: any) {
-      console.warn("client_profiles select threw in coverletter:", profileErr?.message || String(profileErr))
+      console.warn(
+        "client_profiles select threw in coverletter:",
+        profileErr?.message || String(profileErr)
+      )
     }
 
     const fingerprintPayload = {
@@ -340,7 +354,8 @@ export async function POST(req: Request) {
       },
     }
 
-    const { fingerprint_hash, fingerprint_code } = buildCoverletterFingerprint(fingerprintPayload)
+    const { fingerprint_hash, fingerprint_code } =
+      buildCoverletterFingerprint(fingerprintPayload)
 
     const { data: existingRun, error: findErr } = await supabaseAdmin
       .from("coverletter_runs")
@@ -460,8 +475,10 @@ Return JSON only. No markdown. No commentary.
         ? String((parsed as any).letter).trim()
         : String(raw || "").trim()
 
+    const sanitizedLetter = enforceSignalStyle(letter)
+
     const finalResult = {
-      letter,
+      letter: sanitizedLetter,
       contact,
       context_used: {
         jobfit: Boolean(jobfitContext),
