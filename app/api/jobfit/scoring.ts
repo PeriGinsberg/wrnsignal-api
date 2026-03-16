@@ -15,8 +15,8 @@ import type {
   WhyCode,
 } from "./signals"
 
-export const SCORING_V4_STAMP =
-  "SCORING_V4_STAMP__2026_03_07__EVIDENCE_MATCH_PIPELINE__B"
+export const SCORING_V5_STAMP =
+  "SCORING_V5_STAMP__2026_03_14__CAPABILITY_COVERAGE_AND_DIRECTNESS"
 
 export type Penalty = {
   key: PenaltyKey
@@ -53,6 +53,15 @@ type WhyEvidenceMatch = {
   profile_fact: string
   note: string
   weight: number
+  coverageScore: number
+}
+
+type RequirementCoverage = {
+  jobUnit: JobRequirementUnit
+  bestMatch: WhyEvidenceMatch | null
+  coverageScore: number
+  adequate: boolean
+  nearMiss: boolean
 }
 
 const ADJACENCY: Record<string, string[]> = {
@@ -64,15 +73,48 @@ const ADJACENCY: Record<string, string[]> = {
   analysis_reporting: ["financial_analysis", "performance_optimization", "consumer_research"],
   performance_optimization: ["analysis_reporting", "content_execution"],
   product_positioning: ["brand_messaging", "communications_writing"],
-  client_commercial_work: ["stakeholder_coordination", "financial_analysis"],
+
+  prospecting_pipeline_management: ["account_management", "territory_execution", "client_commercial_work"],
+  account_management: ["prospecting_pipeline_management", "post_sale_support", "client_commercial_work"],
+  territory_execution: ["account_management", "hospital_or_environment", "prospecting_pipeline_management"],
+  crm_usage: [],
+  post_sale_support: ["account_management", "product_training_enablement"],
+  product_training_enablement: ["post_sale_support", "clinical_stakeholder_fluency"],
+  hospital_or_environment: ["clinical_stakeholder_fluency", "clinical_patient_work"],
+  clinical_stakeholder_fluency: ["hospital_or_environment", "clinical_patient_work", "product_training_enablement"],
+  med_device_industry_knowledge: ["hospital_or_environment", "product_training_enablement"],
+
+  client_commercial_work: ["stakeholder_coordination", "account_management", "prospecting_pipeline_management"],
   policy_regulatory_research: ["drafting_documentation", "analysis_reporting", "communications_writing"],
-  financial_analysis: ["analysis_reporting", "client_commercial_work"],
+  financial_analysis: ["analysis_reporting"],
   accounting_operations: ["analysis_reporting", "operations_execution"],
-   operations_execution: ["stakeholder_coordination", "analysis_reporting", "drafting_documentation", "policy_regulatory_research"],
+  operations_execution: ["stakeholder_coordination", "analysis_reporting", "drafting_documentation"],
   strategy_problem_solving: ["analysis_reporting", "consumer_research", "stakeholder_coordination"],
-  stakeholder_coordination: ["operations_execution", "client_commercial_work", "communications_writing"],
+  stakeholder_coordination: ["operations_execution", "communications_writing", "account_management"],
   drafting_documentation: ["communications_writing", "policy_regulatory_research"],
+  clinical_patient_work: ["hospital_or_environment", "clinical_stakeholder_fluency"],
 }
+
+const DIRECT_PROOF_REQUIRED_KEYS = new Set([
+  "prospecting_pipeline_management",
+  "account_management",
+  "territory_execution",
+  "crm_usage",
+  "post_sale_support",
+  "product_training_enablement",
+  "med_device_industry_knowledge",
+])
+
+const OWNERSHIP_KEYS = new Set(["account_management", "territory_execution"])
+const SYSTEM_KEYS = new Set(["crm_usage"])
+const COMMERCIAL_EXECUTION_KEYS = new Set([
+  "prospecting_pipeline_management",
+  "account_management",
+  "territory_execution",
+  "post_sale_support",
+  "product_training_enablement",
+  "med_device_industry_knowledge",
+])
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n))
@@ -146,6 +188,9 @@ function hasAdjacentToolProof(profileTools: string[], missingTool: string): bool
   if (m === "tableau" || m === "power bi") return p.includes("excel") || p.includes("sql")
   if (m === "sql") return p.includes("python") || p.includes("r") || p.includes("excel")
   if (m === "google analytics") return p.includes("excel") || p.includes("sql")
+  if (m === "crm") return p.includes("salesforce") || p.includes("hubspot")
+  if (m === "salesforce") return p.includes("crm") || p.includes("hubspot")
+  if (m === "hubspot") return p.includes("crm") || p.includes("salesforce")
 
   return false
 }
@@ -227,6 +272,94 @@ function dedupeRiskCodes(risks: RiskCode[]): RiskCode[] {
   return out
 }
 
+function evidenceShapeCompatible(jobUnit: JobRequirementUnit, profileUnit: ProfileEvidenceUnit): {
+  compatible: boolean
+  degradeToAdjacent: boolean
+  boost: number
+} {
+  const j = jobUnit.key as string
+  const p = norm(profileUnit.key)
+  const text = norm(profileUnit.snippet)
+
+  if (j !== p) {
+    return { compatible: true, degradeToAdjacent: false, boost: 0 }
+  }
+
+  if (j === "crm_usage") {
+    const explicit = /\b(crm|salesforce|hubspot|customer relationship management|pipeline tracking|opportunity tracking)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: !explicit, boost: explicit ? 6 : -8 }
+  }
+
+  if (j === "territory_execution") {
+    const explicit = /\b(territory|regional accounts|field sales|onsite customer visits|cover cases|assigned territory)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: !explicit, boost: explicit ? 5 : -8 }
+  }
+
+  if (j === "account_management") {
+    const explicit = /\b(account management|book of business|managed accounts|maintained accounts|customer success|account support)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: !explicit, boost: explicit ? 4 : -6 }
+  }
+
+  if (j === "post_sale_support") {
+    const explicit = /\b(post-sale|post sale|follow-up|follow up|implementation support|customer onboarding|replenishment|renewal support)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: !explicit, boost: explicit ? 4 : -6 }
+  }
+
+  if (j === "product_training_enablement") {
+    const explicit = /\b(training|trained|demo|demonstration|in-service|product intro|product introduction|education sessions)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: !explicit, boost: explicit ? 5 : -7 }
+  }
+
+  if (j === "med_device_industry_knowledge") {
+    const explicit = /\b(medical device|device sales|implant sales|orthopedic device|device portfolio|competitive device knowledge)\b/i.test(
+      profileUnit.snippet
+    )
+
+    const purelyClinical =
+      profileUnit.functionTag === "premed_clinical" &&
+      !explicit
+
+    return {
+      compatible: explicit,
+      degradeToAdjacent: !explicit || purelyClinical,
+      boost: explicit ? 5 : -16,
+    }
+  }
+
+  if (j === "client_commercial_work") {
+    const adminOnly = /\b(scheduling client meetings|maintaining client communication|client meetings)\b/i.test(
+      profileUnit.snippet
+    )
+    if (adminOnly) return { compatible: false, degradeToAdjacent: true, boost: -7 }
+  }
+
+  if (j === "hospital_or_environment") {
+    const explicit = /\b(operating room|orthopedic|surgical|hospital|emt|surgeon|physician-facing|physician facing)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: false, boost: explicit ? 3 : -3 }
+  }
+
+  if (j === "clinical_stakeholder_fluency") {
+    const explicit = /\b(physician|surgeon|provider|clinical staff|worked with physicians|worked with surgeons)\b/i.test(
+      profileUnit.snippet
+    )
+    return { compatible: explicit, degradeToAdjacent: !explicit, boost: explicit ? 3 : -4 }
+  }
+
+  return { compatible: true, degradeToAdjacent: false, boost: 0 }
+}
+
 function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProfileSignals): WhyEvidenceMatch[] {
   const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
   const profileUnits = Array.isArray(profile.profile_evidence_units) ? profile.profile_evidence_units : []
@@ -244,8 +377,17 @@ function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProf
 
       if (!matchStrength) continue
 
-      const base =
-        matchStrength === "direct" ? 78 : 62
+      const shape = evidenceShapeCompatible(ju, pu)
+
+      if (matchStrength === "direct" && shape.degradeToAdjacent) {
+        matchStrength = "adjacent"
+      }
+
+      if (DIRECT_PROOF_REQUIRED_KEYS.has(ju.key) && matchStrength === "direct" && !shape.compatible) {
+        matchStrength = "adjacent"
+      }
+
+      const base = matchStrength === "direct" ? 78 : 58
 
       const kindBonus =
         ju.kind === "function" ? 10 :
@@ -257,8 +399,16 @@ function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProf
 
       const requirednessBonus = ju.requiredness === "core" ? 10 : 4
       const strengthBonus = Math.min(10, Math.floor((ju.strength + pu.strength) / 2))
+      const weight = clamp(base + kindBonus + requirednessBonus + strengthBonus + shape.boost, 0, 120)
 
-      const weight = base + kindBonus + requirednessBonus + strengthBonus
+      const coverageScore = clamp(
+        (matchStrength === "direct" ? 72 : 48) +
+          (ju.requiredness === "core" ? 8 : 4) +
+          Math.min(8, Math.floor(pu.strength / 2)) +
+          shape.boost,
+        0,
+        100
+      )
 
       const code =
         ju.kind === "tool"
@@ -283,6 +433,7 @@ function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProf
             ? "Profile proof directly matches a concrete job requirement."
             : "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
         weight,
+        coverageScore,
       })
     }
   }
@@ -290,84 +441,68 @@ function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProf
   return dedupeByMatch(matches).sort((a, b) => b.weight - a.weight)
 }
 
-function buildMajorGapRisks(
-  job: StructuredJobSignals,
-  allMatches: WhyEvidenceMatch[]
-): RiskCode[] {
+function buildCoverage(job: StructuredJobSignals, allMatches: WhyEvidenceMatch[]): RequirementCoverage[] {
   const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
 
-  const matchedKeys = new Set(
-    allMatches
-      .map((m) => norm(m.match_key || ""))
-      .filter(Boolean)
-  )
+  return jobUnits.map((ju) => {
+    const matchesForUnit = allMatches
+      .filter((m) => m.job_unit.id === ju.id)
+      .sort((a, b) => b.coverageScore - a.coverageScore)
 
-  const majorKinds = new Set(["function", "execution", "deliverable", "stakeholder"])
+    const bestMatch = matchesForUnit[0] || null
+    const minimumCoverage =
+      ju.requiredness === "core"
+        ? DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
+          ? 74
+          : 64
+        : DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
+        ? 66
+        : 56
 
-  const unmatchedMajorUnits = jobUnits.filter((ju) => {
-    const key = norm(ju.key || "")
-    if (!key) return false
-    if (matchedKeys.has(key)) return false
-    if (!majorKinds.has(ju.kind)) return false
-    if (!(ju.requiredness === "core" || ju.strength >= 8)) return false
-    return true
-  })
+    const nearMissFloor =
+      ju.requiredness === "core" ? minimumCoverage - 18 : minimumCoverage - 14
 
-  const deduped = new Map<string, JobRequirementUnit>()
-  for (const ju of unmatchedMajorUnits) {
-    const key = norm(ju.key || "")
-    if (!key || deduped.has(key)) continue
-    deduped.set(key, ju)
-  }
+    const coverageScore = bestMatch?.coverageScore || 0
+    const adequate = coverageScore >= minimumCoverage
+    const nearMiss = !adequate && coverageScore >= nearMissFloor
 
-  const unmatchedRisks: RiskCode[] = Array.from(deduped.values())
-    .sort((a, b) => {
-      const aCore = a.requiredness === "core" ? 1 : 0
-      const bCore = b.requiredness === "core" ? 1 : 0
-      if (bCore !== aCore) return bCore - aCore
-      return b.strength - a.strength
-    })
-    .slice(0, 2)
-    .map((ju) => ({
-      code: "RISK_MISSING_PROOF" as const,
-      job_fact: ju.label,
-      profile_fact: null,
-      risk: "The role emphasizes work where your profile does not yet show clear direct proof.",
-      severity: ju.requiredness === "core" ? "high" as const : "medium" as const,
-      weight: 0,
-    }))
-
-  const adjacentOnlyRisks: RiskCode[] = []
-
-  const bestMatchStrengthForKey = (key: string): MatchStrength | null => {
-    const keyNorm = norm(key || "")
-    const matchesForKey = allMatches.filter((m) => norm(m.match_key || "") === keyNorm)
-    if (matchesForKey.some((m) => m.match_strength === "direct")) return "direct"
-    if (matchesForKey.some((m) => m.match_strength === "adjacent")) return "adjacent"
-    return null
-  }
-
-  for (const ju of jobUnits) {
-    const key = norm(ju.key || "")
-    if (!key) continue
-
-    // Engine-level rule: adjacent-only strategy proof should still surface a risk.
-    if (key === "strategy_problem_solving") {
-      const best = bestMatchStrengthForKey(key)
-      if (best === "adjacent") {
-        adjacentOnlyRisks.push({
-          code: "RISK_MISSING_PROOF",
-          job_fact: ju.label,
-          profile_fact: null,
-          risk: "The role expects stronger direct proof than your background currently shows.",
-          severity: ju.requiredness === "core" ? "high" : "medium",
-          weight: 0,
-        })
-      }
+    return {
+      jobUnit: ju,
+      bestMatch,
+      coverageScore,
+      adequate,
+      nearMiss,
     }
-  }
+  })
+}
 
-  return [...unmatchedRisks, ...adjacentOnlyRisks]
+function buildMajorGapRisks(job: StructuredJobSignals, coverage: RequirementCoverage[]): RiskCode[] {
+  const majorKinds = new Set(["function", "execution", "deliverable", "stakeholder", "tool"])
+
+  const gapUnits = coverage
+    .filter((c) => {
+      if (!majorKinds.has(c.jobUnit.kind)) return false
+      if (!(c.jobUnit.requiredness === "core" || c.jobUnit.strength >= 8)) return false
+      return !c.adequate
+    })
+    .sort((a, b) => {
+      const aCore = a.jobUnit.requiredness === "core" ? 1 : 0
+      const bCore = b.jobUnit.requiredness === "core" ? 1 : 0
+      if (bCore !== aCore) return bCore - aCore
+      return b.jobUnit.strength - a.jobUnit.strength
+    })
+    .slice(0, 5)
+
+  return gapUnits.map((c) => ({
+    code: "RISK_MISSING_PROOF" as const,
+    job_fact: c.jobUnit.label,
+    profile_fact: c.bestMatch?.profile_fact || null,
+    risk: c.nearMiss
+      ? "You show adjacent evidence here, but not enough direct proof for the way this role uses it."
+      : "The role emphasizes work where your profile does not yet show clear direct proof.",
+    severity: c.jobUnit.requiredness === "core" ? "high" as const : "medium" as const,
+    weight: 0,
+  }))
 }
 
 function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenceMatch[] {
@@ -389,14 +524,15 @@ function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenc
       else if (m.match_kind === "tool") p += 8
 
       if (m.code === "WHY_DIRECT_EXPERIENCE_PROOF") p += 20
-      if (m.match_key === "policy_regulatory_research") p += 12
       if (m.match_key === "product_positioning") p += 10
+      if (m.match_key === "hospital_or_environment") p += 8
+      if (m.match_key === "clinical_stakeholder_fluency") p += 8
 
       return p + (m.weight || 0)
     }
 
     return priority(b) - priority(a)
-  })	
+  })
 
   function badProfileFact(s: string): boolean {
     const t = norm(s)
@@ -410,7 +546,7 @@ function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenc
     if (/@/.test(t)) return true
     if (/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/.test(t)) return true
     if (/\|\s*[A-Z][a-z]+/.test(s)) return true
-if (/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\b.*\b20\d{2}\b/.test(s)) return true
+    if (/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\b.*\b20\d{2}\b/.test(s)) return true
     return false
   }
 
@@ -428,21 +564,22 @@ if (/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\b.*\b20\d{2}\b/.te
     return false
   }
 
-for (const match of ranked) {
+  for (const match of ranked) {
     if (picked.length >= max) break
     if (!match.job_fact || !match.profile_fact) continue
     if (badProfileFact(match.profile_fact)) continue
     if (badJobFact(match.job_fact)) continue
-    if (usedKeys.has(match.match_key)) {
-  const alreadyPickedSameKey = picked.filter((p) => p.match_key === match.match_key)
-  const allowSecondSameKey =
-    alreadyPickedSameKey.length === 1 &&
-    alreadyPickedSameKey[0].profile_fact !== match.profile_fact &&
-    alreadyPickedSameKey[0].job_fact !== match.job_fact &&
-    match.match_strength === "direct"
 
-  if (!allowSecondSameKey) continue
-}
+    if (usedKeys.has(match.match_key)) {
+      const alreadyPickedSameKey = picked.filter((p) => p.match_key === match.match_key)
+      const allowSecondSameKey =
+        alreadyPickedSameKey.length === 1 &&
+        alreadyPickedSameKey[0].profile_fact !== match.profile_fact &&
+        alreadyPickedSameKey[0].job_fact !== match.job_fact &&
+        match.match_strength === "direct"
+
+      if (!allowSecondSameKey) continue
+    }
 
     const kindKey = match.match_kind
     if ((kindCounts[kindKey] || 0) >= 2 && match.match_kind !== "function") continue
@@ -467,6 +604,7 @@ for (const match of ranked) {
 
   return picked.slice(0, max)
 }
+
 function whyCodesFromMatches(matches: WhyEvidenceMatch[]): WhyCode[] {
   return matches.map((m) => ({
     code: m.code,
@@ -480,23 +618,43 @@ function whyCodesFromMatches(matches: WhyEvidenceMatch[]): WhyCode[] {
   }))
 }
 
-function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals, whyMatches: WhyEvidenceMatch[]): number {
-  let base = 58
+function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals, whyMatches: WhyEvidenceMatch[], coverage: RequirementCoverage[]): number {
+  let base = 56
 
   const familyMatch = profile.targetFamilies.includes(job.jobFamily)
   if (familyMatch) base += 10
 
+  if (!familyMatch && profile.targetFamilies.length > 0 && job.jobFamily !== "Other") {
+    base -= 8
+  }
+
   const directCount = whyMatches.filter((m) => m.match_strength === "direct").length
   const adjacentCount = whyMatches.filter((m) => m.match_strength === "adjacent").length
   const toolCount = whyMatches.filter((m) => m.match_kind === "tool").length
-  const coreProofCount = whyMatches.filter((m) => m.job_unit.requiredness === "core").length
+  const adequateCoverageCount = coverage.filter((c) => c.adequate).length
+  const coreCoverageCount = coverage.filter((c) => c.adequate && c.jobUnit.requiredness === "core").length
 
-  base += Math.min(18, directCount * 6)
-  base += Math.min(8, adjacentCount * 3)
+  base += Math.min(14, directCount * 5)
+  base += Math.min(6, adjacentCount * 2)
   base += Math.min(4, toolCount * 2)
-  base += Math.min(6, coreProofCount * 2)
+  base += Math.min(6, adequateCoverageCount)
+  base += Math.min(5, coreCoverageCount)
 
   return clamp(base, POLICY.score.minScore, POLICY.score.maxScore)
+}
+
+function capabilityPenaltyKey(jobKey: string): PenaltyKey {
+  if (SYSTEM_KEYS.has(jobKey)) return "missing_required_system_proof"
+  if (OWNERSHIP_KEYS.has(jobKey)) return "missing_ownership_scope_proof"
+  if (COMMERCIAL_EXECUTION_KEYS.has(jobKey)) return "missing_commercial_execution_proof"
+  return "missing_core_capability_direct_proof"
+}
+
+function capabilitySeverity(jobUnit: JobRequirementUnit, nearMiss: boolean): Severity {
+  if (jobUnit.requiredness === "core" && !nearMiss) return "high"
+  if (jobUnit.requiredness === "core" && nearMiss) return "medium"
+  if (!nearMiss) return "medium"
+  return "low"
 }
 
 export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfileSignals): ScoreResult {
@@ -504,7 +662,8 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const riskOnlyCodes: RiskCode[] = []
 
   const allMatches = buildEvidenceMatches(job, profile)
-  const majorGapRisks = buildMajorGapRisks(job, allMatches)
+  const coverage = buildCoverage(job, allMatches)
+  const majorGapRisks = buildMajorGapRisks(job, coverage)
   const selectedMatches = selectWhyMatches(allMatches, 3, 6)
   const whyCodes = whyCodesFromMatches(selectedMatches)
 
@@ -556,6 +715,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       }
     }
   }
+
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
     const k: PenaltyKey = "location_mismatch_constrained"
     const amt = computePenaltyAmount(k)
@@ -792,6 +952,32 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
+  // New engine-level uncovered capability penalties
+  for (const c of coverage) {
+    if (c.adequate) continue
+    if (!(c.jobUnit.requiredness === "core" || c.jobUnit.strength >= 8)) continue
+    if (c.jobUnit.kind === "tool") continue
+
+    const key = capabilityPenaltyKey(c.jobUnit.key)
+    const amt = computePenaltyAmount(key) * (c.nearMiss ? 0.55 : 1)
+
+    penalties.push({
+      key,
+      amount: amt,
+      note: `Missing proof for ${c.jobUnit.key} (coverage=${c.coverageScore})`,
+      risk: {
+        code: "RISK_MISSING_PROOF",
+        job_fact: c.jobUnit.label,
+        profile_fact: c.bestMatch?.profile_fact || null,
+        risk: c.nearMiss
+          ? "You have adjacent evidence here, but not enough direct proof for this role's requirement."
+          : "This role expects clearer direct proof in this capability than your profile currently shows.",
+        severity: capabilitySeverity(c.jobUnit, c.nearMiss),
+        weight: -amt,
+      },
+    })
+  }
+
   const counts: Record<string, number> = {}
   const capped: Penalty[] = []
 
@@ -805,11 +991,11 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const diminished = applyDiminishingReturns(rawPenaltySum)
   const penaltySum = Math.min(POLICY.score.penaltyStackCap, diminished)
 
-  const base = computeBaseScore(job, profile, selectedMatches)
+  const base = computeBaseScore(job, profile, selectedMatches, coverage)
   let score = base - penaltySum
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
 
-   const riskCodes = dedupeRiskCodes([...capped.map((p) => p.risk), ...riskOnlyCodes, ...majorGapRisks])
+  const riskCodes = dedupeRiskCodes([...capped.map((p) => p.risk), ...riskOnlyCodes, ...majorGapRisks])
 
   return {
     score: Math.round(score),

@@ -12,6 +12,10 @@ export type PenaltyKey =
   | "experience_years_gap"
   | "mba_required"
   | "grad_window_mismatch"
+  | "missing_core_capability_direct_proof"
+  | "missing_commercial_execution_proof"
+  | "missing_required_system_proof"
+  | "missing_ownership_scope_proof"
 
 export type Severity = 1 | 2 | 3 | 4 | 5
 
@@ -26,7 +30,7 @@ export type PenaltyPolicy = {
  * Extraction config MUST match what extract.ts reads:
  * - extraction.location.*
  * - extraction.internship.*
- * - extraction.analytics.* (if used)
+ * - extraction.analytics.*
  * - extraction.government/sales/contract/hourly/mba.*
  * - extraction.years.patterns
  * - extraction.grad.patterns
@@ -49,6 +53,8 @@ export type ExtractionPolicy = {
   analytics: {
     heavyKeywords: string[]
     lightKeywords: string[]
+    optInRoleKeywords: string[]
+    optOutRoleKeywords: string[]
   }
   government: { keywords: string[] }
   sales: { keywords: string[] }
@@ -81,7 +87,7 @@ export type JobFitPolicy = {
 }
 
 export const POLICY: JobFitPolicy = {
-  version: "jobfit_policy_v3_2026-02-25",
+  version: "jobfit_policy_v4_2026-03-14",
 
   score: {
     maxScore: 97,
@@ -166,6 +172,30 @@ export const POLICY: JobFitPolicy = {
       multiplier: 4.0,
       maxStackCount: 1,
     },
+    missing_core_capability_direct_proof: {
+      label: "Missing core direct capability proof",
+      severity: 4,
+      multiplier: 2.8,
+      maxStackCount: 3,
+    },
+    missing_commercial_execution_proof: {
+      label: "Missing commercial execution proof",
+      severity: 4,
+      multiplier: 2.6,
+      maxStackCount: 3,
+    },
+    missing_required_system_proof: {
+      label: "Missing required system proof",
+      severity: 3,
+      multiplier: 2.4,
+      maxStackCount: 2,
+    },
+    missing_ownership_scope_proof: {
+      label: "Missing ownership scope proof",
+      severity: 4,
+      multiplier: 2.7,
+      maxStackCount: 2,
+    },
   },
 
   tools: {
@@ -200,6 +230,8 @@ export const POLICY: JobFitPolicy = {
       RISK_GRAD_WINDOW: "The graduation timing does not match what the posting is screening for.",
       RISK_REPORTING_SIGNALS:
         "The posting emphasizes reporting and measurement ownership that may be a stretch.",
+      RISK_MISSING_PROOF:
+        "The role emphasizes capabilities where your profile does not yet show strong enough proof.",
     },
     pass: {
       GATE_GRAD_MISMATCH: "Pass. The posting is screening for a different graduation window.",
@@ -273,12 +305,50 @@ export const POLICY: JobFitPolicy = {
         "social listening tools",
       ],
       lightKeywords: ["reporting", "insights", "measurement", "tracking", "metrics"],
+      optInRoleKeywords: [
+        "analyst",
+        "analytics",
+        "business intelligence",
+        "data science",
+        "data analyst",
+        "insights",
+        "measurement",
+        "marketing science",
+      ],
+      optOutRoleKeywords: [
+        "territory",
+        "sales rep",
+        "associate sales",
+        "field sales",
+        "account support",
+        "hospital",
+        "or",
+        "operating room",
+        "clinical support",
+        "post-sale",
+        "in-service",
+        "product training",
+      ],
     },
 
     government: { keywords: ["clearance", "dod", "government", "federal", "public sector", "gs-"] },
-    sales: { keywords: ["quota", "commission", "closing", "cold call", "pipeline", "hunter", "business development"] },
+    sales: {
+      keywords: [
+        "quota",
+        "commission",
+        "closing",
+        "cold call",
+        "pipeline",
+        "hunter",
+        "business development",
+        "territory",
+        "account ownership",
+        "sales rep",
+        "field sales",
+      ],
+    },
     contract: { keywords: ["contract", "contractor", "1099", "temporary", "temp"] },
-   hourly: { keywords: ["hourly", "/hour", "per hour", "/hr"] },
+    hourly: { keywords: ["hourly", "/hour", "per hour", "/hr"] },
     mba: { keywords: ["mba required", "master of business administration required"] },
 
     years: {

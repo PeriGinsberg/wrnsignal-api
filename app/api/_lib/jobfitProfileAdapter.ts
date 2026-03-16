@@ -113,38 +113,109 @@ function pickAllowedCities(args: {
 /* ------------------------------ families inference ------------------------------ */
 
 function inferTargetFamilies(profileText: string, targetRoles?: string | null): JobFamily[] {
-  const t = lower(profileText + " " + (targetRoles || ""))
+  const roles = lower(targetRoles || "")
+  const text = lower(profileText || "")
 
-  // Order matters: consulting/strategy first so it doesn't get swallowed by finance keywords.
+  const out: JobFamily[] = []
+
+  // Primary inference should come from target roles, not broad resume text
   if (
-    t.includes("consulting") ||
-    t.includes("management consulting") ||
-    t.includes("strategy") ||
-    t.includes("case interview")
+    roles.includes("sales") ||
+    roles.includes("business development") ||
+    roles.includes("account executive") ||
+    roles.includes("account manager") ||
+    roles.includes("clinical sales") ||
+    roles.includes("medical sales") ||
+    roles.includes("orthopedic sales") ||
+    roles.includes("associate sales representative") ||
+    roles.includes("sales representative")
   ) {
-    return ["Consulting"]
+    out.push("Sales")
   }
 
-  if (t.includes("marketing") || t.includes("brand") || t.includes("communications") || t.includes("pr"))
-    return ["Marketing"]
+  if (
+    roles.includes("clinical") ||
+    roles.includes("medical") ||
+    roles.includes("premed") ||
+    roles.includes("pre-med") ||
+    roles.includes("healthcare")
+  ) {
+    out.push("PreMed")
+  }
 
-  if (t.includes("accounting") || t.includes("accountant")) return ["Accounting"]
+  if (
+    roles.includes("consulting") ||
+    roles.includes("management consulting") ||
+    roles.includes("strategy consulting")
+  ) {
+    out.push("Consulting")
+  }
 
-  if (t.includes("finance") || t.includes("asset management") || t.includes("investment")) return ["Finance"]
+  if (
+    roles.includes("marketing") ||
+    roles.includes("brand") ||
+    roles.includes("communications") ||
+    roles.includes("pr") ||
+    roles.includes("content") ||
+    roles.includes("social media")
+  ) {
+    out.push("Marketing")
+  }
 
-  if (t.includes("analytics") || t.includes("analyst") || t.includes("data")) return ["Analytics"]
+  if (
+    roles.includes("finance") ||
+    roles.includes("investment") ||
+    roles.includes("asset management") ||
+    roles.includes("financial analyst") ||
+    roles.includes("commercial real estate")
+  ) {
+    out.push("Finance")
+  }
 
-  if (t.includes("sales") || t.includes("business development")) return ["Sales"]
+  if (
+    roles.includes("accounting") ||
+    roles.includes("audit") ||
+    roles.includes("tax") ||
+    roles.includes("assurance")
+  ) {
+    out.push("Accounting")
+  }
 
-  if (t.includes("government") || t.includes("public sector")) return ["Government"]
+  if (
+    roles.includes("analytics") ||
+    roles.includes("data analyst") ||
+    roles.includes("business intelligence") ||
+    roles.includes("tableau") ||
+    roles.includes("power bi") ||
+    roles.includes("sql")
+  ) {
+    out.push("Analytics")
+  }
 
-  if (t.includes("clinical") || t.includes("patient") || t.includes("pre-med") || t.includes("research assistant"))
-    return ["PreMed"]
+  if (
+    roles.includes("government") ||
+    roles.includes("public policy") ||
+    roles.includes("government affairs") ||
+    roles.includes("legislative")
+  ) {
+    out.push("Government")
+  }
 
-  return ["Other"]
-}
+  // Fallback to profile text only if targetRoles is empty
+  if (out.length === 0 && !roles) {
+    if (text.includes("sales") || text.includes("business development")) out.push("Sales")
+    if (text.includes("clinical") || text.includes("patient") || text.includes("medical device")) out.push("PreMed")
+    if (text.includes("consulting") || text.includes("management consulting")) out.push("Consulting")
+    if (text.includes("marketing") || text.includes("brand")) out.push("Marketing")
+    if (text.includes("finance") || text.includes("investment")) out.push("Finance")
+    if (text.includes("accounting") || text.includes("accountant")) out.push("Accounting")
+    if (text.includes("analytics") || text.includes("data")) out.push("Analytics")
+    if (text.includes("government") || text.includes("public sector")) out.push("Government")
+  }
 
-/* ------------------------------ constraints inference ------------------------------ */
+  const unique = Array.from(new Set(out))
+  return unique.length ? unique.slice(0, 2) : ["Other"]
+}/* ------------------------------ constraints inference ------------------------------ */
 
 function inferConstraints(profileText: string): ProfileConstraints {
   const t = lower(profileText)

@@ -31,6 +31,12 @@ type CapabilityRule = {
   jobPhrases: string[]
   adjacentKeys?: string[]
   aliases?: string[]
+  profileWeakPhrases?: string[]
+  jobWeakPhrases?: string[]
+  profileBoostPhrases?: string[]
+  jobBoostPhrases?: string[]
+  minMatches?: number
+  suppressAnalyticsHeavy?: boolean
 }
 
 const CAPABILITY_RULES: CapabilityRule[] = [
@@ -260,32 +266,304 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     ],
     adjacentKeys: ["brand_messaging"],
   },
+
+  // Commercial capability split
   {
-    key: "client_commercial_work",
-    label: "client-facing, sales, or commercial support work",
+    key: "prospecting_pipeline_management",
+    label: "prospecting, outreach, and pipeline management",
+    kind: "execution",
+    functionTag: "sales_bd",
+    profilePhrases: [
+      "prospect",
+      "prospecting",
+      "pipeline",
+      "cold calling",
+      "cold call",
+      "outreach",
+      "lead generation",
+      "lead gen",
+      "new business",
+      "b2b prospects",
+      "sales presentations",
+      "closed new accounts",
+      "closed new advertising accounts",
+    ],
+    profileWeakPhrases: ["client communication", "client meetings", "scheduling client meetings"],
+    jobPhrases: [
+      "prospect",
+      "prospecting",
+      "pipeline",
+      "cold call",
+      "cold calling",
+      "outreach",
+      "lead generation",
+      "new business",
+      "sales calls",
+      "sales presentations",
+    ],
+    adjacentKeys: ["account_management", "territory_execution"],
+  },
+  {
+    key: "account_management",
+    label: "account support and account management",
     kind: "stakeholder",
     functionTag: "sales_bd",
     profilePhrases: [
+      "account management",
+      "account support",
+      "customer relationship",
+      "customer success",
+      "client portfolio",
+      "book of business",
+      "maintained accounts",
+      "supported accounts",
+    ],
+    profileWeakPhrases: ["client communication", "client meetings", "scheduling client meetings"],
+    jobPhrases: [
+      "account management",
+      "account support",
+      "support accounts",
+      "maintain accounts",
+      "account growth",
+      "customer accounts",
+      "book of business",
+    ],
+    adjacentKeys: ["prospecting_pipeline_management", "post_sale_support"],
+  },
+  {
+    key: "territory_execution",
+    label: "territory coverage and field sales execution",
+    kind: "execution",
+    functionTag: "sales_bd",
+    profilePhrases: [
+      "territory",
+      "territory management",
+      "territory coverage",
+      "regional accounts",
+      "field sales",
+      "travel to accounts",
+      "onsite customer visits",
+    ],
+    jobPhrases: [
+      "territory",
+      "territory coverage",
+      "territory management",
+      "field sales",
+      "assigned territory",
+      "regional sales",
+      "drive utilization",
+      "grow utilization",
+      "onsite account visits",
+      "cover cases",
+    ],
+    adjacentKeys: ["account_management", "hospital_or_environment"],
+  },
+  {
+    key: "crm_usage",
+    label: "crm usage and sales system hygiene",
+    kind: "tool",
+    functionTag: "sales_bd",
+    profilePhrases: [
+      "crm",
+      "salesforce",
+      "hubspot",
+      "lead tracking",
+      "opportunity tracking",
+      "pipeline tracking",
+      "customer database",
+    ],
+    profileWeakPhrases: ["excel", "spreadsheets"],
+    jobPhrases: [
+      "crm",
+      "salesforce",
+      "hubspot",
+      "customer relationship management",
+      "pipeline tracking",
+      "opportunity management",
+    ],
+    adjacentKeys: [],
+  },
+  {
+    key: "post_sale_support",
+    label: "post-sale support, follow-up, and replenishment support",
+    kind: "execution",
+    functionTag: "sales_bd",
+    profilePhrases: [
+      "post-sale",
+      "post sale",
+      "follow-up",
+      "customer follow-up",
+      "implementation support",
+      "client onboarding",
+      "customer onboarding",
+      "renewal support",
+      "replenishment",
+      "after-sale support",
+      "after sales support",
+    ],
+    jobPhrases: [
+      "post-sale",
+      "post sale",
+      "follow-up",
+      "follow up",
+      "replenishment",
+      "implementation support",
+      "customer support after purchase",
+      "account follow-up",
+      "support after sale",
+    ],
+    adjacentKeys: ["account_management", "product_training_enablement"],
+  },
+  {
+    key: "product_training_enablement",
+    label: "product training, in-service support, and product introductions",
+    kind: "deliverable",
+    functionTag: "sales_bd",
+    profilePhrases: [
+      "product demo",
+      "product demonstrations",
+      "training",
+      "trained",
+      "education sessions",
+      "onboarding sessions",
+      "in-service",
+      "presented products",
+      "product intro",
+      "introduced products",
+    ],
+    jobPhrases: [
+      "in-service",
+      "in service",
+      "product training",
+      "train staff",
+      "educate staff",
+      "product intro",
+      "product introduction",
+      "demo",
+      "demonstration",
+      "case support",
+    ],
+    adjacentKeys: ["post_sale_support", "clinical_stakeholder_fluency"],
+  },
+  {
+    key: "hospital_or_environment",
+    label: "hospital, operating room, or procedural environment exposure",
+    kind: "function",
+    functionTag: "premed_clinical",
+    profilePhrases: [
+      "operating room",
+      "or",
+      "orthopedic",
+      "surgical",
+      "hospital",
+      "trauma center",
+      "emt",
+      "physician-facing",
+      "physician facing",
+      "surgeon",
+      "sterile field",
+      "scrub",
+    ],
+    jobPhrases: [
+      "operating room",
+      "or",
+      "orthopedic",
+      "surgical",
+      "hospital",
+      "case coverage",
+      "procedural environment",
+      "surgeon",
+      "sterile field",
+    ],
+    adjacentKeys: ["clinical_stakeholder_fluency"],
+    suppressAnalyticsHeavy: true,
+  },
+  {
+    key: "clinical_stakeholder_fluency",
+    label: "clinical stakeholder communication and physician-facing fluency",
+    kind: "stakeholder",
+    functionTag: "premed_clinical",
+    profilePhrases: [
+      "physician-facing",
+      "physician facing",
+      "provider communication",
+      "clinical staff",
+      "surgeon interaction",
+      "patient communication",
+      "care team",
+      "worked with physicians",
+      "worked with surgeons",
+    ],
+    profileWeakPhrases: ["patient"],
+    jobPhrases: [
+      "physician",
+      "surgeon",
+      "clinical team",
+      "hospital staff",
+      "work with surgeons",
+      "work with physicians",
+      "support clinicians",
+    ],
+    adjacentKeys: ["hospital_or_environment", "product_training_enablement"],
+    suppressAnalyticsHeavy: true,
+  },
+  {
+    key: "med_device_industry_knowledge",
+    label: "medical device industry, product, and competitive knowledge",
+    kind: "function",
+    functionTag: "sales_bd",
+    profilePhrases: [
+      "medical device sales",
+      "device sales",
+      "implant sales",
+      "orthopedic device",
+      "capital equipment sales",
+      "competitive device knowledge",
+      "device portfolio",
+      "clinical sales specialist",
+      "medical device industry",
+    ],
+    profileWeakPhrases: ["emt", "clinical", "hospital", "patient care"],
+    jobPhrases: [
+      "medical device industry",
+      "device industry",
+      "competitive trends",
+      "competitive knowledge",
+      "acumed customers",
+      "product portfolio",
+      "device product knowledge",
+      "industry knowledge",
+    ],
+    adjacentKeys: ["hospital_or_environment", "product_training_enablement"],
+  },
+
+  // Legacy / generic commercial bucket kept but de-emphasized
+  {
+    key: "client_commercial_work",
+    label: "generic client-facing or commercial support work",
+    kind: "stakeholder",
+    functionTag: "sales_bd",
+minMatches: 2,
+    profilePhrases: [
       "client",
       "client-facing",
-      "business development",
-      "sales",
       "relationship building",
-      "account management",
-      "pipeline",
       "stakeholder management",
+    ],
+    profileWeakPhrases: [
+      "client communication",
+      "maintaining client communication",
+      "scheduling client meetings",
+      "client meetings",
     ],
     jobPhrases: [
       "client",
       "client-facing",
-      "business development",
-      "sales",
       "relationship building",
-      "account management",
-      "pipeline",
     ],
-    adjacentKeys: ["stakeholder_coordination"],
+    adjacentKeys: ["stakeholder_coordination", "account_management"],
   },
+
   {
     key: "policy_regulatory_research",
     label: "legal, policy, and regulatory research",
@@ -342,7 +620,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "equity research",
       "credit analysis",
     ],
-    adjacentKeys: ["analysis_reporting", "client_commercial_work"],
+    adjacentKeys: ["analysis_reporting"],
   },
   {
     key: "accounting_operations",
@@ -391,7 +669,8 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "scribe",
       "care team",
     ],
-    adjacentKeys: [],
+    adjacentKeys: ["hospital_or_environment", "clinical_stakeholder_fluency"],
+    suppressAnalyticsHeavy: true,
   },
   {
     key: "operations_execution",
@@ -419,31 +698,31 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     adjacentKeys: ["stakeholder_coordination", "analysis_reporting"],
   },
   {
-    key: "strategy_problem_solving",
-    label: "strategy, synthesis, and problem-solving work",
-    kind: "function",
-    functionTag: "consulting_strategy",
-    profilePhrases: [
-      "consulting",
-      "strategy",
-      "recommendation",
-      "problem solving",
-      "market research",
-      "hypothesis",
-      "case competition",
-      "presentation",
-    ],
-    jobPhrases: [
-      "consulting",
-      "strategy",
-      "recommendation",
-      "problem solving",
-      "market research",
-      "hypothesis",
-      "presentation",
-    ],
-    adjacentKeys: ["analysis_reporting", "stakeholder_coordination"],
-  },
+  key: "strategy_problem_solving",
+  label: "strategy, synthesis, and problem-solving work",
+  kind: "function",
+  functionTag: "consulting_strategy",
+  minMatches: 2,
+  profilePhrases: [
+    "consulting",
+    "strategy",
+    "recommendation",
+    "problem solving",
+    "market research",
+    "hypothesis",
+    "case competition",
+    "presentation",
+  ],
+  jobPhrases: [
+    "consulting",
+    "strategy",
+    "recommendation",
+    "problem solving",
+    "hypothesis",
+    "presentation",
+  ],
+  adjacentKeys: ["analysis_reporting", "consumer_research", "stakeholder_coordination"],
+},
   {
     key: "stakeholder_coordination",
     label: "stakeholder coordination and cross-functional execution",
@@ -456,7 +735,6 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "collaboration",
       "partnered with",
       "worked with",
-      "client meetings",
       "presented to",
     ],
     jobPhrases: [
@@ -469,7 +747,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "present to",
       "collaborate with",
     ],
-    adjacentKeys: ["client_commercial_work", "operations_execution"],
+    adjacentKeys: ["operations_execution", "account_management"],
   },
   {
     key: "drafting_documentation",
@@ -515,12 +793,22 @@ const TOOL_ALIASES: Record<string, string[]> = {
   indesign: ["indesign", "adobe indesign"],
   canva: ["canva"],
   hubspot: ["hubspot"],
-  salesforce: ["salesforce"],
+  salesforce: ["salesforce", "sales force"],
   shopify: ["shopify"],
   "google analytics": ["google analytics", "ga4"],
   spss: ["spss"],
   autocad: ["autocad"],
+  crm: ["crm", "customer relationship management"],
 }
+
+const NEVER_CORE_KEYS = new Set([
+  "clinical_patient_work",
+  "drafting_documentation",
+  "communications_writing",
+  "consumer_research",
+  "analysis_reporting",
+  "strategy_problem_solving",
+])
 
 function stableHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex").slice(0, 16)
@@ -569,11 +857,16 @@ function countHits(hay: string, phrases: string[]): number {
   return phrases.reduce((acc, p) => acc + (includesPhrase(hay, p) ? 1 : 0), 0)
 }
 
+function countWeakHits(hay: string, phrases?: string[]): number {
+  if (!phrases?.length) return 0
+  return countHits(hay, phrases)
+}
+
 function splitEvidenceLines(text: string): string[] {
   const raw = String(text || "")
   if (!raw.trim()) return []
 
-   const actionSplit =
+  const actionSplit =
     /(?=\b(Conducted|Reviewed|Drafted|Prepared|Presented|Analyzed|Researched|Coordinated|Supported|Executed|Created|Developed|Managed|Led|Produced|Tracked|Wrote|Collaborated|Applied|Organized)\b)/
 
   const chunks = raw
@@ -617,13 +910,17 @@ function scoreProfileLine(line: string): number {
   if (t.length >= 55) score += 1
 
   if (
-    /\b(conducted|analyzed|built|created|developed|managed|supported|coordinated|prepared|drafted|reviewed|researched|presented|executed|optimized|led|designed|translated)\b/i.test(
+    /\b(conducted|analyzed|built|created|developed|managed|supported|coordinated|prepared|drafted|reviewed|researched|presented|executed|optimized|led|designed|translated|closed|sold|prospected|trained)\b/i.test(
       line
     )
   ) score += 4
 
   if (/\b(with|using|for|across|including|through)\b/i.test(line)) score += 1
-  if (/\b(client|stakeholder|campaign|portfolio|policy|regulatory|reporting|brand|content|research|analysis)\b/i.test(line)) score += 2
+  if (
+    /\b(client|stakeholder|campaign|portfolio|policy|regulatory|reporting|brand|content|research|analysis|sales|pipeline|hospital|surgical|physician|crm)\b/i.test(
+      line
+    )
+  ) score += 2
   if (/\b\d+%|\$\d+|\d+\+?\b/.test(line)) score += 1
 
   if (/\b(education|coursework|gpa|dean'?s list|honors|scholarship|university)\b/i.test(line)) score -= 4
@@ -641,13 +938,17 @@ function scoreJobLine(line: string): number {
 
   if (t.length >= 30) score += 2
   if (
-    /\b(responsible for|responsibilities include|you will|will be|support|conduct|analyze|develop|manage|prepare|execute|coordinate|collaborate|assist|drive|build|create|own)\b/i.test(
+    /\b(responsible for|responsibilities include|you will|will be|support|conduct|analyze|develop|manage|prepare|execute|coordinate|collaborate|assist|drive|build|create|own|train|educate|cover)\b/i.test(
       line
     )
   ) score += 4
 
   if (/\b(required|preferred|must|proficient|experience with|ability to)\b/i.test(line)) score += 2
-  if (/\b(research|analysis|reporting|campaign|content|design|financial|client|stakeholder|policy|regulatory|operations)\b/i.test(line)) score += 2
+  if (
+    /\b(research|analysis|reporting|campaign|content|design|financial|client|stakeholder|policy|regulatory|operations|sales|crm|territory|hospital|surgical|surgeon)\b/i.test(
+      line
+    )
+  ) score += 2
 
   if (/\b(equal opportunity|benefits|compensation may vary|about us|who we are|our values)\b/i.test(line)) score -= 5
   if (t.length < 20) score -= 3
@@ -696,8 +997,8 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
 
   for (const tag of tags) {
     if (tag === "government_cleared") score.Government += 5
-    if (tag === "sales_bd") score.Sales += 5
-    if (tag === "premed_clinical") score.PreMed += 5
+    if (tag === "sales_bd") score.Sales += 6
+    if (tag === "premed_clinical") score.PreMed += 4
 
     if (tag === "finance_corp") score.Finance += 5
     if (tag === "accounting_finops") score.Accounting += 5
@@ -711,19 +1012,23 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "growth_performance") score.Marketing += 4
     if (tag === "product_marketing") score.Marketing += 5
 
-    if (tag === "consulting_strategy") score.Consulting += 4
-    if (tag === "operations_general") score.Consulting += 3
+    if (tag === "consulting_strategy") score.Consulting += 3
+    if (tag === "operations_general") score.Consulting += 1
 
     if (tag === "legal_regulatory" || tag === "creative_design" || tag === "other") score.Other += 4
   }
 
+  if (score.Sales > 0 && score.PreMed > 0) {
+    score.Sales += 2
+  }
+
   const ordered: JobFamily[] = [
+    "Sales",
     "Marketing",
     "Consulting",
     "Finance",
     "Accounting",
     "Analytics",
-    "Sales",
     "Government",
     "PreMed",
     "Other",
@@ -817,9 +1122,109 @@ function dedupeUnits<T extends { id: string }>(items: T[]): T[] {
 }
 
 function detectRequiredness(line: string): "core" | "supporting" {
-  return /\b(required|must|responsible for|you will|core|primary|lead|own)\b/i.test(line)
-    ? "core"
-    : "supporting"
+  const l = line.toLowerCase()
+
+  // Always supporting for softer enablement / support language
+  if (
+    l.includes("product training") ||
+    l.includes("in-service") ||
+    l.includes("post-sale") ||
+    l.includes("replenishment") ||
+    l.includes("crm") ||
+    l.includes("communication") ||
+    l.includes("documentation") ||
+    l.includes("reporting") ||
+    l.includes("research") ||
+    l.includes("presentation") ||
+    l.includes("excel") ||
+    l.includes("word") ||
+    l.includes("photoshop") ||
+    l.includes("illustrator") ||
+    l.includes("indesign")
+  ) {
+    return "supporting"
+  }
+
+  // Strategy / consumer / clinical language should not become core by default
+  if (
+    l.includes("strategy") ||
+    l.includes("consumer") ||
+    l.includes("patient")
+  ) {
+    return "supporting"
+  }
+
+  // Core only for strong ownership / required execution language
+  if (
+    /\b(required|must|responsible for|you will|primary responsibility|own|lead|territory)\b/i.test(l)
+  ) {
+    return "core"
+  }
+
+  return "supporting"
+}
+
+function profileRuleStrength(
+  rule: CapabilityRule,
+  cleaned: string,
+  lineScore: number,
+  hits: number
+): number {
+  const n = norm(cleaned)
+  let strength = lineScore + hits + (rule.kind === "function" ? 1 : 0)
+
+  const weakHits = countWeakHits(n, rule.profileWeakPhrases)
+  const boostHits = countHits(n, rule.profileBoostPhrases || [])
+
+  strength += boostHits
+  strength -= weakHits * 3
+
+  if (
+    rule.key === "client_commercial_work" &&
+    /\b(scheduling client meetings|maintaining client communication|client meetings)\b/i.test(cleaned)
+  ) {
+    strength -= 4
+  }
+
+  if (
+    rule.key === "clinical_stakeholder_fluency" &&
+    /\b(patient)\b/i.test(cleaned) &&
+    !/\b(physician|surgeon|provider|clinical staff)\b/i.test(cleaned)
+  ) {
+    strength -= 2
+  }
+
+  return Math.max(1, Math.min(10, strength))
+}
+
+function jobRuleStrength(
+  rule: CapabilityRule,
+  cleaned: string,
+  lineScore: number,
+  hits: number
+): number {
+  const n = norm(cleaned)
+  let strength = lineScore + hits + (rule.kind === "function" ? 1 : 0)
+  const weakHits = countWeakHits(n, rule.jobWeakPhrases)
+  const boostHits = countHits(n, rule.jobBoostPhrases || [])
+  strength += boostHits
+  strength -= weakHits * 2
+
+  if (
+    rule.key === "strategy_problem_solving" &&
+    /\b(sales strategy|territory strategy|drive utilization|field strategy)\b/i.test(cleaned)
+  ) {
+    strength -= 2
+  }
+
+  if (
+    rule.key === "analysis_reporting" &&
+    /\b(salesforce|crm|territory|operating room|surgeon|hospital)\b/i.test(cleaned)
+  ) {
+    strength -= 2
+  }
+
+  return Math.max(1, Math.min(10, strength))
 }
 
 function buildUnitsFromLines(
@@ -845,7 +1250,8 @@ function buildUnitsFromLines(
 
     const lineScore = side === "job" ? scoreJobLine(cleaned) : scoreProfileLine(cleaned)
     if (lineScore < 2) continue
-        if (
+
+    if (
       side === "job" &&
       (
         /\bideal candidates will have\b/i.test(cleaned) ||
@@ -855,14 +1261,47 @@ function buildUnitsFromLines(
       continue
     }
 
+    if (
+      side === "job" &&
+      (
+        /\bcode of conduct\b/i.test(cleaned) ||
+        /\bprivacy and confidentiality\b/i.test(cleaned) ||
+        /\bacting with ethics and integrity\b/i.test(cleaned) ||
+        /\breporting non-compliance\b/i.test(cleaned) ||
+        /\badhering to applicable federal, state and local laws and regulations\b/i.test(cleaned) ||
+        /\baccreditation and licenser requirements\b/i.test(cleaned) ||
+        /\bpolicies and procedures\b/i.test(cleaned)
+      )
+    ) {
+      continue
+    }
+
     for (const rule of CAPABILITY_RULES) {
       const phrases = side === "job" ? rule.jobPhrases : rule.profilePhrases
       const hits = countHits(n, phrases)
-      if (hits <= 0) continue
+           const minMatches = rule.minMatches ?? 1
+      if (hits < minMatches) continue
+
+      if (
+        side === "job" &&
+        rule.key === "strategy_problem_solving" &&
+        (
+          /\bmarketing strategy and tactics\b/i.test(cleaned) ||
+          /\bsales techniques\b/i.test(cleaned) ||
+          /\bsales control systems\b/i.test(cleaned) ||
+          /\btargeted sales strategy\b/i.test(cleaned) ||
+          /\bexecute business plans\b/i.test(cleaned)
+        )
+      ) {
+        continue
+      }
 
       debugHits[rule.key] = (debugHits[rule.key] || 0) + hits
 
-      const strength = Math.min(10, lineScore + hits + (rule.kind === "function" ? 1 : 0))
+      const strength =
+        side === "job"
+          ? jobRuleStrength(rule, cleaned, lineScore, hits)
+          : profileRuleStrength(rule, cleaned, lineScore, hits)
 
       if (rule.functionTag) {
         functionTags.add(rule.functionTag)
@@ -1015,14 +1454,24 @@ function detectLocationMode(jobText: string): {
   return { mode, constrained, city, evidence: evidenceLine }
 }
 
-function detectAnalytics(jobText: string, tags: FunctionTag[]): { isHeavy: boolean; isLight: boolean } {
+function detectAnalytics(jobText: string, tags: FunctionTag[], jobUnits: JobRequirementUnit[]): { isHeavy: boolean; isLight: boolean } {
   const t = norm(jobText)
-  const heavyKeywords = asStringArray((POLICY as any)?.extraction?.analytics?.heavyKeywords).map(norm)
-  const lightKeywords = asStringArray((POLICY as any)?.extraction?.analytics?.lightKeywords).map(norm)
+  const cfg = (POLICY as any)?.extraction?.analytics || {}
+  const heavyKeywords = asStringArray(cfg.heavyKeywords).map(norm)
+  const lightKeywords = asStringArray(cfg.lightKeywords).map(norm)
+  const optInRoleKeywords = asStringArray(cfg.optInRoleKeywords).map(norm)
+  const optOutRoleKeywords = asStringArray(cfg.optOutRoleKeywords).map(norm)
 
-  const heavyByKeywords = includesAny(t, heavyKeywords)
-  const heavyByTags = tags.includes("data_analytics_bi") || tags.includes("consumer_insights_research")
-  const isHeavy = heavyByKeywords || heavyByTags
+  const heavyKeywordHits = heavyKeywords.filter((k) => includesPhrase(t, k)).length
+  const optInHits = optInRoleKeywords.filter((k) => includesPhrase(t, k)).length
+  const optOutHits = optOutRoleKeywords.filter((k) => includesPhrase(t, k)).length
+
+  const analyticsUnitCount = jobUnits.filter(
+    (u) => u.key === "analysis_reporting" || u.key === "consumer_research"
+  ).length
+
+  const heavyByTags = tags.includes("data_analytics_bi") && analyticsUnitCount >= 2
+  const isHeavy = (heavyKeywordHits >= 2 || optInHits >= 1 || heavyByTags) && optOutHits === 0
   const isLight = !isHeavy && includesAny(t, lightKeywords)
 
   return { isHeavy, isLight }
@@ -1157,7 +1606,7 @@ function inferYearsExperienceApprox(profileText: string): number | null {
 
   const roleSignals = splitEvidenceLines(profileText).filter(
     (line) =>
-      /\b(intern|internship|analyst|assistant|coordinator|associate|manager|emt|clerk|specialist)\b/i.test(line)
+      /\b(intern|internship|analyst|assistant|coordinator|associate|manager|emt|clerk|specialist|sales)\b/i.test(line)
   ).length
 
   if (roleSignals >= 5) return 2
@@ -1195,7 +1644,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const built = buildUnitsFromLines(lines, "job")
   const functionTags = built.functionTags
   const jobFamily = familyFromFunctionTags(functionTags)
-  const analytics = detectAnalytics(jobTextRaw, functionTags)
+  const analytics = detectAnalytics(jobTextRaw, functionTags, built.jobUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
   const gradYearHint = extractGradYearHint(normalized)
@@ -1207,8 +1656,30 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const hourlyKeywords = asStringArray((POLICY as any)?.extraction?.hourly?.keywords).map(norm)
 
   const mbaRequired = includesAny(normalized, mbaKeywords)
-  const isGovernment = includesAny(normalized, govKeywords) || functionTags.includes("government_cleared")
-  const isSalesHeavy = includesAny(normalized, salesKeywords) || functionTags.includes("sales_bd")
+
+const isGovernment =
+  functionTags.includes("government_cleared") ||
+  /\b(federal government|state government|county government|city government|municipal government|public sector agency|government agency|department of|ministry of)\b/i.test(normalized)
+
+  const explicitSalesEvidence =
+    built.jobUnits.filter((u) =>
+      [
+        "prospecting_pipeline_management",
+        "account_management",
+        "territory_execution",
+        "crm_usage",
+        "post_sale_support",
+        "product_training_enablement",
+        "med_device_industry_knowledge",
+        "client_commercial_work",
+      ].includes(u.key)
+    ).length >= 2
+
+  const isSalesHeavy =
+    includesAny(normalized, salesKeywords) ||
+    explicitSalesEvidence ||
+    functionTags.includes("sales_bd")
+
   const isContract = includesAny(normalized, contractKeywords)
   const isHourly = includesAny(normalized, hourlyKeywords) || /\$\s*\d+(\.\d+)?\s*\/\s*(hr|hour)\b/i.test(jobTextRaw)
 
@@ -1228,6 +1699,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
       notes: [
         "Requirement units are evidence-first and line-anchored.",
         "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+        "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
       ],
     },
     location,
@@ -1241,7 +1713,17 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     requiredTools: required,
     preferredTools: preferred,
     reportingSignals: { strong: reportingStrong },
-    requirement_units: built.jobUnits.sort((a, b) => b.strength - a.strength),
+requirement_units: Array.from(
+  new Map(
+    built.jobUnits
+      .sort((a, b) => b.strength - a.strength)
+      .map((u) => [u.key, u] as const)
+  ).values()
+).map((u) =>
+  NEVER_CORE_KEYS.has(u.key)
+    ? { ...u, requiredness: "supporting" as const }
+    : u
+),
     internship: detectInternshipSignals(jobTextRaw),
   }
 }
@@ -1264,7 +1746,7 @@ export function extractProfileSignals(
   const baseFamilies = inferTargetFamiliesFromTags(built.functionTags)
 
   const base: StructuredProfileSignals = {
-    targetFamilies: baseFamilies.length ? baseFamilies : ["Marketing"],
+    targetFamilies: baseFamilies.length ? baseFamilies : ["Sales"],
     locationPreference: { mode: "unclear", constrained: false, allowedCities: undefined },
     constraints: defaultConstraintsFromText(profileTextRaw, wantsInternship),
     tools: extractedTools,
