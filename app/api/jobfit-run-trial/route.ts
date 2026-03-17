@@ -65,21 +65,23 @@ export async function POST(req: Request) {
     // Parse request body first (do not reference fields before this)
     const body = await req.json()
 
-    const email = String(body.email ?? "").toLowerCase().trim()
-    const job_description = String(body.job_description ?? "").trim()
+   const email = String(body.email ?? "").toLowerCase().trim()
+const jobText = String(body.job ?? body.job_description ?? "").trim()
 
-    console.log("[jobfit-run-trial] parsed request", {
-      email_present: Boolean(email),
-      job_len: job_description.length,
-      ms: msSince(t0),
-    })
+console.log("[jobfit-run-trial] parsed request", {
+  email_present: Boolean(email),
+  has_job: Boolean(body.job),
+  has_job_description: Boolean(body.job_description),
+  job_len: jobText.length,
+  ms: msSince(t0),
+})
 
-    if (!email) {
-      return withCorsJson(req, { ok: false, error: "missing_email" }, 400)
-    }
-    if (!job_description) {
-      return withCorsJson(req, { ok: false, error: "missing_job_description" }, 400)
-    }
+if (!email) {
+  return withCorsJson(req, { ok: false, error: "missing_email" }, 400)
+}
+if (!jobText) {
+  return withCorsJson(req, { ok: false, error: "missing_job" }, 400)
+}
 
     const supabaseUrl = process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -143,22 +145,22 @@ export async function POST(req: Request) {
         resumeText: profile.resume_text,
       })
 
-    // 3) Run Job Fit (shared evaluator)
-    console.log("[jobfit-run-trial] calling runJobFit", {
-      profile_len: profileText.length,
-      job_len: job_description.length,
-      ms: msSince(t0),
-    })
+   // 3) Run Job Fit (shared evaluator)
+console.log("[jobfit-run-trial] calling runJobFit", {
+  profile_len: profileText.length,
+  job_len: jobText.length,
+  ms: msSince(t0),
+})
 
-    const result = await runJobFit({
-      profileText,
-      jobText: job_description,
-    })
+const result = await runJobFit({
+  profileText,
+  jobText,
+})
 
-    console.log("[jobfit-run-trial] runJobFit returned", {
-      decision: result?.decision,
-      ms: msSince(t0),
-    })
+console.log("[jobfit-run-trial] runJobFit returned", {
+  decision: result?.decision,
+  ms: msSince(t0),
+})
 
     // 4) Decrement credits AFTER successful evaluation
     const newCredits = (user.credits_remaining ?? 0) - 1
