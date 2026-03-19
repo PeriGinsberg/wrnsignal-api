@@ -8,6 +8,10 @@ export async function OPTIONS(req: Request) {
     return corsOptionsResponse(req.headers.get("origin"))
 }
 
+export async function GET(req: Request) {
+    return withCorsJson(req, { ok: true, route: "jobfit-trial-lookup" }, 200)
+}
+
 export async function POST(req: Request) {
     try {
         const expectedKey = process.env.JOBFIT_INGEST_KEY
