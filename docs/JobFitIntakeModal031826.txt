@@ -1,0 +1,508 @@
+import * as React from "react"
+
+/**
+ * JobFitIntakeModal — FULL REPLACE (Framer-safe)
+ *
+ * Goals:
+ * - Avoid "Invalid hook call" issues in Framer by using a named export + default export pattern
+ * - Prevent “blank page” in Framer Preview caused by auto-redirect after unlock
+ * - Fully unmount when closed (no invisible overlays)
+ *
+ * Flow:
+ * - If already unlocked:
+ *   - In Framer Preview: show success state (no redirect)
+ *   - In Production: redirect to /signal/jobfit/run
+ * - Submit -> POST /api/jobfit-intake
+ * - On success:
+ *   - localStorage.jobfit_unlocked = "true"
+ *   - sessionStorage.jobfit_email = email (critical for trial runner)
+ *   - localStorage.jobfit_email = email (optional persistence)
+ *   - dispatch "jobfit_unlocked"
+ *   - show success state + Continue button
+ */
+
+export const layout = "auto"
+
+// IMPORTANT: set to the SAME API base as your JobFit tabs component
+const API_BASE = "https://wrnsignal-api-peri-ginsbergs-projects.vercel.app"
+const JOBFIT_RUN_PATH = "/signal/jobfittrial/run"
+const JOBFIT_RUN_PROD_ORIGIN = "https://wrnsignal.workforcereadynow.com"
+
+function isFramerHost() {
+    if (typeof window === "undefined") return false
+    const h = window.location.hostname || ""
+    return h.endsWith(".framer.app") || h.includes("framer")
+}
+
+function goToJobFitRun() {
+    if (typeof window === "undefined") return
+
+    // Preview: go to the real site so the route exists
+    const url = isFramerHost()
+        ? `${JOBFIT_RUN_PROD_ORIGIN}${JOBFIT_RUN_PATH}`
+        : `${window.location.origin}${JOBFIT_RUN_PATH}`
+
+    window.location.assign(url)
+}
+
+function goTo(path: string) {
+    if (typeof window === "undefined") return
+    // Build a clean URL (no ?node=... carried over)
+    const url = `${window.location.origin}${path}`
+    window.location.assign(url)
+}
+
+/* ---------- BRAND ---------- */
+const WRN_BLUE = "#51ADE5"
+const WRN_ORANGE = "#FEB06A"
+
+/* ---------- UI COLORS ---------- */
+const GLASS = "rgba(255,255,255,0.05)"
+const BORDER = "rgba(255,255,255,0.14)"
+const TEXT = "rgba(255,255,255,0.92)"
+const MUTED = "rgba(255,255,255,0.68)"
+const ERROR = "rgba(255,120,120,0.95)"
+
+type Stage = "form" | "saving" | "success"
+
+const TRIAL_UNLOCK_KEY = "jobfit_unlocked"
+const TRIAL_EMAIL_KEY = "jobfit_email"
+
+function isFramerPreview(): boolean {
+    if (typeof window === "undefined") return false
+    const h = window.location.hostname || ""
+    // Covers most Framer preview/share hosts and local preview
+    return (
+        h.includes("framer") ||
+        h.includes("framercanvas") ||
+        h.includes("genuine-times") ||
+        h.includes("localhost") ||
+        h.endsWith(".framer.app")
+    )
+}
+
+function safeTrimLower(v: string) {
+    return (v || "").trim().toLowerCase()
+}
+
+export function JobFitIntakeModal() {
+    const [open, setOpen] = React.useState(true)
+    const [stage, setStage] = React.useState<Stage>("form")
+    const [error, setError] = React.useState<string | null>(null)
+
+    const [name, setName] = React.useState("")
+    const [email, setEmail] = React.useState("")
+    const [jobType, setJobType] = React.useState<
+        "internship" | "full_time" | ""
+    >("")
+    const [resumeText, setResumeText] = React.useState("")
+    const [targetRoles, setTargetRoles] = React.useState("")
+    const [locations, setLocations] = React.useState("")
+    const [timeline, setTimeline] = React.useState("")
+
+    // On mount: if already unlocked, either redirect (prod) or show success (preview)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+
+        const unlocked = localStorage.getItem(TRIAL_UNLOCK_KEY) === "true"
+        if (!unlocked) return
+
+        if (isFramerPreview()) {
+            // Keep preview testable: show success instead of redirecting into a dead route
+            setStage("success")
+            return
+        }
+
+        goToJobFitRun()
+    }, [])
+
+    function unlockNow(unlockEmail: string) {
+        if (typeof window === "undefined") return
+        const e = safeTrimLower(unlockEmail)
+
+        localStorage.setItem(TRIAL_UNLOCK_KEY, "true")
+        sessionStorage.setItem(TRIAL_EMAIL_KEY, e)
+        localStorage.setItem(TRIAL_EMAIL_KEY, e)
+
+        window.dispatchEvent(new Event("jobfit_unlocked"))
+    }
+
+    async function handleSubmit() {
+        setError(null)
+
+        const n = (name || "").trim()
+        const e = safeTrimLower(email)
+
+        if (!n) {
+            setError("Enter your name.")
+            return
+        }
+        if (!e) {
+            setError("Enter your email.")
+            return
+        }
+        if (!jobType) {
+            setError("Select internship or full-time.")
+            return
+        }
+        if (!resumeText.trim()) {
+            setError("Paste your résumé text. This is required.")
+            return
+        }
+
+        setStage("saving")
+
+        try {
+            const res = await fetch(`${API_BASE}/api/jobfit-intake`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: n,
+                    email: e,
+                    job_type: jobType,
+                    resume_text: resumeText,
+                    target_roles: targetRoles,
+                    target_locations: locations,
+                    timeline,
+                }),
+            })
+
+            const raw = await res.text()
+
+            if (!res.ok) {
+                try {
+                    const parsed = JSON.parse(raw)
+                    throw new Error(
+                        parsed?.error ||
+                            parsed?.detail ||
+                            raw ||
+                            "Submission failed."
+                    )
+                } catch {
+                    throw new Error(raw || "Submission failed.")
+                }
+            }
+
+            unlockNow(e)
+            setStage("success")
+        } catch (err: any) {
+            setStage("form")
+            setError(err?.message || "Unexpected error.")
+        }
+    }
+
+    function handleContinue() {
+        if (typeof window === "undefined") return
+        goToJobFitRun()
+    }
+
+    function handleResetForTesting() {
+        if (typeof window === "undefined") return
+        try {
+            localStorage.removeItem(TRIAL_UNLOCK_KEY)
+            localStorage.removeItem(TRIAL_EMAIL_KEY)
+            sessionStorage.removeItem(TRIAL_EMAIL_KEY)
+            setError(null)
+            setStage("form")
+            setName("")
+            setEmail("")
+            setJobType("")
+            setResumeText("")
+            setTargetRoles("")
+            setLocations("")
+            setTimeline("")
+        } catch {
+            // ignore
+        }
+    }
+
+    // Prevent invisible overlays by fully unmounting
+    if (!open) return null
+
+    const isSaving = stage === "saving"
+    const preview = typeof window !== "undefined" && isFramerPreview()
+
+    return (
+        <div style={overlay} role="dialog" aria-modal="true">
+            <div style={card}>
+                {stage === "form" ? (
+                    <>
+                        <div style={intro}>
+                            For Job Fit, we only need a few key details to
+                            decide whether applying makes sense right now.
+                            <div style={{ height: 10 }} />
+                            <span style={{ color: MUTED }}>
+                                Full SIGNAL access goes deeper to tailor
+                                positioning, messaging, and strategy.
+                            </span>
+                        </div>
+
+                        <label style={label}>Name</label>
+                        <input
+                            style={input}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Full name"
+                        />
+
+                        <label style={label}>Email</label>
+                        <input
+                            style={input}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            autoComplete="email"
+                            inputMode="email"
+                        />
+
+                        <label style={label}>Job Type</label>
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: 20,
+                                marginBottom: 12,
+                            }}
+                        >
+                            <label style={radioLabel}>
+                                <input
+                                    type="radio"
+                                    name="jobType"
+                                    value="internship"
+                                    checked={jobType === "internship"}
+                                    onChange={() => setJobType("internship")}
+                                />
+                                Internship
+                            </label>
+
+                            <label style={radioLabel}>
+                                <input
+                                    type="radio"
+                                    name="jobType"
+                                    value="full_time"
+                                    checked={jobType === "full_time"}
+                                    onChange={() => setJobType("full_time")}
+                                />
+                                Full-time
+                            </label>
+                        </div>
+
+                        <label style={label}>Résumé Text</label>
+                        <textarea
+                            style={textarea}
+                            value={resumeText}
+                            onChange={(e) => setResumeText(e.target.value)}
+                            placeholder="Paste your résumé text here…"
+                        />
+
+                        <label style={label}>Target Roles</label>
+                        <input
+                            style={input}
+                            value={targetRoles}
+                            onChange={(e) => setTargetRoles(e.target.value)}
+                            placeholder="Marketing Analyst, Finance Intern, etc."
+                        />
+
+                        <label style={label}>Preferred Locations</label>
+                        <input
+                            style={input}
+                            value={locations}
+                            onChange={(e) => setLocations(e.target.value)}
+                            placeholder="NYC, Remote, Miami…"
+                        />
+
+                        <label style={label}>Timeline</label>
+                        <input
+                            style={input}
+                            value={timeline}
+                            onChange={(e) => setTimeline(e.target.value)}
+                            placeholder="Now / 3–6 months / Flexible"
+                        />
+
+                        <button
+                            style={primaryBtn}
+                            onClick={handleSubmit}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? "Saving…" : "Unlock Job Fit"}
+                        </button>
+
+                        {error ? <div style={errorBox}>{error}</div> : null}
+
+                        <div style={footnote}>
+                            Tip: If your résumé is messy, paste it anyway. We
+                            are optimizing decisions first.
+                        </div>
+                    </>
+                ) : null}
+
+                {stage === "saving" ? (
+                    <div style={{ ...intro, color: MUTED }}>
+                        Saving your profile…
+                    </div>
+                ) : null}
+
+                {stage === "success" ? (
+                    <>
+                        <div style={successTitle}>You’re in.</div>
+                        <div style={intro}>
+                            Your Job Fit access is ready. Click below to start.
+                        </div>
+
+                        <button style={primaryBtn} onClick={handleContinue}>
+                            Continue to Job Fit
+                        </button>
+
+                        {preview ? (
+                            <>
+                                <div style={footnote}>
+                                    Preview mode: If you need to re-test the
+                                    form, reset your local trial unlock below.
+                                </div>
+                                <button
+                                    style={secondaryBtn}
+                                    onClick={handleResetForTesting}
+                                >
+                                    Reset Trial Unlock (Preview)
+                                </button>
+                            </>
+                        ) : (
+                            <div style={footnote}>
+                                If you leave and come back, enter your email
+                                again to continue.
+                            </div>
+                        )}
+                    </>
+                ) : null}
+
+                {/* Optional close (kept hidden by default) */}
+                {/* <button style={closeBtn} onClick={() => setOpen(false)}>Close</button> */}
+            </div>
+        </div>
+    )
+}
+
+export default JobFitIntakeModal
+
+/* ---------- STYLES ---------- */
+
+const overlay: React.CSSProperties = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    padding: 18,
+    boxSizing: "border-box",
+}
+
+const card: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 680,
+    background: GLASS,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 20,
+    padding: 24,
+    boxSizing: "border-box",
+    color: TEXT,
+    margin: "0 auto",
+}
+
+const intro: React.CSSProperties = {
+    fontSize: 15,
+    lineHeight: "22px",
+    marginBottom: 16,
+    color: TEXT,
+}
+
+const label: React.CSSProperties = {
+    color: WRN_BLUE,
+    fontWeight: 800,
+    marginTop: 12,
+    marginBottom: 6,
+    display: "block",
+}
+
+const input: React.CSSProperties = {
+    width: "100%",
+    height: 44,
+    background: "rgba(0,0,0,0.35)",
+    color: TEXT,
+    padding: "0 14px",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 15,
+}
+
+const textarea: React.CSSProperties = {
+    width: "100%",
+    minHeight: 140,
+    background: "rgba(0,0,0,0.35)",
+    color: TEXT,
+    padding: 14,
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 14,
+    lineHeight: "20px",
+    resize: "vertical",
+}
+
+const primaryBtn: React.CSSProperties = {
+    marginTop: 18,
+    width: "100%",
+    padding: "14px 18px",
+    borderRadius: 16,
+    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
+    fontWeight: 900,
+    border: "none",
+    cursor: "pointer",
+    color: "#0B1020",
+    fontSize: 15,
+}
+
+const secondaryBtn: React.CSSProperties = {
+    marginTop: 10,
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 14,
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.14)",
+    cursor: "pointer",
+    color: "rgba(255,255,255,0.92)",
+    fontWeight: 900,
+    fontSize: 14,
+}
+
+const radioLabel: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.92)",
+    cursor: "pointer",
+}
+
+const errorBox: React.CSSProperties = {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 14,
+    border: `1px solid rgba(255,120,120,0.35)`,
+    background: "rgba(255,120,120,0.08)",
+    color: ERROR,
+    fontWeight: 800,
+    whiteSpace: "pre-wrap",
+}
+
+const footnote: React.CSSProperties = {
+    marginTop: 12,
+    color: MUTED,
+    fontSize: 12,
+    lineHeight: "16px",
+}
+
+const successTitle: React.CSSProperties = {
+    fontSize: 26,
+    fontWeight: 900,
+    marginBottom: 8,
+}
