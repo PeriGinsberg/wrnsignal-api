@@ -106,7 +106,7 @@ export async function runJobFit(args: {
       decision_after_gate: decisionAfterGate,
       decision_final: decisionFinal,
 
-      baseScore: scored.base,
+      baseScore: scored.score,
       rawPenaltySum: scored.penalties.reduce((s, p) => s + p.amount, 0),
       penaltySum: scored.penaltySum,
 

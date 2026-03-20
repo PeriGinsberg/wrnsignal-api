@@ -1,6 +1,6 @@
 import fs from "fs"
 import path from "path"
-import { evaluateJobFit } from "../../app/api/jobfit/evaluator.ts"
+import { evaluateJobFit } from "../../app/api/jobfit/evaluator"
 import { extractProfileV4 } from "../../app/api/_v4/extractProfileV4"
 import { enforceClientFacingRules } from "../../app/api/jobfit/enforceClientFacingRules"
 
