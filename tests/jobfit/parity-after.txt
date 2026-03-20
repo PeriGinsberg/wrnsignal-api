@@ -1,0 +1,22 @@
+﻿Ran 19 real case(s).
+real-001 | score=56 | final=Pass | gate=none
+real-002 | score=38 | final=Pass | gate=none
+real-003 | score=43 | final=Pass | gate=floor_review
+real-004 | score=64 | final=Pass | gate=none
+real-005 | score=62 | final=Pass | gate=force_pass
+real-006 | score=75 | final=Review | gate=none
+real-007 | score=74 | final=Review | gate=none
+real-008 | score=58 | final=Pass | gate=none
+real-009 | score=72 | final=Review | gate=none
+real-010 | score=38 | final=Pass | gate=none
+real-011 | score=67 | final=Review | gate=none
+real-012 | score=35 | final=Pass | gate=force_pass
+real-013 | score=75 | final=Review | gate=none
+real-014 | score=66 | final=Review | gate=none
+real-015 | score=72 | final=Review | gate=none
+real-016 | score=70 | final=Review | gate=none
+real-017 | score=63 | final=Pass | gate=none
+real-018 | score=86 | final=Priority Apply | gate=none
+real-019 | score=82 | final=Apply | gate=none
+JSON written to: C:\Users\perig\wrnsignal-api\tests\jobfit\results\real_case_results.json
+CSV written to: C:\Users\perig\wrnsignal-api\tests\jobfit\results\real_case_results.csv

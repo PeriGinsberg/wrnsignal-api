@@ -1,0 +1,1202 @@
+import * as React from "react"
+import { createClient } from "@supabase/supabase-js"
+
+/**
+ * SIGNAL Full Access Intake
+ *
+ * Flow:
+ * 1) Complete magic link session if present
+ * 2) Confirm authenticated user
+ * 3) Run 3-step intake
+ * 4) POST to /api/profile-intake
+ * 5) Redirect to /signal/jobfit
+ */
+
+// ---------- BRAND ----------
+const WRN_BLUE = "#51ADE5"
+const WRN_ORANGE = "#FEB06A"
+
+// ---------- UI COLORS ----------
+const BG = "#000000"
+const GLASS = "rgba(255,255,255,0.045)"
+const BORDER = "rgba(255,255,255,0.14)"
+const TEXT = "rgba(255,255,255,0.92)"
+const MUTED = "rgba(255,255,255,0.68)"
+const ERROR = "rgba(255,120,120,0.95)"
+
+const SELECT_BG = "#0B0F1A"
+const optionStyle: React.CSSProperties = {
+    backgroundColor: SELECT_BG,
+    color: TEXT,
+}
+
+// ---------- ENV ----------
+const API_BASE = "https://wrnsignal-api.vercel.app"
+const UPGRADE_URL = "https://www.workforcereadynow.com/signal"
+
+const SUPABASE_URL = "https://ejhnokcnahauvrcbcmic.supabase.co"
+const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqaG5va2NuYWhhdXZyY2JjbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMzczNzMsImV4cCI6MjA4MzcxMzM3M30.LzTMZDzDrx4UMWGu9y5qeg4AzwxukEWUu06q7Ts9Wb0"
+
+const START_PATH = "/start"
+const JOBFIT_PATH = "/signal/jobfit"
+
+// ---------- Supabase client ----------
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+    },
+})
+
+// ---------- Types ----------
+type Step = 1 | 2 | 3
+
+function sleep(ms: number) {
+    return new Promise((r) => setTimeout(r, ms))
+}
+
+function isBrowser() {
+    return typeof window !== "undefined"
+}
+
+function hasAuthStuffInUrl() {
+    if (!isBrowser()) return false
+    const href = window.location.href
+    if (href.includes("?code=")) return true
+    const h = window.location.hash || ""
+    return (
+        h.includes("access_token=") ||
+        h.includes("refresh_token=") ||
+        h.includes("type=magiclink")
+    )
+}
+
+function cleanAuthFromUrl() {
+    if (!isBrowser()) return
+    try {
+        const url = new URL(window.location.href)
+        if (url.searchParams.has("code")) url.searchParams.delete("code")
+        const cleaned = url.pathname + (url.search ? url.search : "")
+        window.history.replaceState({}, document.title, cleaned)
+    } catch {}
+}
+
+async function tryExchangeCodeForSessionIfPresent() {
+    if (!isBrowser()) return
+    try {
+        const url = new URL(window.location.href)
+        const code = url.searchParams.get("code")
+        if (!code) return
+        await supabase.auth.exchangeCodeForSession(code)
+    } catch {}
+}
+
+async function getSessionWithRetry() {
+    const attempts = [0, 75, 150, 300]
+    let last: any = null
+
+    for (let i = 0; i < attempts.length; i++) {
+        if (attempts[i] > 0) await sleep(attempts[i])
+        const res = await supabase.auth.getSession()
+        last = res
+        const token = res?.data?.session?.access_token
+        if (token) return res
+    }
+
+    return last
+}
+
+function EngineBrandMark() {
+    return (
+        <div style={engineBrandWrap} aria-hidden="true">
+            <div style={engineBrandSignal}>SIGNAL</div>
+            <div style={engineBrandByline}>by WORKFORCE READY NOW</div>
+        </div>
+    )
+}
+
+function IntakeHero() {
+    return (
+        <div style={heroWrap}>
+            <div style={heroTitle}>
+                Welcome to <span style={{ color: WRN_ORANGE }}>SIGNAL</span>
+            </div>
+            <div style={heroSubtitle}>
+                The decision engine designed to help you apply smarter and get
+                hired.
+            </div>
+        </div>
+    )
+}
+
+export default function SignalIntakeFullAccess() {
+    const [booting, setBooting] = React.useState(true)
+    const [authed, setAuthed] = React.useState(false)
+
+    const [step, setStep] = React.useState<Step>(1)
+    const [loading, setLoading] = React.useState(false)
+    const [error, setError] = React.useState("")
+
+    const [paidEmail, setPaidEmail] = React.useState("")
+    const [trialEmail, setTrialEmail] = React.useState("")
+    const [authMessage, setAuthMessage] = React.useState("")
+
+    const mountedRef = React.useRef(true)
+
+    // step 1
+    const [targetRoles, setTargetRoles] = React.useState("")
+    const [targetLocations, setTargetLocations] = React.useState("")
+    const [timeline, setTimeline] = React.useState("")
+    const [hardNos, setHardNos] = React.useState("")
+
+    // step 2
+    const [currentStatus, setCurrentStatus] = React.useState("")
+    const [university, setUniversity] = React.useState("")
+    const [major, setMajor] = React.useState("")
+    const [gradYear, setGradYear] = React.useState("")
+    const [strongSkills, setStrongSkills] = React.useState("")
+    const [biggestConcern, setBiggestConcern] = React.useState("")
+    const [entryOpenness, setEntryOpenness] = React.useState("")
+
+    // step 3
+    const [name, setName] = React.useState("")
+    const [profileText, setProfileText] = React.useState("")
+    const [writingSamples, setWritingSamples] = React.useState("")
+    const [constraints, setConstraints] = React.useState("")
+
+    function setErr(msg: string) {
+        setError(msg || "Something went wrong.")
+        try {
+            window.scrollTo({ top: 0, behavior: "smooth" })
+        } catch {}
+    }
+
+    function validateStep1(): string | null {
+        if (!targetRoles.trim()) {
+            return "Enter at least one target role."
+        }
+        if (!targetLocations.trim()) {
+            return "Enter at least one target location."
+        }
+        if (!timeline.trim()) {
+            return "Pick a timeline."
+        }
+        return null
+    }
+
+    function validateStep2(): string | null {
+        if (!currentStatus.trim()) return "Select your current status."
+        if (currentStatus === "Current student") {
+            if (!university.trim()) return "Enter your university."
+            if (!major.trim()) return "Enter your major."
+            if (!gradYear.trim()) return "Enter your graduation year."
+        }
+        if (!strongSkills.trim()) return "List your strongest skills."
+        if (!biggestConcern.trim()) return "Tell us your biggest concern."
+        if (!entryOpenness.trim()) return "Pick your openness to entry points."
+        return null
+    }
+
+    function validateStep3(): string | null {
+        if (!profileText.trim()) {
+            return "Paste your resume or background. This is required."
+        }
+        if (profileText.trim().length < 300) {
+            return "Your profile paste is too short. Minimum 300 characters."
+        }
+        return null
+    }
+
+    function goNext() {
+        setError("")
+        if (step === 1) {
+            const e = validateStep1()
+            if (e) return setErr(e)
+            setStep(2)
+            return
+        }
+        if (step === 2) {
+            const e = validateStep2()
+            if (e) return setErr(e)
+            setStep(3)
+        }
+    }
+
+    function goBack() {
+        setError("")
+        if (step === 2) return setStep(1)
+        if (step === 3) return setStep(2)
+    }
+
+    function buildSynthesizedProfileText() {
+        const parts = [
+            `NAME: ${name || ""}`.trim(),
+            `STATUS: ${currentStatus || ""}`.trim(),
+            currentStatus === "Current student"
+                ? `SCHOOL: ${university || ""} | MAJOR: ${major || ""} | GRAD: ${gradYear || ""}`
+                : "",
+            `TARGET ROLES: ${targetRoles || ""}`.trim(),
+            `TARGET LOCATIONS: ${targetLocations || ""}`.trim(),
+            `TIMELINE: ${timeline || ""}`.trim(),
+            hardNos ? `HARD NOs: ${hardNos}` : "",
+            `STRONG SKILLS: ${strongSkills || ""}`.trim(),
+            `BIGGEST CONCERN: ${biggestConcern || ""}`.trim(),
+            `ENTRY OPENNESS: ${entryOpenness || ""}`.trim(),
+            constraints ? `CONSTRAINTS: ${constraints}` : "",
+            "",
+            "----- PASTED RESUME / BACKGROUND -----",
+            profileText || "",
+            writingSamples
+                ? "\n----- WRITING SAMPLES (OPTIONAL) -----\n" + writingSamples
+                : "",
+        ]
+        return parts.filter(Boolean).join("\n")
+    }
+
+    async function submitAll() {
+        setError("")
+        const e3 = validateStep3()
+        if (e3) return setErr(e3)
+
+        setLoading(true)
+        try {
+            const sessRes = await supabase.auth.getSession()
+            const session = sessRes?.data?.session
+            const accessToken = session?.access_token
+
+            if (!accessToken) {
+                setAuthed(false)
+                throw new Error("Not signed in. Use the link from your email.")
+            }
+
+            const synthesizedProfileText = buildSynthesizedProfileText()
+
+            const res = await fetch(`${API_BASE}/api/profile-intake`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    name: name || null,
+                    job_type: currentStatus || null,
+                    target_roles: targetRoles || null,
+                    target_locations: targetLocations || null,
+                    preferred_locations: targetLocations || null,
+                    timeline: timeline || null,
+                    profile_text: synthesizedProfileText,
+                    resume_text: profileText || synthesizedProfileText,
+                }),
+            })
+
+            const raw = await res.text()
+            let data: any = null
+            try {
+                data = JSON.parse(raw)
+            } catch {}
+
+            if (!res.ok) {
+                const msg =
+                    data?.error ||
+                    data?.detail ||
+                    raw ||
+                    `Request failed (${res.status})`
+                throw new Error(msg)
+            }
+
+            window.location.assign(JOBFIT_PATH)
+        } catch (err: any) {
+            setErr(err?.message || "Submission failed.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    React.useEffect(() => {
+        mountedRef.current = true
+        let alive = true
+
+        async function bootAuth() {
+            try {
+                await tryExchangeCodeForSessionIfPresent()
+
+                const sessRes = await getSessionWithRetry()
+                const session = sessRes?.data?.session
+                const has = Boolean(session?.access_token)
+
+                if (!alive || !mountedRef.current) return
+                setAuthed(has)
+
+                if (has && hasAuthStuffInUrl()) {
+                    cleanAuthFromUrl()
+                    window.location.replace(
+                        window.location.pathname + window.location.search
+                    )
+                    return
+                }
+            } catch {
+                if (!alive || !mountedRef.current) return
+                setAuthed(false)
+            } finally {
+                if (!alive || !mountedRef.current) return
+                setBooting(false)
+            }
+        }
+
+        bootAuth()
+
+        const { data: sub } = supabase.auth.onAuthStateChange(
+            (_event, session) => {
+                if (!alive || !mountedRef.current) return
+                setAuthed(Boolean(session?.access_token))
+            }
+        )
+
+        return () => {
+            alive = false
+            mountedRef.current = false
+            sub?.subscription?.unsubscribe()
+        }
+    }, [])
+
+    async function sendPaidMagicLink() {
+        setError("")
+        setAuthMessage("")
+
+        const email = (paidEmail || "").trim().toLowerCase()
+        if (!email) {
+            setError("Enter the email tied to your paid account.")
+            return
+        }
+
+        try {
+            const redirectTo =
+                typeof window !== "undefined"
+                    ? `${window.location.origin}${window.location.pathname}`
+                    : undefined
+
+            const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: { emailRedirectTo: redirectTo },
+            })
+
+
+            if (error) throw error
+
+            setAuthMessage(
+                "Magic link sent. Check your email and come back through that link."
+            )
+        } catch (err: any) {
+            setError(err?.message || "Unable to send magic link.")
+        }
+    }
+
+    function continueTrialAccess() {
+        setError("")
+        setAuthMessage("")
+
+        const email = (trialEmail || "").trim().toLowerCase()
+        if (!email) {
+            setError("Enter the email tied to your trial profile.")
+            return
+        }
+
+        try {
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem("jobfit_email", email)
+                localStorage.setItem("jobfit_email", email)
+                localStorage.setItem("jobfit_unlocked", "true")
+                window.location.assign("/signal/jobfit")
+            }
+        } catch (err: any) {
+            setError(err?.message || "Unable to continue trial access.")
+        }
+    }
+
+    if (booting) {
+        return (
+            <div style={page}>
+                <EngineBrandMark />
+                <Shell>
+                    <IntakeHero />
+                    <div style={headline}>Checking your access…</div>
+                    <div style={subhead}>
+                        Hang tight while we load your session.
+                    </div>
+                </Shell>
+            </div>
+        )
+    }
+
+    if (!authed) {
+        return (
+            <div style={page}>
+                <EngineBrandMark />
+                <Shell>
+                    <IntakeHero />
+
+                    <div style={headline}>Choose how you want to continue.</div>
+                    <div style={subhead}>
+                        If you already have access, enter the email tied to your
+                        account below.
+                    </div>
+
+                    {error ? <div style={errorBox}>{error}</div> : null}
+                    {authMessage ? (
+                        <div style={infoBox}>{authMessage}</div>
+                    ) : null}
+
+                    <div style={authCardsGrid}>
+                        <div style={authCard}>
+                            <div style={authCardEyebrowPaid}>Full Access</div>
+                            <div style={authCardTitle}>Paid account users</div>
+                            <div style={authCardText}>
+                                Enter your email and we’ll send you a magic link
+                                to log in.
+                            </div>
+
+                            <label style={label}>Email</label>
+                            <input
+                                value={paidEmail}
+                                onChange={(e) => setPaidEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                style={input}
+                                autoComplete="email"
+                                inputMode="email"
+                            />
+
+                            <div style={{ height: 12 }} />
+
+                            <button
+                                type="button"
+                                onClick={sendPaidMagicLink}
+                                style={{ ...primaryBtn, width: "100%" }}
+                            >
+                                Send Magic Link
+                            </button>
+                        </div>
+
+                        <div style={authCardTrial}>
+                            <div style={authCardEyebrowTrial}>Free Trial</div>
+                            <div style={authCardTitle}>Trial users</div>
+                            <div style={authCardText}>
+                                Enter the email tied to your saved trial profile
+                                to continue.
+                            </div>
+
+                            <label style={label}>Email</label>
+                            <input
+                                value={trialEmail}
+                                onChange={(e) => setTrialEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                style={input}
+                                autoComplete="email"
+                                inputMode="email"
+                            />
+
+                            <div style={{ height: 12 }} />
+
+                            <button
+                                type="button"
+                                onClick={continueTrialAccess}
+                                style={{ ...secondaryBtn, width: "100%" }}
+                            >
+                                Continue Free Trial
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style={upgradeBlock}>
+                        <div style={upgradeTitle}>Need access?</div>
+                        <div style={upgradeText}>
+                            Purchase SIGNAL or upgrade your access here.
+                        </div>
+
+                        <div style={{ height: 12 }} />
+
+                        <a href={UPGRADE_URL} style={linkBtn}>
+                            Purchase / Upgrade
+                        </a>
+                    </div>
+
+                    <div style={finePrint}>
+                        If you already clicked your magic link and still landed
+                        here, open it again in the same browser you used to
+                        request it.
+                    </div>
+                </Shell>
+            </div>
+        )
+    }
+
+    return (
+        <div style={page}>
+            <EngineBrandMark />
+            <Shell>
+                <IntakeHero />
+                <Progress step={step} />
+
+                {error ? <div style={errorBox}>{error}</div> : null}
+
+                {step === 1 ? (
+                    <div>
+                        <div style={headline}>Where are you aiming?</div>
+                        <div style={subhead}>
+                            Start with the roles, locations, and timing that
+                            matter most right now.
+                        </div>
+
+                        <label style={label}>Target roles *</label>
+                        <input
+                            value={targetRoles}
+                            onChange={(e) => setTargetRoles(e.target.value)}
+                            placeholder="Investment Banking Analyst, Marketing Analyst, Strategy Associate, CRE Acquisitions…"
+                            style={input}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Target locations *</label>
+                        <input
+                            value={targetLocations}
+                            onChange={(e) => setTargetLocations(e.target.value)}
+                            placeholder="NYC (primary), Miami (secondary), ANY"
+                            style={input}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Timeline *</label>
+                        <select
+                            value={timeline}
+                            onChange={(e) => setTimeline(e.target.value)}
+                            style={select}
+                        >
+                            <option value="" disabled style={optionStyle}>
+                                Select one
+                            </option>
+                            <option value="Immediate" style={optionStyle}>
+                                Immediate
+                            </option>
+                            <option value="Summer 2026" style={optionStyle}>
+                                Summer 2026
+                            </option>
+                            <option value="Fall 2026" style={optionStyle}>
+                                Fall 2026
+                            </option>
+                            <option value="Winter 2026" style={optionStyle}>
+                                Winter 2026
+                            </option>
+                            <option value="Spring 2027" style={optionStyle}>
+                                Spring 2027
+                            </option>
+                            <option value="Summer 2027" style={optionStyle}>
+                                Summer 2027
+                            </option>
+                            <option value="Flexible" style={optionStyle}>
+                                Flexible
+                            </option>
+                        </select>
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Hard no’s</label>
+                        <input
+                            value={hardNos}
+                            onChange={(e) => setHardNos(e.target.value)}
+                            placeholder="Commission-only sales, fully remote, startups, etc."
+                            style={input}
+                        />
+
+                        <div style={btnRow}>
+                            <button
+                                type="button"
+                                onClick={goNext}
+                                style={primaryBtn}
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
+
+                {step === 2 ? (
+                    <div>
+                        <div style={headline}>Where are you right now?</div>
+                        <div style={subhead}>
+                            Help SIGNAL understand your current situation before
+                            it starts evaluating fit.
+                        </div>
+
+                        <label style={label}>Your name</label>
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="First and last name"
+                            style={input}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Current status *</label>
+                        <select
+                            value={currentStatus}
+                            onChange={(e) => setCurrentStatus(e.target.value)}
+                            style={select}
+                        >
+                            <option value="" disabled style={optionStyle}>
+                                Select one
+                            </option>
+                            <option value="Current student" style={optionStyle}>
+                                Current student
+                            </option>
+                            <option value="Recent graduate" style={optionStyle}>
+                                Recent graduate
+                            </option>
+                            <option
+                                value="Working professional"
+                                style={optionStyle}
+                            >
+                                Working professional
+                            </option>
+                            <option value="Career pivot" style={optionStyle}>
+                                Career pivot
+                            </option>
+                        </select>
+
+                        {currentStatus === "Current student" ? (
+                            <div style={{ marginTop: 12 }}>
+                                <label style={label}>University *</label>
+                                <input
+                                    value={university}
+                                    onChange={(e) =>
+                                        setUniversity(e.target.value)
+                                    }
+                                    placeholder="University of Florida"
+                                    style={input}
+                                />
+
+                                <div style={{ height: 12 }} />
+
+                                <label style={label}>Major *</label>
+                                <input
+                                    value={major}
+                                    onChange={(e) => setMajor(e.target.value)}
+                                    placeholder="Finance"
+                                    style={input}
+                                />
+
+                                <div style={{ height: 12 }} />
+
+                                <label style={label}>Graduation year *</label>
+                                <input
+                                    value={gradYear}
+                                    onChange={(e) =>
+                                        setGradYear(e.target.value)
+                                    }
+                                    placeholder="2027"
+                                    style={input}
+                                    inputMode="numeric"
+                                />
+                            </div>
+                        ) : null}
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Strongest skills *</label>
+                        <textarea
+                            value={strongSkills}
+                            onChange={(e) => setStrongSkills(e.target.value)}
+                            placeholder="What can you confidently do well today?"
+                            rows={4}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Biggest concern *</label>
+                        <textarea
+                            value={biggestConcern}
+                            onChange={(e) => setBiggestConcern(e.target.value)}
+                            placeholder="What feels hardest or most uncertain right now?"
+                            rows={4}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>
+                            Openness to non-obvious entry points *
+                        </label>
+                        <select
+                            value={entryOpenness}
+                            onChange={(e) => setEntryOpenness(e.target.value)}
+                            style={select}
+                        >
+                            <option value="" disabled style={optionStyle}>
+                                Select one
+                            </option>
+                            <option value="Not open" style={optionStyle}>
+                                Not open
+                            </option>
+                            <option value="Somewhat open" style={optionStyle}>
+                                Somewhat open
+                            </option>
+                            <option value="Very open" style={optionStyle}>
+                                Very open
+                            </option>
+                        </select>
+
+                        <div style={btnRow}>
+                            <button
+                                type="button"
+                                onClick={goBack}
+                                style={secondaryBtn}
+                            >
+                                Back
+                            </button>
+                            <button
+                                type="button"
+                                onClick={goNext}
+                                style={primaryBtn}
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
+
+                {step === 3 ? (
+                    <div>
+                        <div style={headline}>
+                            Give SIGNAL the full picture.
+                        </div>
+                        <div style={subhead}>
+                            This is what drives output quality. Paste more
+                            detail than you think you need.
+                        </div>
+
+                        <label style={label}>
+                            Paste your resume or full background *
+                        </label>
+                        <textarea
+                            value={profileText}
+                            onChange={(e) => setProfileText(e.target.value)}
+                            placeholder="Paste everything. Formatting does not matter."
+                            rows={10}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Optional: writing samples</label>
+                        <textarea
+                            value={writingSamples}
+                            onChange={(e) => setWritingSamples(e.target.value)}
+                            placeholder="Cover letters, emails, or anything that shows how you write."
+                            rows={6}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 12 }} />
+
+                        <label style={label}>Hard constraints</label>
+                        <textarea
+                            value={constraints}
+                            onChange={(e) => setConstraints(e.target.value)}
+                            placeholder="Visa, immovable geography, deadlines, competing offers, family constraints."
+                            rows={4}
+                            style={textarea}
+                        />
+
+                        <div style={btnRow}>
+                            <button
+                                type="button"
+                                onClick={goBack}
+                                style={secondaryBtn}
+                            >
+                                Back
+                            </button>
+                            <button
+                                type="button"
+                                onClick={submitAll}
+                                disabled={loading}
+                                style={{
+                                    ...primaryBtn,
+                                    opacity: loading ? 0.7 : 1,
+                                    cursor: loading ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                {loading ? "Activating…" : "Activate SIGNAL"}
+                            </button>
+                        </div>
+
+                        <div style={finePrint}>
+                            You’ll go straight into JobFit once this is
+                            complete.
+                        </div>
+                    </div>
+                ) : null}
+            </Shell>
+        </div>
+    )
+}
+
+// ---------- Layout components ----------
+function Shell({ children }: { children: React.ReactNode }) {
+    return (
+        <div style={shellOuter}>
+            <div style={shellInner}>{children}</div>
+        </div>
+    )
+}
+
+function Progress({ step }: { step: Step }) {
+    return (
+        <div style={{ marginBottom: 18 }}>
+            <div style={progressTopRow}>
+                <div style={progressLabel}>Step {step} of 3</div>
+                <div style={progressHint}>
+                    {step === 1
+                        ? "Direction"
+                        : step === 2
+                          ? "Context"
+                          : "Profile"}
+                </div>
+            </div>
+            <div style={progressBar}>
+                <div
+                    style={{
+                        ...progressFill,
+                        width:
+                            step === 1
+                                ? "33.33%"
+                                : step === 2
+                                  ? "66.66%"
+                                  : "100%",
+                    }}
+                />
+            </div>
+        </div>
+    )
+}
+
+// ---------- Styles ----------
+const engineBrandWrap: React.CSSProperties = {
+    position: "fixed",
+    top: 24,
+    left: 28,
+    zIndex: 1000,
+    pointerEvents: "none",
+}
+
+const engineBrandSignal: React.CSSProperties = {
+    color: WRN_ORANGE,
+    fontSize: 32,
+    fontWeight: 900,
+    letterSpacing: -1,
+    lineHeight: 1,
+}
+
+const engineBrandByline: React.CSSProperties = {
+    color: WRN_BLUE,
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 1,
+    marginTop: 4,
+    textTransform: "uppercase",
+}
+
+const heroWrap: React.CSSProperties = {
+    marginBottom: 22,
+    maxWidth: 680,
+}
+
+const heroTitle: React.CSSProperties = {
+    fontSize: 40,
+    fontWeight: 900,
+    lineHeight: "42px",
+    letterSpacing: -1,
+    color: "#FFFFFF",
+    marginBottom: 10,
+}
+
+const heroSubtitle: React.CSSProperties = {
+    fontSize: 20,
+    lineHeight: "26px",
+    fontWeight: 700,
+    color: "rgba(255,255,255,0.88)",
+    maxWidth: 620,
+}
+
+const page: React.CSSProperties = {
+    background: BG,
+    minHeight: "100vh",
+    padding: "92px 18px 18px 18px",
+    boxSizing: "border-box",
+}
+
+const shellOuter: React.CSSProperties = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+}
+
+const shellInner: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 920,
+    background: BG,
+    borderRadius: 18,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    padding: 24,
+}
+
+const headline: React.CSSProperties = {
+    fontSize: 24,
+    fontWeight: 900,
+    color: TEXT,
+    marginBottom: 8,
+}
+
+const subhead: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: "20px",
+    color: MUTED,
+    marginBottom: 16,
+    maxWidth: 680,
+}
+
+const label: React.CSSProperties = {
+    color: WRN_BLUE,
+    fontWeight: 800,
+    marginBottom: 6,
+    display: "block",
+    fontSize: 13,
+}
+
+const input: React.CSSProperties = {
+    width: "100%",
+    height: 44,
+    background: GLASS,
+    color: TEXT,
+    padding: "0 14px",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 16,
+}
+
+const select: React.CSSProperties = {
+    width: "100%",
+    height: 44,
+    background: SELECT_BG,
+    color: TEXT,
+    padding: "0 14px",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 16,
+    appearance: "none",
+    colorScheme: "dark",
+}
+
+const textarea: React.CSSProperties = {
+    width: "100%",
+    background: GLASS,
+    color: TEXT,
+    padding: 14,
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 16,
+    lineHeight: "22px",
+    resize: "vertical",
+}
+
+const btnRow: React.CSSProperties = {
+    display: "flex",
+    gap: 10,
+    marginTop: 14,
+    flexWrap: "wrap",
+}
+
+const primaryBtn: React.CSSProperties = {
+    flex: 1,
+    minWidth: 220,
+    padding: "12px 18px",
+    borderRadius: 16,
+    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
+    fontWeight: 900,
+    border: "none",
+    color: "#0B1020",
+    cursor: "pointer",
+}
+
+const secondaryBtn: React.CSSProperties = {
+    flex: 1,
+    minWidth: 160,
+    padding: "12px 18px",
+    borderRadius: 16,
+    background: "transparent",
+    fontWeight: 900,
+    border: `1px solid ${BORDER}`,
+    color: TEXT,
+    cursor: "pointer",
+}
+
+const linkBtn: React.CSSProperties = {
+    display: "inline-block",
+    width: "100%",
+    textAlign: "center",
+    padding: "12px 18px",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    color: TEXT,
+    textDecoration: "none",
+    fontWeight: 900,
+    boxSizing: "border-box",
+}
+
+const errorBox: React.CSSProperties = {
+    color: ERROR,
+    fontWeight: 800,
+    marginTop: 6,
+    marginBottom: 12,
+    whiteSpace: "pre-wrap",
+}
+
+const finePrint: React.CSSProperties = {
+    marginTop: 10,
+    fontSize: 12,
+    color: MUTED,
+}
+
+const progressTopRow: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: 10,
+    marginTop: 6,
+}
+
+const progressLabel: React.CSSProperties = {
+    color: TEXT,
+    fontWeight: 900,
+    fontSize: 13,
+}
+
+const progressHint: React.CSSProperties = {
+    color: MUTED,
+    fontWeight: 800,
+    fontSize: 13,
+}
+
+const progressBar: React.CSSProperties = {
+    height: 10,
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.10)",
+    border: `1px solid ${BORDER}`,
+    overflow: "hidden",
+    marginTop: 8,
+}
+
+const progressFill: React.CSSProperties = {
+    height: "100%",
+    borderRadius: 999,
+    background: `linear-gradient(90deg, ${WRN_ORANGE}, ${WRN_BLUE})`,
+}
+
+const infoBox: React.CSSProperties = {
+    marginBottom: 14,
+    padding: 12,
+    borderRadius: 14,
+    border: `1px solid rgba(81,173,229,0.35)`,
+    background: "rgba(81,173,229,0.08)",
+    color: "rgba(255,255,255,0.92)",
+    fontWeight: 700,
+    whiteSpace: "pre-wrap",
+}
+
+const authCardsGrid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 16,
+    marginTop: 8,
+    marginBottom: 18,
+}
+
+const authCard: React.CSSProperties = {
+    border: `1px solid ${BORDER}`,
+    borderRadius: 18,
+    padding: 18,
+    background: "rgba(255,255,255,0.02)",
+    boxSizing: "border-box",
+}
+
+const authCardEyebrow: React.CSSProperties = {
+    color: WRN_BLUE,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 6,
+}
+
+const authCardTitle: React.CSSProperties = {
+    color: TEXT,
+    fontSize: 20,
+    fontWeight: 900,
+    marginBottom: 6,
+}
+
+const authCardText: React.CSSProperties = {
+    color: MUTED,
+    fontSize: 14,
+    lineHeight: "20px",
+    marginBottom: 14,
+}
+
+const authCardTrial: React.CSSProperties = {
+    ...authCard,
+    border: "1px solid rgba(81,173,229,0.28)",
+    background:
+        "linear-gradient(180deg, rgba(81,173,229,0.10), rgba(81,173,229,0.04))",
+    boxShadow: "0 0 0 1px rgba(81,173,229,0.06) inset",
+}
+
+const upgradeBlock: React.CSSProperties = {
+    border: `1px solid ${BORDER}`,
+    borderRadius: 18,
+    padding: 18,
+    background: "rgba(255,255,255,0.02)",
+    boxSizing: "border-box",
+}
+
+const upgradeTitle: React.CSSProperties = {
+    color: TEXT,
+    fontSize: 18,
+    fontWeight: 900,
+    marginBottom: 6,
+}
+
+const authCardEyebrowPaid: React.CSSProperties = {
+    ...authCardEyebrow,
+    color: WRN_ORANGE,
+}
+
+const authCardEyebrowTrial: React.CSSProperties = {
+    ...authCardEyebrow,
+    color: WRN_BLUE,
+}
+
+const upgradeText: React.CSSProperties = {
+    color: MUTED,
+    fontSize: 14,
+    lineHeight: "20px",
+}
