@@ -2094,8 +2094,8 @@ export function extractProfileSignals(
     tools: mergedTools,
     function_tags: mergedTags,
     function_tag_evidence: overrides?.function_tag_evidence
-      ? mergeFunctionTagEvidence(base.function_tag_evidence, overrides.function_tag_evidence)
-      : base.function_tag_evidence,
+  ? mergeFunctionTagEvidence(base.function_tag_evidence || {}, overrides.function_tag_evidence || {})
+  : base.function_tag_evidence,
     profile_evidence_units:
       Array.isArray(overrides?.profile_evidence_units) && overrides.profile_evidence_units.length > 0
         ? overrides.profile_evidence_units
