@@ -63,7 +63,7 @@
           "job_fact": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
           "profile_fact": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 78,
+          "weight": 79,
           "match_key": "operations_execution",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -103,7 +103,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -146,7 +147,7 @@
             "key": "visual_communication",
             "label": "visual communication and design execution",
             "snippet": "Maintain and evolve the Topps visual identity system and design templates, ensuring consistency across all touchpoints",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "creative_design"
           },
@@ -156,7 +157,7 @@
             "key": "financial_analysis",
             "label": "financial analysis and investment work",
             "snippet": "A strong portfolio that showcases your ability to merge creativity with brand consistency across digital and physical media",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "finance_corp"
           },
@@ -166,7 +167,7 @@
             "key": "brand_messaging",
             "label": "brand messaging and campaign work",
             "snippet": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "brand_marketing"
           },
@@ -176,7 +177,7 @@
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
             "snippet": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -186,7 +187,7 @@
             "key": "stakeholder_coordination",
             "label": "stakeholder coordination and cross-functional execution",
             "snippet": "Work in a fast-paced, deadline-driven environment where collaboration, initiative, and attention to detail are essential",
-            "strength": 3,
+            "strength": 4,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -196,7 +197,7 @@
             "key": "figma",
             "label": "figma tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -205,7 +206,7 @@
             "key": "photoshop",
             "label": "photoshop tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -214,7 +215,7 @@
             "key": "illustrator",
             "label": "illustrator tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -223,7 +224,7 @@
             "key": "indesign",
             "label": "indesign tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           }
         ],
@@ -543,6 +544,7 @@
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
+        "baseScore": 97,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 5,
@@ -577,7 +579,7 @@
             "match_key": "operations_execution",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 78
+            "weight": 79
           },
           {
             "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
@@ -603,15 +605,15 @@
     "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
     "score": 81,
     "decision_final": "Apply",
-    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview | Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and you already have evidence that you can execute rather than just talk about it",
+    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on clinical sales execution and utilization support, and you already have evidence that you can execute rather than just talk about it",
     "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | This role requires clearer proof of day-to-day content execution than is currently visible in your background",
     "raw": {
       "decision": "Apply",
       "score": 81,
       "bullets": [
-        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview",
-        "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and you already have evidence that you can execute rather than just talk about it"
+        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
+        "Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on clinical sales execution and utilization support, and you already have evidence that you can execute rather than just talk about it"
       ],
       "risk_flags": [
         "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
@@ -625,7 +627,7 @@
           "job_fact": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory",
           "profile_fact": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 108,
+          "weight": 109,
           "match_key": "hospital_or_environment",
           "match_kind": "function",
           "match_strength": "direct"
@@ -633,9 +635,9 @@
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory",
-          "profile_fact": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology",
+          "profile_fact": "Assisted with equipment setup and patient flow during treatment sessions",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 100,
           "match_key": "clinical_patient_work",
           "match_kind": "function",
           "match_strength": "direct"
@@ -645,7 +647,7 @@
           "job_fact": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory",
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 84,
+          "weight": 85,
           "match_key": "territory_execution",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -702,13 +704,14 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
           "mode": "unclear",
           "constrained": false,
-          "city": null,
+          "city": "Ocala",
           "evidence": null
         },
         "isGovernment": false,
@@ -730,7 +733,7 @@
             "key": "clinical_patient_work",
             "label": "clinical and patient-facing work",
             "snippet": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "premed_clinical"
           },
@@ -740,7 +743,7 @@
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
             "snippet": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "core",
             "functionTag": "premed_clinical"
           },
@@ -760,7 +763,7 @@
             "key": "territory_execution",
             "label": "territory coverage and field sales execution",
             "snippet": "The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, FL territory.",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "core",
             "functionTag": "sales_bd"
           }
@@ -841,6 +844,16 @@
         },
         "profile_evidence_units": [
           {
+            "id": "60f39c0138e19674",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Assisted with equipment setup and patient flow during treatment sessions",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "premed_clinical"
+          },
+          {
             "id": "da72516a369a2de2",
             "kind": "tool",
             "key": "r",
@@ -890,6 +903,26 @@
             "functionTag": "premed_clinical"
           },
           {
+            "id": "bf77c606d661db3c",
+            "kind": "function",
+            "key": "hospital_or_environment",
+            "label": "hospital, operating room, or procedural environment exposure",
+            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "5e0e938696e0ae14",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "premed_clinical"
+          },
+          {
             "id": "c3ea62356c9614c7",
             "kind": "function",
             "key": "clinical_patient_work",
@@ -905,6 +938,16 @@
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
             "snippet": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "181ec8d428a9bca8",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Coordinate with event staff and supervisors to manage medical incidents in high traffic environments",
             "source": "resume",
             "strength": 8,
             "functionTag": "premed_clinical"
@@ -1000,16 +1043,6 @@
             "functionTag": "premed_clinical"
           },
           {
-            "id": "181ec8d428a9bca8",
-            "kind": "function",
-            "key": "clinical_patient_work",
-            "label": "clinical and patient-facing work",
-            "snippet": "Coordinate with event staff and supervisors to manage medical incidents in high traffic environments",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "27edc041b416fecb",
             "kind": "execution",
             "key": "operations_execution",
@@ -1018,16 +1051,6 @@
             "source": "resume",
             "strength": 6,
             "functionTag": "operations_general"
-          },
-          {
-            "id": "60f39c0138e19674",
-            "kind": "function",
-            "key": "clinical_patient_work",
-            "label": "clinical and patient-facing work",
-            "snippet": "Assisted with equipment setup and patient flow during treatment sessions",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "4ae4d6ee5d3944be",
@@ -1050,21 +1073,11 @@
             "functionTag": "premed_clinical"
           },
           {
-            "id": "bf77c606d661db3c",
+            "id": "3abc6651a16a17b8",
             "kind": "function",
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
-          },
-          {
-            "id": "5e0e938696e0ae14",
-            "kind": "function",
-            "key": "clinical_patient_work",
-            "label": "clinical and patient-facing work",
-            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "snippet": "Harris Gellman, Orthopedic Surgeon",
             "source": "resume",
             "strength": 5,
             "functionTag": "premed_clinical"
@@ -1114,6 +1127,7 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "baseScore": 81,
         "rawPenaltySum": 3.78,
         "penaltySum": 3.78,
         "whyCount": 3,
@@ -1127,21 +1141,21 @@
             "match_key": "hospital_or_environment",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 108
+            "weight": 109
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "clinical_patient_work",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 99
+            "weight": 100
           },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "territory_execution",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 84
+            "weight": 85
           }
         ],
         "risk_codes_in": [
@@ -1174,7 +1188,7 @@
     "score": 84,
     "decision_final": "Apply",
     "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it | Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific",
-    "risk_bullets_joined": "The posting calls for Excel, and your profile does not clearly show it yet",
+    "risk_bullets_joined": "Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger | The posting calls for Excel, and your profile does not clearly show it yet",
     "raw": {
       "decision": "Apply",
       "score": 84,
@@ -1184,6 +1198,7 @@
         "Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific"
       ],
       "risk_flags": [
+        "Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger",
         "The posting calls for Excel, and your profile does not clearly show it yet"
       ],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
@@ -1204,7 +1219,7 @@
           "job_fact": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required",
           "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 92,
+          "weight": 93,
           "match_key": "photoshop",
           "match_kind": "tool",
           "match_strength": "direct"
@@ -1214,7 +1229,7 @@
           "job_fact": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required",
           "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 92,
+          "weight": 93,
           "match_key": "illustrator",
           "match_kind": "tool",
           "match_strength": "direct"
@@ -1224,7 +1239,7 @@
           "job_fact": "Regular reporting on personal workflow and status of all projects",
           "profile_fact": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 78,
+          "weight": 79,
           "match_key": "analysis_reporting",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -1234,7 +1249,7 @@
           "job_fact": "Regular reporting on personal workflow and status of all projects",
           "profile_fact": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 78,
+          "weight": 79,
           "match_key": "operations_execution",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -1254,6 +1269,14 @@
           "job_fact": "Posting lists word as preferred.",
           "profile_fact": "Profile tools: figma, photoshop, illustrator, indesign, canva, adobe.",
           "risk": "You have not shown word yet, and it is called out in the posting.",
+          "severity": "medium",
+          "weight": 0
+        },
+        {
+          "code": "RISK_MISSING_PROOF",
+          "job_fact": "financial analysis and investment work",
+          "profile_fact": null,
+          "risk": "The role emphasizes work where your profile does not yet show clear direct proof.",
           "severity": "medium",
           "weight": 0
         }
@@ -1290,7 +1313,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -1321,12 +1345,22 @@
         },
         "requirement_units": [
           {
+            "id": "b166e7b5bea8c34e",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "Able to supply portfolio of past work/demonstrate skills.",
+            "strength": 9,
+            "requiredness": "supporting",
+            "functionTag": "finance_corp"
+          },
+          {
             "id": "3d6bb0dfa55e3488",
             "kind": "tool",
             "key": "photoshop",
             "label": "photoshop tool usage",
             "snippet": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting"
           },
           {
@@ -1335,7 +1369,7 @@
             "key": "illustrator",
             "label": "illustrator tool usage",
             "snippet": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting"
           },
           {
@@ -1344,7 +1378,7 @@
             "key": "indesign",
             "label": "indesign tool usage",
             "snippet": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting"
           },
           {
@@ -1353,7 +1387,7 @@
             "key": "analysis_reporting",
             "label": "analysis, reporting, and measurement work",
             "snippet": "Regular reporting on personal workflow and status of all projects.",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "data_analytics_bi"
           },
@@ -1363,7 +1397,7 @@
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
             "snippet": "Regular reporting on personal workflow and status of all projects.",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -1373,7 +1407,7 @@
             "key": "content_execution",
             "label": "content and channel execution",
             "snippet": "Participation in the planning and production of events (meeting attendance, determination and documenting of graphics needs, monitoring of related progress).",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting",
             "functionTag": "content_social"
           },
@@ -1383,18 +1417,8 @@
             "key": "canva",
             "label": "canva tool usage",
             "snippet": "Working knowledge of Canva helpful.",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
-          },
-          {
-            "id": "b166e7b5bea8c34e",
-            "kind": "function",
-            "key": "financial_analysis",
-            "label": "financial analysis and investment work",
-            "snippet": "Able to supply portfolio of past work/demonstrate skills.",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "finance_corp"
           },
           {
             "id": "dc865a0946e550fa",
@@ -1402,7 +1426,7 @@
             "key": "excel",
             "label": "excel tool usage",
             "snippet": "Proficiency in Microsoft Office suite � especially Word and Excel.",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -1411,7 +1435,7 @@
             "key": "word",
             "label": "word tool usage",
             "snippet": "Proficiency in Microsoft Office suite � especially Word and Excel.",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           }
         ],
@@ -1779,12 +1803,13 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "baseScore": 84,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 5,
-        "riskCount": 2,
+        "riskCount": 3,
         "why_count": 3,
-        "risk_count": 1,
+        "risk_count": 2,
         "decision": "Apply",
         "why_codes_in": [
           {
@@ -1799,31 +1824,35 @@
             "match_key": "analysis_reporting",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 78
+            "weight": 79
           },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "operations_execution",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 78
+            "weight": 79
           },
           {
             "code": "WHY_TOOL_PROOF",
             "match_key": "photoshop",
             "match_kind": "tool",
             "match_strength": "direct",
-            "weight": 92
+            "weight": 93
           },
           {
             "code": "WHY_TOOL_PROOF",
             "match_key": "illustrator",
             "match_kind": "tool",
             "match_strength": "direct",
-            "weight": 92
+            "weight": 93
           }
         ],
         "risk_codes_in": [
+          {
+            "code": "RISK_MISSING_PROOF",
+            "severity": "medium"
+          },
           {
             "code": "RISK_MISSING_TOOLS",
             "severity": "medium"
@@ -1887,7 +1916,7 @@
           "job_fact": "Work with clients to provide analysis, development and documentation of improvement opportunities",
           "profile_fact": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 97,
+          "weight": 98,
           "match_key": "drafting_documentation",
           "match_kind": "deliverable",
           "match_strength": "direct"
@@ -1897,7 +1926,7 @@
           "job_fact": "Work with clients to provide analysis, development and documentation of improvement opportunities",
           "profile_fact": "Conducted financial analysis including DCF modeling and P&L / Sources and Uses review, presenting investment insights to firm executives",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 98,
+          "weight": 99,
           "match_key": "analysis_reporting",
           "match_kind": "execution",
           "match_strength": "direct"
@@ -1930,7 +1959,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -1978,7 +2008,7 @@
             "key": "analysis_reporting",
             "label": "analysis, reporting, and measurement work",
             "snippet": "Work with clients to provide analysis, development and documentation of improvement opportunities",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "data_analytics_bi"
           },
@@ -1988,7 +2018,7 @@
             "key": "drafting_documentation",
             "label": "drafting, documentation, and written deliverables",
             "snippet": "Work with clients to provide analysis, development and documentation of improvement opportunities",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
           }
@@ -2093,7 +2123,8 @@
             "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
             "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
             "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
-            "Vice President of Operations and Finance"
+            "Vice President of Operations and Finance",
+            "Coordinated all game-day logistics for a 30-game season, including scheduling ice time, referees, trainers, and arranging complex travel (vans, buses, hotels) across multiple regions."
           ],
           "communications_pr": [
             "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization."
@@ -2193,6 +2224,26 @@
             "functionTag": "communications_pr"
           },
           {
+            "id": "d7f103d5d4de78a5",
+            "kind": "deliverable",
+            "key": "coaching_instruction_facilitation",
+            "label": "coaching, instruction, and fundamentals-based facilitation",
+            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1b38459467ea4392",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
             "id": "c95f6ed7ce4dd8ff",
             "kind": "execution",
             "key": "prospecting_pipeline_management",
@@ -2203,13 +2254,13 @@
             "functionTag": "sales_bd"
           },
           {
-            "id": "1b38459467ea4392",
+            "id": "bed85a560117c0e1",
             "kind": "execution",
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
-            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "snippet": "Coordinated all game-day logistics for a 30-game season, including scheduling ice time, referees, trainers, and arranging complex travel (vans, buses, hotels) across multiple regions.",
             "source": "resume",
-            "strength": 9,
+            "strength": 10,
             "functionTag": "operations_general"
           },
           {
@@ -2446,6 +2497,7 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "baseScore": 78,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 4,
@@ -2473,14 +2525,14 @@
             "match_key": "drafting_documentation",
             "match_kind": "deliverable",
             "match_strength": "direct",
-            "weight": 97
+            "weight": 98
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "analysis_reporting",
             "match_kind": "execution",
             "match_strength": "direct",
-            "weight": 98
+            "weight": 99
           }
         ],
         "risk_codes_in": [],
@@ -2516,7 +2568,7 @@
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
-          "profile_fact": "Created and scheduled social media content to support engagement and brand consistency",
+          "profile_fact": "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
           "note": "Profile proof directly matches a concrete job requirement.",
           "weight": 101,
           "match_key": "content_execution",
@@ -2538,7 +2590,7 @@
           "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
           "profile_fact": "Collaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 96,
+          "weight": 97,
           "match_key": "stakeholder_coordination",
           "match_kind": "stakeholder",
           "match_strength": "direct"
@@ -2548,7 +2600,7 @@
           "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
           "profile_fact": "Presented findings through a professional client deck and written report",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 79,
+          "weight": 80,
           "match_key": "operations_execution",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -2580,7 +2632,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -2608,7 +2661,7 @@
             "key": "brand_messaging",
             "label": "brand messaging and campaign work",
             "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
-            "strength": 8,
+            "strength": 9,
             "requiredness": "supporting",
             "functionTag": "brand_marketing"
           },
@@ -2618,7 +2671,7 @@
             "key": "content_execution",
             "label": "content and channel execution",
             "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
-            "strength": 8,
+            "strength": 9,
             "requiredness": "supporting",
             "functionTag": "content_social"
           },
@@ -2628,7 +2681,7 @@
             "key": "stakeholder_coordination",
             "label": "stakeholder coordination and cross-functional execution",
             "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
-            "strength": 8,
+            "strength": 9,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -2638,7 +2691,7 @@
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
             "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
-            "strength": 7,
+            "strength": 8,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           }
@@ -2695,7 +2748,7 @@
           "adobe"
         ],
         "gradYear": 2027,
-        "yearsExperienceApprox": 1,
+        "yearsExperienceApprox": 2,
         "statedInterests": {
           "targetRoles": [],
           "adjacentRoles": [],
@@ -2760,6 +2813,26 @@
         },
         "profile_evidence_units": [
           {
+            "id": "cad53180dbebe830",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "039fb765baa9aa90",
+            "kind": "deliverable",
+            "key": "product_training_enablement",
+            "label": "product training, in-service support, and product introductions",
+            "snippet": "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
             "id": "926f9e7ad7c30bad",
             "kind": "function",
             "key": "content_execution",
@@ -2818,16 +2891,6 @@
             "source": "resume",
             "strength": 8,
             "functionTag": "finance_corp"
-          },
-          {
-            "id": "cad53180dbebe830",
-            "kind": "function",
-            "key": "content_execution",
-            "label": "content and channel execution",
-            "snippet": "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
-            "source": "resume",
-            "strength": 8,
-            "functionTag": "content_social"
           },
           {
             "id": "03ff34b5370792eb",
@@ -2918,16 +2981,6 @@
             "source": "resume",
             "strength": 6,
             "functionTag": "communications_pr"
-          },
-          {
-            "id": "039fb765baa9aa90",
-            "kind": "deliverable",
-            "key": "product_training_enablement",
-            "label": "product training, in-service support, and product introductions",
-            "snippet": "Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "sales_bd"
           },
           {
             "id": "46d98300f6e93be7",
@@ -3146,6 +3199,7 @@
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
+        "baseScore": 93,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 4,
@@ -3173,14 +3227,14 @@
             "match_key": "stakeholder_coordination",
             "match_kind": "stakeholder",
             "match_strength": "direct",
-            "weight": 96
+            "weight": 97
           },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "operations_execution",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 79
+            "weight": 80
           }
         ],
         "risk_codes_in": [],
@@ -3220,7 +3274,7 @@
           "job_fact": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
           "profile_fact": "Supported M&A strategy through market research and due diligence on early childcare targets, assessing student counts, salary structures, and financial performance",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 100,
           "match_key": "consumer_research",
           "match_kind": "function",
           "match_strength": "direct"
@@ -3230,7 +3284,7 @@
           "job_fact": "Prepare client presentations, including recommendations to be presented to boards of directors, executives, senior management, and HR leaders",
           "profile_fact": "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 100,
           "match_key": "drafting_documentation",
           "match_kind": "deliverable",
           "match_strength": "direct"
@@ -3260,7 +3314,7 @@
           "job_fact": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
           "profile_fact": "Technical Skills: Microsoft Excel (Advanced), R (Programming Language), SQL, PowerPoint, Google Sheets, Canva",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 91,
+          "weight": 92,
           "match_key": "powerpoint",
           "match_kind": "tool",
           "match_strength": "direct"
@@ -3315,7 +3369,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -3346,7 +3401,7 @@
             "key": "consumer_research",
             "label": "consumer, market, or user research",
             "snippet": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "consumer_insights_research"
           },
@@ -3356,7 +3411,7 @@
             "key": "analysis_reporting",
             "label": "analysis, reporting, and measurement work",
             "snippet": "Knowledge of data analysis, storytelling with data, and presentation design",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "data_analytics_bi"
           },
@@ -3366,7 +3421,7 @@
             "key": "drafting_documentation",
             "label": "drafting, documentation, and written deliverables",
             "snippet": "Prepare client presentations, including recommendations to be presented to boards of directors, executives, senior management, and HR leaders",
-            "strength": 9,
+            "strength": 10,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
           },
@@ -3376,7 +3431,7 @@
             "key": "stakeholder_coordination",
             "label": "stakeholder coordination and cross-functional execution",
             "snippet": "Ability to collaborate with diverse teams and communicate with others in a skillful, engaging, and proactive manner",
-            "strength": 9,
+            "strength": 10,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -3386,7 +3441,7 @@
             "key": "communications_writing",
             "label": "communications, writing, and messaging work",
             "snippet": "You’ll help diagnose client challenges and contribute to the design of strategic talent solutions across Rewards, HR Transformation, Talent Strategy, Workforce Planning & Analytics, and Communications.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
           },
@@ -3396,7 +3451,7 @@
             "key": "excel",
             "label": "excel tool usage",
             "snippet": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -3405,7 +3460,7 @@
             "key": "powerpoint",
             "label": "powerpoint tool usage",
             "snippet": "Strong analytical skills, both quantitative and qualitative, and working knowledge of Microsoft Office— specifically Excel and PowerPoint",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           }
         ],
@@ -3508,7 +3563,8 @@
             "Engaged in workshops and Q&A sessions focused on consulting casework, structured problem-solving, and the core recruiting process.",
             "Luxury Retail Sales & Operations (Alo & Brooks Brothers)",
             "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
-            "Vice President of Operations and Finance Sep 2023 – May 2025"
+            "Vice President of Operations and Finance Sep 2023 – May 2025",
+            "Coordinated all game-day logistics for a 30-game season, including scheduling ice time, referees, trainers, and arranging complex travel (vans, buses, hotels) across multiple regions."
           ],
           "communications_pr": [
             "Conducted quantitative analysis to determine the marginal effect of technical specifications on final market price, culminating in a detailed written report and data visualization."
@@ -3608,6 +3664,26 @@
             "functionTag": "communications_pr"
           },
           {
+            "id": "d7f103d5d4de78a5",
+            "kind": "deliverable",
+            "key": "coaching_instruction_facilitation",
+            "label": "coaching, instruction, and fundamentals-based facilitation",
+            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1b38459467ea4392",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
             "id": "c95f6ed7ce4dd8ff",
             "kind": "execution",
             "key": "prospecting_pipeline_management",
@@ -3618,13 +3694,13 @@
             "functionTag": "sales_bd"
           },
           {
-            "id": "1b38459467ea4392",
+            "id": "bed85a560117c0e1",
             "kind": "execution",
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
-            "snippet": "Led and executed the hiring process for a new Assistant Coach, including recruitment, interviewing, and selection.",
+            "snippet": "Coordinated all game-day logistics for a 30-game season, including scheduling ice time, referees, trainers, and arranging complex travel (vans, buses, hotels) across multiple regions.",
             "source": "resume",
-            "strength": 9,
+            "strength": 10,
             "functionTag": "operations_general"
           },
           {
@@ -3861,6 +3937,7 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "baseScore": 85,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 6,
@@ -3874,14 +3951,14 @@
             "match_key": "consumer_research",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 99
+            "weight": 100
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "drafting_documentation",
             "match_kind": "deliverable",
             "match_strength": "direct",
-            "weight": 99
+            "weight": 100
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -3909,7 +3986,7 @@
             "match_key": "powerpoint",
             "match_kind": "tool",
             "match_strength": "direct",
-            "weight": 91
+            "weight": 92
           }
         ],
         "risk_codes_in": [
@@ -3950,7 +4027,7 @@
           "job_fact": "learn how to apply for a faculty or staff position using the Career worklet, please review this .The UHealth system at the University of Miami has an exciting opportunity for a full time Senior Analyst, Finance Transformation - Process in the UHealth Finance Department",
           "profile_fact": "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 95,
+          "weight": 96,
           "match_key": "operations_execution",
           "match_kind": "execution",
           "match_strength": "direct"
@@ -3988,7 +4065,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -4016,7 +4094,7 @@
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
             "snippet": "To learn how to apply for a faculty or staff position using the Career worklet, please review this .The UHealth system at the University of Miami has an exciting opportunity for a full time Senior Analyst, Finance Transformation - Process in the UHealth Finance Department.",
-            "strength": 3,
+            "strength": 4,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           }
@@ -4091,9 +4169,9 @@
           "operations_general": [
             "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
             "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
+            "Industrial, Manufacturing and Energy Manufacturing Aerospace and Defense Supply Chain and Logistics",
             "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
-            "My strongest skills are systems thinking, communication, and cross-functional coordination.",
-            "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews."
+            "My strongest skills are systems thinking, communication, and cross-functional coordination."
           ],
           "consulting_strategy": [
             "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
@@ -4513,6 +4591,16 @@
             "functionTag": "operations_general"
           },
           {
+            "id": "4985d2520a31369e",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Industrial, Manufacturing and Energy Manufacturing Aerospace and Defense Supply Chain and Logistics",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
             "id": "3cc66b5606933b72",
             "kind": "execution",
             "key": "operations_execution",
@@ -4647,6 +4735,7 @@
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
+        "baseScore": 66,
         "rawPenaltySum": 7.800000000000001,
         "penaltySum": 7.800000000000001,
         "whyCount": 1,
@@ -4660,7 +4749,7 @@
             "match_key": "operations_execution",
             "match_kind": "execution",
             "match_strength": "direct",
-            "weight": 95
+            "weight": 96
           }
         ],
         "risk_codes_in": [
@@ -4684,19 +4773,19 @@
     "label": null,
     "score": 92,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview | Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to Gains current knowledge on medical device industry, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview",
-    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | The posting calls for CRM, and your profile does not clearly show it yet",
+    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
+    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | This role emphasizes medical device industry, and your background does not yet show clear direct proof in that area",
     "raw": {
       "decision": "Priority Apply",
       "score": 92,
       "bullets": [
-        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview",
-        "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to Gains current knowledge on medical device industry, and gives you a concrete example you can speak to in an interview",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview"
+        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
+        "Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview"
       ],
       "risk_flags": [
         "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
-        "The posting calls for CRM, and your profile does not clearly show it yet"
+        "This role emphasizes medical device industry, and your background does not yet show clear direct proof in that area"
       ],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
@@ -4706,7 +4795,7 @@
           "job_fact": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
           "profile_fact": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 108,
+          "weight": 109,
           "match_key": "hospital_or_environment",
           "match_kind": "function",
           "match_strength": "direct"
@@ -4714,9 +4803,9 @@
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "Gains current knowledge on medical device industry, Acumed customers, and competitive trends",
-          "profile_fact": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology",
+          "profile_fact": "Assisted with equipment setup and patient flow during treatment sessions",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 98,
+          "weight": 99,
           "match_key": "clinical_patient_work",
           "match_kind": "function",
           "match_strength": "direct"
@@ -4726,7 +4815,7 @@
           "job_fact": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 104,
+          "weight": 105,
           "match_key": "prospecting_pipeline_management",
           "match_kind": "execution",
           "match_strength": "direct"
@@ -4746,7 +4835,7 @@
           "job_fact": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 85,
+          "weight": 86,
           "match_key": "territory_execution",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -4775,6 +4864,14 @@
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "risk": "You show adjacent evidence here, but not enough direct proof for the way this role uses it.",
           "severity": "high",
+          "weight": 0
+        },
+        {
+          "code": "RISK_MISSING_PROOF",
+          "job_fact": "medical device industry, product, and competitive knowledge",
+          "profile_fact": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow",
+          "risk": "You show adjacent evidence here, but not enough direct proof for the way this role uses it.",
+          "severity": "medium",
           "weight": 0
         }
       ],
@@ -4807,7 +4904,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -4816,7 +4914,7 @@
           "city": null,
           "evidence": null
         },
-        "isGovernment": false,
+        "isGovernment": true,
         "isSalesHeavy": true,
         "isContract": false,
         "isHourly": false,
@@ -4837,7 +4935,7 @@
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
             "snippet": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "core",
             "functionTag": "premed_clinical"
           },
@@ -4847,7 +4945,7 @@
             "key": "product_training_enablement",
             "label": "product training, in-service support, and product introductions",
             "snippet": "Provides accounts with excellent post-sale follow up (communication and management of delivery dates, in-service training, and coordinates product replenishment)",
-            "strength": 3,
+            "strength": 4,
             "requiredness": "supporting",
             "functionTag": "sales_bd"
           },
@@ -4857,7 +4955,7 @@
             "key": "prospecting_pipeline_management",
             "label": "prospecting, outreach, and pipeline management",
             "snippet": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "core",
             "functionTag": "sales_bd"
           },
@@ -4867,7 +4965,7 @@
             "key": "territory_execution",
             "label": "territory coverage and field sales execution",
             "snippet": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
-            "strength": 7,
+            "strength": 8,
             "requiredness": "core",
             "functionTag": "sales_bd"
           },
@@ -4877,7 +4975,7 @@
             "key": "med_device_industry_knowledge",
             "label": "medical device industry, product, and competitive knowledge",
             "snippet": "Gains current knowledge on medical device industry, Acumed customers, and competitive trends",
-            "strength": 7,
+            "strength": 8,
             "requiredness": "supporting",
             "functionTag": "sales_bd"
           },
@@ -4887,7 +4985,7 @@
             "key": "crm",
             "label": "crm tool usage",
             "snippet": "Maintains customer records in accordance with Acumed specifications using the Company’s CRM tool",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting"
           },
           {
@@ -4896,7 +4994,7 @@
             "key": "post_sale_support",
             "label": "post-sale support, follow-up, and replenishment support",
             "snippet": "Provides accounts with excellent post-sale follow up (communication and management of delivery dates, in-service training, and coordinates product replenishment)",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "sales_bd"
           },
@@ -4906,7 +5004,7 @@
             "key": "crm_usage",
             "label": "crm usage and sales system hygiene",
             "snippet": "Maintains customer records in accordance with Acumed specifications using the Company’s CRM tool",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "sales_bd"
           },
@@ -4916,7 +5014,7 @@
             "key": "clinical_patient_work",
             "label": "clinical and patient-facing work",
             "snippet": "Gains current knowledge on medical device industry, Acumed customers, and competitive trends",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting",
             "functionTag": "premed_clinical"
           }
@@ -4996,6 +5094,16 @@
         },
         "profile_evidence_units": [
           {
+            "id": "60f39c0138e19674",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Assisted with equipment setup and patient flow during treatment sessions",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "premed_clinical"
+          },
+          {
             "id": "da72516a369a2de2",
             "kind": "tool",
             "key": "r",
@@ -5045,11 +5153,41 @@
             "functionTag": "premed_clinical"
           },
           {
+            "id": "bf77c606d661db3c",
+            "kind": "function",
+            "key": "hospital_or_environment",
+            "label": "hospital, operating room, or procedural environment exposure",
+            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "5e0e938696e0ae14",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "premed_clinical"
+          },
+          {
             "id": "aad37ae0b5431633",
             "kind": "function",
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
             "snippet": "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "181ec8d428a9bca8",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Coordinate with event staff and supervisors to manage medical incidents in high traffic environments",
             "source": "resume",
             "strength": 8,
             "functionTag": "premed_clinical"
@@ -5135,16 +5273,6 @@
             "functionTag": "premed_clinical"
           },
           {
-            "id": "181ec8d428a9bca8",
-            "kind": "function",
-            "key": "clinical_patient_work",
-            "label": "clinical and patient-facing work",
-            "snippet": "Coordinate with event staff and supervisors to manage medical incidents in high traffic environments",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "27edc041b416fecb",
             "kind": "execution",
             "key": "operations_execution",
@@ -5153,16 +5281,6 @@
             "source": "resume",
             "strength": 6,
             "functionTag": "operations_general"
-          },
-          {
-            "id": "60f39c0138e19674",
-            "kind": "function",
-            "key": "clinical_patient_work",
-            "label": "clinical and patient-facing work",
-            "snippet": "Assisted with equipment setup and patient flow during treatment sessions",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "4ae4d6ee5d3944be",
@@ -5185,21 +5303,11 @@
             "functionTag": "premed_clinical"
           },
           {
-            "id": "bf77c606d661db3c",
+            "id": "3abc6651a16a17b8",
             "kind": "function",
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
-          },
-          {
-            "id": "5e0e938696e0ae14",
-            "kind": "function",
-            "key": "clinical_patient_work",
-            "label": "clinical and patient-facing work",
-            "snippet": "Observed patient consultations and treatment planning in a specialty orthopedic practice",
+            "snippet": "Harris Gellman, Orthopedic Surgeon",
             "source": "resume",
             "strength": 5,
             "functionTag": "premed_clinical"
@@ -5249,10 +5357,11 @@
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
+        "baseScore": 92,
         "rawPenaltySum": 3.78,
         "penaltySum": 3.78,
         "whyCount": 5,
-        "riskCount": 3,
+        "riskCount": 4,
         "why_count": 3,
         "risk_count": 2,
         "decision": "Priority Apply",
@@ -5262,28 +5371,28 @@
             "match_key": "hospital_or_environment",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 108
+            "weight": 109
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "prospecting_pipeline_management",
             "match_kind": "execution",
             "match_strength": "direct",
-            "weight": 104
+            "weight": 105
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "clinical_patient_work",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 98
+            "weight": 99
           },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "territory_execution",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 85
+            "weight": 86
           },
           {
             "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
@@ -5297,6 +5406,10 @@
           {
             "code": "RISK_MISSING_PROOF",
             "severity": "high"
+          },
+          {
+            "code": "RISK_MISSING_PROOF",
+            "severity": "medium"
           },
           {
             "code": "RISK_MISSING_PROOF",
@@ -5322,15 +5435,14 @@
     "label": "Ryan Rosen - Matthews commercial real estate internship",
     "score": 97,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "Built and managed a full client book. That maps directly to � Observe and practice marketing and lead generation techniques, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it | You've already done real research and diligence work, not just surface-level information gathering. It is not a perfect match, but it transfers credibly into the research and benchmarking work in this role, especially if you explain the overlap clearly",
+    "why_bullets_joined": "Built and managed a full client book. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Priority Apply",
       "score": 97,
       "bullets": [
-        "Built and managed a full client book. That maps directly to � Observe and practice marketing and lead generation techniques, and gives you a concrete example you can speak to in an interview",
-        "You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it",
-        "You've already done real research and diligence work, not just surface-level information gathering. It is not a perfect match, but it transfers credibly into the research and benchmarking work in this role, especially if you explain the overlap clearly"
+        "Built and managed a full client book. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
+        "You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it"
       ],
       "risk_flags": [],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
@@ -5341,7 +5453,7 @@
           "job_fact": "� Participate in the Matthews� University training program to learn the fundamentals of commercial real estate, professional development, financial underwriting, and sales, as well as brokerage, through the lens of investment sales, leasing, and capital markets",
           "profile_fact": "Placed 1st out of 5 teams by building a full LBO model and investment thesis for Dropbox, including revenue analysis, EBITDA margin expansion, CapEx profile, and free cash flow modeling",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 100,
           "match_key": "financial_analysis",
           "match_kind": "function",
           "match_strength": "direct"
@@ -5351,7 +5463,7 @@
           "job_fact": "� Observe and practice marketing and lead generation techniques, including cold calling, research, and client communications",
           "profile_fact": "Built and managed a full client book including prospecting, lead generation, and servicing",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 101,
           "match_key": "prospecting_pipeline_management",
           "match_kind": "execution",
           "match_strength": "direct"
@@ -5361,17 +5473,17 @@
           "job_fact": "� Gain foundational understanding of market research, property valuation, and financial underwriting/investment analysis",
           "profile_fact": "Placed 1st out of 5 teams by building a full LBO model and investment thesis for Dropbox, including revenue analysis, EBITDA margin expansion, CapEx profile, and free cash flow modeling",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 97,
+          "weight": 98,
           "match_key": "analysis_reporting",
           "match_kind": "execution",
           "match_strength": "direct"
         },
         {
           "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-          "job_fact": "� Observe and practice marketing and lead generation techniques, including cold calling, research, and client communications",
+          "job_fact": "� Gain foundational understanding of market research, property valuation, and financial underwriting/investment analysis",
           "profile_fact": "Placed 1st out of 5 teams by building a full LBO model and investment thesis for Dropbox, including revenue analysis, EBITDA margin expansion, CapEx profile, and free cash flow modeling",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 79,
+          "weight": 80,
           "match_key": "consumer_research",
           "match_kind": "function",
           "match_strength": "adjacent"
@@ -5381,7 +5493,7 @@
           "job_fact": "Our interns thrive in an environment that celebrates collaboration, fuels curiosity, and inspires everyone to win together",
           "profile_fact": "Ran Meta marketing campaigns, handled accounting, and executed all sales operations independently",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 75,
+          "weight": 76,
           "match_key": "stakeholder_coordination",
           "match_kind": "stakeholder",
           "match_strength": "adjacent"
@@ -5410,15 +5522,18 @@
           "hits": {
             "stakeholder_coordination": 2,
             "prospecting_pipeline_management": 3,
+            "coaching_instruction_facilitation": 1,
             "financial_analysis": 3,
             "communications_writing": 1,
             "consumer_research": 3,
-            "analysis_reporting": 1
+            "analysis_reporting": 1,
+            "customer_service_guest_experience": 1
           },
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -5446,39 +5561,9 @@
             "key": "prospecting_pipeline_management",
             "label": "prospecting, outreach, and pipeline management",
             "snippet": "� Observe and practice marketing and lead generation techniques, including cold calling, research, and client communications.",
-            "strength": 6,
+            "strength": 10,
             "requiredness": "supporting",
             "functionTag": "sales_bd"
-          },
-          {
-            "id": "35096bbdd8969140",
-            "kind": "stakeholder",
-            "key": "stakeholder_coordination",
-            "label": "stakeholder coordination and cross-functional execution",
-            "snippet": "Our interns thrive in an environment that celebrates collaboration, fuels curiosity, and inspires everyone to win together.",
-            "strength": 3,
-            "requiredness": "supporting",
-            "functionTag": "operations_general"
-          },
-          {
-            "id": "27c5e1e8b4444ad1",
-            "kind": "function",
-            "key": "consumer_research",
-            "label": "consumer, market, or user research",
-            "snippet": "� Observe and practice marketing and lead generation techniques, including cold calling, research, and client communications.",
-            "strength": 6,
-            "requiredness": "supporting",
-            "functionTag": "consumer_insights_research"
-          },
-          {
-            "id": "3fe37ed35e570ab7",
-            "kind": "function",
-            "key": "financial_analysis",
-            "label": "financial analysis and investment work",
-            "snippet": "� Participate in the Matthews� University training program to learn the fundamentals of commercial real estate, professional development, financial underwriting, and sales, as well as brokerage, through the lens of investment sales, leasing, and capital markets.",
-            "strength": 6,
-            "requiredness": "supporting",
-            "functionTag": "finance_corp"
           },
           {
             "id": "cff58adbe03e355c",
@@ -5486,9 +5571,49 @@
             "key": "communications_writing",
             "label": "communications, writing, and messaging work",
             "snippet": "� Observe and practice marketing and lead generation techniques, including cold calling, research, and client communications.",
-            "strength": 6,
+            "strength": 10,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
+          },
+          {
+            "id": "1f2012fb9c1dad81",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "� Gain foundational understanding of market research, property valuation, and financial underwriting/investment analysis.",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "35096bbdd8969140",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Our interns thrive in an environment that celebrates collaboration, fuels curiosity, and inspires everyone to win together.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "3fe37ed35e570ab7",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "� Participate in the Matthews� University training program to learn the fundamentals of commercial real estate, professional development, financial underwriting, and sales, as well as brokerage, through the lens of investment sales, leasing, and capital markets.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "98b2b8df8a67038c",
+            "kind": "deliverable",
+            "key": "coaching_instruction_facilitation",
+            "label": "coaching, instruction, and fundamentals-based facilitation",
+            "snippet": "� Participate in the Matthews� University training program to learn the fundamentals of commercial real estate, professional development, financial underwriting, and sales, as well as brokerage, through the lens of investment sales, leasing, and capital markets.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
           },
           {
             "id": "6f29f518b9291633",
@@ -5496,9 +5621,19 @@
             "key": "analysis_reporting",
             "label": "analysis, reporting, and measurement work",
             "snippet": "� Gain foundational understanding of market research, property valuation, and financial underwriting/investment analysis.",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "ea40289b489fdd07",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "� A positive attitude, team orientation, and willingness to learn",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
           }
         ],
         "internship": {
@@ -5880,11 +6015,12 @@
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
+        "baseScore": 97,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 5,
         "riskCount": 0,
-        "why_count": 3,
+        "why_count": 2,
         "risk_count": 0,
         "decision": "Priority Apply",
         "why_codes_in": [
@@ -5893,35 +6029,35 @@
             "match_key": "financial_analysis",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 99
+            "weight": 100
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "prospecting_pipeline_management",
             "match_kind": "execution",
             "match_strength": "direct",
-            "weight": 99
+            "weight": 101
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "analysis_reporting",
             "match_kind": "execution",
             "match_strength": "direct",
-            "weight": 97
+            "weight": 98
           },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "stakeholder_coordination",
             "match_kind": "stakeholder",
             "match_strength": "adjacent",
-            "weight": 75
+            "weight": 76
           },
           {
             "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
             "match_key": "consumer_research",
             "match_kind": "function",
             "match_strength": "adjacent",
-            "weight": 79
+            "weight": 80
           }
         ],
         "risk_codes_in": [],
@@ -5960,7 +6096,7 @@
           "job_fact": "You'll utilize Solid Works to design manufacturing tools and fixtures, ensuring compliance with regulatory requirements",
           "profile_fact": "Presented research at national BME Pathways Symposium; contributed to manuscript in development",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 80,
+          "weight": 81,
           "match_key": "policy_regulatory_research",
           "match_kind": "function",
           "match_strength": "adjacent"
@@ -6010,7 +6146,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -6038,7 +6175,7 @@
             "key": "drafting_documentation",
             "label": "drafting, documentation, and written deliverables",
             "snippet": "In this role, you will provide engineering support, conduct statistical analyses, and write technical reports",
-            "strength": 7,
+            "strength": 8,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
           },
@@ -6048,7 +6185,7 @@
             "key": "policy_regulatory_research",
             "label": "legal, policy, and regulatory research",
             "snippet": "You'll utilize Solid Works to design manufacturing tools and fixtures, ensuring compliance with regulatory requirements",
-            "strength": 7,
+            "strength": 8,
             "requiredness": "supporting",
             "functionTag": "legal_regulatory"
           }
@@ -6136,7 +6273,8 @@
             "Graduation May 2026 Awards: CP Davis Scholar | Dean�s List (4 semesters) | Hispanic Scholarship Fund Scholar (2022�2025) | Burger King and Trudy Feliu STEM Leadership Scholarships Doral College, Doral, FL | Associate in Arts | Summa Cum Laude May 2022 Completed via Dual Enrollment while in high school RESEARCH & DEVELOPMENT EXPERIENCE Research & Operations Intern | Waypoint Bio Sep 2025 � Present Designed and implemented a comprehensive lab inventory system that reduced time spent locating equipment and supplies by 30%, improved ordering accuracy, and ensured optimal stock levels.",
             "Manage end-to-end procurement for reagents, consumables, and equipment, tracking orders to prevent delays and minimize downtime in research operations.",
             "Support daily wet lab operations by preparing aliquots, labeling samples, and assisting scientists, contributing to consistent, error-free experimental workflows.",
-            "Defined board roles, streamlined operations, and led a 9-person team managing budget, events, and partnerships."
+            "Defined board roles, streamlined operations, and led a 9-person team managing budget, events, and partnerships.",
+            "Visitors Center Intern & Tour Guide | Columbia Undergraduate Admissions Sep 2023 � Present Host weekly campus tours and Q&A sessions for prospective students and families, recognized for engaging public speaking and ability to tailor messaging to diverse audiences."
           ],
           "data_analytics_bi": [
             "Streamline bioinformatics analysis using Seurat and other packages in R, significantly reducing processing time.",
@@ -6204,6 +6342,16 @@
             "source": "resume",
             "strength": 9,
             "functionTag": "sales_bd"
+          },
+          {
+            "id": "f8ccfa0fc0ad4bc2",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Outreach Chair | Venezuelan Student Association Sep 2023 � Aug 2025 Led cross-campus LATAM events, managing logistics, funding, and outreach from planning to execution.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "operations_general"
           },
           {
             "id": "c5e8fc6effdfcbbc",
@@ -6374,6 +6522,16 @@
             "functionTag": "premed_clinical"
           },
           {
+            "id": "02b5add6df630323",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Visitors Center Intern & Tour Guide | Columbia Undergraduate Admissions Sep 2023 � Present Host weekly campus tours and Q&A sessions for prospective students and families, recognized for engaging public speaking and ability to tailor messaging to diverse audiences.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
             "id": "0d538fae5711071b",
             "kind": "function",
             "key": "clinical_patient_work",
@@ -6505,6 +6663,7 @@
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
+        "baseScore": 54,
         "rawPenaltySum": 7.800000000000001,
         "penaltySum": 7.800000000000001,
         "whyCount": 2,
@@ -6525,7 +6684,7 @@
             "match_key": "policy_regulatory_research",
             "match_kind": "function",
             "match_strength": "adjacent",
-            "weight": 80
+            "weight": 81
           }
         ],
         "risk_codes_in": [
@@ -6549,14 +6708,15 @@
     "label": "Allyson Keyes - NBCUniversal business and legal affairs internship",
     "score": 75,
     "decision_final": "Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it",
     "risk_bullets_joined": "The posting calls for Excel, and your profile does not clearly show it yet",
     "raw": {
       "decision": "Apply",
       "score": 75,
       "bullets": [
         "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview"
+        "You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview",
+        "You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it"
       ],
       "risk_flags": [
         "The posting calls for Excel, and your profile does not clearly show it yet"
@@ -6577,9 +6737,9 @@
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "� Classes or experience in copyright and contracts law preferred",
-          "profile_fact": "Organized and updated client files and legal records, ensuring compliance with firm protocols and regulatory standards",
+          "profile_fact": "Krinzman, Huss, Lubetsky, Feldman & Hotte, Attorneys at Law, Miami, FL Legal Intern, June 2024 � March 2025 Observed civil litigation proceedings, gaining firsthand insight into courtroom procedures and case strategy",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 100,
           "match_key": "policy_regulatory_research",
           "match_kind": "function",
           "match_strength": "direct"
@@ -6587,9 +6747,9 @@
         {
           "code": "WHY_EXECUTION_PROOF",
           "job_fact": "� Analysis of various agreements for input of rights information into the department�s rights management system",
-          "profile_fact": "Since beginning law school, I have built practical legal experience through internships that involved research, drafting, and supporting attorneys across a range of matters, while learning how legal teams operate as strategic partners within larger organizations",
+          "profile_fact": "Krinzman, Huss, Lubetsky, Feldman & Hotte, Attorneys at Law, Miami, FL Legal Intern, June 2024 � March 2025 Observed civil litigation proceedings, gaining firsthand insight into courtroom procedures and case strategy",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 78,
+          "weight": 79,
           "match_key": "analysis_reporting",
           "match_kind": "execution",
           "match_strength": "adjacent"
@@ -6639,7 +6799,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -6670,7 +6831,7 @@
             "key": "content_execution",
             "label": "content and channel execution",
             "snippet": "� Analysis of content license agreements in connection with company-mandated requirements",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "content_social"
           },
@@ -6680,7 +6841,7 @@
             "key": "policy_regulatory_research",
             "label": "legal, policy, and regulatory research",
             "snippet": "� Classes or experience in copyright and contracts law preferred.",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "legal_regulatory"
           },
@@ -6690,7 +6851,7 @@
             "key": "excel",
             "label": "excel tool usage",
             "snippet": "� Desired Characteristics: Excellent written and verbal communication skills, knowledge of MS Office (Word, Excel and Outlook), strong organizational skills, ability to handle multiple tasks in fast paced environment, attention to detail and a sense of confidence and discretion; knowledge of entertainment and copyright law helpful",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting"
           },
           {
@@ -6699,7 +6860,7 @@
             "key": "word",
             "label": "word tool usage",
             "snippet": "� Desired Characteristics: Excellent written and verbal communication skills, knowledge of MS Office (Word, Excel and Outlook), strong organizational skills, ability to handle multiple tasks in fast paced environment, attention to detail and a sense of confidence and discretion; knowledge of entertainment and copyright law helpful",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting"
           },
           {
@@ -6708,7 +6869,7 @@
             "key": "analysis_reporting",
             "label": "analysis, reporting, and measurement work",
             "snippet": "� Analysis of various agreements for input of rights information into the department�s rights management system",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "data_analytics_bi"
           }
@@ -6852,6 +7013,16 @@
             "source": "resume",
             "strength": 10,
             "functionTag": "communications_pr"
+          },
+          {
+            "id": "a3a38e619712a325",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Krinzman, Huss, Lubetsky, Feldman & Hotte, Attorneys at Law, Miami, FL Legal Intern, June 2024 � March 2025 Observed civil litigation proceedings, gaining firsthand insight into courtroom procedures and case strategy.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "legal_regulatory"
           },
           {
             "id": "2cf97d42cd6089c7",
@@ -7054,16 +7225,6 @@
             "functionTag": "legal_regulatory"
           },
           {
-            "id": "a3a38e619712a325",
-            "kind": "function",
-            "key": "policy_regulatory_research",
-            "label": "legal, policy, and regulatory research",
-            "snippet": "Krinzman, Huss, Lubetsky, Feldman & Hotte, Attorneys at Law, Miami, FL Legal Intern, June 2024 � March 2025 Observed civil litigation proceedings, gaining firsthand insight into courtroom procedures and case strategy.",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "legal_regulatory"
-          },
-          {
             "id": "76f8d023f15c953d",
             "kind": "function",
             "key": "communications_writing",
@@ -7228,11 +7389,12 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "baseScore": 75,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 3,
         "riskCount": 2,
-        "why_count": 2,
+        "why_count": 3,
         "risk_count": 1,
         "decision": "Apply",
         "why_codes_in": [
@@ -7248,14 +7410,14 @@
             "match_key": "policy_regulatory_research",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 99
+            "weight": 100
           },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "analysis_reporting",
             "match_kind": "execution",
             "match_strength": "adjacent",
-            "weight": 78
+            "weight": 79
           }
         ],
         "risk_codes_in": [
@@ -7342,7 +7504,7 @@
           "job_fact": "Support cross-functional marketing initiatives across brand, partnerships, and activations",
           "profile_fact": "Through J�s Kixx, I managed over $60,000 in sales and built a process that relied on instinct, data, and customer trust",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 99,
+          "weight": 100,
           "match_key": "operations_execution",
           "match_kind": "execution",
           "match_strength": "direct"
@@ -7352,7 +7514,7 @@
           "job_fact": "Strong communication, organizational, and collaboration skills",
           "profile_fact": "Created and managed eBay listings with original photography and copywriting; designed marketing visuals using Canva",
           "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
-          "weight": 75,
+          "weight": 76,
           "match_key": "stakeholder_coordination",
           "match_kind": "stakeholder",
           "match_strength": "adjacent"
@@ -7388,7 +7550,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -7416,7 +7579,7 @@
             "key": "consumer_research",
             "label": "consumer, market, or user research",
             "snippet": "Monitor industry trends, consumer behavior, and emerging opportunities",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting",
             "functionTag": "consumer_insights_research"
           },
@@ -7426,7 +7589,7 @@
             "key": "content_execution",
             "label": "content and channel execution",
             "snippet": "Support cross-functional marketing initiatives across brand, partnerships, and activations",
-            "strength": 8,
+            "strength": 9,
             "requiredness": "supporting",
             "functionTag": "content_social"
           },
@@ -7436,7 +7599,7 @@
             "key": "brand_messaging",
             "label": "brand messaging and campaign work",
             "snippet": "The role reports to the Manager, Brand Marketing",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting",
             "functionTag": "brand_marketing"
           },
@@ -7446,7 +7609,7 @@
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
             "snippet": "Support cross-functional marketing initiatives across brand, partnerships, and activations",
-            "strength": 7,
+            "strength": 8,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -7456,7 +7619,7 @@
             "key": "stakeholder_coordination",
             "label": "stakeholder coordination and cross-functional execution",
             "snippet": "Strong communication, organizational, and collaboration skills",
-            "strength": 3,
+            "strength": 4,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -7466,7 +7629,7 @@
             "key": "communications_writing",
             "label": "communications, writing, and messaging work",
             "snippet": "Currently pursuing a bachelor�s degree at a U.S.-based college or university (Marketing, Business, Communications, Sports Management, PR, or related field)",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
           }
@@ -7570,6 +7733,8 @@
           ],
           "operations_general": [
             "Resume Paste JARED JONAS (954)336-6929 | jared.l.jonas@gmail.com | LinkedIn Profile EDUCATION Florida State University � Tallahassee, FL Bachelor of Science in Marketing GPA: 3.5 Expected Graduation May 2027 Awards: Dean�s List (Fall 2023, Spring 2024, Spring 2025) | Recipient of Florida�s Bright Futures Scholarship Relevant Coursework: Marketing Concepts, Business Communication, Managerial Accounting, Risk in Business Study Abroad: FSU in Valencia, Spain Summer 2025 CORE COMPETENCIES Market Research & Trend Analysis | Content Creation & Social Media Strategy | Customer Engagement & Relationship Building | Sales & Business Development | Pricing & Promotional Strategy | Team Collaboration & Communication | Data Analysis & Business Analytics (Excel, Canva, Marketplace Platforms) | Problem Solving & Adaptability ACADEMIC EXPERIENCE Basic Marketing Concepts (MAR 3023) � Florida State University Fall 2025 Learning principles of consumer behavior, market segmentation, and marketing mix (product, price, place, promotion).",
+            "Retail Associate � A Sneaker City � Sunrise, FL May 2024 � Aug 2024 Delivered personalized customer service by advising shoppers on sizing, product selection, and sneaker trends.",
+            "Retail Associate � JD Sports � Sunrise, FL Dec 2022 � Jun 2023 Delivered high-quality customer service, guiding shoppers through product selection and ensuring positive experience.",
             "INVOLVEMENT American Marketing Association - FSU Chapter - Member Alpha Delta Phi Fraternity � House Manager Jan 2024 � Nov 2024 Oversaw fraternity house operations by organizing cleanings, managing maintenance requests, and coordinating with the property manager to ensure a safe and well-maintained living environment.",
             "Through J�s Kixx, I managed over $60,000 in sales and built a process that relied on instinct, data, and customer trust."
           ],
@@ -7786,6 +7951,16 @@
             "functionTag": "consulting_strategy"
           },
           {
+            "id": "a3a35178a847856d",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Retail Associate � JD Sports � Sunrise, FL Dec 2022 � Jun 2023 Delivered high-quality customer service, guiding shoppers through product selection and ensuring positive experience.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
             "id": "8b81f09011bde263",
             "kind": "execution",
             "key": "operations_execution",
@@ -7824,6 +7999,16 @@
             "source": "resume",
             "strength": 5,
             "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "6f82b746cf208dd0",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Retail Associate � A Sneaker City � Sunrise, FL May 2024 � Aug 2024 Delivered personalized customer service by advising shoppers on sizing, product selection, and sneaker trends.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
           },
           {
             "id": "b35aae5c31b59b60",
@@ -7898,6 +8083,7 @@
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
+        "baseScore": 97,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 6,
@@ -7912,6 +8098,13 @@
             "match_kind": "function",
             "match_strength": "direct",
             "weight": 101
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 100
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -7935,18 +8128,11 @@
             "weight": 98
           },
           {
-            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-            "match_key": "operations_execution",
-            "match_kind": "execution",
-            "match_strength": "direct",
-            "weight": 99
-          },
-          {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "stakeholder_coordination",
             "match_kind": "stakeholder",
             "match_strength": "adjacent",
-            "weight": 75
+            "weight": 76
           }
         ],
         "risk_codes_in": [],
@@ -8014,7 +8200,7 @@
           "job_fact": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
           "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 91,
+          "weight": 92,
           "match_key": "figma",
           "match_kind": "tool",
           "match_strength": "direct"
@@ -8024,7 +8210,7 @@
           "job_fact": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
           "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 91,
+          "weight": 92,
           "match_key": "photoshop",
           "match_kind": "tool",
           "match_strength": "direct"
@@ -8074,7 +8260,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
           ]
         },
         "location": {
@@ -8117,7 +8304,7 @@
             "key": "visual_communication",
             "label": "visual communication and design execution",
             "snippet": "Maintain and evolve the Topps visual identity system and design templates, ensuring consistency across all touchpoints",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "creative_design"
           },
@@ -8127,7 +8314,7 @@
             "key": "financial_analysis",
             "label": "financial analysis and investment work",
             "snippet": "A strong portfolio that showcases your ability to merge creativity with brand consistency across digital and physical media",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "finance_corp"
           },
@@ -8137,7 +8324,7 @@
             "key": "brand_messaging",
             "label": "brand messaging and campaign work",
             "snippet": "Partner with cross-functional teams�including Marketing, Product, and Packaging�to deliver cohesive, campaign-driven creative",
-            "strength": 6,
+            "strength": 7,
             "requiredness": "supporting",
             "functionTag": "brand_marketing"
           },
@@ -8147,7 +8334,7 @@
             "key": "operations_execution",
             "label": "operations, process, and workflow execution",
             "snippet": "Partner with cross-functional teams�including Marketing, Product, and Packaging�to deliver cohesive, campaign-driven creative",
-            "strength": 5,
+            "strength": 6,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -8157,7 +8344,7 @@
             "key": "stakeholder_coordination",
             "label": "stakeholder coordination and cross-functional execution",
             "snippet": "Work in a fast-paced, deadline-driven environment where collaboration, initiative, and attention to detail are essential",
-            "strength": 3,
+            "strength": 4,
             "requiredness": "supporting",
             "functionTag": "operations_general"
           },
@@ -8167,7 +8354,7 @@
             "key": "figma",
             "label": "figma tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -8176,7 +8363,7 @@
             "key": "photoshop",
             "label": "photoshop tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -8185,7 +8372,7 @@
             "key": "illustrator",
             "label": "illustrator tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           },
           {
@@ -8194,7 +8381,7 @@
             "key": "indesign",
             "label": "indesign tool usage",
             "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
-            "strength": 4,
+            "strength": 5,
             "requiredness": "supporting"
           }
         ],
@@ -8562,6 +8749,7 @@
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "baseScore": 86,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 6,
@@ -8603,14 +8791,14 @@
             "match_key": "figma",
             "match_kind": "tool",
             "match_strength": "direct",
-            "weight": 91
+            "weight": 92
           },
           {
             "code": "WHY_TOOL_PROOF",
             "match_key": "photoshop",
             "match_kind": "tool",
             "match_strength": "direct",
-            "weight": 91
+            "weight": 92
           }
         ],
         "risk_codes_in": [],
@@ -8620,6 +8808,853 @@
           "used_raw_profile_text_fallback": false,
           "base_profile_text_len": 3316,
           "augmented_profile_text_len": 3600
+        }
+      }
+    }
+  },
+  {
+    "id": "real-113",
+    "label": "Sports Coordinator (i9 Sports) - entry-level coaching / operations vs MLB-focused candidate",
+    "score": 88,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview | Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences. That maps directly to hands-on game-day and event execution, and gives you a concrete example you can speak to in an interview",
+    "risk_bullets_joined": "",
+    "raw": {
+      "decision": "Apply",
+      "score": 88,
+      "bullets": [
+        "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview",
+        "You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview",
+        "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences. That maps directly to hands-on game-day and event execution, and gives you a concrete example you can speak to in an interview"
+      ],
+      "risk_flags": [],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Ability to work a varied work schedule including weekends and some evenings (for the full duration of the season, ~7 weeks)",
+          "profile_fact": "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "The position entails hands-on involvement with practices and games among all age groups and skill levels",
+          "profile_fact": "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "event_operations_live_execution",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "The Sports Coordinator is responsible for enhancing the i9 Sports Experience for players and coaches",
+          "profile_fact": "Throughout my time at FSU, I have built hands-on experience across game day operations, fan engagement, and community events from supporting FSU Football as part of Legends and ASM Global to volunteering at the NCAA Men’s College World Series and coordinating outreach for the Caribbean Baseball Organization",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 104,
+          "match_key": "customer_service_guest_experience",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Empower volunteer coaches to lead practice sessions focusing on fundamentals, skill development, and fun",
+          "profile_fact": "Across my roles in event coordination, game-day support, and youth coaching, I’ve learned how to connect with people, whether it’s a fan, a client, or a 12-year-old athlete who just needs someone to believe in them",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 103,
+          "match_key": "stakeholder_coordination",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "c2eced93f8932c56",
+        "jobFamily": "Other",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": false
+        },
+        "function_tags": [
+          "legal_regulatory",
+          "operations_general"
+        ],
+        "signal_debug": {
+          "hits": {
+            "policy_regulatory_research": 1,
+            "customer_service_guest_experience": 9,
+            "operations_execution": 3,
+            "coaching_instruction_facilitation": 11,
+            "stakeholder_coordination": 4,
+            "event_operations_live_execution": 5
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": null,
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": true,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "c73189741e91538a",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "The Sports Coordinator is responsible for enhancing the i9 Sports Experience for players and coaches",
+            "strength": 9,
+            "requiredness": "core",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "487bddcc7e452843",
+            "kind": "deliverable",
+            "key": "coaching_instruction_facilitation",
+            "label": "coaching, instruction, and fundamentals-based facilitation",
+            "snippet": "Observing, assessing, and assisting our coaches is paramount",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "929aecf612672364",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "The position entails hands-on involvement with practices and games among all age groups and skill levels",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "95e328a861f16eb9",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Ability to work a varied work schedule including weekends and some evenings (for the full duration of the season, ~7 weeks)",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "3333e45985ed8467",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Empower volunteer coaches to lead practice sessions focusing on fundamentals, skill development, and fun",
+            "strength": 8,
+            "requiredness": "core",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "90012d24cccd47e6",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Awareness & ability to take charge of any situation to ensure the safety of players",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "legal_regulatory"
+          }
+        ],
+        "internship": {
+          "isInternship": false,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Sales",
+          "Marketing"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "Miami"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": true,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "canva"
+        ],
+        "gradYear": 2026,
+        "yearsExperienceApprox": 10,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "operations_general",
+          "content_social",
+          "sales_bd",
+          "consumer_insights_research"
+        ],
+        "function_tag_evidence": {
+          "operations_general": [
+            "Resume Paste AIDEN GINSBERG (561)789-9145 | aideng04@gmail.com | LinkedIn Profile PROFESSIONAL SUMMARY Entry-level game day operations and guest experience professional with Division I athletics and championship event experience.",
+            "Proven ability to support high-volume live events, coordinate logistics, and deliver consistent fan and staff experiences in fast-paced environments.",
+            "Seeking an entry-level role in guest experience, event operations, or fan engagement where I can support game day execution, staff coordination, and fan-facing operations.",
+            "EDUCATION Florida State University – Tallahassee, FL Bachelor of Science in Sport Management GPA: 3.41 Dec 2025 Awards/Honors: Dean’s List (Fall 2023, Spring 2024, Fall 2024, Spring 2025)| Full Tuition Bright Futures Scholarship Global Sports Management in Spain Study Abroad – Valencia, Madrid, and Barcelona, Spain Summer 2024 CORE COMPETENCIES Game Day & Event Operations | Guest Experience & Fan Services | Staff & Volunteer Coordination | Live Event Logistics & Setup | Corporate Hospitality & Sponsor Activation | Player & Team Support (Non-Playing) | Administrative & Front Office Support | Customer Service & Issue Resolution RELEVANT EXPERIENCE Game Day Representative (FSU Football) | Legends & ASM Global – Tallahassee, FL Aug 2025 - Nov 2025",
+            "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences"
+          ],
+          "content_social": [
+            "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "Led weekly practices and skill development sessions for 60+ youth athletes (ages 10–14), emphasizing teamwork, discipline and accountability Served as a mentor and point of support for athletes and families, reinforcing communication and leadership skills ADDITIONAL EXPERIENCE Social Media Content Creator & Coordinator Intern | Workforce Ready Now – Boca Raton, FL May 2025 - Current",
+            "Conducted market and competitor research and produced short-form Instagram and TikTok content using Canva to support Gen Z audience engagement Kitchen Steward | Delta Gamma Sorority – Tallahassee, FL Aug 2024 - Current"
+          ],
+          "sales_bd": [
+            "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "At the Caribbean Baseball Organization, I built a recruiting pipeline through calls, emails, and outreach, developing persistence and relationship-building skills that drive results.",
+            "Throughout my time at FSU, I have built hands-on experience across game day operations, fan engagement, and community events from supporting FSU Football as part of Legends and ASM Global to volunteering at the NCAA Men’s College World Series and coordinating outreach for the Caribbean Baseball Organization."
+          ],
+          "consumer_insights_research": [
+            "Conducted market and competitor research and produced short-form Instagram and TikTok content using Canva to support Gen Z audience engagement Kitchen Steward | Delta Gamma Sorority – Tallahassee, FL Aug 2024 - Current"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "7d2c39dec699629e",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "6f896ebfce871cff",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "baeef386a4e82f4f",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Coordinated vendor and sponsor load-ins, tracked marketing assets, and ensured setup and breakdown of hospitality spaces Served as on-site point of contact for guest issues, sponsor needs, and last-minute operational changes during live events Event Operations Volunteer | NCAA Men’s College World Series – Omaha, NE June 2025 Selected to support on-site event operations for one of collegiate baseball’s premier championships, assisting with venue logistics, fan services, and game day execution across multiple event days",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "cda51562b18dc204",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Coordinated vendor and sponsor load-ins, tracked marketing assets, and ensured setup and breakdown of hospitality spaces Served as on-site point of contact for guest issues, sponsor needs, and last-minute operational changes during live events Event Operations Volunteer | NCAA Men’s College World Series – Omaha, NE June 2025 Selected to support on-site event operations for one of collegiate baseball’s premier championships, assisting with venue logistics, fan services, and game day execution across multiple event days",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "a3550c3ffab1b52e",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Coordinated vendor and sponsor load-ins, tracked marketing assets, and ensured setup and breakdown of hospitality spaces Served as on-site point of contact for guest issues, sponsor needs, and last-minute operational changes during live events Event Operations Volunteer | NCAA Men’s College World Series – Omaha, NE June 2025 Selected to support on-site event operations for one of collegiate baseball’s premier championships, assisting with venue logistics, fan services, and game day execution across multiple event days",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "d56cceaf0b2accc9",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Coordinated vendor and sponsor load-ins, tracked marketing assets, and ensured setup and breakdown of hospitality spaces Served as on-site point of contact for guest issues, sponsor needs, and last-minute operational changes during live events Event Operations Volunteer | NCAA Men’s College World Series – Omaha, NE June 2025 Selected to support on-site event operations for one of collegiate baseball’s premier championships, assisting with venue logistics, fan services, and game day execution across multiple event days",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "07ab29cac706dcc0",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Supported football and baseball game day operations by preparing venues, managing signage and equipment setup, and ensuring facilities met safety and operational standards Provided on-field and behind-the-scenes support during football games, coordinating with media, operations staff, and event personnel to ensure smooth, on-time execution League Coordinator Intern | Caribbean Baseball Organization – Miami, FL Feb 2024 – Aug 2024",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "9053c5aa9ffb6fd3",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Supported football and baseball game day operations by preparing venues, managing signage and equipment setup, and ensuring facilities met safety and operational standards Provided on-field and behind-the-scenes support during football games, coordinating with media, operations staff, and event personnel to ensure smooth, on-time execution League Coordinator Intern | Caribbean Baseball Organization – Miami, FL Feb 2024 – Aug 2024",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "03666d784716230a",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Supported football and baseball game day operations by preparing venues, managing signage and equipment setup, and ensuring facilities met safety and operational standards Provided on-field and behind-the-scenes support during football games, coordinating with media, operations staff, and event personnel to ensure smooth, on-time execution League Coordinator Intern | Caribbean Baseball Organization – Miami, FL Feb 2024 – Aug 2024",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1b2c8f9eb962a039",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "0c929395e13af442",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "e70bae8918ffa167",
+            "kind": "deliverable",
+            "key": "coaching_instruction_facilitation",
+            "label": "coaching, instruction, and fundamentals-based facilitation",
+            "snippet": "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "229d964a5e781ddd",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "4a913ef7debdce7d",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "3a4d115e3c5a7ff5",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Led multi-channel recruitment outreach (calls, emails, texts) to high school seniors and college athletes, supporting roster development for summer league operations Served as primary contact for players and families, answering logistical questions and supporting enrollment and onboarding processes Assisted with league logistics, scheduling coordination, and day-to-day operational support to expand program reach Assistant Basketball Coach | Reach One Youth Organization, Inc – Tallahassee, FL Jan 2024 - May 2025",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "58107bab6d02a413",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Led weekly practices and skill development sessions for 60+ youth athletes (ages 10–14), emphasizing teamwork, discipline and accountability Served as a mentor and point of support for athletes and families, reinforcing communication and leadership skills ADDITIONAL EXPERIENCE Social Media Content Creator & Coordinator Intern | Workforce Ready Now – Boca Raton, FL May 2025 - Current",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "b6b23c48f2d05ba7",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Led weekly practices and skill development sessions for 60+ youth athletes (ages 10–14), emphasizing teamwork, discipline and accountability Served as a mentor and point of support for athletes and families, reinforcing communication and leadership skills ADDITIONAL EXPERIENCE Social Media Content Creator & Coordinator Intern | Workforce Ready Now – Boca Raton, FL May 2025 - Current",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "3390bcdbf11e18c0",
+            "kind": "deliverable",
+            "key": "coaching_instruction_facilitation",
+            "label": "coaching, instruction, and fundamentals-based facilitation",
+            "snippet": "Led weekly practices and skill development sessions for 60+ youth athletes (ages 10–14), emphasizing teamwork, discipline and accountability Served as a mentor and point of support for athletes and families, reinforcing communication and leadership skills ADDITIONAL EXPERIENCE Social Media Content Creator & Coordinator Intern | Workforce Ready Now – Boca Raton, FL May 2025 - Current",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "4f1973f5e135225a",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Conducted market and competitor research and produced short-form Instagram and TikTok content using Canva to support Gen Z audience engagement Kitchen Steward | Delta Gamma Sorority – Tallahassee, FL Aug 2024 - Current",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "1dda1b70313680e8",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Conducted market and competitor research and produced short-form Instagram and TikTok content using Canva to support Gen Z audience engagement Kitchen Steward | Delta Gamma Sorority – Tallahassee, FL Aug 2024 - Current",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "12e68e3b5dc0f30c",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Conducted market and competitor research and produced short-form Instagram and TikTok content using Canva to support Gen Z audience engagement Kitchen Steward | Delta Gamma Sorority – Tallahassee, FL Aug 2024 - Current",
+            "source": "resume",
+            "strength": 10
+          },
+          {
+            "id": "979ea774a7054a4f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Supported meal prep, dining room setup for 300+ people, and kitchen operations, collaborating with chef and house manager to ensure efficient service Recruitment Coordinator | The Placement Gurus – Boca Raton, FL May 2023 – Aug 2023",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "a5a2cafe5576791d",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "At the Caribbean Baseball Organization, I built a recruiting pipeline through calls, emails, and outreach, developing persistence and relationship-building skills that drive results.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "8a8381c7d1c2f78e",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "At the College World Series, I supported game-day operations on one of the sport’s biggest stages, handling logistics and fan experience where details mattered and pressure was high.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "5b1ef6c6a33c5b48",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Throughout my time at FSU, I have built hands-on experience across game day operations, fan engagement, and community events from supporting FSU Football as part of Legends and ASM Global to volunteering at the NCAA Men’s College World Series and coordinating outreach for the Caribbean Baseball Organization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "dee9a74058f2a6ab",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Throughout my time at FSU, I have built hands-on experience across game day operations, fan engagement, and community events from supporting FSU Football as part of Legends and ASM Global to volunteering at the NCAA Men’s College World Series and coordinating outreach for the Caribbean Baseball Organization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "8ac1b5cab7dbe1cb",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Throughout my time at FSU, I have built hands-on experience across game day operations, fan engagement, and community events from supporting FSU Football as part of Legends and ASM Global to volunteering at the NCAA Men’s College World Series and coordinating outreach for the Caribbean Baseball Organization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "54546f57f2cb5905",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Throughout my time at FSU, I have built hands-on experience across game day operations, fan engagement, and community events from supporting FSU Football as part of Legends and ASM Global to volunteering at the NCAA Men’s College World Series and coordinating outreach for the Caribbean Baseball Organization.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "440ef09232991b6d",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Resume Paste AIDEN GINSBERG (561)789-9145 | aideng04@gmail.com | LinkedIn Profile PROFESSIONAL SUMMARY Entry-level game day operations and guest experience professional with Division I athletics and championship event experience.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "463cca7103fe9433",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Seeking an entry-level role in guest experience, event operations, or fan engagement where I can support game day execution, staff coordination, and fan-facing operations.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "2f1dcfb297bb5f4e",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Supported crowd flow, guest assistance, and operational setup, gaining exposure to large-scale baseball event operations Events & Facilities Staff | Florida State University Athletics – Tallahassee, FL Sep 2023 – Dec 2023",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "06be92d3c7196d96",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Resume Paste AIDEN GINSBERG (561)789-9145 | aideng04@gmail.com | LinkedIn Profile PROFESSIONAL SUMMARY Entry-level game day operations and guest experience professional with Division I athletics and championship event experience.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "5c8798880bdd6629",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Resume Paste AIDEN GINSBERG (561)789-9145 | aideng04@gmail.com | LinkedIn Profile PROFESSIONAL SUMMARY Entry-level game day operations and guest experience professional with Division I athletics and championship event experience.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "601824c544e13c70",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Seeking an entry-level role in guest experience, event operations, or fan engagement where I can support game day execution, staff coordination, and fan-facing operations.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "e5f4cab7ae271d25",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Supported crowd flow, guest assistance, and operational setup, gaining exposure to large-scale baseball event operations Events & Facilities Staff | Florida State University Athletics – Tallahassee, FL Sep 2023 – Dec 2023",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "601ea0ff09833346",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Supported crowd flow, guest assistance, and operational setup, gaining exposure to large-scale baseball event operations Events & Facilities Staff | Florida State University Athletics – Tallahassee, FL Sep 2023 – Dec 2023",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "cf89e4d7180a823d",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Managed job postings, candidate screening, and PCRecruiter database updates to support end-to-end hiring operations INVOLVEMENT & VOLUNTEERISM Member, FSU Sport Management Society | Sigma Alpha Epsilon Fraternity",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "c49efe2d8c4a2704",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Across my roles in event coordination, game-day support, and youth coaching, I’ve learned how to connect with people, whether it’s a fan, a client, or a 12-year-old athlete who just needs someone to believe in them.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "ae21be4bb056515b",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Seeking an entry-level role in guest experience, event operations, or fan engagement where I can support game day execution, staff coordination, and fan-facing operations.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "f557c19b5271d634",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "It’s the mix of sales grit, event operations experience, and genuine people skills I bring to the table.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "19498157dae2defb",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "The Reds are looking for someone who can sell events, coordinate logistics, and deliver a best-in-class client experience.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1d94a9df037cf3c7",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "Proven ability to support high-volume live events, coordinate logistics, and deliver consistent fan and staff experiences in fast-paced environments.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "68b3fdf69786606c",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Proven ability to support high-volume live events, coordinate logistics, and deliver consistent fan and staff experiences in fast-paced environments.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "b40f0ca3c17b05f8",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Seeking an entry-level role in guest experience, event operations, or fan engagement where I can support game day execution, staff coordination, and fan-facing operations.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "471fc19de078ebb4",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "It’s the mix of sales grit, event operations experience, and genuine people skills I bring to the table.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "55a9f616071e06d6",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "EDUCATION Florida State University – Tallahassee, FL Bachelor of Science in Sport Management GPA: 3.41 Dec 2025 Awards/Honors: Dean’s List (Fall 2023, Spring 2024, Fall 2024, Spring 2025)| Full Tuition Bright Futures Scholarship Global Sports Management in Spain Study Abroad – Valencia, Madrid, and Barcelona, Spain Summer 2024 CORE COMPETENCIES Game Day & Event Operations | Guest Experience & Fan Services | Staff & Volunteer Coordination | Live Event Logistics & Setup | Corporate Hospitality & Sponsor Activation | Player & Team Support (Non-Playing) | Administrative & Front Office Support | Customer Service & Issue Resolution RELEVANT EXPERIENCE Game Day Representative (FSU Football) | Legends & ASM Global – Tallahassee, FL Aug 2025 - Nov 2025",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "bf6f8e37dc1f4913",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "EDUCATION Florida State University – Tallahassee, FL Bachelor of Science in Sport Management GPA: 3.41 Dec 2025 Awards/Honors: Dean’s List (Fall 2023, Spring 2024, Fall 2024, Spring 2025)| Full Tuition Bright Futures Scholarship Global Sports Management in Spain Study Abroad – Valencia, Madrid, and Barcelona, Spain Summer 2024 CORE COMPETENCIES Game Day & Event Operations | Guest Experience & Fan Services | Staff & Volunteer Coordination | Live Event Logistics & Setup | Corporate Hospitality & Sponsor Activation | Player & Team Support (Non-Playing) | Administrative & Front Office Support | Customer Service & Issue Resolution RELEVANT EXPERIENCE Game Day Representative (FSU Football) | Legends & ASM Global – Tallahassee, FL Aug 2025 - Nov 2025",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "15d58c35b90db115",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "EDUCATION Florida State University – Tallahassee, FL Bachelor of Science in Sport Management GPA: 3.41 Dec 2025 Awards/Honors: Dean’s List (Fall 2023, Spring 2024, Fall 2024, Spring 2025)| Full Tuition Bright Futures Scholarship Global Sports Management in Spain Study Abroad – Valencia, Madrid, and Barcelona, Spain Summer 2024 CORE COMPETENCIES Game Day & Event Operations | Guest Experience & Fan Services | Staff & Volunteer Coordination | Live Event Logistics & Setup | Corporate Hospitality & Sponsor Activation | Player & Team Support (Non-Playing) | Administrative & Front Office Support | Customer Service & Issue Resolution RELEVANT EXPERIENCE Game Day Representative (FSU Football) | Legends & ASM Global – Tallahassee, FL Aug 2025 - Nov 2025",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "b475e61747aaeae4",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Whether it is assisting with fundraising events, managing the Foundation kiosk, or handling the day to day administrative tasks that keep operations running smoothly, I am ready to contribute wherever needed.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "0e998cea188a9494",
+            "kind": "execution",
+            "key": "event_operations_live_execution",
+            "label": "live event, venue, and game-day operations execution",
+            "snippet": "I’m coachable, competitive, and committed to bringing the same energy to your special events team that I’ve brought to every field, venue, and locker room I’ve worked in.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "e4855e80b1c5dc2d",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "EDUCATION Florida State University – Tallahassee, FL Bachelor of Science in Sport Management GPA: 3.41 Dec 2025 Awards/Honors: Dean’s List (Fall 2023, Spring 2024, Fall 2024, Spring 2025)| Full Tuition Bright Futures Scholarship Global Sports Management in Spain Study Abroad – Valencia, Madrid, and Barcelona, Spain Summer 2024 CORE COMPETENCIES Game Day & Event Operations | Guest Experience & Fan Services | Staff & Volunteer Coordination | Live Event Logistics & Setup | Corporate Hospitality & Sponsor Activation | Player & Team Support (Non-Playing) | Administrative & Front Office Support | Customer Service & Issue Resolution RELEVANT EXPERIENCE Game Day Representative (FSU Football) | Legends & ASM Global – Tallahassee, FL Aug 2025 - Nov 2025",
+            "source": "resume",
+            "strength": 3,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 88,
+        "clamped_score": 88,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "✅",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "baseScore": 88,
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 4,
+        "riskCount": 0,
+        "why_count": 3,
+        "risk_count": 0,
+        "decision": "Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "customer_service_guest_experience",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 104
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "stakeholder_coordination",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 103
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 99
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "event_operations_live_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 98
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 9860,
+          "augmented_profile_text_len": 10135
         }
       }
     }
@@ -8667,7 +9702,8 @@
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
             "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
-            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Weak-posting fallback extraction activated because no standard requirement units were detected."
           ]
         },
         "location": {
@@ -8772,6 +9808,7 @@
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
+        "baseScore": 66,
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 0,

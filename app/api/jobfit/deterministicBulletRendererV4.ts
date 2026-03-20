@@ -163,7 +163,21 @@ function normalizeWhyJobFact(s: string): string {
 function capabilityPhrase(jobFact: string): string {
   const t = cleanJobFact(jobFact)
   if (!t) return ""
-
+if (/hands-on involvement with practices and games|practices and games|game day/i.test(t)) {
+  return "hands-on game-day and event execution"
+}
+if (/players, parents, and coaches|superior customer service|i9 sports experience/i.test(t)) {
+  return "guest experience and relationship-building"
+}
+if (/observing, assessing, and assisting our coaches|empower volunteer coaches|sportsmanship values/i.test(t)) {
+  return "coaching support and fundamentals instruction"
+}
+if (/field sales calls for assigned accounts and assigned territory/i.test(t)) {
+  return "territory-based field sales execution"
+}
+if (/clinical sales associate|drive .* utilization/i.test(t)) {
+  return "clinical sales execution and utilization support"
+}
   if (/collaborating with .* drive .*utilization/i.test(t)) {
     return "collaborating with the clinical sales team to drive utilization"
   }
@@ -222,7 +236,9 @@ function capabilityPhrase(jobFact: string): string {
 function summarizeJobFact(jobFact: string, matchKey?: string): string {
   const k = String(matchKey || "").toLowerCase()
   const phrase = capabilityPhrase(jobFact)
-
+if (k === "event_operations_live_execution") return "hands-on game-day and event execution"
+if (k === "customer_service_guest_experience") return "guest experience and fan-facing service"
+if (k === "coaching_instruction_facilitation") return "coaching, instruction, and fundamentals-based support"
   if (k === "strategy_problem_solving") return "the strategic problem-solving side of this role"
   if (k === "consumer_research") return "the research and benchmarking work in this role"
   if (k === "analysis_reporting") return "the analytical work this role requires"
@@ -421,7 +437,7 @@ function interpretDirectProof(profileFact: string, jobFact: string, matchKey?: s
   const literal = summarizeProfileFact(profileFact, matchKey)
   if (!literal) return ""
 
-  const summary = summarizeJobFact(jobFact, matchKey)
+  const summary = summarizeJobFact("", matchKey || "") || capabilityPhrase(jobFact) || "this part of the role"
 
   return sentence(
     `${literal}. That maps directly to ${summary}, and gives you a concrete example you can speak to in an interview.`
@@ -436,7 +452,10 @@ function interpretAdjacentProof(
   const literal = summarizeProfileFact(profileFact, ctx?.matchKey)
   if (!literal) return ""
 
-  const summary = summarizeJobFact(jobFact, ctx?.matchKey)
+  const summary =
+    summarizeJobFact("", ctx?.matchKey || "") ||
+    capabilityPhrase(jobFact) ||
+    "this part of the role"
 
   return sentence(
     `${literal}. It is not a perfect match, but it transfers credibly into ${summary}, especially if you explain the overlap clearly.`

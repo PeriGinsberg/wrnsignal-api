@@ -7,6 +7,12 @@
 // - job requirement units
 // - profile evidence units
 // - function-tag evidence maps for audit/debug
+//
+// Phase I hardening notes:
+// - Added weak-posting fallback extraction so Google summary / scraped bullet jobs do not collapse to zero requirements
+// - Added sports / event / guest-service / coaching / customer-service signals
+// - Added “no-empty-requirements” guardrail behavior
+// - Kept deterministic architecture intact
 
 import crypto from "crypto"
 import { POLICY } from "./policy"
@@ -65,13 +71,13 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "brand storytelling",
       "brand strategy",
       "brand communication",
-"brand initiatives",
-"brand initiative",
-"brand activations",
-"brand activation",
-"campaign initiatives",
-"marketing initiatives",
-"brand events",
+      "brand initiatives",
+      "brand initiative",
+      "brand activations",
+      "brand activation",
+      "campaign initiatives",
+      "marketing initiatives",
+      "brand events",
     ],
     adjacentKeys: ["content_execution", "visual_communication"],
   },
@@ -152,12 +158,12 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "channel",
       "editorial calendar",
       "content strategy",
-"events",
-"event support",
-"event execution",
-"marketing events",
-"brand events",
-"activations",
+      "events",
+      "event support",
+      "event execution",
+      "marketing events",
+      "brand events",
+      "activations",
       "channel execution",
     ],
     adjacentKeys: ["brand_messaging", "visual_communication"],
@@ -279,8 +285,108 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     ],
     adjacentKeys: ["brand_messaging"],
   },
-
-  // Commercial capability split
+  {
+    key: "customer_service_guest_experience",
+    label: "customer service, guest experience, and issue resolution",
+    kind: "stakeholder",
+    functionTag: "operations_general",
+    profilePhrases: [
+      "guest experience",
+      "guest services",
+      "fan services",
+      "fan engagement",
+      "guest issues",
+      "customer service",
+      "customer support",
+      "served as a gracious host",
+      "point of contact",
+      "guest assistance",
+      "crowd flow",
+      "fan-facing",
+      "families",
+      "players and families",
+    ],
+    jobPhrases: [
+      "guest experience",
+      "guest services",
+      "fan services",
+      "fan engagement",
+      "customer service",
+      "positive attitude",
+      "build relationships with players, parents, and coaches",
+      "superior customer service",
+      "players, parents, and coaches",
+      "players and coaches",
+      "i9 sports experience",
+    ],
+    adjacentKeys: ["stakeholder_coordination", "operations_execution"],
+  },
+  {
+    key: "event_operations_live_execution",
+    label: "live event, venue, and game-day operations execution",
+    kind: "execution",
+    functionTag: "operations_general",
+    profilePhrases: [
+      "game day",
+      "game day operations",
+      "event operations",
+      "event execution",
+      "venue logistics",
+      "setup and breakdown",
+      "signage and equipment setup",
+      "load-ins",
+      "hospitality spaces",
+      "operational setup",
+      "venue",
+      "crowd flow",
+      "live events",
+      "live event logistics",
+    ],
+    jobPhrases: [
+      "game day",
+      "game day operation",
+      "game day operations",
+      "practices and games",
+      "hands-on involvement",
+      "hands on involvement",
+      "supervise the overall operation",
+      "overall operation of designated sport on game day",
+      "game day execution",
+      "event operations",
+      "sport coordinator",
+    ],
+    adjacentKeys: ["operations_execution", "stakeholder_coordination"],
+  },
+  {
+    key: "coaching_instruction_facilitation",
+    label: "coaching, instruction, and fundamentals-based facilitation",
+    kind: "deliverable",
+    functionTag: "operations_general",
+    profilePhrases: [
+      "coach",
+      "assistant basketball coach",
+      "led weekly practices",
+      "skill development",
+      "mentor",
+      "athletes and families",
+      "discipline and accountability",
+      "youth athletes",
+      "training sessions",
+    ],
+    jobPhrases: [
+      "coaches",
+      "coach",
+      "observing, assessing, and assisting our coaches",
+      "empower volunteer coaches",
+      "teach & demonstrate core concepts",
+      "teach and demonstrate core concepts",
+      "skill development",
+      "fundamentals",
+      "sportsmanship values",
+      "practice sessions",
+    ],
+    adjacentKeys: ["stakeholder_coordination", "customer_service_guest_experience"],
+  },
   {
     key: "prospecting_pipeline_management",
     label: "prospecting, outreach, and pipeline management",
@@ -465,7 +571,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     functionTag: "premed_clinical",
     profilePhrases: [
       "operating room",
-            "orthopedic",
+      "orthopedic",
       "surgical",
       "hospital",
       "trauma center",
@@ -478,7 +584,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     ],
     jobPhrases: [
       "operating room",
-           "orthopedic",
+      "orthopedic",
       "surgical",
       "hospital",
       "case coverage",
@@ -547,14 +653,12 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     ],
     adjacentKeys: ["hospital_or_environment", "product_training_enablement"],
   },
-
-  // Legacy / generic commercial bucket kept but de-emphasized
   {
     key: "client_commercial_work",
     label: "generic client-facing or commercial support work",
     kind: "stakeholder",
     functionTag: "sales_bd",
-minMatches: 2,
+    minMatches: 2,
     profilePhrases: [
       "client",
       "client-facing",
@@ -574,7 +678,6 @@ minMatches: 2,
     ],
     adjacentKeys: ["stakeholder_coordination", "account_management"],
   },
-
   {
     key: "policy_regulatory_research",
     label: "legal, policy, and regulatory research",
@@ -589,6 +692,7 @@ minMatches: 2,
       "contracts",
       "litigation",
       "legislative",
+      "safety standards",
     ],
     jobPhrases: [
       "legal research",
@@ -599,6 +703,7 @@ minMatches: 2,
       "contracts",
       "litigation",
       "legislative",
+      "safety",
     ],
     adjacentKeys: ["communications_writing", "analysis_reporting"],
   },
@@ -696,6 +801,10 @@ minMatches: 2,
       "program management",
       "cross-functional",
       "process",
+      "logistics",
+      "game day execution",
+      "staff coordination",
+      "event operations",
     ],
     jobPhrases: [
       "operations",
@@ -705,35 +814,40 @@ minMatches: 2,
       "program management",
       "cross-functional",
       "process",
+      "logistics",
+      "game day",
+      "supervise",
+      "schedule",
+      "weekends and evenings",
     ],
     adjacentKeys: ["stakeholder_coordination", "analysis_reporting"],
   },
   {
-  key: "strategy_problem_solving",
-  label: "strategy, synthesis, and problem-solving work",
-  kind: "function",
-  functionTag: "consulting_strategy",
-  minMatches: 2,
-  profilePhrases: [
-    "consulting",
-    "strategy",
-    "recommendation",
-    "problem solving",
-    "market research",
-    "hypothesis",
-    "case competition",
-    "presentation",
-  ],
-  jobPhrases: [
-    "consulting",
-    "strategy",
-    "recommendation",
-    "problem solving",
-    "hypothesis",
-    "presentation",
-  ],
-  adjacentKeys: ["analysis_reporting", "consumer_research", "stakeholder_coordination"],
-},
+    key: "strategy_problem_solving",
+    label: "strategy, synthesis, and problem-solving work",
+    kind: "function",
+    functionTag: "consulting_strategy",
+    minMatches: 2,
+    profilePhrases: [
+      "consulting",
+      "strategy",
+      "recommendation",
+      "problem solving",
+      "market research",
+      "hypothesis",
+      "case competition",
+      "presentation",
+    ],
+    jobPhrases: [
+      "consulting",
+      "strategy",
+      "recommendation",
+      "problem solving",
+      "hypothesis",
+      "presentation",
+    ],
+    adjacentKeys: ["analysis_reporting", "consumer_research", "stakeholder_coordination"],
+  },
   {
     key: "stakeholder_coordination",
     label: "stakeholder coordination and cross-functional execution",
@@ -747,6 +861,11 @@ minMatches: 2,
       "partnered with",
       "worked with",
       "presented to",
+      "players and families",
+      "media, operations staff, and event personnel",
+      "sponsor needs",
+      "coaches",
+      "parents",
     ],
     jobPhrases: [
       "cross-functional",
@@ -757,6 +876,10 @@ minMatches: 2,
       "worked with",
       "present to",
       "collaborate with",
+      "build relationships",
+      "players, parents, and coaches",
+      "players and coaches",
+      "volunteer coaches",
     ],
     adjacentKeys: ["operations_execution", "account_management"],
   },
@@ -821,6 +944,99 @@ const NEVER_CORE_KEYS = new Set([
   "strategy_problem_solving",
 ])
 
+const FALLBACK_JOB_RULES: Array<{
+  key: string
+  label: string
+  kind: EvidenceKind
+  functionTag?: FunctionTag
+  phrases: string[]
+  requiredness?: "core" | "supporting"
+}> = [
+  {
+    key: "event_operations_live_execution",
+    label: "live event, venue, and game-day operations execution",
+    kind: "execution",
+    functionTag: "operations_general",
+    requiredness: "core",
+    phrases: [
+      "game day",
+      "practices and games",
+      "supervise the overall operation",
+      "overall operation of designated sport",
+      "hands-on involvement",
+      "hands on involvement",
+      "event operations",
+      "sport coordinator",
+    ],
+  },
+  {
+    key: "customer_service_guest_experience",
+    label: "customer service, guest experience, and issue resolution",
+    kind: "stakeholder",
+    functionTag: "operations_general",
+    requiredness: "supporting",
+    phrases: [
+      "customer service",
+      "superior customer service",
+      "build relationships with players, parents, and coaches",
+      "players, parents, and coaches",
+      "players and coaches",
+      "i9 sports experience",
+      "guest experience",
+      "fan services",
+    ],
+  },
+  {
+    key: "coaching_instruction_facilitation",
+    label: "coaching, instruction, and fundamentals-based facilitation",
+    kind: "deliverable",
+    functionTag: "operations_general",
+    requiredness: "supporting",
+    phrases: [
+      "observing, assessing, and assisting our coaches",
+      "empower volunteer coaches",
+      "teach",
+      "demonstrate core concepts",
+      "sportsmanship values",
+      "fundamentals",
+      "skill development",
+      "practice sessions",
+    ],
+  },
+  {
+    key: "stakeholder_coordination",
+    label: "stakeholder coordination and cross-functional execution",
+    kind: "stakeholder",
+    functionTag: "operations_general",
+    requiredness: "supporting",
+    phrases: [
+      "build professional relationships",
+      "parents",
+      "coaches",
+      "players",
+      "communicate",
+      "relationship",
+    ],
+  },
+  {
+    key: "operations_execution",
+    label: "operations, process, and workflow execution",
+    kind: "execution",
+    functionTag: "operations_general",
+    requiredness: "supporting",
+    phrases: [
+      "schedule",
+      "weekends",
+      "evenings",
+      "self-starter",
+      "work independently",
+      "solve problems",
+      "take charge",
+      "safety of players",
+    ],
+  },
+]
+
 function stableHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex").slice(0, 16)
 }
@@ -878,7 +1094,7 @@ function splitEvidenceLines(text: string): string[] {
   if (!raw.trim()) return []
 
   const actionSplit =
-    /(?=\b(Conducted|Reviewed|Drafted|Prepared|Presented|Analyzed|Researched|Coordinated|Supported|Executed|Created|Developed|Managed|Led|Produced|Tracked|Wrote|Collaborated|Applied|Organized)\b)/
+    /(?=\b(Conducted|Reviewed|Drafted|Prepared|Presented|Analyzed|Researched|Coordinated|Supported|Executed|Created|Developed|Managed|Led|Produced|Tracked|Wrote|Collaborated|Applied|Organized|Observed|Supervised|Empower|Teach|Demonstrate|Build)\b)/
 
   const chunks = raw
     .split(/\r?\n+/)
@@ -921,14 +1137,14 @@ function scoreProfileLine(line: string): number {
   if (t.length >= 55) score += 1
 
   if (
-    /\b(conducted|analyzed|built|created|developed|managed|supported|coordinated|prepared|drafted|reviewed|researched|presented|executed|optimized|led|designed|translated|closed|sold|prospected|trained)\b/i.test(
+    /\b(conducted|analyzed|built|created|developed|managed|supported|coordinated|prepared|drafted|reviewed|researched|presented|executed|optimized|led|designed|translated|closed|sold|prospected|trained|served|observed|assisted|facilitated|mentored)\b/i.test(
       line
     )
   ) score += 4
 
   if (/\b(with|using|for|across|including|through)\b/i.test(line)) score += 1
   if (
-    /\b(client|stakeholder|campaign|portfolio|policy|regulatory|reporting|brand|content|research|analysis|sales|pipeline|hospital|surgical|physician|crm)\b/i.test(
+    /\b(client|stakeholder|campaign|portfolio|policy|regulatory|reporting|brand|content|research|analysis|sales|pipeline|hospital|surgical|surgeon|guest|fan|event|game day|coach|coach(es)?|player|parent)\b/i.test(
       line
     )
   ) score += 2
@@ -947,22 +1163,24 @@ function scoreJobLine(line: string): number {
 
   let score = 0
 
+  if (t.length >= 20) score += 1
   if (t.length >= 30) score += 2
+
   if (
-    /\b(responsible for|responsibilities include|you will|will be|support|conduct|analyze|develop|manage|prepare|execute|coordinate|collaborate|assist|drive|build|create|own|train|educate|cover)\b/i.test(
+    /\b(responsible for|responsibilities include|you will|will be|support|conduct|analyze|develop|manage|prepare|execute|coordinate|collaborate|assist|drive|build|create|own|train|educate|cover|supervise|teach|demonstrate|observe|assess|empower)\b/i.test(
       line
     )
   ) score += 4
 
-  if (/\b(required|preferred|must|proficient|experience with|ability to)\b/i.test(line)) score += 2
+  if (/\b(required|preferred|must|proficient|experience with|ability to|qualifications)\b/i.test(line)) score += 2
   if (
-    /\b(research|analysis|reporting|campaign|content|design|financial|client|stakeholder|policy|regulatory|operations|sales|crm|territory|hospital|surgical|surgeon)\b/i.test(
+    /\b(research|analysis|reporting|campaign|content|design|financial|client|stakeholder|policy|regulatory|operations|sales|crm|territory|hospital|surgical|surgeon|guest|fan|event|game day|coach|player|parent|customer service|sportsmanship)\b/i.test(
       line
     )
   ) score += 2
 
   if (/\b(equal opportunity|benefits|compensation may vary|about us|who we are|our values)\b/i.test(line)) score -= 5
-  if (t.length < 20) score -= 3
+  if (t.length < 16) score -= 2
 
   return score
 }
@@ -1029,9 +1247,7 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "legal_regulatory" || tag === "creative_design" || tag === "other") score.Other += 4
   }
 
-  if (score.Sales > 0 && score.PreMed > 0) {
-    score.Sales += 2
-  }
+  if (score.Sales > 0 && score.PreMed > 0) score.Sales += 2
 
   const ordered: JobFamily[] = [
     "Sales",
@@ -1096,7 +1312,6 @@ function compressJobSnippet(snippet: string): string {
     .filter(Boolean)
 
   if (parts.length === 0) return cleaned.slice(0, 260).trim()
-
   return parts.slice(0, 2).join("; ").trim()
 }
 
@@ -1135,7 +1350,6 @@ function dedupeUnits<T extends { id: string }>(items: T[]): T[] {
 function detectRequiredness(line: string): "core" | "supporting" {
   const l = line.toLowerCase()
 
-  // Always supporting for softer enablement / support language
   if (
     l.includes("product training") ||
     l.includes("in-service") ||
@@ -1156,7 +1370,6 @@ function detectRequiredness(line: string): "core" | "supporting" {
     return "supporting"
   }
 
-  // Strategy / consumer / clinical language should not become core by default
   if (
     l.includes("strategy") ||
     l.includes("consumer") ||
@@ -1165,9 +1378,8 @@ function detectRequiredness(line: string): "core" | "supporting" {
     return "supporting"
   }
 
-  // Core only for strong ownership / required execution language
   if (
-    /\b(required|must|responsible for|you will|primary responsibility|own|lead|territory)\b/i.test(l)
+    /\b(required|must|responsible for|you will|primary responsibility|own|lead|territory|supervise|teach|observe|assess|empower)\b/i.test(l)
   ) {
     return "core"
   }
@@ -1290,7 +1502,7 @@ function buildUnitsFromLines(
     for (const rule of CAPABILITY_RULES) {
       const phrases = side === "job" ? rule.jobPhrases : rule.profilePhrases
       const hits = countHits(n, phrases)
-           const minMatches = rule.minMatches ?? 1
+      const minMatches = rule.minMatches ?? 1
       if (hits < minMatches) continue
 
       if (
@@ -1373,6 +1585,51 @@ function buildUnitsFromLines(
   }
 }
 
+function buildFallbackJobUnits(lines: string[]): {
+  units: JobRequirementUnit[]
+  functionTags: FunctionTag[]
+  hits: Record<string, number>
+} {
+  const units: JobRequirementUnit[] = []
+  const functionTags = new Set<FunctionTag>()
+  const hits: Record<string, number> = {}
+
+  for (const line of lines) {
+    const cleaned = cleanLine(line)
+    const n = norm(cleaned)
+    if (!n) continue
+
+    const baseScore = scoreJobLine(cleaned)
+    if (baseScore < 1) continue
+
+    for (const rule of FALLBACK_JOB_RULES) {
+      const ruleHits = countHits(n, rule.phrases)
+      if (ruleHits < 1) continue
+
+      hits[rule.key] = (hits[rule.key] || 0) + ruleHits
+      if (rule.functionTag) functionTags.add(rule.functionTag)
+
+      units.push(
+        makeJobUnit(
+          rule.key,
+          rule.label,
+          rule.kind,
+          cleaned,
+          Math.max(4, Math.min(8, baseScore + ruleHits)),
+          rule.requiredness || "supporting",
+          rule.functionTag
+        )
+      )
+    }
+  }
+
+  return {
+    units: dedupeUnits(units),
+    functionTags: Array.from(functionTags),
+    hits,
+  }
+}
+
 function extractYearsRequired(jobText: string): number | null {
   const patterns: RegExp[] = Array.isArray((POLICY as any)?.extraction?.years?.patterns)
     ? ((POLICY as any).extraction.years.patterns as RegExp[])
@@ -1424,6 +1681,7 @@ function extractCity(t: string): string | null {
   if (/\bcharlotte\b/.test(t)) return "Charlotte"
   if (/\bwashington,\s*dc\b|\bwashington dc\b/.test(t)) return "Washington DC"
   if (/\blos angeles\b/.test(t)) return "Los Angeles"
+  if (/\bocala\b/.test(t)) return "Ocala"
   return null
 }
 
@@ -1617,7 +1875,7 @@ function inferYearsExperienceApprox(profileText: string): number | null {
 
   const roleSignals = splitEvidenceLines(profileText).filter(
     (line) =>
-      /\b(intern|internship|analyst|assistant|coordinator|associate|manager|emt|clerk|specialist|sales)\b/i.test(line)
+      /\b(intern|internship|analyst|assistant|coordinator|associate|manager|emt|clerk|specialist|sales|coach|volunteer|representative|staff)\b/i.test(line)
   ).length
 
   if (roleSignals >= 5) return 2
@@ -1647,15 +1905,53 @@ function inferTargetFamiliesFromTags(tags: FunctionTag[]): JobFamily[] {
   return family === "Other" ? [] : [family]
 }
 
+function selectBestJobUnits(units: JobRequirementUnit[]): JobRequirementUnit[] {
+  return Array.from(
+    new Map(
+      units
+        .sort((a, b) => b.strength - a.strength)
+        .map((u) => [u.key, u] as const)
+    ).values()
+  ).map((u) =>
+    NEVER_CORE_KEYS.has(u.key)
+      ? { ...u, requiredness: "supporting" as const }
+      : u
+  )
+}
+
+function mergeFunctionTagEvidence(
+  base: Partial<Record<FunctionTag, string[]>>,
+  extra: Partial<Record<FunctionTag, string[]>>
+): Partial<Record<FunctionTag, string[]>> {
+  const out: Partial<Record<FunctionTag, string[]>> = { ...base }
+
+  for (const [tag, lines] of Object.entries(extra) as Array<[FunctionTag, string[]]>) {
+    const existing = out[tag] || []
+    const merged = Array.from(new Set([...(existing || []), ...(lines || [])])).slice(0, 5)
+    out[tag] = merged
+  }
+
+  return out
+}
+
 export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
 
   const lines = splitEvidenceLines(jobTextRaw)
   const built = buildUnitsFromLines(lines, "job")
-  const functionTags = built.functionTags
+
+  const fallback = built.jobUnits.length === 0 ? buildFallbackJobUnits(lines) : { units: [], functionTags: [], hits: {} }
+
+  const mergedJobUnits = built.jobUnits.length > 0 ? built.jobUnits : fallback.units
+  const mergedFunctionTags = Array.from(new Set([...(built.functionTags || []), ...(fallback.functionTags || [])]))
+  const mergedDebugHits = { ...built.debugHits, ...fallback.hits }
+
+  const functionTags = mergedFunctionTags
+  const requirementUnits = selectBestJobUnits(mergedJobUnits)
+
   const jobFamily = familyFromFunctionTags(functionTags)
-  const analytics = detectAnalytics(jobTextRaw, functionTags, built.jobUnits)
+  const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
   const gradYearHint = extractGradYearHint(normalized)
@@ -1668,12 +1964,13 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
   const mbaRequired = includesAny(normalized, mbaKeywords)
 
-const isGovernment =
-  functionTags.includes("government_cleared") ||
-  /\b(federal government|state government|county government|city government|municipal government|public sector agency|government agency|department of|ministry of)\b/i.test(normalized)
+  const isGovernment =
+    includesAny(normalized, govKeywords) ||
+    functionTags.includes("government_cleared") ||
+    /\b(federal government|state government|county government|city government|municipal government|public sector agency|government agency|department of|ministry of)\b/i.test(normalized)
 
   const explicitSalesEvidence =
-    built.jobUnits.filter((u) =>
+    requirementUnits.filter((u) =>
       [
         "prospecting_pipeline_management",
         "account_management",
@@ -1696,7 +1993,7 @@ const isGovernment =
 
   const { required, preferred } = extractToolRequirements(jobTextRaw)
 
-  const reportingStrong = built.jobUnits.some(
+  const reportingStrong = requirementUnits.some(
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
 
@@ -1706,11 +2003,14 @@ const isGovernment =
     analytics,
     function_tags: functionTags,
     signal_debug: {
-      hits: built.debugHits,
+      hits: mergedDebugHits,
       notes: [
         "Requirement units are evidence-first and line-anchored.",
         "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
         "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+        built.jobUnits.length === 0
+          ? "Weak-posting fallback extraction activated because no standard requirement units were detected."
+          : "Standard extraction path used.",
       ],
     },
     location,
@@ -1724,17 +2024,7 @@ const isGovernment =
     requiredTools: required,
     preferredTools: preferred,
     reportingSignals: { strong: reportingStrong },
-requirement_units: Array.from(
-  new Map(
-    built.jobUnits
-      .sort((a, b) => b.strength - a.strength)
-      .map((u) => [u.key, u] as const)
-  ).values()
-).map((u) =>
-  NEVER_CORE_KEYS.has(u.key)
-    ? { ...u, requiredness: "supporting" as const }
-    : u
-),
+    requirement_units: requirementUnits,
     internship: detectInternshipSignals(jobTextRaw),
   }
 }
@@ -1803,7 +2093,9 @@ export function extractProfileSignals(
         : base.targetFamilies,
     tools: mergedTools,
     function_tags: mergedTags,
-    function_tag_evidence: overrides?.function_tag_evidence || base.function_tag_evidence,
+    function_tag_evidence: overrides?.function_tag_evidence
+      ? mergeFunctionTagEvidence(base.function_tag_evidence, overrides.function_tag_evidence)
+      : base.function_tag_evidence,
     profile_evidence_units:
       Array.isArray(overrides?.profile_evidence_units) && overrides.profile_evidence_units.length > 0
         ? overrides.profile_evidence_units
