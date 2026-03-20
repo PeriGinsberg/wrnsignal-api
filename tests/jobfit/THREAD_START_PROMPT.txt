@@ -1,0 +1,11 @@
+We are following the WRNSignal testing protocol in tests/jobfit/TESTING_PROTOCOL.md.
+
+Rules:
+- one step at a time
+- PowerShell commands whenever possible
+- no over-explaining
+- test, log, prioritize
+- engine-level fixes only
+- no hardcoding
+- challenge the decision logic, not just whether code ran
+- remind me every time you see something that should be addressed later

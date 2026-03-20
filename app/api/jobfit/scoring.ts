@@ -453,11 +453,11 @@ function buildCoverage(job: StructuredJobSignals, allMatches: WhyEvidenceMatch[]
     const minimumCoverage =
       ju.requiredness === "core"
         ? DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
-          ? 74
-          : 64
+          ? 70
+          : 60
         : DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
-        ? 66
-        : 56
+        ? 62
+        : 52
 
     const nearMissFloor =
       ju.requiredness === "core" ? minimumCoverage - 18 : minimumCoverage - 14
@@ -634,11 +634,18 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
   const adequateCoverageCount = coverage.filter((c) => c.adequate).length
   const coreCoverageCount = coverage.filter((c) => c.adequate && c.jobUnit.requiredness === "core").length
 
-  base += Math.min(14, directCount * 5)
-  base += Math.min(6, adjacentCount * 2)
-  base += Math.min(4, toolCount * 2)
-  base += Math.min(6, adequateCoverageCount)
-  base += Math.min(5, coreCoverageCount)
+base += Math.min(24, directCount * 7)
+base += Math.min(8, adjacentCount * 2)
+base += Math.min(4, toolCount * 2)
+base += Math.min(8, adequateCoverageCount)
+base += Math.min(8, coreCoverageCount)
+
+if (directCount >= 3 && coreCoverageCount >= 1 && base < 72) {
+  base = 72
+}
+if (directCount >= 4 && adequateCoverageCount >= 3 && base < 78) {
+  base = 78
+}
 
   return clamp(base, POLICY.score.minScore, POLICY.score.maxScore)
 }
@@ -955,11 +962,11 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   // New engine-level uncovered capability penalties
   for (const c of coverage) {
     if (c.adequate) continue
-    if (!(c.jobUnit.requiredness === "core" || c.jobUnit.strength >= 8)) continue
+  if (c.jobUnit.requiredness !== "core") continue
     if (c.jobUnit.kind === "tool") continue
 
     const key = capabilityPenaltyKey(c.jobUnit.key)
-    const amt = computePenaltyAmount(key) * (c.nearMiss ? 0.55 : 1)
+    const amt = computePenaltyAmount(key) * (c.nearMiss ? 0.35 : 0.75)
 
     penalties.push({
       key,

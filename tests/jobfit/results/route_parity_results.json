@@ -2,20 +2,20 @@
   {
     "id": "real-020",
     "label": "Graphic Designer - Topps NYC",
-    "score": 90,
-    "decision_final": "Apply",
-    "why_bullets_joined": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation | Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution | Designed end-to-end brand identity and visual systems. This shows strong ownership and execution",
+    "score": 97,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Apply",
-      "score": 90,
+      "decision": "Priority Apply",
+      "score": 97,
       "bullets": [
-        "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation",
-        "Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution",
-        "Designed end-to-end brand identity and visual systems. This shows strong ownership and execution"
+        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
+        "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview",
+        "You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it"
       ],
       "risk_flags": [],
-      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -82,7 +82,6 @@
         },
         "function_tags": [
           "creative_design",
-          "premed_clinical",
           "finance_corp",
           "brand_marketing",
           "operations_general",
@@ -91,7 +90,6 @@
         "signal_debug": {
           "hits": {
             "visual_communication": 2,
-            "hospital_or_environment": 4,
             "financial_analysis": 1,
             "tool:figma": 1,
             "tool:photoshop": 1,
@@ -100,7 +98,7 @@
             "brand_messaging": 1,
             "operations_execution": 1,
             "stakeholder_coordination": 2,
-            "content_execution": 1
+            "content_execution": 2
           },
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
@@ -151,16 +149,6 @@
             "strength": 6,
             "requiredness": "supporting",
             "functionTag": "creative_design"
-          },
-          {
-            "id": "1ecb9f209fdf1ff6",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "The listed salary ranges are specific to NYC or Los Angeles and may not be applicable to other locations",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "premed_clinical"
           },
           {
             "id": "139b2433e7127f9c",
@@ -523,23 +511,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 90,
-        "clamped_score": 90,
+        "raw_score": 97,
+        "clamped_score": 97,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "penalty_sum",
@@ -548,20 +536,20 @@
           }
         ]
       },
-      "icon": "✅",
+      "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Apply",
-        "decision_after_gate": "Apply",
-        "decision_final": "Apply",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 5,
         "riskCount": 0,
         "why_count": 3,
         "risk_count": 0,
-        "decision": "Apply",
+        "decision": "Priority Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -613,21 +601,23 @@
   {
     "id": "real-101",
     "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
-    "score": 75,
-    "decision_final": "Review",
-    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with clinical selling, provider-facing support, and utilization growth | Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution",
-    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
+    "score": 81,
+    "decision_final": "Apply",
+    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview | Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and you already have evidence that you can execute rather than just talk about it",
+    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | This role requires clearer proof of day-to-day content execution than is currently visible in your background",
     "raw": {
-      "decision": "Review",
-      "score": 75,
+      "decision": "Apply",
+      "score": 81,
       "bullets": [
-        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with clinical selling, provider-facing support, and utilization growth",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution"
+        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview",
+        "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and gives you a concrete example you can speak to in an interview",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on The focus of the Clinical Sales Associate (CSA) is to clinically sell to maximize the da Vinci� Surgical System�s utilization in the Ocala, and you already have evidence that you can execute rather than just talk about it"
       ],
       "risk_flags": [
-        "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area"
+        "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
+        "This role requires clearer proof of day-to-day content execution than is currently visible in your background"
       ],
-      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -668,7 +658,7 @@
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "risk": "You have adjacent evidence here, but not enough direct proof for this role's requirement.",
           "severity": "medium",
-          "weight": -5.940000000000001
+          "weight": -3.78
         },
         {
           "code": "RISK_MISSING_PROOF",
@@ -676,6 +666,14 @@
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "risk": "You show adjacent evidence here, but not enough direct proof for the way this role uses it.",
           "severity": "high",
+          "weight": 0
+        },
+        {
+          "code": "RISK_MISSING_PROOF",
+          "job_fact": "content and channel execution",
+          "profile_fact": null,
+          "risk": "The role emphasizes work where your profile does not yet show clear direct proof.",
+          "severity": "medium",
           "weight": 0
         }
       ],
@@ -691,12 +689,14 @@
         },
         "function_tags": [
           "premed_clinical",
+          "content_social",
           "sales_bd"
         ],
         "signal_debug": {
           "hits": {
-            "hospital_or_environment": 7,
             "clinical_patient_work": 2,
+            "hospital_or_environment": 4,
+            "content_execution": 2,
             "territory_execution": 2
           },
           "notes": [
@@ -743,6 +743,16 @@
             "strength": 6,
             "requiredness": "core",
             "functionTag": "premed_clinical"
+          },
+          {
+            "id": "7d38b447dcf25e10",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Support regional Sales and Marketing events that create system awareness and procedure adoption",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
           },
           {
             "id": "1312a401d25efdaa",
@@ -1072,45 +1082,45 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 75,
-        "clamped_score": 75,
+        "raw_score": 81,
+        "clamped_score": 81,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
-            "points": -6,
-            "note": "5.940000000000001"
+            "points": -4,
+            "note": "3.78"
           }
         ]
       },
-      "icon": "⚠",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Review",
-        "decision_after_gate": "Review",
-        "decision_final": "Review",
-        "rawPenaltySum": 5.940000000000001,
-        "penaltySum": 5.940000000000001,
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "rawPenaltySum": 3.78,
+        "penaltySum": 3.78,
         "whyCount": 3,
-        "riskCount": 2,
-        "why_count": 2,
-        "risk_count": 1,
-        "decision": "Review",
+        "riskCount": 3,
+        "why_count": 3,
+        "risk_count": 2,
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -1142,6 +1152,10 @@
           {
             "code": "RISK_MISSING_PROOF",
             "severity": "medium"
+          },
+          {
+            "code": "RISK_MISSING_PROOF",
+            "severity": "medium"
           }
         ],
         "evaluator_profile_source": {
@@ -1157,21 +1171,34 @@
   {
     "id": "real-102",
     "label": "Michael Lazarus - NYC Council Graphics Designer",
-    "score": 72,
-    "decision_final": "Review",
-    "why_bullets_joined": "Designed end-to-end brand identity and visual systems. This shows strong ownership and execution | Adobe, Canva, and Photoshop shows relevant tool strength for this work",
-    "risk_bullets_joined": "",
+    "score": 84,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it | Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific",
+    "risk_bullets_joined": "The posting calls for Excel, and your profile does not clearly show it yet",
     "raw": {
-      "decision": "Review",
-      "score": 72,
+      "decision": "Apply",
+      "score": 84,
       "bullets": [
-        "Designed end-to-end brand identity and visual systems. This shows strong ownership and execution",
-        "Adobe, Canva, and Photoshop shows relevant tool strength for this work"
+        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
+        "You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it",
+        "Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific"
       ],
-      "risk_flags": [],
-      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "risk_flags": [
+        "The posting calls for Excel, and your profile does not clearly show it yet"
+      ],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Participation in the planning and production of events (meeting attendance, determination and documenting of graphics needs, monitoring of related progress)",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "content_execution",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
         {
           "code": "WHY_TOOL_PROOF",
           "job_fact": "Proficiency and creativity in Adobe Suite tools such as InDesign, Illustrator, and Photoshop are required",
@@ -1242,12 +1269,14 @@
           "isLight": true
         },
         "function_tags": [
+          "content_social",
           "data_analytics_bi",
           "operations_general",
           "finance_corp"
         ],
         "signal_debug": {
           "hits": {
+            "content_execution": 1,
             "analysis_reporting": 1,
             "operations_execution": 1,
             "tool:photoshop": 1,
@@ -1337,6 +1366,16 @@
             "strength": 5,
             "requiredness": "supporting",
             "functionTag": "operations_general"
+          },
+          {
+            "id": "14061311bdd0bfc1",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Participation in the planning and production of events (meeting attendance, determination and documenting of graphics needs, monitoring of related progress).",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
           },
           {
             "id": "e84a055d9895fb7d",
@@ -1708,23 +1747,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 72,
-        "clamped_score": 72,
+        "raw_score": 84,
+        "clamped_score": 84,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -1733,21 +1772,28 @@
           }
         ]
       },
-      "icon": "⚠",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Review",
-        "decision_after_gate": "Review",
-        "decision_final": "Review",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
-        "whyCount": 4,
+        "whyCount": 5,
         "riskCount": 2,
-        "why_count": 2,
-        "risk_count": 0,
-        "decision": "Review",
+        "why_count": 3,
+        "risk_count": 1,
+        "decision": "Apply",
         "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "content_execution",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 99
+          },
           {
             "code": "WHY_EXECUTION_PROOF",
             "match_key": "analysis_reporting",
@@ -1800,16 +1846,20 @@
   {
     "id": "real-103",
     "label": "Will Friedman - RSM Strategy and Management Consulting Intern",
-    "score": 66,
-    "decision_final": "Review",
-    "why_bullets_joined": "",
+    "score": 78,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You've already done real strategy and diligence work, where you had to break down information and make sense of it. That maps directly to the strategic problem-solving side of this role, and gives you a concrete example you can speak to in an interview | You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview | You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Review",
-      "score": 66,
-      "bullets": [],
+      "decision": "Apply",
+      "score": 78,
+      "bullets": [
+        "You've already done real strategy and diligence work, where you had to break down information and make sense of it. That maps directly to the strategic problem-solving side of this role, and gives you a concrete example you can speak to in an interview",
+        "You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview",
+        "You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview"
+      ],
       "risk_flags": [],
-      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -2364,23 +2414,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 66,
-        "clamped_score": 66,
+        "raw_score": 78,
+        "clamped_score": 78,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -2389,20 +2439,20 @@
           }
         ]
       },
-      "icon": "⚠",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Review",
-        "decision_after_gate": "Review",
-        "decision_final": "Review",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 4,
         "riskCount": 0,
-        "why_count": 0,
+        "why_count": 3,
         "risk_count": 0,
-        "decision": "Review",
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -2447,18 +2497,42 @@
   {
     "id": "real-104",
     "label": "Catherine Lees - tarte Summer 2026 Marketing Internship",
-    "score": 57,
-    "decision_final": "Pass",
-    "why_bullets_joined": "",
+    "score": 93,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You already have direct exposure to brand and messaging work. That maps directly to brand and campaign work, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Pass",
-      "score": 57,
-      "bullets": [],
+      "decision": "Priority Apply",
+      "score": 93,
+      "bullets": [
+        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
+        "You already have direct exposure to brand and messaging work. That maps directly to brand and campaign work, and gives you a concrete example you can speak to in an interview",
+        "You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it"
+      ],
       "risk_flags": [],
-      "next_step": "Pass. Do not apply. Put that effort into a better-fit role.",
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
+          "profile_fact": "Created and scheduled social media content to support engagement and brand consistency",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 101,
+          "match_key": "content_execution",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
+          "profile_fact": "Client Communications & Brand Strategy",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "brand_messaging",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "Collaborate with cross-functional teams on brand initiatives and events",
@@ -2486,16 +2560,20 @@
       },
       "job_signals": {
         "rawHash": "a948c26a1ab04add",
-        "jobFamily": "Consulting",
+        "jobFamily": "Marketing",
         "analytics": {
           "isHeavy": false,
           "isLight": false
         },
         "function_tags": [
+          "brand_marketing",
+          "content_social",
           "operations_general"
         ],
         "signal_debug": {
           "hits": {
+            "brand_messaging": 1,
+            "content_execution": 1,
             "operations_execution": 1,
             "stakeholder_coordination": 2
           },
@@ -2524,6 +2602,26 @@
           "strong": false
         },
         "requirement_units": [
+          {
+            "id": "2d43f1db23300099",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "9b6063fde940c7e9",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Collaborate with cross-functional teams on brand initiatives and events",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
+          },
           {
             "id": "6bae124b6c76e158",
             "kind": "stakeholder",
@@ -2606,7 +2704,6 @@
         "function_tags": [
           "communications_pr",
           "content_social",
-          "premed_clinical",
           "finance_corp",
           "creative_design",
           "sales_bd",
@@ -2630,9 +2727,6 @@
             "Brand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication | Photography",
             "Merchandise Committee | Social Media Coordinator | Feb 2024 � Present",
             "Created and scheduled social media content to support engagement and brand consistency"
-          ],
-          "premed_clinical": [
-            "Timeline: May or June to end of August"
           ],
           "finance_corp": [
             "Summit, NJ | lees.65@osu.edu | 908.477.5138 | LinkedIn | Portfolio",
@@ -2982,16 +3076,6 @@
             "functionTag": "communications_pr"
           },
           {
-            "id": "a330dafa74fe18d8",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Timeline: May or June to end of August",
-            "source": "resume",
-            "strength": 4,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "f007d851d500fda1",
             "kind": "tool",
             "key": "photoshop",
@@ -3030,23 +3114,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 57,
-        "clamped_score": 57,
+        "raw_score": 93,
+        "clamped_score": 93,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Pass"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Pass"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Pass"
+            "note": "Priority Apply"
           },
           {
             "label": "penalty_sum",
@@ -3055,21 +3139,35 @@
           }
         ]
       },
-      "icon": "⛔",
+      "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Pass",
-        "decision_after_gate": "Pass",
-        "decision_final": "Pass",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
-        "whyCount": 2,
+        "whyCount": 4,
         "riskCount": 0,
-        "why_count": 0,
+        "why_count": 3,
         "risk_count": 0,
-        "decision": "Pass",
+        "decision": "Priority Apply",
         "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "content_execution",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 101
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "brand_messaging",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 99
+          },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "stakeholder_coordination",
@@ -3099,19 +3197,22 @@
   {
     "id": "real-105",
     "label": "William Friedman vs Mercer Summer Intern Analyst",
-    "score": 63,
-    "decision_final": "Pass",
-    "why_bullets_joined": "",
-    "risk_bullets_joined": "This role emphasizes hospital, and your background does not yet show clear direct proof in that area | This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston",
+    "score": 85,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview | You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That maps directly to the analytical work this role requires, and gives you a concrete example you can speak to in an interview",
+    "risk_bullets_joined": "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston. If you are not open to relocating, that could become a real constraint later in the process",
     "raw": {
-      "decision": "Pass",
-      "score": 63,
-      "bullets": [],
-      "risk_flags": [
-        "This role emphasizes hospital, and your background does not yet show clear direct proof in that area",
-        "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston"
+      "decision": "Apply",
+      "score": 85,
+      "bullets": [
+        "You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview",
+        "You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview",
+        "You've already done analytical work where you had to turn information into usable conclusions. That maps directly to the analytical work this role requires, and gives you a concrete example you can speak to in an interview"
       ],
-      "next_step": "Pass. Do not apply. Put that effort into a better-fit role.",
+      "risk_flags": [
+        "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston. If you are not open to relocating, that could become a real constraint later in the process"
+      ],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -3177,27 +3278,11 @@
       ],
       "risk_codes": [
         {
-          "code": "RISK_MISSING_PROOF",
-          "job_fact": "hospital, operating room, or procedural environment exposure",
-          "profile_fact": null,
-          "risk": "This role expects clearer direct proof in this capability than your profile currently shows.",
-          "severity": "high",
-          "weight": -11.2
-        },
-        {
           "code": "RISK_LOCATION",
           "job_fact": "Job location indicates Washington DC.",
           "profile_fact": "Preferred cities are NYC, Chicago, Boston.",
           "risk": "The job location sits outside your stated preferred cities.",
           "severity": "medium",
-          "weight": 0
-        },
-        {
-          "code": "RISK_MISSING_PROOF",
-          "job_fact": "hospital, operating room, or procedural environment exposure",
-          "profile_fact": null,
-          "risk": "The role emphasizes work where your profile does not yet show clear direct proof.",
-          "severity": "high",
           "weight": 0
         }
       ],
@@ -3212,7 +3297,6 @@
           "isLight": true
         },
         "function_tags": [
-          "premed_clinical",
           "communications_pr",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -3220,7 +3304,6 @@
         ],
         "signal_debug": {
           "hits": {
-            "hospital_or_environment": 2,
             "communications_writing": 1,
             "consumer_research": 4,
             "analysis_reporting": 3,
@@ -3257,16 +3340,6 @@
           "strong": false
         },
         "requirement_units": [
-          {
-            "id": "bd52a3dea4a82632",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Legal work authorization to work in the U.S. on a permanent and ongoing basis without the need for sponsorship now or in the future is required",
-            "strength": 6,
-            "requiredness": "core",
-            "functionTag": "premed_clinical"
-          },
           {
             "id": "4e73cea763dd51c4",
             "kind": "function",
@@ -3756,45 +3829,45 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 63,
-        "clamped_score": 63,
+        "raw_score": 85,
+        "clamped_score": 85,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Pass"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Pass"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Pass"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
-            "points": -11,
-            "note": "11.2"
+            "points": 0,
+            "note": "0"
           }
         ]
       },
-      "icon": "⛔",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Pass",
-        "decision_after_gate": "Pass",
-        "decision_final": "Pass",
-        "rawPenaltySum": 11.2,
-        "penaltySum": 11.2,
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
         "whyCount": 6,
-        "riskCount": 3,
-        "why_count": 0,
-        "risk_count": 2,
-        "decision": "Pass",
+        "riskCount": 1,
+        "why_count": 3,
+        "risk_count": 1,
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -3841,14 +3914,6 @@
         ],
         "risk_codes_in": [
           {
-            "code": "RISK_MISSING_PROOF",
-            "severity": "high"
-          },
-          {
-            "code": "RISK_MISSING_PROOF",
-            "severity": "high"
-          },
-          {
             "code": "RISK_LOCATION",
             "severity": "medium"
           }
@@ -3866,30 +3931,20 @@
   {
     "id": "real-106",
     "label": null,
-    "score": 52,
-    "decision_final": "Pass",
+    "score": 66,
+    "decision_final": "Review",
     "why_bullets_joined": "",
     "risk_bullets_joined": "This role appears to be contract-based, which does not align with your preference for full-time roles",
     "raw": {
-      "decision": "Pass",
-      "score": 52,
+      "decision": "Review",
+      "score": 66,
       "bullets": [],
       "risk_flags": [
         "This role appears to be contract-based, which does not align with your preference for full-time roles"
       ],
-      "next_step": "Pass. Do not apply. Put that effort into a better-fit role.",
+      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
       "location_constraint": "not_constrained",
       "why_codes": [
-        {
-          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-          "job_fact": "** Any appropriate combination of relevant education, experience and/or certifications may be considered",
-          "profile_fact": "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
-          "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 94,
-          "match_key": "hospital_or_environment",
-          "match_kind": "function",
-          "match_strength": "direct"
-        },
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "learn how to apply for a faculty or staff position using the Career worklet, please review this .The UHealth system at the University of Miami has an exciting opportunity for a full time Senior Analyst, Finance Transformation - Process in the UHealth Finance Department",
@@ -3918,19 +3973,17 @@
       },
       "job_signals": {
         "rawHash": "54b6b2a440620e1e",
-        "jobFamily": "PreMed",
+        "jobFamily": "Consulting",
         "analytics": {
           "isHeavy": false,
           "isLight": true
         },
         "function_tags": [
-          "operations_general",
-          "premed_clinical"
+          "operations_general"
         ],
         "signal_debug": {
           "hits": {
-            "operations_execution": 7,
-            "hospital_or_environment": 4
+            "operations_execution": 7
           },
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
@@ -3966,16 +4019,6 @@
             "strength": 3,
             "requiredness": "supporting",
             "functionTag": "operations_general"
-          },
-          {
-            "id": "b4f3d4b7d78a0dea",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "** Any appropriate combination of relevant education, experience and/or certifications may be considered.",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "premed_clinical"
           }
         ],
         "internship": {
@@ -4037,7 +4080,6 @@
         "function_tags": [
           "operations_general",
           "consulting_strategy",
-          "premed_clinical",
           "finance_corp",
           "data_analytics_bi",
           "accounting_finops",
@@ -4056,13 +4098,6 @@
           "consulting_strategy": [
             "Business Operations Analyst, Process Transformation / Process Improvement Analyst, Strategy Analyst (Internal / Corporate Strategy), Post-Merger Integration (PMI) Analyst / Associate, Internal Consulting / Transformation Analyst, Operations & Strategy Analyst",
             "Business and Finance Asset Management Consulting (Management/Strategy) Financial Services (General) Private Equity Venture Capital Wealth Management Professional Services (General)"
-          ],
-          "premed_clinical": [
-            "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
-            "Are there any roles or industries you D O N O T want?",
-            "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
-            "I am good at understanding how different parts of a business fit together and identifying where processes, roles, or handoffs can be improved.",
-            "I can be good at explaining complex or unfamiliar concepts in a clear, human way."
           ],
           "finance_corp": [
             "Business and Finance Asset Management Consulting (Management/Strategy) Financial Services (General) Private Equity Venture Capital Wealth Management Professional Services (General)",
@@ -4169,16 +4204,6 @@
             "functionTag": "accounting_finops"
           },
           {
-            "id": "a357e7ecd1121810",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Sales or commission-based roles, highly technical finance roles (accounting, financial reporting, valuation-heavy positions), data or analytics roles requiring programming, roles with primary focus on coding, software engineering, or technical development, aggressive, high-pressure finance environments with limited collaboration or mentorship, administrative roles without strategic, cross-functional work",
-            "source": "resume",
-            "strength": 8,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "3259b58672a9fcbc",
             "kind": "function",
             "key": "financial_analysis",
@@ -4197,16 +4222,6 @@
             "source": "resume",
             "strength": 8,
             "functionTag": "operations_general"
-          },
-          {
-            "id": "23ed27705a764d91",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Secondary or adjacent roles you would consider Business Analyst, Internal Consultant or Transformation Enablement Analyst, Change Management or Organizational Development Analyst, Implementation / Solutions Analyst (non-sales), International or Cross-Border Operations Analyst",
-            "source": "resume",
-            "strength": 7,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "c9b970a61b0f9970",
@@ -4319,16 +4334,6 @@
             "functionTag": "consulting_strategy"
           },
           {
-            "id": "cb97976485dcb5fd",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "My experience has been broad and cross-functional, so I find it challenging to present my strengths concisely and with confidence in interview settings—both in finance-labeled roles and in more strategy or operations-focused interviews.",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "0618dcdabed14fef",
             "kind": "execution",
             "key": "operations_execution",
@@ -4419,36 +4424,6 @@
             "functionTag": "operations_general"
           },
           {
-            "id": "176c503cb79418c1",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "I am good at understanding how different parts of a business fit together and identifying where processes, roles, or handoffs can be improved.",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
-          },
-          {
-            "id": "124f54fcdd6b52de",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "I can be good at explaining complex or unfamiliar concepts in a clear, human way.",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
-          },
-          {
-            "id": "50a7dedb2a771fdc",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Either in international settings or differings cultural environments.",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "be5d38c66fe3a958",
             "kind": "stakeholder",
             "key": "stakeholder_coordination",
@@ -4536,16 +4511,6 @@
             "source": "resume",
             "strength": 5,
             "functionTag": "operations_general"
-          },
-          {
-            "id": "da7adbfbafb8e7b0",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Are there any roles or industries you D O N O T want?",
-            "source": "resume",
-            "strength": 4,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "3cc66b5606933b72",
@@ -4650,23 +4615,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 52,
-        "clamped_score": 52,
+        "raw_score": 66,
+        "clamped_score": 66,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Pass"
+            "note": "Review"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Pass"
+            "note": "Review"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Pass"
+            "note": "Review"
           },
           {
             "label": "penalty_sum",
@@ -4675,28 +4640,21 @@
           }
         ]
       },
-      "icon": "⛔",
+      "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Pass",
-        "decision_after_gate": "Pass",
-        "decision_final": "Pass",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Review",
+        "decision_after_gate": "Review",
+        "decision_final": "Review",
         "rawPenaltySum": 7.800000000000001,
         "penaltySum": 7.800000000000001,
-        "whyCount": 2,
+        "whyCount": 1,
         "riskCount": 1,
         "why_count": 0,
         "risk_count": 1,
-        "decision": "Pass",
+        "decision": "Review",
         "why_codes_in": [
-          {
-            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-            "match_key": "hospital_or_environment",
-            "match_kind": "function",
-            "match_strength": "direct",
-            "weight": 94
-          },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "operations_execution",
@@ -4724,31 +4682,31 @@
   {
     "id": "real-107",
     "label": null,
-    "score": 82,
-    "decision_final": "Apply",
-    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with customer support and relationship management | Managed approximately 400 active B2B prospects within a rotating pipeline. This aligns well with field sales execution and account coverage | Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution",
-    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | The posting calls for tools you have not clearly shown in your profile yet",
+    "score": 92,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview | Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to Gains current knowledge on medical device industry, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview",
+    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | The posting calls for CRM, and your profile does not clearly show it yet",
     "raw": {
-      "decision": "Apply",
-      "score": 82,
+      "decision": "Priority Apply",
+      "score": 92,
       "bullets": [
-        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with customer support and relationship management",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. This aligns well with field sales execution and account coverage",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution"
+        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview",
+        "Clinical Sales Representative candidate with active EMT experience and a B.A. in Integrative Physiology. That maps directly to Gains current knowledge on medical device industry, and gives you a concrete example you can speak to in an interview",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to Performs field sales calls for assigned accounts and assigned territory, and gives you a concrete example you can speak to in an interview"
       ],
       "risk_flags": [
         "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
-        "The posting calls for tools you have not clearly shown in your profile yet"
+        "The posting calls for CRM, and your profile does not clearly show it yet"
       ],
-      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-          "job_fact": "Drives customer satisfaction and solves customer problems by addressing any issues, concerns, or problems that arise on assigned accounts promptly",
+          "job_fact": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
           "profile_fact": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 101,
+          "weight": 108,
           "match_key": "hospital_or_environment",
           "match_kind": "function",
           "match_strength": "direct"
@@ -4801,7 +4759,7 @@
           "profile_fact": "Managed approximately 400 active B2B prospects within a rotating pipeline",
           "risk": "You have adjacent evidence here, but not enough direct proof for this role's requirement.",
           "severity": "medium",
-          "weight": -5.940000000000001
+          "weight": -3.78
         },
         {
           "code": "RISK_MISSING_TOOLS",
@@ -4837,7 +4795,7 @@
         "signal_debug": {
           "hits": {
             "product_training_enablement": 2,
-            "hospital_or_environment": 5,
+            "hospital_or_environment": 3,
             "prospecting_pipeline_management": 3,
             "territory_execution": 3,
             "post_sale_support": 3,
@@ -4874,13 +4832,13 @@
         },
         "requirement_units": [
           {
-            "id": "d84edf83baf4262c",
+            "id": "55b9855787acdb55",
             "kind": "function",
             "key": "hospital_or_environment",
             "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Drives customer satisfaction and solves customer problems by addressing any issues, concerns, or problems that arise on assigned accounts promptly",
-            "strength": 4,
-            "requiredness": "supporting",
+            "snippet": "Performs field sales calls for assigned accounts and assigned territory including “on-call” and operating room consultation",
+            "strength": 6,
+            "requiredness": "core",
             "functionTag": "premed_clinical"
           },
           {
@@ -5259,52 +5217,52 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 82,
-        "clamped_score": 82,
+        "raw_score": 92,
+        "clamped_score": 92,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "penalty_sum",
-            "points": -6,
-            "note": "5.940000000000001"
+            "points": -4,
+            "note": "3.78"
           }
         ]
       },
-      "icon": "✅",
+      "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Apply",
-        "decision_after_gate": "Apply",
-        "decision_final": "Apply",
-        "rawPenaltySum": 5.940000000000001,
-        "penaltySum": 5.940000000000001,
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
+        "rawPenaltySum": 3.78,
+        "penaltySum": 3.78,
         "whyCount": 5,
         "riskCount": 3,
         "why_count": 3,
         "risk_count": 2,
-        "decision": "Apply",
+        "decision": "Priority Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
             "match_key": "hospital_or_environment",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 101
+            "weight": 108
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -5362,18 +5320,20 @@
   {
     "id": "real-108",
     "label": "Ryan Rosen - Matthews commercial real estate internship",
-    "score": 90,
-    "decision_final": "Apply",
-    "why_bullets_joined": "Ran Meta marketing campaigns, handled accounting, and executed all sales operations independently. This shows strong ownership and execution",
+    "score": 97,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "Built and managed a full client book. That maps directly to � Observe and practice marketing and lead generation techniques, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it | You've already done real research and diligence work, not just surface-level information gathering. It is not a perfect match, but it transfers credibly into the research and benchmarking work in this role, especially if you explain the overlap clearly",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Apply",
-      "score": 90,
+      "decision": "Priority Apply",
+      "score": 97,
       "bullets": [
-        "Ran Meta marketing campaigns, handled accounting, and executed all sales operations independently. This shows strong ownership and execution"
+        "Built and managed a full client book. That maps directly to � Observe and practice marketing and lead generation techniques, and gives you a concrete example you can speak to in an interview",
+        "You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it",
+        "You've already done real research and diligence work, not just surface-level information gathering. It is not a perfect match, but it transfers credibly into the research and benchmarking work in this role, especially if you explain the overlap clearly"
       ],
       "risk_flags": [],
-      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -5444,8 +5404,7 @@
           "finance_corp",
           "communications_pr",
           "consumer_insights_research",
-          "data_analytics_bi",
-          "premed_clinical"
+          "data_analytics_bi"
         ],
         "signal_debug": {
           "hits": {
@@ -5454,8 +5413,7 @@
             "financial_analysis": 3,
             "communications_writing": 1,
             "consumer_research": 3,
-            "analysis_reporting": 1,
-            "hospital_or_environment": 2
+            "analysis_reporting": 1
           },
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
@@ -5491,16 +5449,6 @@
             "strength": 6,
             "requiredness": "supporting",
             "functionTag": "sales_bd"
-          },
-          {
-            "id": "e8831db223bdb0e1",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "If you are a motivated self-starter looking to gain hands-on experience in commercial real estate brokerage, business development, or sales, we encourage you to apply.",
-            "strength": 6,
-            "requiredness": "supporting",
-            "functionTag": "premed_clinical"
           },
           {
             "id": "35096bbdd8969140",
@@ -5900,23 +5848,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 90,
-        "clamped_score": 90,
+        "raw_score": 97,
+        "clamped_score": 97,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "penalty_sum",
@@ -5925,20 +5873,20 @@
           }
         ]
       },
-      "icon": "✅",
+      "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Apply",
-        "decision_after_gate": "Apply",
-        "decision_final": "Apply",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 5,
         "riskCount": 0,
-        "why_count": 1,
+        "why_count": 3,
         "risk_count": 0,
-        "decision": "Apply",
+        "decision": "Priority Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -5992,12 +5940,15 @@
     "label": "Sofia Garcia - biomedical engineering contract role",
     "score": 54,
     "decision_final": "Pass",
-    "why_bullets_joined": "",
+    "why_bullets_joined": "You've already produced written and presentation-ready work that had to communicate ideas clearly. That matters here because this role depends on client-ready presentation and documentation, and you already have evidence that you can execute rather than just talk about it | You already have experience working with legal and compliance-oriented material. It is not a perfect match, but it transfers credibly into the legal and compliance-oriented part of the role, especially if you explain the overlap clearly",
     "risk_bullets_joined": "This role appears to be contract-based, which does not align with your preference for full-time roles",
     "raw": {
       "decision": "Pass",
       "score": 54,
-      "bullets": [],
+      "bullets": [
+        "You've already produced written and presentation-ready work that had to communicate ideas clearly. That matters here because this role depends on client-ready presentation and documentation, and you already have evidence that you can execute rather than just talk about it",
+        "You already have experience working with legal and compliance-oriented material. It is not a perfect match, but it transfers credibly into the legal and compliance-oriented part of the role, especially if you explain the overlap clearly"
+      ],
       "risk_flags": [
         "This role appears to be contract-based, which does not align with your preference for full-time roles"
       ],
@@ -6158,8 +6109,8 @@
           "targetIndustries": []
         },
         "function_tags": [
-          "premed_clinical",
           "consumer_insights_research",
+          "premed_clinical",
           "operations_general",
           "data_analytics_bi",
           "brand_marketing",
@@ -6167,19 +6118,19 @@
           "sales_bd"
         ],
         "function_tag_evidence": {
-          "premed_clinical": [
-            "Do you have any particular dream/target industries or companies?",
-            "Are there any roles or industries you D O N O T want?",
-            "Trilingual communicator with a proven ability to lead interdisciplinary teams, translate complex data into actionable insights, and drive innovation across lab and clinical settings.",
-            "Seeking to apply research, design, and problem-solving skills in R&D and biotechnology environments focused on improving patient outcomes.",
-            "Cover Letter or Other Writing Samples Sofia Garcia New York, NY | 786.631.6903 | sofia.garcia@columbia.edu | LinkedIn September 15, 2025 To whom it may concern, I am excited to apply for the Associate Clinical Account Specialist (ACAS) program at J&J."
-          ],
           "consumer_insights_research": [
             "Resume Paste Sofia Garcia New York, NY | 786.631.6903 | sofia.garcia@columbia.edu | LinkedIn SUMMARY Driven biomedical engineering student with advanced research experience in immunology, bioinformatics, and translational medicine.",
             "Seeking to apply research, design, and problem-solving skills in R&D and biotechnology environments focused on improving patient outcomes.",
             "Graduation May 2026 Awards: CP Davis Scholar | Dean�s List (4 semesters) | Hispanic Scholarship Fund Scholar (2022�2025) | Burger King and Trudy Feliu STEM Leadership Scholarships Doral College, Doral, FL | Associate in Arts | Summa Cum Laude May 2022 Completed via Dual Enrollment while in high school RESEARCH & DEVELOPMENT EXPERIENCE Research & Operations Intern | Waypoint Bio Sep 2025 � Present Designed and implemented a comprehensive lab inventory system that reduced time spent locating equipment and supplies by 30%, improved ordering accuracy, and ensured optimal stock levels.",
             "Manage end-to-end procurement for reagents, consumables, and equipment, tracking orders to prevent delays and minimize downtime in research operations.",
             "Selected as SURF Fellow for Summer 2025 to research how fibroblastic reticular cells influence T cell responses in Type 1 Diabetes."
+          ],
+          "premed_clinical": [
+            "Trilingual communicator with a proven ability to lead interdisciplinary teams, translate complex data into actionable insights, and drive innovation across lab and clinical settings.",
+            "Seeking to apply research, design, and problem-solving skills in R&D and biotechnology environments focused on improving patient outcomes.",
+            "Cover Letter or Other Writing Samples Sofia Garcia New York, NY | 786.631.6903 | sofia.garcia@columbia.edu | LinkedIn September 15, 2025 To whom it may concern, I am excited to apply for the Associate Clinical Account Specialist (ACAS) program at J&J.",
+            "As a senior studying Biomedical Engineering at Columbia University, I have built a strong technical foundation through research on Type 1 Diabetes in the Creusot Lab at Columbia University Medical Center and through my work in the Living Devices Lab at the University of Minnesota.",
+            "Speaking with Caitlyn Cianci and Amanda Schmitt further affirmed my enthusiasm, as their passion for the program highlighted how it blends technical expertise, patient impact, and the values of Johnson & Johnson�s Credo."
           ],
           "operations_general": [
             "Graduation May 2026 Awards: CP Davis Scholar | Dean�s List (4 semesters) | Hispanic Scholarship Fund Scholar (2022�2025) | Burger King and Trudy Feliu STEM Leadership Scholarships Doral College, Doral, FL | Associate in Arts | Summa Cum Laude May 2022 Completed via Dual Enrollment while in high school RESEARCH & DEVELOPMENT EXPERIENCE Research & Operations Intern | Waypoint Bio Sep 2025 � Present Designed and implemented a comprehensive lab inventory system that reduced time spent locating equipment and supplies by 30%, improved ordering accuracy, and ensured optimal stock levels.",
@@ -6403,16 +6354,6 @@
             "functionTag": "communications_pr"
           },
           {
-            "id": "63fc77c9fbb7b5e8",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Cover Letter or Other Writing Samples Sofia Garcia New York, NY | 786.631.6903 | sofia.garcia@columbia.edu | LinkedIn September 15, 2025 To whom it may concern, I am excited to apply for the Associate Clinical Account Specialist (ACAS) program at J&J.",
-            "source": "resume",
-            "strength": 7,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "724089c6bbab7710",
             "kind": "function",
             "key": "clinical_patient_work",
@@ -6453,16 +6394,6 @@
             "functionTag": "premed_clinical"
           },
           {
-            "id": "9dc24be3bf1213c9",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "I can be reached at sofia.garcia@columbia.edu or 786.631.6903.",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "aeaf6b11551684a8",
             "kind": "tool",
             "key": "r",
@@ -6470,16 +6401,6 @@
             "snippet": "Biotech, life sciences, R&D engineer, scientist, consulting, analysts",
             "source": "resume",
             "strength": 5
-          },
-          {
-            "id": "d504ad0b6e458732",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Do you have any particular dream/target industries or companies?",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "2f7feab627501938",
@@ -6518,16 +6439,6 @@
             "source": "resume",
             "strength": 5,
             "functionTag": "sales_bd"
-          },
-          {
-            "id": "da7adbfbafb8e7b0",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Are there any roles or industries you D O N O T want?",
-            "source": "resume",
-            "strength": 4,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "a346b4d9b79c05ac",
@@ -6590,7 +6501,7 @@
       "icon": "⛔",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
@@ -6598,7 +6509,7 @@
         "penaltySum": 7.800000000000001,
         "whyCount": 2,
         "riskCount": 1,
-        "why_count": 0,
+        "why_count": 2,
         "risk_count": 1,
         "decision": "Pass",
         "why_codes_in": [
@@ -6636,28 +6547,23 @@
   {
     "id": "real-110",
     "label": "Allyson Keyes - NBCUniversal business and legal affairs internship",
-    "score": 68,
-    "decision_final": "Review",
-    "why_bullets_joined": "",
-    "risk_bullets_joined": "",
+    "score": 75,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview",
+    "risk_bullets_joined": "The posting calls for Excel, and your profile does not clearly show it yet",
     "raw": {
-      "decision": "Review",
-      "score": 68,
-      "bullets": [],
-      "risk_flags": [],
-      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "decision": "Apply",
+      "score": 75,
+      "bullets": [
+        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
+        "You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview"
+      ],
+      "risk_flags": [
+        "The posting calls for Excel, and your profile does not clearly show it yet"
+      ],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
-        {
-          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-          "job_fact": "� Needs to be able to work on-site in New York, NY or Miami, FL",
-          "profile_fact": "Secondary or adjacent roles you would consider legal internship",
-          "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 93,
-          "match_key": "hospital_or_environment",
-          "match_kind": "function",
-          "match_strength": "direct"
-        },
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
           "job_fact": "� Analysis of content license agreements in connection with company-mandated requirements",
@@ -6712,7 +6618,7 @@
       },
       "job_signals": {
         "rawHash": "2dbc1328574a1291",
-        "jobFamily": "PreMed",
+        "jobFamily": "Other",
         "analytics": {
           "isHeavy": false,
           "isLight": false
@@ -6720,14 +6626,12 @@
         "function_tags": [
           "content_social",
           "data_analytics_bi",
-          "premed_clinical",
           "legal_regulatory"
         ],
         "signal_debug": {
           "hits": {
             "content_execution": 1,
             "analysis_reporting": 2,
-            "hospital_or_environment": 2,
             "policy_regulatory_research": 1,
             "tool:excel": 1,
             "tool:word": 1
@@ -6769,16 +6673,6 @@
             "strength": 6,
             "requiredness": "supporting",
             "functionTag": "content_social"
-          },
-          {
-            "id": "12684b7f73cc1678",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "� Needs to be able to work on-site in New York, NY or Miami, FL",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "premed_clinical"
           },
           {
             "id": "f9bfdb73eb5bb8e7",
@@ -6872,7 +6766,6 @@
           "targetIndustries": []
         },
         "function_tags": [
-          "premed_clinical",
           "communications_pr",
           "content_social",
           "brand_marketing",
@@ -6883,11 +6776,6 @@
           "finance_corp"
         ],
         "function_tag_evidence": {
-          "premed_clinical": [
-            "Secondary or adjacent roles you would consider legal internship",
-            "Are there any roles or industries you D O N O T want? big law (I don't think)",
-            "Cover Letter or Other Writing Samples December 20, 2025 Hiring Committee Universal Music Group Re: 2026 Summer Internship: Business & Legal Affairs Opportunities (NY) Dear Universal Music Group Internship Team, Universal Music Group sits at the intersection of creativity, culture, and complex business operations, which is exactly where my interests lie."
-          ],
           "communications_pr": [
             "Marketing and Media Advertising Marketing Services Digital Marketing Media and Publishing Branding / Creative Agencies Social Media / Influencer Marketing PR/Communications Content and Production",
             "Boca Raton, Florida 33496 ? (561) 955-0395 ? allysonhkeyes@gmail.com EDUCATION University of Miami School of Law, Coral Gables, Florida Juris Doctor Candidate, May 2028 University of Florida, Gainesville, Florida Bachelor of Science, summa cum laude, in Advertising with a Minor in Spanish, May 2025 GPA: 3.85/4.00 Honors: President�s Honor Roll Activities: Alpha Epsilon Phi (Director of Technology), Elevate Advertising Agency (Communications and Media Director), Jewish Learning Fellowship, UF Hillel, Intramural Sports EXPERIENCE University of Miami School of Law Social Media Team, Coral Gables, Florida Student Ambassador, August 2025 � present Draft content across multiple platforms to highlight academic programs, campus resources, and student initiatives.",
@@ -7176,16 +7064,6 @@
             "functionTag": "legal_regulatory"
           },
           {
-            "id": "8d28760555fe676b",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Cover Letter or Other Writing Samples December 20, 2025 Hiring Committee Universal Music Group Re: 2026 Summer Internship: Business & Legal Affairs Opportunities (NY) Dear Universal Music Group Internship Team, Universal Music Group sits at the intersection of creativity, culture, and complex business operations, which is exactly where my interests lie.",
-            "source": "resume",
-            "strength": 6,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "76f8d023f15c953d",
             "kind": "function",
             "key": "communications_writing",
@@ -7194,26 +7072,6 @@
             "source": "resume",
             "strength": 6,
             "functionTag": "communications_pr"
-          },
-          {
-            "id": "e8c466804a91c597",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Secondary or adjacent roles you would consider legal internship",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
-          },
-          {
-            "id": "ffa4c7052d88529b",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Are there any roles or industries you D O N O T want? big law (I don't think)",
-            "source": "resume",
-            "strength": 5,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "ed0b449107a104d8",
@@ -7338,23 +7196,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 68,
-        "clamped_score": 68,
+        "raw_score": 75,
+        "clamped_score": 75,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -7363,20 +7221,20 @@
           }
         ]
       },
-      "icon": "⚠",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Review",
-        "decision_after_gate": "Review",
-        "decision_final": "Review",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
-        "whyCount": 4,
+        "whyCount": 3,
         "riskCount": 2,
-        "why_count": 0,
-        "risk_count": 0,
-        "decision": "Review",
+        "why_count": 2,
+        "risk_count": 1,
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -7384,13 +7242,6 @@
             "match_kind": "function",
             "match_strength": "direct",
             "weight": 100
-          },
-          {
-            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-            "match_key": "hospital_or_environment",
-            "match_kind": "function",
-            "match_strength": "direct",
-            "weight": 93
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -7430,28 +7281,29 @@
   {
     "id": "real-111",
     "label": "Jared Jonas - Celsius brand marketing internship",
-    "score": 88,
-    "decision_final": "Apply",
-    "why_bullets_joined": "Through J�s Kixx, I managed over $60,000 in sales and built a process that relied on instinct, data, and customer trust. This aligns well with cross-functional marketing work | Created and managed eBay listings with original photography and copywriting. This shows strong ownership and execution",
+    "score": 97,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Apply",
-      "score": 88,
+      "decision": "Priority Apply",
+      "score": 97,
       "bullets": [
-        "Through J�s Kixx, I managed over $60,000 in sales and built a process that relied on instinct, data, and customer trust. This aligns well with cross-functional marketing work",
-        "Created and managed eBay listings with original photography and copywriting. This shows strong ownership and execution"
+        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
+        "You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview",
+        "You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it"
       ],
       "risk_flags": [],
-      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
           "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-          "job_fact": "Interest in or knowledge of the Food & Beverage / CPG industry",
-          "profile_fact": "Are there any roles or industries you D O N O T want? sales",
+          "job_fact": "Support cross-functional marketing initiatives across brand, partnerships, and activations",
+          "profile_fact": "Created and managed eBay listings with original photography and copywriting; designed marketing visuals using Canva",
           "note": "Profile proof directly matches a concrete job requirement.",
-          "weight": 94,
-          "match_key": "hospital_or_environment",
+          "weight": 101,
+          "match_key": "content_execution",
           "match_kind": "function",
           "match_strength": "direct"
         },
@@ -7519,17 +7371,17 @@
         },
         "function_tags": [
           "communications_pr",
-          "premed_clinical",
           "operations_general",
+          "content_social",
           "brand_marketing",
           "consumer_insights_research"
         ],
         "signal_debug": {
           "hits": {
             "communications_writing": 1,
-            "hospital_or_environment": 4,
             "stakeholder_coordination": 2,
-            "brand_messaging": 2,
+            "content_execution": 2,
+            "brand_messaging": 3,
             "operations_execution": 1,
             "consumer_research": 2
           },
@@ -7569,6 +7421,26 @@
             "functionTag": "consumer_insights_research"
           },
           {
+            "id": "8d34b7caed91302f",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Support cross-functional marketing initiatives across brand, partnerships, and activations",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
+          },
+          {
+            "id": "c397c73d6b2609e8",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "The role reports to the Manager, Brand Marketing",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "brand_marketing"
+          },
+          {
             "id": "0952ce4c42469e12",
             "kind": "execution",
             "key": "operations_execution",
@@ -7589,16 +7461,6 @@
             "functionTag": "operations_general"
           },
           {
-            "id": "c397c73d6b2609e8",
-            "kind": "function",
-            "key": "brand_messaging",
-            "label": "brand messaging and campaign work",
-            "snippet": "The role reports to the Manager, Brand Marketing",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "brand_marketing"
-          },
-          {
             "id": "3fccbea64269e3d0",
             "kind": "function",
             "key": "communications_writing",
@@ -7607,16 +7469,6 @@
             "strength": 4,
             "requiredness": "supporting",
             "functionTag": "communications_pr"
-          },
-          {
-            "id": "0ddbaf3ea8258c60",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Interest in or knowledge of the Food & Beverage / CPG industry",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "premed_clinical"
           }
         ],
         "internship": {
@@ -7680,7 +7532,6 @@
         },
         "function_tags": [
           "content_social",
-          "premed_clinical",
           "consumer_insights_research",
           "data_analytics_bi",
           "accounting_finops",
@@ -7697,11 +7548,6 @@
             "Researched market demand by tracking social media trends, influencer insights, and release calendars to identify high-demand products.",
             "Created and managed eBay listings with original photography and copywriting; designed marketing visuals using Canva.",
             "Integrated content ideas from professional retail experience to boost social media engagement and promotional reach."
-          ],
-          "premed_clinical": [
-            "Secondary or adjacent roles you would consider N/A",
-            "Are there any roles or industries you D O N O T want? sales",
-            "Cover Letter or Other Writing Samples JARED JONAS (954)336-6929 | jared.l.jonas@gmail.com | LinkedIn Profile October 30, 2025 Hiring Team United Talent Agency Beverly Hills, CA Re: Application for Summer 2026 � Marketing & Brand Partnerships Training Program Dear UTA Marketing & Brand Partnerships Team, When I started my sneaker resale business, J�s Kixx, I didn�t just learn how to sell shoes�I learned how to read people and culture."
           ],
           "consumer_insights_research": [
             "What do you believe are your strongest skills right now? strong at market research, market analysis, analyzing data, communication",
@@ -7800,16 +7646,6 @@
             "functionTag": "content_social"
           },
           {
-            "id": "14d02b34335f211b",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Cover Letter or Other Writing Samples JARED JONAS (954)336-6929 | jared.l.jonas@gmail.com | LinkedIn Profile October 30, 2025 Hiring Team United Talent Agency Beverly Hills, CA Re: Application for Summer 2026 � Marketing & Brand Partnerships Training Program Dear UTA Marketing & Brand Partnerships Team, When I started my sneaker resale business, J�s Kixx, I didn�t just learn how to sell shoes�I learned how to read people and culture.",
-            "source": "resume",
-            "strength": 9,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "3d53773544a06704",
             "kind": "function",
             "key": "consumer_research",
@@ -7888,16 +7724,6 @@
             "source": "resume",
             "strength": 8,
             "functionTag": "brand_marketing"
-          },
-          {
-            "id": "50509112155f6802",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Are there any roles or industries you D O N O T want? sales",
-            "source": "resume",
-            "strength": 7,
-            "functionTag": "premed_clinical"
           },
           {
             "id": "2fec5ca3d40992bf",
@@ -8000,16 +7826,6 @@
             "functionTag": "data_analytics_bi"
           },
           {
-            "id": "348c95ae888d8d6e",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "Secondary or adjacent roles you would consider N/A",
-            "source": "resume",
-            "strength": 4,
-            "functionTag": "premed_clinical"
-          },
-          {
             "id": "b35aae5c31b59b60",
             "kind": "function",
             "key": "accounting_operations",
@@ -8050,23 +7866,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 88,
-        "clamped_score": 88,
+        "raw_score": 97,
+        "clamped_score": 97,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Apply"
+            "note": "Priority Apply"
           },
           {
             "label": "penalty_sum",
@@ -8075,27 +7891,27 @@
           }
         ]
       },
-      "icon": "✅",
+      "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Apply",
-        "decision_after_gate": "Apply",
-        "decision_final": "Apply",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 6,
         "riskCount": 0,
-        "why_count": 2,
+        "why_count": 3,
         "risk_count": 0,
-        "decision": "Apply",
+        "decision": "Priority Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-            "match_key": "hospital_or_environment",
+            "match_key": "content_execution",
             "match_kind": "function",
             "match_strength": "direct",
-            "weight": 94
+            "weight": 101
           },
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -8147,20 +7963,20 @@
   {
     "id": "real-112",
     "label": null,
-    "score": 74,
-    "decision_final": "Review",
-    "why_bullets_joined": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation | Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution | Adobe, Canva, and Photoshop shows relevant tool strength for this work",
+    "score": 86,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview | Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Review",
-      "score": 74,
+      "decision": "Apply",
+      "score": 86,
       "bullets": [
-        "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation",
-        "Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution",
-        "Adobe, Canva, and Photoshop shows relevant tool strength for this work"
+        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
+        "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview",
+        "Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific"
       ],
       "risk_flags": [],
-      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -8237,7 +8053,6 @@
         },
         "function_tags": [
           "creative_design",
-          "premed_clinical",
           "finance_corp",
           "brand_marketing",
           "operations_general",
@@ -8246,7 +8061,6 @@
         "signal_debug": {
           "hits": {
             "visual_communication": 2,
-            "hospital_or_environment": 4,
             "financial_analysis": 1,
             "tool:figma": 1,
             "tool:photoshop": 1,
@@ -8255,7 +8069,7 @@
             "brand_messaging": 1,
             "operations_execution": 1,
             "stakeholder_coordination": 2,
-            "content_execution": 1
+            "content_execution": 2
           },
           "notes": [
             "Requirement units are evidence-first and line-anchored.",
@@ -8306,16 +8120,6 @@
             "strength": 6,
             "requiredness": "supporting",
             "functionTag": "creative_design"
-          },
-          {
-            "id": "1ecb9f209fdf1ff6",
-            "kind": "function",
-            "key": "hospital_or_environment",
-            "label": "hospital, operating room, or procedural environment exposure",
-            "snippet": "The listed salary ranges are specific to NYC or Los Angeles and may not be applicable to other locations",
-            "strength": 4,
-            "requiredness": "supporting",
-            "functionTag": "premed_clinical"
           },
           {
             "id": "139b2433e7127f9c",
@@ -8726,23 +8530,23 @@
         ]
       },
       "score_breakdown": {
-        "raw_score": 74,
-        "clamped_score": 74,
+        "raw_score": 86,
+        "clamped_score": 86,
         "components": [
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Review"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -8751,20 +8555,20 @@
           }
         ]
       },
-      "icon": "⚠",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
-        "decision_initial": "Review",
-        "decision_after_gate": "Review",
-        "decision_final": "Review",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
         "rawPenaltySum": 0,
         "penaltySum": 0,
         "whyCount": 6,
         "riskCount": 0,
         "why_count": 3,
         "risk_count": 0,
-        "decision": "Review",
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -8826,13 +8630,13 @@
     "score": 66,
     "decision_final": "Review",
     "why_bullets_joined": "",
-    "risk_bullets_joined": "The role description is vague, which makes fit harder to evaluate confidently Posting provides limited concrete detail on requirements or structure",
+    "risk_bullets_joined": "The role description is vague, which makes fit harder to evaluate confidently",
     "raw": {
       "decision": "Review",
       "score": 66,
       "bullets": [],
       "risk_flags": [
-        "The role description is vague, which makes fit harder to evaluate confidently Posting provides limited concrete detail on requirements or structure"
+        "The role description is vague, which makes fit harder to evaluate confidently"
       ],
       "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
       "location_constraint": "not_constrained",
@@ -8964,7 +8768,7 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
