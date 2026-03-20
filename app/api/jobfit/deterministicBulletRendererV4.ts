@@ -27,6 +27,44 @@ function capsForDecision(d: Decision): RenderCaps {
   return { whyMax: 0, riskMax: 4 }
 }
 
+function isBadBulletProfileFact(s: string): boolean {
+  const t = String(s || "").toLowerCase()
+
+  if (!t) return true
+  if (t.includes("are there any roles or industries")) return true
+  if (t.includes("what do you believe are your strongest skills")) return true
+  if (t.includes("the idea of rotating through departments")) return true
+  if (t.includes("currently pursuing a bachelor")) return true
+  if (t.includes("secondary or adjacent roles you would consider")) return true
+  if (t.includes("candidate with active emt experience")) return true
+  if (t.includes("target roles:")) return true
+  if (t.includes("uf panhellenic council")) return true
+  if (t.includes("since beginning law school")) return true
+  if (t.includes("conducting financial analysis")) return true
+  if (t.includes("assessing student counts, salary structures, and")) return true
+  if (t.includes("culminating in a")) return true
+  if (t.endsWith(" and")) return true
+  if (t.endsWith(",")) return true
+
+  return false
+}
+function isBadBulletJobFact(s: string): boolean {
+  const t = String(s || "").toLowerCase()
+
+  if (!t) return true
+  if (t.includes("participate in the matthews")) return true
+  if (t.includes("observe and practice")) return true
+  if (t.includes("needs to be able to work on-site")) return true
+  if (t.includes("classes or experience in")) return true
+  if (t.includes("interest in or knowledge of")) return true
+  if (t.includes("the role reports to")) return true
+  if (t.includes("gain foundational understanding")) return true
+  if (t.includes("currently pursuing a bachelor")) return true
+  if (t.includes("degree at a u.s.-based college")) return true
+  if (t.includes("clients to provide analysis")) return true
+
+  return false
+}
 function whyGroup(w: WhyCode): string {
   if (w.code === "WHY_TOOL_PROOF") return "tools"
   if (w.code === "WHY_EXECUTION_PROOF") return "execution"
@@ -100,11 +138,19 @@ function riskPriority(code: string, r: RiskCode): number {
 
 function norm(s: unknown): string {
   return String(s ?? "")
+    .replace(/Jï¿½s/g, "J's")
+    .replace(/J s/g, "J's")
+    .replace(/bachelorï¿½s/g, "bachelor's")
+    .replace(/ï¿½/g, "'")
+    .replace(/â€™/g, "'")
+    .replace(/â€œ/g, '"')
+    .replace(/â€/g, '"')
+    .replace(/â€“/g, "-")
+    .replace(/â€”/g, "-")
     .replace(/\u00a0/g, " ")
     .replace(/\s+/g, " ")
     .trim()
 }
-
 function sentence(s: string): string {
   const t = norm(s)
     .replace(/^[•\-\s]+/, "")
@@ -285,6 +331,26 @@ function directCapabilityPhrase(jobFact: string): string {
     return ""
   }
 
+  if (/drives customer satisfaction|solves customer problems/i.test(raw)) {
+    return "customer support and relationship management"
+  }
+
+  if (/performs field sales calls|assigned accounts|assigned territory/i.test(raw)) {
+    return "field sales execution and account coverage"
+  }
+
+  if (/cross-functional marketing initiatives across brand/i.test(raw)) {
+    return "cross-functional marketing work"
+  }
+
+  if (/create digital assets/i.test(raw)) {
+    return "digital asset creation"
+  }
+
+  if (/work in a fast-paced/i.test(raw)) {
+    return "fast-paced creative execution"
+  }
+
   return normalized
 }
 
@@ -427,7 +493,7 @@ function safeProfileLead(profileFact: string): string {
       ? pf.slice(0, 140).replace(/\s+\S*$/, "").trim()
       : pf
 
-  return sentence(`Your experience with ${clipped}`)
+  return sentence(`${clipped}`)
 }
 
 function abstractionFromMatchKey(ctx?: SafeEvidenceContext): string {
@@ -471,65 +537,65 @@ function interpretDirectProof(
 
   if (matchKey === "clinical_patient_work") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead}. This shows strong ownership and execution.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to provider-facing clinical work.`)
+    return sentence(`${lead.literal}. This aligns well with provider-facing clinical work.`)
   }
 
   if (matchKey === "operations_execution") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to execution and coordination work.`)
+    return sentence(`${lead.literal}. This aligns well with execution and coordination work.`)
   }
 
   if (matchKey === "analysis_reporting") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to analytical and reporting work.`)
+    return sentence(`${lead.literal}. This aligns well with analytical and reporting work.`)
   }
 
   if (matchKey === "drafting_documentation" || matchKey === "communications_writing") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to written communication and documentation work.`)
+    return sentence(`${lead.literal}. This aligns well with written communication and documentation work.`)
   }
 
   if (matchKey === "stakeholder_coordination" || matchKey === "client_commercial_work") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to stakeholder-facing work.`)
+    return sentence(`${lead.literal}. This aligns well with stakeholder-facing work.`)
   }
 
   if (matchKey === "consumer_research") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to research work.`)
+    return sentence(`${lead.literal}. This aligns well with research work.`)
   }
 
   if (matchKey === "financial_analysis") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to financial analysis work.`)
+    return sentence(`${lead.literal}. This aligns well with financial analysis work.`)
   }
 
   if (matchKey === "strategy_problem_solving") {
     if (capability) {
-      return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+      return sentence(`${lead.literal}. This aligns well with ${capability}.`)
     }
-    return sentence(`${lead.literal} gives you direct proof relevant to structured problem-solving work.`)
+    return sentence(`${lead.literal}. This aligns well with structured problem-solving work.`)
   }
 
   if (capability) {
-    return sentence(`${lead.literal} gives you direct proof relevant to ${capability}.`)
+    return sentence(`${lead.literal}. This aligns well with ${capability}.`)
   }
 
-  return sentence(`${lead.literal} gives you direct relevant proof for this role.`)
+  return sentence(`${lead.literal}, which is directly relevant to this role.`)
 }
 
 function interpretAdjacentProof(
@@ -697,14 +763,19 @@ function renderWhyBullet(
     profileFact = profileFact.slice(0, 180).replace(/\s+\S*$/, "").trim()
   }
 
+if (isBadBulletJobFact(jobFact)) return null
+if (isBadBulletProfileFact(profileFact)) return null
+
   if (
     /^(what you'll do|what you will do|major responsibilities include|ideal qualifications include|this job reports to|major in\b|duties include\b|the intern reports directly\b|throughout your work with\b|two years of equivalent education\b|2-4 years\b|[0-9]+\+?\s*years\b|work as a member of\b|small sized commercial litigation law firm\b)/i.test(jobFact)
   ) {
     return null
   }
 
-  if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
+    if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
     if (!profileFact) return null
+    if (isBadBulletJobFact(jobFact)) return null
+    if (isBadBulletProfileFact(profileFact)) return null
     return interpretDirectProof(profileFact, jobFact, w.match_key)
   }
 
@@ -721,7 +792,7 @@ function renderWhyBullet(
   if (w.code === "WHY_EXECUTION_PROOF") {
     const lead = safeProfileLead(profileFact)
     if (!lead) return null
-    return sentence(`${lead} shows execution discipline that should translate well to this role.`)
+    return sentence(`${lead}. This shows strong ownership and execution.`)
   }
 
   if (w.code === "WHY_TOOL_PROOF") {
@@ -730,7 +801,7 @@ function renderWhyBullet(
       const list = tools.length > 3
         ? `${tools.slice(0, 2).join(", ")}, and ${tools[tools.length - 1]}`
         : tools.join(", ").replace(/, ([^,]*)$/, ", and $1")
-      return sentence(`Your experience with ${list} gives you relevant tool proof for this workflow.`)
+      return sentence(`${list} shows relevant tool strength for this work.`)
     }
 
     const lead = safeProfileLead(profileFact)
@@ -739,6 +810,10 @@ function renderWhyBullet(
     if (!jf) return sentence(`${lead} gives you relevant tool-related proof.`)
     return sentence(`${lead} gives you relevant proof for ${jf}.`)
   }
+
+  if (/^ï¿½/i.test(jobFact)) return null
+  if (/^currently pursuing a bachelor/i.test(jobFact)) return null
+  if (/^gain foundational understanding/i.test(jobFact)) return null
 
   const lead = safeProfileLead(profileFact)
   const jf = capabilityPhrase(jobFact)

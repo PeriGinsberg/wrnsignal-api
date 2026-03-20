@@ -101,12 +101,21 @@ export async function runJobFit(args: {
     debug: {
       eval_wrapper_stamp: JOBFIT_EVAL_WRAPPER_STAMP,
       renderer_stamp: RENDERER_V4_STAMP,
+
       decision_initial: decisionInitial,
       decision_after_gate: decisionAfterGate,
       decision_final: decisionFinal,
+
+      baseScore: scored.base,
+      rawPenaltySum: scored.penalties.reduce((s, p) => s + p.amount, 0),
+      penaltySum: scored.penaltySum,
+
+      whyCount: scored.whyCodes.length,
+      riskCount: scored.riskCodes.length,
+
       why_count: rendered.why.length,
       risk_count: rendered.risk.length,
-      penalty_sum: scored.penaltySum,
+
       ...rendered.renderer_debug,
     },
   }

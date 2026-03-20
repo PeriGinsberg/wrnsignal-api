@@ -1,17 +1,628 @@
 [
   {
+    "id": "real-020",
+    "label": "Graphic Designer - Topps NYC",
+    "score": 90,
+    "decision_final": "Apply",
+    "why_bullets_joined": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation | Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution | Designed end-to-end brand identity and visual systems. This shows strong ownership and execution",
+    "risk_bullets_joined": "",
+    "raw": {
+      "decision": "Apply",
+      "score": 90,
+      "bullets": [
+        "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation",
+        "Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution",
+        "Designed end-to-end brand identity and visual systems. This shows strong ownership and execution"
+      ],
+      "risk_flags": [],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Create digital assets such as landing pages, emails, banner ads, and social content for major product drops, events, and releases",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 102,
+          "match_key": "content_execution",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "brand_messaging",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Work in a fast-paced, deadline-driven environment where collaboration, initiative, and attention to detail are essential",
+          "profile_fact": "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 93,
+          "match_key": "stakeholder_coordination",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Maintain and evolve the Topps visual identity system and design templates, ensuring consistency across all touchpoints",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 80,
+          "match_key": "visual_communication",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        },
+        {
+          "code": "WHY_EXECUTION_PROOF",
+          "job_fact": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
+          "profile_fact": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 78,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "41e735cb704fd3bc",
+        "jobFamily": "Marketing",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": false
+        },
+        "function_tags": [
+          "creative_design",
+          "premed_clinical",
+          "finance_corp",
+          "brand_marketing",
+          "operations_general",
+          "content_social"
+        ],
+        "signal_debug": {
+          "hits": {
+            "visual_communication": 2,
+            "hospital_or_environment": 4,
+            "financial_analysis": 1,
+            "tool:figma": 1,
+            "tool:photoshop": 1,
+            "tool:illustrator": 1,
+            "tool:indesign": 1,
+            "brand_messaging": 1,
+            "operations_execution": 1,
+            "stakeholder_coordination": 2,
+            "content_execution": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": "New York City",
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [
+          "figma",
+          "photoshop",
+          "illustrator",
+          "indesign"
+        ],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "93e76f204d01b486",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Create digital assets such as landing pages, emails, banner ads, and social content for major product drops, events, and releases",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
+          },
+          {
+            "id": "9a03723badc160dc",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Maintain and evolve the Topps visual identity system and design templates, ensuring consistency across all touchpoints",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "1ecb9f209fdf1ff6",
+            "kind": "function",
+            "key": "hospital_or_environment",
+            "label": "hospital, operating room, or procedural environment exposure",
+            "snippet": "The listed salary ranges are specific to NYC or Los Angeles and may not be applicable to other locations",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "139b2433e7127f9c",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "A strong portfolio that showcases your ability to merge creativity with brand consistency across digital and physical media",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "f2f275b558937910",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "4b07a1011eef3678",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Partner with cross-functional teams—including Marketing, Product, and Packaging—to deliver cohesive, campaign-driven creative",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "e6b66127398c5ee0",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Work in a fast-paced, deadline-driven environment where collaboration, initiative, and attention to detail are essential",
+            "strength": 3,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "d342c9ae71ab1a89",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "9747ccb29c5a0220",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "4f1e9aee1ed6433e",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "9bccb0e08b6cd574",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          }
+        ],
+        "internship": {
+          "isInternship": false,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR",
+            "Events"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": "Create digital assets such as landing pages, emails, banner ads, and social content for major product drops, events, and releases",
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Sales",
+          "Marketing"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "figma",
+          "photoshop",
+          "illustrator",
+          "indesign",
+          "canva"
+        ],
+        "gradYear": 2024,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "brand_marketing",
+          "content_social",
+          "operations_general",
+          "accounting_finops",
+          "sales_bd",
+          "communications_pr",
+          "creative_design"
+        ],
+        "function_tag_evidence": {
+          "brand_marketing": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Created thumbnails, photo collages, and branded backgrounds for campaign driven content"
+          ],
+          "content_social": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "Produced social media graphics for Instagram and Facebook"
+          ],
+          "operations_general": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables"
+          ],
+          "accounting_finops": [
+            "Graphic Designer / Brand Manager | Sagemont Advisors and Tax Now | 2023 – 2024",
+            "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands"
+          ],
+          "sales_bd": [
+            "Designed paid ad creative and social media assets supporting lead generation campaigns"
+          ],
+          "communications_pr": [
+            "Prepared production ready files and coordinated with print vendors to ensure accurate execution",
+            "Supported campaigns, events, and branded communications"
+          ],
+          "creative_design": [
+            "Grova Creative Marketing | Graphic Design Intern | 2018"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "fe2edc13110e64be",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "47aa0f7b99550a78",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "cdaf15ff3adb346c",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "3af77ab4289ff1e4",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "6962baf40ec9cae5",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Prepared production ready files and coordinated with print vendors to ensure accurate execution",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "6fcc4717410bafbc",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Supported campaigns, events, and branded communications",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "99a1437deb488e1b",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Graphic Designer / Brand Manager | Sagemont Advisors and Tax Now | 2023 – 2024",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "24256499e373429c",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "0116f6ea0660f075",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "5701fce2421733bf",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "009d2897559031a5",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Produced social media graphics for Instagram and Facebook",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "5cfe91329271edcf",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1afb4585b6a5b300",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Grova Creative Marketing | Graphic Design Intern | 2018",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "f7b6550afcf54afe",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "fbbfb2225174f7d6",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "8831b09e896ba348",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "9a08f143a5fccacd",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "bd774108322154d7",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "bbbb72a0b2d1944c",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 90,
+        "clamped_score": 90,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "✅",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 5,
+        "riskCount": 0,
+        "why_count": 3,
+        "risk_count": 0,
+        "decision": "Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "content_execution",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 102
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "brand_messaging",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "stakeholder_coordination",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 93
+          },
+          {
+            "code": "WHY_EXECUTION_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "adjacent",
+            "weight": 78
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "visual_communication",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 80
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3203,
+          "augmented_profile_text_len": 3426
+        }
+      }
+    }
+  },
+  {
     "id": "real-101",
     "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
     "score": 75,
     "decision_final": "Review",
-    "why_bullets_joined": "Your operations and process transformation experience is relevant to execution and process improvement work | Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments",
+    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with clinical selling, provider-facing support, and utilization growth | Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution",
     "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
     "raw": {
       "decision": "Review",
       "score": 75,
       "bullets": [
-        "Your operations and process transformation experience is relevant to execution and process improvement work",
-        "Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments"
+        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with clinical selling, provider-facing support, and utilization growth",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution"
       ],
       "risk_flags": [
         "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area"
@@ -489,13 +1100,16 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
+        "rawPenaltySum": 5.940000000000001,
+        "penaltySum": 5.940000000000001,
+        "whyCount": 3,
+        "riskCount": 2,
         "why_count": 2,
         "risk_count": 1,
-        "penalty_sum": 5.940000000000001,
         "decision": "Review",
         "why_codes_in": [
           {
@@ -545,14 +1159,14 @@
     "label": "Michael Lazarus - NYC Council Graphics Designer",
     "score": 72,
     "decision_final": "Review",
-    "why_bullets_joined": "Your portfolio-level design work shows the kind of execution discipline this team expects from a designer who can contribute immediately | Your fluency with Adobe, Canva, and Photoshop gives you the tool readiness this design workflow depends on",
+    "why_bullets_joined": "Designed end-to-end brand identity and visual systems. This shows strong ownership and execution | Adobe, Canva, and Photoshop shows relevant tool strength for this work",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Review",
       "score": 72,
       "bullets": [
-        "Your portfolio-level design work shows the kind of execution discipline this team expects from a designer who can contribute immediately",
-        "Your fluency with Adobe, Canva, and Photoshop gives you the tool readiness this design workflow depends on"
+        "Designed end-to-end brand identity and visual systems. This shows strong ownership and execution",
+        "Adobe, Canva, and Photoshop shows relevant tool strength for this work"
       ],
       "risk_flags": [],
       "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
@@ -1122,13 +1736,16 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 4,
+        "riskCount": 2,
         "why_count": 2,
         "risk_count": 0,
-        "penalty_sum": 0,
         "decision": "Review",
         "why_codes_in": [
           {
@@ -1185,15 +1802,12 @@
     "label": "Will Friedman - RSM Strategy and Management Consulting Intern",
     "score": 66,
     "decision_final": "Review",
-    "why_bullets_joined": "Your market research and due diligence experience maps well to the research and analytical work this role depends on | Your experience translating analysis into written deliverables and presentations aligns well with work that depends on clients to provide analysis",
+    "why_bullets_joined": "",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Review",
       "score": 66,
-      "bullets": [
-        "Your market research and due diligence experience maps well to the research and analytical work this role depends on",
-        "Your experience translating analysis into written deliverables and presentations aligns well with work that depends on clients to provide analysis"
-      ],
+      "bullets": [],
       "risk_flags": [],
       "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
       "location_constraint": "not_constrained",
@@ -1778,13 +2392,16 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
-        "why_count": 2,
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 4,
+        "riskCount": 0,
+        "why_count": 0,
         "risk_count": 0,
-        "penalty_sum": 0,
         "decision": "Review",
         "why_codes_in": [
           {
@@ -2441,13 +3058,16 @@
       "icon": "⛔",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 2,
+        "riskCount": 0,
         "why_count": 0,
         "risk_count": 0,
-        "penalty_sum": 0,
         "decision": "Pass",
         "why_codes_in": [
           {
@@ -3164,13 +3784,16 @@
       "icon": "⛔",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
+        "rawPenaltySum": 11.2,
+        "penaltySum": 11.2,
+        "whyCount": 6,
+        "riskCount": 3,
         "why_count": 0,
         "risk_count": 2,
-        "penalty_sum": 11.2,
         "decision": "Pass",
         "why_codes_in": [
           {
@@ -4055,13 +4678,16 @@
       "icon": "⛔",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
+        "rawPenaltySum": 7.800000000000001,
+        "penaltySum": 7.800000000000001,
+        "whyCount": 2,
+        "riskCount": 1,
         "why_count": 0,
         "risk_count": 1,
-        "penalty_sum": 7.800000000000001,
         "decision": "Pass",
         "why_codes_in": [
           {
@@ -4100,15 +4726,15 @@
     "label": null,
     "score": 82,
     "decision_final": "Apply",
-    "why_bullets_joined": "Your operations and process transformation experience is relevant to execution and process improvement work | Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work | Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments",
+    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with customer support and relationship management | Managed approximately 400 active B2B prospects within a rotating pipeline. This aligns well with field sales execution and account coverage | Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution",
     "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | The posting calls for tools you have not clearly shown in your profile yet",
     "raw": {
       "decision": "Apply",
       "score": 82,
       "bullets": [
-        "Your operations and process transformation experience is relevant to execution and process improvement work",
-        "Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work",
-        "Your clinical exposure gives you relevant proof for work that depends on provider-facing credibility and comfort in medical environments"
+        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. This aligns well with customer support and relationship management",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. This aligns well with field sales execution and account coverage",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. This shows strong ownership and execution"
       ],
       "risk_flags": [
         "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
@@ -4661,13 +5287,16 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
+        "rawPenaltySum": 5.940000000000001,
+        "penaltySum": 5.940000000000001,
+        "whyCount": 5,
+        "riskCount": 3,
         "why_count": 3,
         "risk_count": 2,
-        "penalty_sum": 5.940000000000001,
         "decision": "Apply",
         "why_codes_in": [
           {
@@ -4734,19 +5363,17 @@
     "id": "real-108",
     "label": "Ryan Rosen - Matthews commercial real estate internship",
     "score": 90,
-    "decision_final": "Priority Apply",
-    "why_bullets_joined": "Your financial analysis experience gives you strong analytical proof for work that depends on � Participate in the Matthews� University training program to learn the fundamentals of commercial real estate | Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work | Your marketing campaign execution experience shows the kind of execution discipline this team will expect from someone stepping into the role",
+    "decision_final": "Apply",
+    "why_bullets_joined": "Ran Meta marketing campaigns, handled accounting, and executed all sales operations independently. This shows strong ownership and execution",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Priority Apply",
+      "decision": "Apply",
       "score": 90,
       "bullets": [
-        "Your financial analysis experience gives you strong analytical proof for work that depends on � Participate in the Matthews� University training program to learn the fundamentals of commercial real estate",
-        "Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work",
-        "Your marketing campaign execution experience shows the kind of execution discipline this team will expect from someone stepping into the role"
+        "Ran Meta marketing campaigns, handled accounting, and executed all sales operations independently. This shows strong ownership and execution"
       ],
       "risk_flags": [],
-      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -5279,17 +5906,17 @@
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Priority Apply"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Priority Apply"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Priority Apply"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -5298,17 +5925,20 @@
           }
         ]
       },
-      "icon": "🔥",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
-        "decision_initial": "Priority Apply",
-        "decision_after_gate": "Priority Apply",
-        "decision_final": "Priority Apply",
-        "why_count": 3,
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 5,
+        "riskCount": 0,
+        "why_count": 1,
         "risk_count": 0,
-        "penalty_sum": 0,
-        "decision": "Priority Apply",
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -5960,13 +6590,16 @@
       "icon": "⛔",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
+        "rawPenaltySum": 7.800000000000001,
+        "penaltySum": 7.800000000000001,
+        "whyCount": 2,
+        "riskCount": 1,
         "why_count": 0,
         "risk_count": 1,
-        "penalty_sum": 7.800000000000001,
         "decision": "Pass",
         "why_codes_in": [
           {
@@ -6005,15 +6638,12 @@
     "label": "Allyson Keyes - NBCUniversal business and legal affairs internship",
     "score": 68,
     "decision_final": "Review",
-    "why_bullets_joined": "Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work | Your written analysis and presentation work shows the kind of execution discipline this team will expect from someone stepping into the role",
+    "why_bullets_joined": "",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Review",
       "score": 68,
-      "bullets": [
-        "Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work",
-        "Your written analysis and presentation work shows the kind of execution discipline this team will expect from someone stepping into the role"
-      ],
+      "bullets": [],
       "risk_flags": [],
       "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
       "location_constraint": "not_constrained",
@@ -6736,13 +7366,16 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
-        "why_count": 2,
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 4,
+        "riskCount": 2,
+        "why_count": 0,
         "risk_count": 0,
-        "penalty_sum": 0,
         "decision": "Review",
         "why_codes_in": [
           {
@@ -6798,20 +7431,18 @@
     "id": "real-111",
     "label": "Jared Jonas - Celsius brand marketing internship",
     "score": 88,
-    "decision_final": "Priority Apply",
-    "why_bullets_joined": "Your written communication and documentation experience supports the deliverable and communication demands of this role | Your research experience maps well to work that depends on Monitor industry trends | Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work | Your experience implementing process improvements and coordinating initiatives aligns with the execution and transformation work this role requires",
+    "decision_final": "Apply",
+    "why_bullets_joined": "Through J�s Kixx, I managed over $60,000 in sales and built a process that relied on instinct, data, and customer trust. This aligns well with cross-functional marketing work | Created and managed eBay listings with original photography and copywriting. This shows strong ownership and execution",
     "risk_bullets_joined": "",
     "raw": {
-      "decision": "Priority Apply",
+      "decision": "Apply",
       "score": 88,
       "bullets": [
-        "Your written communication and documentation experience supports the deliverable and communication demands of this role",
-        "Your research experience maps well to work that depends on Monitor industry trends",
-        "Your experience working directly with clients and stakeholders provides relevant proof for collaborative, client-facing work",
-        "Your experience implementing process improvements and coordinating initiatives aligns with the execution and transformation work this role requires"
+        "Through J�s Kixx, I managed over $60,000 in sales and built a process that relied on instinct, data, and customer trust. This aligns well with cross-functional marketing work",
+        "Created and managed eBay listings with original photography and copywriting. This shows strong ownership and execution"
       ],
       "risk_flags": [],
-      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
       "why_codes": [
         {
@@ -7425,17 +8056,17 @@
           {
             "label": "decision_initial",
             "points": 0,
-            "note": "Priority Apply"
+            "note": "Apply"
           },
           {
             "label": "decision_after_gate",
             "points": 0,
-            "note": "Priority Apply"
+            "note": "Apply"
           },
           {
             "label": "decision_final",
             "points": 0,
-            "note": "Priority Apply"
+            "note": "Apply"
           },
           {
             "label": "penalty_sum",
@@ -7444,17 +8075,20 @@
           }
         ]
       },
-      "icon": "🔥",
+      "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_09__PREMIUM_EVIDENCE_RENDERER__A",
-        "decision_initial": "Priority Apply",
-        "decision_after_gate": "Priority Apply",
-        "decision_final": "Priority Apply",
-        "why_count": 4,
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 6,
+        "riskCount": 0,
+        "why_count": 2,
         "risk_count": 0,
-        "penalty_sum": 0,
-        "decision": "Priority Apply",
+        "decision": "Apply",
         "why_codes_in": [
           {
             "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -7506,6 +8140,854 @@
           "used_raw_profile_text_fallback": false,
           "base_profile_text_len": 6575,
           "augmented_profile_text_len": 6854
+        }
+      }
+    }
+  },
+  {
+    "id": "real-112",
+    "label": null,
+    "score": 74,
+    "decision_final": "Review",
+    "why_bullets_joined": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation | Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution | Adobe, Canva, and Photoshop shows relevant tool strength for this work",
+    "risk_bullets_joined": "",
+    "raw": {
+      "decision": "Review",
+      "score": 74,
+      "bullets": [
+        "Created thumbnails, photo collages, and branded backgrounds for campaign driven content. This aligns well with digital asset creation",
+        "Partnering with marketing leadership to gather requirements and manage multiple concurrent design deliverables. This aligns well with fast-paced creative execution",
+        "Adobe, Canva, and Photoshop shows relevant tool strength for this work"
+      ],
+      "risk_flags": [],
+      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Create digital assets such as landing pages, emails, banner ads, and social content for major product drops, events, and releases",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 102,
+          "match_key": "content_execution",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Partner with cross-functional teams�including Marketing, Product, and Packaging�to deliver cohesive, campaign-driven creative",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "brand_messaging",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Work in a fast-paced, deadline-driven environment where collaboration, initiative, and attention to detail are essential",
+          "profile_fact": "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 93,
+          "match_key": "stakeholder_coordination",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_TOOL_PROOF",
+          "job_fact": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+          "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 91,
+          "match_key": "figma",
+          "match_kind": "tool",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_TOOL_PROOF",
+          "job_fact": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+          "profile_fact": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 91,
+          "match_key": "photoshop",
+          "match_kind": "tool",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Maintain and evolve the Topps visual identity system and design templates, ensuring consistency across all touchpoints",
+          "profile_fact": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 80,
+          "match_key": "visual_communication",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "9b79506d62488963",
+        "jobFamily": "Marketing",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": false
+        },
+        "function_tags": [
+          "creative_design",
+          "premed_clinical",
+          "finance_corp",
+          "brand_marketing",
+          "operations_general",
+          "content_social"
+        ],
+        "signal_debug": {
+          "hits": {
+            "visual_communication": 2,
+            "hospital_or_environment": 4,
+            "financial_analysis": 1,
+            "tool:figma": 1,
+            "tool:photoshop": 1,
+            "tool:illustrator": 1,
+            "tool:indesign": 1,
+            "brand_messaging": 1,
+            "operations_execution": 1,
+            "stakeholder_coordination": 2,
+            "content_execution": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": "New York City",
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [
+          "figma",
+          "photoshop",
+          "illustrator",
+          "indesign"
+        ],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "93e76f204d01b486",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Create digital assets such as landing pages, emails, banner ads, and social content for major product drops, events, and releases",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
+          },
+          {
+            "id": "9a03723badc160dc",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Maintain and evolve the Topps visual identity system and design templates, ensuring consistency across all touchpoints",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "1ecb9f209fdf1ff6",
+            "kind": "function",
+            "key": "hospital_or_environment",
+            "label": "hospital, operating room, or procedural environment exposure",
+            "snippet": "The listed salary ranges are specific to NYC or Los Angeles and may not be applicable to other locations",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "139b2433e7127f9c",
+            "kind": "function",
+            "key": "financial_analysis",
+            "label": "financial analysis and investment work",
+            "snippet": "A strong portfolio that showcases your ability to merge creativity with brand consistency across digital and physical media",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "finance_corp"
+          },
+          {
+            "id": "4fa957f3acd131ee",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Partner with cross-functional teams�including Marketing, Product, and Packaging�to deliver cohesive, campaign-driven creative",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "3a52d2337a3f2e4f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Partner with cross-functional teams�including Marketing, Product, and Packaging�to deliver cohesive, campaign-driven creative",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "e6b66127398c5ee0",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Work in a fast-paced, deadline-driven environment where collaboration, initiative, and attention to detail are essential",
+            "strength": 3,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "d342c9ae71ab1a89",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "9747ccb29c5a0220",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "4f1e9aee1ed6433e",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "9bccb0e08b6cd574",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Expertise in Adobe Creative Suite (Photoshop, Illustrator, InDesign) and proficiency in Figma, Sketch, or similar tools",
+            "strength": 4,
+            "requiredness": "supporting"
+          }
+        ],
+        "internship": {
+          "isInternship": false,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR",
+            "Events"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": "Create digital assets such as landing pages, emails, banner ads, and social content for major product drops, events, and releases",
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Other"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "figma",
+          "photoshop",
+          "illustrator",
+          "indesign",
+          "canva",
+          "adobe"
+        ],
+        "gradYear": 2027,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "brand_marketing",
+          "content_social",
+          "operations_general",
+          "accounting_finops",
+          "sales_bd",
+          "communications_pr",
+          "creative_design"
+        ],
+        "function_tag_evidence": {
+          "brand_marketing": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Created thumbnails, photo collages, and branded backgrounds for campaign driven content"
+          ],
+          "content_social": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "Produced social media graphics for Instagram and Facebook"
+          ],
+          "operations_general": [
+            "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables"
+          ],
+          "accounting_finops": [
+            "Graphic Designer / Brand Manager | Sagemont Advisors and Tax Now | 2023 � 2024",
+            "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands"
+          ],
+          "sales_bd": [
+            "Designed paid ad creative and social media assets supporting lead generation campaigns"
+          ],
+          "communications_pr": [
+            "Prepared production ready files and coordinated with print vendors to ensure accurate execution",
+            "Supported campaigns, events, and branded communications"
+          ],
+          "creative_design": [
+            "Grova Creative Marketing | Graphic Design Intern | 2018"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "fe2edc13110e64be",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Designed end-to-end brand identity and visual systems including logos, typography, color palettes, and layout standards for two related tax service brands",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "47aa0f7b99550a78",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "cdaf15ff3adb346c",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Created thumbnails, photo collages, and branded backgrounds for campaign driven content",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "3af77ab4289ff1e4",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "6962baf40ec9cae5",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Prepared production ready files and coordinated with print vendors to ensure accurate execution",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "6fcc4717410bafbc",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Supported campaigns, events, and branded communications",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "3ebe8583b5645214",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Graphic Designer / Brand Manager | Sagemont Advisors and Tax Now | 2023 � 2024",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "24256499e373429c",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Designed paid ad creative and social media assets supporting lead generation campaigns",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "0116f6ea0660f075",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "5701fce2421733bf",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "009d2897559031a5",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Produced social media graphics for Instagram and Facebook",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "content_social"
+          },
+          {
+            "id": "5cfe91329271edcf",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Brand identity and visual systems | Brand guidelines and visual direction | Marketing and campaign design | Digital and print production | Social media and paid ad creative | Photography and videography | Pitch decks and sales collateral | Cross functional collaboration",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "1afb4585b6a5b300",
+            "kind": "function",
+            "key": "visual_communication",
+            "label": "visual communication and design execution",
+            "snippet": "Grova Creative Marketing | Graphic Design Intern | 2018",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "creative_design"
+          },
+          {
+            "id": "f7b6550afcf54afe",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "fbbfb2225174f7d6",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "8831b09e896ba348",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "9a08f143a5fccacd",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "bd774108322154d7",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "Adobe Illustrator, Photoshop, InDesign | Canva | Figma (light) | Asana | Monday.com | Microsoft Office | Google Workspace",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "bbbb72a0b2d1944c",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Partnered with marketing leadership to gather requirements and manage multiple concurrent design deliverables",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "55d0746811168c3b",
+            "kind": "tool",
+            "key": "figma",
+            "label": "figma tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "71863d5a1322febc",
+            "kind": "tool",
+            "key": "photoshop",
+            "label": "photoshop tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "375baa7aba4ee0ac",
+            "kind": "tool",
+            "key": "illustrator",
+            "label": "illustrator tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "af5e5cc2b53c4b45",
+            "kind": "tool",
+            "key": "indesign",
+            "label": "indesign tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          },
+          {
+            "id": "3fd717de1bae9fac",
+            "kind": "tool",
+            "key": "canva",
+            "label": "canva tool usage",
+            "snippet": "TOOLS: adobe, canva, figma, illustrator, indesign, photoshop",
+            "source": "resume",
+            "strength": 5
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 74,
+        "clamped_score": 74,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "⚠",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "decision_initial": "Review",
+        "decision_after_gate": "Review",
+        "decision_final": "Review",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 6,
+        "riskCount": 0,
+        "why_count": 3,
+        "risk_count": 0,
+        "decision": "Review",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "content_execution",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 102
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "brand_messaging",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "stakeholder_coordination",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 93
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "visual_communication",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 80
+          },
+          {
+            "code": "WHY_TOOL_PROOF",
+            "match_key": "figma",
+            "match_kind": "tool",
+            "match_strength": "direct",
+            "weight": 91
+          },
+          {
+            "code": "WHY_TOOL_PROOF",
+            "match_key": "photoshop",
+            "match_kind": "tool",
+            "match_strength": "direct",
+            "weight": 91
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3316,
+          "augmented_profile_text_len": 3600
+        }
+      }
+    }
+  },
+  {
+    "id": "real-XXX",
+    "label": null,
+    "score": 66,
+    "decision_final": "Review",
+    "why_bullets_joined": "",
+    "risk_bullets_joined": "The role description is vague, which makes fit harder to evaluate confidently Posting provides limited concrete detail on requirements or structure",
+    "raw": {
+      "decision": "Review",
+      "score": 66,
+      "bullets": [],
+      "risk_flags": [
+        "The role description is vague, which makes fit harder to evaluate confidently Posting provides limited concrete detail on requirements or structure"
+      ],
+      "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
+      "location_constraint": "not_constrained",
+      "why_codes": [],
+      "risk_codes": [
+        {
+          "code": "RISK_AMBIGUOUS_ROLE",
+          "job_fact": "Posting provides limited concrete detail on requirements or structure.",
+          "profile_fact": null,
+          "risk": "The role description is vague, which makes fit harder to evaluate confidently.",
+          "severity": "low",
+          "weight": 0
+        }
+      ],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "73be4d36ff9a9c1d",
+        "jobFamily": "Other",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": false
+        },
+        "function_tags": [],
+        "signal_debug": {
+          "hits": {},
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": null,
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [],
+        "internship": {
+          "isInternship": false,
+          "isSummer": false,
+          "isInPersonExplicit": false,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": null,
+            "aiLine": null,
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Other"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [],
+        "gradYear": null,
+        "yearsExperienceApprox": null,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [],
+        "function_tag_evidence": {},
+        "profile_evidence_units": []
+      },
+      "score_breakdown": {
+        "raw_score": 66,
+        "clamped_score": 66,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Review"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "⚠",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_19__PREMIUM_EVIDENCE_RENDERER__SAFE_LITERAL_A",
+        "decision_initial": "Review",
+        "decision_after_gate": "Review",
+        "decision_final": "Review",
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 0,
+        "riskCount": 1,
+        "why_count": 0,
+        "risk_count": 1,
+        "decision": "Review",
+        "why_codes_in": [],
+        "risk_codes_in": [
+          {
+            "code": "RISK_AMBIGUOUS_ROLE",
+            "severity": "low"
+          }
+        ],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 47,
+          "augmented_profile_text_len": 246
         }
       }
     }
