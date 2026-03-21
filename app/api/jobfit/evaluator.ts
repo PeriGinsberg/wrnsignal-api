@@ -125,7 +125,9 @@ function buildAugmentedProfileText(args: EvaluateJobFitArgs): {
 
     if (targetRoles.length) lines.push(`STATED_TARGET_ROLES: ${targetRoles.join(", ")}`)
     if (adjacentRoles.length) lines.push(`STATED_ADJACENT_ROLES: ${adjacentRoles.join(", ")}`)
-    if (targetIndustries.length) lines.push(`STATED_TARGET_INDUSTRIES: ${targetIndustries.join(", ")}`)
+    if (targetIndustries.length) {
+      lines.push(`STATED_TARGET_INDUSTRIES: ${targetIndustries.join(", ")}`)
+    }
   }
 
   const c =
@@ -186,27 +188,15 @@ export async function evaluateJobFit(args: EvaluateJobFitArgs) {
     profileOverrides: overrides,
   })
 
-const rendered = renderBulletsV4(result as any)
+  const rendered = renderBulletsV4(result as any)
 
-return {
-  ...result,
-  why: rendered.why,
-  risk: rendered.risk,
-  bullets: rendered.why,
-  risk_bullets: rendered.risk,
-  debug: {
-    ...(result as any)?.debug,
-    ...rendered.renderer_debug,
-    evaluator_profile_source: {
-      used_resume_text: Boolean(norm(args.resumeText)),
-      used_profile_structured: Boolean(args.profileStructured),
-      used_raw_profile_text_fallback:
-        !norm(args.resumeText) && Boolean(norm(args.profileText)),
-      base_profile_text_len: baseProfileText.length,
-      augmented_profile_text_len: augmentedProfileText.length,
-    },
-  },
-}
+  return {
+    ...result,
+    why: rendered.why,
+    risk: rendered.risk,
+    bullets: rendered.why,
+    risk_bullets: rendered.risk,
+    debug: {
       ...(result as any)?.debug,
       ...rendered.renderer_debug,
       evaluator_profile_source: {
