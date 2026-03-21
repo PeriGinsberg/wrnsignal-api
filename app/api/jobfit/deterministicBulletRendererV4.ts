@@ -6,7 +6,7 @@ import type {
 } from "./signals"
 
 export const RENDERER_V4_STAMP =
-  "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A"
+  "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B"
 
 type RenderCaps = { whyMax: number; riskMax: number }
 type Group = "proof" | "tools" | "execution" | "other"
@@ -19,6 +19,17 @@ type SafeEvidenceContext = {
 
 const TOOL_PATTERN =
   /\b(adobe(?:\s+creative\s+suite)?|photoshop|illustrator|indesign|figma|canva|excel|powerpoint|word|sql|python|r|arcgis|autocad|tableau|google analytics|meta ads|google ads|crm)\b/i
+
+const WHY_CONNECTORS = [
+  "That matters because",
+  "This is relevant because",
+  "This is important because",
+  "That's useful here because",
+]
+
+function pickConnector(index: number): string {
+  return WHY_CONNECTORS[index % WHY_CONNECTORS.length]
+}
 
 function capsForDecision(d: Decision): RenderCaps {
   if (d === "Priority Apply") return { whyMax: 6, riskMax: 3 }
@@ -40,6 +51,7 @@ function norm(s: unknown): string {
     .replace(/â€”/g, "-")
     .replace(/\u00a0/g, " ")
     .replace(/\s+/g, " ")
+.replace(/â€”/g, " — ")
     .trim()
 }
 
@@ -163,21 +175,21 @@ function normalizeWhyJobFact(s: string): string {
 function capabilityPhrase(jobFact: string): string {
   const t = cleanJobFact(jobFact)
   if (!t) return ""
-if (/hands-on involvement with practices and games|practices and games|game day/i.test(t)) {
-  return "hands-on game-day and event execution"
-}
-if (/players, parents, and coaches|superior customer service|i9 sports experience/i.test(t)) {
-  return "guest experience and relationship-building"
-}
-if (/observing, assessing, and assisting our coaches|empower volunteer coaches|sportsmanship values/i.test(t)) {
-  return "coaching support and fundamentals instruction"
-}
-if (/field sales calls for assigned accounts and assigned territory/i.test(t)) {
-  return "territory-based field sales execution"
-}
-if (/clinical sales associate|drive .* utilization/i.test(t)) {
-  return "clinical sales execution and utilization support"
-}
+  if (/hands-on involvement with practices and games|practices and games|game day/i.test(t)) {
+    return "hands-on game-day and event execution"
+  }
+  if (/players, parents, and coaches|superior customer service|i9 sports experience/i.test(t)) {
+    return "guest experience and relationship-building"
+  }
+  if (/observing, assessing, and assisting our coaches|empower volunteer coaches|sportsmanship values/i.test(t)) {
+    return "coaching support and fundamentals instruction"
+  }
+  if (/field sales calls for assigned accounts and assigned territory/i.test(t)) {
+    return "territory-based field sales execution"
+  }
+  if (/clinical sales associate|drive .* utilization/i.test(t)) {
+    return "clinical sales execution and utilization support"
+  }
   if (/collaborating with .* drive .*utilization/i.test(t)) {
     return "collaborating with the clinical sales team to drive utilization"
   }
@@ -227,33 +239,38 @@ if (/clinical sales associate|drive .* utilization/i.test(t)) {
     return "research"
   }
 
-  const clipped = t.split(/;|\s+\|\s+|,\s+(?=[a-z])/i)[0].trim()
-  return clipped.length > 140
-    ? clipped.slice(0, 140).replace(/\s+\S*$/, "").trim()
-    : clipped
+ return ""
 }
 
 function summarizeJobFact(jobFact: string, matchKey?: string): string {
   const k = String(matchKey || "").toLowerCase()
   const phrase = capabilityPhrase(jobFact)
-if (k === "event_operations_live_execution") return "hands-on game-day and event execution"
-if (k === "customer_service_guest_experience") return "guest experience and fan-facing service"
-if (k === "coaching_instruction_facilitation") return "coaching, instruction, and fundamentals-based support"
-  if (k === "strategy_problem_solving") return "the strategic problem-solving side of this role"
-  if (k === "consumer_research") return "the research and benchmarking work in this role"
-  if (k === "analysis_reporting") return "the analytical work this role requires"
+  if (k === "event_operations_live_execution") return "hands-on game-day and event execution"
+  if (k === "customer_service_guest_experience") return "guest experience and fan-facing service"
+  if (k === "coaching_instruction_facilitation") return "coaching, instruction, and fundamentals-based support"
+  if (k === "strategy_problem_solving") return "the strategic problem-solving side of the role"
+  if (k === "consumer_research") return "research and benchmarking work"
+  if (k === "analysis_reporting") return "analytical work"
   if (k === "drafting_documentation") return "client-ready presentation and documentation"
   if (k === "stakeholder_coordination") return "cross-functional coordination"
   if (k === "operations_execution") return "day-to-day execution in a fast-moving environment"
   if (k === "content_execution") return "content and campaign execution"
   if (k === "brand_messaging") return "brand and campaign work"
-  if (k === "policy_regulatory_research") return "the legal and compliance-oriented part of the role"
+  if (k === "policy_regulatory_research") return "legal and compliance-oriented work"
   if (k === "visual_communication") return "visual design execution"
   if (k === "communications_writing") return "written communication work"
-  if (k === "financial_analysis") return "the financial and analytical side of the role"
+  if (k === "financial_analysis") return "financial and analytical work"
+  if (k === "clinical_patient_work") return "patient-facing clinical work"
+  if (k === "hospital_or_environment") return "clinical and procedural environments"
+  if (k === "territory_execution") return "field execution and territory coverage"
+if (k === "prospecting_pipeline_management") return "outreach, prospecting, and pipeline execution"
+if (k === "accounting_operations") return "operational and process-driven work"
+if (k === "consumer_research") return "market and user research work"
 
-  if (phrase) return phrase
-  return "this part of the role"
+if (phrase) return phrase
+
+// HARD FAILSAFE: never return raw job text
+return "the work this role requires"
 }
 
 function isBadBulletProfileFact(s: string): boolean {
@@ -376,6 +393,13 @@ function extractTools(profileFact: string): string[] {
   return cleaned
 }
 
+function joinWithAnd(items: string[]): string {
+  if (items.length === 0) return ""
+  if (items.length === 1) return items[0]
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`
+}
+
 function safeProfileLead(profileFact: string): string {
   const pf = cleanProfileFact(profileFact)
   if (!pf) return ""
@@ -394,54 +418,95 @@ function summarizeProfileFact(profileFact: string, matchKey?: string): string {
   if (!p) return ""
 
   if (k === "strategy_problem_solving") {
-    return "You've already done real strategy and diligence work, where you had to break down information and make sense of it"
+    return "Strategy and diligence work is already in your background"
   }
   if (k === "consumer_research") {
-    return "You've already done real research and diligence work, not just surface-level information gathering"
+    return "You have real research experience, not just surface-level information gathering"
   }
   if (k === "analysis_reporting") {
-    return "You've already done analytical work where you had to turn information into usable conclusions"
+    return "Your background includes analytical work that turns information into usable conclusions"
   }
   if (k === "drafting_documentation") {
-    return "You've already produced written and presentation-ready work that had to communicate ideas clearly"
+    return "You have written work that had to be clear and usable for other people"
   }
   if (k === "content_execution") {
-    return "You already have hands-on content and campaign execution experience"
+    return "Hands-on content and campaign execution is already on your resume"
   }
   if (k === "brand_messaging") {
-    return "You already have direct exposure to brand and messaging work"
+    return "There is already direct exposure to brand and messaging work in your background"
   }
   if (k === "stakeholder_coordination") {
-    return "You've already worked across people and priorities to move projects forward"
+    return "You have worked across people and priorities to keep work moving"
   }
   if (k === "operations_execution") {
-    return "You've already shown you can execute in a structured environment with real ownership"
+    return "Your background shows execution in structured environments with real ownership"
   }
   if (k === "policy_regulatory_research") {
-    return "You already have experience working with legal and compliance-oriented material"
+    return "Your background already includes legal and compliance-oriented work"
   }
   if (k === "visual_communication") {
-    return "You've already created visual work that had to support a broader brand or campaign objective"
+    return "You have created visual work tied to a broader brand or campaign objective"
   }
   if (k === "communications_writing") {
-    return "You've already done writing and communication work that required clarity and judgment"
+    return "Your background includes writing that required clarity and judgment"
   }
   if (k === "financial_analysis") {
-    return "You've already done financial analysis work that required structure and judgment"
+    return "You have financial analysis experience that required structure and judgment"
+  }
+  if (k === "clinical_patient_work") {
+    return "Your background includes patient-facing clinical exposure"
+  }
+  if (k === "hospital_or_environment") {
+    return "You have exposure to surgical and procedural environments"
+  }
+  if (k === "territory_execution") {
+    return "You have handled real outreach and pipeline execution"
+  }
+  if (k === "event_operations_live_execution") {
+    return "You have worked in live environments where execution had to hold up in real time"
+  }
+  if (k === "customer_service_guest_experience") {
+    return "You have worked in settings where guest experience mattered"
+  }
+  if (k === "coaching_instruction_facilitation") {
+    return "You have supported instruction and fundamentals-based coaching"
   }
 
   return sentence(p)
 }
 
-function interpretDirectProof(profileFact: string, jobFact: string, matchKey?: string): string {
-  const literal = summarizeProfileFact(profileFact, matchKey)
-  if (!literal) return ""
 
-  const summary = summarizeJobFact("", matchKey || "") || capabilityPhrase(jobFact) || "this part of the role"
+function directBridge(lead: string, summary: string, i: number): string {
+  const connector = pickConnector(i)
 
   return sentence(
-    `${literal}. That maps directly to ${summary}, and gives you a concrete example you can speak to in an interview.`
+    `${lead}. ${connector} this role relies on ${summary}, and you already have experience doing that in a real setting`
   )
+}
+
+function adjacentBridge(lead: string, summary: string): string {
+  return sentence(
+    `${lead}. It is not the exact same work, but the underlying skills carry over into ${summary}, which is what this role actually needs`
+  )
+}
+
+function executionBridge(lead: string, summary: string): string {
+  return sentence(
+    `${lead}. For an internship or early role, this is enough to show you can step into ${summary} and get up to speed quickly`
+  )
+}
+
+function toolBridge(toolList: string, summary: string): string {
+  return sentence(
+    `${toolList} give you a usable starting point for ${summary}, which is typically all that is expected at this level`
+  )
+}
+function interpretDirectProof(profileFact: string, jobFact: string, matchKey?: string, i = 0): string {
+  const lead = summarizeProfileFact(profileFact, matchKey)
+  if (!lead) return ""
+
+  const summary = summarizeJobFact(jobFact, matchKey || "") || capabilityPhrase(jobFact) || "the work this role requires"
+  return directBridge(lead, summary, i)
 }
 
 function interpretAdjacentProof(
@@ -449,17 +514,15 @@ function interpretAdjacentProof(
   jobFact: string,
   ctx?: SafeEvidenceContext
 ): string {
-  const literal = summarizeProfileFact(profileFact, ctx?.matchKey)
-  if (!literal) return ""
+  const lead = summarizeProfileFact(profileFact, ctx?.matchKey)
+  if (!lead) return ""
 
   const summary =
-    summarizeJobFact("", ctx?.matchKey || "") ||
+    summarizeJobFact(jobFact, ctx?.matchKey || "") ||
     capabilityPhrase(jobFact) ||
-    "this part of the role"
+    "the work this role requires"
 
-  return sentence(
-    `${literal}. It is not a perfect match, but it transfers credibly into ${summary}, especially if you explain the overlap clearly.`
-  )
+  return adjacentBridge(lead, summary)
 }
 
 function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): string | null {
@@ -478,7 +541,7 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
     (hasAny(["policy", "regulatory", "legislative", "compliance", "government affairs"]) && (familyIs("Government") || familyIs("Other"))) ||
     /\b(policy|regulatory|legislative|compliance)\b/.test(roleText)
   ) {
-    return sentence("This position aligns with your stated interest in policy and regulatory work.")
+    return sentence("This position aligns with your stated interest in policy and regulatory work")
   }
 
   if (
@@ -486,7 +549,7 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
     (hasAny(["operations", "process", "business analyst"]) && (familyIs("Consulting") || familyIs("Other"))) ||
     /\b(operations|process|business analyst|internal consulting|post-merger integration)\b/.test(roleText)
   ) {
-    return sentence("This position aligns with your stated interest in operations and process-oriented work.")
+    return sentence("This position aligns with your stated interest in operations and process-oriented work")
   }
 
   if (
@@ -494,14 +557,14 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
     (hasAny(["marketing", "brand", "product marketing", "digital marketing"]) && familyIs("Marketing")) ||
     /\b(product marketing|brand management|digital marketing|creative marketing|marketing)\b/.test(roleText)
   ) {
-    return sentence("This position aligns with your stated interest in marketing work.")
+    return sentence("This position aligns with your stated interest in marketing work")
   }
 
   if (
     /\b(finance|investment|wealth management|asset management)\b/.test(roleText) ||
     (hasAny(["finance", "investment", "wealth management", "asset management", "client associate"]) && /\b(finance|investment|wealth management|asset management)\b/.test(roleText))
   ) {
-    return sentence("This position aligns with your stated interest in finance work.")
+    return sentence("This position aligns with your stated interest in finance work")
   }
 
   const industryMatch = industries.find((i) => {
@@ -510,7 +573,7 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
   })
 
   if (industryMatch) {
-    return sentence(`This position aligns with your stated interest in the ${industryMatch} industry.`)
+    return sentence(`This position aligns with your stated interest in the ${industryMatch} industry`)
   }
 
   return null
@@ -519,7 +582,8 @@ function buildInterestAlignmentClause(profileSignals?: any, jobSignals?: any): s
 function renderWhyBullet(
   w: WhyCode,
   profileSignals?: EvalOutput["profile_signals"],
-  jobSignals?: EvalOutput["job_signals"]
+  jobSignals?: EvalOutput["job_signals"],
+  i = 0
 ): string | null {
   const jobFact = normalizeWhyJobFact(w.job_fact || "")
   let profileFact = cleanProfileFact(w.profile_fact || "")
@@ -533,18 +597,19 @@ function renderWhyBullet(
     profileFact = profileFact.slice(0, 180).replace(/\s+\S*$/, "").trim()
   }
 
-  if (isBadBulletJobFact(jobFact)) return null
-  if (isBadBulletProfileFact(profileFact)) return null
-  if (!profileFact) return null
+const safeJobFact = isBadBulletJobFact(jobFact) ? "" : jobFact
 
-  if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
-    return interpretDirectProof(profileFact, jobFact, w.match_key)
-  }
+if (isBadBulletProfileFact(profileFact)) return null
+if (!profileFact) return null
+
+if (w.code === "WHY_DIRECT_EXPERIENCE_PROOF") {
+  return interpretDirectProof(profileFact, safeJobFact, w.match_key, i)
+}
 
   if (!usable(profileFact)) return null
 
   if (w.code === "WHY_ADJACENT_EXPERIENCE_PROOF") {
-    return interpretAdjacentProof(profileFact, jobFact, {
+    return interpretAdjacentProof(profileFact, safeJobFact, {
       matchKey: w.match_key,
       matchKind: w.match_kind,
       matchStrength: w.match_strength,
@@ -553,34 +618,28 @@ function renderWhyBullet(
 
   if (w.code === "WHY_EXECUTION_PROOF") {
     const lead = summarizeProfileFact(profileFact, w.match_key)
-    const summary = summarizeJobFact(jobFact, w.match_key)
+    const summary = summarizeJobFact(safeJobFact, w.match_key)
     if (!lead) return null
-    return sentence(
-      `${lead}. That matters here because this role depends on ${summary}, and you already have evidence that you can execute rather than just talk about it.`
-    )
+    return executionBridge(lead, summary)
   }
 
   if (w.code === "WHY_TOOL_PROOF") {
     const tools = extractTools(profileFact)
     if (tools.length > 0) {
-      const list = tools.length > 3
-        ? `${tools.slice(0, 2).join(", ")}, and ${tools[tools.length - 1]}`
-        : tools.join(", ").replace(/, ([^,]*)$/, ", and $1")
-      return sentence(
-        `${list} gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific.`
-      )
+      const list = joinWithAnd(tools.length > 3 ? [tools[0], tools[1], tools[tools.length - 1]] : tools)
+      return toolBridge(list, summarizeJobFact(safeJobFact, w.match_key))
     }
 
     const lead = safeProfileLead(profileFact)
-    const jf = summarizeJobFact(jobFact, w.match_key)
+    const jf = summarizeJobFact(safeJobFact, w.match_key)
     if (!lead) return null
-    return sentence(`${lead}. That gives you relevant tool-related proof for ${jf}.`)
+    return sentence(`${lead}. That gives you usable tool-related proof for ${jf}`)
   }
 
   const lead = safeProfileLead(profileFact)
   const jf = summarizeJobFact(jobFact, w.match_key)
   if (!lead) return null
-  return sentence(`${lead}. That supports the kind of work this role expects, especially around ${jf}.`)
+  return sentence(`${lead}. That is relevant to ${jf}`)
 }
 
 function isSoftSkillRisk(jf: string): boolean {
@@ -607,30 +666,37 @@ function renderMissingToolRisk(jobFact: string): string {
   if (t.includes("crm")) missing.push("CRM")
 
   if (missing.length === 0) {
-    return "The posting calls for tools you have not clearly shown in your profile yet."
+    return "The posting calls for tools you have not clearly shown in your profile yet"
   }
   if (missing.length === 1) {
-    return `The posting calls for ${missing[0]}, and your profile does not clearly show it yet.`
+    return `The posting calls for ${missing[0]}, and your profile does not clearly show it yet`
   }
 
   const last = missing[missing.length - 1]
   const first = missing.slice(0, -1).join(", ")
-  return `The posting calls for ${first} and ${last}, and your profile does not clearly show them yet.`
+  return `The posting calls for ${first} and ${last}, and your profile does not clearly show them yet`
 }
 
-function renderRiskBullet(r: RiskCode): string | null {
-  const code = norm(r.code)
+function renderRiskBullet(r: RiskCode, decision?: Decision): string | null {  const code = norm(r.code)
   const riskText = sentence(r.risk || "")
   const jf = summarizeJobFact(r.job_fact || "", "")
   const jobFact = String(r?.job_fact || "")
 
   if (code === "RISK_ANALYTICS_HEAVY") {
-    return sentence("This role appears more analytics-heavy than your stated preferences suggest, so you would need a strong reason for why it still fits.")
+    return sentence("This role appears more analytics-heavy than your stated preferences suggest, so you would need a strong reason for why it still fits")
   }
 
-  if (code === "RISK_CONTRACT") {
-    return sentence("This role appears to be contract-based, which does not align with your preference for full-time roles.")
+if (code === "RISK_CONTRACT") {
+  if (decision === "Pass") {
+    return sentence("This role is contract-based, which makes it a poor use of effort if you are targeting full-time opportunities")
   }
+
+  if (decision === "Review") {
+    return sentence("This role is contract-based, so you should only move forward if you are genuinely open to that tradeoff")
+  }
+
+  return sentence("This role is contract-based, which may not align with your preference for full-time roles")
+}
 
   if (code === "RISK_LOCATION") {
     const jobLoc = String(r.job_fact || "").trim()
@@ -648,52 +714,52 @@ function renderRiskBullet(r: RiskCode): string | null {
       .trim()
 
     if (jobCity && preferredCities) {
-      return sentence(`This role is located in ${jobCity}, which is outside your stated preferred cities of ${preferredCities}. If you are not open to relocating, that could become a real constraint later in the process.`)
+      return sentence(`This role is located in ${jobCity}, which is outside your stated preferred cities of ${preferredCities}. If you are not open to relocating, that could become a real constraint later in the process`)
     }
 
     if (jobCity) {
-      return sentence(`This role is located in ${jobCity}, which is a practical consideration worth thinking through early.`)
+      return sentence(`This role is located in ${jobCity}, which is a practical consideration worth thinking through early`)
     }
 
-    return sentence("The job location does not clearly line up with your stated preferred cities.")
+    return sentence("The job location does not clearly line up with your stated preferred cities")
   }
 
   if (code === "RISK_SALES") {
-    return sentence("This role has clear sales expectations that conflict with the constraints stated in your profile.")
+    return sentence("This role has clear sales expectations that conflict with the constraints stated in your profile")
   }
 
   if (code === "RISK_MISSING_PROOF") {
     if (isSoftSkillRisk(jf)) {
       if (/strategy|problem-solving|problem solving/i.test(jf)) {
-        return sentence("Your background is relevant, but the resume does not yet make your strongest strategy and problem-solving proof especially explicit. You may need to connect those dots yourself in interviews.")
+        return sentence("Your background is relevant, but the resume does not yet make your strongest strategy and problem-solving proof especially explicit. You may need to connect those dots yourself in interviews")
       }
       if (/client|stakeholder|communication|presentation|collaboration/i.test(jf)) {
-        return sentence("Your background is relevant, but the resume does not yet make your strongest client-facing and communication proof especially explicit. That is a gap you would need to explain clearly in interviews.")
+        return sentence("Your background is relevant, but the resume does not yet make your strongest client-facing and communication proof especially explicit. That is a gap you would need to explain clearly in interviews")
       }
-      return sentence("Your background is relevant, but the resume does not yet make the most role-specific proof especially explicit.")
+      return sentence("Your background is relevant, but the resume does not yet make the most role-specific proof especially explicit")
     }
 
     if (/clinical|patient|surgical|operating room|surgeon/i.test(jf)) {
-      return sentence("This role leans heavily on direct clinical credibility, and your background does not yet show the strongest hands-on proof in that environment. You may need to work harder in interviews to prove you understand how that setting operates.")
+      return sentence("This role leans heavily on direct clinical credibility, and your background does not yet show the strongest hands-on proof in that environment. You may need to work harder in interviews to prove you understand how that setting operates")
     }
 
     if (/research|analysis|analytics|reporting/i.test(jf)) {
-      return sentence("Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger.")
+      return sentence("Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger")
     }
 
     if (/policy|legislative|compliance|legal/i.test(jf)) {
-      return sentence("This role rewards more direct policy, legal, or compliance experience than is currently visible in your background.")
+      return sentence("This role rewards more direct policy, legal, or compliance experience than is currently visible in your background")
     }
 
     if (/forecasting|scenario planning|financial/i.test(jf)) {
-      return sentence("This role expects stronger direct proof in forecasting and planning work than your background currently shows.")
+      return sentence("This role expects stronger direct proof in forecasting and planning work than your background currently shows")
     }
 
     if (/content|social media|creative/i.test(jf)) {
-      return sentence("This role requires clearer proof of day-to-day content execution than is currently visible in your background.")
+      return sentence("This role requires clearer proof of day-to-day content execution than is currently visible in your background")
     }
 
-    return sentence(`This role emphasizes ${jf}, and your background does not yet show clear direct proof in that area.`)
+    return sentence(`This role emphasizes ${jf}, and your background does not yet show clear direct proof in that area`)
   }
 
   if (code === "RISK_MISSING_TOOLS") {
@@ -751,7 +817,7 @@ export function renderBulletsV4(out: EvalOutput): {
 
       const group = String(whyGroup(w))
       const matchKey = norm(w.match_key || "")
-      const rendered = renderWhyBullet(w, out.profile_signals, out.job_signals)
+      const rendered = renderWhyBullet(w, out.profile_signals, out.job_signals, why.length)
       const renderedKey = norm(rendered || "")
       const normalizedWhyJobFactKey = norm(normalizeWhyJobFact(w.job_fact || "")).slice(0, 180)
       const profileFactKey = norm(cleanProfileFact(w.profile_fact || "")).slice(0, 180)
@@ -838,7 +904,7 @@ export function renderBulletsV4(out: EvalOutput): {
       if (risk.length >= riskMax) break
 
       const group = riskGroup(r.code)
-      const rendered = renderRiskBullet(r)
+      const rendered = renderRiskBullet(r, out.decision)
       const renderedKey = norm(rendered || "")
       const jobFactKey = norm(capabilityPhrase(r.job_fact || "")).slice(0, 180)
       const profileFactKey = norm(cleanProfileFact(r.profile_fact || "")).slice(0, 180)

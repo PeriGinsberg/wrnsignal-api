@@ -4,15 +4,15 @@
     "label": "Graphic Designer - Topps NYC",
     "score": 97,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it",
+    "why_bullets_joined": "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting | You have worked across people and priorities to keep work moving. This is relevant because this role relies on cross-functional coordination, and you already have experience doing that in a real setting | Your background shows execution in structured environments with real ownership. For an internship or early role, this is enough to show you can step into day-to-day execution in a fast-moving environment and get up to speed quickly",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Priority Apply",
       "score": 97,
       "bullets": [
-        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview",
-        "You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it"
+        "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting",
+        "You have worked across people and priorities to keep work moving. This is relevant because this role relies on cross-functional coordination, and you already have experience doing that in a real setting",
+        "Your background shows execution in structured environments with real ownership. For an internship or early role, this is enough to show you can step into day-to-day execution in a fast-moving environment and get up to speed quickly"
       ],
       "risk_flags": [],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
@@ -540,7 +540,7 @@
       "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
@@ -605,19 +605,18 @@
     "label": "Reece Kauffman - Intuitive Surgical Clinical Sales Associate Ocala",
     "score": 81,
     "decision_final": "Apply",
-    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on clinical sales execution and utilization support, and you already have evidence that you can execute rather than just talk about it",
-    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | This role requires clearer proof of day-to-day content execution than is currently visible in your background",
+    "why_bullets_joined": "You have exposure to surgical and procedural environments. That matters because this role relies on clinical and procedural environments, and you already have experience doing that in a real setting | Your background includes patient-facing clinical exposure. This is relevant because this role relies on patient-facing clinical work, and you already have experience doing that in a real setting | You have handled real outreach and pipeline execution. For an internship or early role, this is enough to show you can step into field execution and territory coverage and get up to speed quickly",
+    "risk_bullets_joined": "This role emphasizes the work this role requires, and your background does not yet show clear direct proof in that area",
     "raw": {
       "decision": "Apply",
       "score": 81,
       "bullets": [
-        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
-        "Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. That matters here because this role depends on clinical sales execution and utilization support, and you already have evidence that you can execute rather than just talk about it"
+        "You have exposure to surgical and procedural environments. That matters because this role relies on clinical and procedural environments, and you already have experience doing that in a real setting",
+        "Your background includes patient-facing clinical exposure. This is relevant because this role relies on patient-facing clinical work, and you already have experience doing that in a real setting",
+        "You have handled real outreach and pipeline execution. For an internship or early role, this is enough to show you can step into field execution and territory coverage and get up to speed quickly"
       ],
       "risk_flags": [
-        "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
-        "This role requires clearer proof of day-to-day content execution than is currently visible in your background"
+        "This role emphasizes the work this role requires, and your background does not yet show clear direct proof in that area"
       ],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
@@ -1123,7 +1122,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -1133,7 +1132,7 @@
         "whyCount": 3,
         "riskCount": 3,
         "why_count": 3,
-        "risk_count": 2,
+        "risk_count": 1,
         "decision": "Apply",
         "why_codes_in": [
           {
@@ -1187,18 +1186,18 @@
     "label": "Michael Lazarus - NYC Council Graphics Designer",
     "score": 84,
     "decision_final": "Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it | Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific",
-    "risk_bullets_joined": "Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger | The posting calls for Excel, and your profile does not clearly show it yet",
+    "why_bullets_joined": "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting | Your background includes analytical work that turns information into usable conclusions. For an internship or early role, this is enough to show you can step into analytical work and get up to speed quickly | Adobe, Canva, and Photoshop give you a usable starting point for design tool fluency, which is typically all that is expected at this level",
+    "risk_bullets_joined": "This role emphasizes the work this role requires, and your background does not yet show clear direct proof in that area | The posting calls for Excel, and your profile does not clearly show it yet",
     "raw": {
       "decision": "Apply",
       "score": 84,
       "bullets": [
-        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it",
-        "Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific"
+        "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting",
+        "Your background includes analytical work that turns information into usable conclusions. For an internship or early role, this is enough to show you can step into analytical work and get up to speed quickly",
+        "Adobe, Canva, and Photoshop give you a usable starting point for design tool fluency, which is typically all that is expected at this level"
       ],
       "risk_flags": [
-        "Your background shows analytical preparation, but more direct proof of client-ready research and reporting would make this case stronger",
+        "This role emphasizes the work this role requires, and your background does not yet show clear direct proof in that area",
         "The posting calls for Excel, and your profile does not clearly show it yet"
       ],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
@@ -1799,7 +1798,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -1877,15 +1876,15 @@
     "label": "Will Friedman - RSM Strategy and Management Consulting Intern",
     "score": 78,
     "decision_final": "Apply",
-    "why_bullets_joined": "You've already done real strategy and diligence work, where you had to break down information and make sense of it. That maps directly to the strategic problem-solving side of this role, and gives you a concrete example you can speak to in an interview | You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview | You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview",
+    "why_bullets_joined": "Strategy and diligence work is already in your background. That matters because this role relies on the strategic problem-solving side of the role, and you already have experience doing that in a real setting | You have written work that had to be clear and usable for other people. This is relevant because this role relies on client-ready presentation and documentation, and you already have experience doing that in a real setting | You have real research experience, not just surface-level information gathering. This is relevant because this role relies on research and benchmarking work, and you already have experience doing that in a real setting",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Apply",
       "score": 78,
       "bullets": [
-        "You've already done real strategy and diligence work, where you had to break down information and make sense of it. That maps directly to the strategic problem-solving side of this role, and gives you a concrete example you can speak to in an interview",
-        "You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview",
-        "You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview"
+        "Strategy and diligence work is already in your background. That matters because this role relies on the strategic problem-solving side of the role, and you already have experience doing that in a real setting",
+        "You have written work that had to be clear and usable for other people. This is relevant because this role relies on client-ready presentation and documentation, and you already have experience doing that in a real setting",
+        "You have real research experience, not just surface-level information gathering. This is relevant because this role relies on research and benchmarking work, and you already have experience doing that in a real setting"
       ],
       "risk_flags": [],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
@@ -2493,7 +2492,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -2551,15 +2550,15 @@
     "label": "Catherine Lees - tarte Summer 2026 Marketing Internship",
     "score": 93,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You already have direct exposure to brand and messaging work. That maps directly to brand and campaign work, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it",
+    "why_bullets_joined": "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting | There is already direct exposure to brand and messaging work in your background. This is relevant because this role relies on brand and campaign work, and you already have experience doing that in a real setting | Your background shows execution in structured environments with real ownership. For an internship or early role, this is enough to show you can step into day-to-day execution in a fast-moving environment and get up to speed quickly",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Priority Apply",
       "score": 93,
       "bullets": [
-        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You already have direct exposure to brand and messaging work. That maps directly to brand and campaign work, and gives you a concrete example you can speak to in an interview",
-        "You've already shown you can execute in a structured environment with real ownership. That matters here because this role depends on day-to-day execution in a fast-moving environment, and you already have evidence that you can execute rather than just talk about it"
+        "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting",
+        "There is already direct exposure to brand and messaging work in your background. This is relevant because this role relies on brand and campaign work, and you already have experience doing that in a real setting",
+        "Your background shows execution in structured environments with real ownership. For an internship or early role, this is enough to show you can step into day-to-day execution in a fast-moving environment and get up to speed quickly"
       ],
       "risk_flags": [],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
@@ -3195,7 +3194,7 @@
       "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
@@ -3253,15 +3252,15 @@
     "label": "William Friedman vs Mercer Summer Intern Analyst",
     "score": 85,
     "decision_final": "Apply",
-    "why_bullets_joined": "You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview | You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That maps directly to the analytical work this role requires, and gives you a concrete example you can speak to in an interview",
+    "why_bullets_joined": "You have real research experience, not just surface-level information gathering. That matters because this role relies on research and benchmarking work, and you already have experience doing that in a real setting | You have written work that had to be clear and usable for other people. This is relevant because this role relies on client-ready presentation and documentation, and you already have experience doing that in a real setting | Your background includes analytical work that turns information into usable conclusions. This is important because this role relies on analytical work, and you already have experience doing that in a real setting",
     "risk_bullets_joined": "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston. If you are not open to relocating, that could become a real constraint later in the process",
     "raw": {
       "decision": "Apply",
       "score": 85,
       "bullets": [
-        "You've already done real research and diligence work, not just surface-level information gathering. That maps directly to the research and benchmarking work in this role, and gives you a concrete example you can speak to in an interview",
-        "You've already produced written and presentation-ready work that had to communicate ideas clearly. That maps directly to client-ready presentation and documentation, and gives you a concrete example you can speak to in an interview",
-        "You've already done analytical work where you had to turn information into usable conclusions. That maps directly to the analytical work this role requires, and gives you a concrete example you can speak to in an interview"
+        "You have real research experience, not just surface-level information gathering. That matters because this role relies on research and benchmarking work, and you already have experience doing that in a real setting",
+        "You have written work that had to be clear and usable for other people. This is relevant because this role relies on client-ready presentation and documentation, and you already have experience doing that in a real setting",
+        "Your background includes analytical work that turns information into usable conclusions. This is important because this role relies on analytical work, and you already have experience doing that in a real setting"
       ],
       "risk_flags": [
         "This role is located in Washington DC, which is outside your stated preferred cities of NYC, Chicago, Boston. If you are not open to relocating, that could become a real constraint later in the process"
@@ -3933,7 +3932,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -4010,14 +4009,16 @@
     "label": null,
     "score": 66,
     "decision_final": "Review",
-    "why_bullets_joined": "",
-    "risk_bullets_joined": "This role appears to be contract-based, which does not align with your preference for full-time roles",
+    "why_bullets_joined": "Your background shows execution in structured environments with real ownership. That matters because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting",
+    "risk_bullets_joined": "This role is contract-based, so you should only move forward if you are genuinely open to that tradeoff",
     "raw": {
       "decision": "Review",
       "score": 66,
-      "bullets": [],
+      "bullets": [
+        "Your background shows execution in structured environments with real ownership. That matters because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting"
+      ],
       "risk_flags": [
-        "This role appears to be contract-based, which does not align with your preference for full-time roles"
+        "This role is contract-based, so you should only move forward if you are genuinely open to that tradeoff"
       ],
       "next_step": "Only proceed if you can reduce the top risks. If yes, apply and network immediately.",
       "location_constraint": "not_constrained",
@@ -4731,7 +4732,7 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
@@ -4740,7 +4741,7 @@
         "penaltySum": 7.800000000000001,
         "whyCount": 1,
         "riskCount": 1,
-        "why_count": 0,
+        "why_count": 1,
         "risk_count": 1,
         "decision": "Review",
         "why_codes_in": [
@@ -4773,19 +4774,19 @@
     "label": null,
     "score": 92,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
-    "risk_bullets_joined": "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area | This role emphasizes medical device industry, and your background does not yet show clear direct proof in that area",
+    "why_bullets_joined": "You have exposure to surgical and procedural environments. That matters because this role relies on clinical and procedural environments, and you already have experience doing that in a real setting | Your background includes patient-facing clinical exposure. This is relevant because this role relies on patient-facing clinical work, and you already have experience doing that in a real setting | Managed approximately 400 active B2B prospects within a rotating pipeline. This is relevant because this role relies on outreach, prospecting, and pipeline execution, and you already have experience doing that in a real setting",
+    "risk_bullets_joined": "This role emphasizes the work this role requires, and your background does not yet show clear direct proof in that area | The posting calls for CRM, and your profile does not clearly show it yet",
     "raw": {
       "decision": "Priority Apply",
       "score": 92,
       "bullets": [
-        "Present in operating room observing orthopedic surgical procedures and overall surgical workflow. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
-        "Assisted with equipment setup and patient flow during treatment sessions. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
-        "Managed approximately 400 active B2B prospects within a rotating pipeline. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview"
+        "You have exposure to surgical and procedural environments. That matters because this role relies on clinical and procedural environments, and you already have experience doing that in a real setting",
+        "Your background includes patient-facing clinical exposure. This is relevant because this role relies on patient-facing clinical work, and you already have experience doing that in a real setting",
+        "Managed approximately 400 active B2B prospects within a rotating pipeline. This is relevant because this role relies on outreach, prospecting, and pipeline execution, and you already have experience doing that in a real setting"
       ],
       "risk_flags": [
-        "This role emphasizes territory coverage and field sales execution, and your background does not yet show clear direct proof in that area",
-        "This role emphasizes medical device industry, and your background does not yet show clear direct proof in that area"
+        "This role emphasizes the work this role requires, and your background does not yet show clear direct proof in that area",
+        "The posting calls for CRM, and your profile does not clearly show it yet"
       ],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
       "location_constraint": "not_constrained",
@@ -5353,7 +5354,7 @@
       "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
@@ -5435,14 +5436,15 @@
     "label": "Ryan Rosen - Matthews commercial real estate internship",
     "score": 97,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "Built and managed a full client book. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it",
+    "why_bullets_joined": "You have financial analysis experience that required structure and judgment. That matters because this role relies on financial and analytical work, and you already have experience doing that in a real setting | Built and managed a full client book. This is relevant because this role relies on outreach, prospecting, and pipeline execution, and you already have experience doing that in a real setting | You have worked across people and priorities to keep work moving. For an internship or early role, this is enough to show you can step into cross-functional coordination and get up to speed quickly",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Priority Apply",
       "score": 97,
       "bullets": [
-        "Built and managed a full client book. That maps directly to this part of the role, and gives you a concrete example you can speak to in an interview",
-        "You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it"
+        "You have financial analysis experience that required structure and judgment. That matters because this role relies on financial and analytical work, and you already have experience doing that in a real setting",
+        "Built and managed a full client book. This is relevant because this role relies on outreach, prospecting, and pipeline execution, and you already have experience doing that in a real setting",
+        "You have worked across people and priorities to keep work moving. For an internship or early role, this is enough to show you can step into cross-functional coordination and get up to speed quickly"
       ],
       "risk_flags": [],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
@@ -6011,7 +6013,7 @@
       "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
@@ -6020,7 +6022,7 @@
         "penaltySum": 0,
         "whyCount": 5,
         "riskCount": 0,
-        "why_count": 2,
+        "why_count": 3,
         "risk_count": 0,
         "decision": "Priority Apply",
         "why_codes_in": [
@@ -6076,17 +6078,17 @@
     "label": "Sofia Garcia - biomedical engineering contract role",
     "score": 54,
     "decision_final": "Pass",
-    "why_bullets_joined": "You've already produced written and presentation-ready work that had to communicate ideas clearly. That matters here because this role depends on client-ready presentation and documentation, and you already have evidence that you can execute rather than just talk about it | You already have experience working with legal and compliance-oriented material. It is not a perfect match, but it transfers credibly into the legal and compliance-oriented part of the role, especially if you explain the overlap clearly",
-    "risk_bullets_joined": "This role appears to be contract-based, which does not align with your preference for full-time roles",
+    "why_bullets_joined": "You have written work that had to be clear and usable for other people. For an internship or early role, this is enough to show you can step into client-ready presentation and documentation and get up to speed quickly | Your background already includes legal and compliance-oriented work. It is not the exact same work, but the underlying skills carry over into legal and compliance-oriented work, which is what this role actually needs",
+    "risk_bullets_joined": "This role is contract-based, which makes it a poor use of effort if you are targeting full-time opportunities",
     "raw": {
       "decision": "Pass",
       "score": 54,
       "bullets": [
-        "You've already produced written and presentation-ready work that had to communicate ideas clearly. That matters here because this role depends on client-ready presentation and documentation, and you already have evidence that you can execute rather than just talk about it",
-        "You already have experience working with legal and compliance-oriented material. It is not a perfect match, but it transfers credibly into the legal and compliance-oriented part of the role, especially if you explain the overlap clearly"
+        "You have written work that had to be clear and usable for other people. For an internship or early role, this is enough to show you can step into client-ready presentation and documentation and get up to speed quickly",
+        "Your background already includes legal and compliance-oriented work. It is not the exact same work, but the underlying skills carry over into legal and compliance-oriented work, which is what this role actually needs"
       ],
       "risk_flags": [
-        "This role appears to be contract-based, which does not align with your preference for full-time roles"
+        "This role is contract-based, which makes it a poor use of effort if you are targeting full-time opportunities"
       ],
       "next_step": "Pass. Do not apply. Put that effort into a better-fit role.",
       "location_constraint": "not_constrained",
@@ -6659,7 +6661,7 @@
       "icon": "⛔",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Pass",
         "decision_after_gate": "Pass",
         "decision_final": "Pass",
@@ -6708,15 +6710,15 @@
     "label": "Allyson Keyes - NBCUniversal business and legal affairs internship",
     "score": 75,
     "decision_final": "Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview | You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it",
+    "why_bullets_joined": "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting | Your background already includes legal and compliance-oriented work. This is relevant because this role relies on legal and compliance-oriented work, and you already have experience doing that in a real setting | Your background includes analytical work that turns information into usable conclusions. For an internship or early role, this is enough to show you can step into analytical work and get up to speed quickly",
     "risk_bullets_joined": "The posting calls for Excel, and your profile does not clearly show it yet",
     "raw": {
       "decision": "Apply",
       "score": 75,
       "bullets": [
-        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You already have experience working with legal and compliance-oriented material. That maps directly to the legal and compliance-oriented part of the role, and gives you a concrete example you can speak to in an interview",
-        "You've already done analytical work where you had to turn information into usable conclusions. That matters here because this role depends on the analytical work this role requires, and you already have evidence that you can execute rather than just talk about it"
+        "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting",
+        "Your background already includes legal and compliance-oriented work. This is relevant because this role relies on legal and compliance-oriented work, and you already have experience doing that in a real setting",
+        "Your background includes analytical work that turns information into usable conclusions. For an internship or early role, this is enough to show you can step into analytical work and get up to speed quickly"
       ],
       "risk_flags": [
         "The posting calls for Excel, and your profile does not clearly show it yet"
@@ -7385,7 +7387,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -7445,15 +7447,15 @@
     "label": "Jared Jonas - Celsius brand marketing internship",
     "score": 97,
     "decision_final": "Priority Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it",
+    "why_bullets_joined": "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting | Your background shows execution in structured environments with real ownership. This is relevant because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting | Your background includes writing that required clarity and judgment. This is relevant because this role relies on written communication work, and you already have experience doing that in a real setting",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Priority Apply",
       "score": 97,
       "bullets": [
-        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview",
-        "You've already worked across people and priorities to move projects forward. That matters here because this role depends on cross-functional coordination, and you already have evidence that you can execute rather than just talk about it"
+        "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting",
+        "Your background shows execution in structured environments with real ownership. This is relevant because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting",
+        "Your background includes writing that required clarity and judgment. This is relevant because this role relies on written communication work, and you already have experience doing that in a real setting"
       ],
       "risk_flags": [],
       "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
@@ -8079,7 +8081,7 @@
       "icon": "🔥",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Priority Apply",
         "decision_after_gate": "Priority Apply",
         "decision_final": "Priority Apply",
@@ -8151,15 +8153,15 @@
     "label": null,
     "score": 86,
     "decision_final": "Apply",
-    "why_bullets_joined": "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview | You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview | Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific",
+    "why_bullets_joined": "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting | You have worked across people and priorities to keep work moving. This is relevant because this role relies on cross-functional coordination, and you already have experience doing that in a real setting | Adobe, Canva, and Photoshop give you a usable starting point for design tool fluency, which is typically all that is expected at this level",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Apply",
       "score": 86,
       "bullets": [
-        "You already have hands-on content and campaign execution experience. That maps directly to content and campaign execution, and gives you a concrete example you can speak to in an interview",
-        "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview",
-        "Adobe, Canva, and Photoshop gives you relevant tool proof for this work, which helps you sound more credible when the conversation gets specific"
+        "Hands-on content and campaign execution is already on your resume. That matters because this role relies on content and campaign execution, and you already have experience doing that in a real setting",
+        "You have worked across people and priorities to keep work moving. This is relevant because this role relies on cross-functional coordination, and you already have experience doing that in a real setting",
+        "Adobe, Canva, and Photoshop give you a usable starting point for design tool fluency, which is typically all that is expected at this level"
       ],
       "risk_flags": [],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
@@ -8745,7 +8747,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -8817,15 +8819,15 @@
     "label": "Sports Coordinator (i9 Sports) - entry-level coaching / operations vs MLB-focused candidate",
     "score": 88,
     "decision_final": "Apply",
-    "why_bullets_joined": "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview | You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview | Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences. That maps directly to hands-on game-day and event execution, and gives you a concrete example you can speak to in an interview",
+    "why_bullets_joined": "You have worked across people and priorities to keep work moving. That matters because this role relies on cross-functional coordination, and you already have experience doing that in a real setting | Your background shows execution in structured environments with real ownership. This is relevant because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting | You have worked in live environments where execution had to hold up in real time. This is important because this role relies on hands-on game-day and event execution, and you already have experience doing that in a real setting",
     "risk_bullets_joined": "",
     "raw": {
       "decision": "Apply",
       "score": 88,
       "bullets": [
-        "You've already worked across people and priorities to move projects forward. That maps directly to cross-functional coordination, and gives you a concrete example you can speak to in an interview",
-        "You've already shown you can execute in a structured environment with real ownership. That maps directly to day-to-day execution in a fast-moving environment, and gives you a concrete example you can speak to in an interview",
-        "Executed game day operations for Division I football events serving 60,000+ fans, supporting sponsor activations, corporate hospitality, and premium guest experiences. That maps directly to hands-on game-day and event execution, and gives you a concrete example you can speak to in an interview"
+        "You have worked across people and priorities to keep work moving. That matters because this role relies on cross-functional coordination, and you already have experience doing that in a real setting",
+        "Your background shows execution in structured environments with real ownership. This is relevant because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting",
+        "You have worked in live environments where execution had to hold up in real time. This is important because this role relies on hands-on game-day and event execution, and you already have experience doing that in a real setting"
       ],
       "risk_flags": [],
       "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
@@ -9606,7 +9608,7 @@
       "icon": "✅",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Apply",
         "decision_after_gate": "Apply",
         "decision_final": "Apply",
@@ -9655,6 +9657,1594 @@
           "used_raw_profile_text_fallback": false,
           "base_profile_text_len": 9860,
           "augmented_profile_text_len": 10135
+        }
+      }
+    }
+  },
+  {
+    "id": "real-114",
+    "label": "Cornell ILR student targeting Digitas Associate Strategy Intern",
+    "score": 97,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "There is already direct exposure to brand and messaging work in your background. That matters because this role relies on brand and campaign work, and you already have experience doing that in a real setting | Your background includes writing that required clarity and judgment. This is relevant because this role relies on written communication work, and you already have experience doing that in a real setting | Your background shows execution in structured environments with real ownership. This is important because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting | Your background includes analytical work that turns information into usable conclusions. That's useful here because this role relies on analytical work, and you already have experience doing that in a real setting",
+    "risk_bullets_joined": "The posting calls for tools you have not clearly shown in your profile yet",
+    "raw": {
+      "decision": "Priority Apply",
+      "score": 97,
+      "bullets": [
+        "There is already direct exposure to brand and messaging work in your background. That matters because this role relies on brand and campaign work, and you already have experience doing that in a real setting",
+        "Your background includes writing that required clarity and judgment. This is relevant because this role relies on written communication work, and you already have experience doing that in a real setting",
+        "Your background shows execution in structured environments with real ownership. This is important because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting",
+        "Your background includes analytical work that turns information into usable conclusions. That's useful here because this role relies on analytical work, and you already have experience doing that in a real setting"
+      ],
+      "risk_flags": [
+        "The posting calls for tools you have not clearly shown in your profile yet"
+      ],
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Celebrated by AdAge as Data and Insights Agency of the Year, U.S Campaign’s Brand Experience Agency of the Year, Media Network of the Year and celebrated by Forrester and Gartner, Digitas serves the world’s leading brands through a global network comprised of more than 5,500 employees across over 65 offices in 43 countries",
+          "profile_fact": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "brand_messaging",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Designing communications strategies to bring modern media architectures to life",
+          "profile_fact": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "communications_writing",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Being an indispensable source of information, insight and inspiration in the creative process to enhance the work",
+          "profile_fact": "Supported regional outreach operations through phone banking, event staffing, and logistical support",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Working collaboratively with other capabilities, including Data & Analysis, Media and Creative, to work out solutions for clients",
+          "profile_fact": "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 97,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Familiarity with prompt-based interaction and commonly used generative AI tools (e.g., ChatGPT, Google Gemini, DALL E, Midjourney) is a plus, especially for tasks like ideation, research, or content generation",
+          "profile_fact": "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 79,
+          "match_key": "consumer_research",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Stays privy to new digital platforms, social media, technologies and trends",
+          "profile_fact": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 79,
+          "match_key": "content_execution",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [
+        {
+          "code": "RISK_MISSING_TOOLS",
+          "job_fact": "Posting lists google analytics as preferred.",
+          "profile_fact": "Profile tools: r, google sheets.",
+          "risk": "You have not shown google analytics yet, and it is called out in the posting.",
+          "severity": "medium",
+          "weight": 0
+        }
+      ],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "d7c1a96f5377572d",
+        "jobFamily": "Marketing",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": true
+        },
+        "function_tags": [
+          "brand_marketing",
+          "consumer_insights_research",
+          "communications_pr",
+          "data_analytics_bi",
+          "operations_general",
+          "content_social"
+        ],
+        "signal_debug": {
+          "hits": {
+            "brand_messaging": 1,
+            "consumer_research": 2,
+            "communications_writing": 1,
+            "analysis_reporting": 1,
+            "operations_execution": 1,
+            "tool:google analytics": 1,
+            "content_execution": 3,
+            "drafting_documentation": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
+          ]
+        },
+        "location": {
+          "mode": "unclear",
+          "constrained": false,
+          "city": null,
+          "evidence": null
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [
+          "google analytics"
+        ],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "ea066aa9af9d9bdc",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Familiarity with prompt-based interaction and commonly used generative AI tools (e.g., ChatGPT, Google Gemini, DALL E, Midjourney) is a plus, especially for tasks like ideation, research, or content generation.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "45398cd0fb89e3b2",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "Stays privy to new digital platforms, social media, technologies and trends",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
+          },
+          {
+            "id": "061ad4c3a1e31239",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Celebrated by AdAge as Data and Insights Agency of the Year, U.S Campaign’s Brand Experience Agency of the Year, Media Network of the Year and celebrated by Forrester and Gartner, Digitas serves the world’s leading brands through a global network comprised of more than 5,500 employees across over 65 offices in 43 countries.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "a5745d2ab3dbe262",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Working collaboratively with other capabilities, including Data & Analysis, Media and Creative, to work out solutions for clients",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "756be3cbc04f9037",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Designing communications strategies to bring modern media architectures to life",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "b08469d1ebbb4111",
+            "kind": "tool",
+            "key": "google analytics",
+            "label": "google analytics tool usage",
+            "snippet": "Tapping into diverse data sources and working within tools such as Comscore, MRI, Global Web Index, and Google Analytics",
+            "strength": 5,
+            "requiredness": "supporting"
+          },
+          {
+            "id": "b7b43d4ba07659d1",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Being an indispensable source of information, insight and inspiration in the creative process to enhance the work",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "3c1280ee1f157fa5",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "To be considered, candidates will need to submit a YOUnicorn Brief as part of the application.",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": false,
+          "isInPersonExplicit": true,
+          "mentionsAITools": true,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": "As an Associate, Strategy intern, you’ll support the agency’s core strategic disciplines, including account planning, primary research, media planning and analytics.",
+            "inPersonLine": null,
+            "aiLine": "Familiarity with prompt-based interaction and commonly used generative AI tools (e.g., ChatGPT, Google Gemini, DALL E, Midjourney) is a plus, especially for tasks like ideation, research, or content generation.",
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Sales",
+          "Marketing"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York",
+            "Washington, D.C."
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "r",
+          "google sheets"
+        ],
+        "gradYear": 2028,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "sales_bd",
+          "brand_marketing",
+          "consumer_insights_research",
+          "communications_pr",
+          "operations_general",
+          "data_analytics_bi"
+        ],
+        "function_tag_evidence": {
+          "sales_bd": [
+            "Combines analytical thinking with clear communication and collaborative experience from marketing and outreach internships.",
+            "Partner with the VP of Digital Growth to manage and analyze prospect data, supporting outreach strategy and business development targeting nonprofit segments.",
+            "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning.",
+            "Intern | NYS Congressional Voter Outreach – Great Neck, NY Sep 2022 – Nov 2022"
+          ],
+          "brand_marketing": [
+            "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "Campaign Intern | Jon Kaiman for Congress – Great Neck, NY Jun 2022 – Aug 2022",
+            "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts."
+          ],
+          "consumer_insights_research": [
+            "Research Intern | City and State Magazine – New York, NY Jun 2023 – Aug 2023"
+          ],
+          "communications_pr": [
+            "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning."
+          ],
+          "operations_general": [
+            "Supported regional outreach operations through phone banking, event staffing, and logistical support.",
+            "Helped maintain the driving range and organized golf equipment to support day-to-day club operations."
+          ],
+          "data_analytics_bi": [
+            "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends."
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "b8ad5352bd9da2ed",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Supported regional outreach operations through phone banking, event staffing, and logistical support.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "4a246af2af4d1a16",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Supported regional outreach operations through phone banking, event staffing, and logistical support.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "d9647a232d4582a6",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "decddfdaf025856e",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f06bc4917c2ab8cd",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "961ddf7120912368",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Campaign Intern | Jon Kaiman for Congress – Great Neck, NY Jun 2022 – Aug 2022",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "b75e71986dfcf796",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "dafb48bf517488fa",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Research Intern | City and State Magazine – New York, NY Jun 2023 – Aug 2023",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "da2dd2bfb0c3bf78",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "bcbdb743533ae544",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "fad7412340f082f3",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "5038aab38770cfda",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Partner with the VP of Digital Growth to manage and analyze prospect data, supporting outreach strategy and business development targeting nonprofit segments.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f38f8923cd8d2625",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Combines analytical thinking with clear communication and collaborative experience from marketing and outreach internships.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "89e803696edede0f",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Intern | NYS Congressional Voter Outreach – Great Neck, NY Sep 2022 – Nov 2022",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "895be229a9c4a86f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Helped maintain the driving range and organized golf equipment to support day-to-day club operations.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 97,
+        "clamped_score": 97,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "🔥",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
+        "baseScore": 97,
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 6,
+        "riskCount": 1,
+        "why_count": 4,
+        "risk_count": 1,
+        "decision": "Priority Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "brand_messaging",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "communications_writing",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 99
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 98
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 97
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "consumer_research",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 79
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "content_execution",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 79
+          }
+        ],
+        "risk_codes_in": [
+          {
+            "code": "RISK_MISSING_TOOLS",
+            "severity": "medium"
+          }
+        ],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3611,
+          "augmented_profile_text_len": 3903
+        }
+      }
+    }
+  },
+  {
+    "id": "real-115",
+    "label": "Cornell ILR student targeting Gen Marketing AI Strategy Summer Internship",
+    "score": 97,
+    "decision_final": "Priority Apply",
+    "why_bullets_joined": "There is already direct exposure to brand and messaging work in your background. That matters because this role relies on brand and campaign work, and you already have experience doing that in a real setting | Your background includes analytical work that turns information into usable conclusions. This is relevant because this role relies on analytical work, and you already have experience doing that in a real setting | Supported regional outreach operations through phone banking, event staffing, and logistical support. It is not the exact same work, but the underlying skills carry over into operational and process-driven work, which is what this role actually needs | Your background already includes legal and compliance-oriented work. It is not the exact same work, but the underlying skills carry over into legal and compliance-oriented work, which is what this role actually needs",
+    "risk_bullets_joined": "",
+    "raw": {
+      "decision": "Priority Apply",
+      "score": 97,
+      "bullets": [
+        "There is already direct exposure to brand and messaging work in your background. That matters because this role relies on brand and campaign work, and you already have experience doing that in a real setting",
+        "Your background includes analytical work that turns information into usable conclusions. This is relevant because this role relies on analytical work, and you already have experience doing that in a real setting",
+        "Supported regional outreach operations through phone banking, event staffing, and logistical support. It is not the exact same work, but the underlying skills carry over into operational and process-driven work, which is what this role actually needs",
+        "Your background already includes legal and compliance-oriented work. It is not the exact same work, but the underlying skills carry over into legal and compliance-oriented work, which is what this role actually needs"
+      ],
+      "risk_flags": [],
+      "next_step": "Apply now. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Help design structured experimentation plans to test AI-generated content vs. traditional lifecycle messaging",
+          "profile_fact": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "brand_messaging",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Help design structured experimentation plans to test AI-generated content vs. traditional lifecycle messaging",
+          "profile_fact": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 100,
+          "match_key": "communications_writing",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Support the strategy and documentation of new AI “agents,” including defining use cases, inputs, outputs, and success metrics",
+          "profile_fact": "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Audit and analyze outputs from the Hightouch AI decisioning engine to identify gaps in personalized content across products, segments, and lifecycle stages",
+          "profile_fact": "Supported regional outreach operations through phone banking, event staffing, and logistical support",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 82,
+          "match_key": "accounting_operations",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "You’re curious about how AI is used in marketing, and you’re eager to learn how teams personalize content at scale",
+          "profile_fact": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 80,
+          "match_key": "content_execution",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Our combined heritage is rooted in financial empowerment and cyber safety for the first digital generations, and today we deliver award-winning cybersecurity, online privacy, identity protection and financial wellness solutions to nearly 500 million users in more than 150 countries",
+          "profile_fact": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 80,
+          "match_key": "policy_regulatory_research",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "9b1203c86a5bd859",
+        "jobFamily": "Marketing",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": true
+        },
+        "function_tags": [
+          "legal_regulatory",
+          "content_social",
+          "accounting_finops",
+          "data_analytics_bi",
+          "communications_pr",
+          "brand_marketing"
+        ],
+        "signal_debug": {
+          "hits": {
+            "policy_regulatory_research": 1,
+            "content_execution": 5,
+            "accounting_operations": 1,
+            "analysis_reporting": 1,
+            "drafting_documentation": 2,
+            "brand_messaging": 1,
+            "communications_writing": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
+          ]
+        },
+        "location": {
+          "mode": "in_person",
+          "constrained": false,
+          "city": "New York City",
+          "evidence": "NYC Office 5 days per week"
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "9e419f7fadf01070",
+            "kind": "function",
+            "key": "content_execution",
+            "label": "content and channel execution",
+            "snippet": "You’re curious about how AI is used in marketing, and you’re eager to learn how teams personalize content at scale.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "content_social"
+          },
+          {
+            "id": "7fdd3a11535eaf24",
+            "kind": "function",
+            "key": "accounting_operations",
+            "label": "accounting and financial operations work",
+            "snippet": "Audit and analyze outputs from the Hightouch AI decisioning engine to identify gaps in personalized content across products, segments, and lifecycle stages",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "accounting_finops"
+          },
+          {
+            "id": "7236eacb55c969d8",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Support the strategy and documentation of new AI “agents,” including defining use cases, inputs, outputs, and success metrics",
+            "strength": 8,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "a9602cfa256fe1d9",
+            "kind": "deliverable",
+            "key": "drafting_documentation",
+            "label": "drafting, documentation, and written deliverables",
+            "snippet": "Contribute to internal documentation and best practices for scaling AI-enabled marketing workflows",
+            "strength": 4,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "97fa0f58889c6af2",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "Our combined heritage is rooted in financial empowerment and cyber safety for the first digital generations, and today we deliver award-winning cybersecurity, online privacy, identity protection and financial wellness solutions to nearly 500 million users in more than 150 countries.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "7e617797d76b1278",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Help design structured experimentation plans to test AI-generated content vs. traditional lifecycle messaging",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "fd34dc2454cd7961",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Help design structured experimentation plans to test AI-generated content vs. traditional lifecycle messaging",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": true,
+          "isInPersonExplicit": true,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": "Marketing AI Strategy – Summer Internship",
+            "inPersonLine": "NYC Office 5 days per week",
+            "aiLine": "Marketing AI Strategy – Summer Internship",
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Sales",
+          "Marketing"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York",
+            "Washington, D.C."
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "r",
+          "google sheets"
+        ],
+        "gradYear": 2028,
+        "yearsExperienceApprox": 2,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "sales_bd",
+          "brand_marketing",
+          "consumer_insights_research",
+          "communications_pr",
+          "operations_general",
+          "data_analytics_bi"
+        ],
+        "function_tag_evidence": {
+          "sales_bd": [
+            "Combines analytical thinking with clear communication and collaborative experience from marketing and outreach internships.",
+            "Partner with the VP of Digital Growth to manage and analyze prospect data, supporting outreach strategy and business development targeting nonprofit segments.",
+            "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning.",
+            "Intern | NYS Congressional Voter Outreach – Great Neck, NY Sep 2022 – Nov 2022"
+          ],
+          "brand_marketing": [
+            "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "Campaign Intern | Jon Kaiman for Congress – Great Neck, NY Jun 2022 – Aug 2022",
+            "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts."
+          ],
+          "consumer_insights_research": [
+            "Research Intern | City and State Magazine – New York, NY Jun 2023 – Aug 2023"
+          ],
+          "communications_pr": [
+            "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning."
+          ],
+          "operations_general": [
+            "Supported regional outreach operations through phone banking, event staffing, and logistical support.",
+            "Helped maintain the driving range and organized golf equipment to support day-to-day club operations."
+          ],
+          "data_analytics_bi": [
+            "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends."
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "b8ad5352bd9da2ed",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Supported regional outreach operations through phone banking, event staffing, and logistical support.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "4a246af2af4d1a16",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Supported regional outreach operations through phone banking, event staffing, and logistical support.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "d9647a232d4582a6",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "decddfdaf025856e",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Conducted voter outreach through door-to-door canvassing and phone banking in support of campaign’s primary efforts.",
+            "source": "resume",
+            "strength": 10,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f06bc4917c2ab8cd",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning.",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "961ddf7120912368",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Campaign Intern | Jon Kaiman for Congress – Great Neck, NY Jun 2022 – Aug 2022",
+            "source": "resume",
+            "strength": 9,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "b75e71986dfcf796",
+            "kind": "function",
+            "key": "brand_messaging",
+            "label": "brand messaging and campaign work",
+            "snippet": "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "brand_marketing"
+          },
+          {
+            "id": "dafb48bf517488fa",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Research Intern | City and State Magazine – New York, NY Jun 2023 – Aug 2023",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "da2dd2bfb0c3bf78",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Researched and compiled contact lists of nonprofit and public-sector organizations to support outreach, marketing, and editorial planning.",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "bcbdb743533ae544",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Maintain and enhance multi-year datasets for campaign targeting and audience segmentation, optimizing sales team outreach for sponsorship and award programs.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "fad7412340f082f3",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Applied economic modeling and data analysis frameworks to evaluate market behavior and global trends.",
+            "source": "resume",
+            "strength": 7,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "5038aab38770cfda",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Partner with the VP of Digital Growth to manage and analyze prospect data, supporting outreach strategy and business development targeting nonprofit segments.",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "f38f8923cd8d2625",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Combines analytical thinking with clear communication and collaborative experience from marketing and outreach internships.",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "89e803696edede0f",
+            "kind": "execution",
+            "key": "prospecting_pipeline_management",
+            "label": "prospecting, outreach, and pipeline management",
+            "snippet": "Intern | NYS Congressional Voter Outreach – Great Neck, NY Sep 2022 – Nov 2022",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "sales_bd"
+          },
+          {
+            "id": "895be229a9c4a86f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Helped maintain the driving range and organized golf equipment to support day-to-day club operations.",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 97,
+        "clamped_score": 97,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Priority Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "🔥",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
+        "decision_initial": "Priority Apply",
+        "decision_after_gate": "Priority Apply",
+        "decision_final": "Priority Apply",
+        "baseScore": 97,
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 6,
+        "riskCount": 0,
+        "why_count": 4,
+        "risk_count": 0,
+        "decision": "Priority Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "brand_messaging",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "communications_writing",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 100
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 98
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "accounting_operations",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 82
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "content_execution",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 80
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "policy_regulatory_research",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 80
+          }
+        ],
+        "risk_codes_in": [],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3611,
+          "augmented_profile_text_len": 3903
+        }
+      }
+    }
+  },
+  {
+    "id": "real-116",
+    "label": "Yale music and English graduate targeting Brooklyn College Administrative Coordinator box office role",
+    "score": 79,
+    "decision_final": "Apply",
+    "why_bullets_joined": "You have real research experience, not just surface-level information gathering. That matters because this role relies on research and benchmarking work, and you already have experience doing that in a real setting | Your background includes analytical work that turns information into usable conclusions. This is relevant because this role relies on analytical work, and you already have experience doing that in a real setting | Your background shows execution in structured environments with real ownership. This is important because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting | Your background includes writing that required clarity and judgment. It is not the exact same work, but the underlying skills carry over into written communication work, which is what this role actually needs",
+    "risk_bullets_joined": "The posting calls for Word, and your profile does not clearly show it yet",
+    "raw": {
+      "decision": "Apply",
+      "score": 79,
+      "bullets": [
+        "You have real research experience, not just surface-level information gathering. That matters because this role relies on research and benchmarking work, and you already have experience doing that in a real setting",
+        "Your background includes analytical work that turns information into usable conclusions. This is relevant because this role relies on analytical work, and you already have experience doing that in a real setting",
+        "Your background shows execution in structured environments with real ownership. This is important because this role relies on day-to-day execution in a fast-moving environment, and you already have experience doing that in a real setting",
+        "Your background includes writing that required clarity and judgment. It is not the exact same work, but the underlying skills carry over into written communication work, which is what this role actually needs"
+      ],
+      "risk_flags": [
+        "The posting calls for Word, and your profile does not clearly show it yet"
+      ],
+      "next_step": "Apply. Then send 2 targeted networking messages within 24 hours.",
+      "location_constraint": "not_constrained",
+      "why_codes": [
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Conducts internet and/or database research and performs basic systems queries to locate information related to department activities",
+          "profile_fact": "Department of Music, Yale College, Research Assistant and Copy Editor, New Haven, CT Summer 2022, Summer 2023",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "consumer_research",
+          "match_kind": "function",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Reporting to the Associate Bursar, the Box Office Coordinator will respond promptly to customer inquiries and requests, and train Box Office personnel and collaborate with Tow Center personnel",
+          "profile_fact": "and Vivaldi’s L’estro armonico for analysis",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 99,
+          "match_key": "analysis_reporting",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Process ticket sales in-person, over the phone, and online, including handling cash, credit card transactions, and processing vouchers or exchanges",
+          "profile_fact": "● Supported various aspects of orchestral management, from operations to marketing, finances to legal",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 98,
+          "match_key": "operations_execution",
+          "match_kind": "execution",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+          "job_fact": "Reporting to the Associate Bursar, the Box Office Coordinator will respond promptly to customer inquiries and requests, and train Box Office personnel and collaborate with Tow Center personnel",
+          "profile_fact": "● Directed orchestra rehearsals in collaboration with other board members",
+          "note": "Profile proof directly matches a concrete job requirement.",
+          "weight": 96,
+          "match_key": "stakeholder_coordination",
+          "match_kind": "stakeholder",
+          "match_strength": "direct"
+        },
+        {
+          "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+          "job_fact": "Manages basic office functions such as communications, meeting schedules, work plans, staff assignments, and distributing information",
+          "profile_fact": "● Edited and collaborated on contracts for world-renowned soloists and concert venues including Carnegie Hall",
+          "note": "Profile proof is adjacent but credibly transferable to a concrete job requirement.",
+          "weight": 77,
+          "match_key": "communications_writing",
+          "match_kind": "function",
+          "match_strength": "adjacent"
+        }
+      ],
+      "risk_codes": [
+        {
+          "code": "RISK_MISSING_TOOLS",
+          "job_fact": "Posting lists word as preferred.",
+          "profile_fact": "Profile tools: adobe.",
+          "risk": "You have not shown word yet, and it is called out in the posting.",
+          "severity": "medium",
+          "weight": 0
+        }
+      ],
+      "gate_triggered": {
+        "type": "none"
+      },
+      "job_signals": {
+        "rawHash": "280f3981ac8eea4c",
+        "jobFamily": "Analytics",
+        "analytics": {
+          "isHeavy": false,
+          "isLight": true
+        },
+        "function_tags": [
+          "operations_general",
+          "data_analytics_bi",
+          "communications_pr",
+          "consumer_insights_research"
+        ],
+        "signal_debug": {
+          "hits": {
+            "customer_service_guest_experience": 2,
+            "operations_execution": 4,
+            "analysis_reporting": 1,
+            "stakeholder_coordination": 1,
+            "communications_writing": 1,
+            "tool:word": 1,
+            "consumer_research": 1
+          },
+          "notes": [
+            "Requirement units are evidence-first and line-anchored.",
+            "Function tags are derived from extracted requirement units, not used as the WHY source of truth.",
+            "Commercial roles now split prospecting, accounts, territory, CRM, post-sale support, and product training into separate requirement keys.",
+            "Standard extraction path used."
+          ]
+        },
+        "location": {
+          "mode": "in_person",
+          "constrained": false,
+          "city": null,
+          "evidence": "Process ticket sales in-person, over the phone, and online, including handling cash, credit card transactions, and processing vouchers or exchanges."
+        },
+        "isGovernment": false,
+        "isSalesHeavy": false,
+        "isContract": false,
+        "isHourly": false,
+        "yearsRequired": null,
+        "mbaRequired": false,
+        "gradYearHint": null,
+        "requiredTools": [],
+        "preferredTools": [
+          "word"
+        ],
+        "reportingSignals": {
+          "strong": false
+        },
+        "requirement_units": [
+          {
+            "id": "92b6fb93b73bf66a",
+            "kind": "stakeholder",
+            "key": "customer_service_guest_experience",
+            "label": "customer service, guest experience, and issue resolution",
+            "snippet": "Strong communication, customer service, mathematical, analytical, and computer skills",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "fd59612de9a2773f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Process ticket sales in-person, over the phone, and online, including handling cash, credit card transactions, and processing vouchers or exchanges.",
+            "strength": 6,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "6a05f430a9961e5f",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "Reporting to the Associate Bursar, the Box Office Coordinator will respond promptly to customer inquiries and requests, and train Box Office personnel and collaborate with Tow Center personnel.",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "5c3fe8cec05d403e",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "Reporting to the Associate Bursar, the Box Office Coordinator will respond promptly to customer inquiries and requests, and train Box Office personnel and collaborate with Tow Center personnel.",
+            "strength": 10,
+            "requiredness": "supporting",
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "d15d855ce04ab48d",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Conducts internet and/or database research and performs basic systems queries to locate information related to department activities.",
+            "strength": 7,
+            "requiredness": "supporting",
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "287965074f093fac",
+            "kind": "function",
+            "key": "communications_writing",
+            "label": "communications, writing, and messaging work",
+            "snippet": "Manages basic office functions such as communications, meeting schedules, work plans, staff assignments, and distributing information.",
+            "strength": 5,
+            "requiredness": "supporting",
+            "functionTag": "communications_pr"
+          },
+          {
+            "id": "d2d2d4a45f259028",
+            "kind": "tool",
+            "key": "word",
+            "label": "word tool usage",
+            "snippet": "Collects data for, prepares, and distributes reports and presentations using word processing, spreadsheet, and presentation software.",
+            "strength": 5,
+            "requiredness": "supporting"
+          }
+        ],
+        "internship": {
+          "isInternship": true,
+          "isSummer": false,
+          "isInPersonExplicit": true,
+          "mentionsAITools": false,
+          "isMarketingRotation": false,
+          "departments": [
+            "PR"
+          ],
+          "dates": null,
+          "pay": null,
+          "hasCapstone": false,
+          "evidence": {
+            "internshipLine": null,
+            "inPersonLine": "Brooklyn College is soliciting applications for an Administrative Coordinator who will coordinate activities and ticket operations with the highest degree of customer service and accuracy for the Tow Performing Arts Center Box Office.",
+            "aiLine": null,
+            "deptLine": null,
+            "capstoneLine": null,
+            "payLine": null,
+            "dateLine": null
+          }
+        }
+      },
+      "profile_signals": {
+        "targetFamilies": [
+          "Marketing",
+          "Finance"
+        ],
+        "locationPreference": {
+          "mode": "unclear",
+          "constrained": false,
+          "allowedCities": [
+            "New York",
+            "Boston"
+          ]
+        },
+        "constraints": {
+          "hardNoSales": false,
+          "hardNoGovernment": false,
+          "hardNoContract": false,
+          "hardNoHourlyPay": false,
+          "hardNoFullyRemote": false,
+          "prefFullTime": false,
+          "preferNotAnalyticsHeavy": false
+        },
+        "tools": [
+          "adobe"
+        ],
+        "gradYear": 2025,
+        "yearsExperienceApprox": 1,
+        "statedInterests": {
+          "targetRoles": [],
+          "adjacentRoles": [],
+          "targetIndustries": []
+        },
+        "function_tags": [
+          "operations_general",
+          "legal_regulatory",
+          "consumer_insights_research",
+          "premed_clinical",
+          "data_analytics_bi"
+        ],
+        "function_tag_evidence": {
+          "operations_general": [
+            "Orpheus Chamber Orchestra, Operations Intern, New York, NY Summer 2024",
+            "● Supported various aspects of orchestral management, from operations to marketing, finances to legal",
+            "● As President, revitalized the organization by instituting democratic process into repertoire selection and election of officers",
+            "● Directed orchestra rehearsals in collaboration with other board members"
+          ],
+          "legal_regulatory": [
+            "● Edited and collaborated on contracts for world-renowned soloists and concert venues including Carnegie Hall"
+          ],
+          "consumer_insights_research": [
+            "Department of Music, Yale College, Research Assistant and Copy Editor, New Haven, CT Summer 2022, Summer 2023"
+          ],
+          "premed_clinical": [
+            "Department of Music, Yale College, Research Assistant and Copy Editor, New Haven, CT Summer 2022, Summer 2023"
+          ],
+          "data_analytics_bi": [
+            "and Vivaldi’s L’estro armonico for analysis"
+          ]
+        },
+        "profile_evidence_units": [
+          {
+            "id": "90afb92c6dd1c11f",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "● Supported various aspects of orchestral management, from operations to marketing, finances to legal",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "df6ff02f9a992e6c",
+            "kind": "function",
+            "key": "consumer_research",
+            "label": "consumer, market, or user research",
+            "snippet": "Department of Music, Yale College, Research Assistant and Copy Editor, New Haven, CT Summer 2022, Summer 2023",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "consumer_insights_research"
+          },
+          {
+            "id": "e987095b5c117f6f",
+            "kind": "function",
+            "key": "clinical_patient_work",
+            "label": "clinical and patient-facing work",
+            "snippet": "Department of Music, Yale College, Research Assistant and Copy Editor, New Haven, CT Summer 2022, Summer 2023",
+            "source": "resume",
+            "strength": 8,
+            "functionTag": "premed_clinical"
+          },
+          {
+            "id": "96e88b6c78397384",
+            "kind": "function",
+            "key": "policy_regulatory_research",
+            "label": "legal, policy, and regulatory research",
+            "snippet": "● Edited and collaborated on contracts for world-renowned soloists and concert venues including Carnegie Hall",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "legal_regulatory"
+          },
+          {
+            "id": "cadc50f813693361",
+            "kind": "execution",
+            "key": "analysis_reporting",
+            "label": "analysis, reporting, and measurement work",
+            "snippet": "and Vivaldi’s L’estro armonico for analysis",
+            "source": "resume",
+            "strength": 6,
+            "functionTag": "data_analytics_bi"
+          },
+          {
+            "id": "e6119a80e0231386",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "Orpheus Chamber Orchestra, Operations Intern, New York, NY Summer 2024",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "a2ea885cf7bfb519",
+            "kind": "stakeholder",
+            "key": "stakeholder_coordination",
+            "label": "stakeholder coordination and cross-functional execution",
+            "snippet": "● Directed orchestra rehearsals in collaboration with other board members",
+            "source": "resume",
+            "strength": 5,
+            "functionTag": "operations_general"
+          },
+          {
+            "id": "629e7887c10901f5",
+            "kind": "execution",
+            "key": "operations_execution",
+            "label": "operations, process, and workflow execution",
+            "snippet": "● As President, revitalized the organization by instituting democratic process into repertoire selection and election of officers",
+            "source": "resume",
+            "strength": 4,
+            "functionTag": "operations_general"
+          }
+        ]
+      },
+      "score_breakdown": {
+        "raw_score": 79,
+        "clamped_score": 79,
+        "components": [
+          {
+            "label": "decision_initial",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_after_gate",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "decision_final",
+            "points": 0,
+            "note": "Apply"
+          },
+          {
+            "label": "penalty_sum",
+            "points": 0,
+            "note": "0"
+          }
+        ]
+      },
+      "icon": "✅",
+      "debug": {
+        "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
+        "decision_initial": "Apply",
+        "decision_after_gate": "Apply",
+        "decision_final": "Apply",
+        "baseScore": 79,
+        "rawPenaltySum": 0,
+        "penaltySum": 0,
+        "whyCount": 5,
+        "riskCount": 1,
+        "why_count": 4,
+        "risk_count": 1,
+        "decision": "Apply",
+        "why_codes_in": [
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "consumer_research",
+            "match_kind": "function",
+            "match_strength": "direct",
+            "weight": 99
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "analysis_reporting",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 99
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "operations_execution",
+            "match_kind": "execution",
+            "match_strength": "direct",
+            "weight": 98
+          },
+          {
+            "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+            "match_key": "stakeholder_coordination",
+            "match_kind": "stakeholder",
+            "match_strength": "direct",
+            "weight": 96
+          },
+          {
+            "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+            "match_key": "communications_writing",
+            "match_kind": "function",
+            "match_strength": "adjacent",
+            "weight": 77
+          }
+        ],
+        "risk_codes_in": [
+          {
+            "code": "RISK_MISSING_TOOLS",
+            "severity": "medium"
+          }
+        ],
+        "evaluator_profile_source": {
+          "used_resume_text": true,
+          "used_profile_structured": true,
+          "used_raw_profile_text_fallback": false,
+          "base_profile_text_len": 3855,
+          "augmented_profile_text_len": 4112
         }
       }
     }
@@ -9804,7 +11394,7 @@
       "icon": "⚠",
       "debug": {
         "eval_wrapper_stamp": "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B",
-        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_20__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_A",
+        "renderer_stamp": "RENDERER_V4_STAMP__2026_03_21__ADVISOR_GRADE_BULLET_RENDERER__PHASE1_B",
         "decision_initial": "Review",
         "decision_after_gate": "Review",
         "decision_final": "Review",
