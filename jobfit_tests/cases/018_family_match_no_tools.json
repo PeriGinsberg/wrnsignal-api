@@ -1,0 +1,13 @@
+{
+    "id":  "018_family_match_no_tools",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Finance intern role. Internship.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Tools: ."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  55,
+                   "maxScore":  97
+               }
+}

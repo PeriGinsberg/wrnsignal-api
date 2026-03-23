@@ -1,0 +1,13 @@
+{
+    "id":  "002_gate_grad_mismatch",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Summer intern. Class of 2026 preferred.",
+                  "profileText":  "BS Finance, Class of 2029. Target families: Finance. Tools: Excel, SQL."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

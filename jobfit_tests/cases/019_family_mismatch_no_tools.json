@@ -1,0 +1,13 @@
+{
+    "id":  "019_family_mismatch_no_tools",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Software intern role. Internship.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  70
+               }
+}

@@ -1,0 +1,13 @@
+{
+    "id":  "008_floor_review_contract_pref_ft",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Temporary contract role. Contract.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Prefers full-time roles. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

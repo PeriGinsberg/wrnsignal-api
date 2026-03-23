@@ -1,0 +1,13 @@
+{
+    "id":  "029_analytics_heavy_prefer_not_gate_expected",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Marketing insights intern. Regression, modeling, experiment, SQL, python, dashboard ownership.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing. Constraint: prefer not analytics heavy."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

@@ -1,0 +1,13 @@
+{
+    "id":  "020_family_match_tools_overlap_3",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Finance analyst intern. Required: Excel, SQL. Preferred: Tableau.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Tools: Excel, SQL, Tableau."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  60,
+                   "maxScore":  97
+               }
+}

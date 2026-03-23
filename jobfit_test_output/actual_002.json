@@ -1,0 +1,19 @@
+﻿{
+    "decision":  "Apply",
+    "icon":  "âœ…",
+    "score":  97,
+    "bullets":  [
+
+                ],
+    "risk_flags":  [
+
+                   ],
+    "next_step":  "Apply promptly if this role is still open.",
+    "location_constraint":  "unclear",
+    "jobfit_logic_version":  "rules_local_dev",
+    "reused":  false,
+    "debug":  {
+                  "bypass":  true,
+                  "ts":  1772681555492
+              }
+}

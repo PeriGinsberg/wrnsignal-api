@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "node ./node_modules/next/dist/bin/next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "jobfit:regress": "npx tsx scripts/jobfit-regress.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",
@@ -22,7 +23,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "madge": "^8.0.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

@@ -1,0 +1,13 @@
+{
+    "id":  "007_floor_review_location_mode",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Local candidates only. Hybrid role.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Location constrained. Mode: onsite. Allowed cities: ."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

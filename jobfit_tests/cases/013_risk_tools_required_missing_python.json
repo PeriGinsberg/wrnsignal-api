@@ -1,0 +1,13 @@
+{
+    "id":  "013_risk_tools_required_missing_python",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Data analyst intern. Required: Python, SQL.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Tools: SQL, Excel."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

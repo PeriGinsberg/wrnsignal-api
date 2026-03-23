@@ -1,0 +1,13 @@
+{
+    "id":  "017_risk_tools_adjacent_proof_sql_missing_has_python",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Analytics intern. Required: SQL.",
+                  "profileText":  "BS Econ, May 2026. Target families: Consulting. Tools: Python, Excel."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

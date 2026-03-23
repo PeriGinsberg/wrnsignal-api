@@ -1,0 +1,39 @@
+{
+  "endpoint": "http://localhost:3000/api/jobfit",
+  "total": 2,
+  "pass": 2,
+  "fail": 0,
+  "at": "2026-03-05T01:45:51.256Z",
+  "results": [
+    {
+      "id": "001_basic_apply",
+      "ok": true,
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 84,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions r, but the profile does not show it."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "002_missing_skill_flag",
+      "ok": true,
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 81,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions tools not shown in the profile (r, python)."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "id":  "003_gate_hard_sales",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Business development role. Quota, commission, cold call, pipeline.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Constraint: hard no sales. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

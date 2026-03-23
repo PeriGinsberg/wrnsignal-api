@@ -1,0 +1,13 @@
+{
+    "id":  "022_location_penalty_proven_city",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Local candidates only. Must be located in Miami. On-site Miami.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York, Boston."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  30,
+                   "maxScore":  90
+               }
+}

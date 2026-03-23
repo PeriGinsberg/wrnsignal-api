@@ -1,0 +1,13 @@
+{
+    "id":  "009_penalty_contract_hard_no",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Contract role. Contractor. 1099. Temporary.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Constraint: hard no contract. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  0,
+                   "maxScore":  90
+               }
+}

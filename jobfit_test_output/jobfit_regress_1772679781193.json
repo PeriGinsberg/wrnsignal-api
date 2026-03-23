@@ -1,0 +1,189 @@
+{
+  "endpoint": "http://localhost:3000/api/jobfit",
+  "total": 30,
+  "pass": 0,
+  "fail": 30,
+  "at": "2026-03-05T03:03:01.192Z",
+  "results": [
+    {
+      "id": "001_gate_mba_required",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "002_gate_grad_mismatch",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "003_gate_hard_sales",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "004_gate_hard_gov",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "005_gate_hard_no_remote",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "006_floor_review_location_city",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "007_floor_review_location_mode",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "008_floor_review_contract_pref_ft",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "009_penalty_contract_hard_no",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "010_penalty_hourly_hard_no",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "011_penalty_experience_gap",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "012_penalty_grad_window_mismatch",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "013_risk_tools_required_missing_python",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "014_risk_tools_required_missing_sql",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "015_risk_tools_preferred_tableau_missing",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "016_risk_tools_adjacent_proof_python_missing_has_r",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "017_risk_tools_adjacent_proof_sql_missing_has_python",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "018_family_match_no_tools",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "019_family_mismatch_no_tools",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "020_family_match_tools_overlap_3",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "021_family_match_tools_overlap_1",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "022_location_penalty_proven_city",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "023_location_no_penalty_missing_city",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "024_remote_penalty_hard_no_remote",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "025_sales_penalty_no_constraint",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "026_gov_penalty_no_constraint",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "027_downgrade_apply_to_review_penaltysum",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "028_downgrade_review_to_pass_penaltysum",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "029_analytics_heavy_prefer_not_gate_expected",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    },
+    {
+      "id": "030_analytics_heavy_no_constraint",
+      "ok": false,
+      "status": 500,
+      "error": "Non-JSON response"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+﻿{
+  "../_lib/authProfile.ts": [],
+  "../_lib/cors.ts": [],
+  "../_lib/jobfitEvaluator.ts": [],
+  "route.ts": [
+    "../_lib/authProfile.ts",
+    "../_lib/cors.ts",
+    "../_lib/jobfitEvaluator.ts"
+  ]
+}

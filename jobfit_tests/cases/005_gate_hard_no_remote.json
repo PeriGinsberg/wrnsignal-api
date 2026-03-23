@@ -1,0 +1,13 @@
+{
+    "id":  "005_gate_hard_no_remote",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Remote internship. Work from home. Distributed team.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing. Constraint: hard no fully remote."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

@@ -1,0 +1,13 @@
+{
+    "id":  "015_risk_tools_preferred_tableau_missing",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Marketing analytics intern. Preferred: Tableau.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing. Tools: Excel, Google Analytics."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}
