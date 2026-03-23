@@ -776,7 +776,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   }
 
   if (job.isContract && profile.constraints.hardNoContract) {
-    const amt = computePenaltyAmount("contract_mismatch") + 2
+    const amt = computePenaltyAmount("contract_mismatch") + 6
     penalties.push({
       key: "contract_mismatch",
       amount: amt,
@@ -790,18 +790,23 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         weight: -amt,
       },
     })
-  } else if (job.isContract && profile.constraints.prefFullTime) {
-    const amt = computePenaltyAmount("contract_mismatch")
+  } else if (job.isContract) {
+    // Contract roles always penalize students — regardless of stated preference
+    // Most students targeting full-time should not be chasing contract work
+    const isHardPreference = profile.constraints.prefFullTime
+    const amt = computePenaltyAmount("contract_mismatch") + (isHardPreference ? 4 : 2)
     penalties.push({
       key: "contract_mismatch",
       amount: amt,
-      note: "Contract vs full-time preference",
+      note: "Contract role vs student seeking employment",
       risk: {
         code: "RISK_CONTRACT",
         job_fact: "Posting indicates contract or temporary structure.",
-        profile_fact: "You prefer full-time roles.",
-        risk: "Role structure conflicts with your work-type preference.",
-        severity: "medium",
+        profile_fact: isHardPreference ? "You prefer full-time roles." : "Contract roles are generally not ideal for early-career candidates.",
+        risk: isHardPreference
+          ? "Role structure conflicts with your work-type preference."
+          : "This is a contract role, which is generally not the right move for early-career candidates building a full-time track record.",
+        severity: isHardPreference ? "high" : "medium",
         weight: -amt,
       },
     })
@@ -825,18 +830,26 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   }
 
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
-    if (profile.yearsExperienceApprox + 0.5 < job.yearsRequired) {
-      const amt = computePenaltyAmount("experience_years_gap")
+    const yearsGap = job.yearsRequired - profile.yearsExperienceApprox
+    if (yearsGap > 0.5) {
+      const baseAmt = computePenaltyAmount("experience_years_gap")
+      // Scale penalty with how far under they are
+      // 1 year under = base, 2 years under = 1.5x, 3+ years under = 2x
+      const scaleFactor = yearsGap >= 3 ? 2.0 : yearsGap >= 2 ? 1.5 : 1.0
+      const amt = Math.round(baseAmt * scaleFactor)
+      const severity: "high" | "medium" = yearsGap >= 2 ? "high" : "medium"
       penalties.push({
         key: "experience_years_gap",
         amount: amt,
-        note: `Years required ${job.yearsRequired}, profile approx ${profile.yearsExperienceApprox}`,
+        note: `Years required ${job.yearsRequired}, profile approx ${profile.yearsExperienceApprox}, gap ${yearsGap}`,
         risk: {
           code: "RISK_EXPERIENCE",
-          job_fact: `Posting suggests about ${job.yearsRequired} years of experience.`,
+          job_fact: `Posting requires ${job.yearsRequired}+ years of experience.`,
           profile_fact: `Profile experience approximates ${profile.yearsExperienceApprox} years.`,
-          risk: "Experience requirement may be above your current level.",
-          severity: "medium",
+          risk: yearsGap >= 2
+            ? `This role requires ${job.yearsRequired}+ years of experience. You are currently about ${yearsGap} years short of that bar.`
+            : "Experience requirement may be above your current level.",
+          severity,
           weight: -amt,
         },
       })
@@ -887,29 +900,45 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
 
     for (const tool of requiredMissing) {
       let sev: Severity = "high"
-      if (hasAdjacentToolProof(profileTools, tool)) sev = downgradeSeverity(sev)
+      const hasAdjacent = hasAdjacentToolProof(profileTools, tool)
+      if (hasAdjacent) sev = downgradeSeverity(sev)
 
-      riskOnlyCodes.push({
-        code: "RISK_MISSING_TOOLS",
-        job_fact: `Posting lists ${tool} as required.`,
-        profile_fact: profileTools.length ? `Profile tools: ${profileTools.join(", ")}.` : null,
-        risk: `You have not shown ${tool} yet, and it is prioritized in the posting.`,
-        severity: sev,
-        weight: 0,
+      // Required tools subtract from score — not just a risk flag
+      const toolPenaltyAmt = hasAdjacent ? 4 : 8
+      penalties.push({
+        key: "missing_core_capability_direct_proof",
+        amount: toolPenaltyAmt,
+        note: `Missing required tool: ${tool}`,
+        risk: {
+          code: "RISK_MISSING_TOOLS",
+          job_fact: `Posting lists ${tool} as required.`,
+          profile_fact: profileTools.length ? `Profile tools: ${profileTools.join(", ")}.` : null,
+          risk: `You have not shown ${tool} yet, and it is prioritized in the posting.`,
+          severity: sev,
+          weight: -toolPenaltyAmt,
+        },
       })
     }
 
     for (const tool of preferredMissing) {
       let sev: Severity = "medium"
-      if (hasAdjacentToolProof(profileTools, tool)) sev = downgradeSeverity(sev)
+      const hasAdjacent = hasAdjacentToolProof(profileTools, tool)
+      if (hasAdjacent) sev = downgradeSeverity(sev)
 
-      riskOnlyCodes.push({
-        code: "RISK_MISSING_TOOLS",
-        job_fact: `Posting lists ${tool} as preferred.`,
-        profile_fact: profileTools.length ? `Profile tools: ${profileTools.join(", ")}.` : null,
-        risk: `You have not shown ${tool} yet, and it is called out in the posting.`,
-        severity: sev,
-        weight: 0,
+      // Preferred tools: subtract smaller amount
+      const toolPenaltyAmt = hasAdjacent ? 2 : 4
+      penalties.push({
+        key: "missing_core_capability_direct_proof",
+        amount: toolPenaltyAmt,
+        note: `Missing preferred tool: ${tool}`,
+        risk: {
+          code: "RISK_MISSING_TOOLS",
+          job_fact: `Posting lists ${tool} as preferred.`,
+          profile_fact: profileTools.length ? `Profile tools: ${profileTools.join(", ")}.` : null,
+          risk: `You have not shown ${tool} yet, and it is called out in the posting.`,
+          severity: sev,
+          weight: -toolPenaltyAmt,
+        },
       })
     }
   }
