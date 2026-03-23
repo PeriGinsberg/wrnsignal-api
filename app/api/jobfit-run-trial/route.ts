@@ -119,6 +119,18 @@ export async function POST(req: Request) {
 
         if (creditErr) return withCorsJson(req, { ok: false, error: creditErr.message }, 500)
 
+     // Track JobFit run
+        try {
+          await supabase.from("jobfit_page_views").insert({
+            session_id: user.id,
+            page_path: "/signal/jobfit",
+            page_name: "jobfit_run_completed",
+            utm_source: String(body.utm_source ?? "").trim() || null,
+            utm_medium: String(body.utm_medium ?? "").trim() || null,
+            utm_campaign: String(body.utm_campaign ?? "").trim() || null,
+          })
+        } catch {}
+
         return withCorsJson(req, { ok: true, credits_remaining: newCredits, result }, 200)
     } catch (err: any) {
         return withCorsJson(req, { ok: false, error: err?.message || String(err), ms: msSince(t0) }, 500)
