@@ -38,6 +38,39 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
   if (job.mbaRequired) {
     return { type: "force_pass", gateCode: "GATE_MBA_REQUIRED", detail: "MBA required" }
   }
+if (job.credentialRequired) {
+    const profileFunctionTags = profile.function_tags || []
+    const statedRoles = (profile.statedInterests?.targetRoles || []).join(" ").toLowerCase()
+    const statedIndustries = (profile.statedInterests?.targetIndustries || []).join(" ").toLowerCase()
+
+    const hasLegalSignal =
+      profileFunctionTags.includes("legal_regulatory") ||
+      statedRoles.includes("law") ||
+      statedRoles.includes("legal") ||
+      statedRoles.includes("attorney") ||
+      statedIndustries.includes("law") ||
+      statedIndustries.includes("legal")
+
+    const hasMedSignal =
+      profileFunctionTags.includes("premed_clinical") ||
+      statedRoles.includes("medical") ||
+      statedRoles.includes("physician") ||
+      statedRoles.includes("nursing")
+
+    const hasCPASignal =
+      statedRoles.includes("cpa") ||
+      statedRoles.includes("certified public accountant")
+
+    const profileHasCredential = hasLegalSignal || hasMedSignal || hasCPASignal
+
+    if (!profileHasCredential) {
+      return {
+        type: "force_pass",
+        gateCode: "GATE_CREDENTIAL_REQUIRED",
+        detail: `This role requires ${job.credentialDetail || "a professional credential or enrollment"} that is not present in your background. Applying without this qualification will not result in an interview.`,
+      }
+    }
+  }
 
   if (profile.constraints.hardNoSales && job.isSalesHeavy) {
     return { type: "force_pass", gateCode: "GATE_HARD_SALES", detail: "Hard no sales" }

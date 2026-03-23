@@ -1963,6 +1963,28 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const hourlyKeywords = asStringArray((POLICY as any)?.extraction?.hourly?.keywords).map(norm)
 
   const mbaRequired = includesAny(normalized, mbaKeywords)
+// Credential hard requirements
+  const lawSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.lawSchoolKeywords).map(norm)
+  const medSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.medSchoolKeywords).map(norm)
+  const cpaKeywords = asStringArray((POLICY as any)?.extraction?.credential?.cpaKeywords).map(norm)
+  const gradDegreeKeywords = asStringArray((POLICY as any)?.extraction?.credential?.graduateDegreeKeywords).map(norm)
+
+  const requiresLawSchool = includesAny(normalized, lawSchoolKeywords)
+  const requiresMedSchool = includesAny(normalized, medSchoolKeywords)
+  const requiresCPA = includesAny(normalized, cpaKeywords)
+  const requiresGradDegree = includesAny(normalized, gradDegreeKeywords)
+
+  const credentialRequired = requiresLawSchool || requiresMedSchool || requiresCPA || requiresGradDegree
+
+  const credentialDetail = requiresLawSchool
+    ? "law school enrollment or JD"
+    : requiresMedSchool
+    ? "medical school enrollment or MD/RN"
+    : requiresCPA
+    ? "CPA license"
+    : requiresGradDegree
+    ? "graduate degree"
+    : null
 
   const isGovernment =
     includesAny(normalized, govKeywords) ||
@@ -1997,7 +2019,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
 
-  return {
+return {
     rawHash,
     jobFamily,
     analytics,
@@ -2020,6 +2042,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     isHourly,
     yearsRequired,
     mbaRequired,
+    credentialRequired,
+    credentialDetail,
     gradYearHint,
     requiredTools: required,
     preferredTools: preferred,
@@ -2093,8 +2117,10 @@ export function extractProfileSignals(
         : base.targetFamilies,
     tools: mergedTools,
     function_tags: mergedTags,
-    function_tag_evidence: overrides?.function_tag_evidence
-  ? mergeFunctionTagEvidence(base.function_tag_evidence || {}, overrides.function_tag_evidence || {})
+
+   function_tag_evidence: overrides?.function_tag_evidence
+  ? mergeFunctionTagEvidence(base.function_tag_evidence ?? {}, overrides.function_tag_evidence)
+>>>>>>> dev
   : base.function_tag_evidence,
     profile_evidence_units:
       Array.isArray(overrides?.profile_evidence_units) && overrides.profile_evidence_units.length > 0

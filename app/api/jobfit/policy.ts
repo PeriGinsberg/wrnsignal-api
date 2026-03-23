@@ -16,6 +16,7 @@ export type PenaltyKey =
   | "missing_commercial_execution_proof"
   | "missing_required_system_proof"
   | "missing_ownership_scope_proof"
+  | "credential_requirement_mismatch"
 
 export type Severity = 1 | 2 | 3 | 4 | 5
 
@@ -34,6 +35,7 @@ export type PenaltyPolicy = {
  * - extraction.government/sales/contract/hourly/mba.*
  * - extraction.years.patterns
  * - extraction.grad.patterns
+ * - extraction.credential.*
  */
 export type ExtractionPolicy = {
   location: {
@@ -63,6 +65,12 @@ export type ExtractionPolicy = {
   mba: { keywords: string[] }
   years: { patterns: RegExp[] }
   grad: { patterns: RegExp[] }
+  credential: {
+    lawSchoolKeywords: string[]
+    medSchoolKeywords: string[]
+    cpaKeywords: string[]
+    graduateDegreeKeywords: string[]
+  }
 }
 
 export type JobFitPolicy = {
@@ -196,6 +204,12 @@ export const POLICY: JobFitPolicy = {
       multiplier: 2.7,
       maxStackCount: 2,
     },
+    credential_requirement_mismatch: {
+      label: "Professional credential or enrollment required",
+      severity: 5,
+      multiplier: 5.0,
+      maxStackCount: 1,
+    },
   },
 
   tools: {
@@ -230,6 +244,8 @@ export const POLICY: JobFitPolicy = {
       RISK_GRAD_WINDOW: "The graduation timing does not match what the posting is screening for.",
       RISK_REPORTING_SIGNALS:
         "The posting emphasizes reporting and measurement ownership that may be a stretch.",
+      RISK_CREDENTIAL_REQUIRED:
+        "The posting requires professional enrollment or credentials that are not present in your background.",
       RISK_MISSING_PROOF:
         "The role emphasizes capabilities where your profile does not yet show strong enough proof.",
     },
@@ -238,6 +254,8 @@ export const POLICY: JobFitPolicy = {
       GATE_MBA_REQUIRED: "Pass. The posting requires an MBA.",
       GATE_HARD_SALES: "Pass. The posting includes sales requirements that conflict with your constraints.",
       GATE_HARD_GOV: "Pass. The posting includes government or clearance signals that conflict with your constraints.",
+      GATE_CREDENTIAL_REQUIRED:
+        "Pass. The posting requires a professional credential or enrollment (law school, medical school, CPA, bar admission) that the profile does not show.",
       GATE_HEAVY_ANALYTICS: "Pass. This is analytics-heavy and conflicts with your stated preferences.",
     },
   },
@@ -360,6 +378,52 @@ export const POLICY: JobFitPolicy = {
         /(class of)\s*(20\d{2})/i,
         /(graduat(e|ion))\s*(20\d{2})/i,
         /(expected)\s*(graduation)\s*(20\d{2})/i,
+      ],
+    },
+
+    credential: {
+      lawSchoolKeywords: [
+        "must be enrolled in law school",
+        "current law student",
+        "enrolled in an accredited law school",
+        "jd candidate",
+        "jd required",
+        "juris doctor required",
+        "must be a law student",
+        "law school enrollment",
+        "currently attending law school",
+        "1l", "2l", "3l",
+        "bar admission required",
+        "licensed attorney",
+        "admitted to the bar",
+        "active bar license",
+      ],
+      medSchoolKeywords: [
+        "must be enrolled in medical school",
+        "md candidate",
+        "md required",
+        "medical degree required",
+        "must be a medical student",
+        "current medical student",
+        "rn required",
+        "registered nurse",
+        "nursing license",
+        "clinical license",
+      ],
+      cpaKeywords: [
+        "cpa required",
+        "cpa license",
+        "certified public accountant required",
+        "active cpa",
+        "must hold a cpa",
+      ],
+      graduateDegreeKeywords: [
+        "phd required",
+        "phd candidate required",
+        "doctoral candidate",
+        "must be enrolled in a phd",
+        "master's required",
+        "master's degree required",
       ],
     },
   },

@@ -1,0 +1,22 @@
+{
+  "id": "real-118",
+  "profile": {
+    "profile_text": "Name: Alex Carter\r\n\r\nCurrent Status: Recent Graduate (0-12 months)\r\nUniversity: University of Texas at Austin\r\nJob Type Preference: Full Time Role\r\n\r\nPrimary Roles: Business analyst, operations analyst, strategy analyst\r\nSecondary Roles: project coordinator\r\n\r\nPreferred Locations: New York, Austin\r\n\r\nTimeline: June 2026\r\n\r\nStrengths: Analytical thinking, structured problem solving, communication\r\n\r\nResume Text:\r\nALEX CARTER\r\nBusiness Analyst candidate with internship experience in operations and analytics. Strong in Excel-based analysis, reporting, and cross-functional coordination.",
+    "resume_text": "ALEX CARTER\r\n(555) 123-4567 | peri+2@workforcereadynow.com\r\n\r\nEDUCATION\r\nUniversity of Texas at Austin\r\nB.S. Economics\r\nMay 2025\r\n\r\nEXPERIENCE\r\nOperations Analyst Intern\r\nJune 2024 – August 2024\r\n- Built Excel models to track KPIs and performance metrics\r\n- Created weekly reports for leadership team\r\n- Coordinated with cross-functional stakeholders to improve workflows\r\n\r\nProject Coordinator (Student Org)\r\n- Managed timelines and deliverables across 5-person team\r\n- Presented findings and updates to leadership\r\n\r\nSKILLS\r\nExcel, PowerPoint, Data Analysis",
+    "profile_structured": {
+      "grad": "2026",
+      "tools": {
+        "SQL": false,
+        "Excel": true,
+        "PowerPoint": true
+      }
+    },
+    "target_roles": "Business analyst, operations analyst, strategy analyst",
+    "target_locations": "New York, Austin",
+    "preferred_locations": "New York, Austin",
+    "timeline": "June 2026",
+    "job_type": "Full Time Role",
+    "risk_overrides": {}
+  },
+  "jobText": "About the Role\r\n\r\nWe are hiring a Business Operations Analyst to support internal reporting, process improvement, and cross-functional coordination across our operations team.\r\n\r\nThis is a full-time, in-person role based in Austin, TX.\r\n\r\nKey Responsibilities\r\n\r\n- Build and maintain weekly and monthly performance reports using Excel\r\n- Analyze operational data to identify trends, issues, and opportunities for improvement\r\n- Create dashboards and summaries for leadership using Excel and PowerPoint\r\n- Coordinate with cross-functional teams including sales, operations, and finance to gather data and align on priorities\r\n- Document workflows and recommend process improvements to increase efficiency\r\n- Support ad hoc analysis and reporting requests from leadership\r\n\r\nQualifications\r\n\r\n- Bachelor’s degree required\r\n- Strong proficiency in Excel (pivot tables, basic formulas, data organization)\r\n- Experience creating reports or dashboards\r\n- Strong analytical and problem-solving skills\r\n- Ability to communicate findings clearly to non-technical stakeholders\r\n- Organized and able to manage multiple priorities\r\n\r\nPreferred Qualifications\r\n\r\n- Experience in an operations, analytics, or business analyst role (internship or full-time)\r\n- Familiarity with PowerPoint for presenting findings\r\n- Experience working with cross-functional teams\r\n\r\nAdditional Details\r\n\r\n- This is not a sales role\r\n- This is not a clinical or healthcare role\r\n- This role is focused on internal operations and analytics"
+}

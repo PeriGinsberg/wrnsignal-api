@@ -1,25 +1,12 @@
-// app/api/jobfit/evaluator.ts
-//
-// Clean evaluator bridge
-//
-// Goal:
-// - Prefer clean resume_text + structured fields + profile_structured
-// - Fall back to raw profileText only if necessary
-// - Preserve deterministic engine behavior by appending a compact signal block
-// - Keep runJobFit unchanged
-
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { runJobFit } from "../_lib/jobfitEvaluator"
+import { renderBulletsV4 } from "./deterministicBulletRendererV4"
 
 type AnyObj = Record<string, any>
 
 type EvaluateJobFitArgs = {
   jobText: string
-
-  // legacy fallback
   profileText?: string | null
-
-  // new primary inputs
   resumeText?: string | null
   profileStructured?: AnyObj | null
   targetRoles?: string | null
@@ -136,12 +123,8 @@ function buildAugmentedProfileText(args: EvaluateJobFitArgs): {
       ? uniqStrings(statedInterests.targetIndustries)
       : []
 
-    if (targetRoles.length) {
-      lines.push(`STATED_TARGET_ROLES: ${targetRoles.join(", ")}`)
-    }
-    if (adjacentRoles.length) {
-      lines.push(`STATED_ADJACENT_ROLES: ${adjacentRoles.join(", ")}`)
-    }
+    if (targetRoles.length) lines.push(`STATED_TARGET_ROLES: ${targetRoles.join(", ")}`)
+    if (adjacentRoles.length) lines.push(`STATED_ADJACENT_ROLES: ${adjacentRoles.join(", ")}`)
     if (targetIndustries.length) {
       lines.push(`STATED_TARGET_INDUSTRIES: ${targetIndustries.join(", ")}`)
     }
@@ -195,9 +178,6 @@ function buildAugmentedProfileText(args: EvaluateJobFitArgs): {
   return { augmentedProfileText, baseProfileText, overrides }
 }
 
-/**
- * Public entry used by the route handler.
- */
 export async function evaluateJobFit(args: EvaluateJobFitArgs) {
   const { augmentedProfileText, baseProfileText, overrides } =
     buildAugmentedProfileText(args)
@@ -208,10 +188,17 @@ export async function evaluateJobFit(args: EvaluateJobFitArgs) {
     profileOverrides: overrides,
   })
 
+  const rendered = renderBulletsV4(result as any)
+
   return {
     ...result,
+    why: rendered.why,
+    risk: rendered.risk,
+    bullets: rendered.why,
+    risk_bullets: rendered.risk,
     debug: {
       ...(result as any)?.debug,
+      ...rendered.renderer_debug,
       evaluator_profile_source: {
         used_resume_text: Boolean(norm(args.resumeText)),
         used_profile_structured: Boolean(args.profileStructured),
