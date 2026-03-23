@@ -130,6 +130,8 @@ export type StructuredJobSignals = {
   isHourly: boolean
   yearsRequired: number | null
   mbaRequired: boolean
+credentialRequired: boolean
+  credentialDetail: string | null
   gradYearHint: number | null
   requiredTools: string[]
   preferredTools: string[]
