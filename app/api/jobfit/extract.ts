@@ -1244,7 +1244,8 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "consulting_strategy") score.Consulting += 3
     if (tag === "operations_general") score.Consulting += 1
 
-    if (tag === "legal_regulatory" || tag === "creative_design" || tag === "other") score.Other += 4
+    if (tag === "legal_regulatory") score.Other += 8
+    if (tag === "creative_design" || tag === "other") score.Other += 4
   }
 
   if (score.Sales > 0 && score.PreMed > 0) score.Sales += 2
@@ -1347,45 +1348,28 @@ function dedupeUnits<T extends { id: string }>(items: T[]): T[] {
   return out
 }
 
+
 function detectRequiredness(line: string): "core" | "supporting" {
   const l = line.toLowerCase()
 
-  if (
-    l.includes("product training") ||
-    l.includes("in-service") ||
-    l.includes("post-sale") ||
-    l.includes("replenishment") ||
-    l.includes("crm") ||
-    l.includes("communication") ||
-    l.includes("documentation") ||
-    l.includes("reporting") ||
-    l.includes("research") ||
-    l.includes("presentation") ||
-    l.includes("excel") ||
-    l.includes("word") ||
-    l.includes("photoshop") ||
-    l.includes("illustrator") ||
-    l.includes("indesign")
-  ) {
-    return "supporting"
-  }
-
-  if (
-    l.includes("strategy") ||
-    l.includes("consumer") ||
-    l.includes("patient")
-  ) {
-    return "supporting"
-  }
-
+  // Explicit core signals
   if (
     /\b(required|must|responsible for|you will|primary responsibility|own|lead|territory|supervise|teach|observe|assess|empower)\b/i.test(l)
   ) {
     return "core"
   }
 
+  // Lines that describe what the role does day to day are core
+  if (
+    /\b(assist|support|help|coordinate|manage|execute|maintain|prepare|analyze|document|translate|gather|collect|validate|review|participate|identify|perform)\b/i.test(l) &&
+    l.length > 40
+  ) {
+    return "core"
+  }
+
   return "supporting"
 }
+
 
 function profileRuleStrength(
   rule: CapabilityRule,
@@ -1465,9 +1449,18 @@ function buildUnitsFromLines(
   const functionTagEvidence: Partial<Record<FunctionTag, string[]>> = {}
   const functionTags = new Set<FunctionTag>()
   const debugHits: Record<string, number> = {}
+  let inRequiredSection = false
 
   for (const line of lines) {
     const cleaned = cleanLine(line)
+
+    // Track required vs preferred sections
+    if (/\b(required qualifications|key responsibilities|essential functions|must have)\b/i.test(cleaned)) {
+      inRequiredSection = true
+    }
+    if (/\b(preferred qualifications|nice to have|about us|benefits|compensation)\b/i.test(cleaned)) {
+      inRequiredSection = false
+    }
     const n = norm(cleaned)
     if (!n) continue
 
@@ -1543,7 +1536,7 @@ function buildUnitsFromLines(
             rule.kind,
             cleaned,
             strength,
-            detectRequiredness(cleaned),
+            inRequiredSection ? "core" : detectRequiredness(cleaned),
             rule.functionTag
           )
         )
@@ -1565,7 +1558,7 @@ function buildUnitsFromLines(
             "tool",
             cleaned,
             Math.min(10, lineScore + 2),
-            detectRequiredness(cleaned)
+            inRequiredSection ? "core" : detectRequiredness(cleaned)
           )
         )
       } else {
