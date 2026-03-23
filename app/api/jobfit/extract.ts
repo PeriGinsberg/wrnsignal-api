@@ -704,6 +704,16 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "litigation",
       "legislative",
       "safety",
+      "law firm",
+      "legal operations",
+      "legal ops",
+      "legal staff",
+      "legal team",
+      "legal needs",
+      "legal requirements",
+      "in-house legal",
+      "general counsel",
+      "legal department",
     ],
     adjacentKeys: ["communications_writing", "analysis_reporting"],
   },
@@ -1348,7 +1358,6 @@ function dedupeUnits<T extends { id: string }>(items: T[]): T[] {
   return out
 }
 
-
 function detectRequiredness(line: string): "core" | "supporting" {
   const l = line.toLowerCase()
 
@@ -1359,7 +1368,7 @@ function detectRequiredness(line: string): "core" | "supporting" {
     return "core"
   }
 
-  // Lines that describe what the role does day to day are core
+  // Lines describing what the role does day to day are core
   if (
     /\b(assist|support|help|coordinate|manage|execute|maintain|prepare|analyze|document|translate|gather|collect|validate|review|participate|identify|perform)\b/i.test(l) &&
     l.length > 40
@@ -1369,7 +1378,6 @@ function detectRequiredness(line: string): "core" | "supporting" {
 
   return "supporting"
 }
-
 
 function profileRuleStrength(
   rule: CapabilityRule,
@@ -1943,7 +1951,12 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const functionTags = mergedFunctionTags
   const requirementUnits = selectBestJobUnits(mergedJobUnits)
 
-  const jobFamily = familyFromFunctionTags(functionTags)
+  // Law firm / legal ops context overrides family classification
+  const isLegalOpsContext =
+    /\b(law firm|legal operations|legal ops|in-house legal|general counsel|legal department|paralegal|legal team|legal staff|legal counsel)\b/i.test(normalized)
+
+  const jobFamilyFromTags = familyFromFunctionTags(functionTags)
+  const jobFamily: JobFamily = isLegalOpsContext ? "Other" : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
