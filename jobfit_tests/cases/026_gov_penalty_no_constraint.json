@@ -1,0 +1,13 @@
+{
+    "id":  "026_gov_penalty_no_constraint",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Federal client support. Government, clearance.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

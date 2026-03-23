@@ -1,0 +1,519 @@
+{
+  "endpoint": "http://localhost:3000/api/jobfit",
+  "total": 30,
+  "pass": 9,
+  "fail": 21,
+  "at": "2026-03-05T02:31:31.575Z",
+  "results": [
+    {
+      "id": "001_gate_mba_required",
+      "ok": true,
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 37,
+        "bullets": [],
+        "risk_flags": [
+          "This role has a core mismatch with the candidate’s constraints or eligibility."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "002_gate_grad_mismatch",
+      "ok": false,
+      "failures": [
+        "decision expected \"Pass\" got \"Apply\"",
+        "score 97 > maxScore 64"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "003_gate_hard_sales",
+      "ok": true,
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 59,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears to be sales/commission-focused, which the candidate explicitly excluded."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "004_gate_hard_gov",
+      "ok": true,
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 59,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears to be government/public sector, which the candidate explicitly excluded."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "005_gate_hard_no_remote",
+      "ok": false,
+      "failures": [
+        "decision expected \"Pass\" got \"Apply\"",
+        "score 97 > maxScore 64"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "not_constrained"
+      }
+    },
+    {
+      "id": "006_floor_review_location_city",
+      "ok": true,
+      "actual": {
+        "decision": "Review",
+        "icon": "⚠️",
+        "score": 66,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears location-constrained and is outside the candidate’s stated preferred locations (new york).",
+          "Location mismatch for a mostly in-office role (job location does not align with stated preferences: new york)."
+        ],
+        "next_step": "Review the risk flags carefully before proceeding.",
+        "location_constraint": "constrained"
+      }
+    },
+    {
+      "id": "007_floor_review_location_mode",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\"",
+        "score 97 > maxScore 90"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "constrained"
+      }
+    },
+    {
+      "id": "008_floor_review_contract_pref_ft",
+      "ok": true,
+      "actual": {
+        "decision": "Review",
+        "icon": "⚠️",
+        "score": 75,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears to be contract (signals: contract), and the candidate preference is full-time.",
+          "Role appears contract/temporary while the candidate preference is full-time."
+        ],
+        "next_step": "Review the risk flags carefully before proceeding.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "009_penalty_contract_hard_no",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Pass\""
+      ],
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 59,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears to be contract (signals: contract), and the candidate explicitly excluded contract/temporary work."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "010_penalty_hourly_hard_no",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Pass\""
+      ],
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 59,
+        "bullets": [],
+        "risk_flags": [
+          "Job is hourly ($20/hour), and the candidate explicitly excluded hourly pay."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "011_penalty_experience_gap",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\"",
+        "score 97 > maxScore 85"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "012_penalty_grad_window_mismatch",
+      "ok": false,
+      "failures": [
+        "decision expected \"Pass\" got \"Apply\"",
+        "score 97 > maxScore 64"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "013_risk_tools_required_missing_python",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 84,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions python, but the profile does not show it."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "014_risk_tools_required_missing_sql",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 84,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions sql, but the profile does not show it."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "015_risk_tools_preferred_tableau_missing",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 84,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions tableau, but the profile does not show it."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "016_risk_tools_adjacent_proof_python_missing_has_r",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 84,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions python, but the profile does not show it."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "017_risk_tools_adjacent_proof_sql_missing_has_python",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 84,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions sql, but the profile does not show it."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "018_family_match_no_tools",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "019_family_mismatch_no_tools",
+      "ok": false,
+      "failures": [
+        "decision expected \"Pass\" got \"Apply\"",
+        "score 97 > maxScore 70"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "020_family_match_tools_overlap_3",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "021_family_match_tools_overlap_1",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\""
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 81,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions tools not shown in the profile (sql, tableau)."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "022_location_penalty_proven_city",
+      "ok": true,
+      "actual": {
+        "decision": "Review",
+        "icon": "⚠️",
+        "score": 66,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears location-constrained and is outside the candidate’s stated preferred locations (new york, boston).",
+          "Location mismatch for a mostly in-office role (job location does not align with stated preferences: new york, boston)."
+        ],
+        "next_step": "Review the risk flags carefully before proceeding.",
+        "location_constraint": "constrained"
+      }
+    },
+    {
+      "id": "023_location_no_penalty_missing_city",
+      "ok": true,
+      "actual": {
+        "decision": "Review",
+        "icon": "⚠️",
+        "score": 66,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears location-constrained and is outside the candidate’s stated preferred locations (new york, boston).",
+          "Location mismatch for a mostly in-office role (job location does not align with stated preferences: new york, boston)."
+        ],
+        "next_step": "Review the risk flags carefully before proceeding.",
+        "location_constraint": "constrained"
+      }
+    },
+    {
+      "id": "024_remote_penalty_hard_no_remote",
+      "ok": false,
+      "failures": [
+        "decision expected \"Pass\" got \"Apply\"",
+        "score 97 > maxScore 64"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "not_constrained"
+      }
+    },
+    {
+      "id": "025_sales_penalty_no_constraint",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\"",
+        "score 97 > maxScore 90"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "026_gov_penalty_no_constraint",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Apply\"",
+        "score 97 > maxScore 90"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 97,
+        "bullets": [],
+        "risk_flags": [],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "027_downgrade_apply_to_review_penaltysum",
+      "ok": false,
+      "failures": [
+        "decision expected \"Review\" got \"Pass\""
+      ],
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 58,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears to be contract (signals: contract), and the candidate preference is full-time.",
+          "Location mismatch for a mostly in-office role (job location does not align with stated preferences: new york).",
+          "Role appears contract/temporary while the candidate preference is full-time."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "constrained"
+      }
+    },
+    {
+      "id": "028_downgrade_review_to_pass_penaltysum",
+      "ok": true,
+      "actual": {
+        "decision": "Pass",
+        "icon": "⛔",
+        "score": 0,
+        "bullets": [],
+        "risk_flags": [
+          "Role appears to be contract (signals: contract), and the candidate preference is full-time.",
+          "Location mismatch for a mostly in-office role (job location does not align with stated preferences: new york).",
+          "Role appears contract/temporary while the candidate preference is full-time."
+        ],
+        "next_step": "It is recommended that you do not apply and focus your attention on more aligned positions.",
+        "location_constraint": "constrained"
+      }
+    },
+    {
+      "id": "029_analytics_heavy_prefer_not_gate_expected",
+      "ok": false,
+      "failures": [
+        "decision expected \"Pass\" got \"Apply\"",
+        "score 81 > maxScore 64"
+      ],
+      "actual": {
+        "decision": "Apply",
+        "icon": "✅",
+        "score": 81,
+        "bullets": [],
+        "risk_flags": [
+          "Job mentions tools not shown in the profile (sql, python)."
+        ],
+        "next_step": "Apply promptly if this role is still open.",
+        "location_constraint": "unclear"
+      }
+    },
+    {
+      "id": "030_analytics_heavy_no_constraint",
+      "ok": true,
+      "actual": {
+        "decision": "Review",
+        "icon": "⚠️",
+        "score": 79,
+        "bullets": [],
+        "risk_flags": [
+          "Role includes recurring performance reporting and trend analysis; the profile does not show explicit reporting/measurement experience.",
+          "Job mentions tools not shown in the profile (sql, python)."
+        ],
+        "next_step": "Review the risk flags carefully before proceeding.",
+        "location_constraint": "unclear"
+      }
+    }
+  ]
+}

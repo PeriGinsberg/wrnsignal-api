@@ -1,0 +1,13 @@
+{
+    "id":  "024_remote_penalty_hard_no_remote",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Remote role. Work from home.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Constraint: hard no fully remote."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

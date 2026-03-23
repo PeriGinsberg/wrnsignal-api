@@ -1,0 +1,13 @@
+{
+    "id":  "004_gate_hard_gov",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Analyst role supporting federal client. Requires clearance. Government, DoD.",
+                  "profileText":  "BS Econ, May 2026. Target families: Consulting. Constraint: hard no government. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

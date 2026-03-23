@@ -1,0 +1,13 @@
+{
+    "id":  "014_risk_tools_required_missing_sql",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Data analyst intern. Required: SQL.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

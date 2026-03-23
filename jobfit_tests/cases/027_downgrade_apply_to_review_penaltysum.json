@@ -1,0 +1,13 @@
+{
+    "id":  "027_downgrade_apply_to_review_penaltysum",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Finance intern. Required: Excel, SQL. Preferred: Tableau. Contract. Local candidates only. Must be located in Miami. On-site Miami.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York. Prefers full-time roles. Tools: Excel, SQL, Tableau."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  0,
+                   "maxScore":  97
+               }
+}

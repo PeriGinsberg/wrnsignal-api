@@ -1,0 +1,13 @@
+{
+    "id":  "010_penalty_hourly_hard_no",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Hourly role. $20/hour. Per hour.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing. Constraint: hard no hourly pay."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

@@ -140,6 +140,16 @@ if (!user) {
       return withCorsJson(req, { ok: false, error: profErr.message }, 500)
     }
 
+    // Track intake completion
+    await supabase.from("jobfit_page_views").insert({
+      session_id: user.id,
+      page_path: "/signal/jobfittrial/intake",
+      page_name: "jobfit_trial_completed",
+      utm_source: String(body.utm_source ?? "").trim() || null,
+      utm_medium: String(body.utm_medium ?? "").trim() || null,
+      utm_campaign: String(body.utm_campaign ?? "").trim() || null,
+    })
+
     return withCorsJson(
       req,
       { ok: true, user_id: user.id, credits_remaining: user.credits_remaining },

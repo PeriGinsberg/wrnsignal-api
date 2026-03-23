@@ -1,0 +1,13 @@
+{
+    "id":  "012_penalty_grad_window_mismatch",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Internship. Graduation 2026.",
+                  "profileText":  "BS Finance, expected graduation 2029. Target families: Finance."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

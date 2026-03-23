@@ -1,0 +1,13 @@
+{
+    "id":  "028_downgrade_review_to_pass_penaltysum",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Analyst. Minimum 3 years of experience required. Contract. Local candidates only. Must be located in Miami. On-site Miami. MBA required.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York. Prefers full-time roles. Years experience approx 1. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}

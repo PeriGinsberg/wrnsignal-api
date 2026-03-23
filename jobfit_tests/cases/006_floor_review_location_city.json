@@ -1,0 +1,13 @@
+{
+    "id":  "006_floor_review_location_city",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Local candidates only. Must be located in Boston. On-site in Boston.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York. Mode: onsite."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

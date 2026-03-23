@@ -1,0 +1,13 @@
+{
+    "id":  "011_penalty_experience_gap",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Analyst role. Minimum 3 years of experience required.",
+                  "profileText":  "BS Finance, May 2026. Target families: Finance. Years experience approx 1."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  30,
+                   "maxScore":  85
+               }
+}

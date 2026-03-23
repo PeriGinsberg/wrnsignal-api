@@ -294,6 +294,18 @@ export async function POST(req: Request) {
     // claim_url is just a dev helper / fallback
     const claim_url = `https://wrnsignal.workforcereadynow.com/start?claim=${rawToken}`
 
+  // Track purchase
+    try {
+      await supabaseAdmin.from("jobfit_page_views").insert({
+        session_id: seatId,
+        page_path: "/signal/purchase",
+        page_name: "signal_purchased",
+        utm_source: pick(body, "utm_source") || null,
+        utm_medium: pick(body, "utm_medium") || null,
+        utm_campaign: pick(body, "utm_campaign") || null,
+      })
+    } catch {}
+
     return withCorsJson(
       req,
       {

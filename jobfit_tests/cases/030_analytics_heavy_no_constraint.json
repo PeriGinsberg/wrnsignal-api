@@ -1,0 +1,13 @@
+{
+    "id":  "030_analytics_heavy_no_constraint",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "Marketing insights intern. Regression, modeling, experiment, SQL, python, dashboard ownership.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing."
+              },
+    "expect":  {
+                   "decision":  "Review",
+                   "minScore":  40,
+                   "maxScore":  90
+               }
+}

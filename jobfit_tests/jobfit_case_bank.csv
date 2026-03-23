@@ -1,0 +1,31 @@
+﻿id,expectedDecision,job,profileText,minScore,maxScore
+001_gate_mba_required,Pass,"MBA required. Master of Business Administration required. Brand strategy role.","BS Marketing, May 2026. Target families: Marketing. Tools: Excel.",0,64
+002_gate_grad_mismatch,Pass,"Summer intern. Class of 2026 preferred.","BS Finance, Class of 2029. Target families: Finance. Tools: Excel, SQL.",0,64
+003_gate_hard_sales,Pass,"Business development role. Quota, commission, cold call, pipeline.","BS Finance, May 2026. Target families: Finance. Constraint: hard no sales. Tools: Excel.",0,64
+004_gate_hard_gov,Pass,"Analyst role supporting federal client. Requires clearance. Government, DoD.","BS Econ, May 2026. Target families: Consulting. Constraint: hard no government. Tools: Excel.",0,64
+005_gate_hard_no_remote,Pass,"Remote internship. Work from home. Distributed team.","BS Marketing, May 2026. Target families: Marketing. Constraint: hard no fully remote.",0,64
+006_floor_review_location_city,Review,"Local candidates only. Must be located in Boston. On-site in Boston.","BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York. Mode: onsite.",40,90
+007_floor_review_location_mode,Review,"Local candidates only. Hybrid role.","BS Finance, May 2026. Target families: Finance. Location constrained. Mode: onsite. Allowed cities: .",40,90
+008_floor_review_contract_pref_ft,Review,"Temporary contract role. Contract.","BS Finance, May 2026. Target families: Finance. Prefers full-time roles. Tools: Excel.",40,90
+009_penalty_contract_hard_no,Review,"Contract role. Contractor. 1099. Temporary.","BS Finance, May 2026. Target families: Finance. Constraint: hard no contract. Tools: Excel.",0,90
+010_penalty_hourly_hard_no,Review,"Hourly role. $20/hour. Per hour.","BS Marketing, May 2026. Target families: Marketing. Constraint: hard no hourly pay.",40,90
+011_penalty_experience_gap,Review,"Analyst role. Minimum 3 years of experience required.","BS Finance, May 2026. Target families: Finance. Years experience approx 1.",30,85
+012_penalty_grad_window_mismatch,Pass,"Internship. Graduation 2026.","BS Finance, expected graduation 2029. Target families: Finance.",0,64
+013_risk_tools_required_missing_python,Review,"Data analyst intern. Required: Python, SQL.","BS Finance, May 2026. Target families: Finance. Tools: SQL, Excel.",40,90
+014_risk_tools_required_missing_sql,Review,"Data analyst intern. Required: SQL.","BS Marketing, May 2026. Target families: Marketing. Tools: Excel.",40,90
+015_risk_tools_preferred_tableau_missing,Review,"Marketing analytics intern. Preferred: Tableau.","BS Marketing, May 2026. Target families: Marketing. Tools: Excel, Google Analytics.",40,90
+016_risk_tools_adjacent_proof_python_missing_has_r,Review,"Analytics intern. Required: Python.","BS Econ, May 2026. Target families: Consulting. Tools: R, Excel.",40,90
+017_risk_tools_adjacent_proof_sql_missing_has_python,Review,"Analytics intern. Required: SQL.","BS Econ, May 2026. Target families: Consulting. Tools: Python, Excel.",40,90
+018_family_match_no_tools,Review,"Finance intern role. Internship.","BS Finance, May 2026. Target families: Finance. Tools: .",55,97
+019_family_mismatch_no_tools,Pass,"Software intern role. Internship.","BS Finance, May 2026. Target families: Finance.",0,70
+020_family_match_tools_overlap_3,Review,"Finance analyst intern. Required: Excel, SQL. Preferred: Tableau.","BS Finance, May 2026. Target families: Finance. Tools: Excel, SQL, Tableau.",60,97
+021_family_match_tools_overlap_1,Review,"Finance analyst intern. Required: Excel, SQL. Preferred: Tableau.","BS Finance, May 2026. Target families: Finance. Tools: Excel.",55,95
+022_location_penalty_proven_city,Review,"Local candidates only. Must be located in Miami. On-site Miami.","BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York, Boston.",30,90
+023_location_no_penalty_missing_city,Review,"Local candidates only. On-site role.","BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York, Boston.",40,95
+024_remote_penalty_hard_no_remote,Pass,"Remote role. Work from home.","BS Finance, May 2026. Target families: Finance. Constraint: hard no fully remote.",0,64
+025_sales_penalty_no_constraint,Review,"Sales role. Quota, commission, pipeline.","BS Finance, May 2026. Target families: Finance. Tools: Excel.",40,90
+026_gov_penalty_no_constraint,Review,"Federal client support. Government, clearance.","BS Finance, May 2026. Target families: Finance. Tools: Excel.",40,90
+027_downgrade_apply_to_review_penaltysum,Review,"Finance intern. Required: Excel, SQL. Preferred: Tableau. Contract. Local candidates only. Must be located in Miami. On-site Miami.","BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York. Prefers full-time roles. Tools: Excel, SQL, Tableau.",0,97
+028_downgrade_review_to_pass_penaltysum,Pass,"Analyst. Minimum 3 years of experience required. Contract. Local candidates only. Must be located in Miami. On-site Miami. MBA required.","BS Finance, May 2026. Target families: Finance. Location constrained. Allowed cities: New York. Prefers full-time roles. Years experience approx 1. Tools: Excel.",0,64
+029_analytics_heavy_prefer_not_gate_expected,Pass,"Marketing insights intern. Regression, modeling, experiment, SQL, python, dashboard ownership.","BS Marketing, May 2026. Target families: Marketing. Constraint: prefer not analytics heavy.",0,64
+030_analytics_heavy_no_constraint,Review,"Marketing insights intern. Regression, modeling, experiment, SQL, python, dashboard ownership.","BS Marketing, May 2026. Target families: Marketing.",40,90

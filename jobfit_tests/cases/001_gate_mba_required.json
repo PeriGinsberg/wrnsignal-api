@@ -1,0 +1,13 @@
+{
+    "id":  "001_gate_mba_required",
+    "input":  {
+                  "mode":  "test",
+                  "job":  "MBA required. Master of Business Administration required. Brand strategy role.",
+                  "profileText":  "BS Marketing, May 2026. Target families: Marketing. Tools: Excel."
+              },
+    "expect":  {
+                   "decision":  "Pass",
+                   "minScore":  0,
+                   "maxScore":  64
+               }
+}
