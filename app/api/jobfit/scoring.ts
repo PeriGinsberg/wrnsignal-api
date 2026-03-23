@@ -624,8 +624,8 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
   const familyMatch = profile.targetFamilies.includes(job.jobFamily)
   if (familyMatch) base += 10
 
-  if (!familyMatch && profile.targetFamilies.length > 0 && job.jobFamily !== "Other") {
-    base -= 8
+ if (!familyMatch && profile.targetFamilies.length > 0) {
+    base -= 12
   }
 
   const directCount = whyMatches.filter((m) => m.match_strength === "direct").length
