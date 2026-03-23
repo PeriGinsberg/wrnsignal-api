@@ -759,6 +759,10 @@ if (code === "RISK_CONTRACT") {
       return sentence("This role requires clearer proof of day-to-day content execution than is currently visible in your background")
     }
 
+   const jobFactRaw = String(r.job_fact || "").toLowerCase()
+    if (jobFactRaw.includes("tool") || jobFactRaw.includes("excel") || jobFactRaw.includes("word") || jobFactRaw.includes("powerpoint")) {
+      return null // tool gaps are handled by RISK_MISSING_TOOLS already
+    }
     return sentence(`This role emphasizes ${jf}, and your background does not yet show clear direct proof in that area`)
   }
 
@@ -768,6 +772,68 @@ if (code === "RISK_CONTRACT") {
 
   if (usable(riskText)) {
     return riskText
+  }
+
+  return null
+}
+
+function buildDomainMismatchBullet(
+  jobFamily: string,
+  jobSignals?: EvalOutput["job_signals"],
+  profileSignals?: EvalOutput["profile_signals"]
+): string | null {
+  const jf = (jobFamily || "").toLowerCase()
+  const profileFamilies = Array.isArray(profileSignals?.targetFamilies)
+    ? profileSignals.targetFamilies.map((f: string) => String(f).toLowerCase())
+    : []
+  const targetStr = profileFamilies.length > 0
+    ? profileFamilies.map((f) => f.charAt(0).toUpperCase() + f.slice(1)).join(" and ")
+    : null
+
+  const functionTags = Array.isArray(jobSignals?.function_tags)
+    ? jobSignals.function_tags
+    : []
+
+  const isLegalOps =
+    functionTags.includes("legal_regulatory") ||
+    /\b(law firm|legal operations|legal ops|legal team|general counsel)\b/i.test(
+      String(jobSignals?.internship?.evidence?.inPersonLine || "")
+    )
+
+  if (isLegalOps) {
+    return sentence(
+      targetStr
+        ? `Your background is targeting ${targetStr} roles. This is a legal operations and business analysis role at a law firm. Those are fundamentally different tracks, and the hiring manager will notice the mismatch immediately. You would need a very clear explanation for why this role makes sense given your stated direction`
+        : `This is a legal operations role at a law firm. Your background does not currently show any legal, compliance, or law firm experience, which is what this environment actually selects for`
+    )
+  }
+
+  if (jf === "finance") {
+    return sentence(
+      targetStr
+        ? `Your profile targets ${targetStr} roles, but this is a finance-oriented position. Without clear financial analysis or investment proof, your candidacy will be a harder sell than it looks on paper`
+        : `This is a finance role, and your background does not yet show the financial analysis or investment proof this environment typically selects for`
+    )
+  }
+
+  if (jf === "accounting") {
+    return sentence(
+      `This is an accounting and financial operations role. Your background does not currently show accounting, reconciliation, or financial operations experience, which is the core of what this job requires`
+    )
+  }
+
+  if (jf === "sales") {
+    return sentence(
+      `This is a sales role at its core. Unless you are genuinely open to a sales track, the day-to-day work here will be a significant departure from the direction your profile currently targets`
+    )
+  }
+
+  if (jf === "other") {
+    return sentence(
+      targetStr
+        ? `Your profile is targeting ${targetStr} roles. This posting is in a different functional area, and your background does not yet show direct experience in what this role actually does day to day. That is a gap the hiring manager will notice`
+        : `This role sits in a different functional area than what your background currently supports. You would need to work harder to connect your experience to what this environment actually requires`
+    )
   }
 
   return null
@@ -810,6 +876,21 @@ export function renderBulletsV4(out: EvalOutput): {
 
   const interestAlign = buildInterestAlignmentClause(out.profile_signals, out.job_signals)
   if (interestAlign && whyMax > 0) why.push(interestAlign)
+
+// Inject domain mismatch risk bullet if job family doesn't match profile targets
+  const jobFamilyStr = String(out.job_signals?.jobFamily || "")
+  const profileFamilies = Array.isArray(out.profile_signals?.targetFamilies)
+    ? out.profile_signals.targetFamilies.map((f: string) => String(f).toLowerCase())
+    : []
+  const familyMismatch = jobFamilyStr && profileFamilies.length > 0 &&
+    !profileFamilies.includes(jobFamilyStr.toLowerCase())
+
+  if (familyMismatch && riskMax > 0) {
+    const domainRisk = buildDomainMismatchBullet(jobFamilyStr, out.job_signals, out.profile_signals)
+    if (domainRisk) {
+      risk.push(domainRisk)
+    }
+  }
 
   if (whyMax > 0) {
     for (const w of whyCodesIn) {
