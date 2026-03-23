@@ -32,10 +32,10 @@ function pickConnector(index: number): string {
 }
 
 function capsForDecision(d: Decision): RenderCaps {
-  if (d === "Priority Apply") return { whyMax: 6, riskMax: 3 }
-  if (d === "Apply") return { whyMax: 6, riskMax: 3 }
-  if (d === "Review") return { whyMax: 5, riskMax: 4 }
-  return { whyMax: 2, riskMax: 4 }
+if (d === "Priority Apply") return { whyMax: 6, riskMax: 4 }
+  if (d === "Apply") return { whyMax: 6, riskMax: 4 }
+  if (d === "Review") return { whyMax: 5, riskMax: 5 }
+  return { whyMax: 2, riskMax: 5 }
 }
 
 function norm(s: unknown): string {
@@ -909,7 +909,7 @@ export function renderBulletsV4(out: EvalOutput): {
       const isDuplicateTools = group === "tools" && usedWhyGroups.has("tools")
       const isDuplicateExecution =
         group === "execution" &&
-        Array.from(usedWhyGroups).filter((g) => g === "execution").length >= 2
+        Array.from(usedWhyGroups).filter((g) => g === "execution").length >= 3
       const isDuplicateProofGroup = group.startsWith("proof_") && usedWhyGroups.has(group)
 
       const isHardDuplicate =
@@ -939,7 +939,7 @@ export function renderBulletsV4(out: EvalOutput): {
   }
 
   const whyMin =
-    out.decision === "Priority Apply" || out.decision === "Apply" ? 3 : 1
+    out.decision === "Priority Apply" || out.decision === "Apply" ? 4 : 2
 
   if (why.length < whyMin) {
     for (const item of deferredWhy) {
