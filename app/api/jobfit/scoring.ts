@@ -812,21 +812,38 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  if (profile.constraints.hardNoHourlyPay && job.isHourly) {
-    const amt = computePenaltyAmount("hourly_pay_mismatch")
-    penalties.push({
-      key: "hourly_pay_mismatch",
-      amount: amt,
-      note: "Hourly pay signals present",
-      risk: {
-        code: "RISK_HOURLY",
-        job_fact: "Posting indicates hourly compensation.",
-        profile_fact: "You have a no-hourly constraint.",
-        risk: "Compensation structure conflicts with your preference.",
-        severity: "medium",
-        weight: -amt,
-      },
-    })
+  if (job.isHourly) {
+    if (profile.constraints.hardNoHourlyPay) {
+      const amt = computePenaltyAmount("hourly_pay_mismatch")
+      penalties.push({
+        key: "hourly_pay_mismatch",
+        amount: amt,
+        note: "Hourly pay signals present — hard constraint",
+        risk: {
+          code: "RISK_HOURLY",
+          job_fact: "Posting indicates hourly compensation.",
+          profile_fact: "You have a no-hourly constraint.",
+          risk: "Compensation structure conflicts with your preference.",
+          severity: "high",
+          weight: -amt,
+        },
+      })
+    } else if (profile.constraints.prefFullTime) {
+      const amt = computePenaltyAmount("hourly_pay_mismatch")
+      penalties.push({
+        key: "hourly_pay_mismatch",
+        amount: amt,
+        note: "Hourly gig work vs full-time preference",
+        risk: {
+          code: "RISK_HOURLY",
+          job_fact: "Posting indicates hourly or gig-based compensation.",
+          profile_fact: "You are targeting full-time career roles.",
+          risk: "This is hourly or gig-based work. If you are building a full-time career track, this is not the right use of your application effort.",
+          severity: "medium",
+          weight: -amt,
+        },
+      })
+    }
   }
 
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
