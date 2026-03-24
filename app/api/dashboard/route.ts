@@ -92,10 +92,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div class="date-tabs">
-  <div class="date-tab active" onclick="setRange(1,this)">Today</div>
+  <div class="date-tab" onclick="setRange(1,this)">Today</div>
   <div class="date-tab" onclick="setRange(7,this)">7 Days</div>
   <div class="date-tab" onclick="setRange(30,this)">30 Days</div>
-  <div class="date-tab" onclick="setRange(999,this)">All Time</div>
+  <div class="date-tab active" onclick="setRange(999,this)">All Time</div>
 </div>
 
 <div class="metrics">
@@ -152,7 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const SUPABASE_URL = 'https://ejhnokcnahauvrcbcmic.supabase.co'
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqaG5va2NuYWhhdXZyY2JjbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMzczNzMsImV4cCI6MjA4MzcxMzM3M30.LzTMZDzDrx4UMWGu9y5qeg4AzwxukEWUu06q7Ts9Wb0'
 
-let rangeDays = 1
+let rangeDays = 999
 
 function setRange(days, el) {
   rangeDays = days
@@ -199,7 +199,7 @@ function dedupeRows(rows) {
   return rows.filter(r => {
     if (r.page_name !== 'signal_landing') return true  // always keep non-landing events
     const bucket = Math.floor(new Date(r.created_at).getTime() / (60 * 1000))
-    if (bucketCounts[bucket] > 20) {
+    if (bucketCounts[bucket] > 100) {
       if (bucketSeen[bucket]) return false
       bucketSeen[bucket] = true
       return true
@@ -214,7 +214,7 @@ async function loadAll() {
     const since = sinceDate()
     const timeFilter = since ? \`&created_at=gte.\${since}\` : ''
 
-    const rawRows = await query('jobfit_page_views', \`select=*&order=created_at.desc\${timeFilter}\`)
+    const rawRows = await query('jobfit_page_views', \`select=*&order=created_at.asc&limit=10000${timeFilter}\`)
     const rows = dedupeRows(rawRows)
 
     renderMetrics(rows)
