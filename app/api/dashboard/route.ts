@@ -182,14 +182,29 @@ async function query(table, params) {
 }
 
 function dedupeRows(rows) {
-  // Remove bot bursts: keep only first event per session+page_name within a 5-min window
-  // This filters GHL's link pre-fetch which fires hundreds of times in <2 minutes on send
-  const seen = {}
+  // Filter bot bursts by detecting when >20 events fire in the same 60-second window
+  // GHL pre-fetches all links on send, producing hundreds of hits in <2 minutes
+  // Real humans trickle in — never more than a handful per minute
+
+  // Count events per 60-second bucket
+  const bucketCounts = {}
+  rows.forEach(r => {
+    const bucket = Math.floor(new Date(r.created_at).getTime() / (60 * 1000))
+    const key = r.page_name + '|' + bucket
+    bucketCounts[key] = (bucketCounts[key] || 0) + 1
+  })
+
+  // Any bucket with >20 events of the same type = bot burst, cap it at 1
+  const bucketSeen = {}
   return rows.filter(r => {
-    const bucket = Math.floor(new Date(r.created_at).getTime() / (5 * 60 * 1000))
-    const key = r.session_id + '|' + r.page_name + '|' + bucket
-    if (seen[key]) return false
-    seen[key] = true
+    const bucket = Math.floor(new Date(r.created_at).getTime() / (60 * 1000))
+    const key = r.page_name + '|' + bucket
+    if (bucketCounts[key] > 20) {
+      // Bot burst bucket — only keep the first one
+      if (bucketSeen[key]) return false
+      bucketSeen[key] = true
+      return true
+    }
     return true
   })
 }
