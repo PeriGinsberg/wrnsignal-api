@@ -657,7 +657,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     key: "client_commercial_work",
     label: "generic client-facing or commercial support work",
     kind: "stakeholder",
-    functionTag: "sales_bd",
+    functionTag: "operations_general",
     minMatches: 2,
     profilePhrases: [
       "client",
@@ -2002,9 +2002,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     ).length >= 2
 
   const isSalesHeavy =
-    includesAny(normalized, salesKeywords) ||
-    explicitSalesEvidence ||
-    functionTags.includes("sales_bd")
+  includesAny(normalized, salesKeywords) ||
+  explicitSalesEvidence
 
   const isContract = includesAny(normalized, contractKeywords)
   const isHourly = includesAny(normalized, hourlyKeywords) || /\$\s*\d+(\.\d+)?\s*\/\s*(hr|hour)\b/i.test(jobTextRaw)
