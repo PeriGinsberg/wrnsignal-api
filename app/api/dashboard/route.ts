@@ -181,13 +181,27 @@ async function query(table, params) {
   return res.json()
 }
 
+function dedupeRows(rows) {
+  // Remove bot bursts: keep only first event per session+page_name within a 5-min window
+  // This filters GHL's link pre-fetch which fires hundreds of times in <2 minutes on send
+  const seen = {}
+  return rows.filter(r => {
+    const bucket = Math.floor(new Date(r.created_at).getTime() / (5 * 60 * 1000))
+    const key = r.session_id + '|' + r.page_name + '|' + bucket
+    if (seen[key]) return false
+    seen[key] = true
+    return true
+  })
+}
+
 async function loadAll() {
   document.getElementById('last-updated').textContent = 'Refreshing...'
   try {
     const since = sinceDate()
     const timeFilter = since ? \`&created_at=gte.\${since}\` : ''
 
-    const rows = await query('jobfit_page_views', \`select=*&order=created_at.desc\${timeFilter}\`)
+    const rawRows = await query('jobfit_page_views', \`select=*&order=created_at.desc\${timeFilter}\`)
+    const rows = dedupeRows(rawRows)
 
     renderMetrics(rows)
     renderFunnel(rows)
