@@ -214,7 +214,7 @@ async function loadAll() {
     const since = sinceDate()
     const timeFilter = since ? \`&created_at=gte.\${since}\` : ''
 
-    const rawRows = await query('jobfit_page_views', \`select=*&order=created_at.asc&limit=10000${timeFilter}\`)
+    const rawRows = await query('jobfit_page_views', \`select=*&order=created_at.asc&limit=10000\${timeFilter}\`)
     const rows = dedupeRows(rawRows)
 
     renderMetrics(rows)
