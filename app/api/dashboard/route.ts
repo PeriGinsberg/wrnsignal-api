@@ -182,27 +182,26 @@ async function query(table, params) {
 }
 
 function dedupeRows(rows) {
-  // Filter bot bursts by detecting when >20 events fire in the same 60-second window
-  // GHL pre-fetches all links on send, producing hundreds of hits in <2 minutes
-  // Real humans trickle in — never more than a handful per minute
+  // Only filter bot bursts on signal_landing events — that's the only page
+  // GHL pre-fetches on send (hundreds of hits in <2 minutes)
+  // All other events (intake, runs, purchases) are never bot-blasted so pass through untouched
 
-  // Count events per 60-second bucket
+  // Count signal_landing events per 60-second bucket
   const bucketCounts = {}
   rows.forEach(r => {
+    if (r.page_name !== 'signal_landing') return
     const bucket = Math.floor(new Date(r.created_at).getTime() / (60 * 1000))
-    const key = r.page_name + '|' + bucket
-    bucketCounts[key] = (bucketCounts[key] || 0) + 1
+    bucketCounts[bucket] = (bucketCounts[bucket] || 0) + 1
   })
 
-  // Any bucket with >20 events of the same type = bot burst, cap it at 1
+  // In burst buckets (>20 signal_landing hits/min), keep only the first
   const bucketSeen = {}
   return rows.filter(r => {
+    if (r.page_name !== 'signal_landing') return true  // always keep non-landing events
     const bucket = Math.floor(new Date(r.created_at).getTime() / (60 * 1000))
-    const key = r.page_name + '|' + bucket
-    if (bucketCounts[key] > 20) {
-      // Bot burst bucket — only keep the first one
-      if (bucketSeen[key]) return false
-      bucketSeen[key] = true
+    if (bucketCounts[bucket] > 20) {
+      if (bucketSeen[bucket]) return false
+      bucketSeen[bucket] = true
       return true
     }
     return true
