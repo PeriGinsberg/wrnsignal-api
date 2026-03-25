@@ -96,8 +96,10 @@ ${out.decision} (score: ${out.score})
 ## CRITICAL INSTRUCTIONS
 
 ### On specificity
-- Name the employer, metric, or outcome. Never say "your background includes X" — say what they specifically did.
+- Always address the student directly using "you" and "your" — never use their name or third person.
+- Name the employer, metric, or outcome. Never say "your background includes X" — say what you specifically did.
 - If the profile_fact mentions a metric, that number MUST appear in the bullet.
+- No comma-separated lists inside a sentence — pick the single strongest detail.
 
 ### On transferable skills
 - Make the translation explicit. Show them their experience in the hiring manager's language.
@@ -115,6 +117,14 @@ ${out.decision} (score: ${out.score})
 ### On risk reframes
 - gap: one sentence, name the gap plainly.
 - reframe: one sentence, name the adjacent evidence and give exact language to use.
+
+### On voice and tone
+- Write like a sharp advisor talking directly to the student, not like a bot generating output.
+- Vary your sentence structure across bullets — don't start every lead the same way.
+- The connection sentence should feel like an insight, not a label. Show why it matters, don't just state that it does.
+- The action should feel like advice from someone who knows hiring, not a checklist item.
+
+
 ---
 
 ## OUTPUT FORMAT
