@@ -9,7 +9,7 @@
  * PLUS why_structured, risk_structured, and cover_letter_strategy.
  */
 
-import Anthropic from "@anthropic-ai/sdk/index"
+
 import type { EvalOutput } from "./signals"
 
 // ─── Output types ─────────────────────────────────────────────────────────────
@@ -168,23 +168,34 @@ function formatRiskBullet(b: RiskBullet): string {
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
-  const client = new Anthropic()
   const t0 = Date.now()
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 2048,
-    messages: [{ role: "user", content: buildPrompt(out) }],
+  const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 2048,
+      messages: [{ role: "user", content: buildPrompt(out) }],
+    }),
   })
 
-  const usage = response.usage ?? {}
+  if (!apiResponse.ok) {
+    throw new Error(`Anthropic API error: ${apiResponse.status} ${await apiResponse.text()}`)
+  }
 
- const rawJson = response.content
+  const json = await apiResponse.json()
+  const usage = json.usage ?? {}
+
+  const rawJson = (json.content ?? [])
     .filter((b: any) => b.type === "text")
-    .map((b: any) => (b as { type: "text"; text: string }).text)
+    .map((b: any) => String(b.text ?? ""))
     .join("")
 
-  // Strip accidental markdown fences
   const clean = rawJson
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
