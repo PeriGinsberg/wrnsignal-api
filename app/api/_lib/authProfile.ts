@@ -28,7 +28,6 @@ async function getAuthedUser(req: Request) {
   const token = getBearerToken(req)
   const { data, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-
   return {
     userId: data.user.id,
     email: (data.user.email ?? "").trim().toLowerCase() || null,
@@ -61,6 +60,8 @@ type AuthedProfile = {
   timeline: string | null
 }
 
+const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured,job_type,target_roles,target_locations,preferred_locations,timeline"
+
 function rowToProfile(row: ClientProfileRow): AuthedProfile {
   return {
     profileId: row.id,
@@ -74,27 +75,15 @@ function rowToProfile(row: ClientProfileRow): AuthedProfile {
     timeline: row.timeline || null,
   }
 }
-const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured,job_type,target_roles,target_locations,preferred_locations,timeline"
-
-function rowToProfile(row: ClientProfileRow): AuthedProfile {
-  return {
-    profileId: row.id,
-    profileText: row.profile_text || "",
-    resumeText: row.resume_text || "",
-    profileStructured: row.profile_structured || null,
-  }
-}
 
 function isDuplicateConstraint(err: any, constraintName?: string) {
   const code = err?.code
   const msg = String(err?.message || "")
   const details = String(err?.details || "")
   const hint = String(err?.hint || "")
-
   const hitConstraint =
     constraintName &&
     (msg.includes(constraintName) || details.includes(constraintName) || hint.includes(constraintName))
-
   return code === "23505" || hitConstraint
 }
 
@@ -163,7 +152,6 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
         if (racedErr) throw new Error(`Profile lookup failed: ${racedErr.message}`)
         if (raced?.id) return rowToProfile(raced)
       }
-
       throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
     }
 
