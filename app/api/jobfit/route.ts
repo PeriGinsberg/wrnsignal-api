@@ -160,13 +160,18 @@ export async function POST(req: NextRequest) {
     /* ------------------------------
      * NORMAL path (requires bearer)
      * ------------------------------ */
-const authed = await getAuthedProfileText(req as any)
-const profileText = String((authed as any)?.profileText || "").trim()
-const resumeText = String((authed as any)?.resumeText || "").trim()
-const profileStructured = (authed as any)?.profileStructured ?? null
-const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (authed as any)?.userId || MISSING
+    const authed = await getAuthedProfileText(req as any)
+    const profileText = String((authed as any)?.profileText || "").trim()
+    const resumeText = String((authed as any)?.resumeText || "").trim()
+    const profileStructured = (authed as any)?.profileStructured ?? null
+    const targetRoles = (authed as any)?.targetRoles ?? null
+    const preferredLocations = (authed as any)?.preferredLocations ?? (authed as any)?.targetLocations ?? null
+    const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (authed as any)?.userId || MISSING
 
-    if (!profileText) {
+    // Use resume_text as primary profile source — fall back to profile_text
+    const effectiveProfileText = resumeText || profileText
+
+    if (!effectiveProfileText) {
       return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
     }
 
@@ -189,11 +194,11 @@ const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (
         const mod = await import("../_lib/jobfitProfileAdapter")
         if (typeof (mod as any).mapClientProfileToOverrides === "function") {
           profileOverrides = (mod as any).mapClientProfileToOverrides({
-    profileText: resumeText || profileText,
-    profileStructured: profileStructured,
-    targetRoles: (authed as any)?.targetRoles ?? null,
-    preferredLocations: (authed as any)?.preferredLocations ?? (authed as any)?.targetLocations ?? null,
-})
+            profileText: effectiveProfileText,
+            profileStructured: profileStructured,
+            targetRoles: targetRoles,
+            preferredLocations: preferredLocations,
+          })
         }
       } catch {
         profileOverrides = null
@@ -202,7 +207,7 @@ const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (
 
     const fpPayload = {
       job: { text: jobText || MISSING },
-      profile: { id: profileId || MISSING, text: profileText || MISSING, overrides: profileOverrides || MISSING },
+      profile: { id: profileId || MISSING, text: effectiveProfileText || MISSING, overrides: profileOverrides || MISSING },
       system: { jobfit_logic_version: JOBFIT_LOGIC_VERSION },
     }
     const { fingerprint_hash, fingerprint_code } = buildFingerprint(fpPayload)
@@ -235,13 +240,13 @@ const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (
     }
 
     const raw = await runJobFit({
-    profileText: resumeText || profileText,
-    jobText,
-    profileOverrides,
-    userId: (authed as any)?.userId,
-    mode,
-    debug: debugFlag,
-} as any)
+      profileText: effectiveProfileText,
+      jobText,
+      profileOverrides,
+      userId: (authed as any)?.userId,
+      mode,
+      debug: debugFlag,
+    } as any)
 
     const result = enforceClientFacingRules(raw as any)
 
