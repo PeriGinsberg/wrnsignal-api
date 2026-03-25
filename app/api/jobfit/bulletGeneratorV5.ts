@@ -96,34 +96,25 @@ ${out.decision} (score: ${out.score})
 ## CRITICAL INSTRUCTIONS
 
 ### On specificity
-- Use the actual evidence from the profile. Name the employer, name the metric, name the outcome.
-- Never say "your background includes X" — say what they specifically did.
-- If the profile_fact mentions a metric (e.g. "grew client follower base by 200%"), that number MUST appear in the bullet.
-- If the profile names an employer (e.g. "Alpha PR"), use that name.
+- Name the employer, metric, or outcome. Never say "your background includes X" — say what they specifically did.
+- If the profile_fact mentions a metric, that number MUST appear in the bullet.
 
-### On transferable skills (MOST IMPORTANT)
-- When the student's experience doesn't obviously match the job requirement, make the translation explicit.
-- Students think in job titles — your job is to show them their experience in the hiring manager's language.
-- Example: "Running a 300-member chapter required budget oversight, compliance management, and cross-functional coordination — those are operations management skills, even if you've never had that title."
-- Never leave the student to make this connection themselves.
+### On transferable skills
+- Make the translation explicit. Show them their experience in the hiring manager's language.
+- Never leave the student to make the connection themselves.
+
+### On length (STRICT)
+- Each field — lead, connection, action — must be ONE sentence only.
+- Maximum 20 words per field. 60 words total per bullet.
+- Cut every word that doesn't add specific information.
 
 ### On action instructions
-- Every WHY bullet must end with ONE specific instruction.
-- Not "highlight this in your application" — tell them EXACTLY what to do: which sentence to lead with, which metric to name, which experience to frame first.
-- Be specific enough that the student could follow the instruction without any additional guidance.
+- Broaden beyond cover letters — can be resume framing, application strategy, interview prep, or networking.
+- One specific instruction. Not "highlight this" — tell them exactly what to do, where, and how.
 
 ### On risk reframes
-- Don't just name the gap — reframe it.
-- Show the student what adjacent experience they have that partially bridges it.
-- Give them exact language to use in their cover letter.
-- Never leave them feeling helpless. Every gap has a reframe.
-
-### On the cover letter strategy
-- The top WHY signal (highest-weight why_code) becomes the cover letter opening.
-- The top RISK becomes the gap to address directly.
-- If there are no risks, set address_gap to null.
-- Tone should reflect the decision: "confident" for Apply/Priority Apply, "measured" for Review, "honest and direct" for Pass.
-
+- gap: one sentence, name the gap plainly.
+- reframe: one sentence, name the adjacent evidence and give exact language to use.
 ---
 
 ## OUTPUT FORMAT

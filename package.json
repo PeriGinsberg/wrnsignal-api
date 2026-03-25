@@ -10,6 +10,7 @@
     "jobfit:regress": "npx tsx scripts/jobfit-regress.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@supabase/supabase-js": "^2.90.1",
     "next": "16.1.1",
     "openai": "^6.16.0",
