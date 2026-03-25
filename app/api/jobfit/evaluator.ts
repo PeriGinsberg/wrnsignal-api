@@ -1,6 +1,7 @@
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { renderBulletsV4 } from "./deterministicBulletRendererV4"
+import { generateBulletsV5 } from "./bulletGeneratorV5"
 
 type AnyObj = Record<string, any>
 
@@ -188,17 +189,48 @@ export async function evaluateJobFit(args: EvaluateJobFitArgs) {
     profileOverrides: overrides,
   })
 
-  const rendered = renderBulletsV4(result as any)
+  // ── V5: try Claude-powered bullets, fall back to V4 on any failure ──────────
+  let bullets: { why: string[]; risk: string[]; renderer_debug: any }
+  let cover_letter_strategy: any = null
+  let why_structured: any[] = []
+  let risk_structured: any[] = []
+
+  try {
+    const evalResultWithTexts = {
+      ...(result as any),
+      // Pass the raw texts so V5 can cite specific employers/metrics
+      profile_text: augmentedProfileText,
+      job_text: args.jobText || "",
+    }
+    const v5 = await generateBulletsV5(evalResultWithTexts)
+    bullets = v5
+    cover_letter_strategy = v5.cover_letter_strategy
+    why_structured = v5.why_structured
+    risk_structured = v5.risk_structured
+    console.log("[V5 bullet generator] success", {
+      why_count: v5.why_structured.length,
+      risk_count: v5.risk_structured.length,
+      latency_ms: v5.renderer_debug.latency_ms,
+    })
+  } catch (err: any) {
+    console.error("[V5 bullet generator] failed, falling back to V4:", err?.message || String(err))
+    bullets = renderBulletsV4(result as any)
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   return {
     ...result,
-    why: rendered.why,
-    risk: rendered.risk,
-    bullets: rendered.why,
-    risk_bullets: rendered.risk,
+    why: bullets.why,
+    risk: bullets.risk,
+    bullets: bullets.why,
+    risk_bullets: bullets.risk,
+    // New V5 fields — undefined when V4 fallback was used
+    why_structured: why_structured.length ? why_structured : undefined,
+    risk_structured: risk_structured.length ? risk_structured : undefined,
+    cover_letter_strategy: cover_letter_strategy ?? undefined,
     debug: {
       ...(result as any)?.debug,
-      ...rendered.renderer_debug,
+      ...bullets.renderer_debug,
       evaluator_profile_source: {
         used_resume_text: Boolean(norm(args.resumeText)),
         used_profile_structured: Boolean(args.profileStructured),
