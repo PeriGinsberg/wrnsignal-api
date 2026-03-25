@@ -9,7 +9,7 @@
  * PLUS why_structured, risk_structured, and cover_letter_strategy.
  */
 
-import Anthropic from "@anthropic-ai/sdk"
+import Anthropic from "@anthropic-ai/sdk/index"
 import type { EvalOutput } from "./signals"
 
 // ─── Output types ─────────────────────────────────────────────────────────────
