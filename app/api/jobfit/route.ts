@@ -189,11 +189,11 @@ const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (
         const mod = await import("../_lib/jobfitProfileAdapter")
         if (typeof (mod as any).mapClientProfileToOverrides === "function") {
           profileOverrides = (mod as any).mapClientProfileToOverrides({
-            profileText,
-            profileStructured: (body as any)?.profileStructured ?? null,
-            targetRoles: (body as any)?.targetRoles ?? null,
-            preferredLocations: (body as any)?.preferredLocations ?? null,
-          })
+    profileText: resumeText || profileText,
+    profileStructured: profileStructured,
+    targetRoles: (authed as any)?.targetRoles ?? null,
+    preferredLocations: (authed as any)?.preferredLocations ?? (authed as any)?.targetLocations ?? null,
+})
         }
       } catch {
         profileOverrides = null
