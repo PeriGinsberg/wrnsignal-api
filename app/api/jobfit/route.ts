@@ -248,6 +248,36 @@ export async function POST(req: NextRequest) {
       debug: debugFlag,
     } as any)
 
+    // ── V5: replace bullets with AI-generated ones ──────────────────────────
+    let cover_letter_strategy: any = null
+    try {
+      const { generateBulletsV5 } = await import("./bulletGeneratorV5")
+      const v5 = await generateBulletsV5({
+        ...(raw as any),
+        profile_text: effectiveProfileText,
+        job_text: jobText,
+      })
+      ;(raw as any).why = v5.why
+      ;(raw as any).risk = v5.risk
+      ;(raw as any).bullets = v5.why
+      ;(raw as any).risk_bullets = v5.risk
+      ;(raw as any).why_structured = v5.why_structured
+      ;(raw as any).risk_structured = v5.risk_structured
+      ;(raw as any).debug = {
+        ...(raw as any).debug,
+        ...v5.renderer_debug,
+      }
+      cover_letter_strategy = v5.cover_letter_strategy
+      console.log("[V5 bullet generator] success", {
+        why_count: v5.why_structured.length,
+        risk_count: v5.risk_structured.length,
+        latency_ms: v5.renderer_debug.latency_ms,
+      })
+    } catch (err: any) {
+      console.error("[V5 bullet generator] failed, falling back to V4:", err?.message || String(err))
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     const result = enforceClientFacingRules(raw as any)
 
     if (supabase) {
@@ -271,6 +301,7 @@ export async function POST(req: NextRequest) {
       fingerprint_hash,
       jobfit_logic_version: JOBFIT_LOGIC_VERSION,
       reused: false,
+      cover_letter_strategy: cover_letter_strategy ?? undefined,
       debug: { ...(result as any)?.debug, cache_hit: false },
     })
   } catch (err: any) {
