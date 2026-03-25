@@ -44,7 +44,6 @@ type ClientProfileRow = {
   job_type: string | null
   target_roles: string | null
   target_locations: string | null
-  preferred_locations: string | null
   timeline: string | null
 }
 
@@ -60,7 +59,7 @@ type AuthedProfile = {
   timeline: string | null
 }
 
-const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured,job_type,target_roles,target_locations,preferred_locations,timeline"
+const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured,job_type,target_roles,target_locations,timeline"
 
 function rowToProfile(row: ClientProfileRow): AuthedProfile {
   return {
@@ -71,8 +70,7 @@ function rowToProfile(row: ClientProfileRow): AuthedProfile {
     jobType: row.job_type || null,
     targetRoles: row.target_roles || null,
     targetLocations: row.target_locations || null,
-    preferredLocations: row.preferred_locations || null,
-    timeline: row.timeline || null,
+        timeline: row.timeline || null,
   }
 }
 

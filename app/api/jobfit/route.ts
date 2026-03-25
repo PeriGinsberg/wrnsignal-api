@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
     const resumeText = String((authed as any)?.resumeText || "").trim()
     const profileStructured = (authed as any)?.profileStructured ?? null
     const targetRoles = (authed as any)?.targetRoles ?? null
-    const preferredLocations = (authed as any)?.preferredLocations ?? (authed as any)?.targetLocations ?? null
+    const preferredLocations = (authed as any)?.targetLocations ?? null
     const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (authed as any)?.userId || MISSING
 
     // Use resume_text as primary profile source — fall back to profile_text
