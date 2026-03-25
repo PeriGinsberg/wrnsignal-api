@@ -55,8 +55,7 @@ type AuthedProfile = {
   jobType: string | null
   targetRoles: string | null
   targetLocations: string | null
-  preferredLocations: string | null
-  timeline: string | null
+   timeline: string | null
 }
 
 const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured,job_type,target_roles,target_locations,timeline"
