@@ -160,9 +160,11 @@ export async function POST(req: NextRequest) {
     /* ------------------------------
      * NORMAL path (requires bearer)
      * ------------------------------ */
-    const authed = await getAuthedProfileText(req as any)
-    const profileText = String((authed as any)?.profileText || "").trim()
-    const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (authed as any)?.userId || MISSING
+const authed = await getAuthedProfileText(req as any)
+const profileText = String((authed as any)?.profileText || "").trim()
+const resumeText = String((authed as any)?.resumeText || (authed as any)?.resume_text || "").trim()
+const profileStructured = (authed as any)?.profileStructured ?? (authed as any)?.profile_structured ?? null
+const profileId = (authed as any)?.profileId || ...(authed as any)?.userId || MISSING
 
     if (!profileText) {
       return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
@@ -233,13 +235,13 @@ export async function POST(req: NextRequest) {
     }
 
     const raw = await runJobFit({
-      profileText,
-      jobText,
-      profileOverrides,
-      userId: (authed as any)?.userId,
-      mode,
-      debug: debugFlag,
-    } as any)
+    profileText: resumeText || profileText,
+    jobText,
+    profileOverrides,
+    userId: (authed as any)?.userId,
+    mode,
+    debug: debugFlag,
+} as any)
 
     const result = enforceClientFacingRules(raw as any)
 

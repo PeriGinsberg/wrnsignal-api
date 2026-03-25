@@ -40,10 +40,29 @@ type ClientProfileRow = {
   email: string | null
   user_id: string | null
   profile_text: string | null
+  resume_text: string | null
+  profile_structured: Record<string, any> | null
+}
+
+type AuthedProfile = {
+  profileId: string
+  profileText: string
+  resumeText: string
+  profileStructured: Record<string, any> | null
+}
+
+const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured"
+
+function rowToProfile(row: ClientProfileRow): AuthedProfile {
+  return {
+    profileId: row.id,
+    profileText: row.profile_text || "",
+    resumeText: row.resume_text || "",
+    profileStructured: row.profile_structured || null,
+  }
 }
 
 function isDuplicateConstraint(err: any, constraintName?: string) {
-  // Postgres unique_violation = 23505
   const code = err?.code
   const msg = String(err?.message || "")
   const details = String(err?.details || "")
@@ -56,32 +75,20 @@ function isDuplicateConstraint(err: any, constraintName?: string) {
   return code === "23505" || hitConstraint
 }
 
-/**
- * API owns profile creation + attachment.
- * Client never writes to client_profiles.
- *
- * Goal: ensure there is exactly one profile per user_id (unique),
- * and avoid duplicate email unique constraint failures by:
- * - lookup by user_id
- * - else lookup by email; attach only if user_id is null
- * - else create; if create hits duplicate email, re-fetch by email and attach
- */
-export async function getAuthedProfileText(req: Request): Promise<{ profileId: string; profileText: string }> {
+export async function getAuthedProfileText(req: Request): Promise<AuthedProfile> {
   const { userId, email } = await getAuthedUser(req)
 
   // 1) Prefer lookup by user_id
   const { data: byUserId, error: byUserErr } = await supabaseAdmin
     .from("client_profiles")
-    .select("id,user_id,email,profile_text")
+    .select(PROFILE_SELECT)
     .eq("user_id", userId)
     .maybeSingle<ClientProfileRow>()
 
   if (byUserErr) throw new Error(`Profile lookup failed: ${byUserErr.message}`)
-  if (byUserId?.id) {
-    return { profileId: byUserId.id, profileText: byUserId.profile_text || "" }
-  }
+  if (byUserId?.id) return rowToProfile(byUserId)
 
-  // If no email, we cannot attach by email. Create a user-owned row.
+  // If no email, create a user-owned row
   if (!email) {
     const { data: created, error: createErr } = await supabaseAdmin
       .from("client_profiles")
@@ -91,61 +98,56 @@ export async function getAuthedProfileText(req: Request): Promise<{ profileId: s
         profile_text: "",
         updated_at: new Date().toISOString(),
       })
-      .select("id,user_id,email,profile_text")
+      .select(PROFILE_SELECT)
       .single<ClientProfileRow>()
 
     if (createErr || !created) throw new Error(`Profile create failed: ${createErr?.message || "unknown"}`)
-    return { profileId: created.id, profileText: created.profile_text || "" }
+    return rowToProfile(created)
   }
 
-  // 2) Try lookup by email (intake may have created email-only row)
+  // 2) Try lookup by email
   const { data: byEmail, error: byEmailErr } = await supabaseAdmin
     .from("client_profiles")
-    .select("id,user_id,email,profile_text")
+    .select(PROFILE_SELECT)
     .eq("email", email)
     .maybeSingle<ClientProfileRow>()
 
   if (byEmailErr) throw new Error(`Profile lookup by email failed: ${byEmailErr.message}`)
 
   if (byEmail?.id) {
-    // If already attached to THIS user, return
-    if (byEmail.user_id === userId) {
-      return { profileId: byEmail.id, profileText: byEmail.profile_text || "" }
-    }
+    if (byEmail.user_id === userId) return rowToProfile(byEmail)
 
-    // If attached to SOME OTHER user, do NOT attach.
     if (byEmail.user_id && byEmail.user_id !== userId) {
       throw new Error(`Profile email conflict: a profile row for ${email} is attached to a different user_id.`)
     }
 
-    // If unowned, attach it
+    // Unowned — attach it
     const { data: attached, error: attachErr } = await supabaseAdmin
       .from("client_profiles")
       .update({ user_id: userId, updated_at: new Date().toISOString() })
       .eq("id", byEmail.id)
-      .select("id,user_id,email,profile_text")
+      .select(PROFILE_SELECT)
       .single<ClientProfileRow>()
 
     if (attachErr || !attached) {
-      // race: user_id unique violation means another row for userId appeared
       if (isDuplicateConstraint(attachErr, "client_profiles_user_id_key")) {
         const { data: raced, error: racedErr } = await supabaseAdmin
           .from("client_profiles")
-          .select("id,user_id,email,profile_text")
+          .select(PROFILE_SELECT)
           .eq("user_id", userId)
           .maybeSingle<ClientProfileRow>()
 
         if (racedErr) throw new Error(`Profile lookup failed: ${racedErr.message}`)
-        if (raced?.id) return { profileId: raced.id, profileText: raced.profile_text || "" }
+        if (raced?.id) return rowToProfile(raced)
       }
 
       throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
     }
 
-    return { profileId: attached.id, profileText: attached.profile_text || "" }
+    return rowToProfile(attached)
   }
 
-  // 3) Create fresh row; handle email uniqueness races
+  // 3) Create fresh row
   const { data: created, error: createErr } = await supabaseAdmin
     .from("client_profiles")
     .insert({
@@ -154,23 +156,21 @@ export async function getAuthedProfileText(req: Request): Promise<{ profileId: s
       profile_text: "",
       updated_at: new Date().toISOString(),
     })
-    .select("id,user_id,email,profile_text")
+    .select(PROFILE_SELECT)
     .single<ClientProfileRow>()
 
   if (createErr) {
     if (isDuplicateConstraint(createErr, "client_profiles_email_key")) {
       const { data: existingByEmail, error: reErr } = await supabaseAdmin
         .from("client_profiles")
-        .select("id,user_id,email,profile_text")
+        .select(PROFILE_SELECT)
         .eq("email", email)
         .maybeSingle<ClientProfileRow>()
 
       if (reErr) throw new Error(`Profile lookup by email failed: ${reErr.message}`)
       if (!existingByEmail?.id) throw new Error("Profile create failed: duplicate email, but could not re-fetch.")
 
-      if (existingByEmail.user_id === userId) {
-        return { profileId: existingByEmail.id, profileText: existingByEmail.profile_text || "" }
-      }
+      if (existingByEmail.user_id === userId) return rowToProfile(existingByEmail)
 
       if (existingByEmail.user_id && existingByEmail.user_id !== userId) {
         throw new Error(`Profile email conflict: a profile row for ${email} is attached to a different user_id.`)
@@ -180,16 +180,16 @@ export async function getAuthedProfileText(req: Request): Promise<{ profileId: s
         .from("client_profiles")
         .update({ user_id: userId, updated_at: new Date().toISOString() })
         .eq("id", existingByEmail.id)
-        .select("id,user_id,email,profile_text")
+        .select(PROFILE_SELECT)
         .single<ClientProfileRow>()
 
       if (attachErr || !attached) throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
-      return { profileId: attached.id, profileText: attached.profile_text || "" }
+      return rowToProfile(attached)
     }
 
     throw new Error(`Profile create failed: ${createErr.message}`)
   }
 
   if (!created) throw new Error("Profile create failed: unknown")
-  return { profileId: created.id, profileText: created.profile_text || "" }
+  return rowToProfile(created)
 }
