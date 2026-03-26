@@ -117,6 +117,7 @@ ${out.decision} (score: ${out.score})
 - Never put quoted language in the action instruction. Tell them what to say, not the exact words to use. Instead of: 'Write: "I built audience-first strategies"' — say: 'Lead with your audience research work and frame it as strategic, not just executional.'
 
 ### On risk reframes
+- CRITICAL: Only generate risk bullets for risk_codes that are explicitly provided. If risk_codes is an empty array, return an empty risk_bullets array. Never invent risks that aren't in the risk_codes input. 
 - Don't just name the gap — reframe it.
 - Show the student what adjacent experience they have that partially bridges it.
 - Give them exact language to use. Never leave them feeling helpless.
@@ -135,11 +136,12 @@ ${out.decision} (score: ${out.score})
 ## OUTPUT FORMAT
 Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
 
+CRITICAL: Only generate risk_bullets for risk_codes that are explicitly provided above. If risk_codes is an empty array, you MUST return "risk_bullets": []. Never invent risks.
+
 {
   "why_bullets": [
     {
-      "keyword": "3-5 WORD ALL-CAPS LABEL (e.g. 'MISSING EXCEL EXPERIENCE')",
-"keyword": "SHORT ALL-CAPS LABEL FOR THIS STRENGTH",
+      "keyword": "3-5 WORD ALL-CAPS LABEL",
       "lead": "One sentence naming the specific employer, role, outcome, or metric from their profile.",
       "connection": "One sentence connecting that specific experience to the job requirement, using the job's own language.",
       "action": "One concrete instruction — exactly what to write, lead with, or name in the application."
@@ -147,9 +149,9 @@ Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
   ],
   "risk_bullets": [
     {
-      "keyword": "SHORT ALL-CAPS LABEL FOR THIS RISK",
+      "keyword": "3-5 WORD ALL-CAPS LABEL",
       "gap": "One sentence naming the specific gap clearly and without sugar-coating.",
-      "reframe": "One to two sentences: the adjacent evidence that bridges it, plus exact cover letter language to use.",
+      "reframe": "One to two sentences: the adjacent evidence that bridges it. No quoted language.",
       "severity": "low | medium | high"
     }
   ],
@@ -159,9 +161,7 @@ Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
     "address_gap": "Specific gap to address and how — or null if no risks",
     "tone": "One short phrase"
   }
-}`
 }
-
 // ─── Formatters (structured → string for backward compat) ────────────────────
 
 function formatWhyBullet(b: WhyBullet): string {
