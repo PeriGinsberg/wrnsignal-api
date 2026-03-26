@@ -218,12 +218,16 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     .map((b: any) => String(b.text ?? ""))
     .join("")
 
- const clean = rawJson
-  .replace(/^```json\s*/im, "")
-  .replace(/^```\s*/im, "")
-  .replace(/```\s*$/im, "")
-  .replace(/```/g, "")
-  .trim()
+// Strip all markdown fences and find the JSON object
+const fenceStripped = rawJson.replace(/```json|```/gi, "").trim()
+
+// Find the first { and last } to extract just the JSON
+const firstBrace = fenceStripped.indexOf("{")
+const lastBrace = fenceStripped.lastIndexOf("}")
+if (firstBrace === -1 || lastBrace === -1) {
+  throw new Error(`V5 no JSON object found. Raw snippet: ${rawJson.slice(0, 200)}`)
+}
+const clean = fenceStripped.slice(firstBrace, lastBrace + 1)
 
   let parsed: {
     why_bullets: WhyBullet[]
