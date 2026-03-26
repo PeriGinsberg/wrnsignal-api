@@ -218,11 +218,12 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     .map((b: any) => String(b.text ?? ""))
     .join("")
 
-  const clean = rawJson
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim()
+ const clean = rawJson
+  .replace(/^```json\s*/im, "")
+  .replace(/^```\s*/im, "")
+  .replace(/```\s*$/im, "")
+  .replace(/```/g, "")
+  .trim()
 
   let parsed: {
     why_bullets: WhyBullet[]
