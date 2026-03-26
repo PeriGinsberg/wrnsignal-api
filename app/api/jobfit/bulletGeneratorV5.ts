@@ -116,6 +116,9 @@ ${out.decision} (score: ${out.score})
 
 ### On risk reframes
 - Don't just name the gap — reframe it.
+- CRITICAL: The reframe must cite only evidence that actually appears in the profile text. 
+  Never say "you likely did X" or "you probably Y" — only reference what is explicitly stated.
+  If there is no adjacent evidence in the profile, say so plainly and give one action instruction only.
 - Show the student what adjacent experience they have that partially bridges it.
 - TOOL RISKS: gap = one sentence. reframe = one sentence naming adjacent evidence + one action. No quoted language.
 - ALL OTHER RISKS: gap = one sentence. reframe = two sentences max. No quoted language.
