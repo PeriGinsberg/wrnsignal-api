@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MISSING = "__MISSING__"
-const COVERLETTER_PROMPT_VERSION = "coverletter_v2_2026_03_14"
+const COVERLETTER_PROMPT_VERSION = "coverletter_v3_2026_03_v5signals"
 const MODEL_ID = "current"
 
 // Supabase (service role)
@@ -252,29 +252,35 @@ function summarizePositioning(positioning: any) {
   const role_angle = {
     label: asCleanString(roleAngleObj?.label),
     why: asCleanString(roleAngleObj?.why),
-    evidence: asStringArray(roleAngleObj?.evidence).slice(0, 4),
+    evidence: Array.isArray(roleAngleObj?.evidence)
+      ? roleAngleObj.evidence.filter(
+          (x: any) => typeof x === "string" && x.trim()
+        )
+      : [],
   }
 
-  const summaryObj =
+  const summaryStatementObj =
     positioning?.summary_statement && typeof positioning.summary_statement === "object"
       ? positioning.summary_statement
       : {}
 
   const summary_statement = {
-    need_summary: asCleanString(summaryObj?.need_summary),
-    why: asCleanString(summaryObj?.why),
-    recommended_summary: asCleanString(summaryObj?.recommended_summary),
-    evidence: asStringArray(summaryObj?.evidence).slice(0, 3),
+    why: asCleanString(summaryStatementObj?.why),
+    recommended_summary: asCleanString(summaryStatementObj?.recommended_summary),
   }
 
   const edits = Array.isArray(positioning?.resume_bullet_edits)
     ? positioning.resume_bullet_edits
-        .slice(0, 4)
-        .map((x: any) => ({
-          before: asCleanString(x?.before),
-          after: asCleanString(x?.after),
-          rationale: asCleanString(x?.rationale),
-        }))
+        .slice(0, 5)
+        .map((e: any) =>
+          e && typeof e === "object"
+            ? {
+                before: asCleanString(e.before),
+                after: asCleanString(e.after),
+                rationale: asCleanString(e.rationale),
+              }
+            : null
+        )
         .filter((x: any) => x.before || x.after || x.rationale)
     : []
 
@@ -306,6 +312,37 @@ function summarizePositioning(positioning: any) {
   return { role_angle, summary_statement, resume_bullet_edits: edits, keyword_analysis }
 }
 
+// ── NEW: extract cover_letter_strategy from V5 jobfit result ─────────────────
+function extractCoverLetterStrategy(jobfitResult: any): string {
+  const s = jobfitResult?.cover_letter_strategy
+  if (!s || typeof s !== "object") return ""
+
+  const parts: string[] = [
+    "## COVER LETTER STRATEGY (from SIGNAL JobFit V5 — follow these instructions precisely)",
+  ]
+
+  if (s.open_with) {
+    parts.push(`OPEN WITH: ${s.open_with}`)
+    parts.push(
+      `  → Your opening paragraph MUST lead with this. Do not bury it in paragraph 2.`
+    )
+  }
+
+  if (s.address_gap) {
+    parts.push(`ADDRESS GAP: ${s.address_gap}`)
+    parts.push(
+      `  → Address this directly in the letter. Do not omit, minimize, or hide it.`
+    )
+  }
+
+  if (s.tone) {
+    parts.push(`TONE: ${s.tone}`)
+  }
+
+  return parts.join("\n")
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function POST(req: Request) {
   try {
     const { profileId, profileText } = await getAuthedProfileText(req)
@@ -315,8 +352,14 @@ export async function POST(req: Request) {
     const jobText = String(body?.job || "").trim()
     if (!jobText) return withCorsJson(req, { error: "Missing job" }, 400)
 
-    const jobfitContext = summarizeJobFit(body?.jobfit)
+    // Accept jobfit_result from the frontend (sent alongside job)
+    const jobfitResult = body?.jobfit_result ?? null
+
+    const jobfitContext = summarizeJobFit(body?.jobfit ?? jobfitResult)
     const positioningContext = summarizePositioning(body?.positioning)
+
+    // Extract the V5 cover letter strategy block (empty string if not present)
+    const coverLetterStrategyBlock = extractCoverLetterStrategy(jobfitResult)
 
     let writingSample = ""
     try {
@@ -348,6 +391,8 @@ export async function POST(req: Request) {
       upstream: {
         jobfit: jobfitContext || MISSING,
         positioning: positioningContext || MISSING,
+        // Include strategy in fingerprint so a re-run with V5 data isn't cached from a V4 run
+        cover_letter_strategy: jobfitResult?.cover_letter_strategy || MISSING,
       },
       system: {
         coverletter_prompt_version: COVERLETTER_PROMPT_VERSION,
@@ -446,6 +491,7 @@ ${profileText}
 JOB DESCRIPTION (verbatim):
 ${jobText}
 
+${coverLetterStrategyBlock ? coverLetterStrategyBlock + "\n" : ""}
 JOB FIT CONTEXT (use for angle only, not new facts):
 ${jobfitContext ? JSON.stringify(jobfitContext, null, 2) : "None provided."}
 
@@ -485,6 +531,7 @@ Return JSON only. No markdown. No commentary.
         jobfit: Boolean(jobfitContext),
         positioning: Boolean(positioningContext),
         writing_sample: Boolean(writingSample),
+        cover_letter_strategy: Boolean(coverLetterStrategyBlock),
       },
     }
 
