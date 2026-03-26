@@ -93,6 +93,20 @@ ${out.decision} (score: ${out.score})
 
 ---
 
+## DECISION-AWARE INSTRUCTIONS
+
+If the decision is "Pass":
+- WHY bullets should NOT make the case for applying. The student is not applying.
+- Instead, generate "Strengths to Remember" bullets — skills and experiences from this evaluation that the student should carry forward to better-fit roles.
+- Keep them brief. The goal is to reinforce what's transferable, not to argue against the Pass.
+- The tone should be: "Here's what this evaluation confirmed about your strengths" — not "here's why you should apply."
+
+If the decision is "Apply" or "Priority Apply":
+- Generate full WHY bullets as normal.
+
+If the decision is "Review":
+- Generate WHY bullets but flag clearly which ones are strong vs adjacent.
+
 ## CRITICAL INSTRUCTIONS
 
 ### On specificity
