@@ -176,7 +176,8 @@ function formatRiskBullet(b: RiskBullet): string {
 
 export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const t0 = Date.now()
-
+// Hard guard: if no risk_codes, skip Claude for risks entirely
+  const hasRisks = Array.isArray(out.risk_codes) && out.risk_codes.length > 0
   const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -223,8 +224,8 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     )
   }
 
-  const whyBullets = parsed.why_bullets ?? []
-  const riskBullets = parsed.risk_bullets ?? []
+ const whyBullets = parsed.why_bullets ?? []
+  const riskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
 
   return {
     why: whyBullets.map(formatWhyBullet),
