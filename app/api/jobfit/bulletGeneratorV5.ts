@@ -9,7 +9,6 @@
  * PLUS why_structured, risk_structured, and cover_letter_strategy.
  */
 
-
 import type { EvalOutput } from "./signals"
 
 // ─── Output types ─────────────────────────────────────────────────────────────
@@ -93,20 +92,6 @@ ${out.decision} (score: ${out.score})
 
 ---
 
-## DECISION-AWARE INSTRUCTIONS
-
-If the decision is "Pass":
-- WHY bullets should NOT make the case for applying. The student is not applying.
-- Instead, generate "Strengths to Remember" bullets — skills and experiences from this evaluation that the student should carry forward to better-fit roles.
-- Keep them brief. The goal is to reinforce what's transferable, not to argue against the Pass.
-- The tone should be: "Here's what this evaluation confirmed about your strengths" — not "here's why you should apply."
-
-If the decision is "Apply" or "Priority Apply":
-- Generate full WHY bullets as normal.
-
-If the decision is "Review":
-- Generate WHY bullets but flag clearly which ones are strong vs adjacent.
-
 ## CRITICAL INSTRUCTIONS
 
 ### On specificity
@@ -124,25 +109,22 @@ If the decision is "Review":
 - RISK bullets: gap = one sentence. reframe = one to two sentences max. Tool risks = one sentence reframe only.
 - Cut every word that doesn't add specific information.
 
-
 ### On action instructions
 - Broaden beyond cover letters — can be resume framing, application strategy, interview prep, or networking.
 - One specific instruction. Not "highlight this" — tell them exactly what to do, where, and how.
-- Never put quoted language in the action instruction. Tell them what to say, not the exact words to use. Instead of: 'Write: "I built audience-first strategies"' — say: 'Lead with your audience research work and frame it as strategic, not just executional.'
+- Never put quoted language in the action instruction. Tell them what to convey, not the exact words to use.
 
 ### On risk reframes
 - Don't just name the gap — reframe it.
 - Show the student what adjacent experience they have that partially bridges it.
-- Give them exact language to use. Never leave them feeling helpless.
 - TOOL RISKS: gap = one sentence. reframe = one sentence naming adjacent evidence + one action. No quoted language.
-- ALL OTHER RISKS: gap = one sentence. reframe = two sentences max. No quoted language — tell them what to convey, not the exact words to use.
+- ALL OTHER RISKS: gap = one sentence. reframe = two sentences max. No quoted language.
 
 ### On voice and tone
 - Write like a sharp advisor talking directly to the student, not like a bot generating output.
 - Vary your sentence structure across bullets — don't start every lead the same way.
-- The connection sentence should feel like an insight, not a label. Show why it matters, don't just state that it does.
+- The connection sentence should feel like an insight, not a label.
 - The action should feel like advice from someone who knows hiring, not a checklist item.
-
 
 ---
 
@@ -152,18 +134,17 @@ Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
 {
   "why_bullets": [
     {
-      "keyword": "3-5 WORD ALL-CAPS LABEL (e.g. 'MISSING EXCEL EXPERIENCE')",
-"keyword": "SHORT ALL-CAPS LABEL FOR THIS STRENGTH",
+      "keyword": "3-5 WORD ALL-CAPS LABEL",
       "lead": "One sentence naming the specific employer, role, outcome, or metric from their profile.",
       "connection": "One sentence connecting that specific experience to the job requirement, using the job's own language.",
-      "action": "One concrete instruction — exactly what to write, lead with, or name in the application."
+      "action": "One concrete instruction — exactly what to do, where, and how."
     }
   ],
   "risk_bullets": [
     {
-      "keyword": "SHORT ALL-CAPS LABEL FOR THIS RISK",
+      "keyword": "3-5 WORD ALL-CAPS LABEL",
       "gap": "One sentence naming the specific gap clearly and without sugar-coating.",
-      "reframe": "One to two sentences: the adjacent evidence that bridges it, plus exact cover letter language to use.",
+      "reframe": "One to two sentences: the adjacent evidence that bridges it. No quoted language.",
       "severity": "low | medium | high"
     }
   ],
@@ -190,8 +171,14 @@ function formatRiskBullet(b: RiskBullet): string {
 
 export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const t0 = Date.now()
-// Hard guard: if no risk_codes, skip Claude for risks entirely
+
+  // Hard guard: if no risk_codes, skip Claude for risks entirely
   const hasRisks = Array.isArray(out.risk_codes) && out.risk_codes.length > 0
+
+  // For PASS decisions, cap WHY bullets at 2 — enough to show transferable strengths
+  // without making an apply case for a role the student shouldn't pursue
+  const isPass = String(out.decision).toLowerCase() === "pass"
+
   const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -207,7 +194,9 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   })
 
   if (!apiResponse.ok) {
-    throw new Error(`Anthropic API error: ${apiResponse.status} ${await apiResponse.text()}`)
+    throw new Error(
+      `Anthropic API error: ${apiResponse.status} ${await apiResponse.text()}`
+    )
   }
 
   const json = await apiResponse.json()
@@ -218,16 +207,16 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     .map((b: any) => String(b.text ?? ""))
     .join("")
 
-// Strip all markdown fences and find the JSON object
-const fenceStripped = rawJson.replace(/```json|```/gi, "").trim()
-
-// Find the first { and last } to extract just the JSON
-const firstBrace = fenceStripped.indexOf("{")
-const lastBrace = fenceStripped.lastIndexOf("}")
-if (firstBrace === -1 || lastBrace === -1) {
-  throw new Error(`V5 no JSON object found. Raw snippet: ${rawJson.slice(0, 200)}`)
-}
-const clean = fenceStripped.slice(firstBrace, lastBrace + 1)
+  // Strip markdown fences and extract JSON object
+  const fenceStripped = rawJson.replace(/```json|```/gi, "").trim()
+  const firstBrace = fenceStripped.indexOf("{")
+  const lastBrace = fenceStripped.lastIndexOf("}")
+  if (firstBrace === -1 || lastBrace === -1) {
+    throw new Error(
+      `V5 no JSON object found. Raw snippet: ${rawJson.slice(0, 200)}`
+    )
+  }
+  const clean = fenceStripped.slice(firstBrace, lastBrace + 1)
 
   let parsed: {
     why_bullets: WhyBullet[]
@@ -243,7 +232,8 @@ const clean = fenceStripped.slice(firstBrace, lastBrace + 1)
     )
   }
 
- const whyBullets = parsed.why_bullets ?? []
+  const allWhyBullets = parsed.why_bullets ?? []
+  const whyBullets = isPass ? allWhyBullets.slice(0, 2) : allWhyBullets
   const riskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
 
   return {
