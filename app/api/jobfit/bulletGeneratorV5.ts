@@ -118,8 +118,7 @@ ${out.decision} (score: ${out.score})
 - Don't just name the gap — reframe it.
 - Show the student what adjacent experience they have that partially bridges it.
 - Give them exact language to use. Never leave them feeling helpless.
-- TOOL RISKS ARE DIFFERENT: If the gap is a missing tool (Excel, PowerPoint, Salesforce, etc), keep it simple. Say whether it's required or preferred, then give one direct instruction: add it to your resume if you have any exposure, or note that you'll need to learn it. Do not over-explain.
-
+- TOOL RISKS ARE DIFFERENT: One sentence gap, one sentence reframe. State whether it's required or preferred. If they have adjacent tool experience, name it. Give one specific action — add it to resume, mention it in cover letter, or both. No quoted language. No paragraphs.
 ### On voice and tone
 - Write like a sharp advisor talking directly to the student, not like a bot generating output.
 - Vary your sentence structure across bullets — don't start every lead the same way.
