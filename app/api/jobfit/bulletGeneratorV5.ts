@@ -106,8 +106,8 @@ ${out.decision} (score: ${out.score})
 - Never leave the student to make the connection themselves.
 
 ### On length (STRICT)
-- Each field — lead, connection, action — must be ONE sentence only.
-- Maximum 20 words per field. 60 words total per bullet.
+- WHY bullets: one sentence per field, 20 words max per field.
+- RISK bullets: gap = one sentence. reframe = one to two sentences max. Tool risks = one sentence reframe only.
 - Cut every word that doesn't add specific information.
 
 ### On action instructions
@@ -115,8 +115,10 @@ ${out.decision} (score: ${out.score})
 - One specific instruction. Not "highlight this" — tell them exactly what to do, where, and how.
 
 ### On risk reframes
-- gap: one sentence, name the gap plainly.
-- reframe: one sentence, name the adjacent evidence and give exact language to use.
+- Don't just name the gap — reframe it.
+- Show the student what adjacent experience they have that partially bridges it.
+- Give them exact language to use. Never leave them feeling helpless.
+- TOOL RISKS ARE DIFFERENT: If the gap is a missing tool (Excel, PowerPoint, Salesforce, etc), keep it simple. Say whether it's required or preferred, then give one direct instruction: add it to your resume if you have any exposure, or note that you'll need to learn it. Do not over-explain.
 
 ### On voice and tone
 - Write like a sharp advisor talking directly to the student, not like a bot generating output.
