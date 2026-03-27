@@ -312,7 +312,6 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "fan services",
       "fan engagement",
       "customer service",
-      "positive attitude",
       "build relationships with players, parents, and coaches",
       "superior customer service",
       "players, parents, and coaches",
@@ -380,7 +379,6 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "empower volunteer coaches",
       "teach & demonstrate core concepts",
       "teach and demonstrate core concepts",
-      "skill development",
       "fundamentals",
       "sportsmanship values",
       "practice sessions",
@@ -1029,7 +1027,6 @@ const FALLBACK_JOB_RULES: Array<{
       "demonstrate core concepts",
       "sportsmanship values",
       "fundamentals",
-      "skill development",
       "practice sessions",
     ],
   },
@@ -1975,56 +1972,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const isLegalOpsContext =
     /\b(law firm|legal operations|legal ops|in-house legal|general counsel|legal department|paralegal|legal team|legal staff|legal counsel)\b/i.test(normalized)
 
-  // Title-based family override — sparse postings often don't have enough body
-  // text for tag-based classification to work. Check first 300 chars (title + opening line).
-  const jobTitleSlice = normalized.slice(0, 300)
-  const jobTitleIsFinance =
-    /\b(finance intern|financial analyst|fp&a|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance)\b/i.test(jobTitleSlice)
-  const jobTitleIsSales =
-    /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
-
-  // Inject default finance units when title signals Finance but body extracted nothing finance-related
-  if (jobTitleIsFinance) {
-    const hasFinanceUnit = requirementUnits.some(
-      (u) => u.key === "financial_analysis" || u.key === "analysis_reporting" || u.key === "accounting_operations"
-    )
-    if (!hasFinanceUnit) {
-      requirementUnits.push(
-        makeJobUnit(
-          "financial_analysis",
-          "financial analysis and investment work",
-          "function",
-          "Finance role — financial analysis and reporting expected",
-          8,
-          "core",
-          "finance_corp"
-        )
-      )
-      requirementUnits.push(
-        makeJobUnit(
-          "analysis_reporting",
-          "analysis, reporting, and measurement work",
-          "execution",
-          "Finance role — reporting and analysis expected",
-          7,
-          "supporting",
-          "finance_corp"
-        )
-      )
-    }
-    if (!functionTags.includes("finance_corp")) {
-      functionTags.push("finance_corp")
-    }
-  }
-
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
-  const jobFamily: JobFamily = isLegalOpsContext
-    ? "Other"
-    : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-      ? "Finance"
-      : jobTitleIsSales
-        ? "Sales"
-        : jobFamilyFromTags
+  const jobFamily: JobFamily = isLegalOpsContext ? "Other" : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
