@@ -1976,7 +1976,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // text for tag-based classification to work correctly.
   // Check first 400 chars (covers title + department + reporting line).
   // Note: norm() lowercases and preserves & so "FP&A" becomes "fp&a"
-  const jobTitleSlice = normalized.slice(0, 400)
+  const jobTitleSlice = normalized.slice(0, 1500)
   const jobTitleIsFinance =
     /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst)\b/i.test(jobTitleSlice)
   const jobTitleIsSales =
