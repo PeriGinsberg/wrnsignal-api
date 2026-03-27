@@ -794,9 +794,6 @@ function buildDomainMismatchBullet(
     ? jobSignals.function_tags
     : []
 
-  // isLegalOps only fires for actual law firm / legal ops roles.
-  // Do NOT trigger on finance/credit/energy jobs that mention "legal, regulatory" risks — 
-  // those jobs legitimately have legal_regulatory function tags from compliance language.
   const jobTextForLegal = [
     String(jobSignals?.internship?.evidence?.internshipLine || ""),
     String(jobSignals?.internship?.evidence?.inPersonLine || ""),
@@ -892,8 +889,18 @@ export function renderBulletsV4(out: EvalOutput): {
   const profileFamilies = Array.isArray(out.profile_signals?.targetFamilies)
     ? out.profile_signals.targetFamilies.map((f: string) => String(f).toLowerCase())
     : []
+  const jobFunctionTags: string[] = Array.isArray(out.job_signals?.function_tags)
+    ? out.job_signals.function_tags.map((t: string) => String(t).toLowerCase())
+    : []
+  const jobHasFinanceTags = jobFunctionTags.includes("finance_corp") ||
+    jobFunctionTags.includes("accounting_finops")
+
+  // Suppress family mismatch when the job has finance function tags — 
+  // credit/project finance/fintech roles often classify as "Other" but are clearly
+  // finance-adjacent and shouldn't show a mismatch warning for Finance-targeting profiles
   const familyMismatch = jobFamilyStr && profileFamilies.length > 0 &&
-    !profileFamilies.includes(jobFamilyStr.toLowerCase())
+    !profileFamilies.includes(jobFamilyStr.toLowerCase()) &&
+    !(jobHasFinanceTags && profileFamilies.includes("finance"))
 
   if (familyMismatch && riskMax > 0) {
     const domainRisk = buildDomainMismatchBullet(jobFamilyStr, out.job_signals, out.profile_signals)
