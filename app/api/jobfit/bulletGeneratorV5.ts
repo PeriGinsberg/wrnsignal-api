@@ -99,6 +99,7 @@ ${out.decision} (score: ${out.score})
 - Name the employer, metric, or outcome. Never say "your background includes X" — say what you specifically did.
 - If the profile_fact mentions a metric, that number MUST appear in the bullet.
 - No comma-separated lists inside a sentence — pick the single strongest detail.
+- CRITICAL: Never confuse the two employers in this prompt. The student worked at their past employer(s) named in the STUDENT PROFILE. The company they are applying to is named in the JOB DESCRIPTION. These are always different companies — never attribute the student's work experience to the target employer, and never say the student worked at the company in the job description.
 
 ### On transferable skills
 - Make the translation explicit. Show them their experience in the hiring manager's language.
