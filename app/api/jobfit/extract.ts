@@ -18,6 +18,7 @@ import crypto from "crypto"
 import { POLICY } from "./policy"
 import type {
   EvidenceKind,
+  FinanceSubFamily,
   FunctionTag,
   JobFamily,
   JobRequirementUnit,
@@ -1952,6 +1953,122 @@ function mergeFunctionTagEvidence(
   return out
 }
 
+
+// ── Finance sub-family detection ─────────────────────────────────────────────
+// Classifies a Finance job or profile into a specific sub-family based on
+// requirement unit keys, function tags, and keyword signals.
+
+function inferJobFinanceSubFamily(
+  normalized: string,
+  requirementUnits: JobRequirementUnit[],
+  functionTags: FunctionTag[]
+): FinanceSubFamily {
+  const unitKeys = requirementUnits.map((u) => u.key)
+  const hasProspecting = unitKeys.includes("prospecting_pipeline_management")
+  const hasFinancialAnalysis = unitKeys.includes("financial_analysis")
+  const hasAccountingOps = unitKeys.includes("accounting_operations")
+  const hasAnalysisReporting = unitKeys.includes("analysis_reporting")
+  const hasPolicyRegulatory = unitKeys.includes("policy_regulatory_research")
+
+  // IB signals: deal language + prospecting/BD + financial analysis
+  const ibKeywords = /\b(investment banking|mergers and acquisitions|m&a|capital raising|ipo|leveraged buyout|lbo|deal advisory|pitch book|pitchbook|coverage group|bulge bracket|analyst program|summer analyst)\b/i
+  if (ibKeywords.test(normalized) || (hasProspecting && hasFinancialAnalysis)) {
+    return "ib"
+  }
+
+  // Project Finance signals: infrastructure/energy + tax equity + deal execution
+  const pfKeywords = /\b(project finance|tax equity|solar|wind|battery storage|renewable energy|ppa|power purchase|infrastructure finance|tax credit|clean energy financing)\b/i
+  if (pfKeywords.test(normalized) && (hasFinancialAnalysis || hasAccountingOps)) {
+    return "project_finance"
+  }
+
+  // Credit signals: borrower/underwriting/default language
+  const creditKeywords = /\b(credit analysis|credit analyst|underwriting|borrower|probability of default|debt capacity|loan|credit risk|credit underwriting|lending|credit memo)\b/i
+  if (creditKeywords.test(normalized) || (hasAccountingOps && hasPolicyRegulatory && !hasAnalysisReporting)) {
+    return "credit"
+  }
+
+  // Asset Management signals: portfolio/fund/AUM language
+  const amKeywords = /\b(asset management|portfolio management|fund analysis|aum|investment management|equity research|fixed income|hedge fund|mutual fund|portfolio analyst|fund accounting)\b/i
+  if (amKeywords.test(normalized)) {
+    return "asset_management"
+  }
+
+  // FP&A / Corporate Finance signals: budgeting/variance/forecasting dominant
+  const fpaKeywords = /\b(fp&a|fpa|financial planning|budgeting|variance analysis|forecasting|board package|board reporting|monthly close|quarterly close|corporate finance|financial controller)\b/i
+  if (fpaKeywords.test(normalized) || (hasAnalysisReporting && hasAccountingOps && !hasProspecting)) {
+    return "fpa"
+  }
+
+  return "other_finance"
+}
+
+function inferProfileFinanceSubFamily(
+  normalized: string,
+  evidenceUnits: ProfileEvidenceUnit[]
+): FinanceSubFamily {
+  const unitKeys = new Set(evidenceUnits.map((u) => u.key))
+
+  // Check evidence unit keys for FP&A signals
+  const hasFpaExecution = unitKeys.has("analysis_reporting") || unitKeys.has("accounting_operations")
+  const hasFinancialAnalysis = unitKeys.has("financial_analysis")
+
+  // FP&A language in profile
+  const fpaKeywords = /\b(fp&a|fpa|variance analysis|board package|board reporting|monthly close|quarterly report|financial planning|budgeting|forecast accuracy|operating expense|opex|p&l|profit and loss)\b/i
+  if (fpaKeywords.test(normalized) && hasFpaExecution) {
+    return "fpa"
+  }
+
+  // IB language in profile
+  const ibKeywords = /\b(investment banking|m&a|mergers|capital markets|ipo|lbo|deal|pitch book|pitchbook|bulge bracket|boutique bank|coverage|ibd)\b/i
+  if (ibKeywords.test(normalized)) {
+    return "ib"
+  }
+
+  // Project Finance in profile
+  const pfKeywords = /\b(project finance|tax equity|renewable energy|solar|wind|infrastructure finance|ppa|deal execution)\b/i
+  if (pfKeywords.test(normalized)) {
+    return "project_finance"
+  }
+
+  // Credit in profile
+  const creditKeywords = /\b(credit analysis|underwriting|borrower|loan analysis|credit risk|probability of default|debt capacity)\b/i
+  if (creditKeywords.test(normalized)) {
+    return "credit"
+  }
+
+  // Asset Management in profile
+  const amKeywords = /\b(asset management|portfolio management|equity research|fund|aum|fixed income|hedge fund)\b/i
+  if (amKeywords.test(normalized)) {
+    return "asset_management"
+  }
+
+  if (hasFinancialAnalysis || hasFpaExecution) {
+    return "fpa" // default for Finance profiles is FP&A if no specific signal
+  }
+
+  return null
+}
+
+// Sub-family compatibility matrix — how penalizable is each pairing?
+// 0 = no penalty, 1 = light, 2 = moderate, 3 = heavy
+const SUBFAMILY_DISTANCE: Record<string, Record<string, number>> = {
+  ib:               { ib: 0, fpa: 2, credit: 1, project_finance: 1, asset_management: 1, other_finance: 1 },
+  fpa:              { ib: 2, fpa: 0, credit: 1, project_finance: 1, asset_management: 1, other_finance: 0 },
+  credit:           { ib: 1, fpa: 1, credit: 0, project_finance: 0, asset_management: 1, other_finance: 0 },
+  project_finance:  { ib: 1, fpa: 1, credit: 0, project_finance: 0, asset_management: 1, other_finance: 0 },
+  asset_management: { ib: 1, fpa: 1, credit: 1, project_finance: 1, asset_management: 0, other_finance: 0 },
+  other_finance:    { ib: 1, fpa: 0, credit: 0, project_finance: 0, asset_management: 0, other_finance: 0 },
+}
+
+export function getFinanceSubFamilyDistance(
+  jobSub: FinanceSubFamily,
+  profileSub: FinanceSubFamily
+): number {
+  if (!jobSub || !profileSub) return 0
+  return SUBFAMILY_DISTANCE[jobSub]?.[profileSub] ?? 1
+}
+
 export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
@@ -1978,7 +2095,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // Note: norm() lowercases and preserves & so "FP&A" becomes "fp&a"
   const jobTitleSlice = normalized.slice(0, 1500)
   const jobTitleIsFinance =
-    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst|credit analyst|underwriting intern|loan analyst|credit underwriting)\b/i.test(jobTitleSlice)
+    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst)\b/i.test(jobTitleSlice)
   const jobTitleIsSales =
     /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
 
@@ -2091,9 +2208,16 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
 
+// Compute finance sub-family when job is Finance
+  const jobFinanceSubFamily: import("./signals").FinanceSubFamily =
+    jobFamily === "Finance"
+      ? inferJobFinanceSubFamily(normalized, requirementUnits, functionTags)
+      : null
+
 return {
     rawHash,
     jobFamily,
+    financeSubFamily: jobFinanceSubFamily,
     analytics,
     function_tags: functionTags,
     signal_debug: {
@@ -2201,5 +2325,18 @@ export function extractProfileSignals(
     yearsExperienceApprox: overrides?.yearsExperienceApprox ?? base.yearsExperienceApprox,
   }
 
-  return merged
+  // Infer finance sub-family from profile evidence when profile targets Finance
+  const profileFinanceFamilies = (merged.targetFamilies || []).map((f: string) => f.toLowerCase())
+  const profileFinanceSubFamily: import("./signals").FinanceSubFamily =
+    profileFinanceFamilies.includes("finance")
+      ? inferProfileFinanceSubFamily(
+          normalized,
+          merged.profile_evidence_units || []
+        )
+      : null
+
+  return {
+    ...merged,
+    financeSubFamily: profileFinanceSubFamily,
+  }
 }

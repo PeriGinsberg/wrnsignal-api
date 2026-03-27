@@ -14,6 +14,7 @@ import type {
   StructuredProfileSignals,
   WhyCode,
 } from "./signals"
+import { getFinanceSubFamilyDistance } from "./extract"
 
 export const SCORING_V5_STAMP =
   "SCORING_V5_STAMP__2026_03_14__CAPABILITY_COVERAGE_AND_DIRECTNESS"
@@ -969,6 +970,44 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       severity: "medium",
       weight: 0,
     })
+  }
+
+  // Finance sub-family mismatch penalty
+  // Only fires when both job and profile are Finance and sub-families are misaligned
+  if (job.jobFamily === "Finance" && job.financeSubFamily && profile.financeSubFamily) {
+    const distance = getFinanceSubFamilyDistance(job.financeSubFamily, profile.financeSubFamily)
+    if (distance >= 2) {
+      // Heavy mismatch (e.g. IB vs FP&A) — penalize and surface risk
+      const baseAmt = computePenaltyAmount("finance_subfamily_mismatch")
+      const amt = distance === 3 ? baseAmt * 1.5 : baseAmt
+      const jobSubLabel = job.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      const profileSubLabel = profile.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      penalties.push({
+        key: "finance_subfamily_mismatch",
+        amount: amt,
+        note: `Finance sub-family mismatch: job=${job.financeSubFamily}, profile=${profile.financeSubFamily}`,
+        risk: {
+          code: "RISK_SUBFAMILY_MISMATCH",
+          job_fact: `This is a ${jobSubLabel} role.`,
+          profile_fact: `Your finance experience is primarily in ${profileSubLabel}.`,
+          risk: `${jobSubLabel.charAt(0).toUpperCase() + jobSubLabel.slice(1)} and ${profileSubLabel} are different tracks within Finance. You have relevant analytical foundations, but the day-to-day work, career path, and required proof points are meaningfully different.`,
+          severity: "medium",
+          weight: -amt,
+        },
+      })
+    } else if (distance === 1) {
+      // Light mismatch — risk flag only, no score penalty
+      const jobSubLabel = job.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      const profileSubLabel = profile.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      riskOnlyCodes.push({
+        code: "RISK_SUBFAMILY_MISMATCH",
+        job_fact: `This is a ${jobSubLabel} role.`,
+        profile_fact: `Your finance experience is primarily in ${profileSubLabel}.`,
+        risk: `Your ${profileSubLabel} background is adjacent to ${jobSubLabel}. The analytical skills transfer, but expect questions about the gap in deal-specific or domain-specific experience.`,
+        severity: "low",
+        weight: 0,
+      })
+    }
   }
 
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {

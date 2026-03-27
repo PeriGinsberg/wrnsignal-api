@@ -17,6 +17,7 @@ export type PenaltyKey =
   | "missing_required_system_proof"
   | "missing_ownership_scope_proof"
   | "credential_requirement_mismatch"
+  | "finance_subfamily_mismatch"
 
 export type Severity = 1 | 2 | 3 | 4 | 5
 
@@ -208,6 +209,12 @@ export const POLICY: JobFitPolicy = {
       label: "Professional credential or enrollment required",
       severity: 5,
       multiplier: 5.0,
+      maxStackCount: 1,
+    },
+    finance_subfamily_mismatch: {
+      label: "Finance sub-family mismatch (e.g. IB vs FP&A)",
+      severity: 3,
+      multiplier: 2.2,
       maxStackCount: 1,
     },
   },

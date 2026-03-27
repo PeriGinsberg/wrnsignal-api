@@ -1,4 +1,4 @@
-﻿// FILE: app/api/jobfit/signals.ts
+// FILE: app/api/jobfit/signals.ts
 //
 // Canonical JobFit V3 signals + evidence contract.
 // Evidence-first WHY pipeline.
@@ -17,6 +17,16 @@ export type JobFamily =
   | "Government"
   | "PreMed"
   | "Other"
+
+// Sub-family for Finance jobs — distinguishes IB, FP&A, credit, etc.
+export type FinanceSubFamily =
+  | "ib"              // Investment Banking: M&A, capital markets, deal advisory
+  | "fpa"             // FP&A / Corporate Finance: forecasting, variance, budgeting
+  | "credit"          // Credit / underwriting: borrower analysis, default risk
+  | "project_finance" // Project Finance: infrastructure, energy, tax equity
+  | "asset_management"// Asset / portfolio management: fund analysis, PM
+  | "other_finance"   // Finance but sub-family unclear
+  | null              // Not a Finance job
 
 export type LocationMode = "in_person" | "hybrid" | "remote" | "unclear"
 
@@ -107,11 +117,13 @@ export type StructuredProfileSignals = {
   function_tags?: FunctionTag[]
   function_tag_evidence?: Partial<Record<FunctionTag, string[]>>
   profile_evidence_units?: ProfileEvidenceUnit[]
+  financeSubFamily?: FinanceSubFamily
 }
 
 export type StructuredJobSignals = {
   rawHash: string
   jobFamily: JobFamily
+  financeSubFamily: FinanceSubFamily
   analytics: { isHeavy: boolean; isLight: boolean }
   function_tags?: FunctionTag[]
   signal_debug?: {
