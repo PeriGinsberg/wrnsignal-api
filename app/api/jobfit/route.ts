@@ -168,6 +168,15 @@ export async function POST(req: NextRequest) {
     const preferredLocations = (authed as any)?.targetLocations ?? null
     const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (authed as any)?.userId || MISSING
 
+    // Warn loudly in logs if we can't identify this user — helps catch future contamination
+    if (profileId === MISSING) {
+      console.warn("[jobfit/route] WARNING: profileId resolved to MISSING — cache disabled for this request. Check getAuthedProfileText return shape.", {
+        hasProfileText: !!profileText,
+        hasResumeText: !!resumeText,
+        authedKeys: authed ? Object.keys(authed as any) : [],
+      })
+    }
+
     // Use resume_text as primary profile source — fall back to profile_text
     const effectiveProfileText = resumeText || profileText
 
@@ -214,7 +223,11 @@ export async function POST(req: NextRequest) {
 
     const supabase = await getSupabaseAdmin()
 
-    if (supabase && !forceRerun) {
+    // SAFETY: never serve cached results if we don't have a real profile identity.
+    // If profileId is MISSING, a cache hit could return a different user's result.
+    const hasRealProfileId = profileId && profileId !== MISSING
+
+    if (supabase && !forceRerun && hasRealProfileId) {
       try {
         const { data: existingRun } = await supabase
           .from("jobfit_runs")
@@ -280,7 +293,7 @@ export async function POST(req: NextRequest) {
 
     const result = enforceClientFacingRules(raw as any)
 
-    if (supabase) {
+    if (supabase && hasRealProfileId) {
       try {
         await supabase.from("jobfit_runs").insert({
           client_profile_id: profileId,
