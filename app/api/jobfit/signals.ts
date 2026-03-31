@@ -153,6 +153,8 @@ credentialRequired: boolean
   requiresAECExperience: boolean
   requiresDomainIndustryExperience: boolean
   detectedDomain: string | null
+  requiresSoftCredential: boolean
+  softCredentialDetail: string | null
   requirement_units?: JobRequirementUnit[]
   internship?: {
     isInternship: boolean

@@ -2188,7 +2188,111 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const requiresCPA = includesAny(normalized, cpaKeywords)
   const requiresGradDegree = includesAny(normalized, gradDegreeKeywords)
 
-  const credentialRequired = requiresLawSchool || requiresMedSchool || requiresCPA || requiresGradDegree
+  // ── Hard-gate credential detection ────────────────────────────────────────
+  // These are legal/licensing requirements the candidate cannot work around.
+  // Each category reads from policy keywords so they can be updated without
+  // changing this file.
+
+  // Already detected above: requiresLawSchool, requiresMedSchool, requiresCPA,
+  // requiresGradDegree
+
+  // Securities / FINRA registrations + SAFE Act / NMLS
+  const finraKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.finraKeywords
+  ).map(norm)
+  const requiresFinraLicense = finraKeywords.length
+    ? includesAny(normalized, finraKeywords)
+    : /\b(series [0-9]+|finra registration|finra license|securities license|registered representative|safe act|nmls|mortgage loan originator|sie required)\b/i.test(normalized)
+
+  // Life / P&C insurance licenses
+  const insuranceLicenseKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.insuranceLicenseKeywords
+  ).map(norm)
+  const requiresInsuranceLicense = insuranceLicenseKeywords.length
+    ? includesAny(normalized, insuranceLicenseKeywords)
+    : /\b(life insurance license required|insurance license required|p&c license|property and casualty license)\b/i.test(normalized)
+
+  // Real estate license
+  const realEstateLicenseKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.realEstateLicenseKeywords
+  ).map(norm)
+  const requiresRealEstateLicense = realEstateLicenseKeywords.length
+    ? includesAny(normalized, realEstateLicenseKeywords)
+    : /\b(real estate license required|real estate licensed|real estate broker license)\b/i.test(normalized)
+
+  // Teaching credential
+  const teachingCredentialKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.teachingCredentialKeywords
+  ).map(norm)
+  const requiresTeachingCredential = teachingCredentialKeywords.length
+    ? includesAny(normalized, teachingCredentialKeywords)
+    : /\b(teaching certificate required|teaching license required|state teaching credential|teacher certification required)\b/i.test(normalized)
+
+  // Professional Engineer license
+  const engineeringLicenseKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.engineeringLicenseKeywords
+  ).map(norm)
+  const requiresPELicense = engineeringLicenseKeywords.length
+    ? includesAny(normalized, engineeringLicenseKeywords)
+    : /\b(pe license|professional engineer required|licensed professional engineer|p\.e\. required)\b/i.test(normalized)
+
+  // CDL
+  const cdlKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.cdlKeywords
+  ).map(norm)
+  const requiresCDL = cdlKeywords.length
+    ? includesAny(normalized, cdlKeywords)
+    : /\b(cdl required|commercial driver.s license|class [ab] cdl)\b/i.test(normalized)
+
+  // ── Risk-flag credential detection (not gates, but significant gaps) ────
+  const cfaKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.cfaKeywords
+  ).map(norm)
+  const requiresCFA = cfaKeywords.length
+    ? includesAny(normalized, cfaKeywords)
+    : /\b(cfa required|cfa charterholder required|chartered financial analyst required)\b/i.test(normalized)
+
+  const cfpKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.cfpKeywords
+  ).map(norm)
+  const requiresCFP = cfpKeywords.length
+    ? includesAny(normalized, cfpKeywords)
+    : /\b(cfp required|certified financial planner required)\b/i.test(normalized)
+
+  const pmpKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.pmpKeywords
+  ).map(norm)
+  const requiresPMP = pmpKeywords.length
+    ? includesAny(normalized, pmpKeywords)
+    : /\b(pmp required|pmp certification required|project management professional required)\b/i.test(normalized)
+
+  const socialWorkKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.socialWorkLicenseKeywords
+  ).map(norm)
+  const requiresSocialWorkLicense = socialWorkKeywords.length
+    ? includesAny(normalized, socialWorkKeywords)
+    : /\b(lcsw required|lmsw required|licensed clinical social worker|social work license required)\b/i.test(normalized)
+
+  // ── Aggregate flags ──────────────────────────────────────────────────────
+
+  // Hard gate — any of these = candidate cannot legally do the job
+  const requiresHardCredential =
+    requiresLawSchool ||
+    requiresMedSchool ||
+    requiresCPA ||
+    requiresGradDegree ||
+    requiresFinraLicense ||
+    requiresInsuranceLicense ||
+    requiresRealEstateLicense ||
+    requiresTeachingCredential ||
+    requiresPELicense ||
+    requiresCDL
+
+  // Soft credential — significant gap, surface as risk flag not gate
+  const requiresSoftCredential =
+    requiresCFA || requiresCFP || requiresPMP || requiresSocialWorkLicense
+
+  const credentialRequired = requiresHardCredential
 
   const credentialDetail = requiresLawSchool
     ? "law school enrollment or JD"
@@ -2198,6 +2302,26 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     ? "CPA license"
     : requiresGradDegree
     ? "graduate degree"
+    : requiresFinraLicense
+    ? "FINRA registration or securities license"
+    : requiresInsuranceLicense
+    ? "insurance license (life, P&C, or health)"
+    : requiresRealEstateLicense
+    ? "real estate license"
+    : requiresTeachingCredential
+    ? "teaching certificate or credential"
+    : requiresPELicense
+    ? "Professional Engineer (PE) license"
+    : requiresCDL
+    ? "Commercial Driver's License (CDL)"
+    : requiresCFA
+    ? "CFA charterholder designation"
+    : requiresCFP
+    ? "CFP certification"
+    : requiresPMP
+    ? "PMP certification"
+    : requiresSocialWorkLicense
+    ? "social work license (LCSW/LMSW)"
     : null
 
   const isGovernment =
@@ -2377,6 +2501,8 @@ return {
     requiresAECExperience: requiresAECExperience,
     requiresDomainIndustryExperience: requiresDomainIndustryExperience,
     detectedDomain: detectedDomain,
+    requiresSoftCredential: requiresSoftCredential,
+    softCredentialDetail: requiresSoftCredential ? (credentialDetail || null) : null,
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
     internship: detectInternshipSignals(jobTextRaw),

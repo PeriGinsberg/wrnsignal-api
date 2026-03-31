@@ -71,6 +71,20 @@ export type ExtractionPolicy = {
     medSchoolKeywords: string[]
     cpaKeywords: string[]
     graduateDegreeKeywords: string[]
+    // Hard gate credentials — candidate legally cannot perform role without these
+    finraKeywords: string[]         // Securities / FINRA registrations
+    insuranceLicenseKeywords: string[] // Life, P&C insurance licenses
+    realEstateLicenseKeywords: string[] // Real estate license/broker
+    teachingCredentialKeywords: string[] // Teaching certificate/license
+    engineeringLicenseKeywords: string[] // PE license
+    cdlKeywords: string[]           // Commercial driver's license
+    // Risk-flag credentials — significant gap but not legal barrier
+    cfaKeywords: string[]           // CFA charterholder
+    cfpKeywords: string[]           // CFP certification
+    pmpKeywords: string[]           // PMP certification
+    socialWorkLicenseKeywords: string[] // LCSW / LMSW
+    pharmacyLicenseKeywords: string[]   // PharmD / pharmacy license
+    physicalTherapyLicenseKeywords: string[] // PT license
   }
 }
 
@@ -427,6 +441,12 @@ export const POLICY: JobFitPolicy = {
         "registered nurse",
         "nursing license",
         "clinical license",
+        "lpn", "licensed practical nurse",
+        "nurse practitioner", "np required",
+        "physician assistant", "pa-c",
+        "emt", "paramedic certification",
+        "dental license", "dds required", "dmd required",
+        "occupational therapist", "ot license",
       ],
       cpaKeywords: [
         "cpa required",
@@ -434,6 +454,10 @@ export const POLICY: JobFitPolicy = {
         "certified public accountant required",
         "active cpa",
         "must hold a cpa",
+        "cma required",
+        "certified management accountant",
+        "cia required",
+        "certified internal auditor",
       ],
       graduateDegreeKeywords: [
         "phd required",
@@ -443,6 +467,87 @@ export const POLICY: JobFitPolicy = {
         "master's required",
         "master's degree required",
       ],
-    },
+      finraKeywords: [
+        "series 3", "series 6", "series 7", "series 24", "series 57",
+        "series 63", "series 65", "series 66", "series 79", "series 82",
+        "series 99",
+        "finra registration", "finra license", "finra registered",
+        "finra series", "must be finra",
+        "securities license", "securities registration",
+        "investment adviser representative",
+        "registered representative",
+        "sie exam required", "sie required", "sie license",
+        "securities industry essentials",
+        "safe act", "nmls", "mortgage loan originator",
+        "nationwide mortgage licensing",
+      ],
+      insuranceLicenseKeywords: [
+        "life insurance license", "life insurance license required",
+        "life insurance licensed", "must hold a life insurance license",
+        "property and casualty license", "p&c license",
+        "p and c license", "property & casualty license",
+        "insurance license required", "active insurance license",
+        "must be licensed in", "state insurance license",
+        "health insurance license",
+        "variable annuity license",
+      ],
+      realEstateLicenseKeywords: [
+        "real estate license required", "real estate license",
+        "must hold a real estate license", "real estate licensed",
+        "active real estate license", "real estate broker license",
+        "salesperson license", "realtor license",
+        "state real estate license",
+      ],
+      teachingCredentialKeywords: [
+        "teaching certificate required", "teaching license required",
+        "state teaching credential", "valid teaching certificate",
+        "teacher certification required", "must be certified to teach",
+        "educator certification", "teaching licensure",
+        "standard teaching certificate",
+      ],
+      engineeringLicenseKeywords: [
+        "pe license", "professional engineer license",
+        "professional engineer required", "licensed professional engineer",
+        "pe required", "p.e. required", "p.e. license",
+        "must be a licensed engineer",
+        "engineering license required",
+      ],
+      cdlKeywords: [
+        "cdl required", "commercial driver's license",
+        "commercial drivers license", "class a cdl",
+        "class b cdl", "cdl license required",
+        "valid cdl", "must hold a cdl",
+      ],
+      cfaKeywords: [
+        "cfa required", "cfa charterholder required",
+        "cfa designation required", "must hold cfa",
+        "chartered financial analyst required",
+      ],
+      cfpKeywords: [
+        "cfp required", "cfp certification required",
+        "certified financial planner required",
+        "must hold cfp", "cfp designation",
+      ],
+      pmpKeywords: [
+        "pmp required", "pmp certification required",
+        "project management professional required",
+        "must hold pmp", "pmp certified required",
+      ],
+      socialWorkLicenseKeywords: [
+        "lcsw required", "licensed clinical social worker",
+        "lmsw required", "licensed master social worker",
+        "social work license required", "must be licensed social worker",
+      ],
+      pharmacyLicenseKeywords: [
+        "pharmd required", "pharmacy license required",
+        "licensed pharmacist", "pharmacy degree required",
+        "must be a licensed pharmacist",
+      ],
+      physicalTherapyLicenseKeywords: [
+        "pt license required", "physical therapist license",
+        "licensed physical therapist", "dpt required",
+        "physical therapy license required",
+      ],
+    }
   },
 }

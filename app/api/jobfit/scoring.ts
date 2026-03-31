@@ -890,6 +890,20 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     console.log("[scoring] Domain industry experience risk flag added:", domain)
   }
 
+  // Soft credential gap — CFA, CFP, PMP, LCSW etc. Not a legal barrier but
+  // a meaningful gap worth flagging. Risk only, no score penalty.
+  if ((job as any).requiresSoftCredential && (job as any).softCredentialDetail) {
+    const detail = (job as any).softCredentialDetail
+    riskOnlyCodes.push({
+      code: "RISK_CREDENTIAL_PREFERRED",
+      job_fact: `Job lists ${detail} as a requirement or strong preference.`,
+      profile_fact: "Profile does not show this certification.",
+      risk: `${detail} is listed as a requirement. While you can apply without it, expect this to come up — address it directly in your cover letter and show you understand what the certification requires.`,
+      severity: "low",
+    })
+    console.log("[scoring] Soft credential risk flag added:", detail)
+  }
+
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     const yearsGap = job.yearsRequired - profile.yearsExperienceApprox
     if (yearsGap > 0.5) {
