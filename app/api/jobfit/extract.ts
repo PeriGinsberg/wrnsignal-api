@@ -1667,7 +1667,8 @@ function extractYearsRequired(jobText: string): number | null {
     const m = jobText.match(r)
     if (m && m[1]) {
       const v = parseInt(String(m[1]), 10)
-      if (!Number.isNaN(v) && v >= 0 && v <= 20) return v
+      // 0 minimum means entry-level — treat as no meaningful requirement
+      if (!Number.isNaN(v) && v > 0 && v <= 20) return v
     }
   }
   return null

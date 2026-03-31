@@ -376,7 +376,19 @@ export const POLICY: JobFitPolicy = {
     mba: { keywords: ["mba required", "master of business administration required"] },
 
     years: {
-      patterns: [/(\d+)\+?\s*(years|yrs)\s*of\s*(experience|exp)/i, /minimum\s*(\d+)\s*(years|yrs)/i],
+      patterns: [
+        // Range pattern — "0-2 years", "1-3 years", "0–2 years" etc.
+        // We capture the MINIMUM (first number). If min is 0, extractYearsRequired
+        // returns 0 which the caller treats as null (no meaningful minimum).
+        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years|yrs)\s*of\s*(experience|exp)/i,
+        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years|yrs)/i,
+        // Explicit minimum
+        /minimum\s*(\d+)\s*(years|yrs)/i,
+        // Standard "N+ years of experience"
+        /(\d+)\+\s*(years|yrs)\s*of\s*(experience|exp)/i,
+        // Plain "N years of experience" — only if no range present
+        /(\d+)\s*(years|yrs)\s*of\s*(experience|exp)/i,
+      ],
     },
 
     grad: {
