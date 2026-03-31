@@ -65,7 +65,7 @@ export async function runJobFit(args: {
 
   const decisionInitial = decisionFromScore(scored.score)
   const decisionAfterGate = applyGateOverrides(decisionInitial, gate)
-  const decisionFinal = applyRiskDowngrades(decisionAfterGate, scored.penaltySum)
+  const decisionFinal = applyRiskDowngrades(decisionAfterGate, scored.penaltySum, scored.riskCodes)
 
   const baseOut: EvalOutput = {
     decision: decisionFinal,
