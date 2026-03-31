@@ -148,6 +148,8 @@ credentialRequired: boolean
   requiredTools: string[]
   preferredTools: string[]
   reportingSignals: { strong: boolean }
+  isSeniorRole: boolean
+  isTrainingProgram: boolean
   requirement_units?: JobRequirementUnit[]
   internship?: {
     isInternship: boolean

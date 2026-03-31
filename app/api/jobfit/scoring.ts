@@ -847,6 +847,21 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     }
   }
 
+  // Seniority mismatch — fire a risk flag when the job title signals a senior/manager
+  // level and the candidate has <= 2 years of experience. This catches cases where
+  // keyword match is strong but the role is structurally above the candidate's level.
+  if (job.isSeniorRole && profile.yearsExperienceApprox !== null && profile.yearsExperienceApprox <= 2) {
+    riskOnlyCodes.push({
+      code: "RISK_EXPERIENCE",
+      job_fact: "Job title indicates a senior, manager, or leadership-level role.",
+      profile_fact: `Profile shows approximately ${profile.yearsExperienceApprox} year${profile.yearsExperienceApprox === 1 ? "" : "s"} of experience.`,
+      risk: "This role is titled at a level above where early-career candidates are typically competitive. Strong keyword match alone does not overcome a seniority gap — hiring managers screen on title-level experience first.",
+      severity: "medium",
+      weight: -8,
+    })
+    console.log("[scoring] Seniority mismatch risk flag added — isSeniorRole + low experience")
+  }
+
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     const yearsGap = job.yearsRequired - profile.yearsExperienceApprox
     if (yearsGap > 0.5) {

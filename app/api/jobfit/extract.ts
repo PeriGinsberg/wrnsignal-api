@@ -1210,6 +1210,15 @@ function scoreJobLine(line: string): number {
   if (/\b(equal opportunity|benefits|compensation may vary|about us|who we are|our values)\b/i.test(line)) score -= 5
   if (t.length < 16) score -= 2
 
+  // Aspirational / learning language — these describe skills the candidate WILL GAIN,
+  // not skills they must already have. Penalise so lines score below the < 2 threshold
+  // and are dropped from requirement extraction entirely.
+  // Examples: "you will learn Excel", "gain exposure to financial modeling",
+  // "training provided on Salesforce", "develop your skills in PowerPoint"
+  if (
+    /\b(you will learn|you('ll| will) (gain|develop|build|grow|be (trained|taught|introduced|exposed)|acquire)|gain exposure to|exposure to|training (will be|is) provided|training provided|we('ll| will) train|on.the.job training|learn (how to|to use|the tools)|be introduced to|build your (skills|knowledge|foundation)|develop your (skills|understanding)|skills? (will be )?(taught|developed|built|gained))\b/i.test(line)
+  ) score -= 6
+
   return score
 }
 
@@ -2099,6 +2108,13 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobTitleIsSales =
     /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
 
+  // Seniority detection — check the first 300 chars (title line).
+  // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
+  const isSeniorRole =
+    /\b(senior|lead|manager|director|vp|vice president|head of|principal|associate director|associate manager)\b/i.test(
+      normalized.slice(0, 300)
+    )
+
   // Inject default finance units when title signals Finance but body extracted nothing finance-related
   if (jobTitleIsFinance) {
     const hasFinanceUnit = requirementUnits.some(
@@ -2204,6 +2220,17 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
   const { required, preferred } = extractToolRequirements(jobTextRaw)
 
+  // Training program detection — if the job describes skills the candidate WILL LEARN
+  // rather than skills they must already have, flag it so scoring can apply a softer posture.
+  const jobTextLower = norm(jobTextRaw)
+  const isTrainingProgram =
+    /\b(development program|training program|rotational program|advisor development|advisor training|associate development|associate training|learn and (develop|grow)|skills (you|they|we|our) (will|can) (develop|gain|build|learn)|gain (exposure|experience|skills) in|we('ll| will) teach|on-the-job (training|learning)|training is provided|hands.on training|you will (learn|be trained|be taught|develop skills))\b/i.test(
+      jobTextLower
+    )
+  if (isTrainingProgram) {
+    console.log("[extract] Training program detected — aspirational skills will not be treated as hard requirements")
+  }
+
   const reportingStrong = requirementUnits.some(
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
@@ -2243,6 +2270,8 @@ return {
     gradYearHint,
     requiredTools: required,
     preferredTools: preferred,
+    isSeniorRole: isSeniorRole,
+    isTrainingProgram: isTrainingProgram,
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
     internship: detectInternshipSignals(jobTextRaw),
