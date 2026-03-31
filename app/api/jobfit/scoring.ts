@@ -851,15 +851,26 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   // level and the candidate has <= 2 years of experience. This catches cases where
   // keyword match is strong but the role is structurally above the candidate's level.
   if (job.isSeniorRole && profile.yearsExperienceApprox !== null && profile.yearsExperienceApprox <= 2) {
-    riskOnlyCodes.push({
+    // Seniority mismatch reduces the score directly — a Manager/Director/Senior title
+    // requires experience the candidate doesn't have yet. This should be reflected in
+    // the score, not just surfaced as a risk flag. Penalty of 18 brings a near-perfect
+    // keyword match (97) down to solid Apply range (~79).
+    const seniorityPenaltyAmt = 18
+    const seniorityRisk: RiskCode = {
       code: "RISK_EXPERIENCE",
       job_fact: "Job title indicates a senior, manager, or leadership-level role.",
       profile_fact: `Profile shows approximately ${profile.yearsExperienceApprox} year${profile.yearsExperienceApprox === 1 ? "" : "s"} of experience.`,
       risk: "This role is titled at a level above where early-career candidates are typically competitive. Strong keyword match alone does not overcome a seniority gap — hiring managers screen on title-level experience first.",
       severity: "medium",
-      weight: -8,
+      weight: -seniorityPenaltyAmt,
+    }
+    penalties.push({
+      key: "experience_years_gap",
+      amount: seniorityPenaltyAmt,
+      note: "Seniority mismatch — manager/senior-level title vs early-career profile",
+      risk: seniorityRisk,
     })
-    console.log("[scoring] Seniority mismatch risk flag added — isSeniorRole + low experience")
+    console.log("[scoring] Seniority mismatch penalty applied — score impact:", -seniorityPenaltyAmt)
   }
 
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
