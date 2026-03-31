@@ -2109,6 +2109,11 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobTitleIsSales =
     /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
 
+  // Marketing title detection — prevents BD-support language in marketing roles
+  // from triggering sales classification
+  const jobTitleIsMarketing =
+    /\b(marketing coordinator|marketing manager|marketing associate|marketing intern|marketing specialist|marketing director|brand manager|brand coordinator|content manager|communications coordinator|communications manager|growth manager|product marketing)\b/i.test(jobTitleSlice)
+
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
   const isSeniorRole =
@@ -2153,11 +2158,13 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
     ? "Other"
-    : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-      ? "Finance"
-      : jobTitleIsSales
-        ? "Sales"
-        : jobFamilyFromTags
+    : jobTitleIsMarketing && jobFamilyFromTags === "Sales"
+      ? "Marketing"
+      : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
+        ? "Finance"
+        : jobTitleIsSales
+          ? "Sales"
+          : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
@@ -2212,9 +2219,17 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
       ].includes(u.key)
     ).length >= 2
 
-  const isSalesHeavy =
-  includesAny(normalized, salesKeywords) ||
-  explicitSalesEvidence
+  // Hard sales keywords — quota, commission, closing, cold call are unambiguous
+  // regardless of job title
+  const hardSalesKeywords = ["quota", "commission", "closing", "cold call", "cold calling"]
+  const hasHardSalesSignal = includesAny(normalized, hardSalesKeywords)
+
+  // For marketing-titled roles, only flag as sales-heavy if hard sales keywords
+  // are present. BD support language (pitch, proposals, leads) is normal in
+  // marketing roles and should not trigger sales classification.
+  const isSalesHeavy = jobTitleIsMarketing
+    ? hasHardSalesSignal
+    : includesAny(normalized, salesKeywords) || explicitSalesEvidence
 
   const isContract = includesAny(normalized, contractKeywords)
   const isHourly = includesAny(normalized, hourlyKeywords) || /\$\s*\d+(\.\d+)?\s*\/\s*(hr|hour)\b/i.test(jobTextRaw)
