@@ -150,6 +150,9 @@ credentialRequired: boolean
   reportingSignals: { strong: boolean }
   isSeniorRole: boolean
   isTrainingProgram: boolean
+  requiresAECExperience: boolean
+  requiresDomainIndustryExperience: boolean
+  detectedDomain: string | null
   requirement_units?: JobRequirementUnit[]
   internship?: {
     isInternship: boolean

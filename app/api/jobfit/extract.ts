@@ -2247,6 +2247,92 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     console.log("[extract] Training program detected — aspirational skills will not be treated as hard requirements")
   }
 
+  // Generic industry domain requirement detection — fires when a job explicitly
+  // requires experience in a domain-specific industry that a generalist
+  // early-career candidate is unlikely to have.
+  //
+  // Detection approach: look for "[industry term] experience/background/knowledge"
+  // or "experience in/with [industry term]" patterns. Industry terms are those
+  // where prior domain exposure is genuinely required (not just preferred).
+  //
+  // AEC, healthcare, legal, financial services, biotech/pharma, real estate,
+  // media/entertainment, and similar verticals all qualify.
+
+  const DOMAIN_INDUSTRY_TERMS = [
+    // AEC
+    "aec",
+    "architecture, engineering",
+    "architecture and engineering",
+    "architecture & engineering",
+    "construction management",
+    "construction industry",
+    // Healthcare / life sciences
+    "healthcare industry",
+    "health care industry",
+    "life sciences",
+    "pharmaceutical industry",
+    "biotech industry",
+    "clinical",
+    // Legal / professional services
+    "legal industry",
+    "law firm",
+    "professional services industry",
+    // Financial services (beyond general finance)
+    "financial services industry",
+    "asset management industry",
+    "private equity industry",
+    "investment banking industry",
+    "insurance industry",
+    // Real estate
+    "real estate industry",
+    "commercial real estate",
+    // Media / entertainment / sports
+    "media industry",
+    "entertainment industry",
+    "sports industry",
+    // Manufacturing / industrial
+    "manufacturing industry",
+    "industrial industry",
+    // Hospitality / retail
+    "hospitality industry",
+    "retail industry",
+  ]
+
+  // Match "[domain] experience/background/knowledge" or
+  // "experience in/with/within [domain]" or
+  // "background in/with [domain]"
+  const domainRequirementPattern = new RegExp(
+    "(" +
+      DOMAIN_INDUSTRY_TERMS.map((t) =>
+        t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      ).join("|") +
+      ")\\s*(experience|background|knowledge|familiarity|exposure)" +
+      "|" +
+      "(experience|background|familiarity|exposure)\\s+(in|with|within|in the)\\s+(" +
+      DOMAIN_INDUSTRY_TERMS.map((t) =>
+        t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      ).join("|") +
+      ")",
+    "i"
+  )
+
+  const domainMatch = domainRequirementPattern.exec(jobTextLower)
+  const requiresDomainIndustryExperience = !!domainMatch
+  const detectedDomain = domainMatch
+    ? (domainMatch[1] || domainMatch[5] || "").trim() || "industry-specific"
+    : null
+
+  // Keep requiresAECExperience as a named alias for backwards compatibility
+  // with any scoring logic that references it directly
+  const requiresAECExperience =
+    requiresDomainIndustryExperience &&
+    !!detectedDomain &&
+    /aec|architecture|construction/i.test(detectedDomain)
+
+  if (requiresDomainIndustryExperience) {
+    console.log("[extract] Domain industry experience requirement detected:", detectedDomain)
+  }
+
   const reportingStrong = requirementUnits.some(
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
@@ -2288,6 +2374,9 @@ return {
     preferredTools: preferred,
     isSeniorRole: isSeniorRole,
     isTrainingProgram: isTrainingProgram,
+    requiresAECExperience: requiresAECExperience,
+    requiresDomainIndustryExperience: requiresDomainIndustryExperience,
+    detectedDomain: detectedDomain,
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
     internship: detectInternshipSignals(jobTextRaw),

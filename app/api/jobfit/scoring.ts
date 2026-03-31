@@ -873,6 +873,23 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     console.log("[scoring] Seniority mismatch penalty applied — score impact:", -seniorityPenaltyAmt)
   }
 
+  // Domain industry experience requirement — fires a risk flag when the job
+  // explicitly requires experience in a specific industry vertical. Generic
+  // detector covers AEC, healthcare, legal, financial services, biotech,
+  // real estate, media, and others. Not a score penalty — candidate may still
+  // apply but should address the gap directly in their cover letter.
+  if ((job as any).requiresDomainIndustryExperience) {
+    const domain = (job as any).detectedDomain || "this specific industry"
+    riskOnlyCodes.push({
+      code: "RISK_DOMAIN_EXPERIENCE",
+      job_fact: `Job requires prior experience in ${domain}.`,
+      profile_fact: "Profile does not show the required industry background.",
+      risk: `This role explicitly requires experience in ${domain}. Without prior exposure, you will need to address this gap directly in your cover letter — highlight any adjacent experience or transferable skills that demonstrate familiarity with the industry context.`,
+      severity: "medium",
+    })
+    console.log("[scoring] Domain industry experience risk flag added:", domain)
+  }
+
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     const yearsGap = job.yearsRequired - profile.yearsExperienceApprox
     if (yearsGap > 0.5) {
