@@ -2111,8 +2111,12 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
   // Marketing title detection — prevents BD-support language in marketing roles
   // from triggering sales classification
+  // Marketing title detection — matches both simple and compound titles
+  // e.g. "Marketing Coordinator", "Marketing and Business Development Coordinator"
   const jobTitleIsMarketing =
-    /\b(marketing coordinator|marketing manager|marketing associate|marketing intern|marketing specialist|marketing director|brand manager|brand coordinator|content manager|communications coordinator|communications manager|growth manager|product marketing)\b/i.test(jobTitleSlice)
+    /\b(marketing coordinator|marketing manager|marketing associate|marketing intern|marketing specialist|marketing director|marketing and business development|brand manager|brand coordinator|content manager|content coordinator|communications coordinator|communications manager|communications specialist|growth manager|product marketing|marketing operations|media coordinator|marketing analyst)\b/i.test(jobTitleSlice) ||
+    // Compound: starts with Marketing + any other words + Coordinator/Manager/etc
+    /^marketing\b.{0,40}\b(coordinator|manager|associate|specialist|director|analyst)\b/i.test(jobTitleSlice.trim())
 
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
@@ -2363,10 +2367,24 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // Training program detection — if the job describes skills the candidate WILL LEARN
   // rather than skills they must already have, flag it so scoring can apply a softer posture.
   const jobTextLower = norm(jobTextRaw)
-  const isTrainingProgram =
-    /\b(development program|training program|rotational program|advisor development|advisor training|associate development|associate training|learn and (develop|grow)|skills (you|they|we|our) (will|can) (develop|gain|build|learn)|gain (exposure|experience|skills) in|we('ll| will) teach|on-the-job (training|learning)|training is provided|hands.on training|you will (learn|be trained|be taught|develop skills))\b/i.test(
-      jobTextLower
-    )
+  // Training program detection — fires when the job itself is structured as a
+  // learning/development program (not when the company mentions learning benefits).
+  //
+  // Key distinction: "you will receive dedicated study time for your SIE" = training program
+  // vs "learning stipends so you can continue to learn and grow" = company benefit, not a program.
+  //
+  // We require either an explicit program name OR structured training language
+  // that is specific to the role, not generic company culture/benefits boilerplate.
+  const isTrainingProgram = (() => {
+    // Explicit program names — high confidence
+    if (/\b(development program|training program|rotational program|advisor development program|advisor training program|associate development program|associate training program)\b/i.test(jobTextLower)) return true
+    // Role-specific structured training language (not benefits boilerplate)
+    if (/\b(you will (learn|be trained|be taught|develop skills)|we('ll| will) teach you|dedicated (study|training) time|on-the-job (training|learning)|training is provided|hands.on training)\b/i.test(jobTextLower)) return true
+    // Skills the candidate WILL gain as part of the role progression
+    if (/\bskills (you|they|we|our) (will|can) (develop|gain|build|learn)\b/i.test(jobTextLower)) return true
+    if (/\bgain (exposure|experience|skills) in\b/i.test(jobTextLower)) return true
+    return false
+  })()
   if (isTrainingProgram) {
     console.log("[extract] Training program detected — aspirational skills will not be treated as hard requirements")
   }
