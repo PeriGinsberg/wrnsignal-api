@@ -1918,7 +1918,7 @@ function defaultConstraintsFromText(tRaw: string, wantsInternship: boolean): Pro
   const t = norm(tRaw)
 
   return {
-    hardNoSales: t.includes("no sales"),
+    hardNoSales: t.includes("no sales") || t.includes("no sales roles"),
     hardNoGovernment: t.includes("no government"),
     hardNoContract: t.includes("no contract") || t.includes("no temporary") || t.includes("no temp"),
     hardNoHourlyPay: t.includes("no hourly"),

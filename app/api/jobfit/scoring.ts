@@ -920,9 +920,9 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         analytical: "analytics, research, and data-driven work",
         strategic: "brand strategy and planning",
         execution: "content creation, events, and coordination",
-        mixed: "a blend of marketing functions",
+        mixed: "analytical and strategic marketing work",
       }
-      const profileLabel = archetypeLabels[profileRoleArchetype] || profileRoleArchetype
+      const profileLabel = archetypeLabels[profileRoleArchetype] || "the roles you are targeting"
       const jobLabel = archetypeLabels[jobArchetype] || jobArchetype
 
       penalties.push({
