@@ -897,11 +897,23 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const profileTargetRoles = ((profile as any)?.statedInterests?.targetRoles || []) as string[]
   const hardNoContentOnly = (profile as any)?.constraints?.hardNoContentOnly as boolean
 
-  if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear" && profileRoleArchetype !== "mixed") {
+  if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear") {
+    // For "mixed" archetypes, check if the mix is analytical+strategic (not execution)
+    // and the job is execution — that's still a meaningful mismatch
+    const profileIsNonExecution =
+      profileRoleArchetype === "analytical" ||
+      profileRoleArchetype === "strategic" ||
+      (profileRoleArchetype === "mixed" &&
+        profileTargetRoles.some(r =>
+          r.includes("analyst") || r.includes("research") || r.includes("strategy") ||
+          r.includes("data") || r.includes("insights") || r.includes("brand strategy")
+        ) &&
+        !profileTargetRoles.some(r =>
+          r.includes("coordinator") || r.includes("content") || r.includes("social media")
+        ))
+
     const mismatch =
-      (profileRoleArchetype === "analytical" && jobArchetype === "execution") ||
-      (profileRoleArchetype === "strategic" && jobArchetype === "execution") ||
-      (profileRoleArchetype === "analytical" && jobArchetype === "strategic" && profileTargetRoles.some(r => r.includes("analyst") || r.includes("research") || r.includes("data")))
+      profileIsNonExecution && jobArchetype === "execution"
 
     if (mismatch) {
       const archetypeLabels: Record<string, string> = {
