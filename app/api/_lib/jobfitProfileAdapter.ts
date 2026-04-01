@@ -225,12 +225,35 @@ function inferConstraints(profileText: string): ProfileConstraints {
     t.includes("no fully remote") ||
     (t.includes("hard constraints") && t.includes("no remote"))
 
-  const hardNoSales = t.includes("no sales") || (t.includes("hard constraints") && t.includes("no sales"))
+  const hardNoSales =
+    t.includes("no sales") ||
+    (t.includes("hard constraints") && t.includes("no sales")) ||
+    t.includes("no sales roles")
 
   const preferNotAnalyticsHeavy =
     t.includes("no heavy analytical") || t.includes("no heavy analytics") || t.includes("not analytics heavy")
 
-  const prefFullTime = t.includes("full-time") || t.includes("full time")
+  const prefFullTime =
+    t.includes("full-time") ||
+    t.includes("full time") ||
+    t.includes("job type: full time") ||
+    t.includes("looking for full time")
+
+  // Explicit content/execution role exclusions
+  const hardNoContentOnly =
+    t.includes("no pure social media") ||
+    t.includes("no content only") ||
+    t.includes("no pure content") ||
+    t.includes("no coordinator role") ||
+    t.includes("no coordinator roles") ||
+    t.includes("no social media content roles") ||
+    (t.includes("hard constraints") && t.includes("content"))
+
+  const hardNoPartTime =
+    t.includes("no part time") ||
+    t.includes("no part-time") ||
+    t.includes("full time only") ||
+    t.includes("full-time only")
 
   return {
     hardNoHourlyPay: t.includes("no hourly"),
@@ -240,7 +263,95 @@ function inferConstraints(profileText: string): ProfileConstraints {
     hardNoGovernment: t.includes("no government"),
     hardNoFullyRemote,
     preferNotAnalyticsHeavy,
+    hardNoContentOnly,
+    hardNoPartTime,
   }
+}
+
+/* ------------------------------ role archetype inference ------------------------------ */
+
+// Classifies the candidate's stated target roles into an archetype.
+// This is used to detect mismatches with job archetypes during scoring.
+function inferRoleArchetype(targetRoles: string): "analytical" | "strategic" | "execution" | "mixed" | "unclear" {
+  const t = lower(targetRoles)
+  if (!t) return "unclear"
+
+  const analyticalSignals = [
+    "analyst", "analytics", "data", "research", "insights", "measurement",
+    "quantitative", "intelligence", "bi ", "business intelligence",
+    "market research", "consumer research", "marketing analyst",
+    "marketing research", "data science", "reporting",
+  ]
+  const strategicSignals = [
+    "strategy", "strategic", "brand strategy", "consulting", "planning",
+    "brand management", "product marketing", "go-to-market", "gtm",
+    "marketing strategy", "growth strategy", "business development",
+    "corporate strategy", "market strategy",
+  ]
+  const executionSignals = [
+    "coordinator", "content", "social media", "events", "operations",
+    "community manager", "copywriter", "creative", "production",
+    "campaign manager", "email marketing", "influencer",
+  ]
+
+  let analytical = 0
+  let strategic = 0
+  let execution = 0
+
+  for (const s of analyticalSignals) if (t.includes(s)) analytical++
+  for (const s of strategicSignals) if (t.includes(s)) strategic++
+  for (const s of executionSignals) if (t.includes(s)) execution++
+
+  const total = analytical + strategic + execution
+  if (total === 0) return "unclear"
+
+  // Dominant archetype — needs to be >60% of signals
+  if (analytical >= strategic && analytical >= execution) {
+    if (analytical / total >= 0.6) return "analytical"
+  }
+  if (strategic >= analytical && strategic >= execution) {
+    if (strategic / total >= 0.6) return "strategic"
+  }
+  if (execution >= analytical && execution >= strategic) {
+    if (execution / total >= 0.6) return "execution"
+  }
+  return "mixed"
+}
+
+// Parses target roles string into an array of individual roles
+function parseTargetRoles(targetRoles: string | null | undefined): string[] {
+  if (!targetRoles) return []
+  return targetRoles
+    .split(/[,;|\/
+]/)
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+// Parses target industries from profile text
+// Looks for explicit industry mentions in target roles or profile text
+function parseTargetIndustries(profileText: string, targetRoles: string): string[] {
+  const t = lower(profileText + " " + targetRoles)
+  const industries: string[] = []
+
+  const industryMap: Record<string, string[]> = {
+    sports: ["sports", "nba", "nfl", "mlb", "nhl", "athletics", "espn", "sports marketing"],
+    entertainment: ["entertainment", "music", "film", "media", "streaming", "gaming"],
+    "consumer goods": ["consumer goods", "cpg", "fmcg", "retail", "ecommerce", "e-commerce"],
+    technology: ["tech", "saas", "software", "startup", "fintech"],
+    finance: ["finance", "financial services", "banking", "investment", "wealth management"],
+    healthcare: ["healthcare", "health", "biotech", "pharma", "medical"],
+    luxury: ["luxury", "fashion", "beauty", "lifestyle"],
+    food: ["food", "beverage", "restaurant", "hospitality"],
+  }
+
+  for (const [industry, signals] of Object.entries(industryMap)) {
+    if (signals.some(s => t.includes(s))) {
+      industries.push(industry)
+    }
+  }
+
+  return industries
 }
 
 /* ------------------------------ location mode inference ------------------------------ */
@@ -457,6 +568,12 @@ export function mapClientProfileToOverrides(args: {
     (Number.isFinite(ps?.gradYear) ? Number(ps.gradYear) : null) ||
     parseGradYear(args.profileText)
 
+  // Parse stated interests into structured form
+  const targetRolesRaw = norm(args.targetRoles || "")
+  const parsedTargetRoles = parseTargetRoles(targetRolesRaw)
+  const roleArchetype = inferRoleArchetype(targetRolesRaw)
+  const targetIndustries = parseTargetIndustries(args.profileText, targetRolesRaw)
+
   return {
     targetFamilies,
     constraints,
@@ -464,6 +581,16 @@ export function mapClientProfileToOverrides(args: {
     tools,
     gradYear,
     yearsExperienceApprox: ps?.yearsExperienceApprox ?? null,
+    // Fully exposed interest signals
+    targetRolesRaw,
+    roleArchetype,
+    statedInterests: {
+      targetRoles: parsedTargetRoles,
+      adjacentRoles: [],
+      targetIndustries,
+    },
+    // Pass resume text through for gate exemption checks
+    resumeText: args.profileText,
   }
 }
 

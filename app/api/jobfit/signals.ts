@@ -62,6 +62,14 @@ export type EvidenceKind =
 
 export type MatchStrength = "direct" | "adjacent"
 
+// Role archetype — classifies the type of work, not the job family.
+// Used to detect mismatches between what the candidate wants and what the job requires.
+// "analytical"  = data, research, measurement, modeling
+// "strategic"   = planning, brand strategy, GTM, consulting
+// "execution"   = coordinator, content, events, operations, social
+// "mixed"       = meaningful blend of 2+ archetypes
+export type RoleArchetype = "analytical" | "strategic" | "execution" | "mixed" | "unclear"
+
 export type ProfileConstraints = {
   hardNoHourlyPay: boolean
   prefFullTime: boolean
@@ -70,6 +78,9 @@ export type ProfileConstraints = {
   hardNoGovernment: boolean
   hardNoFullyRemote: boolean
   preferNotAnalyticsHeavy: boolean
+  // New — explicit content/execution role exclusions
+  hardNoContentOnly: boolean   // "no pure social media content roles", "no coordinator roles"
+  hardNoPartTime: boolean      // "full time only", "no part time"
 }
 
 export type ProfileEvidenceUnit = {
@@ -108,16 +119,27 @@ export type StructuredProfileSignals = {
   gradYear: number | null
   yearsExperienceApprox: number | null
 
+  // Stated interests — now fully exposed as structured signals
   statedInterests?: {
-    targetRoles?: string[]
+    targetRoles?: string[]        // e.g. ["marketing analyst", "brand strategy"]
     adjacentRoles?: string[]
-    targetIndustries?: string[]
+    targetIndustries?: string[]   // e.g. ["sports", "consumer goods"]
   }
+
+  // Role archetype inferred from stated target roles
+  // Used to detect execution/strategy/analytics mismatches
+  roleArchetype?: RoleArchetype
+
+  // Raw target roles string preserved for matching
+  targetRolesRaw?: string
 
   function_tags?: FunctionTag[]
   function_tag_evidence?: Partial<Record<FunctionTag, string[]>>
   profile_evidence_units?: ProfileEvidenceUnit[]
   financeSubFamily?: FinanceSubFamily
+
+  // Resume text — needed for some gate exemption checks
+  resumeText?: string
 }
 
 export type StructuredJobSignals = {
@@ -148,13 +170,6 @@ credentialRequired: boolean
   requiredTools: string[]
   preferredTools: string[]
   reportingSignals: { strong: boolean }
-  isSeniorRole: boolean
-  isTrainingProgram: boolean
-  requiresAECExperience: boolean
-  requiresDomainIndustryExperience: boolean
-  detectedDomain: string | null
-  requiresSoftCredential: boolean
-  softCredentialDetail: string | null
   requirement_units?: JobRequirementUnit[]
   internship?: {
     isInternship: boolean
@@ -176,6 +191,24 @@ credentialRequired: boolean
       dateLine: string | null
     }
   }
+  // Fields added for interest-alignment scoring
+  isSeniorRole: boolean
+  isTrainingProgram: boolean
+  requiresAECExperience: boolean
+  requiresDomainIndustryExperience: boolean
+  detectedDomain: string | null
+  requiresSoftCredential: boolean
+  softCredentialDetail: string | null
+  // Job archetype — what kind of work does this role actually require day-to-day?
+  // "analytical"  = data, research, measurement-heavy
+  // "strategic"   = planning, brand, GTM, consulting-oriented
+  // "execution"   = coordinator, content, events, operations, social-heavy
+  // "mixed"       = meaningful blend
+  jobArchetype: RoleArchetype
+  // True when content/social/events execution makes up the majority of the role
+  isContentExecutionHeavy: boolean
+  // Detected industry vertical (sports, healthcare, tech, finance, etc.)
+  jobIndustry: string | null
 }
 
 export type WhyCode = {

@@ -163,6 +163,15 @@ if (job.credentialRequired) {
     return { type: "force_pass", gateCode: "GATE_REMOTE_MISMATCH", detail: "Hard no remote vs remote job" }
   }
 
+  // Hard no part-time — candidate explicitly wants full-time only
+  if ((profile.constraints as any).hardNoPartTime && (job as any).isPartTime) {
+    return {
+      type: "force_pass",
+      gateCode: "GATE_PARTTIME_MISMATCH",
+      detail: "You are looking for full-time roles only. This posting is part-time.",
+    }
+  }
+
   // If the candidate explicitly says "no heavy analytics", treat heavy analytics as a hard stop.
   // With your updated extract.ts, "Marketing Insights" style roles will now correctly trip this.
  

@@ -2389,6 +2389,71 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     console.log("[extract] Training program detected — aspirational skills will not be treated as hard requirements")
   }
 
+  // ── Job archetype detection ─────────────────────────────────────────────────
+  // Classifies what kind of work this role actually requires day-to-day.
+  // Used to detect mismatches with the candidate's stated role preferences.
+
+  // Content/execution signals — coordinator, content, events, social, operations
+  const contentExecutionHits = [
+    "coordinate posts", "social media calendar", "content calendar",
+    "develop content", "content creation", "social media content",
+    "event coordination", "event planning", "event logistics",
+    "manage social", "community management", "influencer",
+    "blog content", "email newsletter", "graphic design",
+    "canva", "copy", "copywriting",
+  ].filter(term => jobTextLower.includes(term)).length
+
+  const isContentExecutionHeavy = contentExecutionHits >= 3
+
+  // Analytical signals — data, research, measurement, modeling
+  const analyticalHits = [
+    "sql", "python", "tableau", "power bi", "data analysis",
+    "statistical", "regression", "modeling", "quantitative",
+    "market research", "consumer research", "survey", "a/b test",
+    "attribution", "analytics", "reporting", "insights",
+    "data-driven", "kpi", "metrics", "measurement",
+  ].filter(term => jobTextLower.includes(term)).length
+
+  // Strategic signals — planning, brand, GTM, consulting
+  const strategicHits = [
+    "brand strategy", "go-to-market", "gtm", "market strategy",
+    "strategic planning", "competitive analysis", "positioning",
+    "consulting", "advisory", "market entry", "business strategy",
+    "product strategy", "growth strategy", "brand management",
+  ].filter(term => jobTextLower.includes(term)).length
+
+  // Classify job archetype
+  const jobArchetype: "analytical" | "strategic" | "execution" | "mixed" | "unclear" = (() => {
+    const total = analyticalHits + strategicHits + contentExecutionHits
+    if (total === 0) return "unclear"
+    if (analyticalHits >= 5 && analyticalHits > strategicHits && analyticalHits > contentExecutionHits) return "analytical"
+    if (strategicHits >= 3 && strategicHits > analyticalHits && strategicHits > contentExecutionHits) return "strategic"
+    if (contentExecutionHits >= 3 && contentExecutionHits > analyticalHits && contentExecutionHits > strategicHits) return "execution"
+    if (analyticalHits >= 2 || strategicHits >= 2 || contentExecutionHits >= 2) return "mixed"
+    return "unclear"
+  })()
+
+  // ── Job industry detection ──────────────────────────────────────────────────
+  // Detects the industry vertical of the role for interest alignment scoring
+  const jobIndustry: string | null = (() => {
+    if (/(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)/i.test(jobTextLower)) return "sports"
+    if (/(entertainment|music industry|film|streaming|gaming|media entertainment)/i.test(jobTextLower)) return "entertainment"
+    if (/(fashion|luxury|beauty|lifestyle brand|apparel|footwear)/i.test(jobTextLower)) return "luxury/fashion"
+    if (/(consumer goods|cpg|fmcg|packaged goods|food and beverage|beverage brand)/i.test(jobTextLower)) return "consumer goods"
+    if (/(saas|software company|tech company|technology company|startup|fintech)/i.test(jobTextLower)) return "technology"
+    if (/(private equity|investment bank|asset management|hedge fund|venture capital)/i.test(jobTextLower)) return "finance"
+    if (/(healthcare company|hospital|health system|pharmaceutical|biotech)/i.test(jobTextLower)) return "healthcare"
+    if (/(real estate firm|property management|commercial real estate|reit)/i.test(jobTextLower)) return "real estate"
+    return null
+  })()
+
+  if (jobArchetype !== "unclear") {
+    console.log("[extract] Job archetype:", jobArchetype, "| Content hits:", contentExecutionHits, "| Analytical hits:", analyticalHits, "| Strategic hits:", strategicHits)
+  }
+  if (jobIndustry) {
+    console.log("[extract] Job industry detected:", jobIndustry)
+  }
+
   // Generic industry domain requirement detection — fires when a job explicitly
   // requires experience in a domain-specific industry that a generalist
   // early-career candidate is unlikely to have.
@@ -2443,14 +2508,17 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // Match "[domain] experience/background/knowledge" or
   // "experience in/with/within [domain]" or
   // "background in/with [domain]"
+  // Pattern allows for an optional qualifying word between the industry term
+  // and experience/background — e.g. "AEC industry experience" has "industry"
+  // between "AEC" and "experience". Allow up to 2 words in between.
   const domainRequirementPattern = new RegExp(
     "(" +
       DOMAIN_INDUSTRY_TERMS.map((t) =>
         t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       ).join("|") +
-      ")\\s*(experience|background|knowledge|familiarity|exposure)" +
+      ")\\s*(?:\\w+\\s+)?(?:\\w+\\s+)?(experience|background|knowledge|familiarity|exposure)" +
       "|" +
-      "(experience|background|familiarity|exposure)\\s+(in|with|within|in the)\\s+(" +
+      "(experience|background|familiarity|exposure)\\s+(?:in|with|within|in the)\\s+(?:\\w+\\s+)?(" +
       DOMAIN_INDUSTRY_TERMS.map((t) =>
         t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       ).join("|") +
@@ -2521,6 +2589,9 @@ return {
     detectedDomain: detectedDomain,
     requiresSoftCredential: requiresSoftCredential,
     softCredentialDetail: requiresSoftCredential ? (credentialDetail || null) : null,
+    jobArchetype: jobArchetype,
+    isContentExecutionHeavy: isContentExecutionHeavy,
+    jobIndustry: jobIndustry,
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
     internship: detectInternshipSignals(jobTextRaw),

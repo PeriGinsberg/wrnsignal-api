@@ -890,6 +890,86 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     console.log("[scoring] Domain industry experience risk flag added:", domain)
   }
 
+  // ── Role archetype mismatch ─────────────────────────────────────────────────
+  // Fires when the job archetype conflicts with the candidate's stated role targets.
+  const profileRoleArchetype = (profile as any)?.roleArchetype as string | null
+  const jobArchetype = (job as any)?.jobArchetype as string | null
+  const profileTargetRoles = ((profile as any)?.statedInterests?.targetRoles || []) as string[]
+  const hardNoContentOnly = (profile as any)?.constraints?.hardNoContentOnly as boolean
+
+  if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear" && profileRoleArchetype !== "mixed") {
+    const mismatch =
+      (profileRoleArchetype === "analytical" && jobArchetype === "execution") ||
+      (profileRoleArchetype === "strategic" && jobArchetype === "execution") ||
+      (profileRoleArchetype === "analytical" && jobArchetype === "strategic" && profileTargetRoles.some(r => r.includes("analyst") || r.includes("research") || r.includes("data")))
+
+    if (mismatch) {
+      const archetypeLabels: Record<string, string> = {
+        analytical: "analytics, research, and data-driven work",
+        strategic: "brand strategy and planning",
+        execution: "content creation, events, and coordination",
+        mixed: "a blend of marketing functions",
+      }
+      const profileLabel = archetypeLabels[profileRoleArchetype] || profileRoleArchetype
+      const jobLabel = archetypeLabels[jobArchetype] || jobArchetype
+
+      penalties.push({
+        key: "role_archetype_mismatch" as any,
+        amount: 12,
+        label: "Role type mismatch",
+        detail: `Your stated targets focus on ${profileLabel}, but this role is primarily ${jobLabel}. These are different career tracks within marketing.`,
+      })
+      riskOnlyCodes.push({
+        code: "RISK_ROLE_ARCHETYPE",
+        job_fact: `This role is primarily focused on ${jobLabel}.`,
+        profile_fact: `Your stated target roles focus on ${profileLabel}.`,
+        risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
+        severity: "medium",
+      })
+      console.log("[scoring] Role archetype mismatch:", profileRoleArchetype, "vs", jobArchetype)
+    }
+  }
+
+  // ── Content execution constraint ────────────────────────────────────────────
+  // Candidate said "no pure social media content roles" — penalize if job is content-heavy.
+  if (hardNoContentOnly && (job as any)?.isContentExecutionHeavy) {
+    penalties.push({
+      key: "role_archetype_mismatch" as any,
+      amount: 18,
+      label: "Content-only role conflict",
+      detail: "You indicated you do not want pure content or social media roles, but this role is primarily content execution and coordination.",
+    })
+    riskOnlyCodes.push({
+      code: "RISK_CONTENT_ROLE_CONFLICT",
+      job_fact: "This role is primarily content creation, social media, and event coordination.",
+      profile_fact: "You stated you do not want pure social media content roles.",
+      risk: "You told us you are not looking for pure content or social media roles. This role is primarily content execution and event coordination — not the analytical or strategy-focused work you are targeting.",
+      severity: "high",
+    })
+    console.log("[scoring] Content execution constraint penalty applied")
+  }
+
+  // ── Industry interest alignment ─────────────────────────────────────────────
+  // When a job's industry matches stated target industries, surface a positive signal.
+  const targetIndustries = ((profile as any)?.statedInterests?.targetIndustries || []) as string[]
+  const jobIndustry = (job as any)?.jobIndustry as string | null
+  if (jobIndustry && targetIndustries.length > 0) {
+    const industryMatch = targetIndustries.some(i =>
+      jobIndustry.toLowerCase().includes(i.toLowerCase()) ||
+      i.toLowerCase().includes(jobIndustry.toLowerCase())
+    )
+    if (industryMatch) {
+      riskOnlyCodes.push({
+        code: "WHY_INDUSTRY_MATCH",
+        job_fact: `This role is in the ${jobIndustry} industry.`,
+        profile_fact: `You stated interest in ${jobIndustry} roles.`,
+        risk: `This role is in the ${jobIndustry} space — an area you have specifically said you want to work in. That alignment matters beyond keyword matching.`,
+        severity: "low",
+      })
+      console.log("[scoring] Industry interest match:", jobIndustry)
+    }
+  }
+
   // Soft credential gap — CFA, CFP, PMP, LCSW etc. Not a legal barrier but
   // a meaningful gap worth flagging. Risk only, no score penalty.
   if ((job as any).requiresSoftCredential && (job as any).softCredentialDetail) {
