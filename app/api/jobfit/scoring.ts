@@ -1235,7 +1235,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const capped: Penalty[] = []
 
   for (const p of penalties) {
-    const maxStack = POLICY.penalties[p.key].maxStackCount ?? 999
+    const maxStack = POLICY.penalties[p.key]?.maxStackCount ?? 999
     counts[p.key] = (counts[p.key] || 0) + 1
     if (counts[p.key] <= maxStack) capped.push(p)
   }
