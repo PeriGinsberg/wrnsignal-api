@@ -916,8 +916,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       penalties.push({
         key: "role_archetype_mismatch" as any,
         amount: 12,
-        label: "Role type mismatch",
-        detail: `Your stated targets focus on ${profileLabel}, but this role is primarily ${jobLabel}. These are different career tracks within marketing.`,
+        note: `Role archetype mismatch: profile=${profileRoleArchetype}, job=${jobArchetype}`,
+        risk: {
+          code: "RISK_ROLE_ARCHETYPE",
+          job_fact: `This role is primarily focused on ${jobLabel}.`,
+          profile_fact: `Your stated target roles focus on ${profileLabel}.`,
+          risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
+          severity: "medium" as const,
+        },
       })
       riskOnlyCodes.push({
         code: "RISK_ROLE_ARCHETYPE",
@@ -936,8 +942,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     penalties.push({
       key: "role_archetype_mismatch" as any,
       amount: 18,
-      label: "Content-only role conflict",
-      detail: "You indicated you do not want pure content or social media roles, but this role is primarily content execution and coordination.",
+      note: "Content-only role conflicts with candidate constraint",
+      risk: {
+        code: "RISK_CONTENT_ROLE_CONFLICT",
+        job_fact: "This role is primarily content creation, social media, and event coordination.",
+        profile_fact: "You stated you do not want pure social media content roles.",
+        risk: "You told us you are not looking for pure content or social media roles. This role is primarily content execution and event coordination — not the analytical or strategy-focused work you are targeting.",
+        severity: "high" as const,
+      },
     })
     riskOnlyCodes.push({
       code: "RISK_CONTENT_ROLE_CONFLICT",
