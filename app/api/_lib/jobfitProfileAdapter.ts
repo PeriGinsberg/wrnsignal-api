@@ -573,14 +573,15 @@ export function mapClientProfileToOverrides(args: {
   const roleArchetype = inferRoleArchetype(targetRolesRaw)
   const targetIndustries = parseTargetIndustries(args.profileText, targetRolesRaw)
 
-  // Only pass new constraint fields — do NOT override the base constraint fields
-  // that extract.ts's defaultConstraintsFromText already handles correctly.
-  // Passing a full constraints object would cause the merge in extractProfileSignals
-  // to overwrite correctly-extracted values (hardNoSales, prefFullTime, etc.)
-  // with potentially stale adapter values.
+  // The adapter receives the full profile_text including the hard constraints section.
+  // extract.ts's defaultConstraintsFromText only receives resume text (not the profile header),
+  // so constraints stated in the intake form ("no sales roles", "no pure social media content roles")
+  // must be passed through from the adapter.
   const newConstraintFields = {
+    hardNoSales: constraints.hardNoSales,
     hardNoContentOnly: constraints.hardNoContentOnly,
     hardNoPartTime: constraints.hardNoPartTime,
+    prefFullTime: constraints.prefFullTime,
   }
 
   return {
