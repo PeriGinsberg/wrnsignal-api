@@ -39,6 +39,12 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
     return { type: "force_pass", gateCode: "GATE_MBA_REQUIRED", detail: "MBA required" }
   }
 if (job.credentialRequired) {
+    // Training programs explicitly provide licensing as part of onboarding —
+    // the credential is earned in the role, not required before applying.
+    // Suppress the hard gate entirely for training programs.
+    if ((job as any).isTrainingProgram) {
+      // Don't gate — fall through to normal scoring
+    } else {
     const profileFunctionTags = profile.function_tags || []
     const statedRoles = (profile.statedInterests?.targetRoles || []).join(" ").toLowerCase()
     const statedIndustries = (profile.statedInterests?.targetIndustries || []).join(" ").toLowerCase()
@@ -124,7 +130,8 @@ if (job.credentialRequired) {
           : `This role requires ${job.credentialDetail || "a professional credential or enrollment"} that is not present in your background. Applying without this qualification will not result in an interview.`,
       }
     }
-  }
+    } // end !isTrainingProgram
+  } // end credentialRequired
 
   // Hard seniority gate — when yearsRequired is 5+ and candidate has <= 2 years,
   // the gap is structurally disqualifying regardless of keyword match.
