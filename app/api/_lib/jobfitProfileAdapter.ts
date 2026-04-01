@@ -322,8 +322,7 @@ function inferRoleArchetype(targetRoles: string): "analytical" | "strategic" | "
 function parseTargetRoles(targetRoles: string | null | undefined): string[] {
   if (!targetRoles) return []
   return targetRoles
-    .split(/[,;|\/
-]/)
+    .split(/[,;|\n\/]/)
     .map(s => s.trim().toLowerCase())
     .filter(Boolean)
 }
