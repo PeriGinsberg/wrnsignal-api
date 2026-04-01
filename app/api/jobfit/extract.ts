@@ -1926,6 +1926,17 @@ function defaultConstraintsFromText(tRaw: string, wantsInternship: boolean): Pro
     prefFullTime: wantsInternship ? false : t.includes("full-time") || t.includes("full time"),
     preferNotAnalyticsHeavy:
       t.includes("no heavy analytical") || t.includes("no heavy analytics") || t.includes("not analytics heavy"),
+    hardNoContentOnly:
+      t.includes("no pure social media") ||
+      t.includes("no content only") ||
+      t.includes("no pure content") ||
+      t.includes("no coordinator role") ||
+      t.includes("no social media content roles"),
+    hardNoPartTime:
+      t.includes("no part time") ||
+      t.includes("no part-time") ||
+      t.includes("full time only") ||
+      t.includes("full-time only"),
   }
 }
 
