@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 
-export const ROUTE_V4_DEBUG_STAMP = "ROUTE_V4_DEBUG_STAMP__CLEAN_REWRITE"
+const ROUTE_V4_DEBUG_STAMP = "ROUTE_V4_DEBUG_STAMP__CLEAN_REWRITE"
 
 console.log(`[jobfit-v4-debug route] loaded: ${ROUTE_V4_DEBUG_STAMP}`)
 
