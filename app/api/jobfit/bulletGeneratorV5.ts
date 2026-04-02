@@ -164,7 +164,7 @@ Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
 // ─── Formatters (structured → string for backward compat) ────────────────────
 
 function formatWhyBullet(b: WhyBullet): string {
-  return `${b.lead} ${b.connection} → ${b.action}`
+  return `${b.lead} ${b.connection} -> ${b.action}`
 }
 
 function formatRiskBullet(b: RiskBullet): string {
