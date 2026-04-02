@@ -742,7 +742,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  if (profile.constraints.hardNoSales && job.isSalesHeavy) {
+  // Fallback constraint detection from raw intake form text
+  const profileHeaderText = (((profile as any)?.profileHeaderText as string) || "").toLowerCase()
+  const hardNoSalesEffective =
+    profile.constraints.hardNoSales ||
+    profileHeaderText.includes("no sales roles") ||
+    profileHeaderText.includes("no sales role")
+
+  if (hardNoSalesEffective && job.isSalesHeavy) {
     const amt = computePenaltyAmount("sales_mismatch")
     penalties.push({
       key: "sales_mismatch",
@@ -895,7 +902,11 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const profileRoleArchetype = (profile as any)?.roleArchetype as string | null
   const jobArchetype = (job as any)?.jobArchetype as string | null
   const profileTargetRoles = ((profile as any)?.statedInterests?.targetRoles || []) as string[]
-  const hardNoContentOnly = (profile as any)?.constraints?.hardNoContentOnly as boolean
+  const hardNoContentOnlyFromConstraints = (profile as any)?.constraints?.hardNoContentOnly as boolean
+  const hardNoContentOnly =
+    hardNoContentOnlyFromConstraints ||
+    profileHeaderText.includes("no pure social media") ||
+    profileHeaderText.includes("no social media content roles")
 
   if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear") {
     // For "mixed" archetypes, check if the mix is analytical+strategic (not execution)

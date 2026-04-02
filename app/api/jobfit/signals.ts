@@ -140,6 +140,9 @@ export type StructuredProfileSignals = {
 
   // Resume text — needed for some gate exemption checks
   resumeText?: string
+
+  // Raw intake form text for fallback constraint detection in scoring
+  profileHeaderText?: string
 }
 
 export type StructuredJobSignals = {

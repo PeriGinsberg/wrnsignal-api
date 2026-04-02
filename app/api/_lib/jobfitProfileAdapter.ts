@@ -601,6 +601,8 @@ export function mapClientProfileToOverrides(args: {
     },
     // Pass resume text through for gate exemption checks
     resumeText: args.profileText,
+    // Raw intake form text for fallback constraint detection in scoring
+    profileHeaderText: args.profileText,
   }
 }
 
