@@ -19,6 +19,7 @@ export type PenaltyKey =
   | "credential_requirement_mismatch"
   | "finance_subfamily_mismatch"
   | "role_archetype_mismatch"
+  | "content_role_conflict"
 
 export type Severity = 1 | 2 | 3 | 4 | 5
 
@@ -236,6 +237,12 @@ export const POLICY: JobFitPolicy = {
       label: "Role type mismatch with stated interests",
       severity: 3,
       multiplier: 2.2,
+      maxStackCount: 1,
+    },
+    content_role_conflict: {
+      label: "Content-only role conflicts with candidate constraint",
+      severity: 4,
+      multiplier: 3.0,
       maxStackCount: 1,
     },
   },

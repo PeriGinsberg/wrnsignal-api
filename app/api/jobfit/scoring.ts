@@ -961,9 +961,10 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
 
   // ── Content execution constraint ────────────────────────────────────────────
   // Candidate said "no pure social media content roles" — penalize if job is content-heavy.
+  console.log("[scoring] Content constraint check:", { hardNoContentOnly, isContentExecutionHeavy: (job as any)?.isContentExecutionHeavy })
   if (hardNoContentOnly && (job as any)?.isContentExecutionHeavy) {
     penalties.push({
-      key: "role_archetype_mismatch" as any,
+      key: "content_role_conflict",
       amount: 18,
       note: "Content-only role conflicts with candidate constraint",
       risk: {
