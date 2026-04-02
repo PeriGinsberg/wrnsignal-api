@@ -18,6 +18,7 @@ import crypto from "crypto"
 import { POLICY } from "./policy"
 import type {
   EvidenceKind,
+  FinanceSubFamily,
   FunctionTag,
   JobFamily,
   JobRequirementUnit,
@@ -312,7 +313,6 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "fan services",
       "fan engagement",
       "customer service",
-      "positive attitude",
       "build relationships with players, parents, and coaches",
       "superior customer service",
       "players, parents, and coaches",
@@ -380,7 +380,6 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "empower volunteer coaches",
       "teach & demonstrate core concepts",
       "teach and demonstrate core concepts",
-      "skill development",
       "fundamentals",
       "sportsmanship values",
       "practice sessions",
@@ -735,6 +734,24 @@ jobPhrases: [
       "capital markets",
       "equity research",
       "credit analysis",
+"ad hoc financial",
+"fp&a",
+"fp &a",
+"financial planning",
+"variance analysis",
+"expense analysis", 
+"expense reporting",
+"management reporting",
+"budget",
+"forecast",
+"cash flow",
+"profitability",
+"balance sheet",
+"revenue reporting",
+"competitive analysis",  // when in finance context
+"financial package",
+"board-level",
+"board level",
     ],
     adjacentKeys: ["analysis_reporting"],
   },
@@ -760,6 +777,18 @@ jobPhrases: [
       "audit",
       "tax",
       "financial reporting",
+"management reporting",
+"daily review",
+"weekly review", 
+"monthly review",
+"business performance",
+"ad hoc analysis",
+"planning and forecasting",
+"cash application",
+"accounts payable",
+"accounts receivable",
+"treasury",
+"regulatory",
     ],
     adjacentKeys: ["analysis_reporting", "operations_execution"],
   },
@@ -999,7 +1028,6 @@ const FALLBACK_JOB_RULES: Array<{
       "demonstrate core concepts",
       "sportsmanship values",
       "fundamentals",
-      "skill development",
       "practice sessions",
     ],
   },
@@ -1181,6 +1209,15 @@ function scoreJobLine(line: string): number {
 
   if (/\b(equal opportunity|benefits|compensation may vary|about us|who we are|our values)\b/i.test(line)) score -= 5
   if (t.length < 16) score -= 2
+
+  // Aspirational / learning language — these describe skills the candidate WILL GAIN,
+  // not skills they must already have. Penalise so lines score below the < 2 threshold
+  // and are dropped from requirement extraction entirely.
+  // Examples: "you will learn Excel", "gain exposure to financial modeling",
+  // "training provided on Salesforce", "develop your skills in PowerPoint"
+  if (
+    /\b(you will learn|you('ll| will) (gain|develop|build|grow|be (trained|taught|introduced|exposed)|acquire)|gain exposure to|exposure to|training (will be|is) provided|training provided|we('ll| will) train|on.the.job training|learn (how to|to use|the tools)|be introduced to|build your (skills|knowledge|foundation)|develop your (skills|understanding)|skills? (will be )?(taught|developed|built|gained))\b/i.test(line)
+  ) score -= 6
 
   return score
 }
@@ -1630,7 +1667,8 @@ function extractYearsRequired(jobText: string): number | null {
     const m = jobText.match(r)
     if (m && m[1]) {
       const v = parseInt(String(m[1]), 10)
-      if (!Number.isNaN(v) && v >= 0 && v <= 20) return v
+      // 0 minimum means entry-level — treat as no meaningful requirement
+      if (!Number.isNaN(v) && v > 0 && v <= 20) return v
     }
   }
   return null
@@ -1880,7 +1918,7 @@ function defaultConstraintsFromText(tRaw: string, wantsInternship: boolean): Pro
   const t = norm(tRaw)
 
   return {
-    hardNoSales: t.includes("no sales"),
+    hardNoSales: t.includes("no sales") || t.includes("no sales roles"),
     hardNoGovernment: t.includes("no government"),
     hardNoContract: t.includes("no contract") || t.includes("no temporary") || t.includes("no temp"),
     hardNoHourlyPay: t.includes("no hourly"),
@@ -1888,6 +1926,17 @@ function defaultConstraintsFromText(tRaw: string, wantsInternship: boolean): Pro
     prefFullTime: wantsInternship ? false : t.includes("full-time") || t.includes("full time"),
     preferNotAnalyticsHeavy:
       t.includes("no heavy analytical") || t.includes("no heavy analytics") || t.includes("not analytics heavy"),
+    hardNoContentOnly:
+      t.includes("no pure social media") ||
+      t.includes("no content only") ||
+      t.includes("no pure content") ||
+      t.includes("no coordinator role") ||
+      t.includes("no social media content roles"),
+    hardNoPartTime:
+      t.includes("no part time") ||
+      t.includes("no part-time") ||
+      t.includes("full time only") ||
+      t.includes("full-time only"),
   }
 }
 
@@ -1925,6 +1974,122 @@ function mergeFunctionTagEvidence(
   return out
 }
 
+
+// ── Finance sub-family detection ─────────────────────────────────────────────
+// Classifies a Finance job or profile into a specific sub-family based on
+// requirement unit keys, function tags, and keyword signals.
+
+function inferJobFinanceSubFamily(
+  normalized: string,
+  requirementUnits: JobRequirementUnit[],
+  functionTags: FunctionTag[]
+): FinanceSubFamily {
+  const unitKeys = requirementUnits.map((u) => u.key)
+  const hasProspecting = unitKeys.includes("prospecting_pipeline_management")
+  const hasFinancialAnalysis = unitKeys.includes("financial_analysis")
+  const hasAccountingOps = unitKeys.includes("accounting_operations")
+  const hasAnalysisReporting = unitKeys.includes("analysis_reporting")
+  const hasPolicyRegulatory = unitKeys.includes("policy_regulatory_research")
+
+  // IB signals: deal language + prospecting/BD + financial analysis
+  const ibKeywords = /\b(investment banking|mergers and acquisitions|m&a|capital raising|ipo|leveraged buyout|lbo|deal advisory|pitch book|pitchbook|coverage group|bulge bracket|analyst program|summer analyst)\b/i
+  if (ibKeywords.test(normalized) || (hasProspecting && hasFinancialAnalysis)) {
+    return "ib"
+  }
+
+  // Project Finance signals: infrastructure/energy + tax equity + deal execution
+  const pfKeywords = /\b(project finance|tax equity|solar|wind|battery storage|renewable energy|ppa|power purchase|infrastructure finance|tax credit|clean energy financing)\b/i
+  if (pfKeywords.test(normalized) && (hasFinancialAnalysis || hasAccountingOps)) {
+    return "project_finance"
+  }
+
+  // Credit signals: borrower/underwriting/default language
+  const creditKeywords = /\b(credit analysis|credit analyst|underwriting|borrower|probability of default|debt capacity|loan|credit risk|credit underwriting|lending|credit memo)\b/i
+  if (creditKeywords.test(normalized) || (hasAccountingOps && hasPolicyRegulatory && !hasAnalysisReporting)) {
+    return "credit"
+  }
+
+  // Asset Management signals: portfolio/fund/AUM language
+  const amKeywords = /\b(asset management|portfolio management|fund analysis|aum|investment management|equity research|fixed income|hedge fund|mutual fund|portfolio analyst|fund accounting)\b/i
+  if (amKeywords.test(normalized)) {
+    return "asset_management"
+  }
+
+  // FP&A / Corporate Finance signals: budgeting/variance/forecasting dominant
+  const fpaKeywords = /\b(fp&a|fpa|financial planning|budgeting|variance analysis|forecasting|board package|board reporting|monthly close|quarterly close|corporate finance|financial controller)\b/i
+  if (fpaKeywords.test(normalized) || (hasAnalysisReporting && hasAccountingOps && !hasProspecting)) {
+    return "fpa"
+  }
+
+  return "other_finance"
+}
+
+function inferProfileFinanceSubFamily(
+  normalized: string,
+  evidenceUnits: ProfileEvidenceUnit[]
+): FinanceSubFamily {
+  const unitKeys = new Set(evidenceUnits.map((u) => u.key))
+
+  // Check evidence unit keys for FP&A signals
+  const hasFpaExecution = unitKeys.has("analysis_reporting") || unitKeys.has("accounting_operations")
+  const hasFinancialAnalysis = unitKeys.has("financial_analysis")
+
+  // FP&A language in profile
+  const fpaKeywords = /\b(fp&a|fpa|variance analysis|board package|board reporting|monthly close|quarterly report|financial planning|budgeting|forecast accuracy|operating expense|opex|p&l|profit and loss)\b/i
+  if (fpaKeywords.test(normalized) && hasFpaExecution) {
+    return "fpa"
+  }
+
+  // IB language in profile
+  const ibKeywords = /\b(investment banking|m&a|mergers|capital markets|ipo|lbo|deal|pitch book|pitchbook|bulge bracket|boutique bank|coverage|ibd)\b/i
+  if (ibKeywords.test(normalized)) {
+    return "ib"
+  }
+
+  // Project Finance in profile
+  const pfKeywords = /\b(project finance|tax equity|renewable energy|solar|wind|infrastructure finance|ppa|deal execution)\b/i
+  if (pfKeywords.test(normalized)) {
+    return "project_finance"
+  }
+
+  // Credit in profile
+  const creditKeywords = /\b(credit analysis|underwriting|borrower|loan analysis|credit risk|probability of default|debt capacity)\b/i
+  if (creditKeywords.test(normalized)) {
+    return "credit"
+  }
+
+  // Asset Management in profile
+  const amKeywords = /\b(asset management|portfolio management|equity research|fund|aum|fixed income|hedge fund)\b/i
+  if (amKeywords.test(normalized)) {
+    return "asset_management"
+  }
+
+  if (hasFinancialAnalysis || hasFpaExecution) {
+    return "fpa" // default for Finance profiles is FP&A if no specific signal
+  }
+
+  return null
+}
+
+// Sub-family compatibility matrix — how penalizable is each pairing?
+// 0 = no penalty, 1 = light, 2 = moderate, 3 = heavy
+const SUBFAMILY_DISTANCE: Record<string, Record<string, number>> = {
+  ib:               { ib: 0, fpa: 2, credit: 1, project_finance: 1, asset_management: 1, other_finance: 1 },
+  fpa:              { ib: 2, fpa: 0, credit: 1, project_finance: 1, asset_management: 1, other_finance: 0 },
+  credit:           { ib: 1, fpa: 1, credit: 0, project_finance: 0, asset_management: 1, other_finance: 0 },
+  project_finance:  { ib: 1, fpa: 1, credit: 0, project_finance: 0, asset_management: 1, other_finance: 0 },
+  asset_management: { ib: 1, fpa: 1, credit: 1, project_finance: 1, asset_management: 0, other_finance: 0 },
+  other_finance:    { ib: 1, fpa: 0, credit: 0, project_finance: 0, asset_management: 0, other_finance: 0 },
+}
+
+export function getFinanceSubFamilyDistance(
+  jobSub: FinanceSubFamily,
+  profileSub: FinanceSubFamily
+): number {
+  if (!jobSub || !profileSub) return 0
+  return SUBFAMILY_DISTANCE[jobSub]?.[profileSub] ?? 1
+}
+
 export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
@@ -1945,8 +2110,76 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const isLegalOpsContext =
     /\b(law firm|legal operations|legal ops|in-house legal|general counsel|legal department|paralegal|legal team|legal staff|legal counsel)\b/i.test(normalized)
 
+  // Title-based family override — sparse postings often don't have enough body
+  // text for tag-based classification to work correctly.
+  // Check first 1500 chars (covers title + department + reporting line).
+  // Note: norm() lowercases and preserves & so "FP&A" becomes "fp&a"
+  const jobTitleSlice = normalized.slice(0, 1500)
+  const jobTitleIsFinance =
+    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst)\b/i.test(jobTitleSlice)
+  const jobTitleIsSales =
+    /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
+
+  // Marketing title detection — prevents BD-support language in marketing roles
+  // from triggering sales classification
+  // Marketing title detection — matches both simple and compound titles
+  // e.g. "Marketing Coordinator", "Marketing and Business Development Coordinator"
+  const jobTitleIsMarketing =
+    /\b(marketing coordinator|marketing manager|marketing associate|marketing intern|marketing specialist|marketing director|marketing and business development|brand manager|brand coordinator|content manager|content coordinator|communications coordinator|communications manager|communications specialist|growth manager|product marketing|marketing operations|media coordinator|marketing analyst)\b/i.test(jobTitleSlice) ||
+    // Compound: starts with Marketing + any other words + Coordinator/Manager/etc
+    /^marketing\b.{0,40}\b(coordinator|manager|associate|specialist|director|analyst)\b/i.test(jobTitleSlice.trim())
+
+  // Seniority detection — check the first 300 chars (title line).
+  // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
+  const isSeniorRole =
+    /\b(senior|lead|manager|director|vp|vice president|head of|principal|associate director|associate manager)\b/i.test(
+      normalized.slice(0, 300)
+    )
+
+  // Inject default finance units when title signals Finance but body extracted nothing finance-related
+  if (jobTitleIsFinance) {
+    const hasFinanceUnit = requirementUnits.some(
+      (u) => u.key === "financial_analysis" || u.key === "analysis_reporting" || u.key === "accounting_operations"
+    )
+    if (!hasFinanceUnit) {
+      requirementUnits.push(
+        makeJobUnit(
+          "financial_analysis",
+          "financial analysis and investment work",
+          "function",
+          "Finance role — financial analysis and reporting expected",
+          8,
+          "core",
+          "finance_corp"
+        )
+      )
+      requirementUnits.push(
+        makeJobUnit(
+          "analysis_reporting",
+          "analysis, reporting, and measurement work",
+          "execution",
+          "Finance role — reporting and analysis expected",
+          7,
+          "supporting",
+          "finance_corp"
+        )
+      )
+    }
+    if (!functionTags.includes("finance_corp")) {
+      functionTags.push("finance_corp")
+    }
+  }
+
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
-  const jobFamily: JobFamily = isLegalOpsContext ? "Other" : jobFamilyFromTags
+  const jobFamily: JobFamily = isLegalOpsContext
+    ? "Other"
+    : jobTitleIsMarketing && jobFamilyFromTags === "Sales"
+      ? "Marketing"
+      : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
+        ? "Finance"
+        : jobTitleIsSales
+          ? "Sales"
+          : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
@@ -1970,7 +2203,111 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const requiresCPA = includesAny(normalized, cpaKeywords)
   const requiresGradDegree = includesAny(normalized, gradDegreeKeywords)
 
-  const credentialRequired = requiresLawSchool || requiresMedSchool || requiresCPA || requiresGradDegree
+  // ── Hard-gate credential detection ────────────────────────────────────────
+  // These are legal/licensing requirements the candidate cannot work around.
+  // Each category reads from policy keywords so they can be updated without
+  // changing this file.
+
+  // Already detected above: requiresLawSchool, requiresMedSchool, requiresCPA,
+  // requiresGradDegree
+
+  // Securities / FINRA registrations + SAFE Act / NMLS
+  const finraKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.finraKeywords
+  ).map(norm)
+  const requiresFinraLicense = finraKeywords.length
+    ? includesAny(normalized, finraKeywords)
+    : /\b(series [0-9]+|finra registration|finra license|securities license|registered representative|safe act|nmls|mortgage loan originator|sie required)\b/i.test(normalized)
+
+  // Life / P&C insurance licenses
+  const insuranceLicenseKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.insuranceLicenseKeywords
+  ).map(norm)
+  const requiresInsuranceLicense = insuranceLicenseKeywords.length
+    ? includesAny(normalized, insuranceLicenseKeywords)
+    : /\b(life insurance license required|insurance license required|p&c license|property and casualty license)\b/i.test(normalized)
+
+  // Real estate license
+  const realEstateLicenseKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.realEstateLicenseKeywords
+  ).map(norm)
+  const requiresRealEstateLicense = realEstateLicenseKeywords.length
+    ? includesAny(normalized, realEstateLicenseKeywords)
+    : /\b(real estate license required|real estate licensed|real estate broker license)\b/i.test(normalized)
+
+  // Teaching credential
+  const teachingCredentialKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.teachingCredentialKeywords
+  ).map(norm)
+  const requiresTeachingCredential = teachingCredentialKeywords.length
+    ? includesAny(normalized, teachingCredentialKeywords)
+    : /\b(teaching certificate required|teaching license required|state teaching credential|teacher certification required)\b/i.test(normalized)
+
+  // Professional Engineer license
+  const engineeringLicenseKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.engineeringLicenseKeywords
+  ).map(norm)
+  const requiresPELicense = engineeringLicenseKeywords.length
+    ? includesAny(normalized, engineeringLicenseKeywords)
+    : /\b(pe license|professional engineer required|licensed professional engineer|p\.e\. required)\b/i.test(normalized)
+
+  // CDL
+  const cdlKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.cdlKeywords
+  ).map(norm)
+  const requiresCDL = cdlKeywords.length
+    ? includesAny(normalized, cdlKeywords)
+    : /\b(cdl required|commercial driver.s license|class [ab] cdl)\b/i.test(normalized)
+
+  // ── Risk-flag credential detection (not gates, but significant gaps) ────
+  const cfaKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.cfaKeywords
+  ).map(norm)
+  const requiresCFA = cfaKeywords.length
+    ? includesAny(normalized, cfaKeywords)
+    : /\b(cfa required|cfa charterholder required|chartered financial analyst required)\b/i.test(normalized)
+
+  const cfpKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.cfpKeywords
+  ).map(norm)
+  const requiresCFP = cfpKeywords.length
+    ? includesAny(normalized, cfpKeywords)
+    : /\b(cfp required|certified financial planner required)\b/i.test(normalized)
+
+  const pmpKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.pmpKeywords
+  ).map(norm)
+  const requiresPMP = pmpKeywords.length
+    ? includesAny(normalized, pmpKeywords)
+    : /\b(pmp required|pmp certification required|project management professional required)\b/i.test(normalized)
+
+  const socialWorkKeywords = asStringArray(
+    (POLICY as any)?.extraction?.credential?.socialWorkLicenseKeywords
+  ).map(norm)
+  const requiresSocialWorkLicense = socialWorkKeywords.length
+    ? includesAny(normalized, socialWorkKeywords)
+    : /\b(lcsw required|lmsw required|licensed clinical social worker|social work license required)\b/i.test(normalized)
+
+  // ── Aggregate flags ──────────────────────────────────────────────────────
+
+  // Hard gate — any of these = candidate cannot legally do the job
+  const requiresHardCredential =
+    requiresLawSchool ||
+    requiresMedSchool ||
+    requiresCPA ||
+    requiresGradDegree ||
+    requiresFinraLicense ||
+    requiresInsuranceLicense ||
+    requiresRealEstateLicense ||
+    requiresTeachingCredential ||
+    requiresPELicense ||
+    requiresCDL
+
+  // Soft credential — significant gap, surface as risk flag not gate
+  const requiresSoftCredential =
+    requiresCFA || requiresCFP || requiresPMP || requiresSocialWorkLicense
+
+  const credentialRequired = requiresHardCredential
 
   const credentialDetail = requiresLawSchool
     ? "law school enrollment or JD"
@@ -1980,6 +2317,26 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     ? "CPA license"
     : requiresGradDegree
     ? "graduate degree"
+    : requiresFinraLicense
+    ? "FINRA registration or securities license"
+    : requiresInsuranceLicense
+    ? "insurance license (life, P&C, or health)"
+    : requiresRealEstateLicense
+    ? "real estate license"
+    : requiresTeachingCredential
+    ? "teaching certificate or credential"
+    : requiresPELicense
+    ? "Professional Engineer (PE) license"
+    : requiresCDL
+    ? "Commercial Driver's License (CDL)"
+    : requiresCFA
+    ? "CFA charterholder designation"
+    : requiresCFP
+    ? "CFP certification"
+    : requiresPMP
+    ? "PMP certification"
+    : requiresSocialWorkLicense
+    ? "social work license (LCSW/LMSW)"
     : null
 
   const isGovernment =
@@ -2001,22 +2358,216 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
       ].includes(u.key)
     ).length >= 2
 
-  const isSalesHeavy =
-  includesAny(normalized, salesKeywords) ||
-  explicitSalesEvidence
+  // Hard sales keywords — quota, commission, closing, cold call are unambiguous
+  // regardless of job title
+  const hardSalesKeywords = ["quota", "commission", "closing", "cold call", "cold calling"]
+  const hasHardSalesSignal = includesAny(normalized, hardSalesKeywords)
+
+  // For marketing-titled roles, only flag as sales-heavy if hard sales keywords
+  // are present. BD support language (pitch, proposals, leads) is normal in
+  // marketing roles and should not trigger sales classification.
+  const isSalesHeavy = jobTitleIsMarketing
+    ? hasHardSalesSignal
+    : includesAny(normalized, salesKeywords) || explicitSalesEvidence
 
   const isContract = includesAny(normalized, contractKeywords)
   const isHourly = includesAny(normalized, hourlyKeywords) || /\$\s*\d+(\.\d+)?\s*\/\s*(hr|hour)\b/i.test(jobTextRaw)
 
   const { required, preferred } = extractToolRequirements(jobTextRaw)
 
+  // Training program detection — if the job describes skills the candidate WILL LEARN
+  // rather than skills they must already have, flag it so scoring can apply a softer posture.
+  const jobTextLower = norm(jobTextRaw)
+  // Training program detection — fires when the job itself is structured as a
+  // learning/development program (not when the company mentions learning benefits).
+  //
+  // Key distinction: "you will receive dedicated study time for your SIE" = training program
+  // vs "learning stipends so you can continue to learn and grow" = company benefit, not a program.
+  //
+  // We require either an explicit program name OR structured training language
+  // that is specific to the role, not generic company culture/benefits boilerplate.
+  const isTrainingProgram = (() => {
+    // Explicit program names — high confidence
+    if (/\b(development program|training program|rotational program|advisor development program|advisor training program|associate development program|associate training program)\b/i.test(jobTextLower)) return true
+    // Role-specific structured training language (not benefits boilerplate)
+    if (/\b(you will (learn|be trained|be taught|develop skills)|we('ll| will) teach you|dedicated (study|training) time|on-the-job (training|learning)|training is provided|hands.on training)\b/i.test(jobTextLower)) return true
+    // Skills the candidate WILL gain as part of the role progression
+    if (/\bskills (you|they|we|our) (will|can) (develop|gain|build|learn)\b/i.test(jobTextLower)) return true
+    if (/\bgain (exposure|experience|skills) in\b/i.test(jobTextLower)) return true
+    return false
+  })()
+  if (isTrainingProgram) {
+    console.log("[extract] Training program detected — aspirational skills will not be treated as hard requirements")
+  }
+
+  // ── Job archetype detection ─────────────────────────────────────────────────
+  // Classifies what kind of work this role actually requires day-to-day.
+  // Used to detect mismatches with the candidate's stated role preferences.
+
+  // Content/execution signals — coordinator, content, events, social, operations
+  const contentExecutionHits = [
+    "coordinate posts", "social media calendar", "content calendar",
+    "develop content", "content creation", "social media content",
+    "event coordination", "event planning", "event logistics",
+    "manage social", "community management", "influencer",
+    "blog content", "email newsletter", "graphic design",
+    "canva", "copy", "copywriting",
+  ].filter(term => jobTextLower.includes(term)).length
+
+  const isContentExecutionHeavy = contentExecutionHits >= 3
+
+  // Analytical signals — data, research, measurement, modeling
+  const analyticalHits = [
+    "sql", "python", "tableau", "power bi", "data analysis",
+    "statistical", "regression", "modeling", "quantitative",
+    "market research", "consumer research", "survey", "a/b test",
+    "attribution", "analytics", "reporting", "insights",
+    "data-driven", "kpi", "metrics", "measurement",
+  ].filter(term => jobTextLower.includes(term)).length
+
+  // Strategic signals — planning, brand, GTM, consulting
+  const strategicHits = [
+    "brand strategy", "go-to-market", "gtm", "market strategy",
+    "strategic planning", "competitive analysis", "positioning",
+    "consulting", "advisory", "market entry", "business strategy",
+    "product strategy", "growth strategy", "brand management",
+  ].filter(term => jobTextLower.includes(term)).length
+
+  // Classify job archetype
+  const jobArchetype: "analytical" | "strategic" | "execution" | "mixed" | "unclear" = (() => {
+    const total = analyticalHits + strategicHits + contentExecutionHits
+    if (total === 0) return "unclear"
+    if (analyticalHits >= 5 && analyticalHits > strategicHits && analyticalHits > contentExecutionHits) return "analytical"
+    if (strategicHits >= 3 && strategicHits > analyticalHits && strategicHits > contentExecutionHits) return "strategic"
+    if (contentExecutionHits >= 3 && contentExecutionHits > analyticalHits && contentExecutionHits > strategicHits) return "execution"
+    if (analyticalHits >= 2 || strategicHits >= 2 || contentExecutionHits >= 2) return "mixed"
+    return "unclear"
+  })()
+
+  // ── Job industry detection ──────────────────────────────────────────────────
+  // Detects the industry vertical of the role for interest alignment scoring
+  const jobIndustry: string | null = (() => {
+    if (/(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)/i.test(jobTextLower)) return "sports"
+    if (/(entertainment|music industry|film|streaming|gaming|media entertainment)/i.test(jobTextLower)) return "entertainment"
+    if (/(fashion|luxury|beauty|lifestyle brand|apparel|footwear)/i.test(jobTextLower)) return "luxury/fashion"
+    if (/(consumer goods|cpg|fmcg|packaged goods|food and beverage|beverage brand)/i.test(jobTextLower)) return "consumer goods"
+    if (/(saas|software company|tech company|technology company|startup|fintech)/i.test(jobTextLower)) return "technology"
+    if (/(private equity|investment bank|asset management|hedge fund|venture capital)/i.test(jobTextLower)) return "finance"
+    if (/(healthcare company|hospital|health system|pharmaceutical|biotech)/i.test(jobTextLower)) return "healthcare"
+    if (/(real estate firm|property management|commercial real estate|reit)/i.test(jobTextLower)) return "real estate"
+    return null
+  })()
+
+  if (jobArchetype !== "unclear") {
+    console.log("[extract] Job archetype:", jobArchetype, "| Content hits:", contentExecutionHits, "| Analytical hits:", analyticalHits, "| Strategic hits:", strategicHits)
+  }
+  if (jobIndustry) {
+    console.log("[extract] Job industry detected:", jobIndustry)
+  }
+
+  // Generic industry domain requirement detection — fires when a job explicitly
+  // requires experience in a domain-specific industry that a generalist
+  // early-career candidate is unlikely to have.
+  //
+  // Detection approach: look for "[industry term] experience/background/knowledge"
+  // or "experience in/with [industry term]" patterns. Industry terms are those
+  // where prior domain exposure is genuinely required (not just preferred).
+  //
+  // AEC, healthcare, legal, financial services, biotech/pharma, real estate,
+  // media/entertainment, and similar verticals all qualify.
+
+  const DOMAIN_INDUSTRY_TERMS = [
+    // AEC
+    "aec",
+    "architecture, engineering",
+    "architecture and engineering",
+    "architecture & engineering",
+    "construction management",
+    "construction industry",
+    // Healthcare / life sciences
+    "healthcare industry",
+    "health care industry",
+    "life sciences",
+    "pharmaceutical industry",
+    "biotech industry",
+    "clinical",
+    // Legal / professional services
+    "legal industry",
+    "law firm",
+    "professional services industry",
+    // Financial services (beyond general finance)
+    "financial services industry",
+    "asset management industry",
+    "private equity industry",
+    "investment banking industry",
+    "insurance industry",
+    // Real estate
+    "real estate industry",
+    "commercial real estate",
+    // Media / entertainment / sports
+    "media industry",
+    "entertainment industry",
+    "sports industry",
+    // Manufacturing / industrial
+    "manufacturing industry",
+    "industrial industry",
+    // Hospitality / retail
+    "hospitality industry",
+    "retail industry",
+  ]
+
+  // Match "[domain] experience/background/knowledge" or
+  // "experience in/with/within [domain]" or
+  // "background in/with [domain]"
+  // Pattern allows for an optional qualifying word between the industry term
+  // and experience/background — e.g. "AEC industry experience" has "industry"
+  // between "AEC" and "experience". Allow up to 2 words in between.
+  const domainRequirementPattern = new RegExp(
+    "(" +
+      DOMAIN_INDUSTRY_TERMS.map((t) =>
+        t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      ).join("|") +
+      ")\\s*(?:\\w+\\s+)?(?:\\w+\\s+)?(experience|background|knowledge|familiarity|exposure)" +
+      "|" +
+      "(experience|background|familiarity|exposure)\\s+(?:in|with|within|in the)\\s+(?:\\w+\\s+)?(" +
+      DOMAIN_INDUSTRY_TERMS.map((t) =>
+        t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      ).join("|") +
+      ")",
+    "i"
+  )
+
+  const domainMatch = domainRequirementPattern.exec(jobTextLower)
+  const requiresDomainIndustryExperience = !!domainMatch
+  const detectedDomain = domainMatch
+    ? (domainMatch[1] || domainMatch[5] || "").trim() || "industry-specific"
+    : null
+
+  // Keep requiresAECExperience as a named alias for backwards compatibility
+  // with any scoring logic that references it directly
+  const requiresAECExperience =
+    requiresDomainIndustryExperience &&
+    !!detectedDomain &&
+    /aec|architecture|construction/i.test(detectedDomain)
+
+  if (requiresDomainIndustryExperience) {
+    console.log("[extract] Domain industry experience requirement detected:", detectedDomain)
+  }
+
   const reportingStrong = requirementUnits.some(
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
 
+// Compute finance sub-family when job is Finance
+  const jobFinanceSubFamily: import("./signals").FinanceSubFamily =
+    jobFamily === "Finance"
+      ? inferJobFinanceSubFamily(normalized, requirementUnits, functionTags)
+      : null
+
 return {
     rawHash,
     jobFamily,
+    financeSubFamily: jobFinanceSubFamily,
     analytics,
     function_tags: functionTags,
     signal_debug: {
@@ -2042,6 +2593,16 @@ return {
     gradYearHint,
     requiredTools: required,
     preferredTools: preferred,
+    isSeniorRole: isSeniorRole,
+    isTrainingProgram: isTrainingProgram,
+    requiresAECExperience: requiresAECExperience,
+    requiresDomainIndustryExperience: requiresDomainIndustryExperience,
+    detectedDomain: detectedDomain,
+    requiresSoftCredential: requiresSoftCredential,
+    softCredentialDetail: requiresSoftCredential ? (credentialDetail || null) : null,
+    jobArchetype: jobArchetype,
+    isContentExecutionHeavy: isContentExecutionHeavy,
+    jobIndustry: jobIndustry,
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
     internship: detectInternshipSignals(jobTextRaw),
@@ -2124,5 +2685,18 @@ export function extractProfileSignals(
     yearsExperienceApprox: overrides?.yearsExperienceApprox ?? base.yearsExperienceApprox,
   }
 
-  return merged
+  // Infer finance sub-family from profile evidence when profile targets Finance
+  const profileFinanceFamilies = (merged.targetFamilies || []).map((f: string) => f.toLowerCase())
+  const profileFinanceSubFamily: import("./signals").FinanceSubFamily =
+    profileFinanceFamilies.includes("finance")
+      ? inferProfileFinanceSubFamily(
+          normalized,
+          merged.profile_evidence_units || []
+        )
+      : null
+
+  return {
+    ...merged,
+    financeSubFamily: profileFinanceSubFamily,
+  }
 }

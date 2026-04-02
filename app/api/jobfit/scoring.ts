@@ -14,6 +14,7 @@ import type {
   StructuredProfileSignals,
   WhyCode,
 } from "./signals"
+import { getFinanceSubFamilyDistance } from "./extract"
 
 export const SCORING_V5_STAMP =
   "SCORING_V5_STAMP__2026_03_14__CAPABILITY_COVERAGE_AND_DIRECTNESS"
@@ -741,7 +742,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
-  if (profile.constraints.hardNoSales && job.isSalesHeavy) {
+  // Fallback constraint detection from raw intake form text
+  const profileHeaderText = (((profile as any)?.profileHeaderText as string) || "").toLowerCase()
+  const hardNoSalesEffective =
+    profile.constraints.hardNoSales ||
+    profileHeaderText.includes("no sales roles") ||
+    profileHeaderText.includes("no sales role")
+
+  if (hardNoSalesEffective && job.isSalesHeavy) {
     const amt = computePenaltyAmount("sales_mismatch")
     penalties.push({
       key: "sales_mismatch",
@@ -844,6 +852,171 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         },
       })
     }
+  }
+
+  // Seniority mismatch — fire a risk flag when the job title signals a senior/manager
+  // level and the candidate has <= 2 years of experience. This catches cases where
+  // keyword match is strong but the role is structurally above the candidate's level.
+  if (job.isSeniorRole && profile.yearsExperienceApprox !== null && profile.yearsExperienceApprox <= 2) {
+    // Seniority mismatch reduces the score directly — a Manager/Director/Senior title
+    // requires experience the candidate doesn't have yet. This should be reflected in
+    // the score, not just surfaced as a risk flag. Penalty of 18 brings a near-perfect
+    // keyword match (97) down to solid Apply range (~79).
+    const seniorityPenaltyAmt = 18
+    const seniorityRisk: RiskCode = {
+      code: "RISK_EXPERIENCE",
+      job_fact: "Job title indicates a senior, manager, or leadership-level role.",
+      profile_fact: `Profile shows approximately ${profile.yearsExperienceApprox} year${profile.yearsExperienceApprox === 1 ? "" : "s"} of experience.`,
+      risk: "This role is titled at a level above where early-career candidates are typically competitive. Strong keyword match alone does not overcome a seniority gap — hiring managers screen on title-level experience first.",
+      severity: "medium",
+      weight: -seniorityPenaltyAmt,
+    }
+    penalties.push({
+      key: "experience_years_gap",
+      amount: seniorityPenaltyAmt,
+      note: "Seniority mismatch — manager/senior-level title vs early-career profile",
+      risk: seniorityRisk,
+    })
+    console.log("[scoring] Seniority mismatch penalty applied — score impact:", -seniorityPenaltyAmt)
+  }
+
+  // Domain industry experience requirement — fires a risk flag when the job
+  // explicitly requires experience in a specific industry vertical. Generic
+  // detector covers AEC, healthcare, legal, financial services, biotech,
+  // real estate, media, and others. Not a score penalty — candidate may still
+  // apply but should address the gap directly in their cover letter.
+  if ((job as any).requiresDomainIndustryExperience) {
+    const domain = (job as any).detectedDomain || "this specific industry"
+    riskOnlyCodes.push({
+      code: "RISK_DOMAIN_EXPERIENCE",
+      job_fact: `Job requires prior experience in ${domain}.`,
+      profile_fact: "Profile does not show the required industry background.",
+      risk: `This role explicitly requires experience in ${domain}. Without prior exposure, you will need to address this gap directly in your cover letter — highlight any adjacent experience or transferable skills that demonstrate familiarity with the industry context.`,
+      severity: "medium",
+    })
+    console.log("[scoring] Domain industry experience risk flag added:", domain)
+  }
+
+  // ── Role archetype mismatch ─────────────────────────────────────────────────
+  // Fires when the job archetype conflicts with the candidate's stated role targets.
+  const profileRoleArchetype = (profile as any)?.roleArchetype as string | null
+  const jobArchetype = (job as any)?.jobArchetype as string | null
+  const profileTargetRoles = ((profile as any)?.statedInterests?.targetRoles || []) as string[]
+  const hardNoContentOnlyFromConstraints = (profile as any)?.constraints?.hardNoContentOnly as boolean
+  const hardNoContentOnly =
+    hardNoContentOnlyFromConstraints ||
+    profileHeaderText.includes("no pure social media") ||
+    profileHeaderText.includes("no social media content roles")
+
+  if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear") {
+    // For "mixed" archetypes, check if the mix is analytical+strategic (not execution)
+    // and the job is execution — that's still a meaningful mismatch
+    const profileIsNonExecution =
+      profileRoleArchetype === "analytical" ||
+      profileRoleArchetype === "strategic" ||
+      (profileRoleArchetype === "mixed" &&
+        profileTargetRoles.some(r =>
+          r.includes("analyst") || r.includes("research") || r.includes("strategy") ||
+          r.includes("data") || r.includes("insights") || r.includes("brand strategy")
+        ) &&
+        !profileTargetRoles.some(r =>
+          r.includes("coordinator") || r.includes("content") || r.includes("social media")
+        ))
+
+    const mismatch =
+      profileIsNonExecution && jobArchetype === "execution"
+
+    if (mismatch) {
+      const archetypeLabels: Record<string, string> = {
+        analytical: "analytics, research, and data-driven work",
+        strategic: "brand strategy and planning",
+        execution: "content creation, events, and coordination",
+        mixed: "analytical and strategic marketing work",
+      }
+      const profileLabel = archetypeLabels[profileRoleArchetype] || "the roles you are targeting"
+      const jobLabel = archetypeLabels[jobArchetype] || jobArchetype
+
+      penalties.push({
+        key: "role_archetype_mismatch" as any,
+        amount: 12,
+        note: `Role archetype mismatch: profile=${profileRoleArchetype}, job=${jobArchetype}`,
+        risk: {
+          code: "RISK_ROLE_ARCHETYPE",
+          job_fact: `This role is primarily focused on ${jobLabel}.`,
+          profile_fact: `Your stated target roles focus on ${profileLabel}.`,
+          risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
+          severity: "medium" as const,
+        },
+      })
+      riskOnlyCodes.push({
+        code: "RISK_ROLE_ARCHETYPE",
+        job_fact: `This role is primarily focused on ${jobLabel}.`,
+        profile_fact: `Your stated target roles focus on ${profileLabel}.`,
+        risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
+        severity: "medium",
+      })
+      console.log("[scoring] Role archetype mismatch:", profileRoleArchetype, "vs", jobArchetype)
+    }
+  }
+
+  // ── Content execution constraint ────────────────────────────────────────────
+  // Candidate said "no pure social media content roles" — penalize if job is content-heavy.
+  if (hardNoContentOnly && (job as any)?.isContentExecutionHeavy) {
+    penalties.push({
+      key: "role_archetype_mismatch" as any,
+      amount: 18,
+      note: "Content-only role conflicts with candidate constraint",
+      risk: {
+        code: "RISK_CONTENT_ROLE_CONFLICT",
+        job_fact: "This role is primarily content creation, social media, and event coordination.",
+        profile_fact: "You stated you do not want pure social media content roles.",
+        risk: "You told us you are not looking for pure content or social media roles. This role is primarily content execution and event coordination — not the analytical or strategy-focused work you are targeting.",
+        severity: "high" as const,
+      },
+    })
+    riskOnlyCodes.push({
+      code: "RISK_CONTENT_ROLE_CONFLICT",
+      job_fact: "This role is primarily content creation, social media, and event coordination.",
+      profile_fact: "You stated you do not want pure social media content roles.",
+      risk: "You told us you are not looking for pure content or social media roles. This role is primarily content execution and event coordination — not the analytical or strategy-focused work you are targeting.",
+      severity: "high",
+    })
+    console.log("[scoring] Content execution constraint penalty applied")
+  }
+
+  // ── Industry interest alignment ─────────────────────────────────────────────
+  // When a job's industry matches stated target industries, surface a positive signal.
+  const targetIndustries = ((profile as any)?.statedInterests?.targetIndustries || []) as string[]
+  const jobIndustry = (job as any)?.jobIndustry as string | null
+  if (jobIndustry && targetIndustries.length > 0) {
+    const industryMatch = targetIndustries.some(i =>
+      jobIndustry.toLowerCase().includes(i.toLowerCase()) ||
+      i.toLowerCase().includes(jobIndustry.toLowerCase())
+    )
+    if (industryMatch) {
+      riskOnlyCodes.push({
+        code: "WHY_INDUSTRY_MATCH",
+        job_fact: `This role is in the ${jobIndustry} industry.`,
+        profile_fact: `You stated interest in ${jobIndustry} roles.`,
+        risk: `This role is in the ${jobIndustry} space — an area you have specifically said you want to work in. That alignment matters beyond keyword matching.`,
+        severity: "low",
+      })
+      console.log("[scoring] Industry interest match:", jobIndustry)
+    }
+  }
+
+  // Soft credential gap — CFA, CFP, PMP, LCSW etc. Not a legal barrier but
+  // a meaningful gap worth flagging. Risk only, no score penalty.
+  if ((job as any).requiresSoftCredential && (job as any).softCredentialDetail) {
+    const detail = (job as any).softCredentialDetail
+    riskOnlyCodes.push({
+      code: "RISK_CREDENTIAL_PREFERRED",
+      job_fact: `Job lists ${detail} as a requirement or strong preference.`,
+      profile_fact: "Profile does not show this certification.",
+      risk: `${detail} is listed as a requirement. While you can apply without it, expect this to come up — address it directly in your cover letter and show you understand what the certification requires.`,
+      severity: "low",
+    })
+    console.log("[scoring] Soft credential risk flag added:", detail)
   }
 
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
@@ -971,6 +1144,44 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     })
   }
 
+  // Finance sub-family mismatch penalty
+  // Only fires when both job and profile are Finance and sub-families are misaligned
+  if (job.jobFamily === "Finance" && job.financeSubFamily && profile.financeSubFamily) {
+    const distance = getFinanceSubFamilyDistance(job.financeSubFamily, profile.financeSubFamily)
+    if (distance >= 2) {
+      // Heavy mismatch (e.g. IB vs FP&A) — penalize and surface risk
+      const baseAmt = computePenaltyAmount("finance_subfamily_mismatch")
+      const amt = distance === 3 ? baseAmt * 1.5 : baseAmt
+      const jobSubLabel = job.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      const profileSubLabel = profile.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      penalties.push({
+        key: "finance_subfamily_mismatch",
+        amount: amt,
+        note: `Finance sub-family mismatch: job=${job.financeSubFamily}, profile=${profile.financeSubFamily}`,
+        risk: {
+          code: "RISK_SUBFAMILY_MISMATCH",
+          job_fact: `This is a ${jobSubLabel} role.`,
+          profile_fact: `Your finance experience is primarily in ${profileSubLabel}.`,
+          risk: `${jobSubLabel.charAt(0).toUpperCase() + jobSubLabel.slice(1)} and ${profileSubLabel} are different tracks within Finance. You have relevant analytical foundations, but the day-to-day work, career path, and required proof points are meaningfully different.`,
+          severity: "medium",
+          weight: -amt,
+        },
+      })
+    } else if (distance === 1) {
+      // Light mismatch — risk flag only, no score penalty
+      const jobSubLabel = job.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      const profileSubLabel = profile.financeSubFamily.replace("_", " ").replace("ib", "investment banking").replace("fpa", "FP&A")
+      riskOnlyCodes.push({
+        code: "RISK_SUBFAMILY_MISMATCH",
+        job_fact: `This is a ${jobSubLabel} role.`,
+        profile_fact: `Your finance experience is primarily in ${profileSubLabel}.`,
+        risk: `Your ${profileSubLabel} background is adjacent to ${jobSubLabel}. The analytical skills transfer, but expect questions about the gap in deal-specific or domain-specific experience.`,
+        severity: "low",
+        weight: 0,
+      })
+    }
+  }
+
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     if (profile.yearsExperienceApprox + 1 < job.yearsRequired) {
       riskOnlyCodes.push({
@@ -1035,7 +1246,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const capped: Penalty[] = []
 
   for (const p of penalties) {
-    const maxStack = POLICY.penalties[p.key].maxStackCount ?? 999
+    const maxStack = POLICY.penalties[p.key]?.maxStackCount ?? 999
     counts[p.key] = (counts[p.key] || 0) + 1
     if (counts[p.key] <= maxStack) capped.push(p)
   }

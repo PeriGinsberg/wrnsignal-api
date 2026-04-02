@@ -794,11 +794,18 @@ function buildDomainMismatchBullet(
     ? jobSignals.function_tags
     : []
 
+  const jobTextForLegal = [
+    String(jobSignals?.internship?.evidence?.internshipLine || ""),
+    String(jobSignals?.internship?.evidence?.inPersonLine || ""),
+    String(jobSignals?.internship?.evidence?.deptLine || ""),
+  ].join(" ").toLowerCase()
+
   const isLegalOps =
-    functionTags.includes("legal_regulatory") ||
-    /\b(law firm|legal operations|legal ops|legal team|general counsel)\b/i.test(
-      String(jobSignals?.internship?.evidence?.inPersonLine || "")
-    )
+    /\b(law firm|legal operations|legal ops|legal team|general counsel|paralegal|in-house counsel|legal department)\b/i.test(jobTextForLegal) &&
+    !functionTags.includes("finance_corp") &&
+    !functionTags.includes("accounting_finops") &&
+    jf !== "finance" &&
+    jf !== "accounting"
 
   if (isLegalOps) {
     return sentence(
@@ -882,8 +889,18 @@ export function renderBulletsV4(out: EvalOutput): {
   const profileFamilies = Array.isArray(out.profile_signals?.targetFamilies)
     ? out.profile_signals.targetFamilies.map((f: string) => String(f).toLowerCase())
     : []
+  const jobFunctionTags: string[] = Array.isArray(out.job_signals?.function_tags)
+    ? out.job_signals.function_tags.map((t: string) => String(t).toLowerCase())
+    : []
+  const jobHasFinanceTags = jobFunctionTags.includes("finance_corp") ||
+    jobFunctionTags.includes("accounting_finops")
+
+  // Suppress family mismatch when the job has finance function tags — 
+  // credit/project finance/fintech roles often classify as "Other" but are clearly
+  // finance-adjacent and shouldn't show a mismatch warning for Finance-targeting profiles
   const familyMismatch = jobFamilyStr && profileFamilies.length > 0 &&
-    !profileFamilies.includes(jobFamilyStr.toLowerCase())
+    !profileFamilies.includes(jobFamilyStr.toLowerCase()) &&
+    !(jobHasFinanceTags && profileFamilies.includes("finance"))
 
   if (familyMismatch && riskMax > 0) {
     const domainRisk = buildDomainMismatchBullet(jobFamilyStr, out.job_signals, out.profile_signals)

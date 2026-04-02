@@ -67,9 +67,16 @@ export async function runJobFit(args: {
   const decisionAfterGate = applyGateOverrides(decisionInitial, gate)
   const decisionFinal = applyRiskDowngrades(decisionAfterGate, scored.penaltySum)
 
+  // When a hard gate fires, the raw score is misleading — a candidate who
+  // cannot get an interview should never see a 60+ score. Cap gate scores
+  // at 25 so the number clearly matches the Pass decision.
+  const gateScore = gate.type === "force_pass"
+    ? Math.min(scored.score, 25)
+    : scored.score
+
   const baseOut: EvalOutput = {
     decision: decisionFinal,
-    score: scored.score,
+    score: gateScore,
     bullets: [],
     risk_flags: [],
     next_step: decisionNextStep(decisionFinal),
@@ -81,7 +88,7 @@ export async function runJobFit(args: {
     profile_signals: profileSignals,
     score_breakdown: {
       raw_score: scored.score,
-      clamped_score: scored.score,
+      clamped_score: gateScore,
       components: [
         { label: "decision_initial", points: 0, note: decisionInitial },
         { label: "decision_after_gate", points: 0, note: decisionAfterGate },

@@ -39,36 +39,113 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
     return { type: "force_pass", gateCode: "GATE_MBA_REQUIRED", detail: "MBA required" }
   }
 if (job.credentialRequired) {
+    // Training programs explicitly provide licensing as part of onboarding —
+    // the credential is earned in the role, not required before applying.
+    // Suppress the hard gate entirely for training programs.
+    if ((job as any).isTrainingProgram) {
+      // Don't gate — fall through to normal scoring
+    } else {
     const profileFunctionTags = profile.function_tags || []
     const statedRoles = (profile.statedInterests?.targetRoles || []).join(" ").toLowerCase()
     const statedIndustries = (profile.statedInterests?.targetIndustries || []).join(" ").toLowerCase()
+    const credentialType = (job.credentialDetail || "").toLowerCase()
 
-    const hasLegalSignal =
-      profileFunctionTags.includes("legal_regulatory") ||
-      statedRoles.includes("law") ||
-      statedRoles.includes("legal") ||
-      statedRoles.includes("attorney") ||
-      statedIndustries.includes("law") ||
-      statedIndustries.includes("legal")
+    // Exemption logic is credential-type-specific.
+    // A legal_regulatory function tag does NOT exempt from a FINRA gate —
+    // compliance/regulatory work is not the same as a securities license.
+    // Each credential type requires matching evidence in the profile.
 
-    const hasMedSignal =
-      profileFunctionTags.includes("premed_clinical") ||
-      statedRoles.includes("medical") ||
-      statedRoles.includes("physician") ||
-      statedRoles.includes("nursing")
+    const hasLegalCredential =
+      credentialType.includes("jd") ||
+      credentialType.includes("law") ||
+      credentialType.includes("bar") ||
+      credentialType.includes("attorney")
 
-    const hasCPASignal =
-      statedRoles.includes("cpa") ||
-      statedRoles.includes("certified public accountant")
+    const hasMedCredential =
+      credentialType.includes("md") ||
+      credentialType.includes("nursing") ||
+      credentialType.includes("medical") ||
+      credentialType.includes("clinical")
 
-    const profileHasCredential = hasLegalSignal || hasMedSignal || hasCPASignal
+    const hasCPACredential =
+      credentialType.includes("cpa") ||
+      credentialType.includes("accountant")
 
-    if (!profileHasCredential) {
+    const hasFinraCredential =
+      credentialType.includes("finra") ||
+      credentialType.includes("securities") ||
+      credentialType.includes("insurance license") ||
+      credentialType.includes("real estate license") ||
+      credentialType.includes("teaching") ||
+      credentialType.includes("engineer") ||
+      credentialType.includes("cdl")
+
+    // Profile exemption — only exempt if there is specific matching evidence
+    const profileExemptFromLegal =
+      hasLegalCredential && (
+        statedRoles.includes("law") ||
+        statedRoles.includes("legal") ||
+        statedRoles.includes("attorney") ||
+        statedIndustries.includes("law") ||
+        statedIndustries.includes("legal")
+      )
+
+    const profileExemptFromMed =
+      hasMedCredential && (
+        profileFunctionTags.includes("premed_clinical") ||
+        statedRoles.includes("medical") ||
+        statedRoles.includes("physician") ||
+        statedRoles.includes("nursing")
+      )
+
+    const profileExemptFromCPA =
+      hasCPACredential && (
+        statedRoles.includes("cpa") ||
+        statedRoles.includes("certified public accountant")
+      )
+
+    // FINRA/securities/licenses: only exempt if profile explicitly mentions
+    // holding the license or actively pursuing it (e.g. "SIE expected" is
+    // not the same as holding a license — still gate but softer detail)
+    const profileHoldsSIE =
+      /sie (exam )?(expected|completed|passed|obtained)/i.test(
+        (profile as any)?.resumeText || ""
+      )
+    const profileExemptFromFinra = false // Never fully exempt — license must be held
+
+    const profileIsExempt =
+      profileExemptFromLegal ||
+      profileExemptFromMed ||
+      profileExemptFromCPA ||
+      profileExemptFromFinra
+
+    if (!profileIsExempt) {
+      // Softer detail if candidate is actively pursuing the license
+      const isPursuing = profileHoldsSIE && hasFinraCredential
       return {
         type: "force_pass",
         gateCode: "GATE_CREDENTIAL_REQUIRED",
-        detail: `This role requires ${job.credentialDetail || "a professional credential or enrollment"} that is not present in your background. Applying without this qualification will not result in an interview.`,
+        detail: isPursuing
+          ? `This role requires ${job.credentialDetail || "a professional credential"} that you are working toward but do not yet hold. Most firms require this license before starting — confirm the firm's policy before applying.`
+          : `This role requires ${job.credentialDetail || "a professional credential or enrollment"} that is not present in your background. Applying without this qualification will not result in an interview.`,
       }
+    }
+    } // end !isTrainingProgram
+  } // end credentialRequired
+
+  // Hard seniority gate — when yearsRequired is 5+ and candidate has <= 2 years,
+  // the gap is structurally disqualifying regardless of keyword match.
+  // This prevents misleadingly high scores on roles the candidate cannot get.
+  if (
+    job.yearsRequired !== null &&
+    job.yearsRequired >= 5 &&
+    profile.yearsExperienceApprox !== null &&
+    profile.yearsExperienceApprox <= 2
+  ) {
+    return {
+      type: "force_pass",
+      gateCode: "GATE_EXPERIENCE_GAP",
+      detail: `This role requires ${job.yearsRequired}+ years of experience. With approximately ${profile.yearsExperienceApprox} year${profile.yearsExperienceApprox === 1 ? "" : "s"} of experience, the gap is too large to overcome in the application process. Focus on roles targeting early-career candidates.`,
     }
   }
 
@@ -84,6 +161,15 @@ if (job.credentialRequired) {
   // Hybrid/onsite are fine.
   if (profile.constraints.hardNoFullyRemote && job.location.mode === "remote") {
     return { type: "force_pass", gateCode: "GATE_REMOTE_MISMATCH", detail: "Hard no remote vs remote job" }
+  }
+
+  // Hard no part-time — candidate explicitly wants full-time only
+  if ((profile.constraints as any).hardNoPartTime && (job as any).isPartTime) {
+    return {
+      type: "force_pass",
+      gateCode: "GATE_PARTTIME_MISMATCH",
+      detail: "You are looking for full-time roles only. This posting is part-time.",
+    }
   }
 
   // If the candidate explicitly says "no heavy analytics", treat heavy analytics as a hard stop.

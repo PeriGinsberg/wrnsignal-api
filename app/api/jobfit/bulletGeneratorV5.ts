@@ -9,7 +9,6 @@
  * PLUS why_structured, risk_structured, and cover_letter_strategy.
  */
 
-
 import type { EvalOutput } from "./signals"
 
 // ─── Output types ─────────────────────────────────────────────────────────────
@@ -100,6 +99,7 @@ ${out.decision} (score: ${out.score})
 - Name the employer, metric, or outcome. Never say "your background includes X" — say what you specifically did.
 - If the profile_fact mentions a metric, that number MUST appear in the bullet.
 - No comma-separated lists inside a sentence — pick the single strongest detail.
+- CRITICAL: Never confuse the two employers in this prompt. The student worked at their past employer(s) named in the STUDENT PROFILE. The company they are applying to is named in the JOB DESCRIPTION. These are always different companies — never attribute the student's work experience to the target employer, and never say the student worked at the company in the job description.
 
 ### On transferable skills
 - Make the translation explicit. Show them their experience in the hiring manager's language.
@@ -110,26 +110,26 @@ ${out.decision} (score: ${out.score})
 - RISK bullets: gap = one sentence. reframe = one to two sentences max. Tool risks = one sentence reframe only.
 - Cut every word that doesn't add specific information.
 
-
 ### On action instructions
 - Broaden beyond cover letters — can be resume framing, application strategy, interview prep, or networking.
 - One specific instruction. Not "highlight this" — tell them exactly what to do, where, and how.
-- Never put quoted language in the action instruction. Tell them what to say, not the exact words to use. Instead of: 'Write: "I built audience-first strategies"' — say: 'Lead with your audience research work and frame it as strategic, not just executional.'
+- Never put quoted language in the action instruction. Tell them what to convey, not the exact words to use.
 
 ### On risk reframes
 - CRITICAL: Only generate risk bullets for risk_codes that are explicitly provided. If risk_codes is an empty array, return an empty risk_bullets array. Never invent risks that aren't in the risk_codes input. 
 - Don't just name the gap — reframe it.
+- CRITICAL: The reframe must cite only evidence that actually appears in the profile text. 
+  Never say "you likely did X" or "you probably Y" — only reference what is explicitly stated.
+  If there is no adjacent evidence in the profile, say so plainly and give one action instruction only.
 - Show the student what adjacent experience they have that partially bridges it.
-- Give them exact language to use. Never leave them feeling helpless.
 - TOOL RISKS: gap = one sentence. reframe = one sentence naming adjacent evidence + one action. No quoted language.
-- ALL OTHER RISKS: gap = one sentence. reframe = two sentences max. No quoted language — tell them what to convey, not the exact words to use.
+- ALL OTHER RISKS: gap = one sentence. reframe = two sentences max. No quoted language.
 
 ### On voice and tone
 - Write like a sharp advisor talking directly to the student, not like a bot generating output.
 - Vary your sentence structure across bullets — don't start every lead the same way.
-- The connection sentence should feel like an insight, not a label. Show why it matters, don't just state that it does.
+- The connection sentence should feel like an insight, not a label.
 - The action should feel like advice from someone who knows hiring, not a checklist item.
-
 
 ---
 
@@ -144,7 +144,7 @@ CRITICAL: Only generate risk_bullets for risk_codes that are explicitly provided
       "keyword": "3-5 WORD ALL-CAPS LABEL",
       "lead": "One sentence naming the specific employer, role, outcome, or metric from their profile.",
       "connection": "One sentence connecting that specific experience to the job requirement, using the job's own language.",
-      "action": "One concrete instruction — exactly what to write, lead with, or name in the application."
+      "action": "One concrete instruction — exactly what to do, where, and how."
     }
   ],
   "risk_bullets": [
@@ -177,6 +177,13 @@ function formatRiskBullet(b: RiskBullet): string {
 export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const t0 = Date.now()
 
+  // Hard guard: if no risk_codes, skip Claude for risks entirely
+  const hasRisks = Array.isArray(out.risk_codes) && out.risk_codes.length > 0
+
+  // For PASS decisions, cap WHY bullets at 2 — enough to show transferable strengths
+  // without making an apply case for a role the student shouldn't pursue
+  const isPass = String(out.decision).toLowerCase() === "pass"
+
   const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -192,7 +199,9 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   })
 
   if (!apiResponse.ok) {
-    throw new Error(`Anthropic API error: ${apiResponse.status} ${await apiResponse.text()}`)
+    throw new Error(
+      `Anthropic API error: ${apiResponse.status} ${await apiResponse.text()}`
+    )
   }
 
   const json = await apiResponse.json()
@@ -203,11 +212,16 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     .map((b: any) => String(b.text ?? ""))
     .join("")
 
-  const clean = rawJson
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim()
+  // Strip markdown fences and extract JSON object
+  const fenceStripped = rawJson.replace(/```json|```/gi, "").trim()
+  const firstBrace = fenceStripped.indexOf("{")
+  const lastBrace = fenceStripped.lastIndexOf("}")
+  if (firstBrace === -1 || lastBrace === -1) {
+    throw new Error(
+      `V5 no JSON object found. Raw snippet: ${rawJson.slice(0, 200)}`
+    )
+  }
+  const clean = fenceStripped.slice(firstBrace, lastBrace + 1)
 
   let parsed: {
     why_bullets: WhyBullet[]
@@ -223,8 +237,9 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     )
   }
 
-  const whyBullets = parsed.why_bullets ?? []
-  const riskBullets = parsed.risk_bullets ?? []
+  const allWhyBullets = parsed.why_bullets ?? []
+  const whyBullets = isPass ? allWhyBullets.slice(0, 2) : allWhyBullets
+  const riskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
 
   return {
     why: whyBullets.map(formatWhyBullet),
