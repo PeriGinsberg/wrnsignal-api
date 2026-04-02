@@ -1824,7 +1824,7 @@ function detectInternshipSignals(textRaw: string) {
 
   const lines = splitEvidenceLines(textRaw)
 
-  const isInternship = internshipKeywords.some((k) => t.includes(k))
+  const isInternship = internshipKeywords.some((k) => new RegExp("\\b" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(t))
   const isSummer = summerKeywords.some((k) => t.includes(k))
   const mentionsAITools = aiToolsKeywords.some((k) => t.includes(k))
   const rotationHitCount = rotationKeywords.reduce((acc, k) => acc + (t.includes(k) ? 1 : 0), 0)
@@ -2173,7 +2173,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
     ? "Other"
-    : jobTitleIsMarketing && jobFamilyFromTags === "Sales"
+    : jobTitleIsMarketing
       ? "Marketing"
       : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
         ? "Finance"
