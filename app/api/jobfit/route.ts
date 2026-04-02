@@ -203,7 +203,7 @@ export async function POST(req: NextRequest) {
         const mod = await import("../_lib/jobfitProfileAdapter")
         if (typeof (mod as any).mapClientProfileToOverrides === "function") {
           profileOverrides = (mod as any).mapClientProfileToOverrides({
-            profileText: effectiveProfileText,
+            profileText: profileText || effectiveProfileText,
             profileStructured: profileStructured,
             targetRoles: targetRoles,
             preferredLocations: preferredLocations,
