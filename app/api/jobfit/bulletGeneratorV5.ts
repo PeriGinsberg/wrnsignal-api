@@ -165,11 +165,11 @@ CRITICAL: Only generate risk_bullets for risk_codes that are explicitly provided
 // ─── Formatters (structured → string for backward compat) ────────────────────
 
 function formatWhyBullet(b: WhyBullet): string {
-  return `${b.lead} ${b.connection} -> ${b.action}`
+  return b.lead + " " + b.connection + " -> " + b.action
 }
 
 function formatRiskBullet(b: RiskBullet): string {
-  return `${b.gap} ${b.reframe}`
+  return b.gap + " " + b.reframe
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
 
   if (!apiResponse.ok) {
     throw new Error(
-      `Anthropic API error: ${apiResponse.status} ${await apiResponse.text()}`
+      "Anthropic API error: " + apiResponse.status + " " + (await apiResponse.text())
     )
   }
 
@@ -218,7 +218,7 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const lastBrace = fenceStripped.lastIndexOf("}")
   if (firstBrace === -1 || lastBrace === -1) {
     throw new Error(
-      `V5 no JSON object found. Raw snippet: ${rawJson.slice(0, 200)}`
+      "V5 no JSON object found. Raw snippet: " + rawJson.slice(0, 200)
     )
   }
   const clean = fenceStripped.slice(firstBrace, lastBrace + 1)
@@ -233,7 +233,7 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     parsed = JSON.parse(clean)
   } catch {
     throw new Error(
-      `V5 JSON parse failed. Raw snippet: ${rawJson.slice(0, 400)}`
+      "V5 JSON parse failed. Raw snippet: " + rawJson.slice(0, 400)
     )
   }
 
