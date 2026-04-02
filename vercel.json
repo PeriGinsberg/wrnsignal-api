@@ -1,3 +1,3 @@
 {
-  "buildCommand": "chmod +x node_modules/.bin/next && next build --no-turbo"
+  "buildCommand": "chmod +x node_modules/.bin/next && next build --webpack"
 }
