@@ -268,6 +268,8 @@ export async function POST(req: NextRequest) {
     }
     const { fingerprint_hash, fingerprint_code } = buildFingerprint(fpPayload)
 
+    console.log("[jobfit/route] PRE-CACHE-CHECK:", { hasSupabase: !!supabase, forceRerun, hasRealProfileId, profileId, fingerprint_hash: fingerprint_hash?.slice(0, 12) })
+
     if (supabase && !forceRerun && hasRealProfileId) {
       try {
         const { data: existingRun } = await supabase
@@ -276,6 +278,8 @@ export async function POST(req: NextRequest) {
           .eq("client_profile_id", profileId)
           .eq("fingerprint_hash", fingerprint_hash)
           .maybeSingle()
+
+        console.log("[jobfit/route] CACHE-RESULT:", { cacheHit: !!existingRun?.result_json, hasRun: !!existingRun })
 
         if (existingRun?.result_json) {
           const cleaned = enforceClientFacingRules(existingRun.result_json as any)
