@@ -178,13 +178,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Use resume_text as primary profile source — fall back to profile_text
-    const effectiveProfileText = resumeText || profileText
-
-    if (!effectiveProfileText) {
-      return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
-    }
-
     const forceFromQuery = (() => {
       try {
         const url = new URL(req.url)
@@ -197,6 +190,59 @@ export async function POST(req: NextRequest) {
 
     const forceFromBody = body?.force === true || body?.force_rerun === true
     const forceRerun = forceFromQuery || forceFromBody
+
+    const supabase = await getSupabaseAdmin()
+
+    // SAFETY: never serve cached results if we don't have a real profile identity.
+    // If profileId is MISSING, a cache hit could return a different user's result.
+    const hasRealProfileId = profileId && profileId !== MISSING
+
+    // ── Persona support (optional) ──────────────────────────────────
+    const personaId = String(body?.persona_id || "").trim() || null
+    let personaResumeText: string | null = null
+    let profileVersionAtRun: number | null = null
+    let personaVersionAtRun: number | null = null
+
+    if (personaId && hasRealProfileId && supabase) {
+      const { data: persona, error: personaErr } = await supabase
+        .from("client_personas")
+        .select("resume_text, persona_version, profile_id")
+        .eq("id", personaId)
+        .maybeSingle()
+
+      if (personaErr) console.warn("[jobfit/route] persona lookup failed:", personaErr.message)
+
+      if (persona && persona.profile_id === profileId) {
+        personaResumeText = String(persona.resume_text || "").trim()
+        personaVersionAtRun = persona.persona_version ?? 1
+      } else if (persona) {
+        return withCorsJson(req, { error: "Persona does not belong to this profile" }, 403)
+      }
+
+      const { data: pv } = await supabase
+        .from("client_profiles")
+        .select("profile_version")
+        .eq("id", profileId)
+        .maybeSingle()
+      profileVersionAtRun = pv?.profile_version ?? 1
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // Use resume_text as primary profile source — fall back to profile_text
+    // If persona was specified and found, splice its resume into the canonical profile blob
+    let effectiveProfileText: string
+    if (personaResumeText && profileText) {
+      effectiveProfileText = profileText.replace(
+        /(Resume:\n)([\s\S]*?)(\n[A-Z][a-z]|$)/,
+        `$1${personaResumeText}$3`
+      )
+    } else {
+      effectiveProfileText = personaResumeText || resumeText || profileText
+    }
+
+    if (!effectiveProfileText) {
+      return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
+    }
 
     let profileOverrides: any = body?.profileOverrides ?? null
     if (!profileOverrides) {
@@ -221,12 +267,6 @@ export async function POST(req: NextRequest) {
       system: { jobfit_logic_version: JOBFIT_LOGIC_VERSION },
     }
     const { fingerprint_hash, fingerprint_code } = buildFingerprint(fpPayload)
-
-    const supabase = await getSupabaseAdmin()
-
-    // SAFETY: never serve cached results if we don't have a real profile identity.
-    // If profileId is MISSING, a cache hit could return a different user's result.
-    const hasRealProfileId = profileId && profileId !== MISSING
 
     if (supabase && !forceRerun && hasRealProfileId) {
       try {
@@ -309,6 +349,9 @@ export async function POST(req: NextRequest) {
           fingerprint_code,
           verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
           result_json: result,
+          persona_id: personaId || null,
+          profile_version_at_run: profileVersionAtRun,
+          persona_version_at_run: personaVersionAtRun,
         })
       } catch (e: any) {
         console.warn("[jobfit/route] cache insert failed:", e?.message || String(e))
