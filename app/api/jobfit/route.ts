@@ -355,9 +355,19 @@ export async function POST(req: NextRequest) {
         }).select("id").single()
 
         // Auto-create or update signal_applications
-        const companyName = String((result as any)?.job_signals?.companyName || "").trim()
-        const jobTitle = String((result as any)?.job_signals?.jobTitle || "").trim()
+        let companyName = String((result as any)?.job_signals?.companyName || "").trim()
+        let jobTitle = String((result as any)?.job_signals?.jobTitle || "").trim()
         const runId = runRow?.id || null
+
+        // Clean common prefixes from extracted values
+        jobTitle = jobTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+        companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+
+        // Skip auto-creation if extracted values look like section headers, not real names
+        const isGarbage = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are)\b/i.test(s)
+        if (isGarbage(companyName)) companyName = ""
+
+        console.log("[jobfit/route] auto-application signals:", { companyName, jobTitle, runId })
 
         if (companyName && runId) {
           const { data: existingApp } = await supabase
