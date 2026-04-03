@@ -2096,7 +2096,7 @@ function extractJobTitle(rawLines: string[]): string | null {
   // First pass: find a line that looks like a real job title (has role keywords)
   const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
   const prefixStrip = /^(?:Title|Position|Role|Job Title)\s*[:]\s*/i
-  const sectionWords = /^(position overview|about|overview|description|summary|responsibilities|qualifications|requirements|key responsibilities|how to apply|benefits|compensation|job details|role overview)\b/i
+  const sectionWords = /^(position overview|about|overview|description|summary|responsibilities|qualifications|requirements|key responsibilities|how to apply|benefits|compensation|job details|role overview|company description|job description|role description)\b/i
   for (const line of rawLines.slice(0, 10)) {
     let trimmed = line.trim()
     if (trimmed.length === 0 || trimmed.length > 120 || looksLikeLocation(trimmed)) continue
@@ -2162,7 +2162,7 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   }
 
   // Fallback: second non-empty line (many postings put company name on line 2)
-  const sectionHeaderPattern = /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|what you|what we|the role|the team|the position|the opportunity|job details|role overview|key responsibilities|how to apply|benefits|compensation|title|location|department|reports to|job type|employment type)\b/i
+  const sectionHeaderPattern = /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|what you|what we|the role|the team|the position|the opportunity|job details|role overview|key responsibilities|how to apply|benefits|compensation|title|location|department|reports to|job type|employment type|company description|job description|role description)\b/i
   let nonEmptyCount = 0
   for (const line of rawLines) {
     const trimmed = line.trim()

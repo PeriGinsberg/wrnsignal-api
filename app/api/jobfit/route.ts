@@ -296,7 +296,7 @@ export async function POST(req: NextRequest) {
             let cachedTitle = String(cleaned?.job_signals?.jobTitle || "").trim()
             cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
             cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
-            const isGarbageCached = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are)\b/i.test(s)
+            const isGarbageCached = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s)
             if (isGarbageCached(cachedCompany)) cachedCompany = ""
 
             if (cachedCompany) {
@@ -318,7 +318,7 @@ export async function POST(req: NextRequest) {
                   signal_run_at: new Date().toISOString(),
                   persona_id: personaId || null,
                   application_status: "saved",
-                  interest_level: 0,
+                  interest_level: 1,
                 })
                 console.log("[jobfit/route] created application from cache hit:", cachedCompany, cachedTitle)
               }
@@ -412,7 +412,7 @@ export async function POST(req: NextRequest) {
         companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
 
         // Skip auto-creation if extracted values look like section headers, not real names
-        const isGarbage = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are)\b/i.test(s)
+        const isGarbage = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s)
         if (isGarbage(companyName)) companyName = ""
 
         console.log("[jobfit/route] auto-application signals:", {
@@ -461,7 +461,7 @@ export async function POST(req: NextRequest) {
               jobfit_run_id: runId,
               persona_id: personaId || null,
               application_status: "saved",
-              interest_level: 0,
+              interest_level: 1,
             }).select("id").single()
 
             if (createErr) {

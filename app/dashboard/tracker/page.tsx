@@ -52,7 +52,7 @@ function Stars({ count, max = 5, onClick }: { count: number; max?: number; onCli
       {Array.from({ length: max }, (_, i) => (
         <span
           key={i}
-          onClick={() => onClick?.(count === i + 1 ? 0 : i + 1)}
+          onClick={() => onClick?.(count === i + 1 ? 1 : i + 1)}
           style={{ cursor: onClick ? "pointer" : "default", color: i < count ? T.WRN_ORANGE : "rgba(255,255,255,0.15)", fontSize: 13 }}
         >
           ★
