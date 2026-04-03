@@ -2093,9 +2093,20 @@ export function getFinanceSubFamilyDistance(
 // ── Job title & company name extraction ─────────────────────────────────────
 
 function extractJobTitle(rawLines: string[]): string | null {
-  for (const line of rawLines) {
+  // First pass: find a line that looks like a real job title (has role keywords)
+  const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
+  for (const line of rawLines.slice(0, 10)) {
     const trimmed = line.trim()
-    if (trimmed.length > 0 && trimmed.length <= 120) return trimmed
+    if (trimmed.length > 0 && trimmed.length <= 120 && roleWords.test(trimmed) && !looksLikeLocation(trimmed)) {
+      return trimmed
+    }
+  }
+  // Second pass: first non-empty line that isn't a location
+  for (const line of rawLines.slice(0, 5)) {
+    const trimmed = line.trim()
+    if (trimmed.length > 0 && trimmed.length <= 120 && !looksLikeLocation(trimmed)) {
+      return trimmed
+    }
   }
   return null
 }

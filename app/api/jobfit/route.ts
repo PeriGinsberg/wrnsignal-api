@@ -22,6 +22,7 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 import { RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
+import { extractJobSignals } from "../jobfit/extract"
 import { enforceClientFacingRules } from "./enforceClientFacingRules"
 
 import { TAXONOMY_V4_STAMP } from "../_v4/taxonomy"
@@ -238,6 +239,12 @@ export async function POST(req: NextRequest) {
 
         if (existingRun?.result_json) {
           const cleaned = enforceClientFacingRules(existingRun.result_json as any)
+          // Backfill jobTitle/companyName on cached results that predate the extraction
+          if (cleaned?.job_signals && cleaned.job_signals.jobTitle === undefined) {
+            const backfill = extractJobSignals(jobText)
+            cleaned.job_signals.jobTitle = backfill.jobTitle
+            cleaned.job_signals.companyName = backfill.companyName
+          }
           return withCorsJson(req, {
             ...(cleaned as any),
             fingerprint_code,
