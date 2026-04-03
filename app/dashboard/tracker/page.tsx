@@ -157,7 +157,10 @@ export default function TrackerPage() {
   const [showAddInterview, setShowAddInterview] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [editingApp, setEditingApp] = useState<any>(null)
+  const [editingInterview, setEditingInterview] = useState<any>(null)
+  const [editingInterviewId, setEditingInterviewId] = useState<string | null>(null)
   const [interviewFilter, setInterviewFilter] = useState("all")
+  const [saving, setSaving] = useState(false)
 
   // Add job form
   const [newJob, setNewJob] = useState({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "" })
@@ -187,15 +190,65 @@ export default function TrackerPage() {
 
   // ── Application CRUD ──────────────────────────────────────
 
-  async function updateApp(id: string, updates: any) {
+  function expandApp(app: any) {
+    setEditingApp({ ...app })
+    setExpandedId(app.id)
+  }
+
+  function collapseApp() {
+    setEditingApp(null)
+    setExpandedId(null)
+  }
+
+  function updateDraft(updates: any) {
+    setEditingApp((prev: any) => prev ? { ...prev, ...updates } : prev)
+  }
+
+  async function saveApp() {
+    if (!editingApp) return
+    setSaving(true)
     const token = await getToken()
-    if (!token) return
-    await fetch(`/api/applications/${id}`, {
+    if (!token) { setSaving(false); return }
+    const { id, profile_id, created_at, signal_decision, signal_score, signal_run_at, jobfit_run_id, persona_id, interview_count, ...fields } = editingApp
+    await fetch(`/api/applications/${editingApp.id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(fields),
     })
-    setApplications((prev) => prev.map((a) => a.id === id ? { ...a, ...updates } : a))
+    setApplications((prev) => prev.map((a) => a.id === editingApp.id ? { ...a, ...fields } : a))
+    setSaving(false)
+    setToast("Changes saved")
+  }
+
+  // Interview editing
+  function expandInterview(iv: any) {
+    setEditingInterview({ ...iv })
+    setEditingInterviewId(iv.id)
+  }
+
+  function collapseInterview() {
+    setEditingInterview(null)
+    setEditingInterviewId(null)
+  }
+
+  function updateInterviewDraft(updates: any) {
+    setEditingInterview((prev: any) => prev ? { ...prev, ...updates } : prev)
+  }
+
+  async function saveInterview() {
+    if (!editingInterview) return
+    setSaving(true)
+    const token = await getToken()
+    if (!token) { setSaving(false); return }
+    const { id, profile_id, application_id, created_at, signal_decision, signal_score, signal_applications, ...fields } = editingInterview
+    await fetch(`/api/interviews/${editingInterview.id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(fields),
+    })
+    setInterviews((prev) => prev.map((i) => i.id === editingInterview.id ? { ...i, ...fields } : i))
+    setSaving(false)
+    setToast("Changes saved")
   }
 
   async function deleteApp(id: string) {
@@ -413,7 +466,7 @@ export default function TrackerPage() {
                       return (
                         <div
                           key={a.id}
-                          onClick={() => { setExpandedId(a.id); setViewMode("list"); setFilterStatus("all") }}
+                          onClick={() => { expandApp(a); setViewMode("list"); setFilterStatus("all") }}
                           style={{ background: T.CARD, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8, cursor: "pointer" }}
                         >
                           <div style={{ fontSize: 12, fontWeight: 900, color: T.TEXT, opacity: 0.85 }}>{a.company_name}</div>
@@ -452,7 +505,7 @@ export default function TrackerPage() {
                 return (
                   <div key={a.id}>
                     <div
-                      onClick={() => setExpandedId(expanded ? null : a.id)}
+                      onClick={() => expanded ? collapseApp() : expandApp(a)}
                       style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr 1.2fr 0.7fr 0.9fr 0.8fr", padding: "13px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, cursor: "pointer", alignItems: "center", background: expanded ? "rgba(255,255,255,0.02)" : "transparent" }}
                     >
                       <div>
@@ -464,54 +517,54 @@ export default function TrackerPage() {
                       {ds ? <Pill text={a.signal_decision} style={ds} /> : <span style={{ fontSize: 12, color: T.DIM }}>—</span>}
                       <span style={{ fontSize: 14, fontWeight: 900, color: scoreColor(a.signal_score) }}>{a.signal_score ?? "—"}</span>
                       <Stars count={a.interest_level || 0} />
-                      <button onClick={(e) => { e.stopPropagation(); setExpandedId(expanded ? null : a.id) }} style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
+                      <button onClick={(e) => { e.stopPropagation(); expanded ? collapseApp() : expandApp(a) }} style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
                         {expanded ? "Close" : "View"}
                       </button>
                     </div>
 
-                    {/* Expanded detail */}
-                    {expanded && (
+                    {/* Expanded detail — edits go to draft, Save flushes */}
+                    {expanded && editingApp && (
                       <div style={{ padding: "20px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, background: "rgba(255,255,255,0.02)" }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>STATUS</span>
-                            <SelectField value={a.application_status} options={APP_STATUSES} onChange={(v) => updateApp(a.id, { application_status: v })} />
+                            <SelectField value={editingApp.application_status} options={APP_STATUSES} onChange={(v) => updateDraft({ application_status: v })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>APPLIED DATE</span>
-                            <input type="date" style={{ ...input, height: 38 }} value={a.applied_date || ""} onBlur={(e) => updateApp(a.id, { applied_date: e.target.value || null })} onChange={(e) => setApplications((prev) => prev.map((x) => x.id === a.id ? { ...x, applied_date: e.target.value } : x))} />
+                            <input type="date" style={{ ...input, height: 38 }} value={editingApp.applied_date || ""} onChange={(e) => updateDraft({ applied_date: e.target.value || null })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>LOCATION</span>
-                            <input style={{ ...input, height: 38 }} defaultValue={a.location || ""} onBlur={(e) => updateApp(a.id, { location: e.target.value })} />
+                            <input style={{ ...input, height: 38 }} value={editingApp.location || ""} onChange={(e) => updateDraft({ location: e.target.value })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>JOB URL</span>
                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                              <input style={{ ...input, height: 38, flex: 1 }} defaultValue={a.job_url || ""} onBlur={(e) => updateApp(a.id, { job_url: e.target.value })} />
-                              {a.job_url && <a href={a.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, fontSize: 11, fontWeight: 900, whiteSpace: "nowrap" }}>Open →</a>}
+                              <input style={{ ...input, height: 38, flex: 1 }} value={editingApp.job_url || ""} onChange={(e) => updateDraft({ job_url: e.target.value })} />
+                              {editingApp.job_url && <a href={editingApp.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, fontSize: 11, fontWeight: 900, whiteSpace: "nowrap" }}>Open →</a>}
                             </div>
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>SOURCE</span>
-                            <SelectField value={a.application_location || "Company Website"} options={APP_LOCATIONS} onChange={(v) => updateApp(a.id, { application_location: v })} />
+                            <SelectField value={editingApp.application_location || "Company Website"} options={APP_LOCATIONS} onChange={(v) => updateDraft({ application_location: v })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>INTEREST</span>
-                            <Stars count={a.interest_level || 0} onClick={(n) => updateApp(a.id, { interest_level: n })} />
+                            <Stars count={editingApp.interest_level || 0} onClick={(n) => updateDraft({ interest_level: n })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>COVER LETTER SENT</span>
-                            <YesNoPills value={!!a.cover_letter_submitted} onChange={(v) => updateApp(a.id, { cover_letter_submitted: v })} />
+                            <YesNoPills value={!!editingApp.cover_letter_submitted} onChange={(v) => updateDraft({ cover_letter_submitted: v })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>REFERRAL</span>
-                            <YesNoPills value={!!a.referral} onChange={(v) => updateApp(a.id, { referral: v })} />
+                            <YesNoPills value={!!editingApp.referral} onChange={(v) => updateDraft({ referral: v })} />
                           </div>
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>NOTES</span>
-                          <textarea style={{ ...textarea, minHeight: 60 }} defaultValue={a.notes || ""} onBlur={(e) => updateApp(a.id, { notes: e.target.value })} />
+                          <textarea style={{ ...textarea, minHeight: 60 }} value={editingApp.notes || ""} onChange={(e) => updateDraft({ notes: e.target.value })} />
                         </div>
                         {a.signal_score != null && ds && (
                           <div style={{ marginTop: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 16px", border: `1px solid ${T.BORDER_SOFT}`, display: "flex", alignItems: "center", gap: 14 }}>
@@ -522,12 +575,20 @@ export default function TrackerPage() {
                             </div>
                           </div>
                         )}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
-                          {["interviewing", "offer", "applied"].includes(a.application_status) && (
-                            <button onClick={() => { setNewInterview({ ...newInterview, application_id: a.id }); setShowAddInterview(true); setActiveTab("interviews") }} style={{ ...btnSecondary, fontSize: 11, padding: "6px 14px", borderRadius: 8, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16 }}>
+                          <button onClick={saveApp} disabled={saving} style={{ ...btnPrimary, fontSize: 12, padding: "9px 18px", borderRadius: 10, opacity: saving ? 0.5 : 1 }}>
+                            {saving ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button onClick={collapseApp} style={{ ...btnSecondary, fontSize: 12, padding: "9px 18px", borderRadius: 10 }}>
+                            Cancel
+                          </button>
+                          {["interviewing", "offer", "applied"].includes(editingApp.application_status) && (
+                            <button onClick={() => { setNewInterview({ ...newInterview, application_id: a.id }); setShowAddInterview(true); setActiveTab("interviews") }} style={{ ...btnSecondary, fontSize: 11, padding: "6px 14px", borderRadius: 8, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", marginLeft: "auto" }}>
                               + Add Interview
                             </button>
                           )}
+                        </div>
+                        <div style={{ marginTop: 12 }}>
                           <button onClick={() => deleteApp(a.id)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: 12, cursor: "pointer", padding: 0 }}>
                             Delete Application
                           </button>
@@ -619,8 +680,10 @@ export default function TrackerPage() {
             const ss = STATUS_STYLE[iv.status] || STATUS_STYLE.saved
             const grad = INTERVIEW_GRADIENT[iv.status] || INTERVIEW_GRADIENT.not_scheduled
             const ds = DECISION_STYLE[iv.signal_decision] || null
+            const isEditing = editingInterviewId === iv.id
+            const draft = isEditing ? editingInterview : iv
             return (
-              <div key={iv.id} style={{ ...card, marginBottom: 12 }}>
+              <div key={iv.id} style={{ ...card, marginBottom: 12, cursor: "pointer" }} onClick={() => isEditing ? null : expandInterview(iv)}>
                 <div style={{ height: 3, background: grad }} />
                 <div style={{ padding: "16px 18px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -631,33 +694,83 @@ export default function TrackerPage() {
                     </div>
                     <Pill text={iv.status.replace(/_/g, " ")} style={ss} />
                   </div>
-                  <div style={{ display: "flex", gap: 20, marginTop: 12, flexWrap: "wrap" }}>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>INTERVIEWER</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: T.TEXT, marginTop: 2 }}>{iv.interviewer_names || "—"}</div>
+
+                  {!isEditing && (
+                    <div style={{ display: "flex", gap: 20, marginTop: 12, flexWrap: "wrap" }}>
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>INTERVIEWER</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: T.TEXT, marginTop: 2 }}>{iv.interviewer_names || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>DATE</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: T.TEXT, marginTop: 2 }}>{formatDate(iv.interview_date)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>THANK YOU</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: iv.thank_you_sent ? "#4ade80" : T.DIM, marginTop: 2 }}>{iv.thank_you_sent ? "Sent" : "Not sent"}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>CONFIDENCE</div>
+                        <div style={{ marginTop: 4 }}><ConfidenceDots level={iv.confidence_level || 3} /></div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>SIGNAL</div>
+                        <div style={{ marginTop: 2 }}>
+                          {ds ? <><Pill text={iv.signal_decision} style={ds} /> <span style={{ fontSize: 12, fontWeight: 900, color: scoreColor(iv.signal_score), marginLeft: 6 }}>{iv.signal_score}</span></> : <span style={{ fontSize: 12, color: T.DIM }}>—</span>}
+                        </div>
+                      </div>
+                      {iv.notes && (
+                        <div style={{ width: "100%" }}>
+                          <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>NOTES</div>
+                          <p style={{ fontSize: 12, color: T.MUTED, marginTop: 2, lineHeight: "18px" }}>{iv.notes}</p>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>DATE</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: T.TEXT, marginTop: 2 }}>{formatDate(iv.interview_date)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>THANK YOU SENT</div>
-                      <div style={{ marginTop: 2 }}>
-                        <YesNoPills value={!!iv.thank_you_sent} onChange={(v) => setThankYou(iv.id, v)} />
+                  )}
+
+                  {/* Expanded edit form */}
+                  {isEditing && draft && (
+                    <div style={{ marginTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 14 }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div>
+                          <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>STAGE</span>
+                          <SelectField value={draft.interview_stage} options={INTERVIEW_STAGES} onChange={(v) => updateInterviewDraft({ interview_stage: v })} />
+                        </div>
+                        <div>
+                          <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>STATUS</span>
+                          <SelectField value={draft.status} options={INTERVIEW_STATUSES} onChange={(v) => updateInterviewDraft({ status: v })} />
+                        </div>
+                        <div>
+                          <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>INTERVIEWER</span>
+                          <input style={{ ...input, height: 38 }} value={draft.interviewer_names || ""} onChange={(e) => updateInterviewDraft({ interviewer_names: e.target.value })} />
+                        </div>
+                        <div>
+                          <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>DATE</span>
+                          <input type="date" style={{ ...input, height: 38 }} value={draft.interview_date || ""} onChange={(e) => updateInterviewDraft({ interview_date: e.target.value || null })} />
+                        </div>
+                        <div>
+                          <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>THANK YOU SENT</span>
+                          <YesNoPills value={!!draft.thank_you_sent} onChange={(v) => updateInterviewDraft({ thank_you_sent: v })} />
+                        </div>
+                        <div>
+                          <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>CONFIDENCE</span>
+                          <ConfidenceDots level={draft.confidence_level || 3} onClick={(n) => updateInterviewDraft({ confidence_level: n })} />
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 12 }}>
+                        <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>NOTES</span>
+                        <textarea style={{ ...textarea, minHeight: 60 }} value={draft.notes || ""} onChange={(e) => updateInterviewDraft({ notes: e.target.value })} />
+                      </div>
+                      <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                        <button onClick={saveInterview} disabled={saving} style={{ ...btnPrimary, fontSize: 12, padding: "9px 18px", borderRadius: 10, opacity: saving ? 0.5 : 1 }}>
+                          {saving ? "Saving..." : "Save Changes"}
+                        </button>
+                        <button onClick={collapseInterview} style={{ ...btnSecondary, fontSize: 12, padding: "9px 18px", borderRadius: 10 }}>
+                          Cancel
+                        </button>
                       </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>CONFIDENCE</div>
-                      <div style={{ marginTop: 4 }}><ConfidenceDots level={iv.confidence_level || 3} /></div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>SIGNAL</div>
-                      <div style={{ marginTop: 2 }}>
-                        {ds ? <><Pill text={iv.signal_decision} style={ds} /> <span style={{ fontSize: 12, fontWeight: 900, color: scoreColor(iv.signal_score), marginLeft: 6 }}>{iv.signal_score}</span></> : <span style={{ fontSize: 12, color: T.DIM }}>—</span>}
-                      </div>
-                    </div>
-                  </div>
-                  {iv.notes && <p style={{ fontSize: 12, color: T.MUTED, marginTop: 10, lineHeight: "18px" }}>{iv.notes}</p>}
+                  )}
                 </div>
               </div>
             )
