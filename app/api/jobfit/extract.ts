@@ -2100,13 +2100,26 @@ function extractJobTitle(rawLines: string[]): string | null {
   return null
 }
 
+function looksLikeLocation(s: string): boolean {
+  const t = s.trim()
+  // "City, ST" or "City, State" patterns
+  if (/^[A-Z][a-zA-Z\s.'-]+,\s*[A-Z]{2}\b/.test(t)) return true
+  // "City, State Name"
+  if (/^[A-Z][a-zA-Z\s.'-]+,\s*[A-Z][a-z]/.test(t) && t.length < 40) return true
+  // Common location keywords
+  if (/\b(remote|hybrid|on-site|onsite)\s*$/i.test(t)) return true
+  // Just a US state abbreviation pair like "New York, NY 10001"
+  if (/\b[A-Z]{2}\s+\d{5}\b/.test(t)) return true
+  return false
+}
+
 function extractCompanyName(rawText: string, rawLines: string[]): string | null {
-  // Pattern: "About [Company]" section header
-  const aboutMatch = rawText.match(/\bAbout\s+([A-Z][A-Za-z0-9 &'.,-]{1,60})\b/)
+  // Pattern: "About [Company]" section header (case-insensitive for "The")
+  const aboutMatch = rawText.match(/\bAbout\s+([A-Z][A-Za-z0-9 &'.,-]{1,60})(?:\s*\n|$)/m)
   if (aboutMatch) {
     const candidate = aboutMatch[1].trim()
-    // Filter out generic phrases
-    if (!/^(the company|the role|the team|the position|the opportunity|us|you)\b/i.test(candidate)) {
+    if (!/^(the company|the role|the team|the position|the opportunity|us|you)\b/i.test(candidate) &&
+        !looksLikeLocation(candidate)) {
       return candidate
     }
   }
@@ -2115,12 +2128,22 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   const companyFieldMatch = rawText.match(/(?:^|\n)\s*(?:Company|Employer|Organization)\s*[:]\s*(.+)/im)
   if (companyFieldMatch) {
     const val = companyFieldMatch[1].trim()
-    if (val.length > 0 && val.length <= 80) return val
+    if (val.length > 0 && val.length <= 80 && !looksLikeLocation(val)) return val
   }
 
   // Pattern: "At [Company]," in opening sentences
   const atMatch = rawText.match(/\bAt\s+([A-Z][A-Za-z0-9 &'.,-]{1,60}),/)
-  if (atMatch) return atMatch[1].trim()
+  if (atMatch) {
+    const candidate = atMatch[1].trim()
+    if (!looksLikeLocation(candidate)) return candidate
+  }
+
+  // Pattern: "the [Company]" or "The [Company]" followed by specific verbs
+  const theCompanyMatch = rawText.match(/\b[Tt]he\s+([A-Z][A-Za-z0-9 &'.,-]{2,50})\s+(?:is\s+(?:seeking|hiring|looking)|seeks|offers|provides|has an opening)\b/)
+  if (theCompanyMatch) {
+    const candidate = theCompanyMatch[0].replace(/\s+(?:is\s+(?:seeking|hiring|looking)|seeks|offers|provides|has an opening).*/, "").replace(/^[Tt]he\s+/, "The ").trim()
+    if (!looksLikeLocation(candidate)) return candidate
+  }
 
   // Fallback: second non-empty line (many postings put company name on line 2)
   let nonEmptyCount = 0
@@ -2129,8 +2152,7 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
     if (trimmed.length > 0) {
       nonEmptyCount++
       if (nonEmptyCount === 2 && trimmed.length <= 80) {
-        // Only use if it looks like a company name (starts with uppercase, no bullet/dash)
-        if (/^[A-Z]/.test(trimmed) && !/^[-•●*]/.test(trimmed)) return trimmed
+        if (/^[A-Z]/.test(trimmed) && !/^[-•●*]/.test(trimmed) && !looksLikeLocation(trimmed)) return trimmed
       }
     }
     if (nonEmptyCount > 3) break
