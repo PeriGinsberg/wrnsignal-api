@@ -2095,18 +2095,23 @@ export function getFinanceSubFamilyDistance(
 function extractJobTitle(rawLines: string[]): string | null {
   // First pass: find a line that looks like a real job title (has role keywords)
   const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
+  const prefixStrip = /^(?:Title|Position|Role|Job Title)\s*[:]\s*/i
+  const sectionWords = /^(position overview|about|overview|description|summary|responsibilities|qualifications|requirements|key responsibilities|how to apply|benefits|compensation|job details|role overview)\b/i
   for (const line of rawLines.slice(0, 10)) {
-    const trimmed = line.trim()
-    if (trimmed.length > 0 && trimmed.length <= 120 && roleWords.test(trimmed) && !looksLikeLocation(trimmed)) {
-      return trimmed
-    }
+    let trimmed = line.trim()
+    if (trimmed.length === 0 || trimmed.length > 120 || looksLikeLocation(trimmed)) continue
+    // Strip "Title: " prefix if present
+    trimmed = trimmed.replace(prefixStrip, "").trim()
+    if (trimmed.length === 0 || sectionWords.test(trimmed)) continue
+    if (roleWords.test(trimmed)) return trimmed
   }
-  // Second pass: first non-empty line that isn't a location
+  // Second pass: first non-empty line that isn't a location or section header
   for (const line of rawLines.slice(0, 5)) {
-    const trimmed = line.trim()
-    if (trimmed.length > 0 && trimmed.length <= 120 && !looksLikeLocation(trimmed)) {
-      return trimmed
-    }
+    let trimmed = line.trim()
+    if (trimmed.length === 0 || trimmed.length > 120 || looksLikeLocation(trimmed)) continue
+    trimmed = trimmed.replace(prefixStrip, "").trim()
+    if (trimmed.length === 0 || sectionWords.test(trimmed)) continue
+    return trimmed
   }
   return null
 }
@@ -2157,13 +2162,14 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   }
 
   // Fallback: second non-empty line (many postings put company name on line 2)
+  const sectionHeaderPattern = /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|what you|what we|the role|the team|the position|the opportunity|job details|role overview|key responsibilities|how to apply|benefits|compensation|title|location|department|reports to|job type|employment type)\b/i
   let nonEmptyCount = 0
   for (const line of rawLines) {
     const trimmed = line.trim()
     if (trimmed.length > 0) {
       nonEmptyCount++
       if (nonEmptyCount === 2 && trimmed.length <= 80) {
-        if (/^[A-Z]/.test(trimmed) && !/^[-•●*]/.test(trimmed) && !looksLikeLocation(trimmed)) return trimmed
+        if (/^[A-Z]/.test(trimmed) && !/^[-•●*]/.test(trimmed) && !looksLikeLocation(trimmed) && !sectionHeaderPattern.test(trimmed)) return trimmed
       }
     }
     if (nonEmptyCount > 3) break
