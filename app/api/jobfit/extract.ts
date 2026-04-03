@@ -2090,9 +2090,62 @@ export function getFinanceSubFamilyDistance(
   return SUBFAMILY_DISTANCE[jobSub]?.[profileSub] ?? 1
 }
 
+// ── Job title & company name extraction ─────────────────────────────────────
+
+function extractJobTitle(rawLines: string[]): string | null {
+  for (const line of rawLines) {
+    const trimmed = line.trim()
+    if (trimmed.length > 0 && trimmed.length <= 120) return trimmed
+  }
+  return null
+}
+
+function extractCompanyName(rawText: string, rawLines: string[]): string | null {
+  // Pattern: "About [Company]" section header
+  const aboutMatch = rawText.match(/\bAbout\s+([A-Z][A-Za-z0-9 &'.,-]{1,60})\b/)
+  if (aboutMatch) {
+    const candidate = aboutMatch[1].trim()
+    // Filter out generic phrases
+    if (!/^(the company|the role|the team|the position|the opportunity|us|you)\b/i.test(candidate)) {
+      return candidate
+    }
+  }
+
+  // Pattern: "Company: X" or "Employer: X"
+  const companyFieldMatch = rawText.match(/(?:^|\n)\s*(?:Company|Employer|Organization)\s*[:]\s*(.+)/im)
+  if (companyFieldMatch) {
+    const val = companyFieldMatch[1].trim()
+    if (val.length > 0 && val.length <= 80) return val
+  }
+
+  // Pattern: "At [Company]," in opening sentences
+  const atMatch = rawText.match(/\bAt\s+([A-Z][A-Za-z0-9 &'.,-]{1,60}),/)
+  if (atMatch) return atMatch[1].trim()
+
+  // Fallback: second non-empty line (many postings put company name on line 2)
+  let nonEmptyCount = 0
+  for (const line of rawLines) {
+    const trimmed = line.trim()
+    if (trimmed.length > 0) {
+      nonEmptyCount++
+      if (nonEmptyCount === 2 && trimmed.length <= 80) {
+        // Only use if it looks like a company name (starts with uppercase, no bullet/dash)
+        if (/^[A-Z]/.test(trimmed) && !/^[-•●*]/.test(trimmed)) return trimmed
+      }
+    }
+    if (nonEmptyCount > 3) break
+  }
+
+  return null
+}
+
 export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
+
+  const rawLines = jobTextRaw.split(/\r?\n/)
+  const jobTitle = extractJobTitle(rawLines)
+  const companyName = extractCompanyName(jobTextRaw, rawLines)
 
   const lines = splitEvidenceLines(jobTextRaw)
   const built = buildUnitsFromLines(lines, "job")
@@ -2566,6 +2619,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
 return {
     rawHash,
+    jobTitle,
+    companyName,
     jobFamily,
     financeSubFamily: jobFinanceSubFamily,
     analytics,

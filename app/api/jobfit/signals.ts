@@ -147,6 +147,8 @@ export type StructuredProfileSignals = {
 
 export type StructuredJobSignals = {
   rawHash: string
+  jobTitle: string | null
+  companyName: string | null
   jobFamily: JobFamily
   financeSubFamily: FinanceSubFamily
   analytics: { isHeavy: boolean; isLight: boolean }
