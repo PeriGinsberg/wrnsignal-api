@@ -294,6 +294,7 @@ export async function POST(req: NextRequest) {
           try {
             let cachedCompany = String(cleaned?.job_signals?.companyName || "").trim()
             let cachedTitle = String(cleaned?.job_signals?.jobTitle || "").trim()
+            const cachedLocation = String(cleaned?.job_signals?.location?.city || "").trim()
             cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
             cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
             const isGarbageCached = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s)
@@ -313,6 +314,7 @@ export async function POST(req: NextRequest) {
                   profile_id: profileId,
                   company_name: cachedCompany,
                   job_title: cachedTitle || "",
+                  location: cachedLocation || "",
                   signal_decision: String(cleaned?.decision || ""),
                   signal_score: (cleaned as any)?.score ?? null,
                   signal_run_at: new Date().toISOString(),
@@ -403,6 +405,7 @@ export async function POST(req: NextRequest) {
         // Auto-create or update signal_applications
         const rawCompanyName = (result as any)?.job_signals?.companyName
         const rawJobTitle = (result as any)?.job_signals?.jobTitle
+        const jobLocation = String((result as any)?.job_signals?.location?.city || "").trim()
         let companyName = String(rawCompanyName || "").trim()
         let jobTitle = String(rawJobTitle || "").trim()
         const runId = runRow?.id || null
@@ -455,6 +458,7 @@ export async function POST(req: NextRequest) {
               profile_id: profileId,
               company_name: companyName,
               job_title: jobTitle || "",
+              location: jobLocation || "",
               signal_decision: String((result as any)?.decision || ""),
               signal_score: (result as any)?.score ?? null,
               signal_run_at: new Date().toISOString(),
