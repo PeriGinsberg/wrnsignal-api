@@ -6,19 +6,14 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-function requireEnv(name: string, v?: string) {
-  if (!v) throw new Error(`Missing server env: ${name}`)
-  return v
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
-
-const supabaseAdmin = createClient(
-  requireEnv("SUPABASE_URL", SUPABASE_URL),
-  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
-  { auth: { persistSession: false, autoRefreshToken: false } }
-)
 
 function getBearerToken(req: Request) {
   const h = req.headers.get("authorization") || ""
@@ -30,13 +25,15 @@ function getBearerToken(req: Request) {
 
 async function getAuthedUser(req: Request) {
   const token = getBearerToken(req)
-  const { data, error } = await supabaseAdmin.auth.getUser(token)
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
   return { userId: data.user.id }
 }
 
 async function getProfileId(userId: string) {
-  const { data, error } = await supabaseAdmin
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase
     .from("client_profiles")
     .select("id")
     .eq("user_id", userId)
@@ -57,8 +54,9 @@ export async function GET(req: NextRequest) {
   try {
     const { userId } = await getAuthedUser(req)
     const profileId = await getProfileId(userId)
+    const supabase = getSupabaseAdmin()
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("client_personas")
       .select(PERSONA_SELECT)
       .eq("profile_id", profileId)
@@ -78,9 +76,10 @@ export async function POST(req: NextRequest) {
   try {
     const { userId } = await getAuthedUser(req)
     const profileId = await getProfileId(userId)
+    const supabase = getSupabaseAdmin()
 
     // Enforce max 2
-    const { count, error: countErr } = await supabaseAdmin
+    const { count, error: countErr } = await supabase
       .from("client_personas")
       .select("id", { count: "exact", head: true })
       .eq("profile_id", profileId)
@@ -102,7 +101,7 @@ export async function POST(req: NextRequest) {
     const isFirst = (count ?? 0) === 0
     const display_order = isFirst ? 1 : 2
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("client_personas")
       .insert({
         profile_id: profileId,

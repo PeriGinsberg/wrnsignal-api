@@ -6,19 +6,14 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-function requireEnv(name: string, v?: string) {
-  if (!v) throw new Error(`Missing server env: ${name}`)
-  return v
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
-
-const supabaseAdmin = createClient(
-  requireEnv("SUPABASE_URL", SUPABASE_URL),
-  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
-  { auth: { persistSession: false, autoRefreshToken: false } }
-)
 
 function getBearerToken(req: Request) {
   const h = req.headers.get("authorization") || ""
@@ -30,7 +25,8 @@ function getBearerToken(req: Request) {
 
 async function getAuthedUser(req: Request) {
   const token = getBearerToken(req)
-  const { data, error } = await supabaseAdmin.auth.getUser(token)
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
   return { userId: data.user.id }
 }
@@ -45,8 +41,9 @@ export async function OPTIONS(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await getAuthedUser(req)
+    const supabase = getSupabaseAdmin()
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("client_profiles")
       .select(PROFILE_SELECT)
       .eq("user_id", userId)
@@ -66,6 +63,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { userId } = await getAuthedUser(req)
+    const supabase = getSupabaseAdmin()
 
     const body = await req.json().catch(() => null)
     if (!body || typeof body !== "object") {
@@ -73,7 +71,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Fetch current profile to confirm ownership
-    const { data: existing, error: lookupErr } = await supabaseAdmin
+    const { data: existing, error: lookupErr } = await supabase
       .from("client_profiles")
       .select("id, profile_version")
       .eq("user_id", userId)
@@ -85,7 +83,7 @@ export async function PUT(req: NextRequest) {
     // Strip fields that must not be changed via this route
     const { email, id, user_id, seat_id, profile_version, ...allowed } = body
 
-    const { data: updated, error: updateErr } = await supabaseAdmin
+    const { data: updated, error: updateErr } = await supabase
       .from("client_profiles")
       .update({
         ...allowed,

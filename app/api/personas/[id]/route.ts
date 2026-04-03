@@ -6,19 +6,14 @@ import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-function requireEnv(name: string, v?: string) {
-  if (!v) throw new Error(`Missing server env: ${name}`)
-  return v
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
-
-const supabaseAdmin = createClient(
-  requireEnv("SUPABASE_URL", SUPABASE_URL),
-  requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY),
-  { auth: { persistSession: false, autoRefreshToken: false } }
-)
 
 function getBearerToken(req: Request) {
   const h = req.headers.get("authorization") || ""
@@ -30,13 +25,15 @@ function getBearerToken(req: Request) {
 
 async function getAuthedUser(req: Request) {
   const token = getBearerToken(req)
-  const { data, error } = await supabaseAdmin.auth.getUser(token)
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
   return { userId: data.user.id }
 }
 
 async function getProfileId(userId: string) {
-  const { data, error } = await supabaseAdmin
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase
     .from("client_profiles")
     .select("id")
     .eq("user_id", userId)
@@ -61,9 +58,10 @@ export async function PUT(
     const { userId } = await getAuthedUser(req)
     const profileId = await getProfileId(userId)
     const { id: personaId } = await params
+    const supabase = getSupabaseAdmin()
 
     // Verify persona belongs to this profile
-    const { data: existing, error: lookupErr } = await supabaseAdmin
+    const { data: existing, error: lookupErr } = await supabase
       .from("client_personas")
       .select("id, persona_version, profile_id")
       .eq("id", personaId)
@@ -94,7 +92,7 @@ export async function PUT(
 
     // If setting as default, clear default on all other personas first
     if (body.is_default === true) {
-      await supabaseAdmin
+      await supabase
         .from("client_personas")
         .update({ is_default: false })
         .eq("profile_id", profileId)
@@ -103,7 +101,7 @@ export async function PUT(
       updates.is_default = true
     }
 
-    const { data: updated, error: updateErr } = await supabaseAdmin
+    const { data: updated, error: updateErr } = await supabase
       .from("client_personas")
       .update(updates)
       .eq("id", personaId)
@@ -128,9 +126,10 @@ export async function DELETE(
     const { userId } = await getAuthedUser(req)
     const profileId = await getProfileId(userId)
     const { id: personaId } = await params
+    const supabase = getSupabaseAdmin()
 
     // Verify persona belongs to this profile
-    const { data: existing, error: lookupErr } = await supabaseAdmin
+    const { data: existing, error: lookupErr } = await supabase
       .from("client_personas")
       .select("id, is_default, profile_id")
       .eq("id", personaId)
@@ -140,7 +139,7 @@ export async function DELETE(
     if (lookupErr) throw new Error(`Persona lookup failed: ${lookupErr.message}`)
     if (!existing) return withCorsJson(req, { error: "Persona not found" }, 404)
 
-    const { error: deleteErr } = await supabaseAdmin
+    const { error: deleteErr } = await supabase
       .from("client_personas")
       .delete()
       .eq("id", personaId)
@@ -149,7 +148,7 @@ export async function DELETE(
 
     // If deleted persona was default, promote the remaining one
     if (existing.is_default) {
-      const { data: remaining } = await supabaseAdmin
+      const { data: remaining } = await supabase
         .from("client_personas")
         .select("id")
         .eq("profile_id", profileId)
@@ -157,7 +156,7 @@ export async function DELETE(
         .maybeSingle()
 
       if (remaining?.id) {
-        await supabaseAdmin
+        await supabase
           .from("client_personas")
           .update({ is_default: true, display_order: 1 })
           .eq("id", remaining.id)
