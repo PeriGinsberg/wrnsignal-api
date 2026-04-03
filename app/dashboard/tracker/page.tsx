@@ -52,12 +52,34 @@ function Stars({ count, max = 5, onClick }: { count: number; max?: number; onCli
       {Array.from({ length: max }, (_, i) => (
         <span
           key={i}
-          onClick={() => onClick?.(i + 1)}
+          onClick={() => onClick?.(count === i + 1 ? 0 : i + 1)}
           style={{ cursor: onClick ? "pointer" : "default", color: i < count ? T.WRN_ORANGE : "rgba(255,255,255,0.15)", fontSize: 13 }}
         >
           ★
         </span>
       ))}
+    </span>
+  )
+}
+
+function YesNoPills({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  const yesActive = value === true
+  const noActive = value === false
+  const unselected = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.4)" }
+  return (
+    <span style={{ display: "inline-flex", gap: 6 }}>
+      <button onClick={() => onChange(true)} style={{
+        fontSize: 11, fontWeight: 900, padding: "4px 14px", borderRadius: 8, cursor: "pointer",
+        ...(yesActive
+          ? { background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.35)", color: "#4ade80" }
+          : unselected),
+      }}>Yes</button>
+      <button onClick={() => onChange(false)} style={{
+        fontSize: 11, fontWeight: 900, padding: "4px 14px", borderRadius: 8, cursor: "pointer",
+        ...(noActive
+          ? { background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.3)", color: "#f87171" }
+          : unselected),
+      }}>No</button>
     </span>
   )
 }
@@ -89,9 +111,21 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   )
 }
 
+const selectStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.07)",
+  color: "rgba(255,255,255,0.92)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 10,
+  padding: "0 14px",
+  height: 42,
+  outline: "none",
+  width: "100%",
+  colorScheme: "dark",
+}
+
 function SelectField({ value, options, onChange, style: s }: { value: string; options: string[]; onChange: (v: string) => void; style?: React.CSSProperties }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...input, ...s, height: 38, appearance: "auto" as any }}>
+    <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...selectStyle, ...s }}>
       {options.map((o) => <option key={o} value={o}>{o.replace(/_/g, " ")}</option>)}
     </select>
   )
@@ -212,16 +246,15 @@ export default function TrackerPage() {
     }
   }
 
-  async function toggleThankYou(interview: any) {
+  async function setThankYou(interviewId: string, val: boolean) {
     const token = await getToken()
     if (!token) return
-    const val = !interview.thank_you_sent
-    await fetch(`/api/interviews/${interview.id}`, {
+    await fetch(`/api/interviews/${interviewId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ thank_you_sent: val }),
     })
-    setInterviews((prev) => prev.map((i) => i.id === interview.id ? { ...i, thank_you_sent: val } : i))
+    setInterviews((prev) => prev.map((i) => i.id === interviewId ? { ...i, thank_you_sent: val } : i))
   }
 
   // ── Stats ─────────────────────────────────────────────────
@@ -243,6 +276,7 @@ export default function TrackerPage() {
 
   return (
     <div>
+      <style>{`option { background: #0F1F38; color: rgba(255,255,255,0.92); }`}</style>
       <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 }}>JOB TRACKER</div>
       <h1 style={{ ...headline, fontSize: 28, letterSpacing: -0.8 }}>Applications &amp; Interviews</h1>
 
@@ -467,26 +501,12 @@ export default function TrackerPage() {
                             <Stars count={a.interest_level || 0} onClick={(n) => updateApp(a.id, { interest_level: n })} />
                           </div>
                           <div>
-                            <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>COVER LETTER</span>
-                            <button onClick={() => updateApp(a.id, { cover_letter_submitted: !a.cover_letter_submitted })} style={{
-                              fontSize: 11, fontWeight: 900, padding: "4px 12px", borderRadius: 8, cursor: "pointer",
-                              background: a.cover_letter_submitted ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.05)",
-                              border: `1px solid ${a.cover_letter_submitted ? "rgba(74,222,128,0.25)" : T.BORDER_SOFT}`,
-                              color: a.cover_letter_submitted ? "#4ade80" : T.MUTED,
-                            }}>
-                              {a.cover_letter_submitted ? "Submitted ✓" : "Not submitted"}
-                            </button>
+                            <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>COVER LETTER SENT</span>
+                            <YesNoPills value={!!a.cover_letter_submitted} onChange={(v) => updateApp(a.id, { cover_letter_submitted: v })} />
                           </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>REFERRAL</span>
-                            <button onClick={() => updateApp(a.id, { referral: !a.referral })} style={{
-                              fontSize: 11, fontWeight: 900, padding: "4px 12px", borderRadius: 8, cursor: "pointer",
-                              background: a.referral ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.05)",
-                              border: `1px solid ${a.referral ? "rgba(74,222,128,0.25)" : T.BORDER_SOFT}`,
-                              color: a.referral ? "#4ade80" : T.MUTED,
-                            }}>
-                              {a.referral ? "Yes ✓" : "No"}
-                            </button>
+                            <YesNoPills value={!!a.referral} onChange={(v) => updateApp(a.id, { referral: v })} />
                           </div>
                         </div>
                         <div style={{ marginTop: 12 }}>
@@ -555,7 +575,7 @@ export default function TrackerPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
                     <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>APPLICATION*</span>
-                    <select value={newInterview.application_id} onChange={(e) => setNewInterview({ ...newInterview, application_id: e.target.value })} style={{ ...input, height: 38, appearance: "auto" as any }}>
+                    <select value={newInterview.application_id} onChange={(e) => setNewInterview({ ...newInterview, application_id: e.target.value })} style={selectStyle}>
                       <option value="">Select application...</option>
                       {applications.map((a) => <option key={a.id} value={a.id}>{a.company_name} — {a.job_title}</option>)}
                     </select>
@@ -621,15 +641,10 @@ export default function TrackerPage() {
                       <div style={{ fontSize: 12, fontWeight: 700, color: T.TEXT, marginTop: 2 }}>{formatDate(iv.interview_date)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>THANK YOU</div>
-                      <button onClick={() => toggleThankYou(iv)} style={{
-                        marginTop: 2, fontSize: 11, fontWeight: 900, padding: "2px 10px", borderRadius: 6, cursor: "pointer",
-                        background: iv.thank_you_sent ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.1)",
-                        border: `1px solid ${iv.thank_you_sent ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.2)"}`,
-                        color: iv.thank_you_sent ? "#4ade80" : "#f87171",
-                      }}>
-                        {iv.thank_you_sent ? "Sent ✓" : "Not sent"}
-                      </button>
+                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>THANK YOU SENT</div>
+                      <div style={{ marginTop: 2 }}>
+                        <YesNoPills value={!!iv.thank_you_sent} onChange={(v) => setThankYou(iv.id, v)} />
+                      </div>
                     </div>
                     <div>
                       <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>CONFIDENCE</div>

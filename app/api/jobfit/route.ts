@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
 
     if (supabase && hasRealProfileId) {
       try {
-        const { data: runRow } = await supabase.from("jobfit_runs").insert({
+        const { data: runRow, error: runInsertErr } = await supabase.from("jobfit_runs").insert({
           client_profile_id: profileId,
           job_url: null,
           fingerprint_hash,
@@ -354,9 +354,15 @@ export async function POST(req: NextRequest) {
           persona_version_at_run: personaVersionAtRun,
         }).select("id").single()
 
+        if (runInsertErr) {
+          console.warn("[jobfit/route] jobfit_runs insert failed:", runInsertErr.message)
+        }
+
         // Auto-create or update signal_applications
-        let companyName = String((result as any)?.job_signals?.companyName || "").trim()
-        let jobTitle = String((result as any)?.job_signals?.jobTitle || "").trim()
+        const rawCompanyName = (result as any)?.job_signals?.companyName
+        const rawJobTitle = (result as any)?.job_signals?.jobTitle
+        let companyName = String(rawCompanyName || "").trim()
+        let jobTitle = String(rawJobTitle || "").trim()
         const runId = runRow?.id || null
 
         // Clean common prefixes from extracted values
@@ -367,10 +373,14 @@ export async function POST(req: NextRequest) {
         const isGarbage = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are)\b/i.test(s)
         if (isGarbage(companyName)) companyName = ""
 
-        console.log("[jobfit/route] auto-application signals:", { companyName, jobTitle, runId })
+        console.log("[jobfit/route] auto-application signals:", {
+          rawCompanyName, rawJobTitle, companyName, jobTitle, runId, profileId,
+          hasJobSignals: !!(result as any)?.job_signals,
+          jobSignalKeys: (result as any)?.job_signals ? Object.keys((result as any).job_signals).slice(0, 15) : [],
+        })
 
         if (companyName && runId) {
-          const { data: existingApp } = await supabase
+          const { data: existingApp, error: lookupErr } = await supabase
             .from("signal_applications")
             .select("id")
             .eq("profile_id", profileId)
@@ -378,8 +388,12 @@ export async function POST(req: NextRequest) {
             .ilike("job_title", jobTitle || "")
             .maybeSingle()
 
+          if (lookupErr) {
+            console.warn("[jobfit/route] application lookup failed:", lookupErr.message)
+          }
+
           if (existingApp?.id) {
-            await supabase.from("signal_applications").update({
+            const { error: updateErr } = await supabase.from("signal_applications").update({
               signal_decision: String((result as any)?.decision || ""),
               signal_score: (result as any)?.score ?? null,
               signal_run_at: new Date().toISOString(),
@@ -387,11 +401,15 @@ export async function POST(req: NextRequest) {
               updated_at: new Date().toISOString(),
             }).eq("id", existingApp.id)
 
+            if (updateErr) console.warn("[jobfit/route] application update failed:", updateErr.message)
+
             await supabase.from("jobfit_runs").update({
               application_id: existingApp.id,
             }).eq("id", runId)
+
+            console.log("[jobfit/route] updated existing application:", existingApp.id)
           } else {
-            const { data: newApp } = await supabase.from("signal_applications").insert({
+            const { data: newApp, error: createErr } = await supabase.from("signal_applications").insert({
               profile_id: profileId,
               company_name: companyName,
               job_title: jobTitle || "",
@@ -401,7 +419,14 @@ export async function POST(req: NextRequest) {
               jobfit_run_id: runId,
               persona_id: personaId || null,
               application_status: "saved",
+              interest_level: 0,
             }).select("id").single()
+
+            if (createErr) {
+              console.error("[jobfit/route] application create FAILED:", createErr.message, createErr.details, createErr.hint)
+            } else {
+              console.log("[jobfit/route] created new application:", newApp?.id)
+            }
 
             if (newApp?.id) {
               await supabase.from("jobfit_runs").update({
@@ -409,6 +434,8 @@ export async function POST(req: NextRequest) {
               }).eq("id", runId)
             }
           }
+        } else {
+          console.log("[jobfit/route] skipping auto-application:", { companyName: companyName || "(empty)", runId: runId || "(null)" })
         }
       } catch (e: any) {
         console.warn("[jobfit/route] cache insert failed:", e?.message || String(e))
