@@ -7,6 +7,7 @@ import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/tracker", label: "Job Tracker" },
 ]
 
 function Logo() {

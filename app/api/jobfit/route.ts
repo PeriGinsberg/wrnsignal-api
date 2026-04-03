@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
 
     if (supabase && hasRealProfileId) {
       try {
-        await supabase.from("jobfit_runs").insert({
+        const { data: runRow } = await supabase.from("jobfit_runs").insert({
           client_profile_id: profileId,
           job_url: null,
           fingerprint_hash,
@@ -352,7 +352,54 @@ export async function POST(req: NextRequest) {
           persona_id: personaId || null,
           profile_version_at_run: profileVersionAtRun,
           persona_version_at_run: personaVersionAtRun,
-        })
+        }).select("id").single()
+
+        // Auto-create or update signal_applications
+        const companyName = String((result as any)?.job_signals?.companyName || "").trim()
+        const jobTitle = String((result as any)?.job_signals?.jobTitle || "").trim()
+        const runId = runRow?.id || null
+
+        if (companyName && runId) {
+          const { data: existingApp } = await supabase
+            .from("signal_applications")
+            .select("id")
+            .eq("profile_id", profileId)
+            .ilike("company_name", companyName)
+            .ilike("job_title", jobTitle || "")
+            .maybeSingle()
+
+          if (existingApp?.id) {
+            await supabase.from("signal_applications").update({
+              signal_decision: String((result as any)?.decision || ""),
+              signal_score: (result as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: runId,
+              updated_at: new Date().toISOString(),
+            }).eq("id", existingApp.id)
+
+            await supabase.from("jobfit_runs").update({
+              application_id: existingApp.id,
+            }).eq("id", runId)
+          } else {
+            const { data: newApp } = await supabase.from("signal_applications").insert({
+              profile_id: profileId,
+              company_name: companyName,
+              job_title: jobTitle || "",
+              signal_decision: String((result as any)?.decision || ""),
+              signal_score: (result as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: runId,
+              persona_id: personaId || null,
+              application_status: "saved",
+            }).select("id").single()
+
+            if (newApp?.id) {
+              await supabase.from("jobfit_runs").update({
+                application_id: newApp.id,
+              }).eq("id", runId)
+            }
+          }
+        }
       } catch (e: any) {
         console.warn("[jobfit/route] cache insert failed:", e?.message || String(e))
       }

@@ -24,11 +24,6 @@ type Profile = {
   preferred_locations: string | null
   timeline: string | null
   resume_text: string | null
-  strong_skills: string | null
-  biggest_concern: string | null
-  hard_nos: string | null
-  extra_context: string | null
-  writing_samples: string | null
   profile_version: number
   profile_structured: Record<string, any> | null
 }
@@ -49,11 +44,6 @@ const PROFILE_FIELDS: { key: keyof Profile; label: string; multi: boolean; requi
   { key: "target_locations", label: "TARGET LOCATIONS", multi: false, required: false },
   { key: "preferred_locations", label: "PREFERRED LOCATIONS", multi: false, required: false },
   { key: "timeline", label: "TIMELINE", multi: false, required: false },
-  { key: "strong_skills", label: "STRONG SKILLS", multi: false, required: false },
-  { key: "biggest_concern", label: "BIGGEST CONCERN", multi: false, required: false },
-  { key: "hard_nos", label: "HARD NOS", multi: false, required: false },
-  { key: "extra_context", label: "EXTRA CONTEXT", multi: true, required: false },
-  { key: "writing_samples", label: "WRITING SAMPLES", multi: true, required: false },
 ]
 
 function Toast({ message, onDone }: { message: string; onDone: () => void }) {
@@ -266,10 +256,10 @@ export default function DashboardPage() {
               <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                 {profile?.target_roles && <SummaryRow label="Target Roles" value={profile.target_roles} />}
                 {profile?.target_locations && <SummaryRow label="Locations" value={profile.target_locations} />}
+                {profile?.preferred_locations && <SummaryRow label="Preferred Locations" value={profile.preferred_locations} />}
                 {profile?.job_type && <SummaryRow label="Job Type" value={profile.job_type} />}
                 {profile?.timeline && <SummaryRow label="Timeline" value={profile.timeline} />}
-                {profile?.hard_nos && <SummaryRow label="Hard Nos" value={profile.hard_nos} />}
-                {profile?.biggest_concern && <SummaryRow label="Biggest Concern" value={profile.biggest_concern} />}
+                {profile?.resume_text && <SummaryRow label="Resume" value={profile.resume_text.length > 200 ? profile.resume_text.slice(0, 200) + "..." : profile.resume_text} />}
               </div>
 
               {!profileEditOpen && (
