@@ -285,6 +285,44 @@ export async function POST(req: NextRequest) {
             cleaned.job_signals.jobTitle = backfill.jobTitle
             cleaned.job_signals.companyName = backfill.companyName
           }
+
+          // Ensure a signal_application exists even on cache hits
+          try {
+            let cachedCompany = String(cleaned?.job_signals?.companyName || "").trim()
+            let cachedTitle = String(cleaned?.job_signals?.jobTitle || "").trim()
+            cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+            cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+            const isGarbageCached = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are)\b/i.test(s)
+            if (isGarbageCached(cachedCompany)) cachedCompany = ""
+
+            if (cachedCompany) {
+              const { data: existingApp } = await supabase
+                .from("signal_applications")
+                .select("id")
+                .eq("profile_id", profileId)
+                .ilike("company_name", cachedCompany)
+                .ilike("job_title", cachedTitle || "")
+                .maybeSingle()
+
+              if (!existingApp?.id) {
+                await supabase.from("signal_applications").insert({
+                  profile_id: profileId,
+                  company_name: cachedCompany,
+                  job_title: cachedTitle || "",
+                  signal_decision: String(cleaned?.decision || ""),
+                  signal_score: (cleaned as any)?.score ?? null,
+                  signal_run_at: new Date().toISOString(),
+                  persona_id: personaId || null,
+                  application_status: "saved",
+                  interest_level: 0,
+                })
+                console.log("[jobfit/route] created application from cache hit:", cachedCompany, cachedTitle)
+              }
+            }
+          } catch (appErr: any) {
+            console.warn("[jobfit/route] cache-hit application create failed:", appErr?.message)
+          }
+
           return withCorsJson(req, {
             ...(cleaned as any),
             fingerprint_code,
