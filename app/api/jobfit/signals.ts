@@ -171,6 +171,7 @@ export type StructuredJobSignals = {
   mbaRequired: boolean
 credentialRequired: boolean
   credentialDetail: string | null
+  credentialSponsored: boolean
   gradYearHint: number | null
   requiredTools: string[]
   preferredTools: string[]

@@ -2345,6 +2345,67 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     ? includesAny(normalized, cdlKeywords)
     : /\b(cdl required|commercial driver.s license|class [ab] cdl)\b/i.test(normalized)
 
+  // ── Sponsorship / training-provided exemption ─────────────────────────
+  // When a credential keyword appears but the surrounding context indicates
+  // the employer will sponsor, train, or provide the credential, do NOT
+  // classify it as a hard requirement.
+  const SPONSOR_PHRASES = [
+    "will sponsor",
+    "will provide",
+    "training provided",
+    "not required",
+    "preferred but not required",
+    "we will help you obtain",
+    "will assist in obtaining",
+    "upon hire",
+    "after joining",
+    "after start",
+    "obtain within",
+    "expected to obtain",
+    "opportunity to earn",
+    "we provide training",
+    "company sponsored",
+    "company-sponsored",
+    "firm will sponsor",
+    "firm-sponsored",
+    "paid training",
+    "licensing training",
+    "license training",
+  ]
+
+  function isCredentialSponsored(credKeywords: string[], text: string): boolean {
+    const lower = text.toLowerCase()
+    for (const kw of credKeywords) {
+      const idx = lower.indexOf(kw.toLowerCase())
+      if (idx === -1) continue
+      // Check a window of ~200 chars around the keyword match
+      const windowStart = Math.max(0, idx - 120)
+      const windowEnd = Math.min(lower.length, idx + kw.length + 120)
+      const context = lower.slice(windowStart, windowEnd)
+      if (SPONSOR_PHRASES.some((sp) => context.includes(sp))) return true
+    }
+    return false
+  }
+
+  let credentialSponsored = false
+
+  // Check each detected hard credential against sponsorship context
+  if (requiresFinraLicense && isCredentialSponsored(finraKeywords.length ? finraKeywords : ["series", "finra", "sie", "nmls", "securities license"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresInsuranceLicense && isCredentialSponsored(insuranceLicenseKeywords.length ? insuranceLicenseKeywords : ["insurance license"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresRealEstateLicense && isCredentialSponsored(realEstateLicenseKeywords.length ? realEstateLicenseKeywords : ["real estate license"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresCPA && isCredentialSponsored(cpaKeywords.length ? cpaKeywords : ["cpa"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresCDL && isCredentialSponsored(cdlKeywords.length ? cdlKeywords : ["cdl"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresTeachingCredential && isCredentialSponsored(teachingCredentialKeywords.length ? teachingCredentialKeywords : ["teaching"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresPELicense && isCredentialSponsored(engineeringLicenseKeywords.length ? engineeringLicenseKeywords : ["pe license"], normalized)) {
+    credentialSponsored = true
+  }
+
   // ── Risk-flag credential detection (not gates, but significant gaps) ────
   const cfaKeywords = asStringArray(
     (POLICY as any)?.extraction?.credential?.cfaKeywords
@@ -2393,7 +2454,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const requiresSoftCredential =
     requiresCFA || requiresCFP || requiresPMP || requiresSocialWorkLicense
 
-  const credentialRequired = requiresHardCredential
+  // If the credential is sponsored/training-provided, do not treat as hard requirement
+  const credentialRequired = requiresHardCredential && !credentialSponsored
 
   const credentialDetail = requiresLawSchool
     ? "law school enrollment or JD"
@@ -2678,6 +2740,7 @@ return {
     mbaRequired,
     credentialRequired,
     credentialDetail,
+    credentialSponsored,
     gradYearHint,
     requiredTools: required,
     preferredTools: preferred,
