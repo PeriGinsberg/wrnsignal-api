@@ -28,19 +28,47 @@ async function getAuthedUser(req: Request) {
   const supabase = getSupabaseAdmin()
   const { data, error } = await supabase.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return { userId: data.user.id }
+  return {
+    userId: data.user.id,
+    email: (data.user.email ?? "").trim().toLowerCase() || null,
+  }
 }
 
-async function getProfileId(userId: string) {
+async function getProfileId(userId: string, email: string | null) {
   const supabase = getSupabaseAdmin()
+
+  // 1) Lookup by user_id
   const { data, error } = await supabase
     .from("client_profiles")
-    .select("id")
+    .select("id, user_id")
     .eq("user_id", userId)
     .maybeSingle()
   if (error) throw new Error(`Profile lookup failed: ${error.message}`)
-  if (!data) throw new Error("Profile not found")
-  return data.id as string
+  if (data) return data.id as string
+
+  // 2) Fallback: lookup by email and attach user_id
+  if (email) {
+    const { data: byEmail, error: emailErr } = await supabase
+      .from("client_profiles")
+      .select("id, user_id")
+      .eq("email", email)
+      .maybeSingle()
+    if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
+
+    if (byEmail) {
+      if (byEmail.user_id !== userId) {
+        // user_id missing or stale — re-attach
+        const { error: attachErr } = await supabase
+          .from("client_profiles")
+          .update({ user_id: userId, updated_at: new Date().toISOString() })
+          .eq("id", byEmail.id)
+        if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
+      }
+      return byEmail.id as string
+    }
+  }
+
+  throw new Error("Profile not found")
 }
 
 const PERSONA_SELECT =
@@ -52,8 +80,8 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await getAuthedUser(req)
-    const profileId = await getProfileId(userId)
+    const { userId, email } = await getAuthedUser(req)
+    const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
     const { data, error } = await supabase
@@ -67,15 +95,18 @@ export async function GET(req: NextRequest) {
     return withCorsJson(req, { ok: true, personas: data || [] })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const lower = msg.toLowerCase()
+    const status = lower.includes("unauthorized") ? 401
+      : lower.includes("not found") ? 404
+      : 500
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await getAuthedUser(req)
-    const profileId = await getProfileId(userId)
+    const { userId, email } = await getAuthedUser(req)
+    const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
     // Enforce max 2
@@ -118,7 +149,10 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, { ok: true, persona: data }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const lower = msg.toLowerCase()
+    const status = lower.includes("unauthorized") ? 401
+      : lower.includes("not found") ? 404
+      : 500
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }

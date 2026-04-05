@@ -492,6 +492,25 @@ export async function POST(req: Request) {
       return withCorsJson(req, { ok: false, error: upErr.message }, 400)
     }
 
+    // Auto-create a default persona if none exists yet
+    const { count: personaCount } = await supabaseAdmin
+      .from("client_personas")
+      .select("id", { count: "exact", head: true })
+      .eq("profile_id", client_profile_id)
+
+    if (!personaCount) {
+      const personaName = name || "Default"
+      await supabaseAdmin
+        .from("client_personas")
+        .insert({
+          profile_id: client_profile_id,
+          name: personaName,
+          resume_text: resume_text || "",
+          is_default: true,
+          display_order: 1,
+        })
+    }
+
     return withCorsJson(
       req,
       {

@@ -170,7 +170,8 @@ export default function TrackerPage() {
 
   async function getToken() {
     const { data: { session } } = await getSupabaseBrowser().auth.getSession()
-    return session?.access_token ?? null
+    if (session?.access_token) return session.access_token
+    return sessionStorage.getItem("signal_handoff_token")
   }
 
   const loadAll = useCallback(async () => {

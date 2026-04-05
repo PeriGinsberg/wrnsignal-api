@@ -88,6 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (handoffToken) {
         // Flag as coming from Framer
         sessionStorage.setItem("signal_from_framer", "1")
+        sessionStorage.setItem("signal_handoff_token", handoffToken)
         setFromFramer(true)
 
         // Strip token from URL immediately
@@ -104,8 +105,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           setStatus("authed")
           return
         }
-        // If setSession failed, fall through to normal flow
-        console.warn("[dashboard] token handoff failed:", sessionError.message)
+        // setSession failed (access token isn't a valid refresh token),
+        // but we stored the handoff token — use it directly for API calls
+        console.warn("[dashboard] token handoff failed, using direct token:", sessionError.message)
+        setStatus("authed")
+        return
       }
 
       // Check for existing Framer flag

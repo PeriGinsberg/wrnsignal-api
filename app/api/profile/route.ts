@@ -28,7 +28,10 @@ async function getAuthedUser(req: Request) {
   const supabase = getSupabaseAdmin()
   const { data, error } = await supabase.auth.getUser(token)
   if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return { userId: data.user.id }
+  return {
+    userId: data.user.id,
+    email: (data.user.email ?? "").trim().toLowerCase() || null,
+  }
 }
 
 const PROFILE_SELECT =
@@ -40,19 +43,60 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await getAuthedUser(req)
+    const { userId, email } = await getAuthedUser(req)
     const supabase = getSupabaseAdmin()
 
-    const { data, error } = await supabase
+    // 1) Lookup by user_id
+    const { data: byUserId, error } = await supabase
       .from("client_profiles")
       .select(PROFILE_SELECT)
       .eq("user_id", userId)
       .maybeSingle()
 
     if (error) throw new Error(`Profile lookup failed: ${error.message}`)
-    if (!data) return withCorsJson(req, { error: "Profile not found" }, 404)
+    if (byUserId) return withCorsJson(req, { ok: true, profile: byUserId })
 
-    return withCorsJson(req, { ok: true, profile: data })
+    // 2) Fallback: lookup by email and attach user_id
+    if (email) {
+      const { data: byEmail, error: emailErr } = await supabase
+        .from("client_profiles")
+        .select(PROFILE_SELECT)
+        .eq("email", email)
+        .maybeSingle()
+
+      if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
+
+      if (byEmail) {
+        if (byEmail.user_id === userId) {
+          return withCorsJson(req, { ok: true, profile: byEmail })
+        }
+        // user_id is missing or stale (auth user was recreated) — re-attach
+        const { data: attached, error: attachErr } = await supabase
+          .from("client_profiles")
+          .update({ user_id: userId, updated_at: new Date().toISOString() })
+          .eq("id", byEmail.id)
+          .select(PROFILE_SELECT)
+          .single()
+
+        if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
+        return withCorsJson(req, { ok: true, profile: attached })
+      }
+    }
+
+    // 3) No profile exists at all — auto-create
+    const { data: created, error: createErr } = await supabase
+      .from("client_profiles")
+      .insert({
+        user_id: userId,
+        email,
+        profile_text: "",
+        updated_at: new Date().toISOString(),
+      })
+      .select(PROFILE_SELECT)
+      .single()
+
+    if (createErr) throw new Error(`Profile create failed: ${createErr.message}`)
+    return withCorsJson(req, { ok: true, profile: created })
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
