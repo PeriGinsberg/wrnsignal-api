@@ -329,7 +329,11 @@ export default function TrackerPage() {
   const applied = applications.filter((a) => a.application_status === "applied")
   const interviewing = applications.filter((a) => a.application_status === "interviewing")
   const offers = applications.filter((a) => a.application_status === "offer")
-  const interviewRate = applied.length > 0 ? Math.round(interviews.length / applied.length * 100) : 0
+  const rejected = applications.filter((a) => a.application_status === "rejected")
+  // Interview rate = apps that reached interview stage / all apps that were submitted
+  const submitted = applications.filter((a) => ["applied", "interviewing", "offer", "rejected"].includes(a.application_status))
+  const reachedInterview = applications.filter((a) => ["interviewing", "offer"].includes(a.application_status))
+  const interviewRate = submitted.length > 0 ? Math.round(reachedInterview.length / submitted.length * 100) : 0
 
   // ── Filtered lists ────────────────────────────────────────
 
@@ -347,11 +351,13 @@ export default function TrackerPage() {
       <h1 style={{ ...headline, fontSize: 28, letterSpacing: -0.8 }}>Applications &amp; Interviews</h1>
 
       {/* Stats bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginTop: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, marginTop: 20 }}>
         {[
+          { n: applications.length, label: "TOTAL", color: "rgba(255,255,255,0.7)" },
           { n: scored.length, label: "ANALYZED", color: "#51ADE5" },
           { n: applied.length, label: "APPLIED", color: "#FEB06A" },
           { n: interviewing.length, label: "INTERVIEWING", color: "#a78bfa" },
+          { n: rejected.length, label: "REJECTED", color: "#E87070" },
           { n: offers.length, label: "OFFERS", color: "#4ade80" },
           { n: `${interviewRate}%`, label: "INTERVIEW RATE", color: "rgba(255,255,255,0.5)" },
         ].map((s) => (
@@ -853,7 +859,7 @@ export default function TrackerPage() {
             <div style={{ ...card, padding: "16px 18px" }}>
               <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.DIM }}>INTERVIEW RATE</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: T.WRN_BLUE, marginTop: 8 }}>{interviewRate}%</div>
-              <div style={{ fontSize: 11, color: T.MUTED, marginTop: 4 }}>{interviews.length} interviews from {applied.length} applications</div>
+              <div style={{ fontSize: 11, color: T.MUTED, marginTop: 4 }}>{reachedInterview.length} reached interview from {submitted.length} submitted</div>
             </div>
             {/* High score unapplied */}
             <div style={{ ...card, padding: "16px 18px" }}>
