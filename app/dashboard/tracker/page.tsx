@@ -367,7 +367,7 @@ export default function TrackerPage() {
         {["applications", "interviews", "insights"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); collapseApp(); collapseInterview() }}
             style={{
               background: "none", border: "none", cursor: "pointer", padding: "10px 0",
               borderBottom: activeTab === tab ? "2px solid #FEB06A" : "2px solid transparent",
