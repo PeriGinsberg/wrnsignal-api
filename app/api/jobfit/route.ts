@@ -297,33 +297,36 @@ export async function POST(req: NextRequest) {
             const cachedLocation = String(cleaned?.job_signals?.location?.city || "").trim()
             cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
             cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
-            const isGarbageCached = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s)
+            const isGarbageCached = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
             if (isGarbageCached(cachedCompany)) cachedCompany = ""
+            if (isGarbageCached(cachedTitle)) cachedTitle = ""
 
+            let existingCachedApp: any = null
             if (cachedCompany) {
-              const { data: existingApp } = await supabase
+              const { data } = await supabase
                 .from("signal_applications")
                 .select("id")
                 .eq("profile_id", profileId)
                 .ilike("company_name", cachedCompany)
                 .ilike("job_title", cachedTitle || "")
                 .maybeSingle()
+              existingCachedApp = data
+            }
 
-              if (!existingApp?.id) {
-                await supabase.from("signal_applications").insert({
-                  profile_id: profileId,
-                  company_name: cachedCompany,
-                  job_title: cachedTitle || "",
-                  location: cachedLocation || "",
-                  signal_decision: String(cleaned?.decision || ""),
-                  signal_score: (cleaned as any)?.score ?? null,
-                  signal_run_at: new Date().toISOString(),
-                  persona_id: personaId || null,
-                  application_status: "saved",
-                  interest_level: 1,
-                })
-                console.log("[jobfit/route] created application from cache hit:", cachedCompany, cachedTitle)
-              }
+            if (!existingCachedApp?.id) {
+              await supabase.from("signal_applications").insert({
+                profile_id: profileId,
+                company_name: cachedCompany || "(Unknown Company)",
+                job_title: cachedTitle || "(Unknown Role)",
+                location: cachedLocation || "",
+                signal_decision: String(cleaned?.decision || ""),
+                signal_score: (cleaned as any)?.score ?? null,
+                signal_run_at: new Date().toISOString(),
+                persona_id: personaId || null,
+                application_status: "saved",
+                interest_level: 1,
+              })
+              console.log("[jobfit/route] created application from cache hit:", cachedCompany || "(unknown)", cachedTitle || "(unknown)")
             }
           } catch (appErr: any) {
             console.warn("[jobfit/route] cache-hit application create failed:", appErr?.message)
@@ -414,9 +417,10 @@ export async function POST(req: NextRequest) {
         jobTitle = jobTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
         companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
 
-        // Skip auto-creation if extracted values look like section headers, not real names
-        const isGarbage = (s: string) => /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s)
+        // Clean extracted values that look like section headers, not real names
+        const isGarbage = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
         if (isGarbage(companyName)) companyName = ""
+        if (isGarbage(jobTitle)) jobTitle = ""
 
         console.log("[jobfit/route] auto-application signals:", {
           rawCompanyName, rawJobTitle, companyName, jobTitle, runId, profileId,
@@ -424,17 +428,21 @@ export async function POST(req: NextRequest) {
           jobSignalKeys: (result as any)?.job_signals ? Object.keys((result as any).job_signals).slice(0, 15) : [],
         })
 
-        if (companyName && runId) {
-          const { data: existingApp, error: lookupErr } = await supabase
-            .from("signal_applications")
-            .select("id")
-            .eq("profile_id", profileId)
-            .ilike("company_name", companyName)
-            .ilike("job_title", jobTitle || "")
-            .maybeSingle()
+        if (runId) {
+          let existingApp: any = null
+          if (companyName) {
+            const { data, error: lookupErr } = await supabase
+              .from("signal_applications")
+              .select("id")
+              .eq("profile_id", profileId)
+              .ilike("company_name", companyName)
+              .ilike("job_title", jobTitle || "")
+              .maybeSingle()
 
-          if (lookupErr) {
-            console.warn("[jobfit/route] application lookup failed:", lookupErr.message)
+            if (lookupErr) {
+              console.warn("[jobfit/route] application lookup failed:", lookupErr.message)
+            }
+            existingApp = data
           }
 
           if (existingApp?.id) {
@@ -456,8 +464,8 @@ export async function POST(req: NextRequest) {
           } else {
             const { data: newApp, error: createErr } = await supabase.from("signal_applications").insert({
               profile_id: profileId,
-              company_name: companyName,
-              job_title: jobTitle || "",
+              company_name: companyName || "(Unknown Company)",
+              job_title: jobTitle || "(Unknown Role)",
               location: jobLocation || "",
               signal_decision: String((result as any)?.decision || ""),
               signal_score: (result as any)?.score ?? null,
