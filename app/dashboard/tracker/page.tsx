@@ -218,6 +218,7 @@ export default function TrackerPage() {
     })
     setApplications((prev) => prev.map((a) => a.id === editingApp.id ? { ...a, ...fields } : a))
     setSaving(false)
+    collapseApp()
     setToast("Changes saved")
   }
 
@@ -249,6 +250,7 @@ export default function TrackerPage() {
     })
     setInterviews((prev) => prev.map((i) => i.id === editingInterview.id ? { ...i, ...fields } : i))
     setSaving(false)
+    collapseInterview()
     setToast("Changes saved")
   }
 
