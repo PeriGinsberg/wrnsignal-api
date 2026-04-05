@@ -353,15 +353,15 @@ export default function TrackerPage() {
       {/* Stats bar */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, marginTop: 20 }}>
         {[
-          { n: applications.length, label: "TOTAL", color: "rgba(255,255,255,0.7)" },
-          { n: scored.length, label: "ANALYZED", color: "#51ADE5" },
-          { n: applied.length, label: "APPLIED", color: "#FEB06A" },
-          { n: interviewing.length, label: "INTERVIEWING", color: "#a78bfa" },
-          { n: rejected.length, label: "REJECTED", color: "#E87070" },
-          { n: offers.length, label: "OFFERS", color: "#4ade80" },
-          { n: `${interviewRate}%`, label: "INTERVIEW RATE", color: "rgba(255,255,255,0.5)" },
+          { n: applications.length, label: "TOTAL", color: "rgba(255,255,255,0.7)", click: () => { setActiveTab("applications"); setFilterStatus("all") } },
+          { n: scored.length, label: "ANALYZED", color: "#51ADE5", click: () => { setActiveTab("applications"); setFilterStatus("all") } },
+          { n: applied.length, label: "APPLIED", color: "#FEB06A", click: () => { setActiveTab("applications"); setFilterStatus("applied") } },
+          { n: interviewing.length, label: "INTERVIEWING", color: "#a78bfa", click: () => { setActiveTab("applications"); setFilterStatus("interviewing") } },
+          { n: rejected.length, label: "REJECTED", color: "#E87070", click: () => { setActiveTab("applications"); setFilterStatus("rejected") } },
+          { n: offers.length, label: "OFFERS", color: "#4ade80", click: () => { setActiveTab("applications"); setFilterStatus("offer") } },
+          { n: `${interviewRate}%`, label: "INTERVIEW RATE", color: "rgba(255,255,255,0.5)", click: () => { setActiveTab("interviews") } },
         ].map((s) => (
-          <div key={s.label} style={{ background: T.CARD, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: "14px 16px" }}>
+          <div key={s.label} onClick={() => { collapseApp(); collapseInterview(); s.click() }} style={{ background: T.CARD, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: "14px 16px", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}>
             <div style={{ fontSize: 28, fontWeight: 900, color: s.color }}>{s.n}</div>
             <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.MUTED, marginTop: 4 }}>{s.label}</div>
           </div>
@@ -892,16 +892,18 @@ export default function TrackerPage() {
             {/* ── STAT CARDS ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, position: "relative" }}>
               {[
-                { label: "INTERVIEW RATE", value: `${interviewRate}%`, sub: `${reachedInterview.length} of ${submitted.length} submitted`, color: "#a78bfa", glow: "rgba(167,139,250,0.25)", delay: 0 },
-                { label: "AVG SIGNAL SCORE", value: scores.length ? String(avgScore) : "—", sub: `${scores.length} jobs analyzed`, color: scores.length ? scoreColor(avgScore) : T.DIM, glow: scores.length ? `${scoreColor(avgScore)}30` : "transparent", delay: 0.1 },
-                { label: "HIGH SCORE UNAPPLIED", value: String(highUnapplied), sub: "Score 75+ not yet applied", color: T.WRN_ORANGE, glow: "rgba(254,176,106,0.20)", delay: 0.2, action: highUnapplied > 0 ? () => { setActiveTab("applications"); setFilterStatus("saved") } : undefined },
-                { label: "TOP CATEGORY", value: topCategory, sub: topCategory === "Not enough data yet" ? "Need 5+ high-scoring runs" : "Strongest role keyword", color: T.WRN_BLUE, glow: "rgba(81,173,229,0.20)", delay: 0.3 },
+                { label: "INTERVIEW RATE", value: `${interviewRate}%`, sub: `${reachedInterview.length} of ${submitted.length} submitted`, color: "#a78bfa", glow: "rgba(167,139,250,0.25)", delay: 0, click: () => { collapseApp(); collapseInterview(); setActiveTab("interviews") } },
+                { label: "AVG SIGNAL SCORE", value: scores.length ? String(avgScore) : "—", sub: `${scores.length} jobs analyzed`, color: scores.length ? scoreColor(avgScore) : T.DIM, glow: scores.length ? `${scoreColor(avgScore)}30` : "transparent", delay: 0.1, click: () => { collapseApp(); collapseInterview(); setActiveTab("applications"); setFilterStatus("all") } },
+                { label: "HIGH SCORE UNAPPLIED", value: String(highUnapplied), sub: "Score 75+ not yet applied", color: T.WRN_ORANGE, glow: "rgba(254,176,106,0.20)", delay: 0.2, click: () => { collapseApp(); collapseInterview(); setActiveTab("applications"); setFilterStatus("saved") } },
+                { label: "TOP CATEGORY", value: topCategory, sub: topCategory === "Not enough data yet" ? "Need 5+ high-scoring runs" : "Strongest role keyword", color: T.WRN_BLUE, glow: "rgba(81,173,229,0.20)", delay: 0.3, click: () => { collapseApp(); collapseInterview(); setActiveTab("applications"); setFilterStatus("all") } },
               ].map((s, i) => (
                 <div
                   key={s.label}
                   className="insight-card"
+                  onClick={s.click}
                   style={{
                     ...glassCard,
+                    cursor: "pointer",
                     boxShadow: glowBorder(s.color),
                     animation: `insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) ${s.delay}s both`,
                   }}
@@ -917,7 +919,7 @@ export default function TrackerPage() {
                     {s.value}
                   </div>
                   <div style={{ fontSize: 11, color: T.MUTED, marginTop: 8, lineHeight: "16px" }}>{s.sub}</div>
-                  {s.action && <button onClick={s.action} style={{ background: "none", border: "none", color: T.WRN_BLUE, fontSize: 11, fontWeight: 900, cursor: "pointer", padding: 0, marginTop: 8 }}>Review them →</button>}
+                  <div style={{ fontSize: 10, fontWeight: 900, color: T.WRN_BLUE, marginTop: 8, opacity: 0.7 }}>View details →</div>
                 </div>
               ))}
             </div>
@@ -928,8 +930,10 @@ export default function TrackerPage() {
               {/* Interview Rate Ring */}
               <div
                 className="insight-card"
+                onClick={() => { collapseApp(); collapseInterview(); setActiveTab("interviews") }}
                 style={{
                   ...glassCard,
+                  cursor: "pointer",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   boxShadow: glowBorder("#a78bfa"),
                   animation: "insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both",
@@ -987,7 +991,7 @@ export default function TrackerPage() {
                     const sc = STATUS_STYLE[c.status]
                     const pct = totalApps > 0 ? Math.round(c.count / totalApps * 100) : 0
                     return (
-                      <div key={c.status} style={{ animation: `insightFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) ${0.4 + idx * 0.08}s both` }}>
+                      <div key={c.status} onClick={() => { collapseApp(); collapseInterview(); setActiveTab("applications"); setFilterStatus(c.status) }} style={{ animation: `insightFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) ${0.4 + idx * 0.08}s both`, cursor: "pointer", padding: "6px 8px", borderRadius: 8, transition: "background 0.2s" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
                           <span style={{ fontSize: 12, fontWeight: 900, color: sc.color, textTransform: "capitalize" }}>{c.status}</span>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1039,7 +1043,7 @@ export default function TrackerPage() {
                   }))
                   const bMax = Math.max(...bucketCounts.map(b => b.count), 1)
                   return bucketCounts.map((b, idx) => (
-                    <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, animation: `insightFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.5 + idx * 0.06}s both` }}>
+                    <div key={b.label} onClick={() => { collapseApp(); collapseInterview(); setActiveTab("applications"); setFilterStatus("all") }} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: "pointer", padding: "4px 6px", borderRadius: 6, transition: "background 0.2s", animation: `insightFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.5 + idx * 0.06}s both` }}>
                       <span style={{ width: 50, fontSize: 11, fontWeight: 900, color: b.color, fontFamily: "monospace" }}>{b.label}</span>
                       <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 4, overflow: "hidden" }}>
                         <div style={{ width: `${b.count ? (b.count / bMax) * 100 : 0}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${b.color}66, ${b.color})`, animation: `barSlide 0.8s cubic-bezier(0.22,1,0.36,1) ${0.7 + idx * 0.08}s both` }} />
@@ -1072,7 +1076,7 @@ export default function TrackerPage() {
                   return dCounts.length === 0
                     ? <div style={{ fontSize: 13, color: T.DIM }}>No analyzed jobs yet</div>
                     : dCounts.map((d, idx) => (
-                      <div key={d.decision} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, animation: `insightFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.55 + idx * 0.06}s both` }}>
+                      <div key={d.decision} onClick={() => { collapseApp(); collapseInterview(); setActiveTab("applications"); setFilterStatus("all") }} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: "pointer", padding: "4px 6px", borderRadius: 6, transition: "background 0.2s", animation: `insightFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.55 + idx * 0.06}s both` }}>
                         <span style={{ width: 90, fontSize: 11, fontWeight: 900, color: d.color }}>{d.decision}</span>
                         <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 4, overflow: "hidden" }}>
                           <div style={{ width: `${(d.count / dMax) * 100}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${d.color}66, ${d.color})`, animation: `barSlide 0.8s cubic-bezier(0.22,1,0.36,1) ${0.7 + idx * 0.08}s both` }} />
