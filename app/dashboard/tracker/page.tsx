@@ -838,76 +838,253 @@ export default function TrackerPage() {
       )}
 
       {/* ══════ INSIGHTS TAB ══════ */}
-      {activeTab === "insights" && (
-        <div style={{ marginTop: 20 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {/* Top category */}
-            <div style={{ ...card, padding: "16px 18px" }}>
-              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.DIM }}>TOP CATEGORY</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: T.WRN_ORANGE, marginTop: 8 }}>
+      {activeTab === "insights" && (() => {
+        const scores = applications.map((a) => a.signal_score).filter((s: any) => s != null) as number[]
+        const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+        const highUnapplied = applications.filter((a) => (a.signal_score || 0) >= 75 && a.application_status === "saved").length
+        const topCategory = (() => {
+          const highScored = applications.filter((a) => (a.signal_score || 0) >= 75)
+          if (highScored.length < 5) return "Not enough data yet"
+          const words: Record<string, number> = {}
+          highScored.forEach((a) => { const w = (a.job_title || "").split(/\s+/)[0]; if (w) words[w] = (words[w] || 0) + 1 })
+          const sorted = Object.entries(words).sort((a, b) => b[1] - a[1])
+          return sorted[0]?.[0] || "—"
+        })()
+        const counts = APP_STATUSES.map((s) => ({ status: s, count: applications.filter((a) => a.application_status === s).length })).filter((c) => c.count > 0)
+        const maxCount = Math.max(...counts.map((c) => c.count), 1)
+        const totalApps = applications.length
+
+        const glassCard: React.CSSProperties = {
+          borderRadius: 20,
+          background: "rgba(15,31,56,0.65)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          padding: "22px 24px",
+          position: "relative",
+          overflow: "hidden",
+          transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease",
+        }
+
+        const glowBorder = (color: string) => `0 0 0 1px ${color}20, 0 4px 30px ${color}15, 0 8px 40px rgba(0,0,0,0.4)`
+
+        return (
+          <div style={{ marginTop: 20, position: "relative" }}>
+            <style>{`
+              @keyframes insightFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+              @keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+              @keyframes barSlide { from { width: 0; } }
+              @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+              @keyframes ringDraw { from { stroke-dashoffset: 314; } }
+              @keyframes pulseGlow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+              @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+              @keyframes dotPulse { 0%, 100% { opacity: 0.03; } 50% { opacity: 0.06; } }
+              .insight-card:hover { transform: translateY(-4px) !important; }
+              .insight-bar-track { position: relative; overflow: hidden; }
+              .insight-bar-track::after { content: ""; position: absolute; top: 0; left: 0; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); animation: shimmer 3s ease-in-out infinite; animation-delay: 1.5s; }
+            `}</style>
+
+            {/* Background effects */}
+            <div style={{ position: "absolute", top: -120, left: -120, width: 350, height: 350, borderRadius: "50%", background: "radial-gradient(circle, rgba(254,176,106,0.08) 0%, transparent 70%)", pointerEvents: "none", animation: "pulseGlow 6s ease-in-out infinite" }} />
+            <div style={{ position: "absolute", bottom: -100, right: -100, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "pulseGlow 8s ease-in-out infinite 2s" }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "24px 24px", pointerEvents: "none", animation: "dotPulse 8s ease-in-out infinite" }} />
+
+            {/* ── STAT CARDS ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, position: "relative" }}>
+              {[
+                { label: "INTERVIEW RATE", value: `${interviewRate}%`, sub: `${reachedInterview.length} of ${submitted.length} submitted`, color: "#a78bfa", glow: "rgba(167,139,250,0.25)", delay: 0 },
+                { label: "AVG SIGNAL SCORE", value: scores.length ? String(avgScore) : "—", sub: `${scores.length} jobs analyzed`, color: scores.length ? scoreColor(avgScore) : T.DIM, glow: scores.length ? `${scoreColor(avgScore)}30` : "transparent", delay: 0.1 },
+                { label: "HIGH SCORE UNAPPLIED", value: String(highUnapplied), sub: "Score 75+ not yet applied", color: T.WRN_ORANGE, glow: "rgba(254,176,106,0.20)", delay: 0.2, action: highUnapplied > 0 ? () => { setActiveTab("applications"); setFilterStatus("saved") } : undefined },
+                { label: "TOP CATEGORY", value: topCategory, sub: topCategory === "Not enough data yet" ? "Need 5+ high-scoring runs" : "Strongest role keyword", color: T.WRN_BLUE, glow: "rgba(81,173,229,0.20)", delay: 0.3 },
+              ].map((s, i) => (
+                <div
+                  key={s.label}
+                  className="insight-card"
+                  style={{
+                    ...glassCard,
+                    boxShadow: glowBorder(s.color),
+                    animation: `insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) ${s.delay}s both`,
+                  }}
+                >
+                  {/* Decorative gradient line */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${s.color}, transparent)`, opacity: 0.5 }} />
+                  {/* Sparkline decoration */}
+                  <svg style={{ position: "absolute", bottom: 12, right: 16, opacity: 0.1 }} width="60" height="24" viewBox="0 0 60 24">
+                    <polyline points="0,20 10,14 20,18 30,8 40,12 50,4 60,10" fill="none" stroke={s.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", color: `${s.color}88` }}>{s.label}</div>
+                  <div style={{ fontSize: s.value.length > 10 ? 18 : 34, fontWeight: 950, color: s.color, marginTop: 10, letterSpacing: -0.5, animation: `countUp 0.8s cubic-bezier(0.22,1,0.36,1) ${s.delay + 0.2}s both`, lineHeight: 1.1 }}>
+                    {s.value}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.MUTED, marginTop: 8, lineHeight: "16px" }}>{s.sub}</div>
+                  {s.action && <button onClick={s.action} style={{ background: "none", border: "none", color: T.WRN_BLUE, fontSize: 11, fontWeight: 900, cursor: "pointer", padding: 0, marginTop: 8 }}>Review them →</button>}
+                </div>
+              ))}
+            </div>
+
+            {/* ── CIRCULAR PROGRESS + BAR CHART ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16, marginTop: 18, position: "relative" }}>
+
+              {/* Interview Rate Ring */}
+              <div
+                className="insight-card"
+                style={{
+                  ...glassCard,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  boxShadow: glowBorder("#a78bfa"),
+                  animation: "insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both",
+                  minHeight: 260,
+                }}
+              >
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #a78bfa, #FEB06A, transparent)", opacity: 0.5 }} />
+                <div style={{ position: "relative", width: 160, height: 160 }}>
+                  <svg width="160" height="160" viewBox="0 0 160 160" style={{ transform: "rotate(-90deg)" }}>
+                    {/* Track */}
+                    <circle cx="80" cy="80" r="65" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="12" />
+                    {/* Progress */}
+                    <circle
+                      cx="80" cy="80" r="65" fill="none"
+                      stroke="url(#ringGrad)"
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      strokeDasharray="408"
+                      strokeDashoffset={408 - (408 * interviewRate / 100)}
+                      style={{ animation: "ringDraw 1.5s cubic-bezier(0.22,1,0.36,1) 0.5s both" }}
+                    />
+                    <defs>
+                      <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FEB06A" />
+                        <stop offset="100%" stopColor="#a78bfa" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ fontSize: 38, fontWeight: 950, color: "#ffffff", letterSpacing: -1, animation: "countUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.7s both" }}>{interviewRate}%</div>
+                    <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: "rgba(167,139,250,0.60)", marginTop: 2 }}>Interview Rate</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: T.MUTED, marginTop: 14, textAlign: "center" }}>
+                  {reachedInterview.length} reached interview from {submitted.length} submitted
+                </div>
+              </div>
+
+              {/* Applications by Status */}
+              <div
+                className="insight-card"
+                style={{
+                  ...glassCard,
+                  boxShadow: glowBorder("#51ADE5"),
+                  animation: "insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.25s both",
+                }}
+              >
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #51ADE5, #FEB06A, transparent)", opacity: 0.5 }} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                  <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(81,173,229,0.60)" }}>Applications by Status</div>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: T.MUTED }}>{totalApps} total</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {counts.map((c, idx) => {
+                    const sc = STATUS_STYLE[c.status]
+                    const pct = totalApps > 0 ? Math.round(c.count / totalApps * 100) : 0
+                    return (
+                      <div key={c.status} style={{ animation: `insightFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) ${0.4 + idx * 0.08}s both` }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                          <span style={{ fontSize: 12, fontWeight: 900, color: sc.color, textTransform: "capitalize" }}>{c.status}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 11, color: T.DIM }}>{pct}%</span>
+                            <span style={{ fontSize: 14, fontWeight: 900, color: T.TEXT }}>{c.count}</span>
+                          </div>
+                        </div>
+                        <div className="insight-bar-track" style={{ height: 10, background: "rgba(255,255,255,0.05)", borderRadius: 5, overflow: "hidden" }}>
+                          <div style={{
+                            width: `${(c.count / maxCount) * 100}%`,
+                            height: "100%",
+                            borderRadius: 5,
+                            background: `linear-gradient(90deg, ${sc.color}88, ${sc.color})`,
+                            animation: `barSlide 1s cubic-bezier(0.22,1,0.36,1) ${0.6 + idx * 0.1}s both`,
+                          }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* ── BOTTOM ROW — Score Distribution + Decision Breakdown ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 18, position: "relative" }}>
+              {/* Score distribution */}
+              <div
+                className="insight-card"
+                style={{
+                  ...glassCard,
+                  boxShadow: glowBorder("#4ade80"),
+                  animation: "insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.35s both",
+                }}
+              >
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #4ade80, #51ADE5, transparent)", opacity: 0.5 }} />
+                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(74,222,128,0.60)", marginBottom: 16 }}>Score Distribution</div>
                 {(() => {
-                  const highScored = applications.filter((a) => (a.signal_score || 0) >= 75)
-                  if (highScored.length < 5) return "Not enough data yet"
-                  const words: Record<string, number> = {}
-                  highScored.forEach((a) => { const w = (a.job_title || "").split(/\s+/)[0]; if (w) words[w] = (words[w] || 0) + 1 })
-                  const sorted = Object.entries(words).sort((a, b) => b[1] - a[1])
-                  return sorted[0]?.[0] || "—"
+                  const buckets = [
+                    { label: "90-100", min: 90, max: 100, color: "#4ade80" },
+                    { label: "75-89", min: 75, max: 89, color: "#22c55e" },
+                    { label: "60-74", min: 60, max: 74, color: "#FEB06A" },
+                    { label: "40-59", min: 40, max: 59, color: "#f97316" },
+                    { label: "0-39", min: 0, max: 39, color: "#E87070" },
+                  ]
+                  const bucketCounts = buckets.map(b => ({
+                    ...b,
+                    count: scores.filter(s => s >= b.min && s <= b.max).length,
+                  }))
+                  const bMax = Math.max(...bucketCounts.map(b => b.count), 1)
+                  return bucketCounts.map((b, idx) => (
+                    <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, animation: `insightFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.5 + idx * 0.06}s both` }}>
+                      <span style={{ width: 50, fontSize: 11, fontWeight: 900, color: b.color, fontFamily: "monospace" }}>{b.label}</span>
+                      <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${b.count ? (b.count / bMax) * 100 : 0}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${b.color}66, ${b.color})`, animation: `barSlide 0.8s cubic-bezier(0.22,1,0.36,1) ${0.7 + idx * 0.08}s both` }} />
+                      </div>
+                      <span style={{ width: 20, textAlign: "right", fontSize: 12, fontWeight: 900, color: b.count ? T.TEXT : T.DIM }}>{b.count}</span>
+                    </div>
+                  ))
+                })()}
+              </div>
+
+              {/* Decision breakdown */}
+              <div
+                className="insight-card"
+                style={{
+                  ...glassCard,
+                  boxShadow: glowBorder("#FEB06A"),
+                  animation: "insightFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.4s both",
+                }}
+              >
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #FEB06A, #E87070, transparent)", opacity: 0.5 }} />
+                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(254,176,106,0.60)", marginBottom: 16 }}>Signal Decisions</div>
+                {(() => {
+                  const decisions = ["Priority Apply", "Apply", "Review", "Pass"]
+                  const dCounts = decisions.map(d => ({
+                    decision: d,
+                    count: applications.filter(a => a.signal_decision === d).length,
+                    ...(DECISION_STYLE[d] || { bg: "rgba(255,255,255,0.05)", color: T.DIM }),
+                  })).filter(d => d.count > 0)
+                  const dMax = Math.max(...dCounts.map(d => d.count), 1)
+                  return dCounts.length === 0
+                    ? <div style={{ fontSize: 13, color: T.DIM }}>No analyzed jobs yet</div>
+                    : dCounts.map((d, idx) => (
+                      <div key={d.decision} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, animation: `insightFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.55 + idx * 0.06}s both` }}>
+                        <span style={{ width: 90, fontSize: 11, fontWeight: 900, color: d.color }}>{d.decision}</span>
+                        <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{ width: `${(d.count / dMax) * 100}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${d.color}66, ${d.color})`, animation: `barSlide 0.8s cubic-bezier(0.22,1,0.36,1) ${0.7 + idx * 0.08}s both` }} />
+                        </div>
+                        <span style={{ width: 20, textAlign: "right", fontSize: 12, fontWeight: 900, color: T.TEXT }}>{d.count}</span>
+                      </div>
+                    ))
                 })()}
               </div>
             </div>
-            {/* Interview rate */}
-            <div style={{ ...card, padding: "16px 18px" }}>
-              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.DIM }}>INTERVIEW RATE</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: T.WRN_BLUE, marginTop: 8 }}>{interviewRate}%</div>
-              <div style={{ fontSize: 11, color: T.MUTED, marginTop: 4 }}>{reachedInterview.length} reached interview from {submitted.length} submitted</div>
-            </div>
-            {/* High score unapplied */}
-            <div style={{ ...card, padding: "16px 18px" }}>
-              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.DIM }}>HIGH SCORE UNAPPLIED</div>
-              {(() => {
-                const count = applications.filter((a) => (a.signal_score || 0) >= 75 && a.application_status === "saved").length
-                return (
-                  <>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: T.WRN_ORANGE, marginTop: 8 }}>{count}</div>
-                    <div style={{ fontSize: 11, color: T.MUTED, marginTop: 4 }}>Score 75+ but not yet applied</div>
-                    {count > 0 && <button onClick={() => { setActiveTab("applications"); setFilterStatus("saved") }} style={{ background: "none", border: "none", color: T.WRN_BLUE, fontSize: 11, fontWeight: 900, cursor: "pointer", padding: 0, marginTop: 6 }}>Review them →</button>}
-                  </>
-                )
-              })()}
-            </div>
-            {/* Avg score */}
-            <div style={{ ...card, padding: "16px 18px" }}>
-              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.DIM }}>AVG SIGNAL SCORE</div>
-              {(() => {
-                const scores = applications.map((a) => a.signal_score).filter((s: any) => s != null) as number[]
-                const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
-                return <div style={{ fontSize: 28, fontWeight: 900, color: scores.length ? scoreColor(avg) : T.DIM, marginTop: 8 }}>{scores.length ? avg : "—"}</div>
-              })()}
-            </div>
           </div>
-
-          {/* Status bar chart */}
-          <div style={{ ...card, padding: "16px 18px", marginTop: 16 }}>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>APPLICATIONS BY STATUS</div>
-            {(() => {
-              const counts = APP_STATUSES.map((s) => ({ status: s, count: applications.filter((a) => a.application_status === s).length })).filter((c) => c.count > 0)
-              const max = Math.max(...counts.map((c) => c.count), 1)
-              return counts.map((c) => {
-                const sc = STATUS_STYLE[c.status]
-                return (
-                  <div key={c.status} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                    <span style={{ width: 100, fontSize: 11, fontWeight: 900, color: sc.color, textTransform: "capitalize" }}>{c.status}</span>
-                    <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ width: `${(c.count / max) * 100}%`, height: "100%", background: sc.color, borderRadius: 3 }} />
-                    </div>
-                    <span style={{ width: 20, textAlign: "right", fontSize: 12, fontWeight: 900, color: T.TEXT }}>{c.count}</span>
-                  </div>
-                )
-              })
-            })()}
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
