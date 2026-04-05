@@ -123,10 +123,14 @@ const selectStyle: React.CSSProperties = {
   colorScheme: "dark",
 }
 
-function SelectField({ value, options, onChange, style: s }: { value: string; options: string[]; onChange: (v: string) => void; style?: React.CSSProperties }) {
+function SelectField({ value, options, onChange, style: s }: { value: string; options: (string | { value: string; label: string })[]; onChange: (v: string) => void; style?: React.CSSProperties }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...selectStyle, ...s }}>
-      {options.map((o) => <option key={o} value={o}>{o.replace(/_/g, " ")}</option>)}
+      {options.map((o) => {
+        const val = typeof o === "string" ? o : o.value
+        const lbl = typeof o === "string" ? o.replace(/_/g, " ") : o.label
+        return <option key={val} value={val}>{lbl}</option>
+      })}
     </select>
   )
 }
@@ -162,8 +166,11 @@ export default function TrackerPage() {
   const [interviewFilter, setInterviewFilter] = useState("all")
   const [saving, setSaving] = useState(false)
 
+  // Personas
+  const [personas, setPersonas] = useState<any[]>([])
+
   // Add job form
-  const [newJob, setNewJob] = useState({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "" })
+  const [newJob, setNewJob] = useState({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "", persona_id: "" })
 
   // Add interview form
   const [newInterview, setNewInterview] = useState({ application_id: "", interview_stage: "phone", interviewer_names: "", interview_date: "", status: "scheduled", confidence_level: 3, notes: "" })
@@ -178,12 +185,14 @@ export default function TrackerPage() {
     const token = await getToken()
     if (!token) return
     const h = { Authorization: `Bearer ${token}` }
-    const [aRes, iRes] = await Promise.all([
+    const [aRes, iRes, pRes] = await Promise.all([
       fetch("/api/applications", { headers: h }),
       fetch("/api/interviews", { headers: h }),
+      fetch("/api/personas", { headers: h }),
     ])
     if (aRes.ok) { const j = await aRes.json(); setApplications(j.applications || []) }
     if (iRes.ok) { const j = await iRes.json(); setInterviews(j.interviews || []) }
+    if (pRes.ok) { const j = await pRes.json(); setPersonas(j.personas || []) }
     setLoading(false)
   }, [])
 
@@ -210,7 +219,7 @@ export default function TrackerPage() {
     setSaving(true)
     const token = await getToken()
     if (!token) { setSaving(false); return }
-    const { id, profile_id, created_at, signal_decision, signal_score, signal_run_at, jobfit_run_id, persona_id, interview_count, ...fields } = editingApp
+    const { id, profile_id, created_at, signal_decision, signal_score, signal_run_at, jobfit_run_id, interview_count, persona_name, ...fields } = editingApp
     await fetch(`/api/applications/${editingApp.id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -276,7 +285,7 @@ export default function TrackerPage() {
       const j = await res.json()
       setApplications((prev) => [j.application, ...prev])
       setShowAddJob(false)
-      setNewJob({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "" })
+      setNewJob({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "", persona_id: "" })
       setToast("Job added")
     }
   }
@@ -439,6 +448,12 @@ export default function TrackerPage() {
                     <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>DATE POSTED</span>
                     <input type="date" style={{ ...input, height: 38 }} value={newJob.date_posted} onChange={(e) => setNewJob({ ...newJob, date_posted: e.target.value })} />
                   </div>
+                  {personas.length > 0 && (
+                    <div>
+                      <span style={{ ...label, color: T.WRN_ORANGE, display: "block", marginBottom: 4 }}>PERSONA</span>
+                      <SelectField value={newJob.persona_id || ""} options={[{ value: "", label: "— None —" }, ...personas.map((p: any) => ({ value: p.id, label: p.name + (p.is_default ? " (default)" : "") }))]} onChange={(v) => setNewJob({ ...newJob, persona_id: v })} />
+                    </div>
+                  )}
                 </div>
                 <div style={{ marginTop: 12 }}>
                   <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>NOTES</span>
@@ -565,6 +580,12 @@ export default function TrackerPage() {
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>REFERRAL</span>
                             <YesNoPills value={!!editingApp.referral} onChange={(v) => updateDraft({ referral: v })} />
                           </div>
+                          {personas.length > 0 && (
+                            <div>
+                              <span style={{ ...label, color: T.WRN_ORANGE, display: "block", marginBottom: 4 }}>PERSONA</span>
+                              <SelectField value={editingApp.persona_id || ""} options={[{ value: "", label: "— None —" }, ...personas.map((p: any) => ({ value: p.id, label: p.name + (p.is_default ? " (default)" : "") }))]} onChange={(v) => updateDraft({ persona_id: v || null })} />
+                            </div>
+                          )}
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>NOTES</span>
