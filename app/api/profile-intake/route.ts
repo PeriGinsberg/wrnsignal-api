@@ -500,12 +500,25 @@ export async function POST(req: Request) {
 
     if (!personaCount) {
       const personaName = name || "Default"
+      // Extract just the resume portion — the intake form may send the
+      // full profile blob as resume_text.  The canonical profile_text
+      // has a labelled "Resume Text:" section we can slice from.
+      let personaResume = resume_text || ""
+      const resumeMarker = canonicalProfileText.match(/\nResume:\s*/i)
+      if (resumeMarker && resumeMarker.index != null) {
+        const afterMarker = canonicalProfileText
+          .slice(resumeMarker.index + resumeMarker[0].length)
+          .replace(/\n(Writing samples|Extra context):\s*/i, (m: string) => "\0" + m)
+          .split("\0")[0]
+          .trim()
+        if (afterMarker.length > 50) personaResume = afterMarker
+      }
       await supabaseAdmin
         .from("client_personas")
         .insert({
           profile_id: client_profile_id,
           name: personaName,
-          resume_text: resume_text || "",
+          resume_text: personaResume,
           is_default: true,
           display_order: 1,
         })
