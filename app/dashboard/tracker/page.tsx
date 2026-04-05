@@ -225,7 +225,8 @@ export default function TrackerPage() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(fields),
     })
-    setApplications((prev) => prev.map((a) => a.id === editingApp.id ? { ...a, ...fields } : a))
+    const resolvedPersonaName = personas.find((p: any) => p.id === fields.persona_id)?.name || null
+    setApplications((prev) => prev.map((a) => a.id === editingApp.id ? { ...a, ...fields, persona_name: resolvedPersonaName } : a))
     setSaving(false)
     collapseApp()
     setToast("Changes saved")
