@@ -492,8 +492,8 @@ export default function TrackerPage() {
           {viewMode === "list" && (
             <div style={{ ...card, overflow: "hidden" }}>
               {/* Header */}
-              <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr 1.2fr 0.7fr 0.9fr 0.8fr", padding: "10px 18px", background: "rgba(255,255,255,0.03)" }}>
-                {["Company / Role", "Location", "Status", "SIGNAL", "Score", "Interest", "Actions"].map((h) => (
+              <div style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1fr 0.9fr 1fr 0.6fr 0.8fr 0.7fr", padding: "10px 18px", background: "rgba(255,255,255,0.03)" }}>
+                {["Company / Role", "Persona", "Location", "Status", "SIGNAL", "Score", "Interest", "Actions"].map((h) => (
                   <span key={h} style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase", color: T.DIM }}>{h}</span>
                 ))}
               </div>
@@ -509,12 +509,13 @@ export default function TrackerPage() {
                   <div key={a.id}>
                     <div
                       onClick={() => expanded ? collapseApp() : expandApp(a)}
-                      style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr 1.2fr 0.7fr 0.9fr 0.8fr", padding: "13px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, cursor: "pointer", alignItems: "center", background: expanded ? "rgba(255,255,255,0.02)" : "transparent" }}
+                      style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1fr 0.9fr 1fr 0.6fr 0.8fr 0.7fr", padding: "13px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, cursor: "pointer", alignItems: "center", background: expanded ? "rgba(255,255,255,0.02)" : "transparent" }}
                     >
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 900, color: T.TEXT }}>{a.company_name}</div>
                         <div style={{ fontSize: 11, color: T.MUTED, marginTop: 2 }}>{a.job_title}</div>
                       </div>
+                      <span style={{ fontSize: 11, color: a.persona_name ? T.WRN_ORANGE : T.DIM }}>{a.persona_name || "—"}</span>
                       <span style={{ fontSize: 12, color: T.MUTED }}>{a.location || "—"}</span>
                       <Pill text={a.application_status} style={ss} />
                       {ds ? <Pill text={a.signal_decision} style={ds} /> : <span style={{ fontSize: 12, color: T.DIM }}>—</span>}
@@ -569,12 +570,39 @@ export default function TrackerPage() {
                           <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>NOTES</span>
                           <textarea style={{ ...textarea, minHeight: 60 }} value={editingApp.notes || ""} onChange={(e) => updateDraft({ notes: e.target.value })} />
                         </div>
-                        {a.signal_score != null && ds && (
-                          <div style={{ marginTop: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 16px", border: `1px solid ${T.BORDER_SOFT}`, display: "flex", alignItems: "center", gap: 14 }}>
-                            <Pill text={a.signal_decision} style={ds} />
-                            <span style={{ fontSize: 22, fontWeight: 900, color: scoreColor(a.signal_score) }}>{a.signal_score}</span>
-                            <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ width: `${a.signal_score}%`, height: "100%", background: scoreColor(a.signal_score), borderRadius: 3 }} />
+                        {/* SIGNAL summary bar */}
+                        {(a.signal_score != null || a.persona_name || a.signal_run_at) && (
+                          <div style={{ marginTop: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 16px", border: `1px solid ${T.BORDER_SOFT}` }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                              {ds && <Pill text={a.signal_decision} style={ds} />}
+                              {a.signal_score != null && (
+                                <>
+                                  <span style={{ fontSize: 22, fontWeight: 900, color: scoreColor(a.signal_score) }}>{a.signal_score}</span>
+                                  <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden", minWidth: 60 }}>
+                                    <div style={{ width: `${a.signal_score}%`, height: "100%", background: scoreColor(a.signal_score), borderRadius: 3 }} />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+                              {a.persona_name && (
+                                <div>
+                                  <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", color: T.DIM }}>Persona </span>
+                                  <span style={{ fontSize: 12, color: T.WRN_ORANGE, fontWeight: 700 }}>{a.persona_name}</span>
+                                </div>
+                              )}
+                              {a.signal_run_at && (
+                                <div>
+                                  <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", color: T.DIM }}>Run </span>
+                                  <span style={{ fontSize: 12, color: T.MUTED }}>{new Date(a.signal_run_at).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                              {a.application_location && (
+                                <div>
+                                  <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", color: T.DIM }}>Source </span>
+                                  <span style={{ fontSize: 12, color: T.MUTED }}>{a.application_location}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}

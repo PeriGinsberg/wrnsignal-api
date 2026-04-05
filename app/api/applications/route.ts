@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from("signal_applications")
-      .select("*, signal_interviews(id)")
+      .select("*, signal_interviews(id), client_personas(name)")
       .eq("profile_id", profileId)
       .order("created_at", { ascending: false })
 
@@ -64,7 +64,9 @@ export async function GET(req: NextRequest) {
     const apps = (data || []).map((app: any) => ({
       ...app,
       interview_count: Array.isArray(app.signal_interviews) ? app.signal_interviews.length : 0,
+      persona_name: app.client_personas?.name || null,
       signal_interviews: undefined,
+      client_personas: undefined,
     }))
 
     return withCorsJson(req, { ok: true, applications: apps })
