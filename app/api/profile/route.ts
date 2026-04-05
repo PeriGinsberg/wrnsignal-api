@@ -54,7 +54,7 @@ function parseFieldsFromProfileText(text: string): Record<string, string> {
 
   // Grab a tab/multi-space separated field: "Label    Value"
   const grabField = (label: string): string => {
-    const m = text.match(new RegExp(`^${label}[\\t ]{2,}(.+)`, "im"))
+    const m = text.match(new RegExp(`^${label}[\\t ]+(.+)`, "im"))
     return m?.[1]?.trim() || ""
   }
 
@@ -76,7 +76,7 @@ function parseFieldsFromProfileText(text: string): Record<string, string> {
 
   // --- Target Roles ---
   const roles = grab(/Primary Roles:\s*(.+?)(?:\s*Secondary Roles:|$)/im)
-    || grabField("What types of roles are you targeting")
+    || grabField("\\d+\\.\\s*What types of roles are you targeting[^\\t]*")
     || grabField("Target Roles")
   if (roles) out.target_roles = roles.replace(/\.\s*$/, "").replace(/^\d+\.\s*/, "").trim()
 
