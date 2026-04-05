@@ -52,23 +52,48 @@ function parseFieldsFromProfileText(text: string): Record<string, string> {
     return m?.[1]?.trim() || ""
   }
 
-  const name = grab(/^Name:\s*(.+)/im)
+  // Grab a tab/multi-space separated field: "Label    Value"
+  const grabField = (label: string): string => {
+    const m = text.match(new RegExp(`^${label}[\\t ]{2,}(.+)`, "im"))
+    return m?.[1]?.trim() || ""
+  }
+
+  // --- Name ---
+  // Format A: "Name:Reece Kauffman" or "Name: Reece Kauffman"
+  const nameColon = grab(/^Name:\s*(.+)/im)
+  // Format B: "First Name    Jacob\nLast Name    Kanterman"
+  const firstName = grabField("First Name")
+  const lastName = grabField("Last Name")
+  const nameCombined = [firstName, lastName].filter(Boolean).join(" ")
+  const name = nameColon || nameCombined
   if (name) out.name = name
 
+  // --- Job Type ---
   const jobType = grab(/Job Type(?:\s+Preference)?:\s*(.+)/i)
+    || grabField("Job Type Preference")
+    || grabField("Job Type")
   if (jobType) out.job_type = jobType
 
+  // --- Target Roles ---
   const roles = grab(/Primary Roles:\s*(.+?)(?:\s*Secondary Roles:|$)/im)
-  if (roles) out.target_roles = roles.replace(/\.\s*$/, "").trim()
+    || grabField("What types of roles are you targeting")
+    || grabField("Target Roles")
+  if (roles) out.target_roles = roles.replace(/\.\s*$/, "").replace(/^\d+\.\s*/, "").trim()
 
+  // --- Preferred Locations ---
   const prefLoc = grab(/Preferred Locations?:\s*(.+)/i)
+    || grabField("Preferred Locations?")
+    || grabField("Where do you want to work")
   if (prefLoc) out.preferred_locations = prefLoc
 
+  // --- Timeline ---
   const timeline = grab(/Timeline:\s*(.+?)(?:\s+Feedback Style:|$)/i)
+    || grabField("Timeline")
+    || grabField("When do you need")
   if (timeline) out.timeline = timeline.trim()
 
-  // Extract just the resume (everything after "Resume Text:" or "Resume:")
-  const resumeMatch = text.match(/(?:Resume Text|Resume):\s*\n?([\s\S]+?)(?:\n(?:Cover Letter Text|Writing Samples|Extra Context|Other Concerns|Strengths):|\s*$)/i)
+  // --- Resume text (everything after the resume section marker) ---
+  const resumeMatch = text.match(/(?:Resume Text|Resume|Paste your resume)[\s:]*\n([\s\S]+?)(?:\n(?:Cover Letter Text|Writing Samples|Extra Context|Other Concerns|Strengths):|\s*$)/i)
   if (resumeMatch?.[1]?.trim() && resumeMatch[1].trim().length > 50) {
     out.resume_text = resumeMatch[1].trim()
   }
