@@ -7,12 +7,12 @@ import { T, card, eyebrow, headline, input, textarea, btnPrimary, btnSecondary, 
 // ── Status + Decision color maps ────────────────────────────
 
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  saved: { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)" },
+  saved: { bg: "rgba(255,255,255,0.07)", color: "#51ADE5" },
   applied: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
   interviewing: { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
   offer: { bg: "rgba(74,222,128,0.15)", color: "#4ade80" },
-  rejected: { bg: "rgba(248,113,113,0.10)", color: "rgba(248,113,113,0.7)" },
-  withdrawn: { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.3)" },
+  rejected: { bg: "rgba(248,113,113,0.10)", color: "#f87171" },
+  withdrawn: { bg: "rgba(255,255,255,0.05)", color: "#94a3b8" },
 }
 
 const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
@@ -1000,7 +1000,8 @@ export default function TrackerPage() {
                             width: `${(c.count / maxCount) * 100}%`,
                             height: "100%",
                             borderRadius: 5,
-                            background: `linear-gradient(90deg, ${sc.color}88, ${sc.color})`,
+                            background: sc.color,
+                            opacity: 0.9,
                             animation: `barSlide 1s cubic-bezier(0.22,1,0.36,1) ${0.6 + idx * 0.1}s both`,
                           }} />
                         </div>
