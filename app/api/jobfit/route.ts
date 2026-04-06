@@ -228,16 +228,19 @@ export async function POST(req: NextRequest) {
     }
     // ────────────────────────────────────────────────────────────────
 
-    // Use resume_text as primary profile source — fall back to profile_text
-    // If persona was specified and found, splice its resume into the canonical profile blob
+    // Combine profile_text (targeting info) with resume_text (actual resume).
+    // If persona was specified, splice its resume into the profile blob.
     let effectiveProfileText: string
     if (personaResumeText && profileText) {
       effectiveProfileText = profileText.replace(
         /(Resume:\n)([\s\S]*?)(\n[A-Z][a-z]|$)/,
         `$1${personaResumeText}$3`
       )
+    } else if (profileText && resumeText && !profileText.includes(resumeText.slice(0, 80))) {
+      // Both exist and resume isn't already embedded — combine them
+      effectiveProfileText = profileText + "\n\nResume:\n" + resumeText
     } else {
-      effectiveProfileText = personaResumeText || resumeText || profileText
+      effectiveProfileText = resumeText || profileText
     }
 
     if (!effectiveProfileText) {
