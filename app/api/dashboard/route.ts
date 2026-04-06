@@ -194,12 +194,12 @@ function dedupeRows(rows) {
     bucketCounts[bucket] = (bucketCounts[bucket] || 0) + 1
   })
 
-  // In burst buckets (>20 signal_landing hits/min), keep only the first
+  // In burst buckets (>5 signal_landing hits/min), keep only the first
   const bucketSeen = {}
   return rows.filter(r => {
     if (r.page_name !== 'signal_landing') return true  // always keep non-landing events
     const bucket = Math.floor(new Date(r.created_at).getTime() / (60 * 1000))
-    if (bucketCounts[bucket] > 100) {
+    if (bucketCounts[bucket] > 5) {
       if (bucketSeen[bucket]) return false
       bucketSeen[bucket] = true
       return true
@@ -216,7 +216,7 @@ async function loadAll() {
 
     // Fetch page views and attribution in parallel
     const [rawRows, attrRows] = await Promise.all([
-      query('jobfit_page_views', \`select=*&order=created_at.asc&limit=10000\${timeFilter}\`),
+      query('jobfit_page_views', \`select=*&order=created_at.asc&limit=50000\${timeFilter}\`),
       query('signal_attribution', \`select=app_session_id,mkt_session_id,ref_source,ref_medium,ref_campaign,clicked_from&limit=10000\`).catch(() => []),
     ])
     const rows = dedupeRows(rawRows)
