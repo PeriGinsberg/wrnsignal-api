@@ -162,6 +162,9 @@ CRITICAL: Only generate risk_bullets for risk_codes that are explicitly provided
     "tone": "One short phrase"
   }
 }
+`
+}
+
 // ─── Formatters (structured → string for backward compat) ────────────────────
 
 function formatWhyBullet(b: WhyBullet): string {
