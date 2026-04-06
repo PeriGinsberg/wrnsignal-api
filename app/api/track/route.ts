@@ -15,7 +15,10 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const sessionId = crypto.randomUUID()
+    // Accept session_id from client if provided, otherwise generate one
+    const sessionId = body.session_id
+      ? String(body.session_id).slice(0, 200)
+      : crypto.randomUUID()
 
     await supabase.from("jobfit_page_views").insert({
       session_id: sessionId,
@@ -25,6 +28,8 @@ export async function POST(req: Request) {
       utm_source: body.utm_source ? String(body.utm_source).slice(0, 100) : null,
       utm_medium: body.utm_medium ? String(body.utm_medium).slice(0, 100) : null,
       utm_campaign: body.utm_campaign ? String(body.utm_campaign).slice(0, 100) : null,
+      utm_content: body.utm_content ? String(body.utm_content).slice(0, 100) : null,
+      utm_term: body.utm_term ? String(body.utm_term).slice(0, 100) : null,
     })
 
     return withCorsJson(req, { ok: true }, 200)
