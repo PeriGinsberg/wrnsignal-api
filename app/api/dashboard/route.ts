@@ -60,7 +60,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-red{background:rgba(239,68,68,0.12);color:#EF4444;}
 .badge-purple{background:rgba(127,119,221,0.12);color:#7F77DD;}
 
+.card-sub{font-size:11px;color:rgba(255,255,255,0.30);margin-top:-10px;margin-bottom:16px;line-height:1.5;}
 .loading{color:rgba(255,255,255,0.30);font-size:13px;text-align:center;padding:20px;}
+.journey-row{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.journey-row:last-child{border-bottom:none;}
+.journey-step{font-size:10px;font-weight:700;letter-spacing:0.5px;padding:3px 8px;border-radius:8px;white-space:nowrap;}
+.journey-arrow{color:rgba(255,255,255,0.15);font-size:10px;}
+.journey-time{font-size:10px;color:rgba(255,255,255,0.22);margin-left:auto;white-space:nowrap;}
+.hour-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.hour-row:last-child{border-bottom:none;}
+.hour-label{font-size:12px;color:rgba(255,255,255,0.35);width:50px;flex-shrink:0;font-weight:600;}
+.hour-pills{display:flex;flex-wrap:wrap;gap:4px;flex:1;}
+.hour-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;}
+.eng-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(min-width:600px){.eng-grid{grid-template-columns:repeat(4,1fr);}}
+.eng-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center;}
+.eng-num{font-size:28px;font-weight:700;line-height:1;}
+.eng-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.30);margin-top:6px;}
+.eng-sub{font-size:11px;color:rgba(255,255,255,0.25);margin-top:3px;}
 .empty{color:rgba(255,255,255,0.25);font-size:12px;text-align:center;padding:16px;}
 
 .verdict-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -142,10 +159,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div class="card" style="margin-bottom:12px;">
-  <div class="card-title">Recent Events</div>
-  <div class="events-list" id="events">
-    <div class="loading">Loading...</div>
-  </div>
+  <div class="card-title">Paid User Engagement</div>
+  <div class="card-sub">How much are paying customers actually using SIGNAL?</div>
+  <div id="engagement"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="card" style="margin-bottom:12px;">
+  <div class="card-title">Today's Activity</div>
+  <div class="card-sub">What happened on your site in the last 24 hours, hour by hour.</div>
+  <div id="activity"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="card" style="margin-bottom:12px;">
+  <div class="card-title">Recent Visitor Journeys</div>
+  <div class="card-sub">Each row is one person — see how far they got before they left or converted.</div>
+  <div id="journeys"><div class="loading">Loading...</div></div>
 </div>
 
 <script>
@@ -245,7 +273,9 @@ async function loadAll() {
     renderMetrics(rows)
     renderFunnel(rows)
     renderSources(rows, attrBySession)
-    renderEvents(rows)
+    renderEngagement(rows)
+    renderActivity(rows)
+    renderJourneys(rows)
 
     const now = new Date()
     document.getElementById('last-updated').textContent =
@@ -349,35 +379,215 @@ function renderSources(rows, attrBySession) {
   }).join('')
 }
 
-function renderEvents(rows) {
-  const recent = rows.slice(-12).reverse()
-  const el = document.getElementById('events')
+// ── Paid User Engagement ──────────────────────────────────────
+function renderEngagement(rows) {
+  const el = document.getElementById('engagement')
+  const paidEvents = ['jobfit_full_run','positioning_run','coverletter_run','networking_run']
+  const paid = rows.filter(r => paidEvents.includes(r.page_name))
 
-  if (recent.length === 0) { el.innerHTML = '<div class="empty">No events yet</div>'; return }
-
-  const eventConfig = {
-    'jobfit_trial_intake':    { label: 'Visited trial intake',     color: '#51ADE5', badge: 'badge-blue',   badgeText: 'Intake' },
-    'jobfit_trial_completed': { label: 'Completed trial signup',   color: '#FEB06A', badge: 'badge-orange', badgeText: 'Signup' },
-    'jobfit_run_completed':   { label: 'Ran a JobFit (trial)',     color: '#7F77DD', badge: 'badge-purple', badgeText: 'Trial Run' },
-    'jobfit_full_run':        { label: 'Ran JobFit (full access)', color: '#7F77DD', badge: 'badge-purple', badgeText: 'JobFit' },
-    'positioning_run':        { label: 'Ran Positioning',          color: '#51ADE5', badge: 'badge-blue',   badgeText: 'Position' },
-    'coverletter_run':        { label: 'Ran Cover Letter',         color: '#FEB06A', badge: 'badge-orange', badgeText: 'Letter' },
-    'networking_run':         { label: 'Ran Networking',            color: '#4AE888', badge: 'badge-green',  badgeText: 'Network' },
-    'signal_purchased':       { label: 'Purchased full access',    color: '#4AE888', badge: 'badge-green',  badgeText: 'Purchase' },
+  if (paid.length === 0) {
+    el.innerHTML = '<div class="empty">No paid user activity yet</div>'
+    return
   }
 
-  el.innerHTML = recent.map(r => {
-    const cfg = eventConfig[r.page_name] || { label: r.page_name, color: '#888', badge: 'badge-blue', badgeText: 'Event' }
+  const jobfit = paid.filter(r => r.page_name === 'jobfit_full_run').length
+  const positioning = paid.filter(r => r.page_name === 'positioning_run').length
+  const coverletter = paid.filter(r => r.page_name === 'coverletter_run').length
+  const networking = paid.filter(r => r.page_name === 'networking_run').length
+  const totalRuns = paid.length
+  const activeUsers = new Set(paid.map(r => r.session_id)).size
+  const avgPerUser = activeUsers > 0 ? (totalRuns / activeUsers).toFixed(1) : '0'
+
+  // Most active day
+  const dayCounts = {}
+  paid.forEach(r => {
+    const day = new Date(r.created_at).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})
+    dayCounts[day] = (dayCounts[day]||0) + 1
+  })
+  const busiestDay = Object.entries(dayCounts).sort((a,b) => b[1]-a[1])[0]
+
+  el.innerHTML = \`
+    <div class="eng-grid">
+      <div class="eng-box">
+        <div class="eng-num" style="color:#7F77DD">\${activeUsers}</div>
+        <div class="eng-label">Active Users</div>
+        <div class="eng-sub">unique paying customers</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#fff">\${totalRuns}</div>
+        <div class="eng-label">Total Runs</div>
+        <div class="eng-sub">\${avgPerUser} avg per user</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#7F77DD">\${jobfit}</div>
+        <div class="eng-label">JobFit</div>
+        <div class="eng-sub">jobs evaluated</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#51ADE5">\${positioning}</div>
+        <div class="eng-label">Positioning</div>
+        <div class="eng-sub">resumes rewritten</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#FEB06A">\${coverletter}</div>
+        <div class="eng-label">Cover Letters</div>
+        <div class="eng-sub">letters generated</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#4AE888">\${networking}</div>
+        <div class="eng-label">Networking</div>
+        <div class="eng-sub">outreach plans built</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#FEB06A">\${avgPerUser}</div>
+        <div class="eng-label">Tools / User</div>
+        <div class="eng-sub">avg tools used per person</div>
+      </div>
+      <div class="eng-box">
+        <div class="eng-num" style="color:#4AE888;font-size:16px">\${busiestDay ? busiestDay[0] : '—'}</div>
+        <div class="eng-label">Busiest Day</div>
+        <div class="eng-sub">\${busiestDay ? busiestDay[1]+' runs' : ''}</div>
+      </div>
+    </div>
+  \`
+}
+
+// ── Today's Activity (24h, grouped by hour) ──────────────────
+function renderActivity(rows) {
+  const el = document.getElementById('activity')
+  const now = new Date()
+  const yesterday = new Date(now.getTime() - 24*60*60*1000)
+  const recent = rows.filter(r => new Date(r.created_at) >= yesterday)
+
+  if (recent.length === 0) {
+    el.innerHTML = '<div class="empty">No activity in the last 24 hours</div>'
+    return
+  }
+
+  const pillConfig = {
+    'signal_landing':         { label: 'Visit',    bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
+    'signal_cta_click':       { label: 'CTA',      bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'jobfit_trial_intake':    { label: 'Intake',   bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
+    'jobfit_trial_completed': { label: 'Signup',   bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'jobfit_run_completed':   { label: 'Trial Run',bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'jobfit_full_run':        { label: 'JobFit',   bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'positioning_run':        { label: 'Position', bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
+    'coverletter_run':        { label: 'Letter',   bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'networking_run':         { label: 'Network',  bg: 'rgba(74,232,136,0.15)',  color: '#4AE888' },
+    'signal_purchased':       { label: '$99 Purchase', bg: 'rgba(74,232,136,0.20)', color: '#4AE888' },
+  }
+
+  // Group by hour
+  const hours = {}
+  recent.forEach(r => {
     const d = new Date(r.created_at)
-    const time = d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-    const source = r.utm_source ? \` · \${r.utm_source}\` : (r.referrer?.includes('reel') ? ' · reel' : '')
-    return \`<div class="event-row">
-      <div class="event-time">\${time}</div>
-      <div class="event-dot" style="background:\${cfg.color}"></div>
-      <div class="event-name">\${cfg.label}\${source}</div>
-      <div class="event-badge \${cfg.badge}">\${cfg.badgeText}</div>
+    const hourKey = d.toLocaleTimeString([], {hour:'numeric', hour12:true})
+    if (!hours[hourKey]) hours[hourKey] = {}
+    const name = r.page_name
+    hours[hourKey][name] = (hours[hourKey][name]||0) + 1
+  })
+
+  // Sort hours newest first
+  const hourEntries = Object.entries(hours)
+
+  el.innerHTML = hourEntries.reverse().map(([hour, events]) => {
+    const pills = Object.entries(events).map(([name, count]) => {
+      const cfg = pillConfig[name] || { label: name, bg: 'rgba(255,255,255,0.08)', color: '#888' }
+      return \`<span class="hour-pill" style="background:\${cfg.bg};color:\${cfg.color}">\${count} \${cfg.label}</span>\`
+    }).join('')
+    return \`<div class="hour-row">
+      <div class="hour-label">\${hour}</div>
+      <div class="hour-pills">\${pills}</div>
     </div>\`
   }).join('')
+}
+
+// ── Visitor Journeys ─────────────────────────────────────────
+function renderJourneys(rows) {
+  const el = document.getElementById('journeys')
+
+  // Group all events by session_id
+  const sessions = {}
+  rows.forEach(r => {
+    if (!sessions[r.session_id]) sessions[r.session_id] = []
+    sessions[r.session_id].push(r)
+  })
+
+  // Define the funnel step order
+  const stepOrder = {
+    'signal_landing': 0,
+    'signal_cta_click': 1,
+    'jobfit_trial_intake': 2,
+    'jobfit_trial_completed': 3,
+    'jobfit_run_completed': 4,
+    'signal_purchased': 5,
+    'jobfit_full_run': 6,
+    'positioning_run': 7,
+    'coverletter_run': 8,
+    'networking_run': 9,
+  }
+
+  const stepConfig = {
+    'signal_landing':         { label: 'Landed',     bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
+    'signal_cta_click':       { label: 'Clicked CTA',bg: 'rgba(254,176,106,0.12)', color: '#FEB06A' },
+    'jobfit_trial_intake':    { label: 'Started Intake', bg: 'rgba(81,173,229,0.12)', color: '#51ADE5' },
+    'jobfit_trial_completed': { label: 'Signed Up',  bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'jobfit_run_completed':   { label: 'Ran JobFit', bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'signal_purchased':       { label: 'Purchased',  bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
+    'jobfit_full_run':        { label: 'JobFit',     bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'positioning_run':        { label: 'Positioning',bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
+    'coverletter_run':        { label: 'Letter',     bg: 'rgba(254,176,106,0.12)', color: '#FEB06A' },
+    'networking_run':         { label: 'Networking', bg: 'rgba(74,232,136,0.12)',  color: '#4AE888' },
+  }
+
+  // Build journey per session — deduplicate steps, keep order
+  const journeys = Object.entries(sessions).map(([sid, events]) => {
+    const seen = new Set()
+    const steps = events
+      .sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .filter(e => {
+        if (seen.has(e.page_name)) return false
+        seen.add(e.page_name)
+        return true
+      })
+    const lastTime = new Date(events[events.length-1].created_at)
+    const maxStep = Math.max(...steps.map(s => stepOrder[s.page_name] ?? -1))
+    return { sid, steps, lastTime, maxStep }
+  })
+
+  // Sort: most recent activity first, but prioritize longer journeys
+  journeys.sort((a,b) => b.lastTime.getTime() - a.lastTime.getTime())
+
+  // Show top 15
+  const top = journeys.slice(0, 15)
+
+  if (top.length === 0) {
+    el.innerHTML = '<div class="empty">No visitor data yet</div>'
+    return
+  }
+
+  el.innerHTML = top.map(j => {
+    const stepsHtml = j.steps.map((s, i) => {
+      const cfg = stepConfig[s.page_name] || { label: s.page_name, bg: 'rgba(255,255,255,0.08)', color: '#888' }
+      const arrow = i < j.steps.length - 1 ? '<span class="journey-arrow">→</span>' : ''
+      return \`<span class="journey-step" style="background:\${cfg.bg};color:\${cfg.color}">\${cfg.label}</span>\${arrow}\`
+    }).join('')
+
+    const ago = timeAgo(j.lastTime)
+
+    return \`<div class="journey-row">\${stepsHtml}<span class="journey-time">\${ago}</span></div>\`
+  }).join('')
+}
+
+function timeAgo(date) {
+  const diff = Date.now() - date.getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return mins + 'm ago'
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return hrs + 'h ago'
+  const days = Math.floor(hrs / 24)
+  return days + 'd ago'
 }
 
 loadAll()
