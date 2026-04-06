@@ -384,7 +384,7 @@ export const POLICY: JobFitPolicy = {
       ],
     },
 
-    government: { keywords: ["clearance", "dod", "government", "federal", "public sector", "gs-"] },
+    government: { keywords: ["security clearance", "clearance required", "dod", "government agency", "government contract", "federal agency", "federal government", "public sector", "gs-"] },
   sales: {
   keywords: [
     "quota",
@@ -400,7 +400,7 @@ export const POLICY: JobFitPolicy = {
   ],
 },
     contract: { keywords: ["contract", "contractor", "1099", "temporary", "temp"] },
-    hourly: { keywords: ["hourly", "/hour", "per hour", "/hr"] },
+    hourly: { keywords: ["hourly pay", "hourly rate", "hourly wage", "hourly position", "hourly role", "paid hourly", "/hour", "per hour", "/hr"] },
     mba: { keywords: ["mba required", "master of business administration required"] },
 
     years: {

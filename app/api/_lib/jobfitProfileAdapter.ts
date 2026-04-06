@@ -49,6 +49,11 @@ const JOB_FAMILY_ALLOWLIST: JobFamily[] = [
   "Sales",
   "Government",
   "PreMed",
+  "Engineering",
+  "IT_Software",
+  "Healthcare",
+  "Legal",
+  "Trades",
   "Other",
 ]
 
@@ -199,6 +204,35 @@ function inferTargetFamilies(profileText: string, targetRoles?: string | null): 
     roles.includes("legislative")
   ) {
     out.push("Government")
+  }
+
+  if (
+    roles.includes("software engineer") ||
+    roles.includes("software developer") ||
+    roles.includes("front end developer") ||
+    roles.includes("frontend developer") ||
+    roles.includes("back end developer") ||
+    roles.includes("backend developer") ||
+    roles.includes("full stack developer") ||
+    roles.includes("fullstack developer") ||
+    roles.includes("web developer") ||
+    roles.includes("mobile developer") ||
+    roles.includes("devops") ||
+    roles.includes("software development") ||
+    roles.includes("swe")
+  ) {
+    out.push("IT_Software")
+  }
+
+  if (
+    roles.includes("software engineering") ||
+    roles.includes("engineering") ||
+    roles.includes("mechanical engineer") ||
+    roles.includes("electrical engineer") ||
+    roles.includes("civil engineer") ||
+    roles.includes("chemical engineer")
+  ) {
+    out.push("Engineering")
   }
 
   // Fallback to profile text only if targetRoles is empty
