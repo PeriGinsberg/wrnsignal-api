@@ -1,0 +1,876 @@
+import * as React from "react"
+
+/**
+ * SIGNAL Job Analysis Engine — Framer Code Component
+ *
+ * Two states: INPUT (paste JD) and RESULTS (full analysis).
+ * Glass card aesthetic with orb glows, monospace data labels.
+ * CTA links to GHL payment flow.
+ */
+
+/**
+ * @framerSupportedLayoutWidth any
+ * @framerSupportedLayoutHeight any
+ */
+
+// ---------- PROD CONFIG ----------
+const API_BASE = "https://wrnsignal-api.vercel.app"
+const GHL_URL = "https://workforcereadynow.com/signal-user-info"
+
+// ---------- COLORS ----------
+const C = {
+    bg: "#0a1628",
+    orange: "#FEB06A",
+    blue: "#51ADE5",
+    green: "#4ADE80",
+    purple: "#c084fc",
+    red: "#f87171",
+    teal: "#2dd4bf",
+    muted: "#7a9bbf",
+    body: "#b0c8df",
+    finding: "#ccdde8",
+    white: "#fff",
+    glass: "rgba(255,255,255,0.04)",
+    glassBorder: "rgba(255,255,255,0.09)",
+    glassBorderHover: "rgba(255,255,255,0.18)",
+}
+
+const MONO = "'JetBrains Mono','Courier New',monospace"
+const SANS = "'Inter',system-ui,sans-serif"
+
+// ---------- Types ----------
+type AnalysisResult = {
+    role_level: string
+    function: string
+    seniority_signals: string[]
+    core_skills: string[]
+    hidden_requirements: string[]
+    competitiveness: string
+    risk_flags: string[]
+    target_candidate_profile: string[]
+    summary: string
+    company_name?: string
+}
+
+type Verdict = "APPLY" | "REVIEW" | "PASS"
+
+function getVerdict(r: AnalysisResult): Verdict {
+    const comp = r.competitiveness
+    const level = r.role_level
+    const hiddenCount = r.hidden_requirements?.length ?? 0
+    if (comp === "Very High" && hiddenCount >= 3) return "PASS"
+    if ((comp === "Low" || comp === "Medium") && (level === "Entry" || level === "Early Career")) return "APPLY"
+    return "REVIEW"
+}
+
+function getGenericScore(r: AnalysisResult): number {
+    const compMap: Record<string, number> = { "Low": 78, "Medium": 62, "High": 45, "Very High": 30 }
+    let base = compMap[r.competitiveness] ?? 50
+    const hiddenCount = r.hidden_requirements?.length ?? 0
+    if (hiddenCount >= 4) base -= 6
+    if (r.role_level === "Mid-Level" || r.role_level === "Experienced") base -= 5
+    return Math.max(15, Math.min(90, base))
+}
+
+function getCompSegments(comp: string): number {
+    const map: Record<string, number> = { "Low": 1, "Medium": 2, "High": 3, "Very High": 4 }
+    return map[comp] ?? 2
+}
+
+const LOADING_MSGS = [
+    "Reading the job description...",
+    "Identifying hidden requirements...",
+    "Assessing the applicant pool...",
+    "Checking what they're not telling you...",
+    "Building your intelligence report...",
+]
+
+// ---------- MAIN COMPONENT ----------
+export default function SignalJobAnalysis() {
+    const [jd, setJd] = React.useState("")
+    const [loading, setLoading] = React.useState(false)
+    const [loadingMsg, setLoadingMsg] = React.useState(LOADING_MSGS[0])
+    const [error, setError] = React.useState("")
+    const [result, setResult] = React.useState<AnalysisResult | null>(null)
+
+    // Track page view on mount
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const existing = localStorage.getItem("jobfit_session_id")
+        const sessionId = existing || crypto.randomUUID()
+        if (!existing) localStorage.setItem("jobfit_session_id", sessionId)
+
+        const url = new URL(window.location.href)
+        const src = url.searchParams.get("utm_source") || sessionStorage.getItem("signal_utm_source") || null
+        const med = url.searchParams.get("utm_medium") || sessionStorage.getItem("signal_utm_medium") || null
+        const camp = url.searchParams.get("utm_campaign") || sessionStorage.getItem("signal_utm_campaign") || null
+        try {
+            if (src) sessionStorage.setItem("signal_utm_source", src)
+            if (med) sessionStorage.setItem("signal_utm_medium", med)
+            if (camp) sessionStorage.setItem("signal_utm_campaign", camp)
+        } catch {}
+
+        fetch(API_BASE + "/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                session_id: sessionId,
+                page_path: window.location.pathname || "/analyze",
+                page_name: "job_analysis_page",
+                referrer: document.referrer || null,
+                utm_source: src, utm_medium: med, utm_campaign: camp,
+            }),
+        }).catch(() => {})
+    }, [])
+
+    // Rotate loading messages
+    React.useEffect(() => {
+        if (!loading) return
+        let idx = 0
+        const iv = setInterval(() => {
+            idx = (idx + 1) % LOADING_MSGS.length
+            setLoadingMsg(LOADING_MSGS[idx])
+        }, 2500)
+        return () => clearInterval(iv)
+    }, [loading])
+
+    async function handleAnalyze() {
+        setError("")
+        const trimmed = jd.trim()
+        if (trimmed.length < 100) {
+            setError("Paste the full job description. It needs to be at least 100 characters.")
+            return
+        }
+        setLoading(true)
+        setLoadingMsg(LOADING_MSGS[0])
+        try {
+            const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+            const src = sessionStorage.getItem("signal_utm_source") || undefined
+            const med = sessionStorage.getItem("signal_utm_medium") || undefined
+            const camp = sessionStorage.getItem("signal_utm_campaign") || undefined
+
+            const res = await fetch(API_BASE + "/api/job-analysis", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    job_description: trimmed,
+                    session_id: sessionId,
+                    utm_source: src, utm_medium: med, utm_campaign: camp,
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data?.error || "Analysis failed. Try again.")
+            setResult(data as AnalysisResult)
+        } catch (err: any) {
+            setError(err?.message || "Something went wrong. Try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    function handleCTA() {
+        try {
+            sessionStorage.setItem("signal_jd", JSON.stringify({
+                job_description: jd.trim(),
+                analysis: result,
+                company_name: result?.company_name,
+                timestamp: Date.now(),
+            }))
+        } catch {}
+
+        // Track CTA click
+        const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+        const src = sessionStorage.getItem("signal_utm_source") || undefined
+        fetch(API_BASE + "/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ page_name: "signal_cta_click", session_id: sessionId, utm_source: src }),
+        }).catch(() => {})
+
+        window.location.assign(GHL_URL)
+    }
+
+    function handleStartOver() {
+        setResult(null)
+        setJd("")
+        setError("")
+        try { window.scrollTo({ top: 0, behavior: "smooth" }) } catch {}
+    }
+
+    function charHint(): { text: string; ready: boolean } {
+        const n = jd.length
+        if (n < 300) return { text: "Paste the full posting for best results", ready: false }
+        if (n < 800) return { text: n + " characters -- good, paste the full posting if you have it", ready: false }
+        return { text: n + " characters -- ready to analyze", ready: true }
+    }
+
+    return (
+        <div style={pageStyle}>
+            {/* Orbs */}
+            <div style={{ ...orbBase, width: 500, height: 500, background: "rgba(81,173,229,0.1)", top: -150, right: -100 }} />
+            <div style={{ ...orbBase, width: 400, height: 400, background: "rgba(254,176,106,0.07)", top: 300, left: -120 }} />
+            <div style={{ ...orbBase, width: 300, height: 300, background: "rgba(192,132,252,0.07)", bottom: 100, right: -60 }} />
+            {result ? <div style={{ ...orbBase, width: 280, height: 280, background: "rgba(74,222,128,0.06)", top: 900, left: -40 }} /> : null}
+
+            <div style={{ position: "relative" as const, zIndex: 1 }}>
+                {/* Topbar */}
+                <div style={topbar}>
+                    <div>
+                        <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-.02em" }}>
+                            SIGNAL<span style={{ color: C.orange }}>--</span>
+                        </div>
+                        <div style={{ fontSize: 9, color: C.blue, letterSpacing: ".1em", fontWeight: 600, marginTop: 1, fontFamily: MONO }}>
+                            BY WORKFORCE READY NOW
+                        </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: result ? C.muted : C.green, fontFamily: MONO, display: "flex", alignItems: "center", gap: 6 }}>
+                        {result ? (
+                            <>
+                                {extractRoleTitle(result)} {result.company_name ? " \u00B7 " + result.company_name : ""}
+                                {" \u00B7 "}
+                                <span style={{ color: C.blue, cursor: "pointer" }} onClick={handleStartOver}>Run another \u2192</span>
+                            </>
+                        ) : (
+                            <>
+                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, display: "inline-block" }} />
+                                Free job intelligence \u00B7 No account required
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {!result ? (
+                    <InputState
+                        jd={jd}
+                        setJd={setJd}
+                        loading={loading}
+                        loadingMsg={loadingMsg}
+                        error={error}
+                        charHint={charHint()}
+                        onAnalyze={handleAnalyze}
+                    />
+                ) : (
+                    <ResultsState result={result} onCTA={handleCTA} onStartOver={handleStartOver} />
+                )}
+            </div>
+        </div>
+    )
+}
+
+function extractRoleTitle(r: AnalysisResult): string {
+    const fn = r.function || ""
+    const paren = fn.indexOf("(")
+    return paren > 0 ? fn.slice(0, paren).trim() : fn
+}
+
+// ===================== INPUT STATE =====================
+
+function InputState({
+    jd, setJd, loading, loadingMsg, error, charHint, onAnalyze,
+}: {
+    jd: string
+    setJd: (v: string) => void
+    loading: boolean
+    loadingMsg: string
+    error: string
+    charHint: { text: string; ready: boolean }
+    onAnalyze: () => void
+}) {
+    return (
+        <>
+            {/* Hero */}
+            <div style={{ padding: "36px 24px 20px", textAlign: "center" as const }}>
+                <div style={eyebrowPill}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.orange, display: "inline-block" }} />
+                    FREE JOB INTELLIGENCE
+                </div>
+
+                <div style={{ fontSize: 36, fontWeight: 900, lineHeight: 1.15, letterSpacing: "-.02em", marginBottom: 10 }}>
+                    <div style={{ color: C.white }}>Find out what a job</div>
+                    <div>
+                        <span style={{ color: C.orange }}>actually</span>{" "}
+                        <span style={{ color: C.white }}>requires</span>{" "}
+                        <span style={{ color: C.blue }}>to get hired.</span>
+                    </div>
+                </div>
+
+                <div style={{ fontSize: 14, lineHeight: 1.7, color: C.muted, maxWidth: 480, margin: "0 auto 28px" }}>
+                    Paste any job description. SIGNAL breaks down what the role really demands, how competitive the pool is, and what hiring managers expect -- but don't say.
+                </div>
+
+                {/* Intel banner */}
+                <div style={intelBanner}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+                        <circle cx="8" cy="8" r="7" stroke={C.blue} strokeWidth="1.2" />
+                        <line x1="8" y1="7" x2="8" y2="11" stroke={C.blue} strokeWidth="1.2" strokeLinecap="round" />
+                        <circle cx="8" cy="5" r=".6" fill={C.blue} />
+                    </svg>
+                    <div style={{ fontSize: 12, color: C.body, lineHeight: 1.6 }}>
+                        <strong style={{ color: C.blue, fontWeight: 600 }}>This is market intelligence, not a personal score.</strong> The analysis is based on the job and company -- not your specific background. To find out how YOU compare to this role, you'll need full SIGNAL access.
+                    </div>
+                </div>
+
+                {/* Stats row */}
+                <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 32, flexWrap: "wrap" as const }}>
+                    <StatGlass num="73%" color={C.orange} label="of applications never get a response" />
+                    <StatGlass num="4 hrs" color={C.blue} label="average time wasted per bad application" />
+                    <StatGlass num="1 in 8" color={C.green} label="students reviewed job fit entirely" />
+                </div>
+            </div>
+
+            {/* Form area */}
+            <div style={{ padding: "0 24px 32px" }}>
+                {/* What you get grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                    <WygCard icon="star" color={C.orange} title="Competitiveness rating" desc="How hard is this pool, really" />
+                    <WygCard icon="check" color={C.blue} title="Hidden requirements" desc="What the JD doesn't say" />
+                    <WygCard icon="doc" color={C.purple} title="Risk flags" desc="Honest warnings before you apply" />
+                    <WygCard icon="tick" color={C.green} title="Target candidate profile" desc="What a strong applicant looks like" />
+                </div>
+
+                {/* Input card */}
+                <div style={glassCard}>
+                    <div style={{ ...monoLabel, color: C.orange, marginBottom: 6 }}>STEP 1 OF 1</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: C.white, marginBottom: 4 }}>Paste the job description</div>
+                    <div style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>
+                        The more complete the posting, the sharper the intelligence.
+                    </div>
+
+                    {error ? <div style={errorBox}>{error}</div> : null}
+
+                    <textarea
+                        value={jd}
+                        onChange={(e) => setJd(e.target.value)}
+                        placeholder="Paste the full job posting here -- title, responsibilities, requirements, company info. The more you include, the better the analysis."
+                        style={textareaStyle}
+                    />
+                    <div style={{ fontSize: 11, color: charHint.ready ? C.green : C.muted, marginTop: 6, fontFamily: MONO, textAlign: "right" as const }}>
+                        {charHint.text}
+                    </div>
+
+                    {loading ? (
+                        <div style={{ marginTop: 14 }}>
+                            <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 10 }}>
+                                <div style={{
+                                    height: "100%", borderRadius: 3, background: C.orange,
+                                    animation: "loadbar 2.5s ease-in-out infinite",
+                                    width: "60%",
+                                }} />
+                            </div>
+                            <div style={{ textAlign: "center" as const, fontSize: 13, color: C.muted, fontWeight: 600 }}>
+                                {loadingMsg}
+                            </div>
+                        </div>
+                    ) : (
+                        <button type="button" onClick={onAnalyze} style={submitBtn}>
+                            Analyze This Role -- Get Free Intel \u2192
+                        </button>
+                    )}
+                    <div style={{ textAlign: "center" as const, fontSize: 11, color: C.muted, marginTop: 8, fontFamily: MONO, letterSpacing: ".04em" }}>
+                        FREE \u00B7 NO ACCOUNT \u00B7 RESULTS IN ~15 SECONDS
+                    </div>
+                </div>
+
+                {/* Personal teaser */}
+                <div style={personalTeaser}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ ...monoLabel, color: C.orange, marginBottom: 4, fontSize: 9 }}>WANT YOUR PERSONAL SCORE?</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: C.white, marginBottom: 2 }}>Skip ahead -- get full SIGNAL access</div>
+                        <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>See exactly how your background scores against any role.</div>
+                    </div>
+                    <div
+                        onClick={() => window.location.assign(GHL_URL)}
+                        style={{ background: C.orange, color: C.bg, fontSize: 11, fontWeight: 800, padding: "8px 14px", borderRadius: 6, cursor: "pointer", whiteSpace: "nowrap" as const, fontFamily: SANS }}
+                    >
+                        Get Full Access \u2192
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
+// ===================== RESULTS STATE =====================
+
+function ResultsState({
+    result, onCTA, onStartOver,
+}: {
+    result: AnalysisResult
+    onCTA: () => void
+    onStartOver: () => void
+}) {
+    const verdict = getVerdict(result)
+    const score = getGenericScore(result)
+    const compSegs = getCompSegments(result.competitiveness)
+    const companyLabel = result.company_name || ""
+
+    const verdictColor = verdict === "APPLY" ? C.green : verdict === "PASS" ? C.red : C.orange
+    const verdictGlow = verdict === "APPLY" ? "rgba(74,222,128,0.3)" : verdict === "PASS" ? "rgba(248,113,113,0.3)" : "rgba(254,176,106,0.3)"
+
+    // Split target_candidate_profile into checklist and profile tags
+    const checkItems = result.target_candidate_profile ?? []
+
+    return (
+        <>
+            {/* Hero */}
+            <div style={{ padding: "32px 24px 28px" }}>
+                <div style={eyebrowPill}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.orange, display: "inline-block" }} />
+                    SIGNAL ANALYSIS COMPLETE
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.blue, letterSpacing: ".08em", textTransform: "uppercase" as const, marginBottom: 12, fontFamily: MONO }}>
+                    {result.role_level} {" \u00B7 "} {result.function} {companyLabel ? " \u00B7 " + companyLabel : ""}
+                </div>
+
+                {/* Verdict card */}
+                <div style={verdictCard}>
+                    <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: "-.03em", lineHeight: 1, color: verdictColor, textShadow: "0 0 40px " + verdictGlow }}>
+                        {verdict}
+                    </div>
+                    <div style={{ borderLeft: "1px solid rgba(255,255,255,0.08)", borderRight: "1px solid rgba(255,255,255,0.08)", padding: "0 24px" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.white, marginBottom: 8 }}>
+                            {extractRoleTitle(result)} {companyLabel ? " -- " + companyLabel : ""}
+                        </div>
+                        <div style={{ fontSize: 12, lineHeight: 1.7, color: "#9ab8cf" }}>
+                            {result.summary}
+                        </div>
+
+                        {/* Competition meter */}
+                        <div style={compRow}>
+                            <div style={{ ...monoLabel, fontSize: 9, whiteSpace: "nowrap" as const, color: C.muted }}>COMPETITION</div>
+                            <div style={{ display: "flex", gap: 3 }}>
+                                {[1, 2, 3, 4].map((s) => (
+                                    <div key={s} style={{ width: 26, height: 5, borderRadius: 2, background: s <= compSegs ? C.orange : "rgba(255,255,255,0.08)" }} />
+                                ))}
+                            </div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: C.orange, fontFamily: MONO, letterSpacing: ".06em" }}>
+                                {result.competitiveness.toUpperCase()}
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ textAlign: "center" as const }}>
+                        <div style={{ fontSize: 48, fontWeight: 900, color: C.white, lineHeight: 1, fontFamily: MONO }}>
+                            {score}<span style={{ fontSize: 18, color: "rgba(255,255,255,0.3)", fontFamily: MONO }}>/100</span>
+                        </div>
+                        <div style={{ ...monoLabel, fontSize: 9, color: C.muted, marginTop: 4 }}>GENERIC FIT SCORE</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Cards row 1: Signals + Skills */}
+            <div style={cardsRow}>
+                <div style={{ ...glassCard, borderTop: "2px solid " + C.blue, background: "rgba(81,173,229,0.05)" }}>
+                    <div style={{ ...cardLabel, color: C.blue }}>SIGNALS FROM THE POSTING</div>
+                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+                        {(result.seniority_signals ?? []).map((s, i) => (
+                            <div key={i} style={{ fontSize: 12, color: C.body, paddingLeft: 14, position: "relative" as const, lineHeight: 1.55 }}>
+                                <span style={{ position: "absolute" as const, left: 0, color: C.blue, fontFamily: MONO, fontSize: 11 }}>--</span>
+                                {s}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div style={{ ...glassCard, borderTop: "2px solid " + C.purple, background: "rgba(192,132,252,0.04)" }}>
+                    <div style={{ ...cardLabel, color: C.purple }}>HARD SKILLS REQUIRED</div>
+                    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5 }}>
+                        {(result.core_skills ?? []).map((s, i) => {
+                            const colors = [
+                                { color: C.blue, bg: "rgba(81,173,229,0.1)", border: "rgba(81,173,229,0.2)" },
+                                { color: C.purple, bg: "rgba(192,132,252,0.1)", border: "rgba(192,132,252,0.2)" },
+                                { color: C.teal, bg: "rgba(45,212,191,0.08)", border: "rgba(45,212,191,0.2)" },
+                            ]
+                            const c = colors[i % 3]
+                            return (
+                                <span key={i} style={{ fontSize: 11, fontFamily: MONO, padding: "3px 8px", borderRadius: 4, color: c.color, background: c.bg, border: "1px solid " + c.border }}>
+                                    {s}
+                                </span>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            {/* Cards row 2: Candidate profile + Target */}
+            <div style={cardsRow}>
+                <div style={{ ...glassCard, borderTop: "2px solid " + C.green, background: "rgba(74,222,128,0.04)" }}>
+                    <div style={{ ...cardLabel, color: C.green }}>STRONG CANDIDATE LOOKS LIKE</div>
+                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
+                        {checkItems.map((item, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 9, fontSize: 12, color: C.body, lineHeight: 1.55 }}>
+                                <div style={{ width: 12, height: 12, border: "1.5px solid rgba(74,222,128,0.45)", borderRadius: 3, flexShrink: 0, marginTop: 2 }} />
+                                {item}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div style={{ ...glassCard, borderTop: "2px solid " + C.teal, background: "rgba(45,212,191,0.04)" }}>
+                    <div style={{ ...cardLabel, color: C.teal }}>TARGET PROFILE</div>
+                    {checkItems.slice(0, 3).map((item, i) => {
+                        const labels = ["EXPERIENCE", "EDUCATION", "DIFFERENTIATOR"]
+                        return (
+                            <div key={i} style={profileTag}>
+                                <span style={{ fontSize: 9, letterSpacing: ".1em", color: "rgba(74,222,128,0.5)", fontFamily: MONO, display: "block", marginBottom: 2 }}>
+                                    {labels[i] || "DETAIL"}
+                                </span>
+                                {item}
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+
+            {/* Classified section */}
+            <div style={{ padding: "0 24px 16px" }}>
+                {/* Header */}
+                <div style={classHeaderCard}>
+                    <span style={classBadge}>CLASSIFIED</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: C.white, letterSpacing: "-.01em" }}>The hidden reality</span>
+                    <span style={{ fontSize: 11, color: C.muted, marginLeft: "auto", textAlign: "right" as const, lineHeight: 1.4, maxWidth: 240 }}>
+                        What the JD doesn't say -- but every hiring manager expects.
+                    </span>
+                </div>
+
+                {/* Findings grid */}
+                <div style={findingsWrap}>
+                    {(result.hidden_requirements ?? []).map((item, i) => {
+                        const colors = [C.orange, C.blue, C.purple, C.green, C.teal]
+                        const fc = colors[i % colors.length]
+                        return (
+                            <div key={i} style={{ ...findingCell, borderLeft: "3px solid " + fc }}>
+                                <div style={{ fontSize: 9, letterSpacing: ".12em", fontFamily: MONO, marginBottom: 6, color: fc }}>
+                                    FINDING {String(i + 1).padStart(2, "0")}
+                                </div>
+                                <div style={{ fontSize: 12, color: C.finding, lineHeight: 1.62 }}>{item}</div>
+                            </div>
+                        )
+                    })}
+                </div>
+
+                {/* Risk flags */}
+                <div style={riskCard}>
+                    <div style={{ ...monoLabel, color: C.red, marginBottom: 10, fontSize: 9 }}>RISK FLAGS</div>
+                    {(result.risk_flags ?? []).map((flag, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 9, padding: "8px 0", borderBottom: i < (result.risk_flags.length - 1) ? "1px solid rgba(248,113,113,0.08)" : "none" }}>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+                                <path d="M6 1L11.5 11H.5L6 1Z" stroke={C.red} strokeWidth="1.2" />
+                                <line x1="6" y1="4.5" x2="6" y2="7.5" stroke={C.red} strokeWidth="1.2" strokeLinecap="round" />
+                                <circle cx="6" cy="9.2" r=".5" fill={C.red} />
+                            </svg>
+                            <div style={{ fontSize: 12, color: C.body, lineHeight: 1.55 }}>{flag}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* CTA */}
+            <div style={{ padding: "16px 24px 24px" }}>
+                <div style={ctaCard}>
+                    <div style={{ fontSize: 13, fontStyle: "italic", color: "rgba(14,34,64,0.7)", marginBottom: 5 }}>
+                        This is what the job actually requires.
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: C.bg, lineHeight: 1.2, marginBottom: 6, letterSpacing: "-.02em" }}>
+                        Now find out if YOU have what it takes.
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(10,22,40,0.6)", marginBottom: 20 }}>
+                        SIGNAL reads your background and scores you against this exact role -- not a generic candidate.
+                    </div>
+                    <div onClick={onCTA} style={ctaBtn}>
+                        See My Personal Score \u2192
+                    </div>
+                    <div style={{ fontSize: 10, color: "rgba(10,22,40,0.45)", marginTop: 12, fontFamily: MONO, letterSpacing: ".04em" }}>
+                        FULL SIGNAL ACCESS {" \u00B7 "} $99 / 3 MONTHS
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
+// ===================== SMALL COMPONENTS =====================
+
+function StatGlass({ num, color, label }: { num: string; color: string; label: string }) {
+    return (
+        <div style={{ ...glassCard, padding: "12px 18px", textAlign: "center" as const, minWidth: 110 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: MONO, lineHeight: 1, color }}>{num}</div>
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 4, lineHeight: 1.3 }}>{label}</div>
+        </div>
+    )
+}
+
+function WygCard({ icon, color, title, desc }: { icon: string; color: string; title: string; desc: string }) {
+    const iconBg = color === C.orange ? "rgba(254,176,106,0.15)"
+        : color === C.blue ? "rgba(81,173,229,0.12)"
+        : color === C.purple ? "rgba(192,132,252,0.12)"
+        : "rgba(74,222,128,0.1)"
+    const iconBorder = color === C.orange ? "rgba(254,176,106,0.2)"
+        : color === C.blue ? "rgba(81,173,229,0.2)"
+        : color === C.purple ? "rgba(192,132,252,0.2)"
+        : "rgba(74,222,128,0.2)"
+
+    return (
+        <div style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg, border: "1px solid " + iconBorder }}>
+                {icon === "star" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L10 6H14L11 9L12 13L8 11L4 13L5 9L2 6H6L8 2Z" stroke={color} strokeWidth="1.2" strokeLinejoin="round" /></svg>
+                )}
+                {icon === "check" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke={color} strokeWidth="1.2" /><path d="M5 8l2 2 4-4" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                )}
+                {icon === "doc" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="2" stroke={color} strokeWidth="1.2" /><path d="M5 7h6M5 9.5h4" stroke={color} strokeWidth="1.2" strokeLinecap="round" /></svg>
+                )}
+                {icon === "tick" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                )}
+            </div>
+            <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.white, marginBottom: 2 }}>{title}</div>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>{desc}</div>
+            </div>
+        </div>
+    )
+}
+
+// ===================== STYLES =====================
+
+const pageStyle: React.CSSProperties = {
+    background: C.bg,
+    fontFamily: SANS,
+    color: C.white,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+    minHeight: "100vh",
+}
+
+const orbBase: React.CSSProperties = {
+    position: "absolute",
+    borderRadius: "50%",
+    filter: "blur(90px)",
+    pointerEvents: "none",
+    zIndex: 0,
+}
+
+const topbar: React.CSSProperties = {
+    background: "rgba(10,22,40,0.85)",
+    backdropFilter: "blur(12px)",
+    padding: "12px 24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid rgba(255,255,255,0.07)",
+}
+
+const eyebrowPill: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 10,
+    letterSpacing: ".14em",
+    color: C.orange,
+    border: "1px solid rgba(254,176,106,0.3)",
+    padding: "5px 12px",
+    borderRadius: 20,
+    fontFamily: MONO,
+    marginBottom: 20,
+    background: "rgba(254,176,106,0.06)",
+    backdropFilter: "blur(8px)",
+}
+
+const intelBanner: React.CSSProperties = {
+    background: "rgba(81,173,229,0.08)",
+    border: "1px solid rgba(81,173,229,0.2)",
+    borderRadius: 10,
+    padding: "12px 16px",
+    maxWidth: 520,
+    margin: "0 auto 28px",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+    backdropFilter: "blur(8px)",
+}
+
+const glassCard: React.CSSProperties = {
+    background: C.glass,
+    backdropFilter: "blur(16px)",
+    border: "1px solid " + C.glassBorder,
+    borderRadius: 14,
+    padding: 18,
+}
+
+const monoLabel: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: ".14em",
+    fontFamily: MONO,
+    fontWeight: 600,
+}
+
+const cardLabel: React.CSSProperties = {
+    ...monoLabel,
+    marginBottom: 10,
+}
+
+const textareaStyle: React.CSSProperties = {
+    width: "100%",
+    background: C.glass,
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    padding: "14px 16px",
+    color: C.white,
+    fontSize: 13,
+    fontFamily: SANS,
+    lineHeight: 1.65,
+    resize: "vertical",
+    minHeight: 180,
+    outline: "none",
+}
+
+const submitBtn: React.CSSProperties = {
+    width: "100%",
+    background: C.orange,
+    color: C.bg,
+    fontSize: 15,
+    fontWeight: 900,
+    padding: 16,
+    borderRadius: 10,
+    border: "none",
+    cursor: "pointer",
+    letterSpacing: ".02em",
+    marginTop: 14,
+    fontFamily: SANS,
+}
+
+const errorBox: React.CSSProperties = {
+    color: C.red,
+    fontWeight: 800,
+    marginBottom: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "rgba(248,113,113,0.08)",
+    border: "1px solid rgba(248,113,113,0.20)",
+    fontSize: 13,
+    lineHeight: "18px",
+}
+
+const personalTeaser: React.CSSProperties = {
+    background: "rgba(254,176,106,0.06)",
+    border: "1px solid rgba(254,176,106,0.2)",
+    borderRadius: 12,
+    padding: "16px 18px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    backdropFilter: "blur(8px)",
+    marginTop: 16,
+}
+
+const verdictCard: React.CSSProperties = {
+    background: C.glass,
+    backdropFilter: "blur(16px)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+    display: "grid",
+    gridTemplateColumns: "auto 1fr auto",
+    gap: 24,
+    alignItems: "center",
+}
+
+const compRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 16,
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 8,
+    padding: "10px 14px",
+}
+
+const cardsRow: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+    marginBottom: 12,
+    padding: "0 24px",
+}
+
+const profileTag: React.CSSProperties = {
+    fontSize: 12,
+    color: C.green,
+    background: "rgba(74,222,128,0.06)",
+    border: "1px solid rgba(74,222,128,0.15)",
+    padding: "8px 10px",
+    borderRadius: 8,
+    marginBottom: 6,
+    lineHeight: 1.45,
+}
+
+const classHeaderCard: React.CSSProperties = {
+    background: "rgba(254,176,106,0.06)",
+    backdropFilter: "blur(16px)",
+    border: "1px solid rgba(254,176,106,0.2)",
+    borderRadius: "14px 14px 0 0",
+    borderBottom: "none",
+    padding: "18px 20px 14px",
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+}
+
+const classBadge: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: ".18em",
+    color: C.orange,
+    border: "1px solid rgba(254,176,106,0.4)",
+    padding: "3px 8px",
+    borderRadius: 4,
+    fontFamily: MONO,
+    background: "rgba(254,176,106,0.08)",
+}
+
+const findingsWrap: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 2,
+    background: "rgba(254,176,106,0.08)",
+    border: "1px solid rgba(254,176,106,0.15)",
+    borderTop: "none",
+    overflow: "hidden",
+}
+
+const findingCell: React.CSSProperties = {
+    padding: 16,
+    background: C.bg,
+}
+
+const riskCard: React.CSSProperties = {
+    background: "rgba(10,22,40,0.95)",
+    backdropFilter: "blur(16px)",
+    border: "1px solid rgba(248,113,113,0.15)",
+    borderTop: "none",
+    borderRadius: "0 0 14px 14px",
+    padding: "16px 20px",
+    marginTop: 2,
+}
+
+const ctaCard: React.CSSProperties = {
+    background: C.orange,
+    borderRadius: 14,
+    padding: "32px 28px",
+    textAlign: "center" as const,
+}
+
+const ctaBtn: React.CSSProperties = {
+    display: "inline-block",
+    background: C.bg,
+    color: C.orange,
+    fontSize: 14,
+    fontWeight: 800,
+    padding: "13px 36px",
+    borderRadius: 8,
+    cursor: "pointer",
+    letterSpacing: ".02em",
+}
