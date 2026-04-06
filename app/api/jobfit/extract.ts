@@ -939,6 +939,80 @@ jobPhrases: [
     ],
     adjacentKeys: ["communications_writing", "policy_regulatory_research"],
   },
+
+  // ── Engineering / Technical ──────────────────────────────────────
+  {
+    key: "structural_engineering",
+    label: "Structural Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["structural analysis", "structural design", "load analysis", "finite element", "steel design", "concrete design", "foundation design"],
+    jobPhrases: ["structural analysis", "structural design", "load calculations", "finite element", "steel structures", "concrete structures", "foundation", "structural engineering"],
+    adjacentKeys: [],
+  },
+  {
+    key: "mechanical_engineering",
+    label: "Mechanical Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "cad design", "manufacturing engineering", "tolerance analysis"],
+    jobPhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "manufacturing", "tolerance", "mechanical engineering", "product design engineering"],
+    adjacentKeys: [],
+  },
+  {
+    key: "civil_engineering",
+    label: "Civil Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation engineering", "geotechnical"],
+    jobPhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation", "geotechnical", "land development"],
+    adjacentKeys: ["structural_engineering"],
+  },
+  {
+    key: "electrical_engineering",
+    label: "Electrical Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["electrical design", "circuit design", "power systems", "control systems", "pcb design", "embedded systems"],
+    jobPhrases: ["electrical design", "circuit", "power systems", "control systems", "pcb", "embedded", "electrical engineering"],
+    adjacentKeys: [],
+  },
+  {
+    key: "chemical_engineering",
+    label: "Chemical Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["chemical engineering", "process engineering", "reaction kinetics", "mass transfer", "distillation"],
+    jobPhrases: ["chemical engineering", "process engineering", "reaction", "mass transfer", "distillation", "chemical process"],
+    adjacentKeys: [],
+  },
+  {
+    key: "software_engineering",
+    label: "Software Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "software_it" as FunctionTag,
+    profilePhrases: ["software development", "full stack", "backend", "frontend", "api development", "microservices", "devops", "cloud infrastructure"],
+    jobPhrases: ["software engineer", "software development", "full stack", "backend", "frontend", "api", "microservices", "devops", "cloud", "software developer"],
+    adjacentKeys: [],
+  },
+  {
+    key: "nursing_clinical",
+    label: "Nursing / Clinical",
+    kind: "function" as EvidenceKind,
+    functionTag: "healthcare_clinical" as FunctionTag,
+    profilePhrases: ["patient care", "nursing", "clinical assessment", "vital signs", "medication administration", "triage"],
+    jobPhrases: ["patient care", "nursing", "clinical", "vital signs", "medication", "triage", "registered nurse", "rn", "lpn", "cna"],
+    adjacentKeys: [],
+  },
+  {
+    key: "trades_construction",
+    label: "Skilled Trades",
+    kind: "function" as EvidenceKind,
+    functionTag: "trades_skilled" as FunctionTag,
+    profilePhrases: ["welding", "plumbing", "hvac", "carpentry", "electrical wiring", "machining", "cnc"],
+    jobPhrases: ["welding", "plumbing", "hvac", "carpentry", "electrician", "machinist", "cnc", "journeyman", "apprentice"],
+    adjacentKeys: [],
+  },
 ]
 
 const TOOL_ALIASES: Record<string, string[]> = {
@@ -960,8 +1034,45 @@ const TOOL_ALIASES: Record<string, string[]> = {
   shopify: ["shopify"],
   "google analytics": ["google analytics", "ga4"],
   spss: ["spss"],
-  autocad: ["autocad"],
+  autocad: ["autocad", "auto cad"],
   crm: ["crm", "customer relationship management"],
+
+  // Engineering tools
+  revit: ["revit", "autodesk revit"],
+  solidworks: ["solidworks", "solid works"],
+  catia: ["catia"],
+  "staad pro": ["staad", "staad pro", "staad.pro"],
+  sap2000: ["sap2000", "sap 2000"],
+  etabs: ["etabs"],
+  risa: ["risa"],
+  ansys: ["ansys"],
+  abaqus: ["abaqus"],
+  matlab: ["matlab"],
+  microstation: ["microstation"],
+  civil3d: ["civil 3d", "civil3d"],
+  tekla: ["tekla"],
+  primavera: ["primavera", "p6"],
+  procore: ["procore"],
+  bluebeam: ["bluebeam"],
+
+  // Software / IT tools
+  aws: ["aws", "amazon web services"],
+  azure: ["azure", "microsoft azure"],
+  gcp: ["gcp", "google cloud"],
+  docker: ["docker"],
+  kubernetes: ["kubernetes", "k8s"],
+  terraform: ["terraform"],
+  jenkins: ["jenkins"],
+  git: ["git", "github", "gitlab"],
+  jira: ["jira"],
+  react: ["react", "reactjs", "react.js"],
+  node: ["node", "nodejs", "node.js"],
+  java: ["java"],
+  "c++": ["c++", "cpp"],
+  golang: ["golang", "go lang"],
+  typescript: ["typescript"],
+  swift: ["swift"],
+  kotlin: ["kotlin"],
 }
 
 const NEVER_CORE_KEYS = new Set([
@@ -1258,6 +1369,11 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     Sales: 0,
     Government: 0,
     PreMed: 0,
+    Engineering: 0,
+    IT_Software: 0,
+    Healthcare: 0,
+    Legal: 0,
+    Trades: 0,
     Other: 0,
   }
 
@@ -1281,13 +1397,23 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "consulting_strategy") score.Consulting += 3
     if (tag === "operations_general") score.Consulting += 1
 
-    if (tag === "legal_regulatory") score.Other += 8
+    if (tag === "engineering_technical") score.Engineering += 8
+    if (tag === "software_it") score.IT_Software += 8
+    if (tag === "healthcare_clinical") score.Healthcare += 6
+    if (tag === "trades_skilled") score.Trades += 8
+
+    if (tag === "legal_regulatory") score.Legal += 8
     if (tag === "creative_design" || tag === "other") score.Other += 4
   }
 
   if (score.Sales > 0 && score.PreMed > 0) score.Sales += 2
 
   const ordered: JobFamily[] = [
+    "Engineering",
+    "IT_Software",
+    "Healthcare",
+    "Legal",
+    "Trades",
     "Sales",
     "Marketing",
     "Consulting",
@@ -1824,7 +1950,7 @@ function detectInternshipSignals(textRaw: string) {
 
   const lines = splitEvidenceLines(textRaw)
 
-  const isInternship = internshipKeywords.some((k) => t.includes(k))
+  const isInternship = internshipKeywords.some((k) => new RegExp("\\b" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(t))
   const isSummer = summerKeywords.some((k) => t.includes(k))
   const mentionsAITools = aiToolsKeywords.some((k) => t.includes(k))
   const rotationHitCount = rotationKeywords.reduce((acc, k) => acc + (t.includes(k) ? 1 : 0), 0)
@@ -2090,9 +2216,101 @@ export function getFinanceSubFamilyDistance(
   return SUBFAMILY_DISTANCE[jobSub]?.[profileSub] ?? 1
 }
 
+// ── Job title & company name extraction ─────────────────────────────────────
+
+function extractJobTitle(rawLines: string[]): string | null {
+  // First pass: find a line that looks like a real job title (has role keywords)
+  const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
+  const prefixStrip = /^(?:Title|Position|Role|Job Title)\s*[:]\s*/i
+  const sectionWords = /^(position overview|about|overview|description|summary|responsibilities|qualifications|requirements|key responsibilities|how to apply|benefits|compensation|job details|role overview|company description|job description|role description)\b/i
+  for (const line of rawLines.slice(0, 10)) {
+    let trimmed = line.trim()
+    if (trimmed.length === 0 || trimmed.length > 120 || looksLikeLocation(trimmed)) continue
+    // Strip "Title: " prefix if present
+    trimmed = trimmed.replace(prefixStrip, "").trim()
+    if (trimmed.length === 0 || sectionWords.test(trimmed)) continue
+    if (roleWords.test(trimmed)) return trimmed
+  }
+  // Second pass: first non-empty line that isn't a location or section header
+  for (const line of rawLines.slice(0, 5)) {
+    let trimmed = line.trim()
+    if (trimmed.length === 0 || trimmed.length > 120 || looksLikeLocation(trimmed)) continue
+    trimmed = trimmed.replace(prefixStrip, "").trim()
+    if (trimmed.length === 0 || sectionWords.test(trimmed)) continue
+    return trimmed
+  }
+  return null
+}
+
+function looksLikeLocation(s: string): boolean {
+  const t = s.trim()
+  // "City, ST" or "City, State" patterns
+  if (/^[A-Z][a-zA-Z\s.'-]+,\s*[A-Z]{2}\b/.test(t)) return true
+  // "City, State Name"
+  if (/^[A-Z][a-zA-Z\s.'-]+,\s*[A-Z][a-z]/.test(t) && t.length < 40) return true
+  // Common location keywords
+  if (/\b(remote|hybrid|on-site|onsite)\s*$/i.test(t)) return true
+  // Just a US state abbreviation pair like "New York, NY 10001"
+  if (/\b[A-Z]{2}\s+\d{5}\b/.test(t)) return true
+  return false
+}
+
+function extractCompanyName(rawText: string, rawLines: string[]): string | null {
+  // Pattern: "About [Company]" section header (case-insensitive for "The")
+  const aboutMatch = rawText.match(/\bAbout\s+([A-Z][A-Za-z0-9 &'.,-]{1,60})(?:\s*\n|$)/m)
+  if (aboutMatch) {
+    const candidate = aboutMatch[1].trim()
+    if (!/^(the company|the role|the team|the position|the opportunity|us|you)\b/i.test(candidate) &&
+        !looksLikeLocation(candidate)) {
+      return candidate
+    }
+  }
+
+  // Pattern: "Company: X" or "Employer: X"
+  const companyFieldMatch = rawText.match(/(?:^|\n)\s*(?:Company|Employer|Organization)\s*[:]\s*(.+)/im)
+  if (companyFieldMatch) {
+    const val = companyFieldMatch[1].trim()
+    if (val.length > 0 && val.length <= 80 && !looksLikeLocation(val)) return val
+  }
+
+  // Pattern: "At [Company]," in opening sentences
+  const atMatch = rawText.match(/\bAt\s+([A-Z][A-Za-z0-9 &'.,-]{1,60}),/)
+  if (atMatch) {
+    const candidate = atMatch[1].trim()
+    if (!looksLikeLocation(candidate)) return candidate
+  }
+
+  // Pattern: "the [Company]" or "The [Company]" followed by specific verbs
+  const theCompanyMatch = rawText.match(/\b[Tt]he\s+([A-Z][A-Za-z0-9 &'.,-]{2,50})\s+(?:is\s+(?:seeking|hiring|looking)|seeks|offers|provides|has an opening)\b/)
+  if (theCompanyMatch) {
+    const candidate = theCompanyMatch[0].replace(/\s+(?:is\s+(?:seeking|hiring|looking)|seeks|offers|provides|has an opening).*/, "").replace(/^[Tt]he\s+/, "The ").trim()
+    if (!looksLikeLocation(candidate)) return candidate
+  }
+
+  // Fallback: second non-empty line (many postings put company name on line 2)
+  const sectionHeaderPattern = /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|what you|what we|the role|the team|the position|the opportunity|job details|role overview|key responsibilities|how to apply|benefits|compensation|title|location|department|reports to|job type|employment type|company description|job description|role description)\b/i
+  let nonEmptyCount = 0
+  for (const line of rawLines) {
+    const trimmed = line.trim()
+    if (trimmed.length > 0) {
+      nonEmptyCount++
+      if (nonEmptyCount === 2 && trimmed.length <= 80) {
+        if (/^[A-Z]/.test(trimmed) && !/^[-•●*]/.test(trimmed) && !looksLikeLocation(trimmed) && !sectionHeaderPattern.test(trimmed)) return trimmed
+      }
+    }
+    if (nonEmptyCount > 3) break
+  }
+
+  return null
+}
+
 export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
+
+  const rawLines = jobTextRaw.split(/\r?\n/)
+  const jobTitle = extractJobTitle(rawLines)
+  const companyName = extractCompanyName(jobTextRaw, rawLines)
 
   const lines = splitEvidenceLines(jobTextRaw)
   const built = buildUnitsFromLines(lines, "job")
@@ -2128,6 +2346,16 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     /\b(marketing coordinator|marketing manager|marketing associate|marketing intern|marketing specialist|marketing director|marketing and business development|brand manager|brand coordinator|content manager|content coordinator|communications coordinator|communications manager|communications specialist|growth manager|product marketing|marketing operations|media coordinator|marketing analyst)\b/i.test(jobTitleSlice) ||
     // Compound: starts with Marketing + any other words + Coordinator/Manager/etc
     /^marketing\b.{0,40}\b(coordinator|manager|associate|specialist|director|analyst)\b/i.test(jobTitleSlice.trim())
+
+  // Engineering / technical title detection
+  const jobTitleIsEngineering =
+    /\b(structural engineer|civil engineer|mechanical engineer|electrical engineer|chemical engineer|environmental engineer|aerospace engineer|biomedical engineer|industrial engineer|manufacturing engineer|process engineer|design engineer|project engineer|field engineer|engineering intern|engineering co-?op|engineer i|engineer ii|engineer iii|staff engineer|structural analysis|structural design)\b/i.test(jobTitleSlice)
+  const jobTitleIsSoftware =
+    /\b(software engineer|software developer|full stack|frontend engineer|backend engineer|devops engineer|sre|site reliability|data engineer|ml engineer|machine learning engineer|cloud engineer|ios developer|android developer|web developer|systems engineer)\b/i.test(jobTitleSlice)
+  const jobTitleIsHealthcare =
+    /\b(registered nurse|nurse practitioner|physician assistant|medical assistant|clinical nurse|lpn|rn|cna|dental hygienist|physical therapist|occupational therapist|respiratory therapist|pharmacist|pharmacy tech)\b/i.test(jobTitleSlice)
+  const jobTitleIsTrades =
+    /\b(electrician|plumber|welder|hvac technician|carpenter|machinist|cnc operator|pipefitter|millwright|sheet metal worker|boilermaker|ironworker)\b/i.test(jobTitleSlice)
 
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
@@ -2170,16 +2398,38 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     }
   }
 
+  // Inject engineering function tag when title is clearly technical
+  if (jobTitleIsEngineering && !functionTags.includes("engineering_technical")) {
+    functionTags.push("engineering_technical")
+  }
+  if (jobTitleIsSoftware && !functionTags.includes("software_it")) {
+    functionTags.push("software_it")
+  }
+  if (jobTitleIsHealthcare && !functionTags.includes("healthcare_clinical")) {
+    functionTags.push("healthcare_clinical")
+  }
+  if (jobTitleIsTrades && !functionTags.includes("trades_skilled")) {
+    functionTags.push("trades_skilled")
+  }
+
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
     ? "Other"
-    : jobTitleIsMarketing && jobFamilyFromTags === "Sales"
-      ? "Marketing"
-      : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-        ? "Finance"
-        : jobTitleIsSales
-          ? "Sales"
-          : jobFamilyFromTags
+    : jobTitleIsEngineering
+      ? "Engineering"
+      : jobTitleIsSoftware
+        ? "IT_Software"
+        : jobTitleIsHealthcare
+          ? "Healthcare"
+          : jobTitleIsTrades
+            ? "Trades"
+            : jobTitleIsMarketing
+              ? "Marketing"
+              : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
+                ? "Finance"
+                : jobTitleIsSales
+                  ? "Sales"
+                  : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
@@ -2259,6 +2509,67 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     ? includesAny(normalized, cdlKeywords)
     : /\b(cdl required|commercial driver.s license|class [ab] cdl)\b/i.test(normalized)
 
+  // ── Sponsorship / training-provided exemption ─────────────────────────
+  // When a credential keyword appears but the surrounding context indicates
+  // the employer will sponsor, train, or provide the credential, do NOT
+  // classify it as a hard requirement.
+  const SPONSOR_PHRASES = [
+    "will sponsor",
+    "will provide",
+    "training provided",
+    "not required",
+    "preferred but not required",
+    "we will help you obtain",
+    "will assist in obtaining",
+    "upon hire",
+    "after joining",
+    "after start",
+    "obtain within",
+    "expected to obtain",
+    "opportunity to earn",
+    "we provide training",
+    "company sponsored",
+    "company-sponsored",
+    "firm will sponsor",
+    "firm-sponsored",
+    "paid training",
+    "licensing training",
+    "license training",
+  ]
+
+  function isCredentialSponsored(credKeywords: string[], text: string): boolean {
+    const lower = text.toLowerCase()
+    for (const kw of credKeywords) {
+      const idx = lower.indexOf(kw.toLowerCase())
+      if (idx === -1) continue
+      // Check a window of ~200 chars around the keyword match
+      const windowStart = Math.max(0, idx - 120)
+      const windowEnd = Math.min(lower.length, idx + kw.length + 120)
+      const context = lower.slice(windowStart, windowEnd)
+      if (SPONSOR_PHRASES.some((sp) => context.includes(sp))) return true
+    }
+    return false
+  }
+
+  let credentialSponsored = false
+
+  // Check each detected hard credential against sponsorship context
+  if (requiresFinraLicense && isCredentialSponsored(finraKeywords.length ? finraKeywords : ["series", "finra", "sie", "nmls", "securities license"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresInsuranceLicense && isCredentialSponsored(insuranceLicenseKeywords.length ? insuranceLicenseKeywords : ["insurance license"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresRealEstateLicense && isCredentialSponsored(realEstateLicenseKeywords.length ? realEstateLicenseKeywords : ["real estate license"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresCPA && isCredentialSponsored(cpaKeywords.length ? cpaKeywords : ["cpa"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresCDL && isCredentialSponsored(cdlKeywords.length ? cdlKeywords : ["cdl"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresTeachingCredential && isCredentialSponsored(teachingCredentialKeywords.length ? teachingCredentialKeywords : ["teaching"], normalized)) {
+    credentialSponsored = true
+  } else if (requiresPELicense && isCredentialSponsored(engineeringLicenseKeywords.length ? engineeringLicenseKeywords : ["pe license"], normalized)) {
+    credentialSponsored = true
+  }
+
   // ── Risk-flag credential detection (not gates, but significant gaps) ────
   const cfaKeywords = asStringArray(
     (POLICY as any)?.extraction?.credential?.cfaKeywords
@@ -2307,7 +2618,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const requiresSoftCredential =
     requiresCFA || requiresCFP || requiresPMP || requiresSocialWorkLicense
 
-  const credentialRequired = requiresHardCredential
+  // If the credential is sponsored/training-provided, do not treat as hard requirement
+  const credentialRequired = requiresHardCredential && !credentialSponsored
 
   const credentialDetail = requiresLawSchool
     ? "law school enrollment or JD"
@@ -2566,6 +2878,8 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
 return {
     rawHash,
+    jobTitle,
+    companyName,
     jobFamily,
     financeSubFamily: jobFinanceSubFamily,
     analytics,
@@ -2590,6 +2904,7 @@ return {
     mbaRequired,
     credentialRequired,
     credentialDetail,
+    credentialSponsored,
     gradYearHint,
     requiredTools: required,
     preferredTools: preferred,

@@ -625,8 +625,12 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
   const familyMatch = profile.targetFamilies.includes(job.jobFamily)
   if (familyMatch) base += 10
 
- if (!familyMatch && profile.targetFamilies.length > 0) {
-    base -= 12
+  // Hard technical families get a steeper penalty for mismatch
+  const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades"])
+  const isTechnicalJob = HARD_TECH.has(job.jobFamily)
+
+  if (!familyMatch && profile.targetFamilies.length > 0) {
+    base -= isTechnicalJob ? 30 : 12
   }
 
   const directCount = whyMatches.filter((m) => m.match_strength === "direct").length
@@ -641,11 +645,15 @@ base += Math.min(4, toolCount * 2)
 base += Math.min(8, adequateCoverageCount)
 base += Math.min(8, coreCoverageCount)
 
-if (directCount >= 3 && coreCoverageCount >= 1 && base < 72) {
-  base = 72
-}
-if (directCount >= 4 && adequateCoverageCount >= 3 && base < 78) {
-  base = 78
+// Floor rules — only apply when the family actually matches.
+// Generic keyword overlap across different fields should not guarantee a high score.
+if (familyMatch || !isTechnicalJob) {
+  if (directCount >= 3 && coreCoverageCount >= 1 && base < 72) {
+    base = 72
+  }
+  if (directCount >= 4 && adequateCoverageCount >= 3 && base < 78) {
+    base = 78
+  }
 }
 
   return clamp(base, POLICY.score.minScore, POLICY.score.maxScore)
@@ -961,9 +969,10 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
 
   // ── Content execution constraint ────────────────────────────────────────────
   // Candidate said "no pure social media content roles" — penalize if job is content-heavy.
+  console.log("[scoring] Content constraint check:", { hardNoContentOnly, isContentExecutionHeavy: (job as any)?.isContentExecutionHeavy })
   if (hardNoContentOnly && (job as any)?.isContentExecutionHeavy) {
     penalties.push({
-      key: "role_archetype_mismatch" as any,
+      key: "content_role_conflict",
       amount: 18,
       note: "Content-only role conflicts with candidate constraint",
       risk: {

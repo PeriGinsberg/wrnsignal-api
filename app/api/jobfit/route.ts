@@ -22,6 +22,7 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 import { RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
+import { extractJobSignals } from "../jobfit/extract"
 import { enforceClientFacingRules } from "./enforceClientFacingRules"
 
 import { TAXONOMY_V4_STAMP } from "../_v4/taxonomy"
@@ -177,13 +178,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Use resume_text as primary profile source — fall back to profile_text
-    const effectiveProfileText = resumeText || profileText
-
-    if (!effectiveProfileText) {
-      return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
-    }
-
     const forceFromQuery = (() => {
       try {
         const url = new URL(req.url)
@@ -197,13 +191,66 @@ export async function POST(req: NextRequest) {
     const forceFromBody = body?.force === true || body?.force_rerun === true
     const forceRerun = forceFromQuery || forceFromBody
 
+    const supabase = await getSupabaseAdmin()
+
+    // SAFETY: never serve cached results if we don't have a real profile identity.
+    // If profileId is MISSING, a cache hit could return a different user's result.
+    const hasRealProfileId = profileId && profileId !== MISSING
+
+    // ── Persona support (optional) ──────────────────────────────────
+    const personaId = String(body?.persona_id || "").trim() || null
+    let personaResumeText: string | null = null
+    let profileVersionAtRun: number | null = null
+    let personaVersionAtRun: number | null = null
+
+    if (personaId && hasRealProfileId && supabase) {
+      const { data: persona, error: personaErr } = await supabase
+        .from("client_personas")
+        .select("resume_text, persona_version, profile_id")
+        .eq("id", personaId)
+        .maybeSingle()
+
+      if (personaErr) console.warn("[jobfit/route] persona lookup failed:", personaErr.message)
+
+      if (persona && persona.profile_id === profileId) {
+        personaResumeText = String(persona.resume_text || "").trim()
+        personaVersionAtRun = persona.persona_version ?? 1
+      } else if (persona) {
+        return withCorsJson(req, { error: "Persona does not belong to this profile" }, 403)
+      }
+
+      const { data: pv } = await supabase
+        .from("client_profiles")
+        .select("profile_version")
+        .eq("id", profileId)
+        .maybeSingle()
+      profileVersionAtRun = pv?.profile_version ?? 1
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // Use resume_text as primary profile source — fall back to profile_text
+    // If persona was specified and found, splice its resume into the canonical profile blob
+    let effectiveProfileText: string
+    if (personaResumeText && profileText) {
+      effectiveProfileText = profileText.replace(
+        /(Resume:\n)([\s\S]*?)(\n[A-Z][a-z]|$)/,
+        `$1${personaResumeText}$3`
+      )
+    } else {
+      effectiveProfileText = personaResumeText || resumeText || profileText
+    }
+
+    if (!effectiveProfileText) {
+      return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
+    }
+
     let profileOverrides: any = body?.profileOverrides ?? null
     if (!profileOverrides) {
       try {
         const mod = await import("../_lib/jobfitProfileAdapter")
         if (typeof (mod as any).mapClientProfileToOverrides === "function") {
           profileOverrides = (mod as any).mapClientProfileToOverrides({
-            profileText: effectiveProfileText,
+            profileText: profileText || effectiveProfileText,
             profileStructured: profileStructured,
             targetRoles: targetRoles,
             preferredLocations: preferredLocations,
@@ -221,11 +268,7 @@ export async function POST(req: NextRequest) {
     }
     const { fingerprint_hash, fingerprint_code } = buildFingerprint(fpPayload)
 
-    const supabase = await getSupabaseAdmin()
-
-    // SAFETY: never serve cached results if we don't have a real profile identity.
-    // If profileId is MISSING, a cache hit could return a different user's result.
-    const hasRealProfileId = profileId && profileId !== MISSING
+    console.log("[jobfit/route] PRE-CACHE-CHECK:", { hasSupabase: !!supabase, forceRerun, hasRealProfileId, profileId, fingerprint_hash: fingerprint_hash?.slice(0, 12) })
 
     if (supabase && !forceRerun && hasRealProfileId) {
       try {
@@ -236,8 +279,59 @@ export async function POST(req: NextRequest) {
           .eq("fingerprint_hash", fingerprint_hash)
           .maybeSingle()
 
+        console.log("[jobfit/route] CACHE-RESULT:", { cacheHit: !!existingRun?.result_json, hasRun: !!existingRun })
+
         if (existingRun?.result_json) {
           const cleaned = enforceClientFacingRules(existingRun.result_json as any)
+          // Backfill jobTitle/companyName on cached results that predate the extraction
+          if (cleaned?.job_signals && cleaned.job_signals.jobTitle === undefined) {
+            const backfill = extractJobSignals(jobText)
+            cleaned.job_signals.jobTitle = backfill.jobTitle
+            cleaned.job_signals.companyName = backfill.companyName
+          }
+
+          // Ensure a signal_application exists even on cache hits
+          try {
+            let cachedCompany = String(cleaned?.job_signals?.companyName || "").trim()
+            let cachedTitle = String(cleaned?.job_signals?.jobTitle || "").trim()
+            const cachedLocation = String(cleaned?.job_signals?.location?.city || "").trim()
+            cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+            cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+            const isGarbageCached = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
+            if (isGarbageCached(cachedCompany)) cachedCompany = ""
+            if (isGarbageCached(cachedTitle)) cachedTitle = ""
+
+            let existingCachedApp: any = null
+            if (cachedCompany) {
+              const { data } = await supabase
+                .from("signal_applications")
+                .select("id")
+                .eq("profile_id", profileId)
+                .ilike("company_name", cachedCompany)
+                .ilike("job_title", cachedTitle || "")
+                .maybeSingle()
+              existingCachedApp = data
+            }
+
+            if (!existingCachedApp?.id) {
+              await supabase.from("signal_applications").insert({
+                profile_id: profileId,
+                company_name: cachedCompany || "(Unknown Company)",
+                job_title: cachedTitle || "(Unknown Role)",
+                location: cachedLocation || "",
+                signal_decision: String(cleaned?.decision || ""),
+                signal_score: (cleaned as any)?.score ?? null,
+                signal_run_at: new Date().toISOString(),
+                persona_id: personaId || null,
+                application_status: "saved",
+                interest_level: 1,
+              })
+              console.log("[jobfit/route] created application from cache hit:", cachedCompany || "(unknown)", cachedTitle || "(unknown)")
+            }
+          } catch (appErr: any) {
+            console.warn("[jobfit/route] cache-hit application create failed:", appErr?.message)
+          }
+
           return withCorsJson(req, {
             ...(cleaned as any),
             fingerprint_code,
@@ -295,18 +389,125 @@ export async function POST(req: NextRequest) {
 
     if (supabase && hasRealProfileId) {
       try {
-        await supabase.from("jobfit_runs").insert({
+        const { data: runRow, error: runInsertErr } = await supabase.from("jobfit_runs").insert({
           client_profile_id: profileId,
           job_url: null,
           fingerprint_hash,
           fingerprint_code,
           verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
           result_json: result,
+          persona_id: personaId || null,
+          profile_version_at_run: profileVersionAtRun,
+          persona_version_at_run: personaVersionAtRun,
+        }).select("id").single()
+
+        if (runInsertErr) {
+          console.warn("[jobfit/route] jobfit_runs insert failed:", runInsertErr.message)
+        }
+
+        // Auto-create or update signal_applications
+        const rawCompanyName = (result as any)?.job_signals?.companyName
+        const rawJobTitle = (result as any)?.job_signals?.jobTitle
+        const jobLocation = String((result as any)?.job_signals?.location?.city || "").trim()
+        let companyName = String(rawCompanyName || "").trim()
+        let jobTitle = String(rawJobTitle || "").trim()
+        const runId = runRow?.id || null
+
+        // Clean common prefixes from extracted values
+        jobTitle = jobTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+        companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+
+        // Clean extracted values that look like section headers, not real names
+        const isGarbage = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
+        if (isGarbage(companyName)) companyName = ""
+        if (isGarbage(jobTitle)) jobTitle = ""
+
+        console.log("[jobfit/route] auto-application signals:", {
+          rawCompanyName, rawJobTitle, companyName, jobTitle, runId, profileId,
+          hasJobSignals: !!(result as any)?.job_signals,
+          jobSignalKeys: (result as any)?.job_signals ? Object.keys((result as any).job_signals).slice(0, 15) : [],
         })
+
+        if (runId) {
+          let existingApp: any = null
+          if (companyName) {
+            const { data, error: lookupErr } = await supabase
+              .from("signal_applications")
+              .select("id")
+              .eq("profile_id", profileId)
+              .ilike("company_name", companyName)
+              .ilike("job_title", jobTitle || "")
+              .maybeSingle()
+
+            if (lookupErr) {
+              console.warn("[jobfit/route] application lookup failed:", lookupErr.message)
+            }
+            existingApp = data
+          }
+
+          if (existingApp?.id) {
+            const { error: updateErr } = await supabase.from("signal_applications").update({
+              signal_decision: String((result as any)?.decision || ""),
+              signal_score: (result as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: runId,
+              updated_at: new Date().toISOString(),
+            }).eq("id", existingApp.id)
+
+            if (updateErr) console.warn("[jobfit/route] application update failed:", updateErr.message)
+
+            await supabase.from("jobfit_runs").update({
+              application_id: existingApp.id,
+            }).eq("id", runId)
+
+            console.log("[jobfit/route] updated existing application:", existingApp.id)
+          } else {
+            const { data: newApp, error: createErr } = await supabase.from("signal_applications").insert({
+              profile_id: profileId,
+              company_name: companyName || "(Unknown Company)",
+              job_title: jobTitle || "(Unknown Role)",
+              location: jobLocation || "",
+              signal_decision: String((result as any)?.decision || ""),
+              signal_score: (result as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: runId,
+              persona_id: personaId || null,
+              application_status: "saved",
+              interest_level: 1,
+            }).select("id").single()
+
+            if (createErr) {
+              console.error("[jobfit/route] application create FAILED:", createErr.message, createErr.details, createErr.hint)
+            } else {
+              console.log("[jobfit/route] created new application:", newApp?.id)
+            }
+
+            if (newApp?.id) {
+              await supabase.from("jobfit_runs").update({
+                application_id: newApp.id,
+              }).eq("id", runId)
+            }
+          }
+        } else {
+          console.log("[jobfit/route] skipping auto-application:", { companyName: companyName || "(empty)", runId: runId || "(null)" })
+        }
       } catch (e: any) {
         console.warn("[jobfit/route] cache insert failed:", e?.message || String(e))
       }
     }
+
+    // Track successful run — use profileId as session_id for dedup
+    try {
+      const sb = await getSupabaseAdmin()
+      if (sb) {
+        await sb.from("jobfit_page_views").insert({
+          session_id: String(profileId || crypto.randomUUID()),
+          page_name: "jobfit_full_run",
+          page_path: "/api/jobfit",
+          referrer: null,
+        })
+      }
+    } catch {}
 
     return withCorsJson(req, {
       ...(result as any),

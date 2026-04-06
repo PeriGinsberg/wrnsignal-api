@@ -19,6 +19,7 @@ export type PenaltyKey =
   | "credential_requirement_mismatch"
   | "finance_subfamily_mismatch"
   | "role_archetype_mismatch"
+  | "content_role_conflict"
 
 export type Severity = 1 | 2 | 3 | 4 | 5
 
@@ -200,25 +201,25 @@ export const POLICY: JobFitPolicy = {
       label: "Missing core direct capability proof",
       severity: 4,
       multiplier: 2.8,
-      maxStackCount: 3,
+      maxStackCount: 1,
     },
     missing_commercial_execution_proof: {
       label: "Missing commercial execution proof",
       severity: 4,
       multiplier: 2.6,
-      maxStackCount: 3,
+      maxStackCount: 1,
     },
     missing_required_system_proof: {
       label: "Missing required system proof",
       severity: 3,
       multiplier: 2.4,
-      maxStackCount: 2,
+      maxStackCount: 1,
     },
     missing_ownership_scope_proof: {
       label: "Missing ownership scope proof",
       severity: 4,
       multiplier: 2.7,
-      maxStackCount: 2,
+      maxStackCount: 1,
     },
     credential_requirement_mismatch: {
       label: "Professional credential or enrollment required",
@@ -236,6 +237,12 @@ export const POLICY: JobFitPolicy = {
       label: "Role type mismatch with stated interests",
       severity: 3,
       multiplier: 2.2,
+      maxStackCount: 1,
+    },
+    content_role_conflict: {
+      label: "Content-only role conflicts with candidate constraint",
+      severity: 4,
+      multiplier: 3.0,
       maxStackCount: 1,
     },
   },
