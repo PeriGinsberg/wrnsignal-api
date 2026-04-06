@@ -92,7 +92,7 @@ export async function POST(req: Request) {
         if (profErr) return withCorsJson(req, { ok: false, error: profErr.message }, 500)
         if (!profile) return withCorsJson(req, { ok: false, error: "missing_profile" }, 400)
 
-        const profileText =
+        const baseProfileText =
             (profile.profile_text && String(profile.profile_text).trim()) ||
             buildFallbackProfileText({
                 name: profile.name,
@@ -103,6 +103,12 @@ export async function POST(req: Request) {
                 timeline: profile.timeline,
                 resumeText: profile.resume_text,
             })
+
+        // Always append resume_text if it exists and isn't already in the profile text
+        const resumeText = profile.resume_text ? String(profile.resume_text).trim() : ""
+        const profileText = resumeText && !baseProfileText.includes(resumeText.slice(0, 100))
+            ? baseProfileText + "\n\nResume:\n" + resumeText
+            : baseProfileText
 
         // 3) Run full JobFit evaluator (shared with full-access)
         const result = await runJobFit({
