@@ -19,7 +19,7 @@ const GHL_URL = "https://workforcereadynow.com/signal-user-info"
 
 // ---------- COLORS ----------
 const C = {
-    bg: "#0a1628",
+    bg: "#0b1929",
     orange: "#FEB06A",
     blue: "#51ADE5",
     green: "#4ADE80",
@@ -49,9 +49,11 @@ type CompanyContext = {
 }
 
 type MarketReality = {
+    stats?: { value: string; label: string }[]
+    competitive_dynamic?: string
+    // backward compat with old cached responses
     estimated_applicants?: string
     applicant_pool_description?: string
-    competitive_dynamic?: string
 }
 
 type AnalysisResult = {
@@ -222,6 +224,21 @@ export default function SignalJobAnalysis() {
 
     return (
         <div style={pageStyle}>
+            {/* Injected keyframes */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes ctaGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(254,176,106,0.4), 0 0 40px rgba(254,176,106,0.15); }
+                    50% { box-shadow: 0 0 28px rgba(81,173,229,0.5), 0 0 56px rgba(81,173,229,0.2); }
+                }
+                .signal-cta-btn {
+                    animation: ctaGlow 3s ease-in-out infinite;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+                .signal-cta-btn:hover {
+                    transform: scale(1.03);
+                    box-shadow: 0 0 32px rgba(254,176,106,0.6), 0 0 64px rgba(81,173,229,0.3) !important;
+                }
+            ` }} />
             {/* Orbs */}
             <div style={{ ...orbBase, width: 500, height: 500, background: "rgba(81,173,229,0.1)", top: -150, right: -100 }} />
             <div style={{ ...orbBase, width: 400, height: 400, background: "rgba(254,176,106,0.07)", top: 300, left: -120 }} />
@@ -239,7 +256,7 @@ export default function SignalJobAnalysis() {
                             BY WORKFORCE READY NOW
                         </div>
                     </div>
-                    <div style={{ fontSize: 11, color: result ? C.muted : C.green, fontFamily: MONO, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ fontSize: 11, color: result ? "#4a6a85" : C.green, display: "flex", alignItems: "center", gap: 6 }}>
                         {result ? (
                             <>
                                 {extractRoleTitle(result)} {result.company_name ? " \u00B7 " + result.company_name : ""}
@@ -421,116 +438,114 @@ function ResultsState({
     const co = result.company_name || ""
     const cc = result.company_context
     const mr = result.market_reality
-
-    const vColor = verdict === "APPLY" ? C.green : verdict === "PASS" ? C.red : C.orange
-    const vGlow = verdict === "APPLY" ? "rgba(74,222,128,0.3)" : verdict === "PASS" ? "rgba(248,113,113,0.3)" : "rgba(254,176,106,0.3)"
     const checkItems = result.target_candidate_profile ?? []
     const findingColors = [C.orange, C.blue, C.purple, C.green, C.teal, C.red]
 
-    // Skill pill color categories
+    const vColor = verdict === "APPLY" ? C.green : verdict === "PASS" ? C.red : C.orange
+
     const skillPalettes = [
-        { color: C.purple, bg: "rgba(192,132,252,0.1)", border: "rgba(192,132,252,0.22)" },
-        { color: C.blue, bg: "rgba(81,173,229,0.1)", border: "rgba(81,173,229,0.22)" },
-        { color: C.teal, bg: "rgba(45,212,191,0.08)", border: "rgba(45,212,191,0.22)" },
-        { color: C.orange, bg: "rgba(254,176,106,0.08)", border: "rgba(254,176,106,0.22)" },
+        { color: C.blue, bg: "rgba(81,173,229,0.08)", border: "rgba(81,173,229,0.18)" },
+        { color: C.purple, bg: "rgba(192,132,252,0.08)", border: "rgba(192,132,252,0.18)" },
+        { color: C.teal, bg: "rgba(45,212,191,0.06)", border: "rgba(45,212,191,0.18)" },
+        { color: C.orange, bg: "rgba(254,176,106,0.06)", border: "rgba(254,176,106,0.18)" },
     ]
+
+    const Divider = () => <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 32px" }} />
+    const secEyebrow = (text: string, color: string): React.CSSProperties => ({ fontSize: 9, letterSpacing: ".18em", fontWeight: 700, color, marginBottom: 8 })
+    const secTitle: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: C.white, marginBottom: 24, letterSpacing: "-.01em" }
 
     return (
         <>
-            {/* ── Hero + Verdict ── */}
-            <div style={{ padding: "32px 28px 24px" }}>
-                <div style={eyebrowPill}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.orange, display: "inline-block" }} />
-                    SIGNAL ANALYSIS COMPLETE
-                </div>
-                <div style={{ fontSize: 12, color: C.blue, letterSpacing: ".06em", textTransform: "uppercase" as const, marginBottom: 16 }}>
-                    {result.role_level} {" \u00B7 "} {result.function} {co ? " \u00B7 " + co : ""}
-                </div>
-
-                <div style={verdictCard}>
-                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 24, alignItems: "start", marginBottom: 18 }}>
-                        <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: "-.04em", lineHeight: 1, color: vColor, textShadow: "0 0 40px " + vGlow }}>
-                            {verdict}
-                        </div>
-                        <div>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: C.white, marginBottom: 10 }}>
-                                {extractRoleTitle(result)}{co ? " \u2014 " + co : ""}
-                            </div>
-                            <div style={{ fontSize: 14, lineHeight: 1.75, color: "#9ab8cf" }}>
-                                {result.summary}
-                            </div>
-                        </div>
-                        <div style={{ textAlign: "center" as const, paddingLeft: 20, borderLeft: "1px solid rgba(255,255,255,0.08)" }}>
-                            <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>
-                                {score}<span style={{ fontSize: 18, color: "rgba(255,255,255,0.25)" }}>/100</span>
-                            </div>
-                            <div style={{ fontSize: 10, letterSpacing: ".1em", color: C.muted, marginTop: 4 }}>GENERIC FIT SCORE</div>
-                        </div>
+            {/* ── Verdict Hero (2-column) ── */}
+            <div style={{ padding: "48px 32px 0", display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 48, alignItems: "start" }}>
+                {/* Left: stamp + score + competition */}
+                <div>
+                    <div style={{ fontSize: 96, fontWeight: 900, letterSpacing: "-.05em", lineHeight: 0.95, marginBottom: 20, color: vColor }}>
+                        {verdict}
                     </div>
-                    <div style={compRow}>
-                        <div style={{ fontSize: 9, letterSpacing: ".12em", color: C.muted, whiteSpace: "nowrap" as const }}>COMPETITION</div>
-                        <div style={{ display: "flex", gap: 3 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 16 }}>
+                        <div style={{ fontSize: 44, fontWeight: 900, color: C.white, lineHeight: 1 }}>{score}</div>
+                        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.25)" }}>/100</div>
+                        <div style={{ fontSize: 10, letterSpacing: ".1em", color: "#4a6a85" }}>{" "}GENERIC FIT</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                        <div style={{ fontSize: 9, letterSpacing: ".14em", color: "#4a6a85", whiteSpace: "nowrap" as const }}>COMPETITION</div>
+                        <div style={{ display: "flex", gap: 4 }}>
                             {[1, 2, 3, 4].map((s) => (
-                                <div key={s} style={{ width: 28, height: 5, borderRadius: 2, background: s <= compSegs ? C.orange : "rgba(255,255,255,0.08)" }} />
+                                <div key={s} style={{ width: 32, height: 4, borderRadius: 2, background: s <= compSegs ? C.orange : "rgba(255,255,255,0.07)" }} />
                             ))}
                         </div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: C.orange, letterSpacing: ".06em" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: C.orange, letterSpacing: ".08em" }}>
                             {result.competitiveness.toUpperCase()}
                         </div>
-                        {mr?.estimated_applicants ? (
-                            <div style={{ fontSize: 11, color: C.muted }}>
-                                {" \u00B7 Est. " + mr.estimated_applicants + " applicants"}
-                                {mr.applicant_pool_description ? " \u00B7 " + mr.applicant_pool_description : ""}
-                            </div>
-                        ) : null}
+                    </div>
+                    {mr?.estimated_applicants ? (
+                        <div style={{ fontSize: 10, color: "#4a6a85" }}>
+                            Est. {mr.estimated_applicants} applicants
+                        </div>
+                    ) : null}
+                </div>
+
+                {/* Right: role + summary */}
+                <div style={{ paddingTop: 8 }}>
+                    <div style={{ fontSize: 10, letterSpacing: ".12em", color: C.blue, textTransform: "uppercase" as const, marginBottom: 14 }}>
+                        {result.role_level} {" \u00B7 "} {result.function} {co ? " \u00B7 " + co : ""}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: C.white, lineHeight: 1.3, marginBottom: 16, letterSpacing: "-.01em" }}>
+                        {extractRoleTitle(result)}{co ? " \u2014 " + co : ""}
+                    </div>
+                    <div style={{ fontSize: 15, lineHeight: 1.8, color: "#7a9bbf" }}>
+                        {result.summary}
                     </div>
                 </div>
             </div>
 
+            {/* Divider */}
+            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "36px 32px 0" }} />
+
             {/* ── Company Intelligence ── */}
             {cc ? (
-                <div style={{ padding: "0 28px 22px" }}>
-                    <div style={{ background: "rgba(81,173,229,0.05)", backdropFilter: "blur(16px)", border: "1px solid rgba(81,173,229,0.2)", borderRadius: 16, padding: 24 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                            <span style={{ fontSize: 9, letterSpacing: ".16em", color: C.blue, border: "1px solid rgba(81,173,229,0.35)", padding: "4px 10px", borderRadius: 4, background: "rgba(81,173,229,0.08)" }}>COMPANY INTELLIGENCE</span>
-                            <span style={{ fontSize: 17, fontWeight: 800, color: C.white }}>What you need to know about {co}</span>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                            {cc.what_they_do ? <CoField label="WHAT THEY ACTUALLY DO" value={cc.what_they_do} /> : null}
-                            {cc.company_stage ? <CoField label="COMPANY STAGE" value={cc.company_stage} /> : null}
-                            {cc.clients ? <CoField label="WHO THEIR CLIENTS ARE" value={cc.clients} /> : null}
-                            {cc.marketing_context ? <CoField label="MARKETING CONTEXT" value={cc.marketing_context} /> : null}
+                <>
+                    <div style={{ padding: "36px 32px" }}>
+                        <div style={secEyebrow("COMPANY INTELLIGENCE", C.blue)}>COMPANY INTELLIGENCE</div>
+                        <div style={secTitle}>What you need to know about {co}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "rgba(81,173,229,0.1)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+                            {cc.what_they_do ? <div style={coCell}><div style={coCellLbl}>WHAT THEY ACTUALLY DO</div><div style={coCellVal}>{cc.what_they_do}</div></div> : null}
+                            {cc.company_stage ? <div style={coCell}><div style={coCellLbl}>COMPANY STAGE</div><div style={coCellVal}>{cc.company_stage}</div></div> : null}
+                            {cc.clients ? <div style={coCell}><div style={coCellLbl}>WHO THEIR CLIENTS ARE</div><div style={coCellVal}>{cc.clients}</div></div> : null}
+                            {cc.marketing_context ? <div style={coCell}><div style={coCellLbl}>MARKETING CONTEXT</div><div style={coCellVal}>{cc.marketing_context}</div></div> : null}
                         </div>
                         {cc.application_insight ? (
-                            <div style={{ marginTop: 12, fontSize: 14, color: "#b8d4e8", lineHeight: 1.72, background: "rgba(81,173,229,0.04)", borderLeft: "3px solid " + C.blue, padding: "14px 16px", borderRadius: "0 8px 8px 0" }}>
-                                <strong style={{ color: C.blue }}>Why this matters for your application:</strong> {cc.application_insight}
+                            <div style={{ fontSize: 14, color: "#b8cedf", lineHeight: 1.75, borderLeft: "2px solid " + C.blue, padding: "16px 20px", background: "rgba(81,173,229,0.04)", borderRadius: "0 8px 8px 0" }}>
+                                <strong style={{ color: C.blue, fontWeight: 600 }}>Why this matters for your application:</strong> {cc.application_insight}
                             </div>
                         ) : null}
                     </div>
-                </div>
+                    <Divider />
+                </>
             ) : null}
 
-            {/* ── Cards row 1: Signals + Skills ── */}
-            <div style={{ padding: "0 28px 22px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div style={{ ...glassCard, padding: 22, borderTop: "2px solid " + C.blue, background: "rgba(81,173,229,0.04)" }}>
-                        <div style={{ ...cardLabel, color: C.blue }}>SIGNALS FROM THE POSTING</div>
-                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 9 }}>
+            {/* ── Signals + Skills ── */}
+            <div style={{ padding: "36px 32px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                    <div>
+                        <div style={secEyebrow("SIGNALS FROM THE POSTING", C.blue)}>SIGNALS FROM THE POSTING</div>
+                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginTop: 14 }}>
                             {(result.seniority_signals ?? []).map((s, i) => (
-                                <div key={i} style={{ fontSize: 14, color: "#b8cedf", paddingLeft: 16, position: "relative" as const, lineHeight: 1.6 }}>
+                                <div key={i} style={{ fontSize: 14, color: "#9ab8cf", paddingLeft: 16, position: "relative" as const, lineHeight: 1.6 }}>
                                     <span style={{ position: "absolute" as const, left: 0, color: C.blue }}>{"\u2014"}</span>
                                     {s}
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div style={{ ...glassCard, padding: 22, borderTop: "2px solid " + C.purple, background: "rgba(192,132,252,0.04)" }}>
-                        <div style={{ ...cardLabel, color: C.purple }}>HARD SKILLS REQUIRED</div>
-                        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                    <div>
+                        <div style={secEyebrow("HARD SKILLS REQUIRED", C.purple)}>HARD SKILLS REQUIRED</div>
+                        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6, marginTop: 14 }}>
                             {(result.core_skills ?? []).map((s, i) => {
                                 const p = skillPalettes[i % 4]
                                 return (
-                                    <span key={i} style={{ fontSize: 12, padding: "4px 9px", borderRadius: 4, color: p.color, background: p.bg, border: "1px solid " + p.border }}>
+                                    <span key={i} style={{ fontSize: 12, padding: "5px 10px", borderRadius: 4, color: p.color, background: p.bg, border: "1px solid " + p.border }}>
                                         {s}
                                     </span>
                                 )
@@ -540,126 +555,206 @@ function ResultsState({
                 </div>
             </div>
 
-            {/* ── Cards row 2: Candidate + Target ── */}
-            <div style={{ padding: "0 28px 22px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div style={{ ...glassCard, padding: 22, borderTop: "2px solid " + C.green, background: "rgba(74,222,128,0.03)" }}>
-                        <div style={{ ...cardLabel, color: C.green }}>STRONG CANDIDATE LOOKS LIKE</div>
-                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 10 }}>
+            <Divider />
+
+            {/* ── Candidate + Target Profile ── */}
+            <div style={{ padding: "36px 32px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                    <div>
+                        <div style={secEyebrow("STRONG CANDIDATE LOOKS LIKE", C.green)}>STRONG CANDIDATE LOOKS LIKE</div>
+                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 12, marginTop: 14 }}>
                             {checkItems.map((item, i) => (
-                                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, color: "#b8cedf", lineHeight: 1.6 }}>
-                                    <div style={{ width: 13, height: 13, border: "1.5px solid rgba(74,222,128,0.45)", borderRadius: 3, flexShrink: 0, marginTop: 2 }} />
+                                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, fontSize: 14, color: "#9ab8cf", lineHeight: 1.65 }}>
+                                    <div style={{ width: 14, height: 14, border: "1.5px solid rgba(74,222,128,0.4)", borderRadius: 3, flexShrink: 0, marginTop: 2 }} />
                                     {item}
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div style={{ ...glassCard, padding: 22, borderTop: "2px solid " + C.teal, background: "rgba(45,212,191,0.03)" }}>
-                        <div style={{ ...cardLabel, color: C.teal }}>TARGET PROFILE</div>
-                        {checkItems.slice(0, 3).map((item, i) => {
-                            const labels = ["EXPERIENCE", "EDUCATION", "DIFFERENTIATOR"]
-                            return (
-                                <div key={i} style={{ fontSize: 14, color: C.green, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)", padding: "10px 12px", borderRadius: 8, marginBottom: 7, lineHeight: 1.5 }}>
-                                    <span style={{ fontSize: 9, letterSpacing: ".1em", color: "rgba(74,222,128,0.45)", display: "block", marginBottom: 2 }}>
-                                        {labels[i] || "DETAIL"}
-                                    </span>
-                                    {item}
-                                </div>
-                            )
-                        })}
+                    <div>
+                        <div style={secEyebrow("TARGET PROFILE", C.teal)}>TARGET PROFILE</div>
+                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginTop: 14 }}>
+                            {checkItems.slice(0, 3).map((item, i) => {
+                                const labels = ["EXPERIENCE", "BACKGROUND", "DIFFERENTIATOR"]
+                                return (
+                                    <div key={i} style={{ padding: "14px 16px", borderRadius: 8, background: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.12)" }}>
+                                        <div style={{ fontSize: 9, letterSpacing: ".12em", color: "rgba(74,222,128,0.5)", marginBottom: 4 }}>{labels[i] || "DETAIL"}</div>
+                                        <div style={{ fontSize: 13, color: "#8ade9a", lineHeight: 1.5 }}>{item}</div>
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <Divider />
+
             {/* ── Market Reality ── */}
             {mr ? (
-                <div style={{ padding: "0 28px 22px" }}>
-                    <div style={{ background: "rgba(192,132,252,0.05)", backdropFilter: "blur(16px)", border: "1px solid rgba(192,132,252,0.18)", borderRadius: 16, padding: 24 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                            <span style={{ fontSize: 9, letterSpacing: ".16em", color: C.purple, border: "1px solid rgba(192,132,252,0.35)", padding: "4px 10px", borderRadius: 4, background: "rgba(192,132,252,0.08)" }}>MARKET REALITY</span>
-                            <span style={{ fontSize: 17, fontWeight: 800, color: C.white }}>What the applicant pool actually looks like</span>
-                        </div>
-                        {mr.estimated_applicants ? (
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
-                                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(192,132,252,0.12)", borderRadius: 10, padding: 14, textAlign: "center" as const }}>
-                                    <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, marginBottom: 4, color: C.purple }}>{mr.estimated_applicants}</div>
-                                    <div style={{ fontSize: 11, color: "#9a7bbf", lineHeight: 1.4 }}>estimated applicants</div>
-                                </div>
-                                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(192,132,252,0.12)", borderRadius: 10, padding: 14, textAlign: "center" as const }}>
-                                    <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, marginBottom: 4, color: C.orange }}>60%</div>
-                                    <div style={{ fontSize: 11, color: "#9a7bbf", lineHeight: 1.4 }}>likely have relevant industry exposure</div>
-                                </div>
-                                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(192,132,252,0.12)", borderRadius: 10, padding: 14, textAlign: "center" as const }}>
-                                    <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, marginBottom: 4, color: C.red }}>Top 25</div>
-                                    <div style={{ fontSize: 11, color: "#9a7bbf", lineHeight: 1.4 }}>university backgrounds heavily represented</div>
+                <>
+                    <div style={{ padding: "36px 32px" }}>
+                        <div style={secEyebrow("MARKET REALITY", C.purple)}>MARKET REALITY</div>
+                        <div style={secTitle}>What the applicant pool actually looks like</div>
+                        {(mr.stats && mr.stats.length > 0) ? (
+                            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid rgba(192,132,252,0.12)", borderRadius: 12, overflow: "hidden" }}>
+                                {mr.stats.map((st, i) => {
+                                    const statColors = [C.purple, C.orange, C.red]
+                                    return (
+                                        <div key={i} style={{ ...mStatCell, borderLeft: i > 0 ? "1px solid rgba(192,132,252,0.1)" : "none" }}>
+                                            <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1, marginBottom: 6, color: statColors[i % 3] }}>{st.value}</div>
+                                            <div style={{ fontSize: 11, color: "#4a6a85", lineHeight: 1.4 }}>{st.label}</div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : mr.estimated_applicants ? (
+                            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid rgba(192,132,252,0.12)", borderRadius: 12, overflow: "hidden" }}>
+                                <div style={mStatCell}>
+                                    <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1, marginBottom: 6, color: C.purple }}>{mr.estimated_applicants}</div>
+                                    <div style={{ fontSize: 11, color: "#4a6a85", lineHeight: 1.4 }}>estimated applicants</div>
                                 </div>
                             </div>
                         ) : null}
                         {mr.competitive_dynamic ? (
-                            <div style={{ fontSize: 14, color: "#c4b0df", lineHeight: 1.72, background: "rgba(192,132,252,0.04)", borderLeft: "3px solid " + C.purple, padding: "14px 16px", borderRadius: "0 8px 8px 0" }}>
+                            <div style={{ fontSize: 14, color: "#b8cedf", lineHeight: 1.75, borderLeft: "2px solid " + C.purple, padding: "16px 20px", background: "rgba(192,132,252,0.03)", borderRadius: "0 8px 8px 0" }}>
                                 <strong style={{ color: C.purple }}>The real competitive dynamic:</strong> {mr.competitive_dynamic}
                             </div>
                         ) : null}
                     </div>
-                </div>
+                    <Divider />
+                </>
             ) : null}
 
-            {/* ── Classified section ── */}
-            <div style={{ padding: "0 28px 22px" }}>
-                <div style={{ background: "rgba(254,176,106,0.06)", border: "1px solid rgba(254,176,106,0.2)", borderRadius: "16px 16px 0 0", borderBottom: "none", padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
-                    <span style={classBadge}>CLASSIFIED</span>
-                    <span style={{ fontSize: 20, fontWeight: 900, color: C.white }}>The hidden reality</span>
-                    <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto", textAlign: "right" as const, maxWidth: 240, lineHeight: 1.4 }}>
-                        What the JD doesn't say {"\u2014"} but every hiring manager at this company expects.
+            {/* ── Classified ── */}
+            <div style={{ padding: "36px 32px 36px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 24 }}>
+                    <span style={{ fontSize: 9, letterSpacing: ".18em", color: C.orange, border: "1px solid rgba(254,176,106,0.35)", padding: "4px 8px", borderRadius: 3 }}>CLASSIFIED</span>
+                    <span style={{ fontSize: 24, fontWeight: 900, color: C.white, letterSpacing: "-.02em" }}>The hidden reality</span>
+                    <span style={{ fontSize: 12, color: "#4a6a85", marginLeft: "auto" }}>
+                        What the JD doesn't say {"\u2014"} but every hiring manager expects.
                     </span>
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, background: "rgba(254,176,106,0.06)", border: "1px solid rgba(254,176,106,0.15)", borderTop: "none" }}>
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 0, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden" }}>
                     {(result.hidden_requirements ?? []).map((item, i) => {
                         const fc = findingColors[i % 6]
                         return (
-                            <div key={i} style={{ padding: 20, background: C.bg, borderLeft: "3px solid " + fc }}>
-                                <div style={{ fontSize: 9, letterSpacing: ".14em", marginBottom: 8, color: fc }}>
-                                    FINDING {String(i + 1).padStart(2, "0")}
+                            <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0, borderBottom: i < (result.hidden_requirements.length - 1) ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                                <div style={{ width: 80, padding: "20px 0 20px 20px", display: "flex", flexDirection: "column" as const, alignItems: "flex-start", gap: 4, borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+                                    <div style={{ fontSize: 9, letterSpacing: ".14em", color: fc }}>{String(i + 1).padStart(2, "0")}</div>
+                                    <div style={{ width: 2, flex: 1, minHeight: 20, borderRadius: 1, background: fc }} />
                                 </div>
-                                <div style={{ fontSize: 14, color: "#d0e4f0", lineHeight: 1.72 }}>{item}</div>
+                                <div style={{ padding: "20px 24px", fontSize: 14, color: "#c8daea", lineHeight: 1.72 }}>{item}</div>
                             </div>
                         )
                     })}
                 </div>
+            </div>
 
-                <div style={{ background: "rgba(10,22,40,0.97)", border: "1px solid rgba(254,176,106,0.15)", borderTop: "2px solid rgba(248,113,113,0.4)", borderRadius: "0 0 16px 16px", padding: "20px 24px" }}>
-                    <div style={{ fontSize: 10, letterSpacing: ".14em", color: C.red, marginBottom: 14 }}>RISK FLAGS</div>
+            {/* ── Risk Flags ── */}
+            <div style={{ padding: "0 32px 36px" }}>
+                <div style={secEyebrow("RISK FLAGS", C.red)}>RISK FLAGS</div>
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 0, borderLeft: "2px solid rgba(248,113,113,0.3)", marginTop: 14 }}>
                     {(result.risk_flags ?? []).map((flag, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 0", borderBottom: i < (result.risk_flags.length - 1) ? "1px solid rgba(248,113,113,0.08)" : "none" }}>
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 20px", borderBottom: i < (result.risk_flags.length - 1) ? "1px solid rgba(248,113,113,0.07)" : "none" }}>
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
                                 <path d="M7 1L13.5 13H.5L7 1Z" stroke={C.red} strokeWidth="1.2" />
                                 <line x1="7" y1="5" x2="7" y2="9" stroke={C.red} strokeWidth="1.2" strokeLinecap="round" />
                                 <circle cx="7" cy="11" r=".6" fill={C.red} />
                             </svg>
-                            <div style={{ fontSize: 14, color: "#c0d4e4", lineHeight: 1.65 }}>{flag}</div>
+                            <div style={{ fontSize: 14, color: "#b8cedf", lineHeight: 1.65 }}>{flag}</div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* ── CTA ── */}
-            <div style={{ padding: "8px 28px 28px" }}>
-                <div style={{ background: C.orange, borderRadius: 16, padding: "40px 32px", textAlign: "center" as const }}>
-                    <div style={{ fontSize: 15, fontStyle: "italic", color: "rgba(10,22,40,0.65)", marginBottom: 6 }}>
-                        This is what this job actually requires.
+            {/* ── CTA Section ── */}
+            <div style={{ padding: "0 32px 32px" }}>
+                {/* Divider */}
+                <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 36 }} />
+
+                {/* Headline */}
+                <div style={{ fontSize: 10, letterSpacing: ".16em", fontWeight: 700, color: C.orange, textTransform: "uppercase" as const, marginBottom: 12 }}>
+                    Full Signal Access
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, marginBottom: 10 }}>
+                    <span style={{ background: "linear-gradient(90deg, #FEB06A 0%, #f97316 30%, #e85d9a 60%, #51ADE5 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        See How Competitive YOU Are.
+                    </span>
+                </div>
+                <div style={{ fontSize: 14, color: C.muted, marginBottom: 26, lineHeight: 1.7, maxWidth: 560 }}>
+                    The analysis above is based on the job and company. Full SIGNAL reads your specific background and tells you exactly where you stand against the real competition {"\u2014"} then gives you everything you need to win.
+                </div>
+
+                {/* Feature list */}
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 0, marginBottom: 28, border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                    <UpgradeFeature
+                        iconBg="rgba(254,176,106,0.12)" iconBorder="rgba(254,176,106,0.2)"
+                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.5l-3 2.9.7 4.1L8 11.4l-3.7 2.1.7-4.1L2 6.5l4.2-.9L8 2z" stroke="#FEB06A" strokeWidth="1.2" strokeLinejoin="round" /></svg>}
+                        title="Personal Fit Score"
+                        tag="Your edge" tagColor="#FEB06A" tagBg="rgba(254,176,106,0.1)" tagBorder="rgba(254,176,106,0.2)"
+                        desc="Find out exactly how your background stacks up against the real applicant pool. Know before you apply whether you're competitive or wasting your time."
+                        last={false}
+                    />
+                    <UpgradeFeature
+                        iconBg="rgba(81,173,229,0.1)" iconBorder="rgba(81,173,229,0.18)"
+                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="#51ADE5" strokeWidth="1.2" /><path d="M5 7h4M5 9.5h6" stroke="#51ADE5" strokeWidth="1.2" strokeLinecap="round" /></svg>}
+                        title="Resume Positioning"
+                        tag="Stand out" tagColor="#51ADE5" tagBg="rgba(81,173,229,0.08)" tagBorder="rgba(81,173,229,0.18)"
+                        desc="Your resume bullets rewritten to match exactly what this company filters on \u2014 including the hidden requirements most candidates never address."
+                        last={false}
+                    />
+                    <UpgradeFeature
+                        iconBg="rgba(74,222,128,0.08)" iconBorder="rgba(74,222,128,0.16)"
+                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#4ADE80" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        title="Interview Intelligence"
+                        desc="Learn exactly how to represent yourself for this specific role \u2014 what to emphasize, what gaps to address, and how to speak the company's language."
+                        last={false}
+                    />
+                    <UpgradeFeature
+                        iconBg="rgba(192,132,252,0.1)" iconBorder="rgba(192,132,252,0.18)"
+                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#c084fc" strokeWidth="1.2" /><path d="M8 5v3l2 2" stroke="#c084fc" strokeWidth="1.2" strokeLinecap="round" /></svg>}
+                        title="Cover Letter + Networking Plan"
+                        desc="A cover letter built from your background and the hidden requirements above, plus a post-apply outreach strategy with copy-paste messages."
+                        last={false}
+                    />
+                    <UpgradeFeature
+                        iconBg="rgba(45,212,191,0.08)" iconBorder="rgba(45,212,191,0.16)"
+                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /><rect x="9" y="2" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /><rect x="2" y="9" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /><rect x="9" y="9" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /></svg>}
+                        title="Application Tracker"
+                        tag="All in one place" tagColor="#4ADE80" tagBg="rgba(74,222,128,0.07)" tagBorder="rgba(74,222,128,0.16)"
+                        desc="Every application tracked in one dashboard \u2014 status, your fit score, interview rate, and what's working."
+                        last={true}
+                    />
+                </div>
+
+                {/* CTA card */}
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(254,176,106,0.18)", borderRadius: 12, overflow: "hidden" }}>
+                    <div style={{ padding: "22px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 5 }}>
+                                <div style={{ fontSize: 32, fontWeight: 900, color: C.orange, lineHeight: 1 }}>$99</div>
+                                <div style={{ fontSize: 13, color: "rgba(254,176,106,0.55)", fontWeight: 500 }}>/ 3 months {"\u00B7"} unlimited roles</div>
+                            </div>
+                            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+                                Full access to every tool {"\u2014"} score, position, cover letter, network, and track.
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onCTA}
+                            className="signal-cta-btn"
+                            style={{ background: "linear-gradient(90deg, #FEB06A, #51ADE5)", color: "#0b1929", fontSize: 17, fontWeight: 900, padding: "18px 40px", borderRadius: 10, cursor: "pointer", whiteSpace: "nowrap" as const, border: "none", letterSpacing: ".02em", flexShrink: 0 }}
+                        >
+                            {"See How I Compare \u2192"}
+                        </button>
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 900, color: C.bg, lineHeight: 1.2, marginBottom: 8, letterSpacing: "-.02em" }}>
-                        Now find out if YOU have what it takes.
-                    </div>
-                    <div style={{ fontSize: 14, color: "rgba(10,22,40,0.6)", marginBottom: 24, lineHeight: 1.6, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
-                        SIGNAL reads your specific background {"\u2014"} your degree, internships, skills, and experience {"\u2014"} and scores you against this exact role. Not a generic candidate. You.
-                    </div>
-                    <div onClick={onCTA} style={{ display: "inline-block", background: C.bg, color: C.orange, fontSize: 16, fontWeight: 800, padding: "16px 44px", borderRadius: 10, cursor: "pointer", letterSpacing: ".02em" }}>
-                        See My Personal Score {"\u2192"}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(10,22,40,0.45)", marginTop: 14, letterSpacing: ".04em" }}>
-                        FULL SIGNAL ACCESS {"\u00B7"} $99 / 3 MONTHS
+                    <div style={{ padding: "11px 24px", display: "flex", justifyContent: "center", gap: 20, alignItems: "center" }}>
+                        <span style={{ fontSize: 11, color: "#4a6a85", fontWeight: 500 }}>No subscription trap</span>
+                        <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a3f55", display: "inline-block" }} />
+                        <span style={{ fontSize: 11, color: "#4a6a85", fontWeight: 500 }}>Full access for 3 months</span>
+                        <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a3f55", display: "inline-block" }} />
+                        <span style={{ fontSize: 11, color: "#4a6a85", fontWeight: 500 }}>Cancel anytime</span>
                     </div>
                 </div>
             </div>
@@ -672,6 +767,33 @@ function CoField({ label, value }: { label: string; value: string }) {
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(81,173,229,0.1)", borderRadius: 10, padding: 14 }}>
             <div style={{ fontSize: 10, letterSpacing: ".1em", color: C.blue, marginBottom: 5 }}>{label}</div>
             <div style={{ fontSize: 14, color: "#ddeef8", lineHeight: 1.5, fontWeight: 500 }}>{value}</div>
+        </div>
+    )
+}
+
+function UpgradeFeature({
+    iconBg, iconBorder, icon, title, tag, tagColor, tagBg, tagBorder, desc, last,
+}: {
+    iconBg: string; iconBorder: string; icon: React.ReactNode
+    title: string; tag?: string; tagColor?: string; tagBg?: string; tagBorder?: string
+    desc: string; last: boolean
+}) {
+    return (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "17px 20px", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg, border: "1px solid " + iconBorder }}>
+                {icon}
+            </div>
+            <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.white, marginBottom: 3, display: "flex", alignItems: "center", gap: 8 }}>
+                    {title}
+                    {tag ? (
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, letterSpacing: ".04em", color: tagColor, background: tagBg, border: "1px solid " + tagBorder }}>
+                            {tag}
+                        </span>
+                    ) : null}
+                </div>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>{desc}</div>
+            </div>
         </div>
     )
 }
@@ -733,6 +855,28 @@ const pageStyle: React.CSSProperties = {
     minHeight: "100vh",
 }
 
+// Results page styles
+const coCell: React.CSSProperties = {
+    background: C.bg,
+    padding: "20px 22px",
+}
+const coCellLbl: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: ".14em",
+    color: C.blue,
+    marginBottom: 8,
+}
+const coCellVal: React.CSSProperties = {
+    fontSize: 14,
+    color: "#c8daea",
+    lineHeight: 1.65,
+}
+const mStatCell: React.CSSProperties = {
+    flex: 1,
+    padding: "22px 20px",
+    textAlign: "center" as const,
+}
+
 const orbBase: React.CSSProperties = {
     position: "absolute",
     borderRadius: "50%",
@@ -742,13 +886,12 @@ const orbBase: React.CSSProperties = {
 }
 
 const topbar: React.CSSProperties = {
-    background: "rgba(10,22,40,0.85)",
-    backdropFilter: "blur(12px)",
-    padding: "12px 24px",
+    background: "#071220",
+    padding: "12px 32px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    borderBottom: "1px solid rgba(255,255,255,0.07)",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
 }
 
 const eyebrowPill: React.CSSProperties = {

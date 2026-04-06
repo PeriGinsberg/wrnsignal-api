@@ -74,10 +74,19 @@ Return this exact schema:
   "target_candidate_profile": ["string — what a strong candidate looks like"],
   "summary": "string — 2-3 sentences, sounds human, specific to this company",
   "market_reality": {
-    "estimated_applicants": "string — e.g. '200-400'",
-    "applicant_pool_description": "string — who is actually applying",
+    "stats": [
+      {"value": "string — a number, percentage, or short metric", "label": "string — what this stat means, 8 words max"}
+    ],
     "competitive_dynamic": "string — 2-3 sentences, the real competitive story"
   }
+
+IMPORTANT for market_reality.stats:
+- Return exactly 3 stats, each specific to THIS role and company
+- First stat should always be estimated applicant count (e.g. "200-400")
+- Second and third stats should be unique competitive insights specific to this applicant pool — NOT generic. Examples: "40% have prior fintech experience", "Top 15 MBA programs overrepresented", "3:1 ratio of experienced to entry-level applicants"
+- Each value should be short and punchy — a number, percentage, or ratio
+- Each label should be under 8 words
+- Never reuse the same stats across different analyses
 }`
 }
 
