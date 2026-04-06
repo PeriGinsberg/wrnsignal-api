@@ -809,7 +809,11 @@ jobPhrases: [
     jobPhrases: [
       "clinical",
       "patient",
-      "medical",
+      "medical device",
+      "medical research",
+      "medical records",
+      "medical practice",
+      "medical staff",
       "research assistant",
       "scribe",
       "care team",
@@ -965,7 +969,7 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
     profilePhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation engineering", "geotechnical"],
-    jobPhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation", "geotechnical", "land development"],
+    jobPhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation engineering", "transportation planning", "transportation design", "geotechnical", "land development"],
     adjacentKeys: ["structural_engineering"],
   },
   {
@@ -1318,7 +1322,7 @@ function scoreJobLine(line: string): number {
     )
   ) score += 2
 
-  if (/\b(equal opportunity|benefits|compensation may vary|about us|who we are|our values)\b/i.test(line)) score -= 5
+  if (/\b(equal opportunity|benefits|compensation may vary|about us|who we are|our values|401\(?k\)?|health plan|dental|vision insurance|life insurance|disability|paid time off|pto|tuition reimbursement|employee stock|sign.on (payment|bonus)|commissions? (generated|schedule|in accordance)|money.back guarantee|cancel anytime)\b/i.test(line)) score -= 5
   if (t.length < 16) score -= 2
 
   // Aspirational / learning language — these describe skills the candidate WILL GAIN,
@@ -1859,7 +1863,10 @@ function detectLocationMode(jobText: string): {
     t.includes("required to be in") ||
     t.includes("local candidates only")
 
-  const hasRemote = includesAny(t, remotePhrases)
+  // Check for remote but exclude false positives from "remote-work technology/tools/solutions"
+  const rawHasRemote = includesAny(t, remotePhrases)
+  const remoteIsTechContext = /\bremote[\s-]?(work )?(technology|tools|solutions|software|platform|access)\b/i.test(t) && !/(fully |100% |position is |role is |this is a )remote\b/i.test(t)
+  const hasRemote = rawHasRemote && !remoteIsTechContext
   const hasHybrid = includesAny(t, hybridPhrases)
   const hasInPerson = includesAny(t, onsitePhrases) || t.includes("in-person") || t.includes("in person")
 

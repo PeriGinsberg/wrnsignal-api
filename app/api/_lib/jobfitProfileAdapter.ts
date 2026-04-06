@@ -207,6 +207,24 @@ function inferTargetFamilies(profileText: string, targetRoles?: string | null): 
   }
 
   if (
+    roles.includes("wealth management") ||
+    roles.includes("financial advisor") ||
+    roles.includes("financial planner") ||
+    roles.includes("wealth advisor") ||
+    roles.includes("financial consultant") ||
+    roles.includes("investment banking") ||
+    roles.includes("investment analyst") ||
+    roles.includes("financial analyst") ||
+    roles.includes("finance") ||
+    roles.includes("accounting") ||
+    roles.includes("private equity") ||
+    roles.includes("asset management") ||
+    roles.includes("portfolio management")
+  ) {
+    out.push("Finance")
+  }
+
+  if (
     roles.includes("software engineer") ||
     roles.includes("software developer") ||
     roles.includes("front end developer") ||
