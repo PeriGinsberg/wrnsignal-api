@@ -16,6 +16,11 @@ export type JobFamily =
   | "Sales"
   | "Government"
   | "PreMed"
+  | "Engineering"
+  | "IT_Software"
+  | "Healthcare"
+  | "Legal"
+  | "Trades"
   | "Other"
 
 // Sub-family for Finance jobs — distinguishes IB, FP&A, credit, etc.
@@ -49,6 +54,10 @@ export type FunctionTag =
   | "premed_clinical"
   | "operations_general"
   | "consulting_strategy"
+  | "engineering_technical"
+  | "software_it"
+  | "healthcare_clinical"
+  | "trades_skilled"
   | "other"
 
 export type EvidenceKind =

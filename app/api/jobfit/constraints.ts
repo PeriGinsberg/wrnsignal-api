@@ -32,8 +32,44 @@ function cityMatches(jobCity: string, allowed: string[]): boolean {
  * - force_pass = hard viability blocker (do not apply)
  * - floor_review = not an apply, but may still be worth networking/review
  */
+// Technical/specialized families that require domain-specific education and credentials.
+// A marketing/consulting/business profile should not match these.
+const HARD_TECHNICAL_FAMILIES = new Set([
+  "Engineering",
+  "IT_Software",
+  "Healthcare",
+  "Trades",
+])
+
+// Business/generalist families — profiles in these families should not match
+// hard technical roles.
+const BUSINESS_FAMILIES = new Set([
+  "Consulting",
+  "Marketing",
+  "Finance",
+  "Accounting",
+  "Analytics",
+  "Sales",
+  "Government",
+  "PreMed",
+  "Other",
+])
+
 export function evaluateGates(job: StructuredJobSignals, profile: StructuredProfileSignals): GateTriggered {
   // ---------------- Hard stops ----------------
+
+  // Field mismatch: technical job vs business profile (or vice versa)
+  if (HARD_TECHNICAL_FAMILIES.has(job.jobFamily)) {
+    const profileFamilies = profile.targetFamilies || []
+    const profileHasTechnicalFamily = profileFamilies.some((f) => HARD_TECHNICAL_FAMILIES.has(f))
+    if (!profileHasTechnicalFamily && profileFamilies.length > 0) {
+      return {
+        type: "force_pass",
+        gateCode: "GATE_FIELD_MISMATCH",
+        detail: `This is a ${job.jobFamily.replace("_", "/")} role that requires specialized technical training. Your profile targets ${profileFamilies.join(", ")} — this is a fundamental field mismatch.`,
+      }
+    }
+  }
 
   if (job.mbaRequired) {
     return { type: "force_pass", gateCode: "GATE_MBA_REQUIRED", detail: "MBA required" }

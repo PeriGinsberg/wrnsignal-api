@@ -939,6 +939,80 @@ jobPhrases: [
     ],
     adjacentKeys: ["communications_writing", "policy_regulatory_research"],
   },
+
+  // ── Engineering / Technical ──────────────────────────────────────
+  {
+    key: "structural_engineering",
+    label: "Structural Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["structural analysis", "structural design", "load analysis", "finite element", "steel design", "concrete design", "foundation design"],
+    jobPhrases: ["structural analysis", "structural design", "load calculations", "finite element", "steel structures", "concrete structures", "foundation", "structural engineering"],
+    adjacentKeys: [],
+  },
+  {
+    key: "mechanical_engineering",
+    label: "Mechanical Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "cad design", "manufacturing engineering", "tolerance analysis"],
+    jobPhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "manufacturing", "tolerance", "mechanical engineering", "product design engineering"],
+    adjacentKeys: [],
+  },
+  {
+    key: "civil_engineering",
+    label: "Civil Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation engineering", "geotechnical"],
+    jobPhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation", "geotechnical", "land development"],
+    adjacentKeys: ["structural_engineering"],
+  },
+  {
+    key: "electrical_engineering",
+    label: "Electrical Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["electrical design", "circuit design", "power systems", "control systems", "pcb design", "embedded systems"],
+    jobPhrases: ["electrical design", "circuit", "power systems", "control systems", "pcb", "embedded", "electrical engineering"],
+    adjacentKeys: [],
+  },
+  {
+    key: "chemical_engineering",
+    label: "Chemical Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "engineering_technical" as FunctionTag,
+    profilePhrases: ["chemical engineering", "process engineering", "reaction kinetics", "mass transfer", "distillation"],
+    jobPhrases: ["chemical engineering", "process engineering", "reaction", "mass transfer", "distillation", "chemical process"],
+    adjacentKeys: [],
+  },
+  {
+    key: "software_engineering",
+    label: "Software Engineering",
+    kind: "function" as EvidenceKind,
+    functionTag: "software_it" as FunctionTag,
+    profilePhrases: ["software development", "full stack", "backend", "frontend", "api development", "microservices", "devops", "cloud infrastructure"],
+    jobPhrases: ["software engineer", "software development", "full stack", "backend", "frontend", "api", "microservices", "devops", "cloud", "software developer"],
+    adjacentKeys: [],
+  },
+  {
+    key: "nursing_clinical",
+    label: "Nursing / Clinical",
+    kind: "function" as EvidenceKind,
+    functionTag: "healthcare_clinical" as FunctionTag,
+    profilePhrases: ["patient care", "nursing", "clinical assessment", "vital signs", "medication administration", "triage"],
+    jobPhrases: ["patient care", "nursing", "clinical", "vital signs", "medication", "triage", "registered nurse", "rn", "lpn", "cna"],
+    adjacentKeys: [],
+  },
+  {
+    key: "trades_construction",
+    label: "Skilled Trades",
+    kind: "function" as EvidenceKind,
+    functionTag: "trades_skilled" as FunctionTag,
+    profilePhrases: ["welding", "plumbing", "hvac", "carpentry", "electrical wiring", "machining", "cnc"],
+    jobPhrases: ["welding", "plumbing", "hvac", "carpentry", "electrician", "machinist", "cnc", "journeyman", "apprentice"],
+    adjacentKeys: [],
+  },
 ]
 
 const TOOL_ALIASES: Record<string, string[]> = {
@@ -960,8 +1034,45 @@ const TOOL_ALIASES: Record<string, string[]> = {
   shopify: ["shopify"],
   "google analytics": ["google analytics", "ga4"],
   spss: ["spss"],
-  autocad: ["autocad"],
+  autocad: ["autocad", "auto cad"],
   crm: ["crm", "customer relationship management"],
+
+  // Engineering tools
+  revit: ["revit", "autodesk revit"],
+  solidworks: ["solidworks", "solid works"],
+  catia: ["catia"],
+  "staad pro": ["staad", "staad pro", "staad.pro"],
+  sap2000: ["sap2000", "sap 2000"],
+  etabs: ["etabs"],
+  risa: ["risa"],
+  ansys: ["ansys"],
+  abaqus: ["abaqus"],
+  matlab: ["matlab"],
+  microstation: ["microstation"],
+  civil3d: ["civil 3d", "civil3d"],
+  tekla: ["tekla"],
+  primavera: ["primavera", "p6"],
+  procore: ["procore"],
+  bluebeam: ["bluebeam"],
+
+  // Software / IT tools
+  aws: ["aws", "amazon web services"],
+  azure: ["azure", "microsoft azure"],
+  gcp: ["gcp", "google cloud"],
+  docker: ["docker"],
+  kubernetes: ["kubernetes", "k8s"],
+  terraform: ["terraform"],
+  jenkins: ["jenkins"],
+  git: ["git", "github", "gitlab"],
+  jira: ["jira"],
+  react: ["react", "reactjs", "react.js"],
+  node: ["node", "nodejs", "node.js"],
+  java: ["java"],
+  "c++": ["c++", "cpp"],
+  golang: ["golang", "go lang"],
+  typescript: ["typescript"],
+  swift: ["swift"],
+  kotlin: ["kotlin"],
 }
 
 const NEVER_CORE_KEYS = new Set([
@@ -1258,6 +1369,11 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     Sales: 0,
     Government: 0,
     PreMed: 0,
+    Engineering: 0,
+    IT_Software: 0,
+    Healthcare: 0,
+    Legal: 0,
+    Trades: 0,
     Other: 0,
   }
 
@@ -1281,13 +1397,23 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "consulting_strategy") score.Consulting += 3
     if (tag === "operations_general") score.Consulting += 1
 
-    if (tag === "legal_regulatory") score.Other += 8
+    if (tag === "engineering_technical") score.Engineering += 8
+    if (tag === "software_it") score.IT_Software += 8
+    if (tag === "healthcare_clinical") score.Healthcare += 6
+    if (tag === "trades_skilled") score.Trades += 8
+
+    if (tag === "legal_regulatory") score.Legal += 8
     if (tag === "creative_design" || tag === "other") score.Other += 4
   }
 
   if (score.Sales > 0 && score.PreMed > 0) score.Sales += 2
 
   const ordered: JobFamily[] = [
+    "Engineering",
+    "IT_Software",
+    "Healthcare",
+    "Legal",
+    "Trades",
     "Sales",
     "Marketing",
     "Consulting",
@@ -2221,6 +2347,16 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     // Compound: starts with Marketing + any other words + Coordinator/Manager/etc
     /^marketing\b.{0,40}\b(coordinator|manager|associate|specialist|director|analyst)\b/i.test(jobTitleSlice.trim())
 
+  // Engineering / technical title detection
+  const jobTitleIsEngineering =
+    /\b(structural engineer|civil engineer|mechanical engineer|electrical engineer|chemical engineer|environmental engineer|aerospace engineer|biomedical engineer|industrial engineer|manufacturing engineer|process engineer|design engineer|project engineer|field engineer|engineering intern|engineering co-?op|engineer i|engineer ii|engineer iii|staff engineer|structural analysis|structural design)\b/i.test(jobTitleSlice)
+  const jobTitleIsSoftware =
+    /\b(software engineer|software developer|full stack|frontend engineer|backend engineer|devops engineer|sre|site reliability|data engineer|ml engineer|machine learning engineer|cloud engineer|ios developer|android developer|web developer|systems engineer)\b/i.test(jobTitleSlice)
+  const jobTitleIsHealthcare =
+    /\b(registered nurse|nurse practitioner|physician assistant|medical assistant|clinical nurse|lpn|rn|cna|dental hygienist|physical therapist|occupational therapist|respiratory therapist|pharmacist|pharmacy tech)\b/i.test(jobTitleSlice)
+  const jobTitleIsTrades =
+    /\b(electrician|plumber|welder|hvac technician|carpenter|machinist|cnc operator|pipefitter|millwright|sheet metal worker|boilermaker|ironworker)\b/i.test(jobTitleSlice)
+
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
   const isSeniorRole =
@@ -2262,16 +2398,38 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     }
   }
 
+  // Inject engineering function tag when title is clearly technical
+  if (jobTitleIsEngineering && !functionTags.includes("engineering_technical")) {
+    functionTags.push("engineering_technical")
+  }
+  if (jobTitleIsSoftware && !functionTags.includes("software_it")) {
+    functionTags.push("software_it")
+  }
+  if (jobTitleIsHealthcare && !functionTags.includes("healthcare_clinical")) {
+    functionTags.push("healthcare_clinical")
+  }
+  if (jobTitleIsTrades && !functionTags.includes("trades_skilled")) {
+    functionTags.push("trades_skilled")
+  }
+
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
     ? "Other"
-    : jobTitleIsMarketing
-      ? "Marketing"
-      : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-        ? "Finance"
-        : jobTitleIsSales
-          ? "Sales"
-          : jobFamilyFromTags
+    : jobTitleIsEngineering
+      ? "Engineering"
+      : jobTitleIsSoftware
+        ? "IT_Software"
+        : jobTitleIsHealthcare
+          ? "Healthcare"
+          : jobTitleIsTrades
+            ? "Trades"
+            : jobTitleIsMarketing
+              ? "Marketing"
+              : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
+                ? "Finance"
+                : jobTitleIsSales
+                  ? "Sales"
+                  : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
