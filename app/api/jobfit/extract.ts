@@ -1327,7 +1327,7 @@ function scoreJobLine(line: string): number {
   // Examples: "you will learn Excel", "gain exposure to financial modeling",
   // "training provided on Salesforce", "develop your skills in PowerPoint"
   if (
-    /\b(you will learn|you('ll| will) (gain|develop|build|grow|be (trained|taught|introduced|exposed)|acquire)|gain exposure to|exposure to|training (will be|is) provided|training provided|we('ll| will) train|on.the.job training|learn (how to|to use|the tools)|be introduced to|build your (skills|knowledge|foundation)|develop your (skills|understanding)|skills? (will be )?(taught|developed|built|gained))\b/i.test(line)
+    /\b(you will learn|you('ll| will) (gain|develop|build|grow|be (trained|taught|introduced|exposed)|acquire)|gain exposure to|exposure to|training (will be|is) provided|training provided|we('ll| will) (train|teach)|on.the.job (training|learning)|learn (how to|to use|the tools|about)|be introduced to|build your (skills|knowledge|foundation)|develop your (skills|understanding|expertise)|develop (an |a )?(understanding|knowledge|expertise)|skills? (will be )?(taught|developed|built|gained)|will (receive|get) training|study time (for|to)|dedicated study|we (provide|offer) (training|study|licensing|certification)|no (prior )?experience (required|necessary|needed)|no (certification|license) required|will (prepare|equip) you)\b/i.test(line)
   ) score -= 6
 
   return score
@@ -2516,25 +2516,42 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const SPONSOR_PHRASES = [
     "will sponsor",
     "will provide",
+    "sponsor certification",
+    "sponsor finra",
+    "sponsor series",
+    "sponsor licensing",
+    "sponsorship for",
+    "sponsorship of",
     "training provided",
     "not required",
     "preferred but not required",
     "we will help you obtain",
     "will assist in obtaining",
+    "will help you get",
+    "will help you earn",
     "upon hire",
     "after joining",
     "after start",
     "obtain within",
     "expected to obtain",
     "opportunity to earn",
+    "opportunity to obtain",
     "we provide training",
+    "we provide study",
     "company sponsored",
     "company-sponsored",
     "firm will sponsor",
     "firm-sponsored",
     "paid training",
+    "paid study",
+    "dedicated study time",
+    "study time provided",
     "licensing training",
     "license training",
+    "will train you",
+    "will be trained",
+    "training and certification",
+    "training & certification",
   ]
 
   function isCredentialSponsored(credKeywords: string[], text: string): boolean {
@@ -2542,9 +2559,9 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     for (const kw of credKeywords) {
       const idx = lower.indexOf(kw.toLowerCase())
       if (idx === -1) continue
-      // Check a window of ~200 chars around the keyword match
-      const windowStart = Math.max(0, idx - 120)
-      const windowEnd = Math.min(lower.length, idx + kw.length + 120)
+      // Check a window of ~400 chars around the keyword match
+      const windowStart = Math.max(0, idx - 200)
+      const windowEnd = Math.min(lower.length, idx + kw.length + 200)
       const context = lower.slice(windowStart, windowEnd)
       if (SPONSOR_PHRASES.some((sp) => context.includes(sp))) return true
     }
@@ -2619,7 +2636,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     requiresCFA || requiresCFP || requiresPMP || requiresSocialWorkLicense
 
   // If the credential is sponsored/training-provided, do not treat as hard requirement
-  const credentialRequired = requiresHardCredential && !credentialSponsored
+  let credentialRequired = requiresHardCredential && !credentialSponsored
 
   const credentialDetail = requiresLawSchool
     ? "law school enrollment or JD"
@@ -2700,16 +2717,25 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // that is specific to the role, not generic company culture/benefits boilerplate.
   const isTrainingProgram = (() => {
     // Explicit program names — high confidence
-    if (/\b(development program|training program|rotational program|advisor development program|advisor training program|associate development program|associate training program)\b/i.test(jobTextLower)) return true
+    if (/\b(development program|training program|rotational program|advisor development program|advisor training program|associate development program|associate training program|analyst program|scholar program|apprentice|apprenticeship)\b/i.test(jobTextLower)) return true
     // Role-specific structured training language (not benefits boilerplate)
-    if (/\b(you will (learn|be trained|be taught|develop skills)|we('ll| will) teach you|dedicated (study|training) time|on-the-job (training|learning)|training is provided|hands.on training)\b/i.test(jobTextLower)) return true
+    if (/\b(you will (learn|be trained|be taught|develop skills)|we('ll| will) (teach you|train you|prepare you)|dedicated (study|training) time|on-the-job (training|learning)|training is provided|hands.on training|will receive training|receive dedicated training|study time (for|to)|will sponsor.{0,20}(certification|license|series|finra|sie))\b/i.test(jobTextLower)) return true
+    // Credential sponsorship language — strong indicator of training program
+    if (/\b(sponsor.{0,15}(certification|license|series|finra|sie|nmls)|certification.{0,15}sponsor|we (provide|offer|cover).{0,20}(licensing|certification|training))\b/i.test(jobTextLower)) return true
     // Skills the candidate WILL gain as part of the role progression
     if (/\bskills (you|they|we|our) (will|can) (develop|gain|build|learn)\b/i.test(jobTextLower)) return true
     if (/\bgain (exposure|experience|skills) in\b/i.test(jobTextLower)) return true
+    // No experience required language in entry-level context
+    if (/\bno (prior )?(experience|certification|license) (required|necessary|needed)\b/i.test(jobTextLower)) return true
     return false
   })()
   if (isTrainingProgram) {
     console.log("[extract] Training program detected — aspirational skills will not be treated as hard requirements")
+    // Training programs provide credentials as part of the role — never gate on them
+    if (credentialRequired) {
+      console.log("[extract] Suppressing credentialRequired for training program")
+      credentialRequired = false
+    }
   }
 
   // ── Job archetype detection ─────────────────────────────────────────────────
