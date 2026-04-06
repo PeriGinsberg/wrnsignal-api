@@ -214,12 +214,23 @@ async function loadAll() {
     const since = sinceDate()
     const timeFilter = since ? \`&created_at=gte.\${since}\` : ''
 
-    const rawRows = await query('jobfit_page_views', \`select=*&order=created_at.asc&limit=10000\${timeFilter}\`)
+    // Fetch page views and attribution in parallel
+    const [rawRows, attrRows] = await Promise.all([
+      query('jobfit_page_views', \`select=*&order=created_at.asc&limit=10000\${timeFilter}\`),
+      query('signal_attribution', \`select=app_session_id,mkt_session_id,ref_source,ref_medium,ref_campaign,clicked_from&limit=10000\`).catch(() => []),
+    ])
     const rows = dedupeRows(rawRows)
+
+    // Build lookup: session_id -> attribution data
+    const attrBySession = {}
+    attrRows.forEach(a => {
+      if (a.app_session_id) attrBySession[a.app_session_id] = a
+      if (a.mkt_session_id) attrBySession[a.mkt_session_id] = a
+    })
 
     renderMetrics(rows)
     renderFunnel(rows)
-    renderSources(rows)
+    renderSources(rows, attrBySession)
     renderEvents(rows)
 
     const now = new Date()
@@ -283,14 +294,25 @@ function renderFunnel(rows) {
   }).join('')
 }
 
-function renderSources(rows) {
+function renderSources(rows, attrBySession) {
   const counts = {}
   rows.forEach(r => {
     let source = 'Direct'
-    if (r.utm_source) source = r.utm_source.charAt(0).toUpperCase() + r.utm_source.slice(1)
+
+    // Priority 1: attribution table (joined on session_id)
+    const attr = attrBySession[r.session_id]
+    if (attr && attr.ref_source && attr.ref_source !== 'direct') {
+      source = attr.ref_source.charAt(0).toUpperCase() + attr.ref_source.slice(1)
+    }
+    // Priority 2: utm_source on the page view row itself
+    else if (r.utm_source) {
+      source = r.utm_source.charAt(0).toUpperCase() + r.utm_source.slice(1)
+    }
+    // Priority 3: referrer-based fallback
     else if (r.referrer && r.referrer.includes('signal_reel')) source = 'Reel'
     else if (r.referrer && r.referrer.includes('api/reel')) source = 'Reel'
     else if (r.referrer) source = 'Referral'
+
     counts[source] = (counts[source] || 0) + 1
   })
 
