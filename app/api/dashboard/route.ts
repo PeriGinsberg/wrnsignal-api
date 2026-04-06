@@ -168,17 +168,31 @@ function sinceDate() {
   return d.toISOString()
 }
 
-async function query(table, params) {
-  let url = \`\${SUPABASE_URL}/rest/v1/\${table}?\${params}\`
-  const res = await fetch(url, {
-    headers: {
-      'apikey': ANON_KEY,
-      'Authorization': \`Bearer \${ANON_KEY}\`,
-      'Content-Type': 'application/json'
-    }
-  })
-  if (!res.ok) throw new Error(\`\${res.status}: \${await res.text()}\`)
-  return res.json()
+async function query(table, params, maxRows) {
+  // Supabase anon key caps at 1000 rows per request.
+  // Paginate using the Range header to get all rows.
+  const pageSize = 1000
+  const cap = maxRows || 50000
+  let all = []
+
+  for (let offset = 0; offset < cap; offset += pageSize) {
+    const end = offset + pageSize - 1
+    const url = \`\${SUPABASE_URL}/rest/v1/\${table}?\${params}\`
+    const res = await fetch(url, {
+      headers: {
+        'apikey': ANON_KEY,
+        'Authorization': \`Bearer \${ANON_KEY}\`,
+        'Content-Type': 'application/json',
+        'Range': \`\${offset}-\${end}\`,
+        'Prefer': 'count=planned'
+      }
+    })
+    if (!res.ok && res.status !== 206) throw new Error(\`\${res.status}: \${await res.text()}\`)
+    const page = await res.json()
+    all = all.concat(page)
+    if (page.length < pageSize) break  // last page
+  }
+  return all
 }
 
 function dedupeRows(rows) {
@@ -218,19 +232,11 @@ async function loadAll() {
     const since = sinceDate()
     const timeFilter = since ? \`&created_at=gte.\${since}\` : ''
 
-    // Fetch page views in two queries to avoid bot-burst rows blowing the limit:
-    // 1. Non-landing events (intake, runs, purchases) — these are never bots, fetch all
-    // 2. Landing events — fetch newest first with a reasonable cap, then dedupe
-    const [nonLandingRows, landingRows, attrRows] = await Promise.all([
-      query('jobfit_page_views', \`select=*&page_name=neq.signal_landing&order=created_at.asc&limit=50000\${timeFilter}\`),
-      query('jobfit_page_views', \`select=*&page_name=eq.signal_landing&order=created_at.desc&limit=20000\${timeFilter}\`),
-      query('signal_attribution', \`select=app_session_id,mkt_session_id,ref_source,ref_medium,ref_campaign,clicked_from&limit=10000\`).catch(() => []),
+    // Fetch all page views (paginated to bypass Supabase 1000-row cap)
+    const [rawRows, attrRows] = await Promise.all([
+      query('jobfit_page_views', \`select=*&order=created_at.asc\${timeFilter}\`),
+      query('signal_attribution', \`select=app_session_id,mkt_session_id,ref_source,ref_medium,ref_campaign,clicked_from\`).catch(() => []),
     ])
-    // Reverse landing rows back to ascending for consistent processing
-    landingRows.reverse()
-    const rawRows = [...landingRows, ...nonLandingRows].sort((a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    )
     const rows = dedupeRows(rawRows)
 
     // Build lookup: session_id -> attribution data
