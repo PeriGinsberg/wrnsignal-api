@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
+export const maxDuration = 90
 
 // Backtick chars built via fromCharCode to avoid Turbopack parse error
 const _t = String.fromCharCode(96)
@@ -10,58 +11,73 @@ const _fence = _t + _t + _t
 function stripFences(s: string) {
   return s.split(_fence + "json").join("").split(_fence).join("").trim()
 }
-export const maxDuration = 60
 
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
-// ── Company enrichment prompt ──
-// Quick extraction + classification using model knowledge.
-// No web search needed — the model knows Fortune 500s, major brands, etc.
-const ENRICHMENT_PROMPT = `Extract the company name from this job description and classify it.
-Return ONLY valid JSON, no explanation:
+// ── Company enrichment prompt (deep research) ──
+const ENRICHMENT_PROMPT = `You are a company research analyst. Given this job description, extract the company name and research everything a job applicant would need to know.
+
+Return ONLY valid JSON:
 {
-  "company_name": "string or null if not identifiable",
+  "company_name": "string or null",
+  "what_they_do": "2-3 sentences about what the company actually does — real business description, not JD marketing copy",
+  "company_stage": "string — startup / growth-stage / PE-backed / public / Fortune 500 / unknown, with detail (e.g. 'Growth-stage, PE-backed. Rebranded from X in 2023')",
+  "clients": "string — who their actual customers/clients are, be specific",
+  "marketing_context": "string — what marketing at this type of company looks like (B2B vs B2C, sales cycles, content strategy, etc.)",
+  "recent_news": "string or null — any significant recent news: rebrand, expansion, layoffs, funding, acquisitions",
   "tier": "Fortune 500 | Major Brand | Mid-Market | Growth Stage | Early Stage | Unknown",
   "industry": "string",
-  "notes": "one sentence about this company relevant to a job seeker, or null"
+  "application_insight": "string — 2-3 sentences about what this company context means for how a candidate should approach their application"
 }
 
 Job description:
 `
 
-// ── Main analysis prompt ──
+// ── Main analysis system prompt ──
 function buildSystemPrompt(companyContext: string | null) {
-  const companyBlock = companyContext
-    ? `\n\nCOMPANY CONTEXT (use this to calibrate competitiveness and hidden requirements):\n${companyContext}\n`
-    : ""
+  const companyBlock = companyContext || "No company intelligence available — proceed with best inference from the JD."
 
-  return `You are a senior hiring manager and career strategist with 15 years of recruiting experience across top-tier companies. You analyze job descriptions with precision and tell candidates the truth about what a role actually requires — including what is implied but not stated.
+  return `You are a senior hiring manager and career intelligence analyst with 15 years of recruiting experience across top-tier companies. You have deep knowledge of job markets, hiring patterns, and what companies actually filter on versus what they say publicly.
 
-You will receive a job description and return a structured JSON analysis.${companyBlock}
+You will receive a job description AND company intelligence gathered from external research. Use both to produce an analysis that goes far beyond what a candidate could learn from reading the JD.
 
-Rules:
-- Be specific to THIS job description. Generic outputs are failure.
-- Never use soft skill language ("communication", "teamwork", "passionate", "detail-oriented"). Only hard, tangible things.
-- Hidden requirements are the most valuable output. Think like the hiring manager who wrote this posting — what do they actually want that they did not write down? What will get a resume filtered out even though the JD does not mention it? Be concrete and specific to this role and company.
-- Risk flags should be blunt and honest, like a mentor who has seen 10,000 applications. Not discouraging — just real.
-- Competitiveness must reflect the actual applicant pool this company and role will attract. A Fortune 500 entry-level marketing role is Very High. A 15-person startup needing a niche skill is Low.
-- The summary must sound like a person briefing a friend. No AI phrases. No "exciting opportunity." No "dynamic environment." No "fast-paced." Write like you are telling someone the truth over coffee.
-- Every hidden requirement and risk flag must be specific enough that a reader can act on it. "Strong candidates preferred" is useless. "Candidates without a prior internship at a comparable firm will likely be screened out at the resume stage" is useful.
-- Return only valid JSON. No markdown, no explanation, no preamble.
+Your output must include things the candidate genuinely cannot get anywhere else:
+- What this company's culture and client base means for this role
+- What the real competitive pool looks like (not just "high competition")
+- What hiring managers at THIS type of company actually filter on
+- What the last 3-5 people hired for this type of role at this company tier actually looked like
+- Specific intelligence about the company that changes how you approach the application
 
-Return exactly this structure:
+RULES:
+- Be specific to this company and role. Generic outputs are failure.
+- No soft skills language. No "communication" or "teamwork".
+- Hidden requirements must be genuinely hidden — not restatable from the JD. Minimum 5, maximum 7.
+- Risk flags must be honest and specific, not cautionary boilerplate. Minimum 3, maximum 5.
+- Market reality must include real competitive dynamics, not vague warnings.
+- The summary must sound like a person who has seen 1000 of these roles.
+- Return only valid JSON matching the schema exactly. No markdown, no preamble.
+
+COMPANY CONTEXT PROVIDED:
+${companyBlock}
+
+Return this exact schema:
 {
   "role_level": "Entry | Early Career | Mid-Level | Experienced",
-  "function": "specific functional area, e.g. Marketing (Brand), Sales (B2B), Finance (FP&A), Software Engineering (Frontend)",
-  "seniority_signals": ["near-verbatim extractions from the JD that indicate seniority expectations"],
-  "core_skills": ["hard skills only — tools, platforms, technical capabilities, no soft skills"],
-  "hidden_requirements": ["2-5 inferred expectations NOT stated in the JD, specific to this role and company"],
+  "function": "string — specific functional area",
+  "seniority_signals": ["string — near-verbatim from JD"],
+  "core_skills": ["string — hard skills only, tools/platforms/technical"],
+  "hidden_requirements": ["string — 5-7 items, each specific to this company and role"],
   "competitiveness": "Low | Medium | High | Very High",
-  "risk_flags": ["1-4 blunt warnings a mentor would give"],
-  "target_candidate_profile": ["what a strong candidate actually looks like, be specific"],
-  "summary": "2-3 sentences, hiring manager briefing style, no filler"
+  "risk_flags": ["string — 3-5 items, blunt and specific"],
+  "target_candidate_profile": ["string — what a strong candidate looks like"],
+  "summary": "string — 2-3 sentences, sounds human, specific to this company",
+  "market_reality": {
+    "estimated_applicants": "string — e.g. '200-400'",
+    "applicant_pool_description": "string — who is actually applying",
+    "competitive_dynamic": "string — 2-3 sentences, the real competitive story"
+  }
 }`
 }
 
@@ -75,12 +91,17 @@ const REQUIRED_FIELDS = [
   "risk_flags",
   "target_candidate_profile",
   "summary",
+  "market_reality",
 ] as const
 
 async function enrichCompany(
   jd: string,
   apiKey: string
-): Promise<{ context: string; company_name: string | null } | null> {
+): Promise<{
+  context: string
+  company_name: string | null
+  company_context: Record<string, unknown> | null
+} | null> {
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -90,10 +111,10 @@ async function enrichCompany(
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 300,
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 800,
         messages: [
-          { role: "user", content: ENRICHMENT_PROMPT + jd.slice(0, 3000) },
+          { role: "user", content: ENRICHMENT_PROMPT + jd.slice(0, 4000) },
         ],
       }),
     })
@@ -110,14 +131,30 @@ async function enrichCompany(
 
     if (!data.company_name) return null
 
+    // Build context string for the main analysis prompt
     const lines = [
-      `Name: ${data.company_name}`,
-      `Tier: ${data.tier || "Unknown"}`,
+      `Company: ${data.company_name}`,
+      `What they do: ${data.what_they_do || "Unknown"}`,
+      `Stage: ${data.company_stage || data.tier || "Unknown"}`,
       `Industry: ${data.industry || "Unknown"}`,
+      `Clients: ${data.clients || "Unknown"}`,
+      `Marketing context: ${data.marketing_context || "Unknown"}`,
     ]
-    if (data.notes) lines.push(`Context: ${data.notes}`)
+    if (data.recent_news) lines.push(`Recent news: ${data.recent_news}`)
+    if (data.application_insight) lines.push(`Application insight: ${data.application_insight}`)
 
-    return { context: lines.join("\n"), company_name: data.company_name }
+    return {
+      context: lines.join("\n"),
+      company_name: data.company_name,
+      company_context: {
+        what_they_do: data.what_they_do || null,
+        company_stage: data.company_stage || data.tier || null,
+        clients: data.clients || null,
+        marketing_context: data.marketing_context || null,
+        recent_news: data.recent_news || null,
+        application_insight: data.application_insight || null,
+      },
+    }
   } catch (err) {
     console.error("[job-analysis] enrichment parse error:", err)
     return null
@@ -145,10 +182,7 @@ export async function POST(req: Request) {
     if (!job_description || job_description.length < 100) {
       return withCorsJson(
         req,
-        {
-          error:
-            "Job description is required and must be at least 100 characters.",
-        },
+        { error: "Job description is required and must be at least 100 characters." },
         400
       )
     }
@@ -178,7 +212,6 @@ export async function POST(req: Request) {
       .single()
 
     if (cached) {
-      // Track even cache hits
       await supabase.from("jobfit_page_views").insert({
         page_name: "job_analysis_run",
         session_id,
@@ -187,7 +220,6 @@ export async function POST(req: Request) {
         utm_campaign,
         referrer: req.headers.get("referer") || null,
       })
-
       return withCorsJson(req, cached.result, 200)
     }
 
@@ -197,12 +229,13 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "server_misconfigured" }, 500)
     }
 
-    // Step 1: Company enrichment (fast, Haiku)
+    // Step 1: Deep company enrichment (Sonnet for quality)
     const enrichment = await enrichCompany(job_description, apiKey)
     const companyContext = enrichment?.context ?? null
     const company_name = enrichment?.company_name ?? null
+    const company_context = enrichment?.company_context ?? null
 
-    console.log("[job-analysis] company enrichment:", company_name, companyContext)
+    console.log("[job-analysis] company enrichment:", company_name)
 
     // Step 2: Main analysis (Sonnet, with company context)
     const systemPrompt = buildSystemPrompt(companyContext)
@@ -216,7 +249,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
+        max_tokens: 3000,
         system: systemPrompt,
         messages: [
           {
@@ -229,16 +262,8 @@ export async function POST(req: Request) {
 
     if (!apiResponse.ok) {
       const errText = await apiResponse.text()
-      console.error(
-        "[job-analysis] Anthropic API error:",
-        apiResponse.status,
-        errText
-      )
-      return withCorsJson(
-        req,
-        { error: "Analysis failed. Please try again." },
-        500
-      )
+      console.error("[job-analysis] Anthropic API error:", apiResponse.status, errText)
+      return withCorsJson(req, { error: "Analysis failed. Please try again." }, 500)
     }
 
     const json = await apiResponse.json()
@@ -249,35 +274,21 @@ export async function POST(req: Request) {
       const cleaned = stripFences(rawText)
       analysis = JSON.parse(cleaned)
     } catch (parseError) {
-      console.error(
-        "[job-analysis] JSON parse error:",
-        parseError,
-        "Raw:",
-        rawText
-      )
-      return withCorsJson(
-        req,
-        { error: "Analysis failed. Please try again." },
-        500
-      )
+      console.error("[job-analysis] JSON parse error:", parseError, "Raw:", rawText)
+      return withCorsJson(req, { error: "Analysis failed. Please try again." }, 500)
     }
 
     // Validate required fields
     for (const field of REQUIRED_FIELDS) {
       if (!analysis[field]) {
         console.error("[job-analysis] Missing field:", field)
-        return withCorsJson(
-          req,
-          { error: "Analysis incomplete. Please try again." },
-          500
-        )
+        return withCorsJson(req, { error: "Analysis incomplete. Please try again." }, 500)
       }
     }
 
-    // Attach company name for frontend use
-    if (company_name) {
-      analysis.company_name = company_name
-    }
+    // Attach company data for frontend
+    if (company_name) analysis.company_name = company_name
+    if (company_context) analysis.company_context = company_context
 
     // ── Cache result ──
     await supabase.from("job_analysis_cache").insert({
@@ -298,10 +309,6 @@ export async function POST(req: Request) {
     return withCorsJson(req, analysis, 200)
   } catch (err: any) {
     console.error("[job-analysis] Unexpected error:", err)
-    return withCorsJson(
-      req,
-      { error: err?.message || "Analysis failed." },
-      500
-    )
+    return withCorsJson(req, { error: err?.message || "Analysis failed." }, 500)
   }
 }
