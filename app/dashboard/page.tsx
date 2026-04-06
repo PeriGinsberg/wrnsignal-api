@@ -98,12 +98,44 @@ export default function DashboardPage() {
   const [newPersonaResume, setNewPersonaResume] = useState("")
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [resumeUploading, setResumeUploading] = useState(false)
 
   async function getToken() {
     const { data: { session } } = await getSupabaseBrowser().auth.getSession()
     if (session?.access_token) return session.access_token
     // Fallback: handoff token stored directly from Framer redirect
     return sessionStorage.getItem("signal_handoff_token")
+  }
+
+  async function handleResumeUpload(onText: (text: string) => void) {
+    const fileInput = document.createElement("input")
+    fileInput.type = "file"
+    fileInput.accept = ".pdf,.docx,.doc,.txt"
+    fileInput.onchange = async () => {
+      const file = fileInput.files?.[0]
+      if (!file) return
+      const token = await getToken()
+      if (!token) return
+      setResumeUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+        const res = await fetch("/api/resume-upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || "Upload failed")
+        onText(data.text)
+        setToast("Resume uploaded successfully")
+      } catch (err: any) {
+        setToast(err?.message || "Upload failed. Try pasting instead.")
+      } finally {
+        setResumeUploading(false)
+      }
+    }
+    fileInput.click()
   }
 
   const loadAll = useCallback(async () => {
@@ -368,7 +400,26 @@ export default function DashboardPage() {
                           />
                         </div>
                         <div>
-                          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME TEXT</span>
+                          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
+                          <button
+                            type="button"
+                            onClick={() => handleResumeUpload((text) => setEditPersona({ ...editPersona!, resume_text: text }))}
+                            disabled={resumeUploading}
+                            style={{
+                              ...btnSecondary,
+                              width: "100%",
+                              marginBottom: 8,
+                              fontSize: 12,
+                              padding: "10px 14px",
+                              borderRadius: 10,
+                              color: T.WRN_BLUE,
+                              borderColor: "rgba(81,173,229,0.3)",
+                              opacity: resumeUploading ? 0.5 : 1,
+                            }}
+                          >
+                            {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
+                          </button>
+                          <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
                           <textarea
                             style={{ ...textarea, minHeight: 260 }}
                             value={editPersona.resume_text}
@@ -419,7 +470,26 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div>
-                      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME TEXT</span>
+                      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
+                      <button
+                        type="button"
+                        onClick={() => handleResumeUpload((text) => setNewPersonaResume(text))}
+                        disabled={resumeUploading}
+                        style={{
+                          ...btnSecondary,
+                          width: "100%",
+                          marginBottom: 8,
+                          fontSize: 12,
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          color: T.WRN_BLUE,
+                          borderColor: "rgba(81,173,229,0.3)",
+                          opacity: resumeUploading ? 0.5 : 1,
+                        }}
+                      >
+                        {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
+                      </button>
+                      <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
                       <textarea
                         style={{ ...textarea, minHeight: 200 }}
                         placeholder="Paste your resume text here..."
