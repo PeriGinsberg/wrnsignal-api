@@ -230,6 +230,13 @@ export async function POST(req: NextRequest) {
 
     // Combine profile_text (targeting info) with resume_text (actual resume).
     // If persona was specified, splice its resume into the profile blob.
+    console.log("[jobfit/route] PROFILE-MERGE-DEBUG:", {
+      profileTextLen: profileText.length,
+      resumeTextLen: resumeText.length,
+      hasPersonaResume: !!personaResumeText,
+      resumeFirst80: resumeText.slice(0, 80),
+    })
+
     let effectiveProfileText: string
     if (personaResumeText && profileText) {
       effectiveProfileText = profileText.replace(
@@ -239,8 +246,10 @@ export async function POST(req: NextRequest) {
     } else if (profileText && resumeText && !profileText.includes(resumeText.slice(0, 80))) {
       // Both exist and resume isn't already embedded — combine them
       effectiveProfileText = profileText + "\n\nResume:\n" + resumeText
+      console.log("[jobfit/route] MERGED profile+resume, effectiveLen:", effectiveProfileText.length)
     } else {
       effectiveProfileText = resumeText || profileText
+      console.log("[jobfit/route] FALLBACK path, effectiveLen:", effectiveProfileText.length, "usedResume:", !!resumeText && effectiveProfileText === resumeText)
     }
 
     if (!effectiveProfileText) {
