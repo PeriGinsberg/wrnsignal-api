@@ -98,7 +98,7 @@ async function enrichCompany(
 
     const json = await res.json()
     const text = (json.content ?? [])?.[0]?.text ?? ""
-    const cleaned = text.replace(/```json|```/g, "").trim()
+    const cleaned = text.replaceAll(String.fromCharCode(96,96,96) + "json", "").replaceAll(String.fromCharCode(96,96,96), "").trim()
     const data = JSON.parse(cleaned)
 
     if (!data.company_name) return null
@@ -239,7 +239,7 @@ export async function POST(req: Request) {
 
     let analysis: Record<string, unknown>
     try {
-      const cleaned = rawText.replace(/```json|```/g, "").trim()
+      const cleaned = rawText.replaceAll(String.fromCharCode(96,96,96) + "json", "").replaceAll(String.fromCharCode(96,96,96), "").trim()
       analysis = JSON.parse(cleaned)
     } catch (parseError) {
       console.error(
