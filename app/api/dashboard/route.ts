@@ -168,26 +168,22 @@ function sinceDate() {
   return d.toISOString()
 }
 
-async function query(table, params, maxRows) {
+async function query(table, params) {
   // Supabase anon key caps at 1000 rows per request.
-  // Paginate using the Range header to get all rows.
+  // Paginate using offset/limit query params to get all rows.
   const pageSize = 1000
-  const cap = maxRows || 50000
   let all = []
 
-  for (let offset = 0; offset < cap; offset += pageSize) {
-    const end = offset + pageSize - 1
-    const url = \`\${SUPABASE_URL}/rest/v1/\${table}?\${params}\`
+  for (let offset = 0; offset < 50000; offset += pageSize) {
+    const url = \`\${SUPABASE_URL}/rest/v1/\${table}?\${params}&limit=\${pageSize}&offset=\${offset}\`
     const res = await fetch(url, {
       headers: {
         'apikey': ANON_KEY,
         'Authorization': \`Bearer \${ANON_KEY}\`,
-        'Content-Type': 'application/json',
-        'Range': \`\${offset}-\${end}\`,
-        'Prefer': 'count=planned'
+        'Content-Type': 'application/json'
       }
     })
-    if (!res.ok && res.status !== 206) throw new Error(\`\${res.status}: \${await res.text()}\`)
+    if (!res.ok) throw new Error(\`\${res.status}: \${await res.text()}\`)
     const page = await res.json()
     all = all.concat(page)
     if (page.length < pageSize) break  // last page
