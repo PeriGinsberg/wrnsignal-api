@@ -917,6 +917,16 @@ Make the messages feel specifically grounded in this user and this role.
       console.warn("networking_runs insert failed:", insertErr.message)
     }
 
+    // Track successful run
+    try {
+      await supabaseAdmin.from("jobfit_page_views").insert({
+        session_id: crypto.randomUUID(),
+        page_name: "networking_run",
+        page_path: "/api/networking",
+        referrer: null,
+      })
+    } catch {}
+
     return withCorsJson(
       req,
       {

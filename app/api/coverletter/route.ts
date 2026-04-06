@@ -550,6 +550,16 @@ Return JSON only. No markdown. No commentary.
 
     if (upsertErr) console.warn("coverletter_runs upsert failed:", upsertErr.message)
 
+    // Track successful run
+    try {
+      await supabaseAdmin.from("jobfit_page_views").insert({
+        session_id: crypto.randomUUID(),
+        page_name: "coverletter_run",
+        page_path: "/api/coverletter",
+        referrer: null,
+      })
+    } catch {}
+
     return withCorsJson(
       req,
       {

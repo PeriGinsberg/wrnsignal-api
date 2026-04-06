@@ -336,7 +336,7 @@ function renderSources(rows, attrBySession) {
 }
 
 function renderEvents(rows) {
-  const recent = rows.slice(0, 12)
+  const recent = rows.slice(-12).reverse()
   const el = document.getElementById('events')
 
   if (recent.length === 0) { el.innerHTML = '<div class="empty">No events yet</div>'; return }
@@ -344,7 +344,11 @@ function renderEvents(rows) {
   const eventConfig = {
     'jobfit_trial_intake':    { label: 'Visited trial intake',     color: '#51ADE5', badge: 'badge-blue',   badgeText: 'Intake' },
     'jobfit_trial_completed': { label: 'Completed trial signup',   color: '#FEB06A', badge: 'badge-orange', badgeText: 'Signup' },
-    'jobfit_run_completed':   { label: 'Ran a JobFit evaluation',  color: '#7F77DD', badge: 'badge-purple', badgeText: 'JobFit' },
+    'jobfit_run_completed':   { label: 'Ran a JobFit (trial)',     color: '#7F77DD', badge: 'badge-purple', badgeText: 'Trial Run' },
+    'jobfit_full_run':        { label: 'Ran JobFit (full access)', color: '#7F77DD', badge: 'badge-purple', badgeText: 'JobFit' },
+    'positioning_run':        { label: 'Ran Positioning',          color: '#51ADE5', badge: 'badge-blue',   badgeText: 'Position' },
+    'coverletter_run':        { label: 'Ran Cover Letter',         color: '#FEB06A', badge: 'badge-orange', badgeText: 'Letter' },
+    'networking_run':         { label: 'Ran Networking',            color: '#4AE888', badge: 'badge-green',  badgeText: 'Network' },
     'signal_purchased':       { label: 'Purchased full access',    color: '#4AE888', badge: 'badge-green',  badgeText: 'Purchase' },
   }
 
