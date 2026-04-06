@@ -3,6 +3,13 @@ import crypto from "crypto"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
+
+// Backtick chars built via fromCharCode to avoid Turbopack parse error
+const _t = String.fromCharCode(96)
+const _fence = _t + _t + _t
+function stripFences(s: string) {
+  return s.split(_fence + "json").join("").split(_fence).join("").trim()
+}
 export const maxDuration = 60
 
 export async function OPTIONS(req: Request) {
@@ -98,7 +105,7 @@ async function enrichCompany(
 
     const json = await res.json()
     const text = (json.content ?? [])?.[0]?.text ?? ""
-    const cleaned = text.replace(new RegExp("```json|```", "gi"), "").trim()
+    const cleaned = stripFences(text)
     const data = JSON.parse(cleaned)
 
     if (!data.company_name) return null
@@ -239,7 +246,7 @@ export async function POST(req: Request) {
 
     let analysis: Record<string, unknown>
     try {
-      const cleaned = rawText.replace(new RegExp("```json|```", "gi"), "").trim()
+      const cleaned = stripFences(rawText)
       analysis = JSON.parse(cleaned)
     } catch (parseError) {
       console.error(

@@ -213,7 +213,10 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     .join("")
 
   // Strip markdown fences and extract JSON object
-  const fenceStripped = rawJson.replace(new RegExp("```json|```", "gi"), "").trim()
+  // Note: backtick chars built via fromCharCode to avoid Turbopack parse error
+  const _t = String.fromCharCode(96)
+  const _fence = _t + _t + _t
+  const fenceStripped = rawJson.split(_fence + "json").join("").split(_fence).join("").trim()
   const firstBrace = fenceStripped.indexOf("{")
   const lastBrace = fenceStripped.lastIndexOf("}")
   if (firstBrace === -1 || lastBrace === -1) {
