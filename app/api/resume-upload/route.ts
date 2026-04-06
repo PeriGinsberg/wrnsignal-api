@@ -41,7 +41,12 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await getAuthedUser(req)
+    // Auth is optional — free trial users don't have tokens.
+    // This endpoint only extracts text from a file; it stores nothing.
+    const authHeader = req.headers.get("authorization") || ""
+    if (authHeader.match(/^Bearer\s+.+$/i)) {
+      await getAuthedUser(req)
+    }
 
     const formData = await req.formData()
     const file = formData.get("file") as File | null
