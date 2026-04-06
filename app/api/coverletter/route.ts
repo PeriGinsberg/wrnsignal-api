@@ -553,7 +553,7 @@ Return JSON only. No markdown. No commentary.
     // Track successful run
     try {
       await supabaseAdmin.from("jobfit_page_views").insert({
-        session_id: crypto.randomUUID(),
+        session_id: String(profileId || crypto.randomUUID()),
         page_name: "coverletter_run",
         page_path: "/api/coverletter",
         referrer: null,

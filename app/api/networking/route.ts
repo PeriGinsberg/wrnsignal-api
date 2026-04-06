@@ -920,7 +920,7 @@ Make the messages feel specifically grounded in this user and this role.
     // Track successful run
     try {
       await supabaseAdmin.from("jobfit_page_views").insert({
-        session_id: crypto.randomUUID(),
+        session_id: String(profileId || crypto.randomUUID()),
         page_name: "networking_run",
         page_path: "/api/networking",
         referrer: null,

@@ -496,12 +496,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Track successful run
+    // Track successful run — use profileId as session_id for dedup
     try {
       const sb = await getSupabaseAdmin()
       if (sb) {
         await sb.from("jobfit_page_views").insert({
-          session_id: crypto.randomUUID(),
+          session_id: String(profileId || crypto.randomUUID()),
           page_name: "jobfit_full_run",
           page_path: "/api/jobfit",
           referrer: null,

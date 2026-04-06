@@ -495,10 +495,10 @@ Return JSON only. No markdown. No extra text.
       console.warn("positioning_runs insert failed:", insertErr.message)
     }
 
-    // Track successful run
+    // Track successful run — use profileId as session_id for dedup
     try {
       await supabaseAdmin.from("jobfit_page_views").insert({
-        session_id: crypto.randomUUID(),
+        session_id: String(profileId || crypto.randomUUID()),
         page_name: "positioning_run",
         page_path: "/api/positioning",
         referrer: null,
