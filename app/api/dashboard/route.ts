@@ -122,19 +122,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="metric-sub">Unique visitors to /signal</div>
   </div>
   <div class="metric">
-    <div class="metric-label">JobFit Intake Visitors</div>
+    <div class="metric-label">Job Analysis Page Views</div>
     <div class="metric-value blue" id="m-visitors">—</div>
-    <div class="metric-sub" id="m-visitors-rate">Unique sessions on intake</div>
+    <div class="metric-sub" id="m-visitors-rate">Reached the analyzer</div>
   </div>
   <div class="metric">
-    <div class="metric-label">Intake Completed</div>
+    <div class="metric-label">Analyses Run</div>
     <div class="metric-value orange" id="m-intake">—</div>
-    <div class="metric-sub" id="m-intake-rate">Trial signups</div>
+    <div class="metric-sub" id="m-intake-rate">Pasted JD + got results</div>
   </div>
   <div class="metric">
-    <div class="metric-label">JobFit Runs</div>
+    <div class="metric-label">CTA Clicks</div>
     <div class="metric-value white" id="m-runs">—</div>
-    <div class="metric-sub" id="m-runs-rate">Activations</div>
+    <div class="metric-sub" id="m-runs-rate">Clicked "See How I Compare"</div>
   </div>
   <div class="metric">
     <div class="metric-label">Purchases</div>
@@ -287,37 +287,41 @@ async function loadAll() {
 
 function renderMetrics(rows) {
   const landingVisitors = new Set(rows.filter(r => r.page_name === 'signal_landing').map(r => r.session_id)).size
-  const intakeVisitors  = new Set(rows.filter(r => r.page_name === 'jobfit_trial_intake').map(r => r.session_id)).size
-  const intakeCompleted = rows.filter(r => r.page_name === 'jobfit_trial_completed').length
-  const runs = rows.filter(r => r.page_name === 'jobfit_run_completed').length
+  const analyzerVisitors = new Set(rows.filter(r => r.page_name === 'job_analysis_page').map(r => r.session_id)).size
+  const analysesRun = rows.filter(r => r.page_name === 'job_analysis_run').length
+  const ctaClicks = rows.filter(r => r.page_name === 'signal_cta_click').length
   const purchases = rows.filter(r => r.page_name === 'signal_purchased').length
 
   document.getElementById('m-landing').textContent = landingVisitors || '0'
-  document.getElementById('m-visitors').textContent = intakeVisitors || '0'
-  document.getElementById('m-intake').textContent = intakeCompleted || '0'
-  document.getElementById('m-runs').textContent = runs || '0'
+  document.getElementById('m-visitors').textContent = analyzerVisitors || '0'
+  document.getElementById('m-intake').textContent = analysesRun || '0'
+  document.getElementById('m-runs').textContent = ctaClicks || '0'
   document.getElementById('m-purchases').textContent = purchases || '0'
 
-  const intakeRate = intakeVisitors > 0 ? Math.round(intakeCompleted/intakeVisitors*100) : 0
-  const runRate = intakeCompleted > 0 ? Math.round(runs/intakeCompleted*100) : 0
-  const landingToIntake = landingVisitors > 0 ? Math.round(intakeVisitors/landingVisitors*100) : 0
+  const landingToAnalyzer = landingVisitors > 0 ? Math.round(analyzerVisitors/landingVisitors*100) : 0
+  const analyzerToRun = analyzerVisitors > 0 ? Math.round(analysesRun/analyzerVisitors*100) : 0
+  const runToCta = analysesRun > 0 ? Math.round(ctaClicks/analysesRun*100) : 0
 
-  document.getElementById('m-visitors-rate').textContent = landingVisitors > 0 ? \`\${landingToIntake}% of landing visitors\` : 'Unique sessions on intake'
-  document.getElementById('m-intake-rate').textContent = intakeVisitors > 0 ? \`\${intakeRate}% of intake visitors\` : 'Trial signups'
-  document.getElementById('m-runs-rate').textContent = intakeCompleted > 0 ? \`\${runRate}% of signups\` : 'Activations'
+  document.getElementById('m-visitors-rate').textContent = landingVisitors > 0 ? \`\${landingToAnalyzer}% of landing visitors\` : 'Reached the analyzer'
+  document.getElementById('m-intake-rate').textContent = analyzerVisitors > 0 ? \`\${analyzerToRun}% of page views\` : 'Pasted JD + got results'
+  document.getElementById('m-runs-rate').textContent = analysesRun > 0 ? \`\${runToCta}% of analyses\` : 'Clicked "See How I Compare"'
 }
 
 function renderFunnel(rows) {
-  const visitors = new Set(rows.filter(r => r.page_name === 'jobfit_trial_intake').map(r => r.session_id)).size
-  const intakeDone = rows.filter(r => r.page_name === 'jobfit_trial_completed').length
-  const runs = rows.filter(r => r.page_name === 'jobfit_run_completed').length
+  const landing = new Set(rows.filter(r => r.page_name === 'signal_landing').map(r => r.session_id)).size
+  const analyzerViews = new Set(rows.filter(r => r.page_name === 'job_analysis_page').map(r => r.session_id)).size
+  const analysesRun = rows.filter(r => r.page_name === 'job_analysis_run').length
+  const ctaClicks = rows.filter(r => r.page_name === 'signal_cta_click').length
   const purchases = rows.filter(r => r.page_name === 'signal_purchased').length
 
+  const base = landing || analyzerViews || 1
+
   const steps = [
-    { label: 'Visited app', n: visitors, color: '#51ADE5', base: visitors },
-    { label: 'Completed intake', n: intakeDone, color: '#FEB06A', base: visitors },
-    { label: 'Ran a JobFit', n: runs, color: '#7F77DD', base: visitors },
-    { label: 'Purchased ($99)', n: purchases, color: '#4AE888', base: visitors },
+    { label: 'Landed on /signal', n: landing, color: '#51ADE5', base },
+    { label: 'Reached analyzer', n: analyzerViews, color: '#7DD3FC', base },
+    { label: 'Ran a job analysis', n: analysesRun, color: '#FEB06A', base },
+    { label: 'Clicked upgrade CTA', n: ctaClicks, color: '#7F77DD', base },
+    { label: 'Purchased ($99)', n: purchases, color: '#4AE888', base },
   ]
 
   const el = document.getElementById('funnel')
@@ -465,16 +469,19 @@ function renderActivity(rows) {
   }
 
   const pillConfig = {
-    'signal_landing':         { label: 'Visit',    bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
-    'signal_cta_click':       { label: 'CTA',      bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
-    'jobfit_trial_intake':    { label: 'Intake',   bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
-    'jobfit_trial_completed': { label: 'Signup',   bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
-    'jobfit_run_completed':   { label: 'Trial Run',bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
-    'jobfit_full_run':        { label: 'JobFit',   bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
-    'positioning_run':        { label: 'Position', bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
-    'coverletter_run':        { label: 'Letter',   bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
-    'networking_run':         { label: 'Network',  bg: 'rgba(74,232,136,0.15)',  color: '#4AE888' },
-    'signal_purchased':       { label: '$99 Purchase', bg: 'rgba(74,232,136,0.20)', color: '#4AE888' },
+    'signal_landing':         { label: 'Landing Visit',     bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
+    'job_analysis_page':      { label: 'Analyzer View',     bg: 'rgba(125,211,252,0.18)', color: '#7DD3FC' },
+    'job_analysis_run':       { label: 'Analysis Run',      bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'signal_cta_click':       { label: 'Upgrade CTA',       bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'signal_purchased':       { label: '$99 Purchase',      bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
+    // Legacy events (kept for backward compat with old data)
+    'jobfit_trial_intake':    { label: 'Intake (legacy)',   bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_trial_completed': { label: 'Signup (legacy)',   bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_run_completed':   { label: 'Trial Run (legacy)',bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_full_run':        { label: 'JobFit',            bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'positioning_run':        { label: 'Position',          bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
+    'coverletter_run':        { label: 'Letter',            bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'networking_run':         { label: 'Network',           bg: 'rgba(74,232,136,0.15)',  color: '#4AE888' },
   }
 
   // Group by hour
@@ -516,27 +523,33 @@ function renderJourneys(rows) {
   // Define the funnel step order
   const stepOrder = {
     'signal_landing': 0,
-    'signal_cta_click': 1,
-    'jobfit_trial_intake': 2,
-    'jobfit_trial_completed': 3,
-    'jobfit_run_completed': 4,
-    'signal_purchased': 5,
-    'jobfit_full_run': 6,
-    'positioning_run': 7,
-    'coverletter_run': 8,
-    'networking_run': 9,
+    'job_analysis_page': 1,
+    'job_analysis_run': 2,
+    'signal_cta_click': 3,
+    'signal_purchased': 4,
+    // Legacy events at the end
+    'jobfit_trial_intake': 10,
+    'jobfit_trial_completed': 11,
+    'jobfit_run_completed': 12,
+    'jobfit_full_run': 13,
+    'positioning_run': 14,
+    'coverletter_run': 15,
+    'networking_run': 16,
   }
 
   const stepConfig = {
-    'signal_landing':         { label: 'Landed',     bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
-    'signal_cta_click':       { label: 'Clicked CTA',bg: 'rgba(254,176,106,0.12)', color: '#FEB06A' },
-    'jobfit_trial_intake':    { label: 'Started Intake', bg: 'rgba(81,173,229,0.12)', color: '#51ADE5' },
-    'jobfit_trial_completed': { label: 'Signed Up',  bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
-    'jobfit_run_completed':   { label: 'Ran JobFit', bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
-    'signal_purchased':       { label: 'Purchased',  bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
-    'jobfit_full_run':        { label: 'JobFit',     bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
-    'positioning_run':        { label: 'Positioning',bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
-    'coverletter_run':        { label: 'Letter',     bg: 'rgba(254,176,106,0.12)', color: '#FEB06A' },
+    'signal_landing':         { label: 'Landed',         bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
+    'job_analysis_page':      { label: 'Reached Analyzer', bg: 'rgba(125,211,252,0.15)', color: '#7DD3FC' },
+    'job_analysis_run':       { label: 'Ran Analysis',   bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'signal_cta_click':       { label: 'Clicked CTA',    bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'signal_purchased':       { label: 'Purchased',      bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
+    // Legacy events (kept for old data)
+    'jobfit_trial_intake':    { label: 'Started Intake (legacy)', bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_trial_completed': { label: 'Signed Up (legacy)',  bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_run_completed':   { label: 'Ran JobFit (legacy)', bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_full_run':        { label: 'JobFit',         bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'positioning_run':        { label: 'Positioning',    bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
+    'coverletter_run':        { label: 'Letter',         bg: 'rgba(254,176,106,0.12)', color: '#FEB06A' },
     'networking_run':         { label: 'Networking', bg: 'rgba(74,232,136,0.12)',  color: '#4AE888' },
   }
 
