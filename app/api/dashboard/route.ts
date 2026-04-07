@@ -122,8 +122,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="metric-sub">Unique visitors to /signal</div>
   </div>
   <div class="metric">
+    <div class="metric-label">Free Trial CTA Clicks</div>
+    <div class="metric-value blue" id="m-free-cta">—</div>
+    <div class="metric-sub" id="m-free-cta-rate">Marketing → Job Analysis</div>
+  </div>
+  <div class="metric">
     <div class="metric-label">Job Analysis Page Views</div>
-    <div class="metric-value blue" id="m-visitors">—</div>
+    <div class="metric-value white" id="m-visitors">—</div>
     <div class="metric-sub" id="m-visitors-rate">Reached the analyzer</div>
   </div>
   <div class="metric">
@@ -132,9 +137,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="metric-sub" id="m-intake-rate">Pasted JD + got results</div>
   </div>
   <div class="metric">
-    <div class="metric-label">CTA Clicks</div>
+    <div class="metric-label">Upgrade CTA Clicks</div>
     <div class="metric-value white" id="m-runs">—</div>
-    <div class="metric-sub" id="m-runs-rate">Clicked "See How I Compare"</div>
+    <div class="metric-sub" id="m-runs-rate">Results → Purchase page</div>
   </div>
   <div class="metric">
     <div class="metric-label">Purchases</div>
@@ -287,40 +292,46 @@ async function loadAll() {
 
 function renderMetrics(rows) {
   const landingVisitors = new Set(rows.filter(r => r.page_name === 'signal_landing').map(r => r.session_id)).size
+  const freeTrialCtaClicks = rows.filter(r => r.page_name === 'free_trial_cta_click').length
   const analyzerVisitors = new Set(rows.filter(r => r.page_name === 'job_analysis_page').map(r => r.session_id)).size
   const analysesRun = rows.filter(r => r.page_name === 'job_analysis_run').length
-  const ctaClicks = rows.filter(r => r.page_name === 'signal_cta_click').length
+  const upgradeCtaClicks = rows.filter(r => r.page_name === 'upgrade_cta_click').length
   const purchases = rows.filter(r => r.page_name === 'signal_purchased').length
 
   document.getElementById('m-landing').textContent = landingVisitors || '0'
+  document.getElementById('m-free-cta').textContent = freeTrialCtaClicks || '0'
   document.getElementById('m-visitors').textContent = analyzerVisitors || '0'
   document.getElementById('m-intake').textContent = analysesRun || '0'
-  document.getElementById('m-runs').textContent = ctaClicks || '0'
+  document.getElementById('m-runs').textContent = upgradeCtaClicks || '0'
   document.getElementById('m-purchases').textContent = purchases || '0'
 
-  const landingToAnalyzer = landingVisitors > 0 ? Math.round(analyzerVisitors/landingVisitors*100) : 0
+  const landingToFreeCta = landingVisitors > 0 ? Math.round(freeTrialCtaClicks/landingVisitors*100) : 0
+  const freeCtaToAnalyzer = freeTrialCtaClicks > 0 ? Math.round(analyzerVisitors/freeTrialCtaClicks*100) : 0
   const analyzerToRun = analyzerVisitors > 0 ? Math.round(analysesRun/analyzerVisitors*100) : 0
-  const runToCta = analysesRun > 0 ? Math.round(ctaClicks/analysesRun*100) : 0
+  const runToUpgradeCta = analysesRun > 0 ? Math.round(upgradeCtaClicks/analysesRun*100) : 0
 
-  document.getElementById('m-visitors-rate').textContent = landingVisitors > 0 ? \`\${landingToAnalyzer}% of landing visitors\` : 'Reached the analyzer'
+  document.getElementById('m-free-cta-rate').textContent = landingVisitors > 0 ? \`\${landingToFreeCta}% of landing visitors\` : 'Marketing → Job Analysis'
+  document.getElementById('m-visitors-rate').textContent = freeTrialCtaClicks > 0 ? \`\${freeCtaToAnalyzer}% of CTA clicks\` : 'Reached the analyzer'
   document.getElementById('m-intake-rate').textContent = analyzerVisitors > 0 ? \`\${analyzerToRun}% of page views\` : 'Pasted JD + got results'
-  document.getElementById('m-runs-rate').textContent = analysesRun > 0 ? \`\${runToCta}% of analyses\` : 'Clicked "See How I Compare"'
+  document.getElementById('m-runs-rate').textContent = analysesRun > 0 ? \`\${runToUpgradeCta}% of analyses\` : 'Results → Purchase page'
 }
 
 function renderFunnel(rows) {
   const landing = new Set(rows.filter(r => r.page_name === 'signal_landing').map(r => r.session_id)).size
+  const freeTrialCta = rows.filter(r => r.page_name === 'free_trial_cta_click').length
   const analyzerViews = new Set(rows.filter(r => r.page_name === 'job_analysis_page').map(r => r.session_id)).size
   const analysesRun = rows.filter(r => r.page_name === 'job_analysis_run').length
-  const ctaClicks = rows.filter(r => r.page_name === 'signal_cta_click').length
+  const upgradeCta = rows.filter(r => r.page_name === 'upgrade_cta_click').length
   const purchases = rows.filter(r => r.page_name === 'signal_purchased').length
 
   const base = landing || analyzerViews || 1
 
   const steps = [
     { label: 'Landed on /signal', n: landing, color: '#51ADE5', base },
+    { label: 'Free trial CTA click', n: freeTrialCta, color: '#7DD3FC', base },
     { label: 'Reached analyzer', n: analyzerViews, color: '#7DD3FC', base },
     { label: 'Ran a job analysis', n: analysesRun, color: '#FEB06A', base },
-    { label: 'Clicked upgrade CTA', n: ctaClicks, color: '#7F77DD', base },
+    { label: 'Upgrade CTA click', n: upgradeCta, color: '#7F77DD', base },
     { label: 'Purchased ($99)', n: purchases, color: '#4AE888', base },
   ]
 
@@ -470,11 +481,13 @@ function renderActivity(rows) {
 
   const pillConfig = {
     'signal_landing':         { label: 'Landing Visit',     bg: 'rgba(81,173,229,0.15)',  color: '#51ADE5' },
+    'free_trial_cta_click':   { label: 'Free Trial CTA',    bg: 'rgba(125,211,252,0.18)', color: '#7DD3FC' },
     'job_analysis_page':      { label: 'Analyzer View',     bg: 'rgba(125,211,252,0.18)', color: '#7DD3FC' },
     'job_analysis_run':       { label: 'Analysis Run',      bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
-    'signal_cta_click':       { label: 'Upgrade CTA',       bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'upgrade_cta_click':      { label: 'Upgrade CTA',       bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
     'signal_purchased':       { label: '$99 Purchase',      bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
     // Legacy events (kept for backward compat with old data)
+    'signal_cta_click':       { label: 'CTA (legacy)',      bg: 'rgba(255,255,255,0.06)', color: '#888' },
     'jobfit_trial_intake':    { label: 'Intake (legacy)',   bg: 'rgba(255,255,255,0.06)', color: '#888' },
     'jobfit_trial_completed': { label: 'Signup (legacy)',   bg: 'rgba(255,255,255,0.06)', color: '#888' },
     'jobfit_run_completed':   { label: 'Trial Run (legacy)',bg: 'rgba(255,255,255,0.06)', color: '#888' },
@@ -523,11 +536,13 @@ function renderJourneys(rows) {
   // Define the funnel step order
   const stepOrder = {
     'signal_landing': 0,
-    'job_analysis_page': 1,
-    'job_analysis_run': 2,
-    'signal_cta_click': 3,
-    'signal_purchased': 4,
+    'free_trial_cta_click': 1,
+    'job_analysis_page': 2,
+    'job_analysis_run': 3,
+    'upgrade_cta_click': 4,
+    'signal_purchased': 5,
     // Legacy events at the end
+    'signal_cta_click': 9,
     'jobfit_trial_intake': 10,
     'jobfit_trial_completed': 11,
     'jobfit_run_completed': 12,
@@ -538,15 +553,17 @@ function renderJourneys(rows) {
   }
 
   const stepConfig = {
-    'signal_landing':         { label: 'Landed',         bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
-    'job_analysis_page':      { label: 'Reached Analyzer', bg: 'rgba(125,211,252,0.15)', color: '#7DD3FC' },
-    'job_analysis_run':       { label: 'Ran Analysis',   bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
-    'signal_cta_click':       { label: 'Clicked CTA',    bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
-    'signal_purchased':       { label: 'Purchased',      bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
+    'signal_landing':         { label: 'Landed',             bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
+    'free_trial_cta_click':   { label: 'Clicked Free Trial', bg: 'rgba(125,211,252,0.15)', color: '#7DD3FC' },
+    'job_analysis_page':      { label: 'Reached Analyzer',   bg: 'rgba(125,211,252,0.15)', color: '#7DD3FC' },
+    'job_analysis_run':       { label: 'Ran Analysis',       bg: 'rgba(254,176,106,0.15)', color: '#FEB06A' },
+    'upgrade_cta_click':      { label: 'Clicked Upgrade',    bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
+    'signal_purchased':       { label: 'Purchased',          bg: 'rgba(74,232,136,0.20)',  color: '#4AE888' },
     // Legacy events (kept for old data)
+    'signal_cta_click':       { label: 'CTA (legacy)',       bg: 'rgba(255,255,255,0.06)', color: '#888' },
     'jobfit_trial_intake':    { label: 'Started Intake (legacy)', bg: 'rgba(255,255,255,0.06)', color: '#888' },
-    'jobfit_trial_completed': { label: 'Signed Up (legacy)',  bg: 'rgba(255,255,255,0.06)', color: '#888' },
-    'jobfit_run_completed':   { label: 'Ran JobFit (legacy)', bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_trial_completed': { label: 'Signed Up (legacy)', bg: 'rgba(255,255,255,0.06)', color: '#888' },
+    'jobfit_run_completed':   { label: 'Ran JobFit (legacy)',bg: 'rgba(255,255,255,0.06)', color: '#888' },
     'jobfit_full_run':        { label: 'JobFit',         bg: 'rgba(127,119,221,0.15)', color: '#7F77DD' },
     'positioning_run':        { label: 'Positioning',    bg: 'rgba(81,173,229,0.12)',  color: '#51ADE5' },
     'coverletter_run':        { label: 'Letter',         bg: 'rgba(254,176,106,0.12)', color: '#FEB06A' },
