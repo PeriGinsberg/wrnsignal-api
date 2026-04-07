@@ -1284,6 +1284,48 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   const diminished = applyDiminishingReturns(rawPenaltySum)
   const penaltySum = Math.min(POLICY.score.penaltyStackCap, diminished)
 
+  // ── Surface hidden score-affecting penalties as visible risk codes ──
+  // These don't add new penalties — they make existing penalties explainable.
+
+  // Family mismatch — surfaces the silent -12/-30 penalty in computeBaseScore
+  const familyMatch = profile.targetFamilies.includes(job.jobFamily)
+  if (!familyMatch && profile.targetFamilies.length > 0) {
+    const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades"])
+    const isTechnicalJob = HARD_TECH.has(job.jobFamily)
+    riskOnlyCodes.push({
+      code: "RISK_FAMILY_MISMATCH",
+      job_fact: `This role is in the ${job.jobFamily} field.`,
+      profile_fact: `Your stated target field${profile.targetFamilies.length === 1 ? " is" : "s are"} ${profile.targetFamilies.join(", ")}.`,
+      risk: isTechnicalJob
+        ? `This is a specialized ${job.jobFamily} role that typically requires direct field experience. Your profile targets a different field.`
+        : `The role's field doesn't match your stated targets. You can still apply, but expect more scrutiny on transferable skills in interviews.`,
+      severity: isTechnicalJob ? "high" : "medium",
+      weight: 0,
+    })
+  }
+
+  // Sparse evidence floor — when there are very few why_codes generated,
+  // surface that as the explanation for the lower score
+  if (selectedMatches.length === 0) {
+    riskOnlyCodes.push({
+      code: "RISK_LIMITED_MATCH_EVIDENCE",
+      job_fact: "This role's stated requirements are difficult to map to your profile.",
+      profile_fact: "No direct or adjacent matches found.",
+      risk: "Either the job description is too vague to extract clear requirements, or your profile lacks evidence that maps to what they describe. Read the JD carefully before deciding to apply.",
+      severity: "high",
+      weight: 0,
+    })
+  } else if (selectedMatches.length < 2) {
+    riskOnlyCodes.push({
+      code: "RISK_LIMITED_MATCH_EVIDENCE",
+      job_fact: "Only a small number of direct matches between your profile and this role's requirements.",
+      profile_fact: "Limited evidence overlap.",
+      risk: "Your profile shows some alignment but not enough specific proof points to make this a strong match. Consider whether you have unstated experience that fills the gap.",
+      severity: "medium",
+      weight: 0,
+    })
+  }
+
   const base = computeBaseScore(job, profile, selectedMatches, coverage)
   let score = base - penaltySum
   score = clamp(score, POLICY.score.minScore, POLICY.score.maxScore)
