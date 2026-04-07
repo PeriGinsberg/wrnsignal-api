@@ -727,7 +727,9 @@ jobPhrases: [
       "financial modeling",
       "valuation",
       "lbo",
-      "portfolio",
+      "investment portfolio",
+      "portfolio management",
+      "portfolio analysis",
       "investment analysis",
       "asset management",
       "capital markets",
@@ -739,7 +741,9 @@ jobPhrases: [
       "financial modeling",
       "valuation",
       "lbo",
-      "portfolio",
+      "investment portfolio",
+      "portfolio management",
+      "portfolio analysis",
       "investment analysis",
       "asset management",
       "capital markets",
@@ -753,16 +757,17 @@ jobPhrases: [
 "expense analysis", 
 "expense reporting",
 "management reporting",
-"budget",
-"forecast",
+"budgeting",
+"budget management",
+"financial forecast",
+"forecasting models",
 "cash flow",
-"profitability",
+"profitability analysis",
 "balance sheet",
 "revenue reporting",
-"competitive analysis",  // when in finance context
 "financial package",
-"board-level",
-"board level",
+"board-level reporting",
+"board level reporting",
     ],
     adjacentKeys: ["analysis_reporting"],
   },
@@ -1401,7 +1406,14 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "accounting_finops") score.Accounting += 5
 
     if (tag === "data_analytics_bi") score.Analytics += 3
-    if (tag === "consumer_insights_research") score.Analytics += 2
+    // Consumer/market research is fundamentally Marketing work — it lives
+    // inside marketing teams, advertising agencies, and brand orgs.
+    // Give Marketing the larger share so market research analyst roles
+    // classify correctly instead of falling to Analytics or Finance.
+    if (tag === "consumer_insights_research") {
+      score.Marketing += 4
+      score.Analytics += 2
+    }
 
     if (tag === "brand_marketing") score.Marketing += 4
     if (tag === "communications_pr") score.Marketing += 3
