@@ -7,8 +7,36 @@ export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
+// Common bot/crawler User-Agent fragments. Case-insensitive match.
+const BOT_UA_PATTERNS = [
+  "bot", "crawler", "spider", "crawl", "scraper", "fetcher",
+  "headless", "phantom", "puppeteer", "playwright", "selenium",
+  "googlebot", "bingbot", "yandex", "baidu", "duckduckbot",
+  "facebookexternalhit", "facebot", "linkedinbot", "twitterbot",
+  "slackbot", "telegrambot", "discordbot", "whatsapp",
+  "preview", "lighthouse", "pingdom", "uptimerobot", "monitor",
+  "ahrefs", "semrush", "mj12bot", "dotbot", "sitebulb",
+  "curl", "wget", "python-requests", "okhttp", "java/", "go-http-client",
+]
+
+function looksLikeBot(req: Request): boolean {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase()
+  if (!ua) return true // missing UA = bot
+  for (const p of BOT_UA_PATTERNS) {
+    if (ua.includes(p)) return true
+  }
+  return false
+}
+
 export async function POST(req: Request) {
   try {
+    // ── Bot filter ──
+    // Reject obvious bot/crawler traffic so dashboard counts reflect
+    // real users, not search engine indexers or scrapers.
+    if (looksLikeBot(req)) {
+      return withCorsJson(req, { ok: true, filtered: "bot" }, 200)
+    }
+
     const body = await req.json()
     const supabase = createClient(
       process.env.SUPABASE_URL!,
