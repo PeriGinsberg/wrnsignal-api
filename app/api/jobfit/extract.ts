@@ -951,7 +951,7 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
     profilePhrases: ["structural analysis", "structural design", "load analysis", "finite element", "steel design", "concrete design", "foundation design"],
-    jobPhrases: ["structural analysis", "structural design", "load calculations", "finite element", "steel structures", "concrete structures", "foundation", "structural engineering"],
+    jobPhrases: ["structural analysis", "structural design", "load calculations", "finite element", "steel structures", "concrete structures", "foundation design", "foundation engineering", "structural engineering"],
     adjacentKeys: [],
   },
   {
@@ -960,7 +960,7 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
     profilePhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "cad design", "manufacturing engineering", "tolerance analysis"],
-    jobPhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "manufacturing", "tolerance", "mechanical engineering", "product design engineering"],
+    jobPhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "manufacturing engineering", "tolerance analysis", "mechanical engineering", "product design engineering"],
     adjacentKeys: [],
   },
   {
@@ -969,7 +969,7 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
     profilePhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation engineering", "geotechnical"],
-    jobPhrases: ["civil engineering", "site design", "grading", "stormwater", "transportation engineering", "transportation planning", "transportation design", "geotechnical", "land development"],
+    jobPhrases: ["civil engineering", "site design", "site grading", "stormwater", "transportation engineering", "transportation planning", "transportation design", "geotechnical", "land development engineering"],
     adjacentKeys: ["structural_engineering"],
   },
   {
@@ -978,7 +978,7 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
     profilePhrases: ["electrical design", "circuit design", "power systems", "control systems", "pcb design", "embedded systems"],
-    jobPhrases: ["electrical design", "circuit", "power systems", "control systems", "pcb", "embedded", "electrical engineering"],
+    jobPhrases: ["electrical design", "circuit design", "power systems engineering", "control systems engineering", "pcb design", "embedded systems", "electrical engineering"],
     adjacentKeys: [],
   },
   {
@@ -987,7 +987,7 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
     profilePhrases: ["chemical engineering", "process engineering", "reaction kinetics", "mass transfer", "distillation"],
-    jobPhrases: ["chemical engineering", "process engineering", "reaction", "mass transfer", "distillation", "chemical process"],
+    jobPhrases: ["chemical engineering", "process engineering", "reaction kinetics", "mass transfer", "distillation", "chemical process"],
     adjacentKeys: [],
   },
   {
