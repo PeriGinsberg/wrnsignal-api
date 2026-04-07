@@ -645,6 +645,26 @@ base += Math.min(4, toolCount * 2)
 base += Math.min(8, adequateCoverageCount)
 base += Math.min(8, coreCoverageCount)
 
+// Training program bonus — when the job is a training program (e.g. wealth advisor
+// development program, FINRA-sponsored entry level), the JD typically has few
+// extractable hard requirements because everything is taught on the job. In that
+// case, score the candidate based on profile-to-family alignment instead of
+// requirement-unit matching.
+const isTrainingProgram = (job as any).isTrainingProgram === true
+if (isTrainingProgram && familyMatch) {
+  // Count strong profile evidence units in the matching family
+  const profileEvidenceCount = (profile.profile_evidence_units || []).filter(
+    (u: any) => u.strength >= 6 && u.functionTag
+  ).length
+  // Each strong unit adds 2 points, capped at 20 — gives well-qualified
+  // candidates a path to Apply even with sparse JD requirements
+  const trainingBonus = Math.min(20, profileEvidenceCount * 2)
+  base += trainingBonus
+  // Floor at Review for training programs with family match — don't bury
+  // qualified candidates just because the JD is light on extractable requirements
+  if (base < 65) base = 65
+}
+
 // Floor rules — only apply when the family actually matches.
 // Generic keyword overlap across different fields should not guarantee a high score.
 if (familyMatch || !isTechnicalJob) {

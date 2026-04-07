@@ -2341,7 +2341,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // Note: norm() lowercases and preserves & so "FP&A" becomes "fp&a"
   const jobTitleSlice = normalized.slice(0, 1500)
   const jobTitleIsFinance =
-    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst)\b/i.test(jobTitleSlice)
+    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst|wealth management|wealth advisor|financial advisor|financial professional|financial consultant|financial planner|client associate|client service associate|advisor development|wealth relationship|relationship manager|series 7|finra|securities|broker dealer)\b/i.test(jobTitleSlice)
   const jobTitleIsSales =
     /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
 

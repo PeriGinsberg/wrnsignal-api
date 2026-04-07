@@ -228,31 +228,16 @@ export async function POST(req: NextRequest) {
     }
     // ────────────────────────────────────────────────────────────────
 
-    // Combine profile_text (targeting info) with resume_text (actual resume).
-    // If persona was specified, splice its resume into the profile blob.
-    console.log("[jobfit/route] PROFILE-MERGE-DEBUG:", {
-      profileTextLen: profileText.length,
-      resumeTextLen: resumeText.length,
-      hasPersonaResume: !!personaResumeText,
-      resumeFirst80: resumeText.slice(0, 80),
-    })
-
-    // Determine the resume to use: persona resume overrides default resume
+    // Combine profile header (targeting info) with the active resume.
+    // Persona resume overrides default resume when specified.
     const activeResume = personaResumeText || resumeText
 
-    // Always combine profile header (targeting info) with resume
     let effectiveProfileText: string
     if (profileText && activeResume && !profileText.includes(activeResume.slice(0, 80))) {
       effectiveProfileText = profileText + "\n\nResume:\n" + activeResume
     } else {
       effectiveProfileText = activeResume || profileText
     }
-
-    console.log("[jobfit/route] PROFILE-MERGE-RESULT:", {
-      effectiveLen: effectiveProfileText.length,
-      usedPersonaResume: !!personaResumeText,
-      usedDefaultResume: !personaResumeText && !!resumeText,
-    })
 
     if (!effectiveProfileText) {
       return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
