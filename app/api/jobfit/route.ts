@@ -237,20 +237,22 @@ export async function POST(req: NextRequest) {
       resumeFirst80: resumeText.slice(0, 80),
     })
 
+    // Determine the resume to use: persona resume overrides default resume
+    const activeResume = personaResumeText || resumeText
+
+    // Always combine profile header (targeting info) with resume
     let effectiveProfileText: string
-    if (personaResumeText && profileText) {
-      effectiveProfileText = profileText.replace(
-        /(Resume:\n)([\s\S]*?)(\n[A-Z][a-z]|$)/,
-        `$1${personaResumeText}$3`
-      )
-    } else if (profileText && resumeText && !profileText.includes(resumeText.slice(0, 80))) {
-      // Both exist and resume isn't already embedded — combine them
-      effectiveProfileText = profileText + "\n\nResume:\n" + resumeText
-      console.log("[jobfit/route] MERGED profile+resume, effectiveLen:", effectiveProfileText.length)
+    if (profileText && activeResume && !profileText.includes(activeResume.slice(0, 80))) {
+      effectiveProfileText = profileText + "\n\nResume:\n" + activeResume
     } else {
-      effectiveProfileText = resumeText || profileText
-      console.log("[jobfit/route] FALLBACK path, effectiveLen:", effectiveProfileText.length, "usedResume:", !!resumeText && effectiveProfileText === resumeText)
+      effectiveProfileText = activeResume || profileText
     }
+
+    console.log("[jobfit/route] PROFILE-MERGE-RESULT:", {
+      effectiveLen: effectiveProfileText.length,
+      usedPersonaResume: !!personaResumeText,
+      usedDefaultResume: !personaResumeText && !!resumeText,
+    })
 
     if (!effectiveProfileText) {
       return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
