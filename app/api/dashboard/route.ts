@@ -325,7 +325,7 @@ function renderFunnel(rows) {
   ]
 
   const el = document.getElementById('funnel')
-  if (visitors === 0) { el.innerHTML = '<div class="empty">No data yet</div>'; return }
+  if (landing === 0 && analyzerViews === 0) { el.innerHTML = '<div class="empty">No data yet</div>'; return }
 
   el.innerHTML = steps.map(s => {
     const pct = s.base > 0 ? Math.round(s.n / s.base * 100) : 0
