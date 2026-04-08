@@ -245,10 +245,17 @@ function inferTargetFamilies(profileText: string, targetRoles?: string | null): 
   if (
     roles.includes("software engineering") ||
     roles.includes("engineering") ||
+    roles.includes("engineer") ||
     roles.includes("mechanical engineer") ||
     roles.includes("electrical engineer") ||
     roles.includes("civil engineer") ||
-    roles.includes("chemical engineer")
+    roles.includes("chemical engineer") ||
+    roles.includes("biomedical engineer") ||
+    roles.includes("biomedical engineering") ||
+    roles.includes("bioengineer") ||
+    roles.includes("bioengineering") ||
+    roles.includes("medical device") ||
+    roles.includes("medical devices")
   ) {
     out.push("Engineering")
   }
