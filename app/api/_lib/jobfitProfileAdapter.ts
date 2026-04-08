@@ -599,6 +599,16 @@ export function mapClientProfileToOverrides(args: {
   const structuredFamilies = sanitizeTargetFamilies(ps?.targetFamilies)
   const targetFamilies: JobFamily[] = structuredFamilies ?? inferTargetFamilies(args.profileText, args.targetRoles)
 
+  // ── DEBUG LOG (temporary) ──
+  console.log("[adapter] targetFamilies resolution", {
+    hadStructured: !!structuredFamilies,
+    structuredValue: structuredFamilies,
+    targetRolesPresent: !!args.targetRoles,
+    targetRolesLen: (args.targetRoles || "").length,
+    targetRolesPreview: (args.targetRoles || "").slice(0, 200),
+    inferredFinal: targetFamilies,
+  })
+
   const constraints: ProfileConstraints =
     (ps?.constraints && typeof ps.constraints === "object" ? (ps.constraints as ProfileConstraints) : null) ||
     inferConstraints(args.profileText)

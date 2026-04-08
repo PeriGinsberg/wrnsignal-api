@@ -157,10 +157,13 @@ function inferTargetFamilies(targetRoles: string[]): string[] {
   if (/\b(marketing|brand|content|social|growth|ecommerce)\b/.test(joined)) {
     out.push("Marketing")
   }
-  if (/\b(finance|investment|banking|wealth|asset)\b/.test(joined)) {
+  if (/\b(finance|investment|banking|wealth|asset|financial advisor|financial planner|wealth advisor)\b/.test(joined)) {
     out.push("Finance")
   }
-  if (/\b(consulting|strategy|business strategy)\b/.test(joined)) {
+  if (/\b(accounting|audit|tax|assurance)\b/.test(joined)) {
+    out.push("Accounting")
+  }
+  if (/\b(consulting|strategy|business strategy|management consulting|strategy consulting)\b/.test(joined)) {
     out.push("Consulting")
   }
   if (/\b(policy|regulatory|government|legislative|compliance)\b/.test(joined)) {
@@ -168,6 +171,21 @@ function inferTargetFamilies(targetRoles: string[]): string[] {
   }
   if (/\b(design|creative|visual)\b/.test(joined)) {
     out.push("Design")
+  }
+  if (/\b(sales|business development|account executive|account manager|medical sales|orthopedic sales)\b/.test(joined)) {
+    out.push("Sales")
+  }
+  if (/\b(clinical|patient|premed|pre-med|healthcare|nurs|physician|medical assistant)\b/.test(joined)) {
+    out.push("PreMed")
+  }
+  if (/\b(software engineer|software developer|frontend|backend|full stack|fullstack|web developer|mobile developer|devops|swe)\b/.test(joined)) {
+    out.push("IT_Software")
+  }
+  if (/\b(engineer|engineering|biomedical|bioengineer|mechanical|electrical|civil engineer|chemical engineer|medical device)\b/.test(joined)) {
+    out.push("Engineering")
+  }
+  if (/\b(analytics|data analyst|business intelligence|tableau|power bi)\b/.test(joined)) {
+    out.push("Analytics")
   }
 
   return out.length ? out : ["Other"]
