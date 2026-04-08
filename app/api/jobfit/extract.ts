@@ -1389,6 +1389,27 @@ function extractToolMentions(text: string): string[] {
     if (includesPhrase(t, tool) || includesPhrase(t, c)) out.add(c)
   }
 
+  // Suite-level expansions. A candidate who writes "Microsoft Office Suite"
+  // should be credited for the individual apps the suite implies, otherwise
+  // jobs that list "Excel" as a required tool will incorrectly penalize
+  // them with RISK_MISSING_TOOLS. Same logic for Google Workspace / G Suite
+  // and Adobe Creative Cloud / Creative Suite.
+  if (/\b(microsoft office suite|ms office suite|ms office|microsoft office|office 365|o365|office suite)\b/i.test(t)) {
+    out.add("excel")
+    out.add("powerpoint")
+    out.add("word")
+  }
+  if (/\b(google workspace|g ?suite|google g ?suite)\b/i.test(t)) {
+    out.add("google sheets")
+    out.add("google docs")
+    out.add("google slides")
+  }
+  if (/\b(adobe creative cloud|creative cloud|adobe creative suite|creative suite)\b/i.test(t)) {
+    out.add("photoshop")
+    out.add("illustrator")
+    out.add("indesign")
+  }
+
   return Array.from(out)
 }
 
@@ -1434,8 +1455,13 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     if (tag === "growth_performance") score.Marketing += 4
     if (tag === "product_marketing") score.Marketing += 5
 
-    if (tag === "consulting_strategy") score.Consulting += 3
-    if (tag === "operations_general") score.Consulting += 1
+    if (tag === "consulting_strategy") score.Consulting += 5
+    // Operations roles (Chief of Staff, BusinessOps, Strategy & Ops) route
+    // to Consulting because there is no dedicated Operations family. Bumped
+    // from +1 to +4 so a job with heavy operations signal can beat stray
+    // finance_corp / accounting_finops tags that pick up on budget and
+    // reporting language in the body.
+    if (tag === "operations_general") score.Consulting += 4
 
     if (tag === "engineering_technical") score.Engineering += 8
     if (tag === "software_it") score.IT_Software += 8
@@ -2068,24 +2094,145 @@ function detectInternshipSignals(textRaw: string) {
   }
 }
 
+// Only treat a year as a graduation year when it appears adjacent to an
+// explicit graduation or degree keyword. Previously this function returned
+// the latest year found anywhere in the profile, which meant any candidate
+// with a recent work entry like "Jan 2025 – Present" got their gradYear
+// set to 2025 — painting senior candidates as recent grads and inflating
+// RISK_EXPERIENCE against them.
 function inferProfileGradYear(text: string): number | null {
-  const matches = text.match(/\b20(1\d|2\d|3\d)\b/g) || []
-  const years = matches
-    .map((x) => parseInt(x, 10))
-    .filter((y) => y >= 2018 && y <= 2035)
-    .sort((a, b) => a - b)
+  if (!text) return null
 
-  return years.length ? years[years.length - 1] : null
-}
-
-function inferYearsExperienceApprox(profileText: string): number | null {
-  const t = norm(profileText)
-  const explicit = t.match(/\b(\d{1,2})\+?\s+years?\b/)
-  if (explicit?.[1]) {
-    const v = parseInt(explicit[1], 10)
-    if (!Number.isNaN(v)) return v
+  // Pattern A: "class of 2025", "graduated 2019", "expected graduation 2026"
+  const grad = text.match(
+    /\b(class of|graduat(?:e|ed|ing|ion)|expected graduation|anticipated graduation)\b[^\n\d]{0,30}(20\d{2})\b/i
+  )
+  if (grad?.[2]) {
+    const y = parseInt(grad[2], 10)
+    if (Number.isFinite(y) && y >= 2000 && y <= 2035) return y
   }
 
+  // Pattern B: "B.S., Marketing, 2024" or "Bachelor of Science 2022" —
+  // a degree keyword followed by a year on the same line, within a short
+  // span. Bounded to avoid matching a year from the next job entry.
+  const degree = text.match(
+    /\b(b\.?\s*[as]\.?|bachelor'?s?|m\.?\s*[as]\.?|master'?s?|mba|ph\.?d|m\.?d\.?|j\.?d\.?)\b[^\n]{0,80}?\b(20\d{2})\b/i
+  )
+  if (degree?.[2]) {
+    const y = parseInt(degree[2], 10)
+    if (Number.isFinite(y) && y >= 2000 && y <= 2035) return y
+  }
+
+  // Pattern C: "year → degree" ordering, e.g. "2024, B.S. Biology"
+  const degreeAfter = text.match(
+    /\b(20\d{2})\b[^\n]{0,20}?\b(b\.?\s*[as]\.?|bachelor'?s?|m\.?\s*[as]\.?|master'?s?|mba|ph\.?d)\b/i
+  )
+  if (degreeAfter?.[1]) {
+    const y = parseInt(degreeAfter[1], 10)
+    if (Number.isFinite(y) && y >= 2000 && y <= 2035) return y
+  }
+
+  return null
+}
+
+// Deterministic years-of-experience estimator.
+// See inferYearsExperienceApprox in profile-intake/route.ts for the full
+// rationale. This is the extract.ts copy kept in sync so that downstream
+// scoring gets the same answer regardless of which code path built the
+// profile signals.
+//
+// Handles (in order):
+//   1. Explicit "10+ years" self-report
+//   2. Month-Year date ranges, merged to handle concurrent roles
+//   3. Bare Year-Year date ranges as a fallback
+//   4. Role-signal heuristic as a final fallback for resumes without
+//      machine-readable dates
+function inferYearsExperienceApprox(profileText: string): number | null {
+  if (!profileText || profileText.trim().length === 0) return null
+
+  // ── 1. Explicit self-report ─────────────────────────────────────────────
+  const explicit = profileText.match(
+    /\b(\d{1,2})\+?\s+years?\b(?!\s+(ago|old))/i
+  )
+  if (explicit?.[1]) {
+    const v = parseInt(explicit[1], 10)
+    if (Number.isFinite(v) && v >= 1 && v <= 50) return v
+  }
+
+  // ── 2. Month Year – Month Year (or Present) ranges ──────────────────────
+  const monthMap: Record<string, number> = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sept: 8, sep: 8, oct: 9, nov: 10, dec: 11,
+  }
+
+  const now = new Date()
+  const currentMonthsAbs = now.getUTCFullYear() * 12 + now.getUTCMonth()
+
+  const ranges: Array<{ start: number; end: number }> = []
+
+  const monthRangeRx =
+    /(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})\s*(?:[-–—]|to)\s*(?:(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})|present|current|now|today)/gi
+
+  let m: RegExpExecArray | null
+  while ((m = monthRangeRx.exec(profileText)) !== null) {
+    const startM = monthMap[m[1].toLowerCase()] ?? 0
+    const startY = parseInt(m[2], 10)
+    if (!Number.isFinite(startY) || startY < 1970 || startY > 2100) continue
+    const startAbs = startY * 12 + startM
+
+    let endAbs: number
+    if (m[3] && m[4]) {
+      const endM = monthMap[m[3].toLowerCase()] ?? 0
+      const endY = parseInt(m[4], 10)
+      if (!Number.isFinite(endY) || endY < 1970 || endY > 2100) continue
+      endAbs = endY * 12 + endM
+    } else {
+      endAbs = currentMonthsAbs
+    }
+    if (endAbs >= startAbs) ranges.push({ start: startAbs, end: endAbs })
+  }
+
+  // ── 3. Bare "2019 – 2022" / "2019 to Present" ranges ────────────────────
+  const yearRangeRx =
+    /\b(19[89]\d|20\d{2})\s*(?:[-–—]|to)\s*(?:(19[89]\d|20\d{2})|present|current|now|today)\b/gi
+  while ((m = yearRangeRx.exec(profileText)) !== null) {
+    const startY = parseInt(m[1], 10)
+    if (!Number.isFinite(startY)) continue
+    const startAbs = startY * 12
+
+    let endAbs: number
+    if (m[2]) {
+      const endY = parseInt(m[2], 10)
+      if (!Number.isFinite(endY)) continue
+      endAbs = endY * 12 + 11
+    } else {
+      endAbs = currentMonthsAbs
+    }
+    if (endAbs >= startAbs) ranges.push({ start: startAbs, end: endAbs })
+  }
+
+  if (ranges.length > 0) {
+    ranges.sort((a, b) => a.start - b.start)
+    let totalMonths = 0
+    let curStart = ranges[0].start
+    let curEnd = ranges[0].end
+    for (let i = 1; i < ranges.length; i++) {
+      if (ranges[i].start <= curEnd) {
+        curEnd = Math.max(curEnd, ranges[i].end)
+      } else {
+        totalMonths += curEnd - curStart
+        curStart = ranges[i].start
+        curEnd = ranges[i].end
+      }
+    }
+    totalMonths += curEnd - curStart
+    const years = Math.round(totalMonths / 12)
+    if (years >= 0 && years <= 50) return years
+  }
+
+  // ── 4. Role-signal fallback for resumes without parseable dates ─────────
+  // Kept as a last resort so entry-level profiles without date ranges
+  // still get a rough 0/1/2 estimate, matching legacy behavior.
   const roleSignals = splitEvidenceLines(profileText).filter(
     (line) =>
       /\b(intern|internship|analyst|assistant|coordinator|associate|manager|emt|clerk|specialist|sales|coach|volunteer|representative|staff)\b/i.test(line)
@@ -2415,6 +2562,16 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobTitleIsTrades =
     /\b(electrician|plumber|welder|hvac technician|carpenter|machinist|cnc operator|pipefitter|millwright|sheet metal worker|boilermaker|ironworker)\b/i.test(jobTitleSlice)
 
+  // Strategy / business operations / chief of staff title detection.
+  // These roles sit in an awkward zone: the body often mentions financial
+  // modeling, analysis, and cross-functional coordination, which pulls the
+  // tag-based classifier toward Finance or Analytics. The actual job is
+  // strategic/operational, so we force Consulting when the title says so.
+  // Consulting is the closest family in the current JobFamily type; a
+  // dedicated Operations family would be better but is out of scope here.
+  const jobTitleIsStrategyOps =
+    /\b(chief of staff|strategy (and|&) (business )?operations|business operations|business ops|strategy (and|&) operations|strategic operations|strategy manager|strategy director|strategy associate|strategy consultant|management consultant|management consulting|operations manager|operations director|director of operations|head of operations|vp of operations|business strategy|corporate strategy|internal operations|people operations|hr business partner|hrbp)\b/i.test(jobTitleSlice)
+
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
   const isSeniorRole =
@@ -2483,11 +2640,17 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
             ? "Trades"
             : jobTitleIsMarketing
               ? "Marketing"
-              : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-                ? "Finance"
-                : jobTitleIsSales
-                  ? "Sales"
-                  : jobFamilyFromTags
+              // Strategy/BusinessOps/CoS titles force Consulting even when
+              // the body has finance/analytics noise. Placed BEFORE the
+              // Finance check so "Strategy and Business Operations" doesn't
+              // lose to "financial modeling" bullets in the body.
+              : jobTitleIsStrategyOps
+                ? "Consulting"
+                : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
+                  ? "Finance"
+                  : jobTitleIsSales
+                    ? "Sales"
+                    : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)

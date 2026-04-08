@@ -98,28 +98,112 @@ function getCurrentYearUtc(): number {
   return new Date().getUTCFullYear()
 }
 
-function inferYearsExperienceApprox(resumeText: string): number {
-  const lower = resumeText.toLowerCase()
+// Deterministic years-of-experience estimator.
+//
+// Handles three common patterns in order of reliability:
+//   1. Explicit self-report: "10+ years", "5 years of experience"
+//   2. Month-Year date ranges: "Feb 2020 – Jan 2025", "Aug 2019 - Feb 2020",
+//      "Jan 2025 – Present". Overlapping ranges are merged so a candidate
+//      isn't double-counted for concurrent roles.
+//   3. Bare Year-Year ranges as a last resort: "2019 - 2022".
+//
+// Returns null only when nothing is found, so downstream code can distinguish
+// "unknown" from "zero". Previously capped at 2 years for entry-level flows,
+// which caused every senior candidate to score as a 2-year career pivoter.
+function inferYearsExperienceApprox(resumeText: string): number | null {
+  if (!resumeText || resumeText.trim().length === 0) return null
 
-  const monthYearMatches = Array.from(
-    lower.matchAll(
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+20\d{2}\b/g
-    )
+  // ── 1. Explicit self-report ─────────────────────────────────────────────
+  // Match "10+ years", "5 years of experience", "twelve years". We only
+  // accept values within [1, 50] to avoid catching "20 years ago" style
+  // phrases that aren't referring to the candidate's own tenure.
+  const explicit = resumeText.match(
+    /\b(\d{1,2})\+?\s+years?\b(?!\s+(ago|old))/i
   )
+  if (explicit?.[1]) {
+    const v = parseInt(explicit[1], 10)
+    if (Number.isFinite(v) && v >= 1 && v <= 50) return v
+  }
 
-  const yearMatches = Array.from(lower.matchAll(/\b20(2\d)\b/g))
-  const internships =
-    (lower.match(/\bintern\b/g) || []).length +
-    (lower.match(/\binternship\b/g) || []).length
+  // ── 2. Month Year – Month Year (or Present) ranges ──────────────────────
+  const monthMap: Record<string, number> = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sept: 8, sep: 8, oct: 9, nov: 10, dec: 11,
+  }
 
-  // Conservative deterministic estimate:
-  // enough to distinguish 0 vs 1 vs 2+ without pretending precision.
-  if (monthYearMatches.length >= 4) return 2
-  if (monthYearMatches.length >= 2) return 1
-  if (internships >= 2) return 2
-  if (internships >= 1) return 1
-  if (yearMatches.length >= 4) return 2
-  return 0
+  const now = new Date()
+  const currentMonthsAbs = now.getUTCFullYear() * 12 + now.getUTCMonth()
+
+  const ranges: Array<{ start: number; end: number }> = []
+
+  // "Feb 2020 – Jan 2025" / "Feb 2020 - Present" / "Feb 2020 to Jan 2025"
+  const monthRangeRx =
+    /(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})\s*(?:[-–—]|to)\s*(?:(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})|present|current|now|today)/gi
+
+  let m: RegExpExecArray | null
+  while ((m = monthRangeRx.exec(resumeText)) !== null) {
+    const startM = monthMap[m[1].toLowerCase()] ?? 0
+    const startY = parseInt(m[2], 10)
+    if (!Number.isFinite(startY) || startY < 1970 || startY > 2100) continue
+    const startAbs = startY * 12 + startM
+
+    let endAbs: number
+    if (m[3] && m[4]) {
+      const endM = monthMap[m[3].toLowerCase()] ?? 0
+      const endY = parseInt(m[4], 10)
+      if (!Number.isFinite(endY) || endY < 1970 || endY > 2100) continue
+      endAbs = endY * 12 + endM
+    } else {
+      endAbs = currentMonthsAbs
+    }
+
+    if (endAbs >= startAbs) ranges.push({ start: startAbs, end: endAbs })
+  }
+
+  // ── 3. Bare "2019 – 2022" / "2019 to Present" ranges ────────────────────
+  // Only used if we don't already have month-level data (or to extend it).
+  const yearRangeRx =
+    /\b(19[89]\d|20\d{2})\s*(?:[-–—]|to)\s*(?:(19[89]\d|20\d{2})|present|current|now|today)\b/gi
+  while ((m = yearRangeRx.exec(resumeText)) !== null) {
+    const startY = parseInt(m[1], 10)
+    if (!Number.isFinite(startY)) continue
+    const startAbs = startY * 12 // January of startY
+
+    let endAbs: number
+    if (m[2]) {
+      const endY = parseInt(m[2], 10)
+      if (!Number.isFinite(endY)) continue
+      // Treat bare year end as December of that year (inclusive of the year)
+      endAbs = endY * 12 + 11
+    } else {
+      endAbs = currentMonthsAbs
+    }
+
+    if (endAbs >= startAbs) ranges.push({ start: startAbs, end: endAbs })
+  }
+
+  if (ranges.length === 0) return null
+
+  // Merge overlapping ranges so concurrent roles don't double-count.
+  ranges.sort((a, b) => a.start - b.start)
+  let totalMonths = 0
+  let curStart = ranges[0].start
+  let curEnd = ranges[0].end
+  for (let i = 1; i < ranges.length; i++) {
+    if (ranges[i].start <= curEnd) {
+      curEnd = Math.max(curEnd, ranges[i].end)
+    } else {
+      totalMonths += curEnd - curStart
+      curStart = ranges[i].start
+      curEnd = ranges[i].end
+    }
+  }
+  totalMonths += curEnd - curStart
+
+  const years = Math.round(totalMonths / 12)
+  if (years < 0) return 0
+  if (years > 50) return 50
+  return years
 }
 
 function extractTools(resumeText: string): string[] {
@@ -137,14 +221,43 @@ function extractTools(resumeText: string): string[] {
     ["excel", /\bexcel\b|\bmicrosoft excel\b/i],
     ["google sheets", /\bgoogle sheets\b/i],
     ["powerpoint", /\bpowerpoint\b|\bmicrosoft powerpoint\b/i],
+    ["word", /\bmicrosoft word\b/i],
     ["sql", /\bsql\b/i],
     ["r", /(^|[^a-z])r([^a-z]|$)/i],
     ["power bi", /\bpower\s*bi\b/i],
     ["looker", /\blooker\b/i],
+    ["tableau", /\btableau\b/i],
+    ["salesforce", /\bsalesforce\b/i],
+    ["netsuite", /\bnetsuite\b/i],
+    ["quickbooks", /\bquickbooks\b/i],
+    ["workday", /\bworkday\b/i],
+    ["adp", /\badp\b/i],
+    ["coupa", /\bcoupa\b/i],
+    ["concur", /\bconcur\b/i],
+    ["sap", /\bsap\b/i],
+    ["oracle", /\boracle\b/i],
   ]
 
   for (const [label, rx] of map) {
     if (rx.test(t)) tools.push(label)
+  }
+
+  // "Microsoft Office Suite" / "MS Office" / "Office 365" implies the core
+  // trio. Previously a candidate who wrote "Microsoft Office Suite" but
+  // didn't spell out each app individually got zero credit for Excel and
+  // PowerPoint, which then fired RISK_MISSING_TOOLS against any role
+  // mentioning those tools.
+  const mentionsOfficeSuite =
+    /\b(microsoft office suite|ms office suite|ms office|microsoft office|office 365|o365|office suite)\b/i.test(t)
+  if (mentionsOfficeSuite) {
+    tools.push("excel", "powerpoint", "word")
+  }
+
+  // "Google Workspace" / "G Suite" implies Google's productivity trio.
+  const mentionsGoogleWorkspace =
+    /\b(google workspace|g ?suite|google g ?suite)\b/i.test(t)
+  if (mentionsGoogleWorkspace) {
+    tools.push("google sheets", "google docs", "google slides")
   }
 
   return uniqueLower(tools)
@@ -163,7 +276,13 @@ function inferTargetFamilies(targetRoles: string[]): string[] {
   if (/\b(accounting|audit|tax|assurance)\b/.test(joined)) {
     out.push("Accounting")
   }
-  if (/\b(consulting|strategy|business strategy|management consulting|strategy consulting)\b/.test(joined)) {
+  // Consulting family covers strategy, business operations, chief of staff,
+  // and HR business partner roles because the scoring engine currently has
+  // no dedicated Operations or HR family. These roles all sit in the same
+  // "cross-functional strategic operator" space as management consulting,
+  // so we route them to Consulting rather than "Other" (which would fire
+  // a false family-mismatch against any real job).
+  if (/\b(consulting|strategy|business strategy|management consulting|strategy consulting|chief of staff|cos\b|business operations|business ops|strategy and operations|strategy & operations|strategic operations|operations manager|operations director|hrbp|hr business partner|people operations|people ops|people partner|internal operations)\b/.test(joined)) {
     out.push("Consulting")
   }
   if (/\b(policy|regulatory|government|legislative|compliance)\b/.test(joined)) {
