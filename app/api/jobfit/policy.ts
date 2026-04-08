@@ -399,7 +399,7 @@ export const POLICY: JobFitPolicy = {
     "field sales",
   ],
 },
-    contract: { keywords: ["contract", "contractor", "1099", "temporary", "temp"] },
+    contract: { keywords: ["contract role", "contract position", "contract basis", "contract employee", "contract worker", "contract assignment", "independent contractor", "1099 contractor", "1099 employee", "1099 basis", "temporary position", "temporary role", "temporary assignment", "temp position", "temp role", "temp-to-hire", "contract-to-hire"] },
     hourly: { keywords: ["hourly pay", "hourly rate", "hourly wage", "hourly position", "hourly role", "paid hourly", "/hour", "per hour", "/hr"] },
     mba: { keywords: ["mba required", "master of business administration required"] },
 
