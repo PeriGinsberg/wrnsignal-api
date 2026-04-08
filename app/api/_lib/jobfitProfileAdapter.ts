@@ -273,7 +273,11 @@ function inferTargetFamilies(profileText: string, targetRoles?: string | null): 
   }
 
   const unique = Array.from(new Set(out))
-  return unique.length ? unique.slice(0, 2) : ["Other"]
+  // Cap at 4 families to keep matching focused but not so tight that
+  // legitimate cross-functional candidates lose their secondary fields.
+  // Was: slice(0, 2) — this dropped Engineering for biomedical/clinical
+  // candidates whose primary tags fired first (PreMed, Consulting).
+  return unique.length ? unique.slice(0, 4) : ["Other"]
 }/* ------------------------------ constraints inference ------------------------------ */
 
 function inferConstraints(profileText: string): ProfileConstraints {
@@ -598,16 +602,6 @@ export function mapClientProfileToOverrides(args: {
 
   const structuredFamilies = sanitizeTargetFamilies(ps?.targetFamilies)
   const targetFamilies: JobFamily[] = structuredFamilies ?? inferTargetFamilies(args.profileText, args.targetRoles)
-
-  // ── DEBUG LOG (temporary) ──
-  console.log("[adapter] targetFamilies resolution", {
-    hadStructured: !!structuredFamilies,
-    structuredValue: structuredFamilies,
-    targetRolesPresent: !!args.targetRoles,
-    targetRolesLen: (args.targetRoles || "").length,
-    targetRolesPreview: (args.targetRoles || "").slice(0, 200),
-    inferredFinal: targetFamilies,
-  })
 
   const constraints: ProfileConstraints =
     (ps?.constraints && typeof ps.constraints === "object" ? (ps.constraints as ProfileConstraints) : null) ||
