@@ -601,7 +601,17 @@ export function mapClientProfileToOverrides(args: {
   const ps = (args.profileStructured || {}) as AnyObj
 
   const structuredFamilies = sanitizeTargetFamilies(ps?.targetFamilies)
-  const targetFamilies: JobFamily[] = structuredFamilies ?? inferTargetFamilies(args.profileText, args.targetRoles)
+  const inferredFamilies = inferTargetFamilies(args.profileText, args.targetRoles)
+  const targetFamilies: JobFamily[] = structuredFamilies ?? inferredFamilies
+
+  // ── DEBUG LOG v2 — temporary, remove after diagnosis ──
+  console.log("[adapter v2] targetFamilies", {
+    structured: structuredFamilies,
+    inferred: inferredFamilies,
+    final: targetFamilies,
+    targetRolesContainsBiomed: (args.targetRoles || "").toLowerCase().includes("biomedical engineer"),
+    targetRolesContainsEngineer: (args.targetRoles || "").toLowerCase().includes("engineer"),
+  })
 
   const constraints: ProfileConstraints =
     (ps?.constraints && typeof ps.constraints === "object" ? (ps.constraints as ProfileConstraints) : null) ||
