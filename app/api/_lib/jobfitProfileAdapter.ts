@@ -148,10 +148,34 @@ function inferTargetFamilies(profileText: string, targetRoles?: string | null): 
     out.push("PreMed")
   }
 
+  // Consulting family covers strategy, business operations, chief of staff,
+  // and HR business partner roles because the scoring engine currently has
+  // no dedicated Operations or HR family. Matches "consultant" as well as
+  // "consulting" since both spellings are common in resumes and intake forms.
   if (
     roles.includes("consulting") ||
-    roles.includes("management consulting") ||
-    roles.includes("strategy consulting")
+    roles.includes("consultant") ||
+    roles.includes("management consult") ||
+    roles.includes("strategy consult") ||
+    roles.includes("strategy") ||
+    roles.includes("chief of staff") ||
+    roles.includes("cos ") ||
+    roles.includes(" cos") ||
+    roles.includes("business operations") ||
+    roles.includes("business ops") ||
+    roles.includes("strategy and operations") ||
+    roles.includes("strategy & operations") ||
+    roles.includes("strategic operations") ||
+    roles.includes("operations manager") ||
+    roles.includes("operations director") ||
+    roles.includes("director of operations") ||
+    roles.includes("head of operations") ||
+    roles.includes("internal operations") ||
+    roles.includes("people operations") ||
+    roles.includes("people ops") ||
+    roles.includes("hrbp") ||
+    roles.includes("hr business partner") ||
+    roles.includes("people partner")
   ) {
     out.push("Consulting")
   }
