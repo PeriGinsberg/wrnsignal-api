@@ -1886,12 +1886,19 @@ function detectLocationMode(jobText: string): {
     t.includes("required to be in") ||
     t.includes("local candidates only")
 
-  // Check for remote but exclude false positives from "remote-work technology/tools/solutions"
+  // Check for remote but exclude false positives from:
+  //   1. "remote-work technology/tools/solutions" — describes tools, not the role
+  //   2. "partial remote", "occasional remote", "some remote work" — these are hybrid/perk language
+  //   3. JDs that explicitly mention an office location with "in our X office"
   const rawHasRemote = includesAny(t, remotePhrases)
   const remoteIsTechContext = /\bremote[\s-]?(work )?(technology|tools|solutions|software|platform|access)\b/i.test(t) && !/(fully |100% |position is |role is |this is a )remote\b/i.test(t)
-  const hasRemote = rawHasRemote && !remoteIsTechContext
-  const hasHybrid = includesAny(t, hybridPhrases)
-  const hasInPerson = includesAny(t, onsitePhrases) || t.includes("in-person") || t.includes("in person")
+  const remoteIsPartial = /\b(partial(ly)?|occasional(ly)?|some|hybrid|flexible|optional)\s+remote\b/i.test(t)
+  const mentionsOfficeLocation = /\bin\s+(our|the)\s+[^.]{0,40}\boffice\b/i.test(jobText)
+  const hasRemote = rawHasRemote && !remoteIsTechContext && !remoteIsPartial && !mentionsOfficeLocation
+  // "Partial remote" / "flexible remote" / mention of an office signals HYBRID
+  const inferredHybrid = (rawHasRemote && remoteIsPartial) || (rawHasRemote && mentionsOfficeLocation && !remoteIsTechContext)
+  const hasHybrid = includesAny(t, hybridPhrases) || inferredHybrid
+  const hasInPerson = includesAny(t, onsitePhrases) || t.includes("in-person") || t.includes("in person") || mentionsOfficeLocation
 
   let mode: LocationMode = "unclear"
   if (hasHybrid) mode = "hybrid"
@@ -2566,6 +2573,34 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     "expected to obtain",
     "opportunity to earn",
     "opportunity to obtain",
+    "ability to obtain",
+    "must obtain",
+    "must pass",
+    "must be obtained",
+    "must be passed",
+    "required to obtain",
+    "required to pass",
+    "required during",
+    "during first",
+    "during the first",
+    "within first",
+    "within the first",
+    "first twelve months",
+    "first 12 months",
+    "first six months",
+    "first 6 months",
+    "first year",
+    "within 12 months",
+    "within twelve months",
+    "within 6 months",
+    "within six months",
+    "within 90 days",
+    "within 180 days",
+    "company timeline",
+    "mandated company timeline",
+    "mandated timeline",
+    "prepare for and pass",
+    "prepare for and obtain",
     "we provide training",
     "we provide study",
     "company sponsored",
