@@ -2328,9 +2328,20 @@ function inferJobFinanceSubFamily(
   const hasAnalysisReporting = unitKeys.includes("analysis_reporting")
   const hasPolicyRegulatory = unitKeys.includes("policy_regulatory_research")
 
-  // IB signals: deal language + prospecting/BD + financial analysis
-  const ibKeywords = /\b(investment banking|mergers and acquisitions|m&a|capital raising|ipo|leveraged buyout|lbo|deal advisory|pitch book|pitchbook|coverage group|bulge bracket|analyst program|summer analyst)\b/i
-  if (ibKeywords.test(normalized) || (hasProspecting && hasFinancialAnalysis)) {
+  // IB signals: require role-specific language, not boilerplate mentions.
+  // Previously bare "investment banking" matched any firm About Us section
+  // that listed their business lines (e.g. "wealth management advisory,
+  // investment banking and asset management"), which misclassified every
+  // UBS / JPM / Morgan Stanley wealth management support posting as IB.
+  //
+  // The fix: "investment banking" must appear adjacent to a role-context
+  // word (analyst, associate, division, group, team, role, department,
+  // vice president, VP, summer analyst). Other strong IB keywords below
+  // stand alone because they're specific enough not to appear in broad
+  // firm descriptions.
+  const ibRoleContext = /\binvestment banking\s+(analyst|associate|vice president|vp|division|group|team|role|department|intern|internship|summer|full.?time)\b|\b(analyst|associate|vp|vice president|intern)\s+(in|at|within|for)\s+investment banking\b/i
+  const ibKeywords = /\b(mergers and acquisitions|m&a advisory|capital raising|pitch book|pitchbook|coverage group|bulge bracket|leveraged buyout|lbo modeling|deal execution|ib analyst|ib associate|ib intern|ibd\b)\b/i
+  if (ibRoleContext.test(normalized) || ibKeywords.test(normalized) || (hasProspecting && hasFinancialAnalysis)) {
     return "ib"
   }
 
