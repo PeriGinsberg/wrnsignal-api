@@ -212,6 +212,12 @@ credentialRequired: boolean
   requiresAECExperience: boolean
   requiresDomainIndustryExperience: boolean
   detectedDomain: string | null
+  // True when the JD explicitly requires prior experience at a top
+  // management consulting firm or investment bank. Hard screen gate.
+  requiresAdvisoryBackground: boolean
+  // True when the JD asks for concrete financial modeling / valuations /
+  // public-filings work — distinct from generic analysis_reporting.
+  requiresFinancialModeling: boolean
   requiresSoftCredential: boolean
   softCredentialDetail: string | null
   // Job archetype — what kind of work does this role actually require day-to-day?

@@ -228,6 +228,42 @@ function profileFactFromUnit(unit: ProfileEvidenceUnit): string {
   return cleanFactSnippet(unit.snippet)
 }
 
+// Detects when a profile evidence snippet is a bare skills-list keyword
+// rather than a narrative accomplishment. Used to cap WHY_TOOL_PROOF
+// weight so that listing "Microsoft Office Suite · Google Workspace ·
+// SharePoint" doesn't register as the same level of proof as "Built
+// 3-statement financial model in Excel for board review".
+//
+// Heuristics (any ONE of these triggers skills-list treatment):
+//   - 2+ occurrences of a bullet separator (·, |, •, ‣)
+//   - 4+ comma-separated items that are each 1-3 words and contain no
+//     action verb (built, developed, managed, designed, led, etc.)
+//   - The snippet is very short (< 12 words) with 3+ items
+function isSkillsListSnippet(snippet: string): boolean {
+  const s = String(snippet || "").trim()
+  if (!s) return false
+
+  // U+FFFD is the replacement character — shows up when a CSV was saved
+  // in Windows-1252 and read as UTF-8, so exotic separators like "·" or
+  // "•" decode to "\ufffd". Include en-dash and em-dash as well since
+  // some profiles use those as list separators.
+  const separatorCount = (s.match(/[·•‣|\ufffd–—]/g) || []).length
+  if (separatorCount >= 2) return true
+
+  const wordCount = s.split(/\s+/).filter(Boolean).length
+  const hasActionVerb =
+    /\b(built|building|developed|developing|designed|managing|managed|led|leading|owned|owning|created|creating|launched|launching|drove|driving|implemented|implementing|executed|executing|delivered|delivering|shipped|shipping|analyzed|analyzing|researched|researching|presented|presenting|wrote|writing|authored|authoring|configured|configuring|optimized|optimizing|improved|improving|reduced|reducing|increased|increasing|scaled|scaling|migrated|migrating|architected|architecting|deployed|deploying|collaborated|collaborating)\b/i.test(s)
+
+  if (hasActionVerb) return false
+
+  // Short snippet with commas and no verbs → looks like a skills list
+  const commaItems = s.split(/,/).map((x) => x.trim()).filter(Boolean)
+  if (wordCount < 12 && commaItems.length >= 3) return true
+  if (commaItems.length >= 4 && commaItems.every((c) => c.split(/\s+/).length <= 3)) return true
+
+  return false
+}
+
 function jobFactFromUnit(unit: JobRequirementUnit): string {
   let text = cleanFactSnippet(unit.snippet)
 
@@ -400,7 +436,19 @@ function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProf
 
       const requirednessBonus = ju.requiredness === "core" ? 10 : 4
       const strengthBonus = Math.min(10, Math.floor((ju.strength + pu.strength) / 2))
-      const weight = clamp(base + kindBonus + requirednessBonus + strengthBonus + shape.boost, 0, 120)
+      let weight = clamp(base + kindBonus + requirednessBonus + strengthBonus + shape.boost, 0, 120)
+
+      // Tool-proof inflation guard: when a WHY_TOOL_PROOF matches off a
+      // bare skills-list keyword ("Microsoft Office Suite · Google
+      // Workspace · SharePoint · Confluence"), the evidence is weak — the
+      // candidate listed the tool but hasn't shown any narrative
+      // accomplishment with it. Cap the weight so a skills-list match
+      // cannot push the score into Priority Apply territory on tool
+      // proofs alone. Narrative tool proofs (e.g. "Built 3-statement
+      // model in Excel for board review") retain their full weight.
+      if (ju.kind === "tool" && isSkillsListSnippet(pu.snippet)) {
+        weight = Math.min(weight, 60)
+      }
 
       const coverageScore = clamp(
         (matchStrength === "direct" ? 72 : 48) +
@@ -1046,6 +1094,79 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       severity: "medium",
     })
     console.log("[scoring] Domain industry experience risk flag added:", domain)
+  }
+
+  // Advisory / consulting / banking background requirement. Human
+  // recruiters use "within a top advisory firm or bank" as a hard screen
+  // gate. If the profile shows no evidence of management consulting,
+  // investment banking, or one of the well-known firm names, fire a
+  // high-severity risk. This is the kind of gap that sinks applications
+  // regardless of how well the candidate's general skills align.
+  if ((job as any).requiresAdvisoryBackground) {
+    const ADVISORY_FIRM_RE = /\b(mckinsey|bain\b|bcg|boston consulting|deloitte|pwc|pricewaterhouse|ey\b|ernst\s*&\s*young|kpmg|accenture|oliver wyman|l\.?e\.?k\.?|roland berger|goldman sachs|morgan stanley|j\.?p\.?\s*morgan|jpmorgan|citi(group)?|bank of america|barclays|credit suisse|ubs|deutsche bank|lazard|evercore|moelis|centerview|rothschild|houlihan lokey|guggenheim|jefferies|perella|blackstone|kkr|carlyle)\b/i
+    const ADVISORY_DISCIPLINE_RE = /\b(management consulting|strategy consulting|investment banking|financial analyst|banking analyst|equity research|m&a advisory|corporate finance advisory|restructuring advisory|transaction advisory)\b/i
+    const profileHasAdvisory =
+      ADVISORY_FIRM_RE.test(profileHeaderText) ||
+      ADVISORY_DISCIPLINE_RE.test(profileHeaderText)
+    if (!profileHasAdvisory) {
+      const amt = 12
+      penalties.push({
+        key: "advisory_background_missing" as any,
+        amount: amt,
+        note: "JD requires top advisory/consulting/banking background; profile shows none",
+        risk: {
+          code: "RISK_ADVISORY_BACKGROUND",
+          job_fact: "Job explicitly requires prior experience at a top management consulting firm or investment bank.",
+          profile_fact: "Profile does not show management consulting, investment banking, or equivalent advisory firm experience.",
+          risk: "This role uses 'within a top advisory firm or bank' as a screening gate. Without prior experience at McKinsey/Bain/BCG/Big 4, a bulge-bracket bank, or an equivalent firm, this application is likely to be screened out regardless of other qualifications. Consider whether transferable experience can credibly be positioned as advisory work — if not, this is probably not the right use of your application effort.",
+          severity: "high" as const,
+          weight: -amt,
+        },
+      })
+      riskOnlyCodes.push({
+        code: "RISK_ADVISORY_BACKGROUND",
+        job_fact: "Job explicitly requires prior experience at a top management consulting firm or investment bank.",
+        profile_fact: "Profile does not show management consulting, investment banking, or equivalent advisory firm experience.",
+        risk: "This role uses 'within a top advisory firm or bank' as a screening gate. Without prior experience at McKinsey/Bain/BCG/Big 4, a bulge-bracket bank, or an equivalent firm, this application is likely to be screened out regardless of other qualifications. Consider whether transferable experience can credibly be positioned as advisory work — if not, this is probably not the right use of your application effort.",
+        severity: "high",
+        weight: -amt,
+      })
+      console.log("[scoring] Advisory background risk fired — profile lacks consulting/banking evidence")
+    }
+  }
+
+  // Financial modeling / valuations / public filings requirement.
+  // Distinct from generic analysis_reporting — this is concrete corporate
+  // finance work. If the JD asks for it and the profile doesn't show
+  // narrative evidence of financial modeling, fire a medium risk.
+  if ((job as any).requiresFinancialModeling) {
+    const FIN_MODELING_RE = /\b(financial model(s|ing)?|three[-\s]?statement|3[-\s]?statement|dcf|discounted cash flow|valuation(s)?|lbo|m&a (model|analysis)|equity research|sec filings?|10[-\s]?k\b|10[-\s]?q\b|forecasting models?|corporate finance)\b/i
+    const profileHasFinModeling = FIN_MODELING_RE.test(profileHeaderText)
+    if (!profileHasFinModeling) {
+      const amt = 6
+      penalties.push({
+        key: "financial_modeling_missing" as any,
+        amount: amt,
+        note: "JD requires financial modeling / valuations; profile shows no narrative proof",
+        risk: {
+          code: "RISK_FINANCIAL_MODELING",
+          job_fact: "Job asks for financial modeling, valuations, forecasting, or familiarity with company reporting / public filings.",
+          profile_fact: "Profile does not show narrative evidence of building financial models, valuations, or working with SEC filings.",
+          risk: "This role requires concrete financial modeling work — building 3-statement models, DCF / valuation analysis, or working with public filings. Generic operations or analysis experience is not the same thing. If your modeling experience is informal or light, address this directly in your cover letter and highlight any exposure you do have.",
+          severity: "medium" as const,
+          weight: -amt,
+        },
+      })
+      riskOnlyCodes.push({
+        code: "RISK_FINANCIAL_MODELING",
+        job_fact: "Job asks for financial modeling, valuations, forecasting, or familiarity with company reporting / public filings.",
+        profile_fact: "Profile does not show narrative evidence of building financial models, valuations, or working with SEC filings.",
+        risk: "This role requires concrete financial modeling work — building 3-statement models, DCF / valuation analysis, or working with public filings. Generic operations or analysis experience is not the same thing. If your modeling experience is informal or light, address this directly in your cover letter and highlight any exposure you do have.",
+        severity: "medium",
+        weight: -amt,
+      })
+      console.log("[scoring] Financial modeling risk fired — profile lacks modeling evidence")
+    }
   }
 
   // ── Role archetype mismatch ─────────────────────────────────────────────────

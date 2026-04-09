@@ -3418,6 +3418,67 @@ export function extractJobSignals(
     console.log("[extract] Domain industry experience requirement detected:", detectedDomain)
   }
 
+  // ── Advisory / consulting / banking background requirement ─────────────
+  // Many senior Strategy/Ops and Finance roles require prior experience
+  // specifically AT a top management consulting firm or investment bank.
+  // This is a hard screen gate that human recruiters apply but that the
+  // tag-based extractor doesn't catch, because the JD body uses language
+  // like "management consulting" or "top advisory firm" as REQUIREMENTS,
+  // not as tag-matchable unit phrases.
+  //
+  // When detected, we also check whether the profile text has matching
+  // evidence — either the word "management consulting" / "investment
+  // banking" / "top advisory" itself, or one of the well-known firm names
+  // (McKinsey, Bain, BCG, Big 4, bulge-bracket banks). Absence → risk.
+  const advisoryBackgroundPatterns: RegExp[] = [
+    /\b(within|at|from|experience (?:at|in|with))\s+(?:a\s+)?(?:top|leading|premier|elite|tier[-\s]?1|bulge[-\s]?bracket|big\s*4|big\s*five)\s+(?:advisory|consulting|management consulting|investment bank|bank|strategy consulting|strategy firm)\b/i,
+    /\b(?:prior|previous)\s+experience\s+(?:at|in|with)\s+(?:a\s+)?(management consulting|investment banking|strategy consulting)\b/i,
+    /\brole\s+within\s+(?:a\s+)?top\s+(advisory|consulting|investment bank|bank)\b/i,
+    /\b(3|4|5|6|7|8)\s*[-–]\s*(5|6|7|8|9|10)\+?\s*years?\s+(?:of\s+)?(?:relevant\s+)?experience\s+in\s+(?:a\s+)?(management consulting|financial analyst|investment banking|consulting)\b/i,
+    /\bmanagement consulting\s+or\s+(financial analyst|investment banking|banking)\b/i,
+    /\b(financial analyst|investment banking associate|analyst\/associate)\s+role\s+within\s+(?:a\s+)?top\b/i,
+  ]
+  const requiresAdvisoryBackground = advisoryBackgroundPatterns.some((re) =>
+    re.test(jobTextRaw)
+  )
+  // Check if the profile has matching advisory/consulting/banking evidence.
+  // Looks for the discipline name itself OR well-known firm names.
+  const ADVISORY_FIRM_REGEX = /\b(mckinsey|bain\b|bcg|boston consulting|deloitte|pwc|pricewaterhouse|ey|ernst\s*&\s*young|kpmg|accenture|oliver wyman|ll?ek|l\.e\.k\.|roland berger|goldman sachs|morgan stanley|j\.?p\.?\s*morgan|jpmorgan|citi(group)?|bank of america|barclays|credit suisse|ubs|deutsche bank|lazard|evercore|moelis|centerview|rothschild|houlihan lokey|guggenheim|jefferies|perella|blackstone|kkr|carlyle)\b/i
+  const ADVISORY_DISCIPLINE_REGEX = /\b(management consulting|strategy consulting|investment banking|financial analyst|investment banking analyst|banking analyst|equity research|m&a advisory|corporate finance advisory|restructuring advisory|transaction advisory)\b/i
+  // This is evaluated after profile extraction — we stash a flag for the
+  // scoring layer to consume since the extractor only sees the JD side.
+  if (requiresAdvisoryBackground) {
+    console.log("[extract] Advisory/consulting/banking background requirement detected")
+  }
+
+  // ── Financial modeling / valuations / public filings requirement ──────
+  // Distinct from generic "analysis and reporting" — this is concrete
+  // financial modeling work (3-statement models, DCF, valuations, M&A
+  // models, SEC public filings) that requires corporate finance or
+  // investment banking proof on the profile side. Without this, the
+  // extractor lumps it into analysis_reporting which any ops candidate
+  // can satisfy with "operating cadence" language.
+  const financialModelingPatterns: RegExp[] = [
+    /\bfinancial\s+model(s|ing)?\b/i,
+    /\bthree[-\s]?statement\s+model/i,
+    /\b3[-\s]?statement\s+model/i,
+    /\bdcf\s+model|discounted cash flow/i,
+    /\bvaluation(s|\s+analysis|\s+modeling)?\b/i,
+    /\bforecasting\s+(models?|analysis)/i,
+    /\b(public|sec)\s+filings\b/i,
+    /\b10[-\s]?k\b|\b10[-\s]?q\b/i,
+    /\bcompany reporting documents\b/i,
+    /\bm&a\s+(model|analysis|due diligence)/i,
+    /\bcapital allocation\b/i,
+    /\bleveraged\s+buyout|\blbo\s+model/i,
+  ]
+  const requiresFinancialModeling = financialModelingPatterns.some((re) =>
+    re.test(jobTextRaw)
+  )
+  if (requiresFinancialModeling) {
+    console.log("[extract] Financial modeling requirement detected")
+  }
+
   const reportingStrong = requirementUnits.some(
     (u) => u.key === "analysis_reporting" && u.requiredness === "core"
   )
@@ -3465,6 +3526,8 @@ return {
     requiresAECExperience: requiresAECExperience,
     requiresDomainIndustryExperience: requiresDomainIndustryExperience,
     detectedDomain: detectedDomain,
+    requiresAdvisoryBackground,
+    requiresFinancialModeling,
     requiresSoftCredential: requiresSoftCredential,
     softCredentialDetail: requiresSoftCredential ? (credentialDetail || null) : null,
     jobArchetype: jobArchetype,
