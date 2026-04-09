@@ -552,6 +552,19 @@ export default function TrackerPage() {
                     {expanded && editingApp && (
                       <div style={{ padding: "20px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, background: "rgba(255,255,255,0.02)" }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                          {/* Company and job title — first two fields so users
+                              can quickly correct extraction garbage (e.g.
+                              "UBS, we know that it's our people..." or
+                              "(Unknown Company)"). Writes flow through the
+                              existing PUT /api/applications/[id] handler. */}
+                          <div>
+                            <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>COMPANY</span>
+                            <input style={{ ...input, height: 38 }} value={editingApp.company_name || ""} onChange={(e) => updateDraft({ company_name: e.target.value })} placeholder="Company name" maxLength={200} />
+                          </div>
+                          <div>
+                            <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>JOB TITLE</span>
+                            <input style={{ ...input, height: 38 }} value={editingApp.job_title || ""} onChange={(e) => updateDraft({ job_title: e.target.value })} placeholder="Job title" maxLength={200} />
+                          </div>
                           <div>
                             <span style={{ ...label, color: T.DIM, display: "block", marginBottom: 4 }}>STATUS</span>
                             <SelectField value={editingApp.application_status} options={APP_STATUSES} onChange={(v) => updateDraft({ application_status: v })} />
