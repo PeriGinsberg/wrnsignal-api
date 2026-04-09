@@ -196,7 +196,12 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 2048,
+      // Bumped from 2048 to 4096 because candidate profiles with many
+      // evidence units (e.g. pre-med candidates with 25+ clinical bullets)
+      // produce output JSON that gets truncated mid-response at 2048,
+      // causing JSON.parse to fail and silently falling back to the V4
+      // template renderer — which produces generic placeholder bullets.
+      max_tokens: 4096,
       messages: [{ role: "user", content: buildPrompt(out) }],
     }),
   })

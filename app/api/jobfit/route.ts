@@ -380,7 +380,17 @@ export async function POST(req: NextRequest) {
         latency_ms: v5.renderer_debug.latency_ms,
       })
     } catch (err: any) {
-      console.error("[V5 bullet generator] failed, falling back to V4:", err?.message || String(err))
+      const v5ErrorMessage = err?.message || String(err)
+      console.error("[V5 bullet generator] failed, falling back to V4:", v5ErrorMessage)
+      // Surface the V5 error in the response debug block so silent
+      // V5 → V4 fallback is visible to the caller. Without this, a
+      // V5 failure produces low-quality template bullets and the only
+      // way to diagnose is to check Vercel runtime logs.
+      ;(raw as any).debug = {
+        ...(raw as any).debug,
+        v5_error: v5ErrorMessage,
+        v5_fell_back_to_v4: true,
+      }
     }
     // ────────────────────────────────────────────────────────────────────────
 
