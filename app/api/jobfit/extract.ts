@@ -851,26 +851,39 @@ jobPhrases: [
     label: "clinical and patient-facing work",
     kind: "function",
     functionTag: "premed_clinical",
+    // Bare-word "patient", "clinical", "medical" removed from both
+    // phrase lists — they matched pharma sales and generic healthcare
+    // marketing JDs on phrases like "patient therapy", "clinical
+    // environment", "medical teams". Now requires compound clinical-
+    // action language that only appears in real hands-on clinical
+    // contexts.
     profilePhrases: [
-      "clinical",
-      "patient",
-      "medical",
+      "patient care",
+      "clinical assessment",
+      "clinical experience",
+      "clinical rotation",
+      "direct patient care",
+      "patient intake",
+      "clinical research",
+      "clinical trial",
       "research assistant",
       "emt",
       "scribe",
       "care team",
     ],
     jobPhrases: [
-      "clinical",
-      "patient",
-      "medical device",
+      "direct patient care",
+      "hands-on patient",
+      "clinical experience",
+      "clinical rotation",
+      "clinical assessment",
+      "clinical trial",
+      "clinical research coordinator",
       "medical research",
-      "medical records",
-      "medical practice",
-      "medical staff",
       "research assistant",
       "scribe",
       "care team",
+      "bedside",
     ],
     adjacentKeys: ["hospital_or_environment", "clinical_stakeholder_fluency"],
     suppressAnalyticsHeavy: true,
@@ -1083,11 +1096,14 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "healthcare_clinical" as FunctionTag,
     profilePhrases: ["patient care", "nursing", "clinical assessment", "vital signs", "medication administration", "triage", "registered nurse", "bedside care"],
-    // "triage" removed from jobPhrases — it matches metaphorical business
-    // language like "triage problems" / "triage customer issues" in ops and
-    // strategy JDs. Kept in profilePhrases because nurse resumes use it in
-    // the clinical sense. Remaining job phrases are unambiguously medical.
-    jobPhrases: ["patient care", "registered nurse", "nurse practitioner", "lpn", "rn", "cna", "clinical assessment", "vital signs", "medication administration", "bedside", "hands-on patient"],
+    // "patient care" and "triage" removed from jobPhrases. Pharma sales
+    // JDs use "patient care" in a support-the-patient sense ("partner
+    // with healthcare professionals involved in patient care") that is
+    // NOT hands-on nursing work. Job side now requires unambiguously
+    // hands-on nursing vocabulary (RN, LPN, vitals, bedside, IV,
+    // medication administration). Profile side keeps "patient care"
+    // because nurse resumes use it in the concrete sense.
+    jobPhrases: ["registered nurse", "nurse practitioner", "lpn", "rn", "cna", "clinical assessment", "vital signs", "medication administration", "bedside", "hands-on patient"],
     adjacentKeys: [],
   },
   {
@@ -2489,6 +2505,116 @@ function inferJobFinanceSubFamily(
   return "other_finance"
 }
 
+// ── Sales sub-family inference ───────────────────────────────────────────────
+// Sales is not monolithic. A candidate who targets medical device sales
+// (OR exposure, surgical implants, trauma/spinal/prosthetic) treats
+// pharmaceutical sales as a different job. This classifier splits sales
+// JDs into concrete sub-segments so we can detect mismatch against a
+// candidate's stated target sub-segment.
+function inferJobSalesSubFamily(
+  jobTextRaw: string,
+  userTitleNorm: string
+): import("./signals").SalesSubFamily {
+  const t = jobTextRaw.toLowerCase()
+  const title = userTitleNorm.toLowerCase()
+  const combined = title + " " + t.slice(0, 2000)
+
+  // Medical device: OR coverage, surgical instruments, implants,
+  // orthopedic / trauma / spinal / prosthetic product lines. These JDs
+  // typically emphasize case coverage and surgeon relationships.
+  const medDeviceRe =
+    /\b(medical device|orthopedic (sales|rep|territory)|trauma (sales|rep|implants?)|spinal (sales|rep|implants?|products?)|prosthetic (sales|rep)|surgical (instrument|implant|device) (sales|rep)|case coverage|operating room (coverage|support|rep)|implant sales|clinical specialist.{0,40}(device|implant|orthopedic|trauma|spinal)|associate (sales|clinical) (rep|representative|specialist).{0,40}(device|implant|orthopedic|trauma)|capital equipment sales)\b/i
+  if (medDeviceRe.test(combined)) return "medical_device"
+
+  // Pharmaceutical: pharma rep, drug sampling, formulary, CSO, prescriber
+  // calls. These JDs emphasize product detailing to physicians.
+  const pharmaRe =
+    /\b(pharmaceutical sales|pharma (sales|rep|representative)|pharmaceutical rep|drug rep|pharmaceutical cso|pharmaceutical product expert|therapeutic area specialist|specialty pharmaceutical|oncology sales|cns sales|biotech sales rep|primary care rep|prescriber (call|engagement)|formulary access|pharmaceutical territory)\b/i
+  if (pharmaRe.test(combined)) return "pharmaceutical"
+
+  // Financial services sales: wealth management, insurance, client advisor
+  const finSalesRe =
+    /\b(wealth management (sales|advisor)|financial advisor.{0,20}(sales|client acquisition)|insurance (sales|producer|agent)|registered representative|client advisor|private banker|personal banker|relationship banker)\b/i
+  if (finSalesRe.test(combined)) return "financial_services"
+
+  // SaaS / tech sales: SDR, BDR, AE, quota tech sales
+  const saasRe =
+    /\b(saas sales|software sales|technology sales|tech sales|sdr\b|bdr\b|account executive.{0,20}(saas|software|technology)|sales development representative|business development representative|inside sales.{0,20}(saas|software|technology)|enterprise software sales|cloud sales|platform sales)\b/i
+  if (saasRe.test(combined)) return "saas_tech"
+
+  // Advertising / media sales
+  const adMediaRe =
+    /\b(advertising sales|media sales|ad sales|digital advertising sales|publisher sales|programmatic sales|brand partnerships sales|sponsorship sales)\b/i
+  if (adMediaRe.test(combined)) return "advertising_media"
+
+  // Real estate sales
+  const reSalesRe =
+    /\b(real estate (sales|agent|broker)|commercial real estate (sales|broker)|leasing (agent|sales)|residential real estate|cre sales)\b/i
+  if (reSalesRe.test(combined)) return "real_estate"
+
+  // Industrial / B2B distribution
+  const industrialRe =
+    /\b(industrial (sales|distribution)|manufacturing sales|distributor sales|wholesale sales|outside sales.{0,20}(industrial|manufacturing|equipment)|territory manager.{0,30}(industrial|manufacturing|distribution))\b/i
+  if (industrialRe.test(combined)) return "industrial_b2b"
+
+  // Retail / consumer goods
+  const retailRe =
+    /\b(retail sales|consumer (goods|products) sales|cpg sales|consumer packaged goods sales|in-store sales)\b/i
+  if (retailRe.test(combined)) return "retail_consumer"
+
+  return "other_sales"
+}
+
+// ── Profile-side sales sub-segment inference ─────────────────────────────────
+// Parse the candidate's target_roles / profile_text for explicit
+// sub-segment signals so the scoring layer can detect mismatch with the
+// job-side salesSubFamily.
+export function inferProfileSalesSubsegments(
+  targetRoles: string | null | undefined,
+  profileText: string | null | undefined
+): import("./signals").SalesSubFamily[] {
+  const tr = String(targetRoles || "").toLowerCase()
+  const pt = String(profileText || "").toLowerCase()
+  const combined = tr + " " + pt
+  const out: import("./signals").SalesSubFamily[] = []
+
+  // Medical device — strong signals. We check targetRoles primarily
+  // because profileText may describe clinical work (not a sales target).
+  if (
+    /\b(medical device|orthopedic sales|trauma sales|spinal sales|prosthetic sales|prostetic sales|clinical sales|associate sales rep|clinical specialist|implant sales|surgical (equipment|device) sales|case coverage|operating room)\b/.test(tr) ||
+    /\b(operating room|surgical equipment|orthopedic|trauma|spinal|prosthetic)\b/.test(pt) && /\b(sales)\b/.test(tr)
+  ) {
+    out.push("medical_device")
+  }
+
+  if (/\b(pharmaceutical sales|pharma sales|pharma rep|drug rep|prescriber)\b/.test(combined)) {
+    out.push("pharmaceutical")
+  }
+
+  if (/\b(saas sales|tech sales|software sales|sdr|bdr|account executive)\b/.test(combined)) {
+    out.push("saas_tech")
+  }
+
+  if (/\b(advertising sales|media sales|ad sales)\b/.test(combined)) {
+    out.push("advertising_media")
+  }
+
+  if (/\b(wealth management|financial advisor|insurance sales|client advisor|private banker)\b/.test(combined)) {
+    out.push("financial_services")
+  }
+
+  if (/\b(real estate sales|commercial real estate|cre sales|leasing agent)\b/.test(combined)) {
+    out.push("real_estate")
+  }
+
+  if (/\b(industrial sales|manufacturing sales|distributor sales|wholesale sales)\b/.test(combined)) {
+    out.push("industrial_b2b")
+  }
+
+  // Deduplicate
+  return Array.from(new Set(out))
+}
+
 function inferProfileFinanceSubFamily(
   normalized: string,
   evidenceUnits: ProfileEvidenceUnit[]
@@ -3489,12 +3615,55 @@ export function extractJobSignals(
       ? inferJobFinanceSubFamily(normalized, requirementUnits, functionTags)
       : null
 
+  // Compute sales sub-family when job is Sales (or has sales_bd tag).
+  // Fires even for non-Sales families because a "Clinical Specialist"
+  // role may route to Healthcare but still be fundamentally a sales
+  // sub-segment (medical device) we want to distinguish.
+  const jobSalesSubFamily: import("./signals").SalesSubFamily =
+    jobFamily === "Sales" || functionTags.includes("sales_bd")
+      ? inferJobSalesSubFamily(jobTextRaw, userTitleNorm)
+      : null
+
+  // Territory-based role with no disclosed location. Pharmaceutical and
+  // medical device sales JDs frequently say "live within territory /
+  // territory boundaries / 30 miles of territory" without specifying
+  // where the territory is. Surface as a risk so the candidate confirms
+  // location before applying.
+  const hasTerritoryLanguage =
+    /\b(within (?:the )?territory|territory boundaries?|within \d+ miles? of territory|live within|territory-?based)\b/i.test(
+      jobTextRaw
+    )
+  // We consider the territory disclosed if the JD mentions any specific
+  // US city, state name, or common region descriptor tied to the role.
+  const hasDisclosedLocation =
+    !!(location && (location.city || location.mode !== "unclear")) ||
+    /\b(new york|nyc|manhattan|brooklyn|los angeles|san francisco|chicago|boston|miami|fort lauderdale|dallas|houston|austin|atlanta|seattle|denver|philadelphia|washington dc|washington, d\.?c\.?|san diego|phoenix|minneapolis|portland|northeast|southeast|midwest|west coast|east coast|tri[-\s]state|bay area)\b/i.test(
+      jobTextRaw
+    )
+  const territoryUndisclosed = hasTerritoryLanguage && !hasDisclosedLocation
+
+  // Pharmaceutical sales training preference — fire a soft risk when the
+  // JD mentions it and the profile has no pharma or med-sales exposure.
+  // This gets checked against the profile at scoring time; here we just
+  // stash the JD-side signal.
+  const mentionsPharmaTraining =
+    /\b(pharmaceutical sales training|pharma sales training|pharmaceutical sales (?:education|certification|rep training))\b/i.test(
+      jobTextRaw
+    )
+
 return {
     rawHash,
     jobTitle,
     companyName,
     jobFamily,
     financeSubFamily: jobFinanceSubFamily,
+    salesSubFamily: jobSalesSubFamily,
+    // Territory-without-location and pharma-training-preference are
+    // stashed on the signals object as any-typed properties consumed by
+    // the scoring layer. They intentionally are not on StructuredJobSignals
+    // because they are purely risk inputs, not core signals.
+    ...(territoryUndisclosed ? { territoryUndisclosed: true } : {}),
+    ...(mentionsPharmaTraining ? { mentionsPharmaTraining: true } : {}),
     analytics,
     function_tags: functionTags,
     signal_debug: {
@@ -3625,8 +3794,19 @@ export function extractProfileSignals(
         )
       : null
 
+  // Infer sales sub-segment targeting from target_roles + profile_text.
+  // Always runs so that even non-Sales-family profiles get annotated
+  // when they mention a sales sub-segment (e.g., a pre-med candidate
+  // targeting medical device sales gets salesTargetSubsegments set).
+  const targetRolesRaw = (merged as any).targetRolesRaw as string | undefined
+  const salesTargetSubsegments = inferProfileSalesSubsegments(
+    targetRolesRaw || null,
+    profileTextRaw
+  )
+
   return {
     ...merged,
     financeSubFamily: profileFinanceSubFamily,
+    ...(salesTargetSubsegments.length > 0 ? { salesTargetSubsegments } : {}),
   }
 }

@@ -33,6 +33,23 @@ export type FinanceSubFamily =
   | "other_finance"   // Finance but sub-family unclear
   | null              // Not a Finance job
 
+// Sub-family for Sales jobs — sales is not monolithic. Candidates who
+// target medical device sales do NOT consider pharma sales a match, and
+// a SaaS SDR is a different world from an industrial distribution rep.
+// We use this to fire RISK_SALES_SUBSEGMENT when the profile explicitly
+// targets one sales subsegment and the JD is in a different one.
+export type SalesSubFamily =
+  | "medical_device"  // OR/case coverage, implants, orthopedic/trauma/spinal/prosthetic, surgical equipment
+  | "pharmaceutical"  // Pharma rep, drug sampling, formulary access, CSO, prescriber calls
+  | "saas_tech"       // SaaS/software, SDR/BDR/AE, quota-carrying tech sales
+  | "industrial_b2b"  // Industrial distribution, tangible goods B2B, manufacturing sales
+  | "advertising_media" // Advertising sales, media sales, digital ad sales, publisher sales
+  | "financial_services" // Wealth management sales, insurance sales, client advisor sales
+  | "real_estate"     // Real estate / commercial real estate / leasing sales
+  | "retail_consumer" // Retail/consumer goods sales, CPG distribution
+  | "other_sales"     // Sales but sub-family unclear
+  | null              // Not a Sales job
+
 export type LocationMode = "in_person" | "hybrid" | "remote" | "unclear"
 
 export type Severity = "low" | "medium" | "high"
@@ -146,6 +163,9 @@ export type StructuredProfileSignals = {
   function_tag_evidence?: Partial<Record<FunctionTag, string[]>>
   profile_evidence_units?: ProfileEvidenceUnit[]
   financeSubFamily?: FinanceSubFamily
+  // Sub-segments of Sales the candidate explicitly targets. Parsed from
+  // target_roles. Used to detect mismatch against job-side salesSubFamily.
+  salesTargetSubsegments?: SalesSubFamily[]
 
   // Resume text — needed for some gate exemption checks
   resumeText?: string
@@ -160,6 +180,8 @@ export type StructuredJobSignals = {
   companyName: string | null
   jobFamily: JobFamily
   financeSubFamily: FinanceSubFamily
+  // Sub-family for Sales jobs. Null when jobFamily is not Sales.
+  salesSubFamily: SalesSubFamily
   analytics: { isHeavy: boolean; isLight: boolean }
   function_tags?: FunctionTag[]
   signal_debug?: {

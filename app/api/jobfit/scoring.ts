@@ -228,6 +228,22 @@ function profileFactFromUnit(unit: ProfileEvidenceUnit): string {
   return cleanFactSnippet(unit.snippet)
 }
 
+// Human-readable labels for sales sub-segments used in risk messages.
+function formatSalesSubsegment(key: string): string {
+  switch (key) {
+    case "medical_device": return "medical device"
+    case "pharmaceutical": return "pharmaceutical"
+    case "saas_tech": return "SaaS / tech"
+    case "industrial_b2b": return "industrial / B2B"
+    case "advertising_media": return "advertising / media"
+    case "financial_services": return "financial services"
+    case "real_estate": return "real estate"
+    case "retail_consumer": return "retail / consumer"
+    case "other_sales": return "general sales"
+    default: return key
+  }
+}
+
 // Detects when a profile evidence snippet is a bare skills-list keyword
 // rather than a narrative accomplishment. Used to cap WHY_TOOL_PROOF
 // weight so that listing "Microsoft Office Suite · Google Workspace ·
@@ -1132,6 +1148,83 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         weight: -amt,
       })
       console.log("[scoring] Advisory background risk fired — profile lacks consulting/banking evidence")
+    }
+  }
+
+  // Sales sub-segment mismatch. Sales is not monolithic — a candidate
+  // targeting medical device sales (OR exposure, orthopedic/trauma/
+  // spinal implants) does not consider pharmaceutical sales a match.
+  // When the profile explicitly targets one sub-segment and the JD is
+  // clearly in a different one, fire a high-severity risk.
+  const profileSalesSubsegments = ((profile as any)?.salesTargetSubsegments || []) as string[]
+  const jobSalesSubFamily = (job as any)?.salesSubFamily as string | null
+  if (
+    profileSalesSubsegments.length > 0 &&
+    jobSalesSubFamily &&
+    jobSalesSubFamily !== "other_sales" &&
+    !profileSalesSubsegments.includes(jobSalesSubFamily)
+  ) {
+    // Some sub-segments are considered acceptable bridges (e.g. financial
+    // services ↔ saas_tech are different but not always a hard mismatch).
+    // For now the mismatch fires whenever the profile targets something
+    // concrete and the job is a different concrete sub-segment.
+    const profileLabel = profileSalesSubsegments.map(formatSalesSubsegment).join(" / ")
+    const jobLabel = formatSalesSubsegment(jobSalesSubFamily)
+    const amt = 10
+    penalties.push({
+      key: "sales_subsegment_mismatch" as any,
+      amount: amt,
+      note: `Profile targets ${profileLabel}; job is ${jobLabel}`,
+      risk: {
+        code: "RISK_SALES_SUBSEGMENT",
+        job_fact: `This is a ${jobLabel} sales role.`,
+        profile_fact: `You explicitly target ${profileLabel} sales — a different sub-segment.`,
+        risk: `Sales roles are not interchangeable. You told us you want ${profileLabel} work, but this is a ${jobLabel} role. The day-to-day work, buyer relationships, and career track are different. It may still be a viable entry point, but be clear-eyed that this is not the specific track you asked for.`,
+        severity: "high" as const,
+        weight: -amt,
+      },
+    })
+    riskOnlyCodes.push({
+      code: "RISK_SALES_SUBSEGMENT",
+      job_fact: `This is a ${jobLabel} sales role.`,
+      profile_fact: `You explicitly target ${profileLabel} sales — a different sub-segment.`,
+      risk: `Sales roles are not interchangeable. You told us you want ${profileLabel} work, but this is a ${jobLabel} role. The day-to-day work, buyer relationships, and career track are different. It may still be a viable entry point, but be clear-eyed that this is not the specific track you asked for.`,
+      severity: "high",
+      weight: -amt,
+    })
+    console.log(`[scoring] Sales sub-segment mismatch fired: profile=${profileLabel} vs job=${jobLabel}`)
+  }
+
+  // Undisclosed territory risk — JDs that reference "within territory"
+  // or "within 30 miles of territory boundaries" without specifying the
+  // actual territory location. Candidate should confirm location before
+  // applying since it may be anywhere in the country.
+  if ((job as any)?.territoryUndisclosed) {
+    riskOnlyCodes.push({
+      code: "RISK_LOCATION_UNDISCLOSED",
+      job_fact: "Job references a sales territory but does not specify where it is located.",
+      profile_fact: "Your profile has a preferred location, but the territory may be elsewhere.",
+      risk: "The posting mentions a territory requirement without disclosing which territory. Confirm the territory location before investing time in this application — it may be outside your preferred region.",
+      severity: "low",
+    })
+    console.log("[scoring] Undisclosed territory risk fired")
+  }
+
+  // Pharmaceutical sales training preference — soft risk when JD lists
+  // pharma-specific training as a plus and profile has no pharma
+  // exposure. Medium severity because it is a preference, not a
+  // requirement.
+  if ((job as any)?.mentionsPharmaTraining) {
+    const PHARMA_EXPOSURE_RE = /\b(pharmaceutical|pharma (sales|rep)|drug rep|prescriber|formulary|cso|therapeutic area)\b/i
+    if (!PHARMA_EXPOSURE_RE.test(profileHeaderText)) {
+      riskOnlyCodes.push({
+        code: "RISK_MISSING_TRAINING",
+        job_fact: "Job prefers candidates who have completed pharmaceutical sales training or education.",
+        profile_fact: "Profile shows no pharmaceutical-specific training or exposure.",
+        risk: "This role lists pharmaceutical sales training as a preference. If you have no pharma exposure, consider free/low-cost programs (MedReps, RepCertified, CNPR) or address it directly in your cover letter. It is not disqualifying but candidates who have completed training will have an edge.",
+        severity: "medium",
+      })
+      console.log("[scoring] Pharma training gap risk fired")
     }
   }
 
