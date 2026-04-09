@@ -151,7 +151,19 @@ function inferConstraints(profileText: string): ProfileConstraints {
     t.includes("job type: full time") ||
     t.includes("looking for full time")
 
-  // Explicit content/execution role exclusions
+  // Explicit content/execution role exclusions.
+  //
+  // IMPORTANT: the final "hard constraints" clause must ONLY look at the
+  // actual hard-constraints sentence, not the whole profile. Previously we
+  // did `t.includes("hard constraints") && t.includes("content")`, which
+  // false-fired for any profile whose hard constraints said nothing about
+  // content but whose target roles / resume mentioned "content development"
+  // or "content creation" (e.g., Tatum Sperling targeting social media /
+  // content roles but with hard constraints of "no commission, no remote").
+  const hardConstraintsClause = (() => {
+    const m = t.match(/hard constraints?\s*:?\s*([^\n.]*)/i)
+    return m ? m[1] : ""
+  })()
   const hardNoContentOnly =
     t.includes("no pure social media") ||
     t.includes("no content only") ||
@@ -159,7 +171,7 @@ function inferConstraints(profileText: string): ProfileConstraints {
     t.includes("no coordinator role") ||
     t.includes("no coordinator roles") ||
     t.includes("no social media content roles") ||
-    (t.includes("hard constraints") && t.includes("content"))
+    /\bno\b[^.]*\bcontent\b/.test(hardConstraintsClause)
 
   const hardNoPartTime =
     t.includes("no part time") ||

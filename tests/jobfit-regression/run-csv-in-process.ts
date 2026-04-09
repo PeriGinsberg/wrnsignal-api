@@ -26,6 +26,11 @@ const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> 
   "40926c": { jobTitle: "Chemist I", companyName: "ADMA Biologics" },
   "40926d": { jobTitle: "Analytical Scientist I", companyName: "PL Developments" },
   "40926e": { jobTitle: "QC Analyst I", companyName: "(Unknown)" },
+  "40926f": { jobTitle: "Social Media Associate", companyName: "Joe & The Juice" },
+  "40926g": { jobTitle: "Social Coordinator", companyName: "Vogue" },
+  "40926h": { jobTitle: "Public Relations Assistant", companyName: "Mario Badescu" },
+  "40926i": { jobTitle: "Account Coordinator", companyName: "Allison" },
+  "40926j": { jobTitle: "Media Strategist", companyName: "Momentum Communications Group" },
 }
 
 // ── Minimal CSV parser (handles quoted fields with embedded newlines/commas/quotes)

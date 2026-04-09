@@ -1087,7 +1087,11 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "trades_skilled" as FunctionTag,
     profilePhrases: ["welding", "plumbing", "hvac", "carpentry", "electrical wiring", "machining", "cnc"],
-    jobPhrases: ["welding", "plumbing", "hvac", "carpentry", "electrician", "machinist", "cnc", "journeyman", "apprentice"],
+    // "apprentice" removed — it matches metaphorical "intern/apprentice" language
+    // in PR/marketing JDs (e.g., "Preferred experience as an intern/apprentice in
+    // public relations"), misclassifying them as Trades. All remaining phrases are
+    // concrete trade vocabulary that doesn't appear outside skilled-trades contexts.
+    jobPhrases: ["welding", "plumbing", "hvac", "carpentry", "electrician", "machinist", "cnc", "journeyman"],
     adjacentKeys: [],
   },
 ]
@@ -2716,6 +2720,21 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
       jobTitleSlice
     )
 
+  // PR / communications agency "account" titles. At a PR or comms
+  // agency, "Account Coordinator / Executive / Supervisor / Director"
+  // is the standard career ladder — these are PR/media-relations roles,
+  // NOT sales roles. Without this detector, the body's "pitches",
+  // "new business research", and "account" language fires sales_bd,
+  // and metaphorical "apprentice / builder" language can even push the
+  // role into Trades. We require BOTH an account-title phrase AND
+  // unambiguous PR/comms agency context in the first 1500 chars so this
+  // does not over-fire on genuine sales Account Executive roles.
+  const hasAccountTitle =
+    /\b(account coordinator|account executive|account supervisor|account director|account manager)\b/i.test(jobTitleSlice)
+  const hasPRCommsAgencyContext =
+    /\b(public relations|communications practice|pr agency|pr firm|communications agency|media relations|press release|press outreach|media pitch|media pitching|earned media|editorial placements|influencer relations|client communications|comms practice)\b/i.test(jobTitleSlice)
+  const jobTitleIsPRCommsAgency = hasAccountTitle && hasPRCommsAgencyContext
+
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
   const isSeniorRole =
@@ -2770,6 +2789,9 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   if (jobTitleIsTrades && !functionTags.includes("trades_skilled")) {
     functionTags.push("trades_skilled")
   }
+  if (jobTitleIsPRCommsAgency && !functionTags.includes("communications_pr")) {
+    functionTags.push("communications_pr")
+  }
 
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
@@ -2795,7 +2817,13 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
               ? "Healthcare"
               : jobTitleIsTrades
                 ? "Trades"
-                : jobTitleIsMarketing
+                : jobTitleIsPRCommsAgency
+                  // PR/comms agency account ladder → Marketing family.
+                  // Placed BEFORE jobTitleIsMarketing because the account
+                  // titles are NOT marketing-titled, but the work clearly
+                  // sits in the Marketing family for our scoring model.
+                  ? "Marketing"
+                  : jobTitleIsMarketing
                   ? "Marketing"
                   // Strategy/BusinessOps/CoS titles force Consulting even when
                   // the body has finance/analytics noise. Placed BEFORE the
@@ -3137,7 +3165,7 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // For marketing-titled roles, only flag as sales-heavy if hard sales keywords
   // are present. BD support language (pitch, proposals, leads) is normal in
   // marketing roles and should not trigger sales classification.
-  const isSalesHeavy = jobTitleIsMarketing
+  const isSalesHeavy = (jobTitleIsMarketing || jobTitleIsPRCommsAgency)
     ? hasHardSalesSignal
     : includesAny(normalized, salesKeywords) || explicitSalesEvidence
 
