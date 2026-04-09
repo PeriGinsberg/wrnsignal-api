@@ -163,7 +163,13 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "social channel",
       "editorial calendar",
       "content strategy",
-      "marketing events",
+      // NOTE: "marketing events" removed — too weak. Support roles
+      // (Client Associate, Executive Assistant, Office Manager) use
+      // "plan marketing events" for admin logistics, while real marketing
+      // roles use more specific phrases below (brand events, trade shows,
+      // brand activations). Keeping this in the list produced false-
+      // positive content_execution requirements on wealth management and
+      // banking support postings.
       "brand events",
       "trade show",
       "brand activations",
