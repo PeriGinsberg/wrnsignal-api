@@ -16,6 +16,14 @@ import { join, basename, dirname } from "node:path"
 import { runJobFit } from "../../app/api/_lib/jobfitEvaluator"
 import { mapClientProfileToOverrides } from "../../app/api/_lib/jobfitProfileAdapter"
 
+// Exported type for regression-check consumers.
+export type BatchCaseResult = {
+  caseNo: string
+  profileName: string
+  label: string
+  result: any
+}
+
 // Manual title/company overrides for existing test cases. These mirror
 // what a user would enter through the required job-title / company-name
 // inputs on the live JobFit form. Once the CSV schema is extended with
@@ -143,6 +151,105 @@ function fmt(n: any): string {
 
 function pad(s: string, n: number): string {
   return s.length >= n ? s : s + " ".repeat(n - s.length)
+}
+
+// ── Exported: run the batch and return per-case results, no side effects.
+//
+// The regression-check.ts entry point uses this to assemble live snapshots
+// without writing per-case fixture files or the review markdown. The main()
+// CLI path below still calls the same core logic via an internal helper.
+export async function runBatch(csvPath: string, opts?: {
+  verbose?: boolean
+}): Promise<BatchCaseResult[]> {
+  const verbose = opts?.verbose ?? false
+  const content = readFileSync(csvPath, "utf8")
+  const rows = parseCSV(content)
+  if (rows.length < 2) throw new Error("CSV has no data rows")
+
+  const header = rows[0].map((h) => h.trim())
+  const idxCaseNo = header.indexOf("Case Number")
+  const idxName = header.indexOf("Profile Name")
+  const idxJson = header.indexOf("Profile JSON")
+  const idxJob = header.indexOf("Job Description")
+  if (idxCaseNo < 0 || idxJson < 0 || idxJob < 0) {
+    throw new Error(`CSV missing required columns. Got: ${header.join(", ")}`)
+  }
+
+  const dataRows = rows.slice(1).filter((r) => r.some((c) => c.trim().length > 0))
+  const out: BatchCaseResult[] = []
+
+  for (const row of dataRows) {
+    const caseNo = row[idxCaseNo]?.trim() || "unnamed"
+    const profileName = (idxName >= 0 ? row[idxName] : "").trim()
+    const profileJsonRaw = row[idxJson]?.trim() || ""
+    const jobText = row[idxJob]?.trim() || ""
+
+    if (verbose) console.log(`▶ Case ${caseNo} (${profileName})`)
+
+    let profileArray: any = null
+    try {
+      profileArray = JSON.parse(profileJsonRaw)
+    } catch (e: any) {
+      // Tolerant fallback for concatenated-array profile cells.
+      let depth = 0
+      let end = -1
+      for (let k = 0; k < profileJsonRaw.length; k++) {
+        const ch = profileJsonRaw[k]
+        if (ch === "[") depth++
+        else if (ch === "]") {
+          depth--
+          if (depth === 0) { end = k; break }
+        }
+      }
+      if (end > 0) {
+        try {
+          profileArray = JSON.parse(profileJsonRaw.slice(0, end + 1))
+        } catch (e2: any) {
+          console.error(`  ✗ Profile JSON parse failed for ${caseNo}: ${e.message}`)
+          continue
+        }
+      } else {
+        console.error(`  ✗ Profile JSON parse failed for ${caseNo}: ${e.message}`)
+        continue
+      }
+    }
+
+    const profileRow = Array.isArray(profileArray) ? profileArray[0] : profileArray
+    if (!profileRow) {
+      console.error(`  ✗ Profile JSON empty for ${caseNo}`)
+      continue
+    }
+
+    const profileText = buildProfileText(profileRow)
+    const profileOverrides = buildProfileOverrides(profileRow)
+    const override = CASE_OVERRIDES[caseNo] || { jobTitle: "", companyName: "" }
+
+    let result: any
+    try {
+      result = await runJobFit({
+        profileText,
+        jobText,
+        profileOverrides,
+        userJobTitle: override.jobTitle || undefined,
+        userCompanyName: override.companyName || undefined,
+      } as any)
+    } catch (e: any) {
+      console.error(`  ✗ runJobFit threw for ${caseNo}: ${e.message}`)
+      continue
+    }
+
+    const label = `${caseNo} — ${profileName || profileRow.name || profileRow.email || "unknown"} / ${override.jobTitle || "(no title)"}`
+    out.push({ caseNo, profileName, label, result })
+
+    if (verbose) {
+      const whyCount = (result?.why_codes ?? []).length
+      const riskCount = (result?.risk_codes ?? []).length
+      const gate = result?.gate_triggered?.type ?? "none"
+      console.log(`  ${result?.decision ?? "?"} / ${result?.score ?? "?"}  why=${whyCount} risk=${riskCount} gate=${gate}`)
+    }
+  }
+
+  return out
 }
 
 // ── Main
@@ -351,7 +458,13 @@ async function main() {
   console.log(`✓ Per-case JSON results in ${outDir}`)
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err)
-  process.exit(2)
-})
+// Only auto-run when executed directly (not when imported by
+// regression-check.ts). The check is filename-based for tsx/CJS
+// interop compatibility.
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/run-csv-in-process.ts")
+if (isMainEntryPoint) {
+  main().catch((err) => {
+    console.error("Fatal error:", err)
+    process.exit(2)
+  })
+}

@@ -113,4 +113,17 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(2) })
+// Exported for regression-check.ts to consume without re-entering main().
+export const CASE = {
+  id: "retest-013-ryan",
+  label: "Ryan Rudnet vs Hennion & Walsh Investment Associate",
+  profileJson: PROFILE_JSON,
+  jobText: JOB_TEXT,
+  userJobTitle: "Investment Associate",
+  userCompanyName: "Hennion & Walsh",
+}
+
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/retest-013-ryan.ts")
+if (isMainEntryPoint) {
+  main().catch((e) => { console.error(e); process.exit(2) })
+}

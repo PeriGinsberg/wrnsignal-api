@@ -144,4 +144,16 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(2) })
+export const CASE = {
+  id: "retest-012-ryan",
+  label: "Ryan Rudnet vs Raymond James Client Service Associate",
+  profileJson: PROFILE_JSON,
+  jobText: JOB_TEXT,
+  userJobTitle: "Client Service Associate",
+  userCompanyName: "Raymond James",
+}
+
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/retest-012-ryan.ts")
+if (isMainEntryPoint) {
+  main().catch((e) => { console.error(e); process.exit(2) })
+}

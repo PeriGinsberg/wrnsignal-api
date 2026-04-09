@@ -100,4 +100,16 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(2) })
+export const CASE = {
+  id: "retest-emma-01",
+  label: "Emma Stein (UF sophomore pre-law) vs Richemont Legal Intern",
+  profileJson: PROFILE_JSON,
+  jobText: JOB_TEXT,
+  userJobTitle: "Legal Intern",
+  userCompanyName: "Richemont Americas",
+}
+
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/retest-emma-01.ts")
+if (isMainEntryPoint) {
+  main().catch((e) => { console.error(e); process.exit(2) })
+}

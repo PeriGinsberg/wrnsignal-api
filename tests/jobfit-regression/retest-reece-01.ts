@@ -101,7 +101,19 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(e)
-  process.exit(2)
-})
+export const CASE = {
+  id: "retest-reece-01",
+  label: "Reece Kauffman (med device sales target) vs Pharmaceutical Sales Rep",
+  profileJson: PROFILE_JSON,
+  jobText: JOB_TEXT,
+  userJobTitle: "Pharmaceutical Sales Representative",
+  userCompanyName: "(Unknown Pharma CSO)",
+}
+
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/retest-reece-01.ts")
+if (isMainEntryPoint) {
+  main().catch((e) => {
+    console.error(e)
+    process.exit(2)
+  })
+}

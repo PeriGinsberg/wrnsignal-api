@@ -1,41 +1,24 @@
-import {readFileSync} from 'fs';
-import {runJobFit} from '../../app/api/_lib/jobfitEvaluator';
-import {mapClientProfileToOverrides} from '../../app/api/_lib/jobfitProfileAdapter';
+#!/usr/bin/env tsx
+// ISSUE-026 retest: Josselyn Chavez vs Fanatics Senior Manager,
+// Strategy and Business Operations. Originally produced Priority
+// Apply/97 with 0 risks when the JD explicitly requires prior
+// experience at a top management consulting firm or investment
+// bank — a hard screen gate Josselyn does not meet.
 
-const text = readFileSync('C:/Users/perig/wrnsignal-api/issues/040926ProdIssues.csv','utf8');
-const rows: string[][] = [];
-let row: string[] = [], cell='', q=false;
-for (let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}else{if(c==='"')q=true;else if(c===','){row.push(cell);cell='';}else if(c==='\n'||c==='\r'){if(cell!==''||row.length>0){row.push(cell);rows.push(row);row=[];cell='';}if(c==='\r'&&text[i+1]==='\n')i++;}else cell+=c;}}
-if(cell!==''||row.length>0){row.push(cell);rows.push(row);}
-const h = rows[0];
-const iC = h.indexOf('Case Number'), iP = h.indexOf('Profile JSON');
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { runJobFit } from "../../app/api/_lib/jobfitEvaluator"
+import { mapClientProfileToOverrides } from "../../app/api/_lib/jobfitProfileAdapter"
 
-// Find Josselyn's profile (first case)
-let jossProfile: any = null;
-for (let i=1;i<rows.length;i++){
-  if (rows[i][iC] === '40926k') {
-    const raw = rows[i][iP];
-    // tolerant parse
-    try { jossProfile = JSON.parse(raw); } catch {
-      let depth=0, end=-1;
-      for (let k=0;k<raw.length;k++){ if (raw[k]==='[') depth++; else if (raw[k]===']'){depth--; if (depth===0){end=k;break;}}}
-      if (end>0) jossProfile = JSON.parse(raw.slice(0,end+1));
-    }
-    break;
-  }
-}
-const p = Array.isArray(jossProfile) ? jossProfile[0] : jossProfile;
-if (!p) { console.error('profile not found'); process.exit(2); }
+// Profile loaded from a fixture file so this module can be imported
+// without re-reading the production CSV (previous version did a
+// top-level CSV scan which ran as a side effect at import time).
+const PROFILE_JSON = readFileSync(
+  join(__dirname, "fixtures", "joss-profile.json"),
+  "utf8"
+)
 
-const profileText = (String(p.profile_text||'').trim() + '\n\nResume:\n' + String(p.resume_text||'').trim()).trim();
-const profileOverrides = mapClientProfileToOverrides({
-  profileText,
-  profileStructured: typeof p.profile_structured === 'string' ? JSON.parse(p.profile_structured||'null') : p.profile_structured,
-  targetRoles: p.target_roles || null,
-  preferredLocations: p.preferred_locations || null,
-});
-
-const jobText = `Senior Manager, Strategy and Business Operations
+const JOB_TEXT = `Senior Manager, Strategy and Business Operations
 Miami, FL, United States (On-site)
 Job Description
 In collaboration and close partnership with leadership across the Fanatics Specialty Businesses Vertical, focused on enabling our integrated platform vison, offers support to our business units in strategy development, operational optimization, select deal negotiations, and explores growth opportunities in new verticals that are important to the sports fan. This role is extremely high visible across the organization and provides high strategic, transactional, and operational exposure.
@@ -68,29 +51,73 @@ Location: Miami / Fort Lauderdale, FL area
 
 About Us
 Fanatics is building a leading global digital sports platform. We ignite the passions of global sports fans and maximize the presence and reach for our hundreds of sports partners globally by offering products and services across Fanatics Commerce, Fanatics Collectibles, and Fanatics Betting & Gaming.
-`;
+`
 
-async function main() { const result: any = await runJobFit({
-  profileText,
-  jobText,
-  profileOverrides,
-  userJobTitle: 'Senior Manager, Strategy and Business Operations',
-  userCompanyName: 'Fanatics',
-} as any);
+async function main() {
+  // Tolerant profile parse (some CSV exports include concatenated arrays).
+  let profileArray: any
+  try {
+    profileArray = JSON.parse(PROFILE_JSON)
+  } catch {
+    let depth = 0, end = -1
+    for (let k = 0; k < PROFILE_JSON.length; k++) {
+      const ch = PROFILE_JSON[k]
+      if (ch === "[") depth++
+      else if (ch === "]") { depth--; if (depth === 0) { end = k; break } }
+    }
+    profileArray = JSON.parse(PROFILE_JSON.slice(0, end + 1))
+  }
+  const p = Array.isArray(profileArray) ? profileArray[0] : profileArray
+  if (!p) { console.error("profile not found"); process.exit(2) }
 
-console.log('\n=== ISSUE-026 Retest ===');
-console.log('Decision:', result.decision, '/ Score:', result.score);
-console.log('Gate:', result.gate_triggered?.type);
-console.log('Job family:', result.job_signals.jobFamily);
-console.log('Profile targetFamilies:', result.profile_signals.targetFamilies);
-console.log('isSeniorRole:', result.job_signals.isSeniorRole);
-console.log('yearsRequired:', result.job_signals.yearsRequired);
-console.log('profileYears:', result.profile_signals.yearsExperienceApprox);
-console.log('functionTags:', result.job_signals.function_tags);
-console.log('\nWHY codes (' + (result.why_codes||[]).length + '):');
-for (const w of (result.why_codes||[])) console.log('  ['+w.code+']', w.match_key, '('+w.match_strength+', w='+w.weight+')', '\n    job:', String(w.job_fact||'').slice(0,140), '\n    prof:', String(w.profile_fact||'').slice(0,140));
-console.log('\nRISK codes (' + (result.risk_codes||[]).length + '):');
-for (const r of (result.risk_codes||[])) console.log('  ['+r.code+'] sev='+r.severity+' w='+r.weight+'\n    ', String(r.risk||'').slice(0,200));
+  const profileText = (String(p.profile_text || "").trim() + "\n\nResume:\n" + String(p.resume_text || "").trim()).trim()
+  const profileOverrides = mapClientProfileToOverrides({
+    profileText,
+    profileStructured: typeof p.profile_structured === "string" ? JSON.parse(p.profile_structured || "null") : p.profile_structured,
+    targetRoles: p.target_roles || null,
+    preferredLocations: p.preferred_locations || null,
+  })
 
+  const result: any = await runJobFit({
+    profileText,
+    jobText: JOB_TEXT,
+    profileOverrides,
+    userJobTitle: "Senior Manager, Strategy and Business Operations",
+    userCompanyName: "Fanatics",
+  } as any)
+
+  console.log("\n=== ISSUE-026 Retest ===")
+  console.log("Decision:", result.decision, "/ Score:", result.score)
+  console.log("Gate:", result.gate_triggered?.type)
+  console.log("Job family:", result.job_signals.jobFamily)
+  console.log("Profile targetFamilies:", result.profile_signals.targetFamilies)
+  console.log("isSeniorRole:", result.job_signals.isSeniorRole)
+  console.log("yearsRequired:", result.job_signals.yearsRequired)
+  console.log("profileYears:", result.profile_signals.yearsExperienceApprox)
+  console.log("functionTags:", result.job_signals.function_tags)
+  console.log("\nWHY codes (" + (result.why_codes || []).length + "):")
+  for (const w of result.why_codes || []) {
+    console.log(`  [${w.code}] ${w.match_key} (${w.match_strength}, w=${w.weight})`)
+    console.log("    job:", String(w.job_fact || "").slice(0, 140))
+    console.log("    prof:", String(w.profile_fact || "").slice(0, 140))
+  }
+  console.log("\nRISK codes (" + (result.risk_codes || []).length + "):")
+  for (const r of result.risk_codes || []) {
+    console.log(`  [${r.code}] sev=${r.severity} w=${r.weight}`)
+    console.log("   ", String(r.risk || "").slice(0, 200))
+  }
 }
-main();
+
+export const CASE = {
+  id: "retest-026",
+  label: "ISSUE-026 Josselyn Chavez vs Fanatics Senior Manager Strategy",
+  profileJson: PROFILE_JSON,
+  jobText: JOB_TEXT,
+  userJobTitle: "Senior Manager, Strategy and Business Operations",
+  userCompanyName: "Fanatics",
+}
+
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/retest-026.ts")
+if (isMainEntryPoint) {
+  main().catch((e) => { console.error(e); process.exit(2) })
+}
