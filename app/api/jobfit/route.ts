@@ -134,6 +134,14 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { error: "Missing job text" }, 400)
     }
 
+    // Optional user-provided job title and company name. These win over
+    // whatever the deterministic extractor pulls from the JD body, which
+    // is frequently wrong when the posting doesn't cleanly label the
+    // company/title (e.g. UBS "About Us" boilerplate bleeding into the
+    // company name field). Clamped to 200 chars to bound storage.
+    const userJobTitle = String(body?.job_title || "").trim().slice(0, 200)
+    const userCompanyName = String(body?.company_name || "").trim().slice(0, 200)
+
     const mode = String(body?.mode || "live")
     const debugFlag = Boolean(body?.debug)
 
@@ -306,16 +314,31 @@ export async function POST(req: NextRequest) {
             cleaned.job_signals.companyName = backfill.companyName
           }
 
+          // Apply user-provided overrides on cache hits too, so a user who
+          // corrects the title/company on a resubmit sees the fix even when
+          // the scoring result itself is served from cache.
+          if (userJobTitle || userCompanyName) {
+            if (!cleaned.job_signals) (cleaned as any).job_signals = {}
+            if (userJobTitle) (cleaned as any).job_signals.jobTitle = userJobTitle
+            if (userCompanyName) (cleaned as any).job_signals.companyName = userCompanyName
+          }
+
           // Ensure a signal_application exists even on cache hits
           try {
             let cachedCompany = String(cleaned?.job_signals?.companyName || "").trim()
             let cachedTitle = String(cleaned?.job_signals?.jobTitle || "").trim()
             const cachedLocation = String(cleaned?.job_signals?.location?.city || "").trim()
-            cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
-            cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+            const cachedTitleFromUser = Boolean(userJobTitle)
+            const cachedCompanyFromUser = Boolean(userCompanyName)
+            if (!cachedTitleFromUser) {
+              cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+            }
+            if (!cachedCompanyFromUser) {
+              cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+            }
             const isGarbageCached = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
-            if (isGarbageCached(cachedCompany)) cachedCompany = ""
-            if (isGarbageCached(cachedTitle)) cachedTitle = ""
+            if (!cachedCompanyFromUser && isGarbageCached(cachedCompany)) cachedCompany = ""
+            if (!cachedTitleFromUser && isGarbageCached(cachedTitle)) cachedTitle = ""
 
             let existingCachedApp: any = null
             if (cachedCompany) {
@@ -411,6 +434,20 @@ export async function POST(req: NextRequest) {
     }
     // ────────────────────────────────────────────────────────────────────────
 
+    // ── User-provided job title and company name override ──────────────────
+    // If the caller supplied either field explicitly, replace the extracted
+    // values in job_signals BEFORE the result is serialized into jobfit_runs
+    // and signal_applications. This ensures every downstream reader — the
+    // client display, the auto-application row, later cover letter / cached
+    // result views — sees the user-authoritative value rather than whatever
+    // the deterministic extractor pulled from the JD body.
+    if (userJobTitle || userCompanyName) {
+      const rawAny = raw as any
+      if (!rawAny.job_signals) rawAny.job_signals = {}
+      if (userJobTitle) rawAny.job_signals.jobTitle = userJobTitle
+      if (userCompanyName) rawAny.job_signals.companyName = userCompanyName
+    }
+
     const result = enforceClientFacingRules(raw as any)
 
     if (supabase && hasRealProfileId) {
@@ -439,14 +476,26 @@ export async function POST(req: NextRequest) {
         let jobTitle = String(rawJobTitle || "").trim()
         const runId = runRow?.id || null
 
-        // Clean common prefixes from extracted values
-        jobTitle = jobTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
-        companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+        // User-provided values win unconditionally. If the caller supplied
+        // job_title / company_name explicitly, trust them and skip the
+        // prefix-cleaning and garbage-filter heuristics (those exist to
+        // scrub bad extractor output, not to second-guess the user).
+        const jobTitleFromUser = Boolean(userJobTitle)
+        const companyNameFromUser = Boolean(userCompanyName)
 
-        // Clean extracted values that look like section headers, not real names
+        if (!jobTitleFromUser) {
+          // Clean common prefixes from extracted values
+          jobTitle = jobTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+        }
+        if (!companyNameFromUser) {
+          companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+        }
+
+        // Clean extracted values that look like section headers, not real names.
+        // Only applied to extractor output, never to user-provided values.
         const isGarbage = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
-        if (isGarbage(companyName)) companyName = ""
-        if (isGarbage(jobTitle)) jobTitle = ""
+        if (!companyNameFromUser && isGarbage(companyName)) companyName = ""
+        if (!jobTitleFromUser && isGarbage(jobTitle)) jobTitle = ""
 
         console.log("[jobfit/route] auto-application signals:", {
           rawCompanyName, rawJobTitle, companyName, jobTitle, runId, profileId,
