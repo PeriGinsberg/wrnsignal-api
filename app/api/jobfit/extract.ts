@@ -2746,6 +2746,27 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
     "training provided",
     "not required",
     "preferred but not required",
+    // Preference/aspiration language — when the credential appears under a
+    // "Your expertise" / "ideal candidate" section with these modifiers, it
+    // is describing the preferred profile, not a hard requirement. Common
+    // in wealth management Client Associate and banking support postings
+    // where firms sponsor post-hire licensing.
+    "ideally",
+    "ideal candidate",
+    "ideal candidates",
+    "the ideal",
+    "preferred qualifications",
+    "desired qualifications",
+    "desired skills",
+    "nice to have",
+    "a plus",
+    "would be a plus",
+    "is a plus",
+    "are a plus",
+    "bonus",
+    "bonus points",
+    "helpful but not required",
+    "but not required",
     "we will help you obtain",
     "will assist in obtaining",
     "will help you get",
@@ -2819,8 +2840,23 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
 
   let credentialSponsored = false
 
+  // Role-title convention override for wealth management / banking support
+  // roles. Client Associate, Service Associate, Relationship Associate, and
+  // Wealth Management Associate titles are almost universally post-hire
+  // licensed: firms sponsor Series 7/66 during the first 120 days. Treating
+  // the Series requirement as a hard gate on these postings generates
+  // false passes for every early-career candidate targeting wealth
+  // management support roles.
+  const isSupportAssociateTitle =
+    /\b(client associate|service associate|relationship associate|wealth management associate|financial services associate|client service associate|branch associate|investment associate|advisor associate|registered client associate|registered service associate|sales associate|operations associate)\b/i.test(
+      jobTitleSlice
+    )
+  if (requiresFinraLicense && isSupportAssociateTitle) {
+    credentialSponsored = true
+  }
+
   // Check each detected hard credential against sponsorship context
-  if (requiresFinraLicense && isCredentialSponsored(finraKeywords.length ? finraKeywords : ["series", "finra", "sie", "nmls", "securities license"], normalized)) {
+  if (!credentialSponsored && requiresFinraLicense && isCredentialSponsored(finraKeywords.length ? finraKeywords : ["series", "finra", "sie", "nmls", "securities license"], normalized)) {
     credentialSponsored = true
   } else if (requiresInsuranceLicense && isCredentialSponsored(insuranceLicenseKeywords.length ? insuranceLicenseKeywords : ["insurance license"], normalized)) {
     credentialSponsored = true
