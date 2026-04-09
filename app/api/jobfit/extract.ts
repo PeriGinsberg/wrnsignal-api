@@ -973,6 +973,29 @@ jobPhrases: [
       "operating cadence",
       "operational rigor",
       "drive operational",
+      // HR management / people operations phrases — added so HR-heavy
+      // JDs (Director of People Services, HR Generalist, HRBP) produce
+      // requirement units that HR candidates' profile operations_execution
+      // work can match. These are unambiguous HR vocabulary that does not
+      // appear in lab / sales / engineering JDs.
+      "human resources activities",
+      "implement policies",
+      "enforcing company policies",
+      "enforcing policies",
+      "employee relations",
+      "compensation programs",
+      "compensation and benefits",
+      "benefits administration",
+      "performance management",
+      "talent acquisition",
+      "workforce planning",
+      "hr operations",
+      "hr policies",
+      "people operations",
+      "people services",
+      "training and development programs",
+      "employee recognition",
+      "recruitment, selection",
     ],
     adjacentKeys: ["stakeholder_coordination", "analysis_reporting"],
   },
@@ -1066,14 +1089,62 @@ jobPhrases: [
       "report",
       "presentation deck",
     ],
+    // Bare "draft", "prepare", "write" removed — they matched pharma
+    // and training-program language like "prepare to take the exams"
+    // and "write code". Now requires the verb to be paired with a
+    // concrete written-deliverable object (memo, report, press release,
+    // briefing, bylined article, pitch, material, policy, brief, etc.)
+    // so we fire on PR/writing roles without over-firing on generic
+    // "prepare"/"write"/"draft" language.
     jobPhrases: [
-      "draft",
-      "prepare",
-      "write",
+      // draft + written output
+      "draft memos",
+      "draft documents",
+      "draft reports",
+      "draft briefs",
+      "draft press",
+      "draft materials",
+      "draft content",
+      "draft communications",
+      "draft policies",
+      "drafting documentation",
+      "first draft",
+      "drafts of written",
+      "draft of written",
+      // write + written output
+      "write press",
+      "write reports",
+      "write briefs",
+      "write memos",
+      "write materials",
+      "write content",
+      "write articles",
+      "write bylined",
+      "write policies",
+      "write documentation",
+      "written content",
+      "written communications",
+      "written documentation",
+      "written materials",
+      // prepare + written output
+      "prepare reports",
+      "prepare memos",
+      "prepare briefs",
+      "prepare documentation",
+      "prepare presentations",
+      "prepare written",
+      "prepare communications",
+      "prepare policies",
+      // direct nouns
+      "press materials",
+      "press releases",
+      "briefing book",
+      "briefing books",
+      "briefing documents",
+      "bylined articles",
+      "opinion pieces",
       "documentation",
       "memo",
-      "brief",
-      "report",
       "presentation deck",
     ],
     adjacentKeys: ["communications_writing", "policy_regulatory_research"],
@@ -2665,20 +2736,25 @@ function inferProfileFinanceSubFamily(
 ): FinanceSubFamily {
   const unitKeys = new Set(evidenceUnits.map((u) => u.key))
 
-  // Check evidence unit keys for FP&A signals
   const hasFpaExecution = unitKeys.has("analysis_reporting") || unitKeys.has("accounting_operations")
   const hasFinancialAnalysis = unitKeys.has("financial_analysis")
 
-  // FP&A language in profile
-  const fpaKeywords = /\b(fp&a|fpa|variance analysis|board package|board reporting|monthly close|quarterly report|financial planning|budgeting|forecast accuracy|operating expense|opex|p&l|profit and loss)\b/i
-  if (fpaKeywords.test(normalized) && hasFpaExecution) {
-    return "fpa"
-  }
-
-  // IB language in profile
-  const ibKeywords = /\b(investment banking|m&a|mergers|capital markets|ipo|lbo|deal|pitch book|pitchbook|bulge bracket|boutique bank|coverage|ibd)\b/i
+  // IB language — strongest signal, check first.
+  const ibKeywords = /\b(investment banking|m&a analysis|mergers and acquisitions|capital markets|ipo|lbo model|pitch book|pitchbook|bulge bracket|boutique bank|coverage group|ibd)\b/i
   if (ibKeywords.test(normalized)) {
     return "ib"
+  }
+
+  // Asset Management — moved BEFORE FP&A so a candidate with strong
+  // investment/portfolio/valuation signals is not miscategorized as
+  // corporate finance. The old order put FPA first, and the FPA regex
+  // included bare "budgeting", which matched both "Capital Budgeting"
+  // (an investment-analysis technique) and fraternity "Oversee
+  // budgeting" work — miscategorizing an investments-intern candidate
+  // as FPA and firing a false-positive RISK_SUBFAMILY_MISMATCH.
+  const amKeywords = /\b(asset management|portfolio management|equity research|aum|fixed income|hedge fund|endowment|stock portfolio|investments intern|investment intern|investment analysis|capital calls|asset allocation|securities analysis|wealth management|dcf|discounted cash flow|capm|wacc|npv and irr|valuation models?)\b/i
+  if (amKeywords.test(normalized)) {
+    return "asset_management"
   }
 
   // Project Finance in profile
@@ -2693,14 +2769,20 @@ function inferProfileFinanceSubFamily(
     return "credit"
   }
 
-  // Asset Management in profile
-  const amKeywords = /\b(asset management|portfolio management|equity research|fund|aum|fixed income|hedge fund)\b/i
-  if (amKeywords.test(normalized)) {
-    return "asset_management"
+  // FP&A language — tightened to require concrete corporate FP&A
+  // vocabulary rather than bare "budgeting" which is a generic finance
+  // word. "Capital budgeting", "project budgeting", "event budgeting"
+  // etc. all contain "budgeting" but are not FPA.
+  const fpaKeywords = /\b(fp&a|fpa|variance analysis|board package|board reporting|monthly close|quarterly report|financial planning and analysis|budget variance|variance to budget|operating budget|opex budget|forecast accuracy|rolling forecast|p&l ownership|profit and loss statement)\b/i
+  if (fpaKeywords.test(normalized) && hasFpaExecution) {
+    return "fpa"
   }
 
   if (hasFinancialAnalysis || hasFpaExecution) {
-    return "fpa" // default for Finance profiles is FP&A if no specific signal
+    // Default for Finance profiles with no specific signal: other_finance
+    // rather than FPA. Previously we defaulted to FPA which forced a
+    // sub-family mismatch penalty on any non-FPA finance job.
+    return "other_finance"
   }
 
   return null

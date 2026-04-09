@@ -80,16 +80,83 @@ function parseCities(text: string): string[] {
     if (!out.includes(x)) out.push(x)
   }
 
-  // Keep intentionally small; evaluator also has its own location logic.
-  if (t.includes("new york") || t.includes("nyc")) add("New York")
+  // Guard against sports-team / hobby false positives. When the
+  // ONLY mention of a city is next to a team/hobby word, don't add it.
+  // Example: Ryan Rudnet's profile says "Miami Dolphins Football" in
+  // his interests — that shouldn't make Miami his preferred location.
+  const isTeamMention = (cityLower: string, teamWords: RegExp): boolean => {
+    if (!t.includes(cityLower)) return false
+    // Find every position where the city appears
+    const positions: number[] = []
+    let idx = 0
+    while (true) {
+      const found = t.indexOf(cityLower, idx)
+      if (found < 0) break
+      positions.push(found)
+      idx = found + 1
+    }
+    // Check if EVERY occurrence is in a team/hobby context
+    return positions.every((pos) => {
+      const after = t.slice(pos, pos + cityLower.length + 40)
+      return teamWords.test(after)
+    })
+  }
+
+  // New York
+  if (t.includes("new york") || t.includes("nyc") || t.includes("manhattan") || t.includes("brooklyn")) add("New York")
+  // Boston
   if (t.includes("boston")) add("Boston")
+  // Philadelphia
   if (t.includes("philadelphia") || t.includes("philly")) add("Philadelphia")
-  if (t.includes("washington") || t.includes("d.c") || t.includes(" dc")) add("Washington, D.C.")
-  if (t.includes("miami")) add("Miami")
-  if (t.includes("chicago")) add("Chicago")
+  // DC
+  if (t.includes("washington, d") || t.includes("washington dc") || /\bdc\b/.test(t)) add("Washington, D.C.")
+  // Miami — exclude team/hobby-only mentions
+  if (t.includes("miami") && !isTeamMention("miami", /(miami\s+(dolphins|heat|marlins|hurricanes|vice))/i)) {
+    add("Miami")
+  }
+  // Chicago
+  if (t.includes("chicago") && !isTeamMention("chicago", /(chicago\s+(bulls|bears|cubs|white sox|blackhawks))/i)) {
+    add("Chicago")
+  }
+  // New Jersey
   if (t.includes("new jersey") || /\bnj\b/.test(t)) add("New Jersey")
 
-  return out
+  // South Florida region + cities (multi-city target support)
+  if (t.includes("south florida") || t.includes("southeast florida") || t.includes("south fl")) {
+    add("South Florida")
+    // South Florida implicitly covers the major metros
+    add("Miami")
+    add("Fort Lauderdale")
+    add("Boca Raton")
+    add("West Palm Beach")
+  }
+  if (t.includes("boca raton")) add("Boca Raton")
+  if (t.includes("fort lauderdale") || t.includes("ft. lauderdale") || t.includes("ft lauderdale")) add("Fort Lauderdale")
+  if (t.includes("west palm beach") || t.includes("palm beach")) add("West Palm Beach")
+  if (t.includes("jacksonville")) add("Jacksonville")
+  if (t.includes("orlando")) add("Orlando")
+  if (t.includes("tampa")) add("Tampa")
+
+  // California
+  if (t.includes("los angeles") || /\bla\s*,\s*ca\b/.test(t)) add("Los Angeles")
+  if (t.includes("san francisco") || t.includes("sf bay") || t.includes("bay area")) add("San Francisco")
+  if (t.includes("san diego")) add("San Diego")
+
+  // Texas
+  if (t.includes("austin")) add("Austin")
+  if (t.includes("dallas")) add("Dallas")
+  if (t.includes("houston")) add("Houston")
+
+  // Other major metros
+  if (t.includes("atlanta")) add("Atlanta")
+  if (t.includes("seattle")) add("Seattle")
+  if (t.includes("denver")) add("Denver")
+  if (t.includes("phoenix")) add("Phoenix")
+  if (t.includes("minneapolis")) add("Minneapolis")
+  if (t.includes("portland")) add("Portland")
+
+  // Dedupe before returning (some region expansions can overlap)
+  return Array.from(new Set(out))
 }
 
 function normalizeAllowedCities(xs: any): string[] | undefined {
