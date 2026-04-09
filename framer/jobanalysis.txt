@@ -78,20 +78,39 @@ function getVerdict(r: AnalysisResult): Verdict {
     const level = r.role_level
     const hiddenCount = r.hidden_requirements?.length ?? 0
     if (comp === "Very High" && hiddenCount >= 5) return "PASS"
-    if ((comp === "Low" || comp === "Medium") && (level === "Entry" || level === "Early Career")) return "APPLY"
+    if (
+        (comp === "Low" || comp === "Medium") &&
+        (level === "Entry" || level === "Early Career")
+    )
+        return "APPLY"
     return "REVIEW"
 }
 
 function getGenericScore(r: AnalysisResult): number {
-    const compMap: Record<string, number> = { "Low": 75, "Medium": 55, "High": 40, "Very High": 25 }
+    const compMap: Record<string, number> = {
+        Low: 75,
+        Medium: 55,
+        High: 40,
+        "Very High": 25,
+    }
     let base = compMap[r.competitiveness] ?? 50
-    const levelAdj: Record<string, number> = { "Entry": -5, "Early Career": 0, "Mid-Level": 5, "Experienced": 10 }
-    base += (levelAdj[r.role_level] ?? 0)
+    const levelAdj: Record<string, number> = {
+        Entry: -5,
+        "Early Career": 0,
+        "Mid-Level": 5,
+        Experienced: 10,
+    }
+    base += levelAdj[r.role_level] ?? 0
     return Math.max(10, Math.min(90, base))
 }
 
 function getCompSegments(comp: string): number {
-    const map: Record<string, number> = { "Low": 1, "Medium": 2, "High": 3, "Very High": 4 }
+    const map: Record<string, number> = {
+        Low: 1,
+        Medium: 2,
+        High: 3,
+        "Very High": 4,
+    }
     return map[comp] ?? 2
 }
 
@@ -106,6 +125,12 @@ const LOADING_MSGS = [
 // ---------- MAIN COMPONENT ----------
 export default function SignalJobAnalysis() {
     const [jd, setJd] = React.useState("")
+    // Optional user-supplied company name and job title. If the JD body is
+    // messy or sparse, the user can type them here and the API will honor
+    // these values over any enrichment-based guess. Displayed in the
+    // results header so the candidate always sees the correct labels.
+    const [companyName, setCompanyName] = React.useState("")
+    const [jobTitle, setJobTitle] = React.useState("")
     const [loading, setLoading] = React.useState(false)
     const [loadingMsg, setLoadingMsg] = React.useState(LOADING_MSGS[0])
     const [error, setError] = React.useState("")
@@ -119,9 +144,18 @@ export default function SignalJobAnalysis() {
         if (!existing) localStorage.setItem("jobfit_session_id", sessionId)
 
         const url = new URL(window.location.href)
-        const src = url.searchParams.get("utm_source") || sessionStorage.getItem("signal_utm_source") || null
-        const med = url.searchParams.get("utm_medium") || sessionStorage.getItem("signal_utm_medium") || null
-        const camp = url.searchParams.get("utm_campaign") || sessionStorage.getItem("signal_utm_campaign") || null
+        const src =
+            url.searchParams.get("utm_source") ||
+            sessionStorage.getItem("signal_utm_source") ||
+            null
+        const med =
+            url.searchParams.get("utm_medium") ||
+            sessionStorage.getItem("signal_utm_medium") ||
+            null
+        const camp =
+            url.searchParams.get("utm_campaign") ||
+            sessionStorage.getItem("signal_utm_campaign") ||
+            null
         try {
             if (src) sessionStorage.setItem("signal_utm_source", src)
             if (med) sessionStorage.setItem("signal_utm_medium", med)
@@ -136,7 +170,9 @@ export default function SignalJobAnalysis() {
                 page_path: window.location.pathname || "/analyze",
                 page_name: "job_analysis_page",
                 referrer: document.referrer || null,
-                utm_source: src, utm_medium: med, utm_campaign: camp,
+                utm_source: src,
+                utm_medium: med,
+                utm_campaign: camp,
             }),
         }).catch(() => {})
     }, [])
@@ -156,28 +192,39 @@ export default function SignalJobAnalysis() {
         setError("")
         const trimmed = jd.trim()
         if (trimmed.length < 100) {
-            setError("Paste the full job description. It needs to be at least 100 characters.")
+            setError(
+                "Paste the full job description. It needs to be at least 100 characters."
+            )
             return
         }
         setLoading(true)
         setLoadingMsg(LOADING_MSGS[0])
         try {
-            const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+            const sessionId =
+                localStorage.getItem("jobfit_session_id") || undefined
             const src = sessionStorage.getItem("signal_utm_source") || undefined
             const med = sessionStorage.getItem("signal_utm_medium") || undefined
-            const camp = sessionStorage.getItem("signal_utm_campaign") || undefined
+            const camp =
+                sessionStorage.getItem("signal_utm_campaign") || undefined
 
             const res = await fetch(API_BASE + "/api/job-analysis", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     job_description: trimmed,
+                    // User-provided labels — API treats these as optional
+                    // overrides and only uses them when non-empty.
+                    company_name: companyName.trim() || undefined,
+                    job_title: jobTitle.trim() || undefined,
                     session_id: sessionId,
-                    utm_source: src, utm_medium: med, utm_campaign: camp,
+                    utm_source: src,
+                    utm_medium: med,
+                    utm_campaign: camp,
                 }),
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data?.error || "Analysis failed. Try again.")
+            if (!res.ok)
+                throw new Error(data?.error || "Analysis failed. Try again.")
             setResult(data as AnalysisResult)
         } catch (err: any) {
             setError(err?.message || "Something went wrong. Try again.")
@@ -188,16 +235,23 @@ export default function SignalJobAnalysis() {
 
     function handleCTA() {
         try {
-            sessionStorage.setItem("signal_jd", JSON.stringify({
-                job_description: jd.trim(),
-                analysis: result,
-                company_name: result?.company_name,
-                timestamp: Date.now(),
-            }))
+            sessionStorage.setItem(
+                "signal_jd",
+                JSON.stringify({
+                    job_description: jd.trim(),
+                    analysis: result,
+                    company_name: result?.company_name,
+                    timestamp: Date.now(),
+                })
+            )
         } catch {}
 
         // Track upgrade CTA click (analyzer results -> GHL purchase).
-        // Use sendBeacon so the event survives the redirect.
+        // Uses sendBeacon so the event survives the redirect. We send as
+        // text/plain (not application/json) because application/json triggers
+        // a CORS preflight that sendBeacon cannot wait for during page unload,
+        // so Chrome silently drops the beacon. The server parses the body via
+        // req.json() which ignores Content-Type, so this is safe.
         const sessionId = localStorage.getItem("jobfit_session_id") || undefined
         const src = sessionStorage.getItem("signal_utm_source") || undefined
         const payload = JSON.stringify({
@@ -208,39 +262,60 @@ export default function SignalJobAnalysis() {
         })
         try {
             if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-                const blob = new Blob([payload], { type: "application/json" })
+                const blob = new Blob([payload], { type: "text/plain" })
                 navigator.sendBeacon(API_BASE + "/api/track", blob)
             } else {
                 fetch(API_BASE + "/api/track", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "text/plain" },
                     body: payload,
                     keepalive: true,
                 }).catch(() => {})
             }
         } catch {}
 
-        window.location.assign(GHL_URL)
+        // Small delay lets the beacon queue before navigation. sendBeacon is
+        // supposed to survive unload, but in practice ~50ms makes delivery
+        // much more reliable across browsers.
+        setTimeout(() => {
+            window.location.assign(GHL_URL)
+        }, 50)
     }
 
     function handleStartOver() {
         setResult(null)
         setJd("")
+        setCompanyName("")
+        setJobTitle("")
         setError("")
-        try { window.scrollTo({ top: 0, behavior: "smooth" }) } catch {}
+        try {
+            window.scrollTo({ top: 0, behavior: "smooth" })
+        } catch {}
     }
 
     function charHint(): { text: string; ready: boolean } {
         const n = jd.length
-        if (n < 300) return { text: "Paste the full posting for best results", ready: false }
-        if (n < 800) return { text: n + " characters \u2014 good, paste the full posting if you have it", ready: false }
+        if (n < 300)
+            return {
+                text: "Paste the full posting for best results",
+                ready: false,
+            }
+        if (n < 800)
+            return {
+                text:
+                    n +
+                    " characters \u2014 good, paste the full posting if you have it",
+                ready: false,
+            }
         return { text: n + " characters \u2014 ready to analyze", ready: true }
     }
 
     return (
         <div style={pageStyle}>
             {/* Injected keyframes */}
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 @keyframes ctaGlow {
                     0%, 100% { box-shadow: 0 0 20px rgba(254,176,106,0.4), 0 0 40px rgba(254,176,106,0.15); }
                     50% { box-shadow: 0 0 28px rgba(81,173,229,0.5), 0 0 56px rgba(81,173,229,0.2); }
@@ -253,35 +328,116 @@ export default function SignalJobAnalysis() {
                     transform: scale(1.03);
                     box-shadow: 0 0 32px rgba(254,176,106,0.6), 0 0 64px rgba(81,173,229,0.3) !important;
                 }
-            ` }} />
+            `,
+                }}
+            />
             {/* Orbs */}
-            <div style={{ ...orbBase, width: 500, height: 500, background: "rgba(81,173,229,0.1)", top: -150, right: -100 }} />
-            <div style={{ ...orbBase, width: 400, height: 400, background: "rgba(254,176,106,0.07)", top: 300, left: -120 }} />
-            <div style={{ ...orbBase, width: 300, height: 300, background: "rgba(192,132,252,0.07)", bottom: 100, right: -60 }} />
-            {result ? <div style={{ ...orbBase, width: 280, height: 280, background: "rgba(74,222,128,0.06)", top: 900, left: -40 }} /> : null}
+            <div
+                style={{
+                    ...orbBase,
+                    width: 500,
+                    height: 500,
+                    background: "rgba(81,173,229,0.1)",
+                    top: -150,
+                    right: -100,
+                }}
+            />
+            <div
+                style={{
+                    ...orbBase,
+                    width: 400,
+                    height: 400,
+                    background: "rgba(254,176,106,0.07)",
+                    top: 300,
+                    left: -120,
+                }}
+            />
+            <div
+                style={{
+                    ...orbBase,
+                    width: 300,
+                    height: 300,
+                    background: "rgba(192,132,252,0.07)",
+                    bottom: 100,
+                    right: -60,
+                }}
+            />
+            {result ? (
+                <div
+                    style={{
+                        ...orbBase,
+                        width: 280,
+                        height: 280,
+                        background: "rgba(74,222,128,0.06)",
+                        top: 900,
+                        left: -40,
+                    }}
+                />
+            ) : null}
 
             <div style={{ position: "relative" as const, zIndex: 1 }}>
                 {/* Topbar */}
                 <div style={topbar}>
                     <div>
-                        <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-.02em" }}>
-                            SIGNAL<span style={{ color: C.orange }}>{"\u2014"}</span>
+                        <div
+                            style={{
+                                fontSize: 17,
+                                fontWeight: 900,
+                                letterSpacing: "-.02em",
+                            }}
+                        >
+                            SIGNAL
+                            <span style={{ color: C.orange }}>{"\u2014"}</span>
                         </div>
-                        <div style={{ fontSize: 9, color: C.blue, letterSpacing: ".1em", fontWeight: 600, marginTop: 1, fontFamily: MONO }}>
+                        <div
+                            style={{
+                                fontSize: 9,
+                                color: C.blue,
+                                letterSpacing: ".1em",
+                                fontWeight: 600,
+                                marginTop: 1,
+                                fontFamily: MONO,
+                            }}
+                        >
                             BY WORKFORCE READY NOW
                         </div>
                     </div>
-                    <div style={{ fontSize: 11, color: result ? "#4a6a85" : C.green, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div
+                        style={{
+                            fontSize: 11,
+                            color: result ? "#4a6a85" : C.green,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                        }}
+                    >
                         {result ? (
                             <>
-                                {extractRoleTitle(result)} {result.company_name ? " \u00B7 " + result.company_name : ""}
+                                {extractRoleTitle(result)}{" "}
+                                {result.company_name
+                                    ? " \u00B7 " + result.company_name
+                                    : ""}
                                 {" \u00B7 "}
-                                <span style={{ color: C.blue, cursor: "pointer" }} onClick={handleStartOver}>Run another {"\u2192"}</span>
+                                <span
+                                    style={{ color: C.blue, cursor: "pointer" }}
+                                    onClick={handleStartOver}
+                                >
+                                    Run another {"\u2192"}
+                                </span>
                             </>
                         ) : (
                             <>
-                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, display: "inline-block" }} />
-                                Free job intelligence {"\u00B7"} No account required
+                                <span
+                                    style={{
+                                        width: 6,
+                                        height: 6,
+                                        borderRadius: "50%",
+                                        background: C.green,
+                                        display: "inline-block",
+                                    }}
+                                />
+                                Free job intelligence {"\u00B7"} No account
+                                required
                             </>
                         )}
                     </div>
@@ -291,6 +447,10 @@ export default function SignalJobAnalysis() {
                     <InputState
                         jd={jd}
                         setJd={setJd}
+                        companyName={companyName}
+                        setCompanyName={setCompanyName}
+                        jobTitle={jobTitle}
+                        setJobTitle={setJobTitle}
                         loading={loading}
                         loadingMsg={loadingMsg}
                         error={error}
@@ -298,7 +458,11 @@ export default function SignalJobAnalysis() {
                         onAnalyze={handleAnalyze}
                     />
                 ) : (
-                    <ResultsState result={result} onCTA={handleCTA} onStartOver={handleStartOver} />
+                    <ResultsState
+                        result={result}
+                        onCTA={handleCTA}
+                        onStartOver={handleStartOver}
+                    />
                 )}
             </div>
         </div>
@@ -314,10 +478,24 @@ function extractRoleTitle(r: AnalysisResult): string {
 // ===================== INPUT STATE =====================
 
 function InputState({
-    jd, setJd, loading, loadingMsg, error, charHint, onAnalyze,
+    jd,
+    setJd,
+    companyName,
+    setCompanyName,
+    jobTitle,
+    setJobTitle,
+    loading,
+    loadingMsg,
+    error,
+    charHint,
+    onAnalyze,
 }: {
     jd: string
     setJd: (v: string) => void
+    companyName: string
+    setCompanyName: (v: string) => void
+    jobTitle: string
+    setJobTitle: (v: string) => void
     loading: boolean
     loadingMsg: string
     error: string
@@ -327,13 +505,34 @@ function InputState({
     return (
         <>
             {/* Hero */}
-            <div style={{ padding: "36px 24px 20px", textAlign: "center" as const }}>
+            <div
+                style={{
+                    padding: "36px 24px 20px",
+                    textAlign: "center" as const,
+                }}
+            >
                 <div style={eyebrowPill}>
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.orange, display: "inline-block" }} />
+                    <span
+                        style={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: "50%",
+                            background: C.orange,
+                            display: "inline-block",
+                        }}
+                    />
                     FREE JOB INTELLIGENCE
                 </div>
 
-                <div style={{ fontSize: 36, fontWeight: 900, lineHeight: 1.15, letterSpacing: "-.02em", marginBottom: 10 }}>
+                <div
+                    style={{
+                        fontSize: 36,
+                        fontWeight: 900,
+                        lineHeight: 1.15,
+                        letterSpacing: "-.02em",
+                        marginBottom: 10,
+                    }}
+                >
                     <div style={{ color: C.white }}>Find out what a job</div>
                     <div>
                         <span style={{ color: C.orange }}>actually</span>{" "}
@@ -342,49 +541,190 @@ function InputState({
                     </div>
                 </div>
 
-                <div style={{ fontSize: 14, lineHeight: 1.7, color: C.muted, maxWidth: 480, margin: "0 auto 28px" }}>
-                    Paste any job description. SIGNAL breaks down what the role really demands, how competitive the pool is, and what hiring managers expect {"\u2014"} but don't say.
+                <div
+                    style={{
+                        fontSize: 14,
+                        lineHeight: 1.7,
+                        color: C.muted,
+                        maxWidth: 480,
+                        margin: "0 auto 28px",
+                    }}
+                >
+                    Paste any job description. SIGNAL breaks down what the role
+                    really demands, how competitive the pool is, and what hiring
+                    managers expect {"\u2014"} but don't say.
                 </div>
 
                 {/* Intel banner */}
                 <div style={intelBanner}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-                        <circle cx="8" cy="8" r="7" stroke={C.blue} strokeWidth="1.2" />
-                        <line x1="8" y1="7" x2="8" y2="11" stroke={C.blue} strokeWidth="1.2" strokeLinecap="round" />
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        style={{ flexShrink: 0, marginTop: 1 }}
+                    >
+                        <circle
+                            cx="8"
+                            cy="8"
+                            r="7"
+                            stroke={C.blue}
+                            strokeWidth="1.2"
+                        />
+                        <line
+                            x1="8"
+                            y1="7"
+                            x2="8"
+                            y2="11"
+                            stroke={C.blue}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                        />
                         <circle cx="8" cy="5" r=".6" fill={C.blue} />
                     </svg>
-                    <div style={{ fontSize: 12, color: C.body, lineHeight: 1.6 }}>
-                        <strong style={{ color: C.blue, fontWeight: 600 }}>This is market intelligence, not a personal score.</strong> The analysis is based on the job and company {"\u2014"} not your specific background. To find out how YOU compare to this role, you'll need full SIGNAL access.
+                    <div
+                        style={{ fontSize: 12, color: C.body, lineHeight: 1.6 }}
+                    >
+                        <strong style={{ color: C.blue, fontWeight: 600 }}>
+                            This is market intelligence, not a personal score.
+                        </strong>{" "}
+                        The analysis is based on the job and company {"\u2014"}{" "}
+                        not your specific background. To find out how YOU
+                        compare to this role, you'll need full SIGNAL access.
                     </div>
                 </div>
 
                 {/* Stats row */}
-                <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 32, flexWrap: "wrap" as const }}>
-                    <StatGlass num="73%" color={C.orange} label="of applications never get a response" />
-                    <StatGlass num="4 hrs" color={C.blue} label="average time wasted per bad application" />
-                    <StatGlass num="1 in 8" color={C.green} label="students reviewed job fit entirely" />
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 10,
+                        marginBottom: 32,
+                        flexWrap: "wrap" as const,
+                    }}
+                >
+                    <StatGlass
+                        num="73%"
+                        color={C.orange}
+                        label="of applications never get a response"
+                    />
+                    <StatGlass
+                        num="4 hrs"
+                        color={C.blue}
+                        label="average time wasted per bad application"
+                    />
+                    <StatGlass
+                        num="1 in 8"
+                        color={C.green}
+                        label="students reviewed job fit entirely"
+                    />
                 </div>
             </div>
 
             {/* Form area */}
             <div style={{ padding: "0 24px 32px" }}>
                 {/* What you get grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-                    <WygCard icon="star" color={C.orange} title="Competitiveness rating" desc="How hard is this pool, really" />
-                    <WygCard icon="check" color={C.blue} title="Hidden requirements" desc="What the JD doesn't say" />
-                    <WygCard icon="doc" color={C.purple} title="Risk flags" desc="Honest warnings before you apply" />
-                    <WygCard icon="tick" color={C.green} title="Target candidate profile" desc="What a strong applicant looks like" />
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 10,
+                        marginBottom: 16,
+                    }}
+                >
+                    <WygCard
+                        icon="star"
+                        color={C.orange}
+                        title="Competitiveness rating"
+                        desc="How hard is this pool, really"
+                    />
+                    <WygCard
+                        icon="check"
+                        color={C.blue}
+                        title="Hidden requirements"
+                        desc="What the JD doesn't say"
+                    />
+                    <WygCard
+                        icon="doc"
+                        color={C.purple}
+                        title="Risk flags"
+                        desc="Honest warnings before you apply"
+                    />
+                    <WygCard
+                        icon="tick"
+                        color={C.green}
+                        title="Target candidate profile"
+                        desc="What a strong applicant looks like"
+                    />
                 </div>
 
                 {/* Input card */}
                 <div style={glassCard}>
-                    <div style={{ ...monoLabel, color: C.orange, marginBottom: 6 }}>STEP 1 OF 1</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: C.white, marginBottom: 4 }}>Paste the job description</div>
-                    <div style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>
-                        The more complete the posting, the sharper the intelligence.
+                    <div
+                        style={{
+                            ...monoLabel,
+                            color: C.orange,
+                            marginBottom: 6,
+                        }}
+                    >
+                        STEP 1 OF 1
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 16,
+                            fontWeight: 800,
+                            color: C.white,
+                            marginBottom: 4,
+                        }}
+                    >
+                        Paste the job description
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 12,
+                            color: C.muted,
+                            marginBottom: 16,
+                        }}
+                    >
+                        The more complete the posting, the sharper the
+                        intelligence.
                     </div>
 
                     {error ? <div style={errorBox}>{error}</div> : null}
+
+                    {/* Optional label inputs — user can type the company
+                        name and job title so the results header always
+                        shows the right values even when the JD body is
+                        messy or omits them. Left blank, the API falls
+                        back to enrichment. */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 10,
+                            marginBottom: 10,
+                        }}
+                    >
+                        <input
+                            type="text"
+                            value={companyName}
+                            onChange={(e) =>
+                                setCompanyName(e.target.value)
+                            }
+                            placeholder="Company (optional)"
+                            maxLength={200}
+                            style={labelInputStyle}
+                        />
+                        <input
+                            type="text"
+                            value={jobTitle}
+                            onChange={(e) => setJobTitle(e.target.value)}
+                            placeholder="Job title (optional)"
+                            maxLength={200}
+                            style={labelInputStyle}
+                        />
+                    </div>
 
                     <textarea
                         value={jd}
@@ -392,43 +732,125 @@ function InputState({
                         placeholder="Paste the full job posting here \u2014 title, responsibilities, requirements, company info. The more you include, the better the analysis."
                         style={textareaStyle}
                     />
-                    <div style={{ fontSize: 11, color: charHint.ready ? C.green : C.muted, marginTop: 6, fontFamily: MONO, textAlign: "right" as const }}>
+                    <div
+                        style={{
+                            fontSize: 11,
+                            color: charHint.ready ? C.green : C.muted,
+                            marginTop: 6,
+                            fontFamily: MONO,
+                            textAlign: "right" as const,
+                        }}
+                    >
                         {charHint.text}
                     </div>
 
                     {loading ? (
                         <div style={{ marginTop: 14 }}>
-                            <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 10 }}>
-                                <div style={{
-                                    height: "100%", borderRadius: 3, background: C.orange,
-                                    animation: "loadbar 2.5s ease-in-out infinite",
-                                    width: "60%",
-                                }} />
+                            <div
+                                style={{
+                                    height: 6,
+                                    borderRadius: 3,
+                                    background: "rgba(255,255,255,0.08)",
+                                    overflow: "hidden",
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        height: "100%",
+                                        borderRadius: 3,
+                                        background: C.orange,
+                                        animation:
+                                            "loadbar 2.5s ease-in-out infinite",
+                                        width: "60%",
+                                    }}
+                                />
                             </div>
-                            <div style={{ textAlign: "center" as const, fontSize: 13, color: C.muted, fontWeight: 600 }}>
+                            <div
+                                style={{
+                                    textAlign: "center" as const,
+                                    fontSize: 13,
+                                    color: C.muted,
+                                    fontWeight: 600,
+                                }}
+                            >
                                 {loadingMsg}
                             </div>
                         </div>
                     ) : (
-                        <button type="button" onClick={onAnalyze} style={submitBtn}>
+                        <button
+                            type="button"
+                            onClick={onAnalyze}
+                            style={submitBtn}
+                        >
                             Analyze This Role {"\u2192"}
                         </button>
                     )}
-                    <div style={{ textAlign: "center" as const, fontSize: 13, fontWeight: 800, marginTop: 10, letterSpacing: ".06em", background: "linear-gradient(90deg, #FEB06A, #51ADE5)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        FREE {"\u00B7"} NO ACCOUNT {"\u00B7"} RESULTS IN ~15 SECONDS
+                    <div
+                        style={{
+                            textAlign: "center" as const,
+                            fontSize: 13,
+                            fontWeight: 800,
+                            marginTop: 10,
+                            letterSpacing: ".06em",
+                            background:
+                                "linear-gradient(90deg, #FEB06A, #51ADE5)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                        }}
+                    >
+                        FREE {"\u00B7"} NO ACCOUNT {"\u00B7"} RESULTS IN ~15
+                        SECONDS
                     </div>
                 </div>
 
                 {/* Personal teaser */}
                 <div style={personalTeaser}>
                     <div style={{ flex: 1 }}>
-                        <div style={{ ...monoLabel, color: C.orange, marginBottom: 4, fontSize: 9 }}>WANT YOUR PERSONAL SCORE?</div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: C.white, marginBottom: 2 }}>Skip ahead {"\u2014"} get full SIGNAL access</div>
-                        <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>See exactly how your background scores against any role.</div>
+                        <div
+                            style={{
+                                ...monoLabel,
+                                color: C.orange,
+                                marginBottom: 4,
+                                fontSize: 9,
+                            }}
+                        >
+                            WANT YOUR PERSONAL SCORE?
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: C.white,
+                                marginBottom: 2,
+                            }}
+                        >
+                            Skip ahead {"\u2014"} get full SIGNAL access
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 11,
+                                color: C.muted,
+                                lineHeight: 1.4,
+                            }}
+                        >
+                            See exactly how your background scores against any
+                            role.
+                        </div>
                     </div>
                     <div
                         onClick={() => window.location.assign(GHL_URL)}
-                        style={{ background: C.orange, color: C.bg, fontSize: 11, fontWeight: 800, padding: "8px 14px", borderRadius: 6, cursor: "pointer", whiteSpace: "nowrap" as const, fontFamily: SANS }}
+                        style={{
+                            background: C.orange,
+                            color: C.bg,
+                            fontSize: 11,
+                            fontWeight: 800,
+                            padding: "8px 14px",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap" as const,
+                            fontFamily: SANS,
+                        }}
                     >
                         Get Full Access {"\u2192"}
                     </div>
@@ -441,7 +863,9 @@ function InputState({
 // ===================== RESULTS STATE =====================
 
 function ResultsState({
-    result, onCTA, onStartOver,
+    result,
+    onCTA,
+    onStartOver,
 }: {
     result: AnalysisResult
     onCTA: () => void
@@ -456,41 +880,161 @@ function ResultsState({
     const checkItems = result.target_candidate_profile ?? []
     const findingColors = [C.orange, C.blue, C.purple, C.green, C.teal, C.red]
 
-    const vColor = verdict === "APPLY" ? C.green : verdict === "PASS" ? C.red : C.orange
+    const vColor =
+        verdict === "APPLY" ? C.green : verdict === "PASS" ? C.red : C.orange
 
     const skillPalettes = [
-        { color: C.blue, bg: "rgba(81,173,229,0.08)", border: "rgba(81,173,229,0.18)" },
-        { color: C.purple, bg: "rgba(192,132,252,0.08)", border: "rgba(192,132,252,0.18)" },
-        { color: C.teal, bg: "rgba(45,212,191,0.06)", border: "rgba(45,212,191,0.18)" },
-        { color: C.orange, bg: "rgba(254,176,106,0.06)", border: "rgba(254,176,106,0.18)" },
+        {
+            color: C.blue,
+            bg: "rgba(81,173,229,0.08)",
+            border: "rgba(81,173,229,0.18)",
+        },
+        {
+            color: C.purple,
+            bg: "rgba(192,132,252,0.08)",
+            border: "rgba(192,132,252,0.18)",
+        },
+        {
+            color: C.teal,
+            bg: "rgba(45,212,191,0.06)",
+            border: "rgba(45,212,191,0.18)",
+        },
+        {
+            color: C.orange,
+            bg: "rgba(254,176,106,0.06)",
+            border: "rgba(254,176,106,0.18)",
+        },
     ]
 
-    const Divider = () => <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 32px" }} />
-    const secEyebrow = (text: string, color: string): React.CSSProperties => ({ fontSize: 9, letterSpacing: ".18em", fontWeight: 700, color, marginBottom: 8 })
-    const secTitle: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: C.white, marginBottom: 24, letterSpacing: "-.01em" }
+    const Divider = () => (
+        <div
+            style={{
+                height: 1,
+                background: "rgba(255,255,255,0.06)",
+                margin: "0 32px",
+            }}
+        />
+    )
+    const secEyebrow = (text: string, color: string): React.CSSProperties => ({
+        fontSize: 9,
+        letterSpacing: ".18em",
+        fontWeight: 700,
+        color,
+        marginBottom: 8,
+    })
+    const secTitle: React.CSSProperties = {
+        fontSize: 20,
+        fontWeight: 800,
+        color: C.white,
+        marginBottom: 24,
+        letterSpacing: "-.01em",
+    }
 
     return (
         <>
             {/* ── Verdict Hero (2-column) ── */}
-            <div style={{ padding: "48px 32px 0", display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 48, alignItems: "start" }}>
+            <div
+                style={{
+                    padding: "48px 32px 0",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1.4fr",
+                    gap: 48,
+                    alignItems: "start",
+                }}
+            >
                 {/* Left: stamp + score + competition */}
                 <div>
-                    <div style={{ fontSize: 96, fontWeight: 900, letterSpacing: "-.05em", lineHeight: 0.95, marginBottom: 20, color: vColor }}>
+                    <div
+                        style={{
+                            fontSize: 96,
+                            fontWeight: 900,
+                            letterSpacing: "-.05em",
+                            lineHeight: 0.95,
+                            marginBottom: 20,
+                            color: vColor,
+                        }}
+                    >
                         {verdict}
                     </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 16 }}>
-                        <div style={{ fontSize: 44, fontWeight: 900, color: C.white, lineHeight: 1 }}>{score}</div>
-                        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.25)" }}>/100</div>
-                        <div style={{ fontSize: 10, letterSpacing: ".1em", color: "#4a6a85" }}>{" "}GENERIC FIT</div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "baseline",
+                            gap: 6,
+                            marginBottom: 16,
+                        }}
+                    >
+                        <div
+                            style={{
+                                fontSize: 44,
+                                fontWeight: 900,
+                                color: C.white,
+                                lineHeight: 1,
+                            }}
+                        >
+                            {score}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 16,
+                                color: "rgba(255,255,255,0.25)",
+                            }}
+                        >
+                            /100
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 10,
+                                letterSpacing: ".1em",
+                                color: "#4a6a85",
+                            }}
+                        >
+                            {" "}
+                            GENERIC FIT
+                        </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                        <div style={{ fontSize: 9, letterSpacing: ".14em", color: "#4a6a85", whiteSpace: "nowrap" as const }}>COMPETITION</div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            marginBottom: 6,
+                        }}
+                    >
+                        <div
+                            style={{
+                                fontSize: 9,
+                                letterSpacing: ".14em",
+                                color: "#4a6a85",
+                                whiteSpace: "nowrap" as const,
+                            }}
+                        >
+                            COMPETITION
+                        </div>
                         <div style={{ display: "flex", gap: 4 }}>
                             {[1, 2, 3, 4].map((s) => (
-                                <div key={s} style={{ width: 32, height: 4, borderRadius: 2, background: s <= compSegs ? C.orange : "rgba(255,255,255,0.07)" }} />
+                                <div
+                                    key={s}
+                                    style={{
+                                        width: 32,
+                                        height: 4,
+                                        borderRadius: 2,
+                                        background:
+                                            s <= compSegs
+                                                ? C.orange
+                                                : "rgba(255,255,255,0.07)",
+                                    }}
+                                />
                             ))}
                         </div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: C.orange, letterSpacing: ".08em" }}>
+                        <div
+                            style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: C.orange,
+                                letterSpacing: ".08em",
+                            }}
+                        >
                             {result.competitiveness.toUpperCase()}
                         </div>
                     </div>
@@ -503,36 +1047,128 @@ function ResultsState({
 
                 {/* Right: role + summary */}
                 <div style={{ paddingTop: 8 }}>
-                    <div style={{ fontSize: 10, letterSpacing: ".12em", color: C.blue, textTransform: "uppercase" as const, marginBottom: 14 }}>
-                        {result.role_level} {" \u00B7 "} {result.function} {co ? " \u00B7 " + co : ""}
+                    <div
+                        style={{
+                            fontSize: 10,
+                            letterSpacing: ".12em",
+                            color: C.blue,
+                            textTransform: "uppercase" as const,
+                            marginBottom: 14,
+                        }}
+                    >
+                        {result.role_level} {" \u00B7 "} {result.function}{" "}
+                        {co ? " \u00B7 " + co : ""}
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: C.white, lineHeight: 1.3, marginBottom: 16, letterSpacing: "-.01em" }}>
-                        {extractRoleTitle(result)}{co ? " \u2014 " + co : ""}
+                    <div
+                        style={{
+                            fontSize: 22,
+                            fontWeight: 800,
+                            color: C.white,
+                            lineHeight: 1.3,
+                            marginBottom: 16,
+                            letterSpacing: "-.01em",
+                        }}
+                    >
+                        {extractRoleTitle(result)}
+                        {co ? " \u2014 " + co : ""}
                     </div>
-                    <div style={{ fontSize: 15, lineHeight: 1.8, color: "#7a9bbf" }}>
+                    <div
+                        style={{
+                            fontSize: 15,
+                            lineHeight: 1.8,
+                            color: "#7a9bbf",
+                        }}
+                    >
                         {result.summary}
                     </div>
                 </div>
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "36px 32px 0" }} />
+            <div
+                style={{
+                    height: 1,
+                    background: "rgba(255,255,255,0.06)",
+                    margin: "36px 32px 0",
+                }}
+            />
 
             {/* ── Company Intelligence ── */}
             {cc ? (
                 <>
                     <div style={{ padding: "36px 32px" }}>
-                        <div style={secEyebrow("COMPANY INTELLIGENCE", C.blue)}>COMPANY INTELLIGENCE</div>
-                        <div style={secTitle}>What you need to know about {co}</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "rgba(81,173,229,0.1)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
-                            {cc.what_they_do ? <div style={coCell}><div style={coCellLbl}>WHAT THEY ACTUALLY DO</div><div style={coCellVal}>{cc.what_they_do}</div></div> : null}
-                            {cc.company_stage ? <div style={coCell}><div style={coCellLbl}>COMPANY STAGE</div><div style={coCellVal}>{cc.company_stage}</div></div> : null}
-                            {cc.clients ? <div style={coCell}><div style={coCellLbl}>WHO THEIR CLIENTS ARE</div><div style={coCellVal}>{cc.clients}</div></div> : null}
-                            {cc.marketing_context ? <div style={coCell}><div style={coCellLbl}>MARKETING CONTEXT</div><div style={coCellVal}>{cc.marketing_context}</div></div> : null}
+                        <div style={secEyebrow("COMPANY INTELLIGENCE", C.blue)}>
+                            COMPANY INTELLIGENCE
+                        </div>
+                        <div style={secTitle}>
+                            What you need to know about {co}
+                        </div>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: 1,
+                                background: "rgba(81,173,229,0.1)",
+                                borderRadius: 12,
+                                overflow: "hidden",
+                                marginBottom: 20,
+                            }}
+                        >
+                            {cc.what_they_do ? (
+                                <div style={coCell}>
+                                    <div style={coCellLbl}>
+                                        WHAT THEY ACTUALLY DO
+                                    </div>
+                                    <div style={coCellVal}>
+                                        {cc.what_they_do}
+                                    </div>
+                                </div>
+                            ) : null}
+                            {cc.company_stage ? (
+                                <div style={coCell}>
+                                    <div style={coCellLbl}>COMPANY STAGE</div>
+                                    <div style={coCellVal}>
+                                        {cc.company_stage}
+                                    </div>
+                                </div>
+                            ) : null}
+                            {cc.clients ? (
+                                <div style={coCell}>
+                                    <div style={coCellLbl}>
+                                        WHO THEIR CLIENTS ARE
+                                    </div>
+                                    <div style={coCellVal}>{cc.clients}</div>
+                                </div>
+                            ) : null}
+                            {cc.marketing_context ? (
+                                <div style={coCell}>
+                                    <div style={coCellLbl}>
+                                        MARKETING CONTEXT
+                                    </div>
+                                    <div style={coCellVal}>
+                                        {cc.marketing_context}
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                         {cc.application_insight ? (
-                            <div style={{ fontSize: 14, color: "#b8cedf", lineHeight: 1.75, borderLeft: "2px solid " + C.blue, padding: "16px 20px", background: "rgba(81,173,229,0.04)", borderRadius: "0 8px 8px 0" }}>
-                                <strong style={{ color: C.blue, fontWeight: 600 }}>Why this matters for your application:</strong> {cc.application_insight}
+                            <div
+                                style={{
+                                    fontSize: 14,
+                                    color: "#b8cedf",
+                                    lineHeight: 1.75,
+                                    borderLeft: "2px solid " + C.blue,
+                                    padding: "16px 20px",
+                                    background: "rgba(81,173,229,0.04)",
+                                    borderRadius: "0 8px 8px 0",
+                                }}
+                            >
+                                <strong
+                                    style={{ color: C.blue, fontWeight: 600 }}
+                                >
+                                    Why this matters for your application:
+                                </strong>{" "}
+                                {cc.application_insight}
                             </div>
                         ) : null}
                     </div>
@@ -542,25 +1178,83 @@ function ResultsState({
 
             {/* ── Signals + Skills ── */}
             <div style={{ padding: "36px 32px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 32,
+                    }}
+                >
                     <div>
-                        <div style={secEyebrow("SIGNALS FROM THE POSTING", C.blue)}>SIGNALS FROM THE POSTING</div>
-                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginTop: 14 }}>
+                        <div
+                            style={secEyebrow(
+                                "SIGNALS FROM THE POSTING",
+                                C.blue
+                            )}
+                        >
+                            SIGNALS FROM THE POSTING
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column" as const,
+                                gap: 10,
+                                marginTop: 14,
+                            }}
+                        >
                             {(result.seniority_signals ?? []).map((s, i) => (
-                                <div key={i} style={{ fontSize: 14, color: "#9ab8cf", paddingLeft: 16, position: "relative" as const, lineHeight: 1.6 }}>
-                                    <span style={{ position: "absolute" as const, left: 0, color: C.blue }}>{"\u2014"}</span>
+                                <div
+                                    key={i}
+                                    style={{
+                                        fontSize: 14,
+                                        color: "#9ab8cf",
+                                        paddingLeft: 16,
+                                        position: "relative" as const,
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            position: "absolute" as const,
+                                            left: 0,
+                                            color: C.blue,
+                                        }}
+                                    >
+                                        {"\u2014"}
+                                    </span>
                                     {s}
                                 </div>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <div style={secEyebrow("HARD SKILLS REQUIRED", C.purple)}>HARD SKILLS REQUIRED</div>
-                        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6, marginTop: 14 }}>
+                        <div
+                            style={secEyebrow("HARD SKILLS REQUIRED", C.purple)}
+                        >
+                            HARD SKILLS REQUIRED
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexWrap: "wrap" as const,
+                                gap: 6,
+                                marginTop: 14,
+                            }}
+                        >
                             {(result.core_skills ?? []).map((s, i) => {
                                 const p = skillPalettes[i % 4]
                                 return (
-                                    <span key={i} style={{ fontSize: 12, padding: "5px 10px", borderRadius: 4, color: p.color, background: p.bg, border: "1px solid " + p.border }}>
+                                    <span
+                                        key={i}
+                                        style={{
+                                            fontSize: 12,
+                                            padding: "5px 10px",
+                                            borderRadius: 4,
+                                            color: p.color,
+                                            background: p.bg,
+                                            border: "1px solid " + p.border,
+                                        }}
+                                    >
                                         {s}
                                     </span>
                                 )
@@ -574,27 +1268,104 @@ function ResultsState({
 
             {/* ── Candidate + Target Profile ── */}
             <div style={{ padding: "36px 32px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 32,
+                    }}
+                >
                     <div>
-                        <div style={secEyebrow("STRONG CANDIDATE LOOKS LIKE", C.green)}>STRONG CANDIDATE LOOKS LIKE</div>
-                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 12, marginTop: 14 }}>
+                        <div
+                            style={secEyebrow(
+                                "STRONG CANDIDATE LOOKS LIKE",
+                                C.green
+                            )}
+                        >
+                            STRONG CANDIDATE LOOKS LIKE
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column" as const,
+                                gap: 12,
+                                marginTop: 14,
+                            }}
+                        >
                             {checkItems.map((item, i) => (
-                                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, fontSize: 14, color: "#9ab8cf", lineHeight: 1.65 }}>
-                                    <div style={{ width: 14, height: 14, border: "1.5px solid rgba(74,222,128,0.4)", borderRadius: 3, flexShrink: 0, marginTop: 2 }} />
+                                <div
+                                    key={i}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 12,
+                                        fontSize: 14,
+                                        color: "#9ab8cf",
+                                        lineHeight: 1.65,
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: 14,
+                                            height: 14,
+                                            border: "1.5px solid rgba(74,222,128,0.4)",
+                                            borderRadius: 3,
+                                            flexShrink: 0,
+                                            marginTop: 2,
+                                        }}
+                                    />
                                     {item}
                                 </div>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <div style={secEyebrow("TARGET PROFILE", C.teal)}>TARGET PROFILE</div>
-                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginTop: 14 }}>
+                        <div style={secEyebrow("TARGET PROFILE", C.teal)}>
+                            TARGET PROFILE
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column" as const,
+                                gap: 10,
+                                marginTop: 14,
+                            }}
+                        >
                             {checkItems.slice(0, 3).map((item, i) => {
-                                const labels = ["EXPERIENCE", "BACKGROUND", "DIFFERENTIATOR"]
+                                const labels = [
+                                    "EXPERIENCE",
+                                    "BACKGROUND",
+                                    "DIFFERENTIATOR",
+                                ]
                                 return (
-                                    <div key={i} style={{ padding: "14px 16px", borderRadius: 8, background: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.12)" }}>
-                                        <div style={{ fontSize: 9, letterSpacing: ".12em", color: "rgba(74,222,128,0.5)", marginBottom: 4 }}>{labels[i] || "DETAIL"}</div>
-                                        <div style={{ fontSize: 13, color: "#8ade9a", lineHeight: 1.5 }}>{item}</div>
+                                    <div
+                                        key={i}
+                                        style={{
+                                            padding: "14px 16px",
+                                            borderRadius: 8,
+                                            background: "rgba(74,222,128,0.04)",
+                                            border: "1px solid rgba(74,222,128,0.12)",
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 9,
+                                                letterSpacing: ".12em",
+                                                color: "rgba(74,222,128,0.5)",
+                                                marginBottom: 4,
+                                            }}
+                                        >
+                                            {labels[i] || "DETAIL"}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 13,
+                                                color: "#8ade9a",
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
+                                            {item}
+                                        </div>
                                     </div>
                                 )
                             })}
@@ -609,31 +1380,115 @@ function ResultsState({
             {mr ? (
                 <>
                     <div style={{ padding: "36px 32px" }}>
-                        <div style={secEyebrow("MARKET REALITY", C.purple)}>MARKET REALITY</div>
-                        <div style={secTitle}>What the applicant pool actually looks like</div>
-                        {(mr.stats && mr.stats.length > 0) ? (
-                            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid rgba(192,132,252,0.12)", borderRadius: 12, overflow: "hidden" }}>
+                        <div style={secEyebrow("MARKET REALITY", C.purple)}>
+                            MARKET REALITY
+                        </div>
+                        <div style={secTitle}>
+                            What the applicant pool actually looks like
+                        </div>
+                        {mr.stats && mr.stats.length > 0 ? (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 0,
+                                    marginBottom: 20,
+                                    border: "1px solid rgba(192,132,252,0.12)",
+                                    borderRadius: 12,
+                                    overflow: "hidden",
+                                }}
+                            >
                                 {mr.stats.map((st, i) => {
-                                    const statColors = [C.purple, C.orange, C.red]
+                                    const statColors = [
+                                        C.purple,
+                                        C.orange,
+                                        C.red,
+                                    ]
                                     return (
-                                        <div key={i} style={{ ...mStatCell, borderLeft: i > 0 ? "1px solid rgba(192,132,252,0.1)" : "none" }}>
-                                            <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1, marginBottom: 6, color: statColors[i % 3] }}>{st.value}</div>
-                                            <div style={{ fontSize: 11, color: "#4a6a85", lineHeight: 1.4 }}>{st.label}</div>
+                                        <div
+                                            key={i}
+                                            style={{
+                                                ...mStatCell,
+                                                borderLeft:
+                                                    i > 0
+                                                        ? "1px solid rgba(192,132,252,0.1)"
+                                                        : "none",
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    fontSize: 32,
+                                                    fontWeight: 900,
+                                                    lineHeight: 1,
+                                                    marginBottom: 6,
+                                                    color: statColors[i % 3],
+                                                }}
+                                            >
+                                                {st.value}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: 11,
+                                                    color: "#4a6a85",
+                                                    lineHeight: 1.4,
+                                                }}
+                                            >
+                                                {st.label}
+                                            </div>
                                         </div>
                                     )
                                 })}
                             </div>
                         ) : mr.estimated_applicants ? (
-                            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid rgba(192,132,252,0.12)", borderRadius: 12, overflow: "hidden" }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 0,
+                                    marginBottom: 20,
+                                    border: "1px solid rgba(192,132,252,0.12)",
+                                    borderRadius: 12,
+                                    overflow: "hidden",
+                                }}
+                            >
                                 <div style={mStatCell}>
-                                    <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1, marginBottom: 6, color: C.purple }}>{mr.estimated_applicants}</div>
-                                    <div style={{ fontSize: 11, color: "#4a6a85", lineHeight: 1.4 }}>estimated applicants</div>
+                                    <div
+                                        style={{
+                                            fontSize: 32,
+                                            fontWeight: 900,
+                                            lineHeight: 1,
+                                            marginBottom: 6,
+                                            color: C.purple,
+                                        }}
+                                    >
+                                        {mr.estimated_applicants}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 11,
+                                            color: "#4a6a85",
+                                            lineHeight: 1.4,
+                                        }}
+                                    >
+                                        estimated applicants
+                                    </div>
                                 </div>
                             </div>
                         ) : null}
                         {mr.competitive_dynamic ? (
-                            <div style={{ fontSize: 14, color: "#b8cedf", lineHeight: 1.75, borderLeft: "2px solid " + C.purple, padding: "16px 20px", background: "rgba(192,132,252,0.03)", borderRadius: "0 8px 8px 0" }}>
-                                <strong style={{ color: C.purple }}>The real competitive dynamic:</strong> {mr.competitive_dynamic}
+                            <div
+                                style={{
+                                    fontSize: 14,
+                                    color: "#b8cedf",
+                                    lineHeight: 1.75,
+                                    borderLeft: "2px solid " + C.purple,
+                                    padding: "16px 20px",
+                                    background: "rgba(192,132,252,0.03)",
+                                    borderRadius: "0 8px 8px 0",
+                                }}
+                            >
+                                <strong style={{ color: C.purple }}>
+                                    The real competitive dynamic:
+                                </strong>{" "}
+                                {mr.competitive_dynamic}
                             </div>
                         ) : null}
                     </div>
@@ -643,23 +1498,114 @@ function ResultsState({
 
             {/* ── Classified ── */}
             <div style={{ padding: "36px 32px 36px" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 24 }}>
-                    <span style={{ fontSize: 9, letterSpacing: ".18em", color: C.orange, border: "1px solid rgba(254,176,106,0.35)", padding: "4px 8px", borderRadius: 3 }}>CLASSIFIED</span>
-                    <span style={{ fontSize: 24, fontWeight: 900, color: C.white, letterSpacing: "-.02em" }}>The hidden reality</span>
-                    <span style={{ fontSize: 12, color: "#4a6a85", marginLeft: "auto" }}>
-                        What the JD doesn't say {"\u2014"} but every hiring manager expects.
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: 14,
+                        marginBottom: 24,
+                    }}
+                >
+                    <span
+                        style={{
+                            fontSize: 9,
+                            letterSpacing: ".18em",
+                            color: C.orange,
+                            border: "1px solid rgba(254,176,106,0.35)",
+                            padding: "4px 8px",
+                            borderRadius: 3,
+                        }}
+                    >
+                        CLASSIFIED
+                    </span>
+                    <span
+                        style={{
+                            fontSize: 24,
+                            fontWeight: 900,
+                            color: C.white,
+                            letterSpacing: "-.02em",
+                        }}
+                    >
+                        The hidden reality
+                    </span>
+                    <span
+                        style={{
+                            fontSize: 12,
+                            color: "#4a6a85",
+                            marginLeft: "auto",
+                        }}
+                    >
+                        What the JD doesn't say {"\u2014"} but every hiring
+                        manager expects.
                     </span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column" as const, gap: 0, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column" as const,
+                        gap: 0,
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                    }}
+                >
                     {(result.hidden_requirements ?? []).map((item, i) => {
                         const fc = findingColors[i % 6]
                         return (
-                            <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0, borderBottom: i < (result.hidden_requirements.length - 1) ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-                                <div style={{ width: 80, padding: "20px 0 20px 20px", display: "flex", flexDirection: "column" as const, alignItems: "flex-start", gap: 4, borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-                                    <div style={{ fontSize: 9, letterSpacing: ".14em", color: fc }}>{String(i + 1).padStart(2, "0")}</div>
-                                    <div style={{ width: 2, flex: 1, minHeight: 20, borderRadius: 1, background: fc }} />
+                            <div
+                                key={i}
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "auto 1fr",
+                                    gap: 0,
+                                    borderBottom:
+                                        i <
+                                        result.hidden_requirements.length - 1
+                                            ? "1px solid rgba(255,255,255,0.05)"
+                                            : "none",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: 80,
+                                        padding: "20px 0 20px 20px",
+                                        display: "flex",
+                                        flexDirection: "column" as const,
+                                        alignItems: "flex-start",
+                                        gap: 4,
+                                        borderRight:
+                                            "1px solid rgba(255,255,255,0.05)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            letterSpacing: ".14em",
+                                            color: fc,
+                                        }}
+                                    >
+                                        {String(i + 1).padStart(2, "0")}
+                                    </div>
+                                    <div
+                                        style={{
+                                            width: 2,
+                                            flex: 1,
+                                            minHeight: 20,
+                                            borderRadius: 1,
+                                            background: fc,
+                                        }}
+                                    />
                                 </div>
-                                <div style={{ padding: "20px 24px", fontSize: 14, color: "#c8daea", lineHeight: 1.72 }}>{item}</div>
+                                <div
+                                    style={{
+                                        padding: "20px 24px",
+                                        fontSize: 14,
+                                        color: "#c8daea",
+                                        lineHeight: 1.72,
+                                    }}
+                                >
+                                    {item}
+                                </div>
                             </div>
                         )
                     })}
@@ -669,15 +1615,61 @@ function ResultsState({
             {/* ── Risk Flags ── */}
             <div style={{ padding: "0 32px 36px" }}>
                 <div style={secEyebrow("RISK FLAGS", C.red)}>RISK FLAGS</div>
-                <div style={{ display: "flex", flexDirection: "column" as const, gap: 0, borderLeft: "2px solid rgba(248,113,113,0.3)", marginTop: 14 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column" as const,
+                        gap: 0,
+                        borderLeft: "2px solid rgba(248,113,113,0.3)",
+                        marginTop: 14,
+                    }}
+                >
                     {(result.risk_flags ?? []).map((flag, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 20px", borderBottom: i < (result.risk_flags.length - 1) ? "1px solid rgba(248,113,113,0.07)" : "none" }}>
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
-                                <path d="M7 1L13.5 13H.5L7 1Z" stroke={C.red} strokeWidth="1.2" />
-                                <line x1="7" y1="5" x2="7" y2="9" stroke={C.red} strokeWidth="1.2" strokeLinecap="round" />
+                        <div
+                            key={i}
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: 14,
+                                padding: "14px 20px",
+                                borderBottom:
+                                    i < result.risk_flags.length - 1
+                                        ? "1px solid rgba(248,113,113,0.07)"
+                                        : "none",
+                            }}
+                        >
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                style={{ flexShrink: 0, marginTop: 2 }}
+                            >
+                                <path
+                                    d="M7 1L13.5 13H.5L7 1Z"
+                                    stroke={C.red}
+                                    strokeWidth="1.2"
+                                />
+                                <line
+                                    x1="7"
+                                    y1="5"
+                                    x2="7"
+                                    y2="9"
+                                    stroke={C.red}
+                                    strokeWidth="1.2"
+                                    strokeLinecap="round"
+                                />
                                 <circle cx="7" cy="11" r=".6" fill={C.red} />
                             </svg>
-                            <div style={{ fontSize: 14, color: "#b8cedf", lineHeight: 1.65 }}>{flag}</div>
+                            <div
+                                style={{
+                                    fontSize: 14,
+                                    color: "#b8cedf",
+                                    lineHeight: 1.65,
+                                }}
+                            >
+                                {flag}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -686,90 +1678,380 @@ function ResultsState({
             {/* ── CTA Section ── */}
             <div style={{ padding: "0 32px 32px" }}>
                 {/* Divider */}
-                <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 36 }} />
+                <div
+                    style={{
+                        height: 1,
+                        background: "rgba(255,255,255,0.06)",
+                        marginBottom: 36,
+                    }}
+                />
 
                 {/* Headline */}
-                <div style={{ fontSize: 10, letterSpacing: ".16em", fontWeight: 700, color: C.orange, textTransform: "uppercase" as const, marginBottom: 12 }}>
+                <div
+                    style={{
+                        fontSize: 10,
+                        letterSpacing: ".16em",
+                        fontWeight: 700,
+                        color: C.orange,
+                        textTransform: "uppercase" as const,
+                        marginBottom: 12,
+                    }}
+                >
                     Full Signal Access
                 </div>
-                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-.02em", lineHeight: 1.15, marginBottom: 10 }}>
-                    <span style={{ background: "linear-gradient(90deg, #FEB06A 0%, #f97316 30%, #e85d9a 60%, #51ADE5 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                <div
+                    style={{
+                        fontSize: 30,
+                        fontWeight: 900,
+                        letterSpacing: "-.02em",
+                        lineHeight: 1.15,
+                        marginBottom: 10,
+                    }}
+                >
+                    <span
+                        style={{
+                            background:
+                                "linear-gradient(90deg, #FEB06A 0%, #f97316 30%, #e85d9a 60%, #51ADE5 100%)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                        }}
+                    >
                         See How Competitive YOU Are.
                     </span>
                 </div>
-                <div style={{ fontSize: 14, color: C.muted, marginBottom: 26, lineHeight: 1.7, maxWidth: 560 }}>
-                    The analysis above is based on the job and company. Full SIGNAL reads your specific background and tells you exactly where you stand against the real competition {"\u2014"} then gives you everything you need to win.
+                <div
+                    style={{
+                        fontSize: 14,
+                        color: C.muted,
+                        marginBottom: 26,
+                        lineHeight: 1.7,
+                        maxWidth: 560,
+                    }}
+                >
+                    The analysis above is based on the job and company. Full
+                    SIGNAL reads your specific background and tells you exactly
+                    where you stand against the real competition {"\u2014"} then
+                    gives you everything you need to win.
                 </div>
 
                 {/* Feature list */}
-                <div style={{ display: "flex", flexDirection: "column" as const, gap: 0, marginBottom: 28, border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column" as const,
+                        gap: 0,
+                        marginBottom: 28,
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                    }}
+                >
                     <UpgradeFeature
-                        iconBg="rgba(254,176,106,0.12)" iconBorder="rgba(254,176,106,0.2)"
-                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.5l-3 2.9.7 4.1L8 11.4l-3.7 2.1.7-4.1L2 6.5l4.2-.9L8 2z" stroke="#FEB06A" strokeWidth="1.2" strokeLinejoin="round" /></svg>}
+                        iconBg="rgba(254,176,106,0.12)"
+                        iconBorder="rgba(254,176,106,0.2)"
+                        icon={
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                            >
+                                <path
+                                    d="M8 2l1.8 3.6L14 6.5l-3 2.9.7 4.1L8 11.4l-3.7 2.1.7-4.1L2 6.5l4.2-.9L8 2z"
+                                    stroke="#FEB06A"
+                                    strokeWidth="1.2"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        }
                         title="Personal Fit Score"
-                        tag="Your edge" tagColor="#FEB06A" tagBg="rgba(254,176,106,0.1)" tagBorder="rgba(254,176,106,0.2)"
+                        tag="Your edge"
+                        tagColor="#FEB06A"
+                        tagBg="rgba(254,176,106,0.1)"
+                        tagBorder="rgba(254,176,106,0.2)"
                         desc="Find out exactly how your background stacks up against the real applicant pool. Know before you apply whether you're competitive or wasting your time."
                         last={false}
                     />
                     <UpgradeFeature
-                        iconBg="rgba(81,173,229,0.1)" iconBorder="rgba(81,173,229,0.18)"
-                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="#51ADE5" strokeWidth="1.2" /><path d="M5 7h4M5 9.5h6" stroke="#51ADE5" strokeWidth="1.2" strokeLinecap="round" /></svg>}
+                        iconBg="rgba(81,173,229,0.1)"
+                        iconBorder="rgba(81,173,229,0.18)"
+                        icon={
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                            >
+                                <rect
+                                    x="2"
+                                    y="3"
+                                    width="12"
+                                    height="10"
+                                    rx="2"
+                                    stroke="#51ADE5"
+                                    strokeWidth="1.2"
+                                />
+                                <path
+                                    d="M5 7h4M5 9.5h6"
+                                    stroke="#51ADE5"
+                                    strokeWidth="1.2"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                        }
                         title="Resume Positioning"
-                        tag="Stand out" tagColor="#51ADE5" tagBg="rgba(81,173,229,0.08)" tagBorder="rgba(81,173,229,0.18)"
+                        tag="Stand out"
+                        tagColor="#51ADE5"
+                        tagBg="rgba(81,173,229,0.08)"
+                        tagBorder="rgba(81,173,229,0.18)"
                         desc="Your resume bullets rewritten to match exactly what this company filters on \u2014 including the hidden requirements most candidates never address."
                         last={false}
                     />
                     <UpgradeFeature
-                        iconBg="rgba(74,222,128,0.08)" iconBorder="rgba(74,222,128,0.16)"
-                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#4ADE80" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        iconBg="rgba(74,222,128,0.08)"
+                        iconBorder="rgba(74,222,128,0.16)"
+                        icon={
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                            >
+                                <path
+                                    d="M3 8l3.5 3.5L13 5"
+                                    stroke="#4ADE80"
+                                    strokeWidth="1.4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        }
                         title="Interview Intelligence"
                         desc="Learn exactly how to represent yourself for this specific role \u2014 what to emphasize, what gaps to address, and how to speak the company's language."
                         last={false}
                     />
                     <UpgradeFeature
-                        iconBg="rgba(192,132,252,0.1)" iconBorder="rgba(192,132,252,0.18)"
-                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#c084fc" strokeWidth="1.2" /><path d="M8 5v3l2 2" stroke="#c084fc" strokeWidth="1.2" strokeLinecap="round" /></svg>}
+                        iconBg="rgba(192,132,252,0.1)"
+                        iconBorder="rgba(192,132,252,0.18)"
+                        icon={
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                            >
+                                <circle
+                                    cx="8"
+                                    cy="8"
+                                    r="6"
+                                    stroke="#c084fc"
+                                    strokeWidth="1.2"
+                                />
+                                <path
+                                    d="M8 5v3l2 2"
+                                    stroke="#c084fc"
+                                    strokeWidth="1.2"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                        }
                         title="Cover Letter + Networking Plan"
                         desc="A cover letter built from your background and the hidden requirements above, plus a post-apply outreach strategy with copy-paste messages."
                         last={false}
                     />
                     <UpgradeFeature
-                        iconBg="rgba(45,212,191,0.08)" iconBorder="rgba(45,212,191,0.16)"
-                        icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /><rect x="9" y="2" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /><rect x="2" y="9" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /><rect x="9" y="9" width="5" height="5" rx="1" stroke="#2dd4bf" strokeWidth="1.2" /></svg>}
+                        iconBg="rgba(45,212,191,0.08)"
+                        iconBorder="rgba(45,212,191,0.16)"
+                        icon={
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                            >
+                                <rect
+                                    x="2"
+                                    y="2"
+                                    width="5"
+                                    height="5"
+                                    rx="1"
+                                    stroke="#2dd4bf"
+                                    strokeWidth="1.2"
+                                />
+                                <rect
+                                    x="9"
+                                    y="2"
+                                    width="5"
+                                    height="5"
+                                    rx="1"
+                                    stroke="#2dd4bf"
+                                    strokeWidth="1.2"
+                                />
+                                <rect
+                                    x="2"
+                                    y="9"
+                                    width="5"
+                                    height="5"
+                                    rx="1"
+                                    stroke="#2dd4bf"
+                                    strokeWidth="1.2"
+                                />
+                                <rect
+                                    x="9"
+                                    y="9"
+                                    width="5"
+                                    height="5"
+                                    rx="1"
+                                    stroke="#2dd4bf"
+                                    strokeWidth="1.2"
+                                />
+                            </svg>
+                        }
                         title="Application Tracker"
-                        tag="All in one place" tagColor="#4ADE80" tagBg="rgba(74,222,128,0.07)" tagBorder="rgba(74,222,128,0.16)"
+                        tag="All in one place"
+                        tagColor="#4ADE80"
+                        tagBg="rgba(74,222,128,0.07)"
+                        tagBorder="rgba(74,222,128,0.16)"
                         desc="Every application tracked in one dashboard \u2014 status, your fit score, interview rate, and what's working."
                         last={true}
                     />
                 </div>
 
                 {/* CTA card */}
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(254,176,106,0.18)", borderRadius: 12, overflow: "hidden" }}>
-                    <div style={{ padding: "22px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <div
+                    style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(254,176,106,0.18)",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "22px 24px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 24,
+                            borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        }}
+                    >
                         <div>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 5 }}>
-                                <div style={{ fontSize: 32, fontWeight: 900, color: C.orange, lineHeight: 1 }}>$99</div>
-                                <div style={{ fontSize: 13, color: "rgba(254,176,106,0.55)", fontWeight: 500 }}>/ 3 months {"\u00B7"} unlimited roles</div>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "baseline",
+                                    gap: 6,
+                                    marginBottom: 5,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 32,
+                                        fontWeight: 900,
+                                        color: C.orange,
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    $99
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 13,
+                                        color: "rgba(254,176,106,0.55)",
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    / 3 months {"\u00B7"} unlimited roles
+                                </div>
                             </div>
-                            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-                                Full access to every tool {"\u2014"} score, position, cover letter, network, and track.
+                            <div
+                                style={{
+                                    fontSize: 12,
+                                    color: C.muted,
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                Full access to every tool {"\u2014"} score,
+                                position, cover letter, network, and track.
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={onCTA}
                             className="signal-cta-btn"
-                            style={{ background: "linear-gradient(90deg, #FEB06A, #51ADE5)", color: "#0b1929", fontSize: 17, fontWeight: 900, padding: "18px 40px", borderRadius: 10, cursor: "pointer", whiteSpace: "nowrap" as const, border: "none", letterSpacing: ".02em", flexShrink: 0 }}
+                            style={{
+                                background:
+                                    "linear-gradient(90deg, #FEB06A, #51ADE5)",
+                                color: "#0b1929",
+                                fontSize: 17,
+                                fontWeight: 900,
+                                padding: "18px 40px",
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                whiteSpace: "nowrap" as const,
+                                border: "none",
+                                letterSpacing: ".02em",
+                                flexShrink: 0,
+                            }}
                         >
                             {"See How I Compare \u2192"}
                         </button>
                     </div>
-                    <div style={{ padding: "11px 24px", display: "flex", justifyContent: "center", gap: 20, alignItems: "center" }}>
-                        <span style={{ fontSize: 11, color: "#4a6a85", fontWeight: 500 }}>No subscription trap</span>
-                        <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a3f55", display: "inline-block" }} />
-                        <span style={{ fontSize: 11, color: "#4a6a85", fontWeight: 500 }}>Full access for 3 months</span>
-                        <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a3f55", display: "inline-block" }} />
-                        <span style={{ fontSize: 11, color: "#4a6a85", fontWeight: 500 }}>Cancel anytime</span>
+                    <div
+                        style={{
+                            padding: "11px 24px",
+                            display: "flex",
+                            justifyContent: "center",
+                            gap: 20,
+                            alignItems: "center",
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: 11,
+                                color: "#4a6a85",
+                                fontWeight: 500,
+                            }}
+                        >
+                            No subscription trap
+                        </span>
+                        <span
+                            style={{
+                                width: 3,
+                                height: 3,
+                                borderRadius: "50%",
+                                background: "#2a3f55",
+                                display: "inline-block",
+                            }}
+                        />
+                        <span
+                            style={{
+                                fontSize: 11,
+                                color: "#4a6a85",
+                                fontWeight: 500,
+                            }}
+                        >
+                            Full access for 3 months
+                        </span>
+                        <span
+                            style={{
+                                width: 3,
+                                height: 3,
+                                borderRadius: "50%",
+                                background: "#2a3f55",
+                                display: "inline-block",
+                            }}
+                        />
+                        <span
+                            style={{
+                                fontSize: 11,
+                                color: "#4a6a85",
+                                fontWeight: 500,
+                            }}
+                        >
+                            Cancel anytime
+                        </span>
                     </div>
                 </div>
             </div>
@@ -779,35 +2061,121 @@ function ResultsState({
 
 function CoField({ label, value }: { label: string; value: string }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(81,173,229,0.1)", borderRadius: 10, padding: 14 }}>
-            <div style={{ fontSize: 10, letterSpacing: ".1em", color: C.blue, marginBottom: 5 }}>{label}</div>
-            <div style={{ fontSize: 14, color: "#ddeef8", lineHeight: 1.5, fontWeight: 500 }}>{value}</div>
+        <div
+            style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(81,173,229,0.1)",
+                borderRadius: 10,
+                padding: 14,
+            }}
+        >
+            <div
+                style={{
+                    fontSize: 10,
+                    letterSpacing: ".1em",
+                    color: C.blue,
+                    marginBottom: 5,
+                }}
+            >
+                {label}
+            </div>
+            <div
+                style={{
+                    fontSize: 14,
+                    color: "#ddeef8",
+                    lineHeight: 1.5,
+                    fontWeight: 500,
+                }}
+            >
+                {value}
+            </div>
         </div>
     )
 }
 
 function UpgradeFeature({
-    iconBg, iconBorder, icon, title, tag, tagColor, tagBg, tagBorder, desc, last,
+    iconBg,
+    iconBorder,
+    icon,
+    title,
+    tag,
+    tagColor,
+    tagBg,
+    tagBorder,
+    desc,
+    last,
 }: {
-    iconBg: string; iconBorder: string; icon: React.ReactNode
-    title: string; tag?: string; tagColor?: string; tagBg?: string; tagBorder?: string
-    desc: string; last: boolean
+    iconBg: string
+    iconBorder: string
+    icon: React.ReactNode
+    title: string
+    tag?: string
+    tagColor?: string
+    tagBg?: string
+    tagBorder?: string
+    desc: string
+    last: boolean
 }) {
     return (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "17px 20px", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg, border: "1px solid " + iconBorder }}>
+        <div
+            style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 16,
+                padding: "17px 20px",
+                borderBottom: last
+                    ? "none"
+                    : "1px solid rgba(255,255,255,0.05)",
+            }}
+        >
+            <div
+                style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: iconBg,
+                    border: "1px solid " + iconBorder,
+                }}
+            >
                 {icon}
             </div>
             <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.white, marginBottom: 3, display: "flex", alignItems: "center", gap: 8 }}>
+                <div
+                    style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: C.white,
+                        marginBottom: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                    }}
+                >
                     {title}
                     {tag ? (
-                        <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, letterSpacing: ".04em", color: tagColor, background: tagBg, border: "1px solid " + tagBorder }}>
+                        <span
+                            style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                letterSpacing: ".04em",
+                                color: tagColor,
+                                background: tagBg,
+                                border: "1px solid " + tagBorder,
+                            }}
+                        >
                             {tag}
                         </span>
                     ) : null}
                 </div>
-                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>{desc}</div>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
+                    {desc}
+                </div>
             </div>
         </div>
     )
@@ -815,44 +2183,176 @@ function UpgradeFeature({
 
 // ===================== SMALL COMPONENTS =====================
 
-function StatGlass({ num, color, label }: { num: string; color: string; label: string }) {
+function StatGlass({
+    num,
+    color,
+    label,
+}: {
+    num: string
+    color: string
+    label: string
+}) {
     return (
-        <div style={{ ...glassCard, padding: "12px 18px", textAlign: "center" as const, minWidth: 110 }}>
-            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: MONO, lineHeight: 1, color }}>{num}</div>
-            <div style={{ fontSize: 10, color: C.muted, marginTop: 4, lineHeight: 1.3 }}>{label}</div>
+        <div
+            style={{
+                ...glassCard,
+                padding: "12px 18px",
+                textAlign: "center" as const,
+                minWidth: 110,
+            }}
+        >
+            <div
+                style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    fontFamily: MONO,
+                    lineHeight: 1,
+                    color,
+                }}
+            >
+                {num}
+            </div>
+            <div
+                style={{
+                    fontSize: 10,
+                    color: C.muted,
+                    marginTop: 4,
+                    lineHeight: 1.3,
+                }}
+            >
+                {label}
+            </div>
         </div>
     )
 }
 
-function WygCard({ icon, color, title, desc }: { icon: string; color: string; title: string; desc: string }) {
-    const iconBg = color === C.orange ? "rgba(254,176,106,0.15)"
-        : color === C.blue ? "rgba(81,173,229,0.12)"
-        : color === C.purple ? "rgba(192,132,252,0.12)"
-        : "rgba(74,222,128,0.1)"
-    const iconBorder = color === C.orange ? "rgba(254,176,106,0.2)"
-        : color === C.blue ? "rgba(81,173,229,0.2)"
-        : color === C.purple ? "rgba(192,132,252,0.2)"
-        : "rgba(74,222,128,0.2)"
+function WygCard({
+    icon,
+    color,
+    title,
+    desc,
+}: {
+    icon: string
+    color: string
+    title: string
+    desc: string
+}) {
+    const iconBg =
+        color === C.orange
+            ? "rgba(254,176,106,0.15)"
+            : color === C.blue
+              ? "rgba(81,173,229,0.12)"
+              : color === C.purple
+                ? "rgba(192,132,252,0.12)"
+                : "rgba(74,222,128,0.1)"
+    const iconBorder =
+        color === C.orange
+            ? "rgba(254,176,106,0.2)"
+            : color === C.blue
+              ? "rgba(81,173,229,0.2)"
+              : color === C.purple
+                ? "rgba(192,132,252,0.2)"
+                : "rgba(74,222,128,0.2)"
 
     return (
-        <div style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg, border: "1px solid " + iconBorder }}>
+        <div
+            style={{
+                background: "rgba(255,255,255,0.03)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12,
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+            }}
+        >
+            <div
+                style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: iconBg,
+                    border: "1px solid " + iconBorder,
+                }}
+            >
                 {icon === "star" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L10 6H14L11 9L12 13L8 11L4 13L5 9L2 6H6L8 2Z" stroke={color} strokeWidth="1.2" strokeLinejoin="round" /></svg>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                            d="M8 2L10 6H14L11 9L12 13L8 11L4 13L5 9L2 6H6L8 2Z"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
                 )}
                 {icon === "check" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke={color} strokeWidth="1.2" /><path d="M5 8l2 2 4-4" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle
+                            cx="8"
+                            cy="8"
+                            r="6"
+                            stroke={color}
+                            strokeWidth="1.2"
+                        />
+                        <path
+                            d="M5 8l2 2 4-4"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
                 )}
                 {icon === "doc" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="2" stroke={color} strokeWidth="1.2" /><path d="M5 7h6M5 9.5h4" stroke={color} strokeWidth="1.2" strokeLinecap="round" /></svg>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect
+                            x="2"
+                            y="4"
+                            width="12"
+                            height="8"
+                            rx="2"
+                            stroke={color}
+                            strokeWidth="1.2"
+                        />
+                        <path
+                            d="M5 7h6M5 9.5h4"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                        />
+                    </svg>
                 )}
                 {icon === "tick" && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                            d="M3 8l3.5 3.5L13 5"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
                 )}
             </div>
             <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.white, marginBottom: 2 }}>{title}</div>
-                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>{desc}</div>
+                <div
+                    style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.white,
+                        marginBottom: 2,
+                    }}
+                >
+                    {title}
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                    {desc}
+                </div>
             </div>
         </div>
     )
@@ -971,6 +2471,20 @@ const textareaStyle: React.CSSProperties = {
     resize: "vertical",
     minHeight: 180,
     outline: "none",
+}
+
+const labelInputStyle: React.CSSProperties = {
+    width: "100%",
+    background: C.glass,
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    padding: "12px 14px",
+    color: C.white,
+    fontSize: 13,
+    fontFamily: SANS,
+    lineHeight: 1.4,
+    outline: "none",
+    boxSizing: "border-box" as const,
 }
 
 const submitBtn: React.CSSProperties = {

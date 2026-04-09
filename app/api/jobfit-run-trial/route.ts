@@ -59,6 +59,11 @@ export async function POST(req: Request) {
         const body = await req.json()
         const email = String(body.email ?? "").toLowerCase().trim()
         const jobText = String(body.job ?? body.job_description ?? "").trim()
+        // Optional user-provided labels. Same semantics as /api/jobfit:
+        // when non-empty, override extracted values in result.job_signals
+        // before returning so the trial result display shows them correctly.
+        const userCompanyName = String(body.company_name ?? "").trim().slice(0, 200)
+        const userJobTitle = String(body.job_title ?? "").trim().slice(0, 200)
 
         if (!email) return withCorsJson(req, { ok: false, error: "missing_email" }, 400)
         if (!jobText) return withCorsJson(req, { ok: false, error: "missing_job" }, 400)
@@ -115,6 +120,16 @@ export async function POST(req: Request) {
             profileText,
             jobText,
         })
+
+        // Apply user-provided label overrides. Skipped on the extractor
+        // so the user-authoritative values land in result.job_signals
+        // regardless of what the JD body actually says.
+        if (userCompanyName || userJobTitle) {
+            const r = result as any
+            if (!r.job_signals) r.job_signals = {}
+            if (userCompanyName) r.job_signals.companyName = userCompanyName
+            if (userJobTitle) r.job_signals.jobTitle = userJobTitle
+        }
 
         // 4) Decrement trial credits
         const newCredits = (user.credits_remaining ?? 0) - 1

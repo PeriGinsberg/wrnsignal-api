@@ -188,12 +188,29 @@ export async function POST(req: Request) {
       ? String(body.utm_campaign).slice(0, 100)
       : null
 
+    // Optional user-provided company name and job title. When supplied,
+    // these override whatever the enrichment step pulls from the JD so
+    // the results page shows the user's authoritative value at the top
+    // (and any downstream display consumers agree). Clamped to 200 chars.
+    const userCompanyName = String(body.company_name ?? "").trim().slice(0, 200)
+    const userJobTitle = String(body.job_title ?? "").trim().slice(0, 200)
+
     if (!job_description || job_description.length < 100) {
       return withCorsJson(
         req,
         { error: "Job description is required and must be at least 100 characters." },
         400
       )
+    }
+
+    // Helper: apply user-provided overrides to an analysis result. Called
+    // on both the cache-hit path and the fresh-analysis path so behavior
+    // is identical regardless of cache state. Overrides are applied AFTER
+    // caching so the shared cache never holds one user's label choices.
+    const applyUserOverrides = (result: Record<string, unknown>) => {
+      if (userCompanyName) result.company_name = userCompanyName
+      if (userJobTitle) result.job_title = userJobTitle
+      return result
     }
 
     const supabaseUrl = process.env.SUPABASE_URL
@@ -229,7 +246,11 @@ export async function POST(req: Request) {
         utm_campaign,
         referrer: req.headers.get("referer") || null,
       })
-      return withCorsJson(req, cached.result, 200)
+      // Apply user overrides to cached result (shallow clone first to
+      // avoid mutating any shared reference, even though cached.result
+      // is freshly fetched on each request).
+      const cachedResult = { ...(cached.result as Record<string, unknown>) }
+      return withCorsJson(req, applyUserOverrides(cachedResult), 200)
     }
 
     // ── LLM calls ──
@@ -300,6 +321,9 @@ export async function POST(req: Request) {
     if (company_context) analysis.company_context = company_context
 
     // ── Cache result ──
+    // Cache the ENRICHED version without user overrides applied, so two
+    // different users submitting the same JD with different label choices
+    // each get their own overrides on top of the shared enrichment.
     await supabase.from("job_analysis_cache").insert({
       jd_hash: jdHash,
       result: analysis,
@@ -315,7 +339,7 @@ export async function POST(req: Request) {
       referrer: req.headers.get("referer") || null,
     })
 
-    return withCorsJson(req, analysis, 200)
+    return withCorsJson(req, applyUserOverrides(analysis), 200)
   } catch (err: any) {
     console.error("[job-analysis] Unexpected error:", err)
     return withCorsJson(req, { error: err?.message || "Analysis failed." }, 500)
