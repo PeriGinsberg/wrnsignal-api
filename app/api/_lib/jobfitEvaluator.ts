@@ -51,6 +51,13 @@ export async function runJobFit(args: {
   profileText: string
   jobText: string
   profileOverrides?: Partial<StructuredProfileSignals>
+  // User-provided job title and company name override extracted values
+  // BEFORE scoring runs (not just at the end for display). The scoring
+  // engine uses jobSignals.jobTitle directly — e.g. for target-role
+  // matching, title-based family inference, etc. — so it must see the
+  // authoritative user value, not the extractor's best guess.
+  userJobTitle?: string
+  userCompanyName?: string
 }): Promise<
   EvalOutput & {
     icon: string
@@ -58,6 +65,13 @@ export async function runJobFit(args: {
   }
 > {
   const jobSignals = extractJobSignals(args.jobText || "")
+
+  // Inject user-provided title / company BEFORE any scoring path reads them.
+  // The route handler also does this post-scoring for display, but scoring
+  // itself needs them too for target-role matching.
+  if (args.userJobTitle) jobSignals.jobTitle = args.userJobTitle
+  if (args.userCompanyName) jobSignals.companyName = args.userCompanyName
+
   const profileSignals = extractProfileSignals(args.profileText || "", args.profileOverrides || {})
 
   const gate = evaluateGates(jobSignals, profileSignals)

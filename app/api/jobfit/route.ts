@@ -134,13 +134,21 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { error: "Missing job text" }, 400)
     }
 
-    // Optional user-provided job title and company name. These win over
-    // whatever the deterministic extractor pulls from the JD body, which
-    // is frequently wrong when the posting doesn't cleanly label the
-    // company/title (e.g. UBS "About Us" boilerplate bleeding into the
-    // company name field). Clamped to 200 chars to bound storage.
+    // User-provided job title and company name are REQUIRED. Extractor-
+    // based title/company detection has been ~0% accurate across Lily's
+    // 5-case test batch (section headers captured, bullets mistaken for
+    // titles, "About Us" boilerplate leaking into company name). Rather
+    // than keep patching the extractor, the frontend always asks the
+    // user for both fields and the API rejects requests that omit them.
+    // Clamped to 200 chars to bound storage.
     const userJobTitle = String(body?.job_title || "").trim().slice(0, 200)
     const userCompanyName = String(body?.company_name || "").trim().slice(0, 200)
+    if (!userJobTitle) {
+      return withCorsJson(req, { error: "job_title is required" }, 400)
+    }
+    if (!userCompanyName) {
+      return withCorsJson(req, { error: "company_name is required" }, 400)
+    }
 
     const mode = String(body?.mode || "live")
     const debugFlag = Boolean(body?.debug)
@@ -407,6 +415,11 @@ export async function POST(req: NextRequest) {
       profileText: effectiveProfileText,
       jobText,
       profileOverrides,
+      // Pass user-provided title/company BEFORE scoring so the engine's
+      // target-role-match logic and any title-based family inference
+      // use the authoritative values, not the extractor's guesses.
+      userJobTitle: userJobTitle || undefined,
+      userCompanyName: userCompanyName || undefined,
       userId: (authed as any)?.userId,
       mode,
       debug: debugFlag,

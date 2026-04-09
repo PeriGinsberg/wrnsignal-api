@@ -619,6 +619,102 @@ function whyCodesFromMatches(matches: WhyEvidenceMatch[]): WhyCode[] {
   }))
 }
 
+// Tokens that carry seniority / role-level metadata but no domain info.
+// These are stripped before comparing target roles to job titles so that
+// "Analytical Scientist I" and "analytical sciences associate" can be
+// recognized as equivalent domain roles regardless of the "i" / "associate"
+// level indicator.
+const TITLE_NOISE_TOKENS = new Set([
+  "i", "ii", "iii", "iv", "v",
+  "jr", "junior", "sr", "senior", "entry", "level", "associate", "principal",
+  "staff", "lead", "head", "chief", "vp", "svp", "evp",
+  "manager", "director", "coordinator", "specialist", "generalist",
+  "representative", "rep", "agent", "officer", "administrator", "assistant",
+  "analyst", "consultant", "intern", "trainee", "apprentice",
+  "the", "of", "in", "for", "at", "with", "and", "to", "a", "an",
+])
+
+// Common abbreviations / aliases that should be expanded before tokenizing.
+// Add new pairs here whenever a new candidate's target-role terminology
+// doesn't match the common title form used in job postings.
+const TITLE_ALIAS_MAP: Array<[RegExp, string]> = [
+  [/\bqc\b/gi, "quality control"],
+  [/\br&d\b/gi, "research development"],
+  [/\br and d\b/gi, "research development"],
+  [/\bhrbp\b/gi, "hr business partner"],
+  [/\bcos\b/gi, "chief of staff"],
+  [/\bcs\b/gi, "customer success"],
+  [/\bbd\b/gi, "business development"],
+  [/\bae\b/gi, "account executive"],
+  [/\bsdr\b/gi, "sales development representative"],
+  [/\bae\b/gi, "account executive"],
+  [/\bpm\b/gi, "product manager"],
+  [/\bux\b/gi, "user experience"],
+  [/\bui\b/gi, "user interface"],
+]
+
+function normalizeTitleTokens(s: string): Set<string> {
+  if (!s) return new Set()
+  let t = s.toLowerCase()
+  for (const [rx, replacement] of TITLE_ALIAS_MAP) {
+    t = t.replace(rx, replacement)
+  }
+  const tokens = t
+    .split(/[^a-z0-9]+/)
+    .filter((tok) => tok.length > 0 && !TITLE_NOISE_TOKENS.has(tok))
+  return new Set(tokens)
+}
+
+// Check whether the user-provided job title matches any of the candidate's
+// stated target roles. Returns the best (highest-overlap) matched role
+// and an overlap score in [0, 1]. A single shared non-noise token counts
+// as a match — this is intentional because domain tokens (e.g. "clinical",
+// "analytical", "biomedical") are rare and discriminating.
+function matchTargetRoleToJobTitle(
+  targetRoles: string[],
+  jobTitle: string
+): { matched: boolean; matchedRole: string | null; overlap: number } {
+  if (!jobTitle || !targetRoles || targetRoles.length === 0) {
+    return { matched: false, matchedRole: null, overlap: 0 }
+  }
+
+  const titleTokens = normalizeTitleTokens(jobTitle)
+  if (titleTokens.size === 0) {
+    return { matched: false, matchedRole: null, overlap: 0 }
+  }
+
+  let bestRole: string | null = null
+  let bestOverlap = 0
+
+  for (const role of targetRoles) {
+    const roleTokens = normalizeTitleTokens(role)
+    if (roleTokens.size === 0) continue
+
+    let shared = 0
+    for (const tok of roleTokens) {
+      if (titleTokens.has(tok)) shared++
+    }
+
+    // Overlap ratio relative to the smaller token set so a short target
+    // role like "QC Analyst" can fully match a long title like "Quality
+    // Control Analyst Level II".
+    const overlap = shared / Math.min(roleTokens.size, titleTokens.size)
+
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap
+      bestRole = role
+    }
+  }
+
+  // Threshold: at least one shared domain token. With noise words stripped,
+  // any overlap is meaningful because domain tokens are rare.
+  return {
+    matched: bestOverlap > 0,
+    matchedRole: bestRole,
+    overlap: bestOverlap,
+  }
+}
+
 function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileSignals, whyMatches: WhyEvidenceMatch[], coverage: RequirementCoverage[]): number {
   let base = 56
 
@@ -631,6 +727,33 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
 
   if (!familyMatch && profile.targetFamilies.length > 0) {
     base -= isTechnicalJob ? 30 : 12
+  }
+
+  // ── Direct target-role ↔ job-title matching ─────────────────────────
+  // When the candidate's stated target roles contain tokens that appear in
+  // the (user-provided) job title, that's the strongest positive signal
+  // possible — the user explicitly told us "this is the kind of role I
+  // want" and the title matches. Adds up to +18 base score to recognize
+  // the intent-level match that the tag/keyword extraction often misses.
+  //
+  // Uses the user-provided jobTitle (required by /api/jobfit route handler).
+  // Also helps offset the bare-word false-positive inflation from the
+  // WHY code matchers until those phrase lists are tightened.
+  const targetRoles = profile.statedInterests?.targetRoles ?? []
+  const titleMatch = matchTargetRoleToJobTitle(targetRoles, job.jobTitle || "")
+  if (titleMatch.matched) {
+    // Scale bonus by overlap strength: 1.0 overlap (full token match) → +18,
+    // 0.5 overlap (half tokens shared) → +9, etc.
+    const bonus = Math.round(titleMatch.overlap * 18)
+    base += bonus
+
+    // When the title match is strong AND the family is a hard-technical
+    // mismatch (e.g. a scientist targeting QC Analyst gets classified as
+    // IT_Software), soften the family penalty because the title match is
+    // the stronger signal.
+    if (!familyMatch && isTechnicalJob && titleMatch.overlap >= 0.5) {
+      base += 18 // Cancel most of the -30 technical mismatch penalty
+    }
   }
 
   const directCount = whyMatches.filter((m) => m.match_strength === "direct").length
@@ -1287,11 +1410,26 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
   // ── Surface hidden score-affecting penalties as visible risk codes ──
   // These don't add new penalties — they make existing penalties explainable.
 
-  // Family mismatch — surfaces the silent -12/-30 penalty in computeBaseScore
+  // Family mismatch — surfaces the silent -12/-30 penalty in computeBaseScore.
+  // Suppressed when the job_title strongly matches a target role because the
+  // title match is the stronger signal and the family may have been wrongly
+  // classified (common for life sciences / pharma roles that tag-based
+  // inference routes to IT_Software or Marketing).
   const familyMatch = profile.targetFamilies.includes(job.jobFamily)
-  if (!familyMatch && profile.targetFamilies.length > 0) {
+  const targetRolesForFamily = profile.statedInterests?.targetRoles ?? []
+  const titleMatchForFamily = matchTargetRoleToJobTitle(
+    targetRolesForFamily,
+    job.jobTitle || ""
+  )
+  const strongTitleMatch = titleMatchForFamily.matched && titleMatchForFamily.overlap >= 0.5
+
+  if (!familyMatch && profile.targetFamilies.length > 0 && !strongTitleMatch) {
     const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades"])
     const isTechnicalJob = HARD_TECH.has(job.jobFamily)
+    // Expose the actual hidden penalty magnitude so the user understands
+    // why their score dropped. Previously weight was 0 which made this
+    // risk a cosmetic label hiding a real -12/-30 penalty in base score.
+    const hiddenWeight = isTechnicalJob ? -30 : -12
     riskOnlyCodes.push({
       code: "RISK_FAMILY_MISMATCH",
       job_fact: `This role is in the ${job.jobFamily} field.`,
@@ -1300,7 +1438,7 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         ? `This is a specialized ${job.jobFamily} role that typically requires direct field experience. Your profile targets a different field.`
         : `The role's field doesn't match your stated targets. You can still apply, but expect more scrutiny on transferable skills in interviews.`,
       severity: isTechnicalJob ? "high" : "medium",
-      weight: 0,
+      weight: hiddenWeight,
     })
   }
 

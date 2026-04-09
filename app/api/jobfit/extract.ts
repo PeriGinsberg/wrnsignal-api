@@ -251,33 +251,47 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     label: "growth, performance, and optimization work",
     kind: "execution",
     functionTag: "growth_performance",
+    // Bare "optimize" matched lab "design optimization", "talent acquisition"
+    // matched "molecular acquisition", "retention" matched "employee retention"
+    // and "data retention". Every phrase now requires explicit marketing/
+    // growth context.
     profilePhrases: [
       "performance marketing",
       "growth marketing",
       "campaign optimization",
-      "optimize",
-      "conversion",
-      "acquisition",
-      "retention",
+      "optimize campaign",
+      "optimize spend",
+      "optimize conversion",
+      "customer acquisition",
+      "user acquisition",
+      "customer retention",
+      "user retention",
+      "conversion rate",
+      "conversion funnel",
       "a/b testing",
       "ab testing",
       "roas",
-      "ctr",
-      "cvr",
+      "cpc",
+      "cpm",
     ],
     jobPhrases: [
       "performance marketing",
       "growth marketing",
       "campaign optimization",
-      "optimize",
-      "conversion",
-      "acquisition",
-      "retention",
+      "optimize campaign",
+      "optimize spend",
+      "optimize conversion",
+      "customer acquisition",
+      "user acquisition",
+      "customer retention",
+      "user retention",
+      "conversion rate",
+      "conversion funnel",
       "a/b testing",
       "ab testing",
       "roas",
-      "ctr",
-      "cvr",
+      "cpc",
+      "cpm",
     ],
     adjacentKeys: ["analysis_reporting", "content_execution"],
   },
@@ -861,32 +875,42 @@ jobPhrases: [
     label: "operations, process, and workflow execution",
     kind: "execution",
     functionTag: "operations_general",
+    // All single-word "operations" / "workflow" / "process" phrases removed.
+    // They were matching lab "experimental workflows" (Lily Stein) and
+    // factory "production process" (any manufacturing JD) as if they were
+    // ops execution work. Only compound phrases that clearly mean
+    // business/program operations remain.
     profilePhrases: [
-      "operations",
+      "business operations",
       "process improvement",
-      "workflow",
-      "project management",
+      "process optimization",
       "program management",
-      "cross-functional",
-      "process",
-      "logistics",
+      "project management",
+      "cross-functional program",
+      "event operations",
+      "event logistics",
       "game day execution",
       "staff coordination",
-      "event operations",
+      "operational execution",
+      "operating cadence",
     ],
     jobPhrases: [
-      "operations",
+      "business operations",
       "process improvement",
-      "workflow",
-      "project management",
+      "process optimization",
       "program management",
-      "cross-functional",
-      "process",
-      "logistics",
+      "project management",
+      "cross-functional program",
+      "event logistics",
+      "event operations",
       "game day",
-      "supervise",
-      "schedule",
+      "supervise team",
+      "supervise staff",
+      "staff scheduling",
       "weekends and evenings",
+      "operating cadence",
+      "operational rigor",
+      "drive operational",
     ],
     adjacentKeys: ["stakeholder_coordination", "analysis_reporting"],
   },
@@ -921,30 +945,44 @@ jobPhrases: [
     label: "stakeholder coordination and cross-functional execution",
     kind: "stakeholder",
     functionTag: "operations_general",
+    // IMPORTANT: all phrases must be COMPOUND or contain specific domain
+    // context. Bare "stakeholder" / "collaboration" / "coordination" /
+    // "cross-functional" match every generic business resume line (e.g.
+    // "design based on stakeholder feedback") and produced false-positive
+    // direct matches for Lily Stein (lab scientist) against an HR Director
+    // role. Generic tokens are removed; only compound phrases remain.
     profilePhrases: [
-      "cross-functional",
-      "stakeholder",
-      "coordination",
-      "collaboration",
-      "partnered with",
-      "worked with",
-      "presented to",
+      "cross-functional team",
+      "cross-functional collaboration",
+      "stakeholder management",
+      "stakeholder engagement",
+      "stakeholder alignment",
+      "cross-functional coordination",
+      "partnered with leadership",
+      "partnered with executives",
+      "partnered with cross-functional",
+      "presented to leadership",
+      "presented to stakeholders",
+      "coordinated across teams",
       "players and families",
       "media, operations staff, and event personnel",
       "sponsor needs",
-      "coaches",
-      "parents",
+      "volunteer coaches",
+      "coaches and parents",
     ],
     jobPhrases: [
-      "cross-functional",
-      "stakeholder",
-      "coordination",
-      "collaboration",
-      "partnered with",
-      "worked with",
-      "present to",
-      "collaborate with",
-      "build relationships",
+      "cross-functional team",
+      "cross-functional collaboration",
+      "stakeholder management",
+      "stakeholder engagement",
+      "stakeholder alignment",
+      "cross-functional partner",
+      "partner with leadership",
+      "partner with cross-functional",
+      "present to leadership",
+      "present to executives",
+      "build relationships with",
+      "collaborate across functions",
       "players, parents, and coaches",
       "players and coaches",
       "volunteer coaches",
@@ -2655,6 +2693,29 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobTitleIsStrategyOps =
     /\b(chief of staff|strategy (and|&) (business )?operations|business operations|business ops|strategy (and|&) operations|strategic operations|strategy manager|strategy director|strategy associate|strategy consultant|management consultant|management consulting|operations manager|operations director|director of operations|head of operations|vp of operations|business strategy|corporate strategy|internal operations|people operations|hr business partner|hrbp)\b/i.test(jobTitleSlice)
 
+  // Life sciences / chemistry / pharma lab titles. Route these to the
+  // Engineering family because the scoring engine has no dedicated
+  // Healthcare-Science family and Engineering is the closest fit for
+  // lab-based work (vs. Healthcare which is reserved for clinical /
+  // nursing / patient-facing roles). Without this, scientist / chemist /
+  // analytical / biologist roles fall through to tag-based inference
+  // and misclassify as Marketing (from "research" / "communications"
+  // keywords) or IT_Software (from "technical" / "analysis" keywords).
+  const jobTitleIsLifeSciences =
+    /\b(scientist( i| ii| iii)?|chemist( i| ii| iii)?|biologist( i| ii| iii)?|biochemist|microbiologist|analytical scientist|analytical chemist|research scientist|research associate|laboratory (technician|scientist|analyst)|lab technician|lab analyst|quality control (analyst|scientist|chemist|technician)|qc analyst|qc chemist|qc scientist|qc technician|process development (scientist|engineer|associate)|formulation (scientist|chemist)|analytical development|bioinformatics|cell biologist|molecular biologist|clinical trials associate|clinical research associate|vaccines associate|pharmacology|toxicology)\b/i.test(
+      jobTitleSlice
+    )
+
+  // HR / people leadership titles. Route to "Other" family (scoring
+  // engine has no HR family) so they don't get matched as Consulting
+  // via the operations_general tag bare-word matching. Without this,
+  // a "Director of Human Resources" JD matches any Consulting candidate
+  // just because its body uses the word "operations".
+  const jobTitleIsHR =
+    /\b(human resources|hr director|hr manager|hrbp|hr business partner|director of (people|hr|human resources)|head of (people|hr|human resources)|chief (people|human resources) officer|people operations|talent acquisition|recruiter|compensation and benefits|labor relations)\b/i.test(
+      jobTitleSlice
+    )
+
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
   const isSeniorRole =
@@ -2713,27 +2774,40 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
     ? "Other"
-    : jobTitleIsEngineering
-      ? "Engineering"
-      : jobTitleIsSoftware
-        ? "IT_Software"
-        : jobTitleIsHealthcare
-          ? "Healthcare"
-          : jobTitleIsTrades
-            ? "Trades"
-            : jobTitleIsMarketing
-              ? "Marketing"
-              // Strategy/BusinessOps/CoS titles force Consulting even when
-              // the body has finance/analytics noise. Placed BEFORE the
-              // Finance check so "Strategy and Business Operations" doesn't
-              // lose to "financial modeling" bullets in the body.
-              : jobTitleIsStrategyOps
-                ? "Consulting"
-                : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-                  ? "Finance"
-                  : jobTitleIsSales
-                    ? "Sales"
-                    : jobFamilyFromTags
+    : jobTitleIsHR
+      // HR titles → "Other" so Consulting candidates don't match HR roles
+      // via operations_general bare-word leakage. HR is its own category
+      // that the scoring engine doesn't currently understand, so treating
+      // it as "Other" forces the family mismatch to fire correctly.
+      ? "Other"
+      : jobTitleIsLifeSciences
+        // Scientist / chemist / biologist / QC / lab titles route to
+        // Engineering because it's the closest existing family. Without
+        // this, "QC Analyst I" misclassified as IT_Software (from
+        // "technical" keywords) and "Scientist I" misclassified as
+        // Marketing (from "research" + "communications" tags).
+        ? "Engineering"
+        : jobTitleIsEngineering
+          ? "Engineering"
+          : jobTitleIsSoftware
+            ? "IT_Software"
+            : jobTitleIsHealthcare
+              ? "Healthcare"
+              : jobTitleIsTrades
+                ? "Trades"
+                : jobTitleIsMarketing
+                  ? "Marketing"
+                  // Strategy/BusinessOps/CoS titles force Consulting even when
+                  // the body has finance/analytics noise. Placed BEFORE the
+                  // Finance check so "Strategy and Business Operations" doesn't
+                  // lose to "financial modeling" bullets in the body.
+                  : jobTitleIsStrategyOps
+                    ? "Consulting"
+                    : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
+                      ? "Finance"
+                      : jobTitleIsSales
+                        ? "Sales"
+                        : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
