@@ -316,51 +316,16 @@ function extractTools(resumeText: string): string[] {
   return uniqueLower(tools)
 }
 
+// Target family inference is delegated to the shared module at
+// lib/jobfit-family-inference.ts so this file and jobfitProfileAdapter.ts
+// cannot drift out of sync. The three copies that previously existed each
+// had slightly different keyword lists and edge case handling, which caused
+// at least three bugs in rapid iteration.
+import { inferTargetFamilies as sharedInferTargetFamilies } from "../../../lib/jobfit-family-inference"
+
 function inferTargetFamilies(targetRoles: string[]): string[] {
-  const joined = targetRoles.join(" | ").toLowerCase()
-  const out: string[] = []
-
-  if (/\b(marketing|brand|content|social|growth|ecommerce)\b/.test(joined)) {
-    out.push("Marketing")
-  }
-  if (/\b(finance|investment|banking|wealth|asset|financial advisor|financial planner|wealth advisor)\b/.test(joined)) {
-    out.push("Finance")
-  }
-  if (/\b(accounting|audit|tax|assurance)\b/.test(joined)) {
-    out.push("Accounting")
-  }
-  // Consulting family covers strategy, business operations, chief of staff,
-  // and HR business partner roles because the scoring engine currently has
-  // no dedicated Operations or HR family. These roles all sit in the same
-  // "cross-functional strategic operator" space as management consulting,
-  // so we route them to Consulting rather than "Other" (which would fire
-  // a false family-mismatch against any real job).
-  if (/\b(consulting|strategy|business strategy|management consulting|strategy consulting|chief of staff|cos\b|business operations|business ops|strategy and operations|strategy & operations|strategic operations|operations manager|operations director|hrbp|hr business partner|people operations|people ops|people partner|internal operations)\b/.test(joined)) {
-    out.push("Consulting")
-  }
-  if (/\b(policy|regulatory|government|legislative|compliance)\b/.test(joined)) {
-    out.push("Government")
-  }
-  if (/\b(design|creative|visual)\b/.test(joined)) {
-    out.push("Design")
-  }
-  if (/\b(sales|business development|account executive|account manager|medical sales|orthopedic sales)\b/.test(joined)) {
-    out.push("Sales")
-  }
-  if (/\b(clinical|patient|premed|pre-med|healthcare|nurs|physician|medical assistant)\b/.test(joined)) {
-    out.push("PreMed")
-  }
-  if (/\b(software engineer|software developer|frontend|backend|full stack|fullstack|web developer|mobile developer|devops|swe)\b/.test(joined)) {
-    out.push("IT_Software")
-  }
-  if (/\b(engineer|engineering|biomedical|bioengineer|mechanical|electrical|civil engineer|chemical engineer|medical device)\b/.test(joined)) {
-    out.push("Engineering")
-  }
-  if (/\b(analytics|data analyst|business intelligence|tableau|power bi)\b/.test(joined)) {
-    out.push("Analytics")
-  }
-
-  return out.length ? out : ["Other"]
+  const joined = targetRoles.join(" | ")
+  return sharedInferTargetFamilies(joined)
 }
 
 function inferLocationPreference(

@@ -1,0 +1,23 @@
+{
+  "id": "template-example",
+  "description": "Template fixture. Copy this file, rename to YOUR-ID.json, fill in real values. The _template.json file is ignored by the test runner (underscore prefix).",
+  "profile": {
+    "text": "Full profile text here including resume, target roles, hard constraints, strengths. Paste verbatim from the client_profiles.profile_text column."
+  },
+  "job": {
+    "text": "Full job description text here. Paste verbatim from the source posting.",
+    "companyName": "Optional — use this to override extraction with the correct company",
+    "jobTitle": "Optional — use this to override extraction with the correct title"
+  },
+  "expected": {
+    "decision": "Apply",
+    "scoreRange": [75, 95],
+    "requiredWhyKeys": ["clinical_patient_work"],
+    "forbiddenWhyKeys": [],
+    "requiredRiskCodes": [],
+    "forbiddenRiskCodes": ["GATE_CREDENTIAL_REQUIRED"],
+    "requiredJobFamily": "Sales",
+    "forbiddenJobFamily": "Engineering",
+    "notes": "One-line human note describing why this candidate should score this way. Used for future debugging when a test fails."
+  }
+}
