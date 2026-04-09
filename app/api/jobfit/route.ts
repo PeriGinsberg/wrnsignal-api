@@ -331,12 +331,30 @@ export async function POST(req: NextRequest) {
             const cachedTitleFromUser = Boolean(userJobTitle)
             const cachedCompanyFromUser = Boolean(userCompanyName)
             if (!cachedTitleFromUser) {
-              cachedTitle = cachedTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+              cachedTitle = cachedTitle
+                .replace(
+                  /^(?:position\s+title|job\s+title|job\s+position|role\s+title|title|position|role|job)\s*[:\-–—]\s*/i,
+                  ""
+                )
+                .trim()
             }
             if (!cachedCompanyFromUser) {
-              cachedCompany = cachedCompany.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+              cachedCompany = cachedCompany
+                .replace(
+                  /^(?:company\s+name|employer\s+name|company|employer|organization|organisation)\s*[:\-–—]\s*/i,
+                  ""
+                )
+                .trim()
             }
-            const isGarbageCached = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
+            const isGarbageCached = (s: string) => {
+              if (!s) return true
+              const t = s.trim().toLowerCase()
+              if (/^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)$/i.test(t)) return true
+              if (/^about the (job|role|position|company|team)$/i.test(t)) return true
+              if (/^recruiting for/i.test(t)) return true
+              if (/^(apply|posted|deadline|date|salary|location|remote|hybrid)\s*[:]/i.test(t)) return true
+              return false
+            }
             if (!cachedCompanyFromUser && isGarbageCached(cachedCompany)) cachedCompany = ""
             if (!cachedTitleFromUser && isGarbageCached(cachedTitle)) cachedTitle = ""
 
@@ -484,16 +502,46 @@ export async function POST(req: NextRequest) {
         const companyNameFromUser = Boolean(userCompanyName)
 
         if (!jobTitleFromUser) {
-          // Clean common prefixes from extracted values
-          jobTitle = jobTitle.replace(/^(?:Title|Position|Role|Job Title)\s*[:]\s*/i, "").trim()
+          // Strip common label prefixes. The compound forms ("position
+          // title", "job title") must come BEFORE the single-word forms
+          // so the longest match wins — otherwise "Position Title: X"
+          // would only strip "Position" and leave " Title: X" behind,
+          // which then trips the garbage filter below.
+          jobTitle = jobTitle
+            .replace(
+              /^(?:position\s+title|job\s+title|job\s+position|role\s+title|title|position|role|job)\s*[:\-–—]\s*/i,
+              ""
+            )
+            .trim()
         }
         if (!companyNameFromUser) {
-          companyName = companyName.replace(/^(?:Company|Employer|Organization)\s*[:]\s*/i, "").trim()
+          companyName = companyName
+            .replace(
+              /^(?:company\s+name|employer\s+name|company|employer|organization|organisation)\s*[:\-–—]\s*/i,
+              ""
+            )
+            .trim()
         }
 
-        // Clean extracted values that look like section headers, not real names.
+        // Garbage filter — catches strings that ARE section headers, not
+        // strings that happen to START with section-header words. The old
+        // implementation used `\b` after the keyword, which false-positived
+        // on legitimate titles like "Position Control Analyst". We now
+        // require the entire trimmed string to equal a bare header, or
+        // match one of the specific metadata-row patterns.
         // Only applied to extractor output, never to user-provided values.
-        const isGarbage = (s: string) => !s || /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)\b/i.test(s) || /\babout the (job|role|position|company|team)\b/i.test(s) || /^recruiting for/i.test(s) || /^(apply|posted|deadline|date|salary|location|remote|hybrid)\b/i.test(s)
+        const isGarbage = (s: string) => {
+          if (!s) return true
+          const t = s.trim().toLowerCase()
+          if (/^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|company description|job description|role description)$/i.test(t)) return true
+          if (/^about the (job|role|position|company|team)$/i.test(t)) return true
+          if (/^recruiting for/i.test(t)) return true
+          // Metadata rows ("Apply:", "Posted: ...", "Salary: ..."), keyword
+          // must be followed by colon to qualify — we don't want to kill
+          // titles like "Remote Content Strategist".
+          if (/^(apply|posted|deadline|date|salary|location|remote|hybrid)\s*[:]/i.test(t)) return true
+          return false
+        }
         if (!companyNameFromUser && isGarbage(companyName)) companyName = ""
         if (!jobTitleFromUser && isGarbage(jobTitle)) jobTitle = ""
 
