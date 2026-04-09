@@ -556,18 +556,30 @@ function buildMajorGapRisks(job: StructuredJobSignals, coverage: RequirementCove
       if (bCore !== aCore) return bCore - aCore
       return b.jobUnit.strength - a.jobUnit.strength
     })
-    .slice(0, 5)
+    // Cap at 3 missing-proof risks. Any more and the display becomes a
+    // wall of generic warnings that dilute the high-signal risks (family
+    // mismatch, missing credentials, background gate) the user actually
+    // needs to see. Top 3 captures the most important gaps.
+    .slice(0, 3)
 
-  return gapUnits.map((c) => ({
-    code: "RISK_MISSING_PROOF" as const,
-    job_fact: c.jobUnit.label,
-    profile_fact: c.bestMatch?.profile_fact || null,
-    risk: c.nearMiss
-      ? "You show adjacent evidence here, but not enough direct proof for the way this role uses it."
-      : "The role emphasizes work where your profile does not yet show clear direct proof.",
-    severity: c.jobUnit.requiredness === "core" ? "high" as const : "medium" as const,
-    weight: 0,
-  }))
+  // Build distinct, readable risk text per gap unit so the user doesn't
+  // see 3 copies of "the role emphasizes work where your profile does
+  // not yet show clear direct proof". Each gap now names the specific
+  // capability the role wants and the profile lacks.
+  return gapUnits.map((c) => {
+    const label = c.jobUnit.label || c.jobUnit.key
+    const baseText = c.nearMiss
+      ? `You show adjacent evidence for ${label}, but not enough direct proof for how this role uses it.`
+      : `This role asks for ${label}, and your profile does not yet show direct proof of that work.`
+    return {
+      code: "RISK_MISSING_PROOF" as const,
+      job_fact: c.jobUnit.label,
+      profile_fact: c.bestMatch?.profile_fact || null,
+      risk: baseText,
+      severity: c.jobUnit.requiredness === "core" ? ("high" as const) : ("medium" as const),
+      weight: 0,
+    }
+  })
 }
 
 function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenceMatch[] {
@@ -1208,6 +1220,32 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
       severity: "low",
     })
     console.log("[scoring] Undisclosed territory risk fired")
+  }
+
+  // General location-unclear risk — when the JD doesn't disclose a
+  // location at all (mode: "unclear") AND the candidate has explicit
+  // preferred cities, fire a low-severity risk so they know to verify
+  // before applying. Distinct from territoryUndisclosed which fires on
+  // territory-specific sales JDs. Suppressed for remote-explicit jobs
+  // and for internal-facing postings that don't normally list cities.
+  const jobLocMode = (job as any)?.location?.mode
+  const jobLocCity = (job as any)?.location?.city
+  const profileAllowedCities = (profile as any)?.locationPreference?.allowedCities as string[] | undefined
+  if (
+    !(job as any)?.territoryUndisclosed &&
+    jobLocMode === "unclear" &&
+    !jobLocCity &&
+    Array.isArray(profileAllowedCities) &&
+    profileAllowedCities.length > 0
+  ) {
+    riskOnlyCodes.push({
+      code: "RISK_LOCATION_UNCLEAR",
+      job_fact: "The job posting does not clearly state a location.",
+      profile_fact: `Your preferred locations: ${profileAllowedCities.slice(0, 4).join(", ")}.`,
+      risk: "This posting does not clearly specify a city or region. Before investing time in an application, confirm the location is compatible with your preferences — many corporate postings default to the company's HQ city, which may not be where you want to work.",
+      severity: "low",
+    })
+    console.log("[scoring] Location-unclear risk fired; profile cities:", profileAllowedCities.join(", "))
   }
 
   // Pharmaceutical sales training preference — soft risk when JD lists

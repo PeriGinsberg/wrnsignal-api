@@ -27,11 +27,17 @@ export function applyRiskDowngrades(
 ): Decision {
   if (!POLICY.downgrade.enabled) return decision
 
-  // Zero-tolerance rule: any risk flag blocks Priority Apply
-  if (decision === "Priority Apply" && riskCodes.length > 0) {
+  // Medium/high-severity risk blocks Priority Apply. Low-severity
+  // "heads-up" risks (e.g., RISK_LOCATION_UNCLEAR, RISK_LOCATION_UNDISCLOSED)
+  // are informational and should not downgrade a near-perfect match.
+  // Previously ANY risk blocked Priority Apply which caused cases with
+  // 4 direct WHYs and a single low-severity confirmation-request risk
+  // to drop out of the top band.
+  const blockingRisks = riskCodes.filter((r) => r.severity !== "low")
+  if (decision === "Priority Apply" && blockingRisks.length > 0) {
     console.log(
-      `[decision] Priority Apply blocked — ${riskCodes.length} risk flag(s):`,
-      riskCodes.map(r => r.code).join(", ")
+      `[decision] Priority Apply blocked — ${blockingRisks.length} medium/high risk flag(s):`,
+      blockingRisks.map((r) => r.code).join(", ")
     )
     return "Apply"
   }

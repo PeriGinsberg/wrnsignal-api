@@ -556,19 +556,24 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     kind: "tool",
     functionTag: "sales_bd",
     profilePhrases: [
-      "crm",
       "salesforce",
       "hubspot",
       "lead tracking",
       "opportunity tracking",
       "pipeline tracking",
       "customer database",
+      "crm usage",
+      "crm system",
     ],
     profileWeakPhrases: ["excel", "spreadsheets"],
+    // Bare "crm" removed from jobPhrases — it matched generic "CRM
+    // systems" in boilerplate tool lists even on non-sales JDs (e.g.
+    // Richemont Legal Intern). Now requires a product name (Salesforce,
+    // HubSpot) or an unambiguously sales CRM phrase.
     jobPhrases: [
-      "crm",
       "salesforce",
       "hubspot",
+      "crm usage",
       "customer relationship management",
       "pipeline tracking",
       "opportunity management",
@@ -776,8 +781,22 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "litigation",
       "legislative",
       "safety standards",
+      // Legal internship / pre-law signals — the kind of writing pre-law
+      // undergrads actually do that transfers to legal work
+      "reviewed proposals",
+      "review proposals",
+      "policy briefs",
+      "policy brief",
+      "drafted policies",
+      "drafted policy",
+      "pre law",
+      "pre-law",
+      "argument and persuasion",
+      "legal writing",
+      "legal assistant",
+      "paralegal",
     ],
-jobPhrases: [
+    jobPhrases: [
       "legal research",
       "policy research",
       "policy analysis",
@@ -786,15 +805,35 @@ jobPhrases: [
       "regulatory affairs",
       "compliance officer",
       "compliance program",
+      "compliance initiatives",
+      "applicable laws",
+      "applicable laws and regulations",
       "contract review",
       "contract negotiation",
       "contract drafting",
+      "contract lifecycle management",
+      "clm tool",
+      "clm specialist",
+      "commercial agreements",
+      "commercial agreement",
+      "customer release letters",
+      "third-party subpoena",
+      "third party subpoena",
+      "subpoena requests",
+      "corporate governance",
+      "corporate governance platform",
+      "governance records",
+      "governance platform",
+      "entity data validation",
+      "legal hub",
+      "legal department",
+      "legal team",
       "litigation",
       "legislative",
       "safety standards",
       "regulatory filings",
     ],
-    adjacentKeys: ["communications_writing", "analysis_reporting"],
+    adjacentKeys: ["communications_writing", "drafting_documentation", "analysis_reporting"],
   },
   {
     key: "financial_analysis",
@@ -1081,8 +1120,15 @@ jobPhrases: [
     functionTag: "communications_pr",
     profilePhrases: [
       "drafted",
+      "drafting",
+      "draft written",
+      "draft summaries",
+      "draft press",
+      "draft policies",
+      "drafts of",
       "prepared",
       "wrote",
+      "written summaries",
       "documentation",
       "memo",
       "brief",
@@ -1107,7 +1153,19 @@ jobPhrases: [
       "draft content",
       "draft communications",
       "draft policies",
+      "draft commercial",
+      "draft agreements",
+      "draft contracts",
+      "draft legal",
       "drafting documentation",
+      "drafting and reviewing",
+      "drafting commercial",
+      "drafting contracts",
+      "drafting agreements",
+      "drafting legal",
+      "drafting press",
+      "drafting content",
+      "drafting correspondence",
       "first draft",
       "drafts of written",
       "draft of written",
@@ -1971,9 +2029,21 @@ function buildUnitsFromLines(
     }
 
     const tools = extractToolMentions(cleaned)
+    // Boilerplate tool-list guard: when a single line has 4+ tool
+    // mentions and uses generic "computer skills / proficient with /
+    // including / such as" wording, it's a company template paragraph
+    // that lists common office tools without those being actual job
+    // requirements. Demote everything on this line to supporting so
+    // RISK_MISSING_TOOLS and missing-tool unit matching don't fire.
+    const isBoilerplateToolList =
+      tools.length >= 4 &&
+      /\b(computer skills|technologically proficient|familiarity with|such as|e\.g\.|including)\b/i.test(cleaned)
     for (const tool of tools) {
       debugHits[`tool:${tool}`] = (debugHits[`tool:${tool}`] || 0) + 1
       if (side === "job") {
+        const req: "core" | "supporting" = isBoilerplateToolList
+          ? "supporting"
+          : inRequiredSection ? "core" : detectRequiredness(cleaned)
         jobUnits.push(
           makeJobUnit(
             tool,
@@ -1981,7 +2051,7 @@ function buildUnitsFromLines(
             "tool",
             cleaned,
             Math.min(10, lineScore + 2),
-            inRequiredSection ? "core" : detectRequiredness(cleaned)
+            req
           )
         )
       } else {
@@ -2182,8 +2252,23 @@ function extractToolRequirements(jobTextRaw: string): { required: string[]; pref
     const tools = extractToolMentions(line)
     if (!tools.length) continue
     const requiredLine = /\b(required|must have|proficient|experience with|required qualifications)\b/i.test(line)
+
+    // Template / boilerplate guard: when a SINGLE line mentions 4+ tools
+    // AND uses generic "computer skills / familiarity with / including /
+    // such as" wording, it's almost always a company template paragraph
+    // that lists common office tools without them being actual job
+    // requirements. Example: "Technologically proficient with strong
+    // computer skills, including Microsoft Office Suite, Adobe Creative
+    // Suite, CRM systems" (Richemont Legal Intern). A legal intern does
+    // not actually need Adobe Creative Suite or CRM — that's the
+    // company's catch-all boilerplate. Demote everything on the line
+    // from required to preferred so RISK_MISSING_TOOLS doesn't fire.
+    const isBoilerplateList =
+      tools.length >= 4 &&
+      /\b(computer skills|technologically proficient|familiarity with|such as|e\.g\.|including)\b/i.test(line)
+
     for (const tool of tools) {
-      if (requiredLine) required.add(tool)
+      if (requiredLine && !isBoilerplateList) required.add(tool)
       else preferred.add(tool)
     }
   }
@@ -3010,6 +3095,18 @@ export function extractJobSignals(
       jobTitleSlice
     )
 
+  // Legal titles — in-house counsel, law firm roles, legal interns, and
+  // compliance counsel all route to Legal family. Without this, Legal
+  // Intern / Corporate Counsel / Paralegal JDs with generic corporate
+  // body text ("platforms", "team", "operations") fall through to
+  // tag-based inference and classify as Other / Consulting / Marketing.
+  // Covers both law-firm-side (associate, partner) and in-house-side
+  // (counsel, general counsel) ladders.
+  const jobTitleIsLegal =
+    /\b(legal intern|legal internship|legal counsel|general counsel|assistant general counsel|associate general counsel|corporate counsel|commercial counsel|compliance counsel|deputy general counsel|attorney|paralegal|law clerk|legal assistant|legal secretary|legal operations|legal ops|contracts (manager|counsel|attorney)|contract lifecycle management|clm specialist|legal analyst|legal associate|law firm associate|litigation (associate|partner|paralegal)|regulatory counsel|legal affairs|chief legal officer|cLo|privacy counsel|ip counsel|intellectual property counsel)\b/i.test(
+      jobTitleSlice
+    )
+
   // HR / people leadership titles. Route to "Other" family (scoring
   // engine has no HR family) so they don't get matched as Consulting
   // via the operations_general tag bare-word matching. Without this,
@@ -3095,9 +3192,17 @@ export function extractJobSignals(
   if (jobTitleIsCyberSecurity && !functionTags.includes("software_it")) {
     functionTags.push("software_it")
   }
+  if (jobTitleIsLegal && !functionTags.includes("legal_regulatory")) {
+    functionTags.push("legal_regulatory")
+  }
 
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
-  const jobFamily: JobFamily = isLegalOpsContext
+  const jobFamily: JobFamily = jobTitleIsLegal
+    // Legal titles win over isLegalOpsContext (which routes to "Other"
+    // for in-house general counsel at non-legal companies). When the
+    // title itself is explicitly Legal, always route to Legal family.
+    ? "Legal"
+    : isLegalOpsContext
     ? "Other"
     : jobTitleIsHR
       // HR titles → "Other" so Consulting candidates don't match HR roles
