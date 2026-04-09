@@ -1676,6 +1676,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
         try {
             if (!hasJob) throw new Error("Paste a job description first.")
+            // Job title and company name are now REQUIRED by the scoring
+            // engine — the deterministic title/company extractor had ~0%
+            // accuracy on varied JD formats, so the API rejects requests
+            // that omit them. Validate client-side so the user gets a
+            // friendly message instead of a 400 from the API.
+            if (!manualCompanyName.trim()) {
+                throw new Error("Enter the company name before running JobFit.")
+            }
+            if (!manualJobTitle.trim()) {
+                throw new Error("Enter the job title before running JobFit.")
+            }
 
             if (accessMode === "jobfit_only") {
                 const trialEmail = getTrialEmail().trim().toLowerCase()
@@ -1690,14 +1701,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     {
                         email: trialEmail,
                         job_description: job.trim(),
-                        // Optional user-provided labels. API treats them
-                        // as overrides — skipped when empty.
-                        ...(manualCompanyName.trim()
-                            ? { company_name: manualCompanyName.trim() }
-                            : {}),
-                        ...(manualJobTitle.trim()
-                            ? { job_title: manualJobTitle.trim() }
-                            : {}),
+                        // User-provided labels — now always included
+                        // because client-side validation ensures they
+                        // are non-empty before we get here.
+                        company_name: manualCompanyName.trim(),
+                        job_title: manualJobTitle.trim(),
                     },
                     setDebug,
                     null
@@ -1727,15 +1735,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 `${API_BASE}/api/jobfit`,
                 {
                     job: job.trim(),
-                    // Optional user-provided labels override extracted
-                    // values in result.job_signals + signal_applications.
-                    // When blank we fall back to deterministic extraction.
-                    ...(manualCompanyName.trim()
-                        ? { company_name: manualCompanyName.trim() }
-                        : {}),
-                    ...(manualJobTitle.trim()
-                        ? { job_title: manualJobTitle.trim() }
-                        : {}),
+                    // User-provided labels are required — client-side
+                    // validation above has already confirmed both are
+                    // non-empty by this point.
+                    company_name: manualCompanyName.trim(),
+                    job_title: manualJobTitle.trim(),
                     ...(selectedPersonaId
                         ? { persona_id: selectedPersonaId }
                         : {}),
@@ -8217,12 +8221,42 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                         {jobInputOpen ? (
                             <div style={{ marginTop: 10 }}>
-                                {/* Optional company + job title inputs.
-                                    These override whatever the deterministic
-                                    extractor pulls from the JD body, so the
-                                    top of the results screen always shows
-                                    the correct labels. Left blank → falls
-                                    back to extraction. */}
+                                {/* REQUIRED company name + job title inputs.
+                                    The deterministic extractor has ~0%
+                                    accuracy on varied JD formats so we ask
+                                    the user directly. Both fields must be
+                                    non-empty before Run JobFit will submit
+                                    (validated in runJobFit()). The API
+                                    returns 400 if either is missing as a
+                                    defense-in-depth check. */}
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: 8,
+                                        marginBottom: 6,
+                                        alignItems: "baseline",
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            fontSize: 10,
+                                            color: WRN_ORANGE,
+                                            fontWeight: 700,
+                                            letterSpacing: 0.4,
+                                        }}
+                                    >
+                                        Required
+                                    </span>
+                                    <span
+                                        style={{
+                                            fontSize: 10,
+                                            color: MUTED,
+                                        }}
+                                    >
+                                        — copy the exact company and job
+                                        title from the posting
+                                    </span>
+                                </div>
                                 <div
                                     style={{
                                         display: "grid",
@@ -8233,6 +8267,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 >
                                     <input
                                         type="text"
+                                        required
+                                        aria-required="true"
                                         style={input}
                                         value={manualCompanyName}
                                         onChange={(e) =>
@@ -8240,17 +8276,19 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 e.target.value
                                             )
                                         }
-                                        placeholder="Company (optional)"
+                                        placeholder="Company name *"
                                         maxLength={200}
                                     />
                                     <input
                                         type="text"
+                                        required
+                                        aria-required="true"
                                         style={input}
                                         value={manualJobTitle}
                                         onChange={(e) =>
                                             setManualJobTitle(e.target.value)
                                         }
-                                        placeholder="Job title (optional)"
+                                        placeholder="Job title *"
                                         maxLength={200}
                                     />
                                 </div>

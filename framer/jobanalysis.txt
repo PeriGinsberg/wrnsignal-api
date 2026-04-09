@@ -197,6 +197,18 @@ export default function SignalJobAnalysis() {
             )
             return
         }
+        // Company name and job title are now required — the deterministic
+        // extractor has ~0% accuracy on varied JD formats so we rely on
+        // the user to provide the labels we display at the top of the
+        // results page.
+        if (!companyName.trim()) {
+            setError("Enter the company name before analyzing.")
+            return
+        }
+        if (!jobTitle.trim()) {
+            setError("Enter the job title before analyzing.")
+            return
+        }
         setLoading(true)
         setLoadingMsg(LOADING_MSGS[0])
         try {
@@ -212,10 +224,10 @@ export default function SignalJobAnalysis() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     job_description: trimmed,
-                    // User-provided labels — API treats these as optional
-                    // overrides and only uses them when non-empty.
-                    company_name: companyName.trim() || undefined,
-                    job_title: jobTitle.trim() || undefined,
+                    // User-provided labels are required — validation above
+                    // ensures both are non-empty before we hit this point.
+                    company_name: companyName.trim(),
+                    job_title: jobTitle.trim(),
                     session_id: sessionId,
                     utm_source: src,
                     utm_medium: med,
@@ -693,11 +705,34 @@ function InputState({
 
                     {error ? <div style={errorBox}>{error}</div> : null}
 
-                    {/* Optional label inputs — user can type the company
-                        name and job title so the results header always
-                        shows the right values even when the JD body is
-                        messy or omits them. Left blank, the API falls
-                        back to enrichment. */}
+                    {/* REQUIRED company and job title inputs. The
+                        deterministic extractor has ~0% accuracy on
+                        varied JD formats so the API now requires these
+                        to be filled. Client-side validation blocks
+                        submission with a friendly message. */}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 8,
+                            marginBottom: 6,
+                            alignItems: "baseline",
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: 10,
+                                color: C.orange,
+                                fontWeight: 700,
+                                letterSpacing: 0.4,
+                            }}
+                        >
+                            Required
+                        </span>
+                        <span style={{ fontSize: 10, color: C.muted }}>
+                            — copy the company and job title from the
+                            posting
+                        </span>
+                    </div>
                     <div
                         style={{
                             display: "grid",
@@ -708,19 +743,23 @@ function InputState({
                     >
                         <input
                             type="text"
+                            required
+                            aria-required="true"
                             value={companyName}
                             onChange={(e) =>
                                 setCompanyName(e.target.value)
                             }
-                            placeholder="Company (optional)"
+                            placeholder="Company name *"
                             maxLength={200}
                             style={labelInputStyle}
                         />
                         <input
                             type="text"
+                            required
+                            aria-required="true"
                             value={jobTitle}
                             onChange={(e) => setJobTitle(e.target.value)}
-                            placeholder="Job title (optional)"
+                            placeholder="Job title *"
                             maxLength={200}
                             style={labelInputStyle}
                         />
