@@ -118,6 +118,15 @@ export function inferTargetFamilies(
   // business strategy) to avoid false positives on "product strategy",
   // "growth strategy", and "marketing strategy" which are actually
   // Marketing roles.
+  const targetsHR =
+    roles.includes("people operations") ||
+    roles.includes("people ops") ||
+    roles.includes("hrbp") ||
+    roles.includes("hr business partner") ||
+    roles.includes("people partner") ||
+    /\bhuman resources\b/.test(roles) ||
+    /\bhr (director|manager|generalist|lead|leader)\b/.test(roles)
+
   if (
     roles.includes("consulting") ||
     roles.includes("consultant") ||
@@ -138,13 +147,20 @@ export function inferTargetFamilies(
     roles.includes("director of operations") ||
     roles.includes("head of operations") ||
     roles.includes("internal operations") ||
-    roles.includes("people operations") ||
-    roles.includes("people ops") ||
-    roles.includes("hrbp") ||
-    roles.includes("hr business partner") ||
-    roles.includes("people partner")
+    targetsHR
   ) {
     out.push("Consulting")
+  }
+
+  // HR-targeting candidates also need "Other" in their target families,
+  // because the scoring engine has no dedicated HR family and routes all
+  // HR/people-leader jobs to "Other" (via jobTitleIsHR in extract.ts).
+  // Without this, a candidate targeting HRBP who applies to a Director of
+  // Human Resources posting would trigger RISK_FAMILY_MISMATCH against
+  // their own stated target. This is purely additive — Consulting is
+  // still pushed above so strategy/CoS roles continue to match.
+  if (targetsHR) {
+    out.push("Other")
   }
 
   // ── Marketing ──────────────────────────────────────────────────────────

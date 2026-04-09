@@ -611,10 +611,15 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "sterile field",
       "scrub",
     ],
+    // "surgical" removed from jobPhrases — it matches metaphorical business
+    // language like "surgical follow-through" / "surgical precision" in
+    // strategy/ops JDs. Other phrases here are concrete medical-context
+    // terms that don't appear outside clinical settings. "surgical" remains
+    // in profilePhrases above because resumes use it unambiguously
+    // ("Surgical Technologist", "surgical experience").
     jobPhrases: [
       "operating room",
       "orthopedic",
-      "surgical",
       "hospital",
       "case coverage",
       "procedural environment",
@@ -1078,7 +1083,11 @@ jobPhrases: [
     kind: "function" as EvidenceKind,
     functionTag: "healthcare_clinical" as FunctionTag,
     profilePhrases: ["patient care", "nursing", "clinical assessment", "vital signs", "medication administration", "triage", "registered nurse", "bedside care"],
-    jobPhrases: ["patient care", "registered nurse", "nurse practitioner", "lpn", "rn", "cna", "clinical assessment", "vital signs", "medication administration", "triage", "bedside", "hands-on patient"],
+    // "triage" removed from jobPhrases — it matches metaphorical business
+    // language like "triage problems" / "triage customer issues" in ops and
+    // strategy JDs. Kept in profilePhrases because nurse resumes use it in
+    // the clinical sense. Remaining job phrases are unambiguously medical.
+    jobPhrases: ["patient care", "registered nurse", "nurse practitioner", "lpn", "rn", "cna", "clinical assessment", "vital signs", "medication administration", "bedside", "hands-on patient"],
     adjacentKeys: [],
   },
   {
@@ -2695,7 +2704,16 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // Consulting is the closest family in the current JobFamily type; a
   // dedicated Operations family would be better but is out of scope here.
   const jobTitleIsStrategyOps =
-    /\b(chief of staff|strategy (and|&) (business )?operations|business operations|business ops|strategy (and|&) operations|strategic operations|strategy manager|strategy director|strategy associate|strategy consultant|management consultant|management consulting|operations manager|operations director|director of operations|head of operations|vp of operations|business strategy|corporate strategy|internal operations|people operations|hr business partner|hrbp)\b/i.test(jobTitleSlice)
+    /\b(chief of staff|strategy (and|&) (business )?operations|business operations|business ops|strategy (and|&) operations|strategic operations|strategy manager|strategy director|strategy associate|strategy consultant|management consultant|management consulting|operations manager|operations director|director of operations|head of operations|vp of operations|business strategy|corporate strategy|internal operations|people operations|hr business partner|hrbp)\b/i.test(jobTitleSlice) ||
+    // "Associate to the Chairman / CEO / Founder / President" — these are
+    // Chief-of-Staff archetype roles at founder-led or privately-held
+    // companies. The title doesn't literally say "Chief of Staff" but the
+    // JD describes exactly that: executing the principal's operational
+    // and strategic priorities, cross-functional project ownership, and
+    // decision enablement. Route to Consulting family so CoS candidates
+    // match them instead of falling through to accidental family inference.
+    /\b(associate|assistant|executive assistant|chief assistant) to the (chairman|ceo|founder|president|managing partner|executive chairman|chairwoman)\b/i.test(jobTitleSlice) ||
+    /\b(chairman|ceo|founder|president)'s (associate|assistant|right hand|chief of staff)\b/i.test(jobTitleSlice)
 
   // Life sciences / chemistry / pharma lab titles. Route these to the
   // Engineering family because the scoring engine has no dedicated

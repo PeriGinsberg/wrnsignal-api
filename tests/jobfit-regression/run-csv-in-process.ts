@@ -31,6 +31,12 @@ const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> 
   "40926h": { jobTitle: "Public Relations Assistant", companyName: "Mario Badescu" },
   "40926i": { jobTitle: "Account Coordinator", companyName: "Allison" },
   "40926j": { jobTitle: "Media Strategist", companyName: "Momentum Communications Group" },
+  "40926k": { jobTitle: "HR Manager", companyName: "(Unknown - Boca Raton)" },
+  "40926l": { jobTitle: "Director of People Services", companyName: "CoralTree / Pier Sixty-Six Resort" },
+  "40926m": { jobTitle: "Growth Strategy Director", companyName: "TEAM" },
+  "40926n": { jobTitle: "Finance Strategy & Department Lead", companyName: "Affirm" },
+  "40926o": { jobTitle: "Strategy and Operations Consultant", companyName: "SEI" },
+  "40926p": { jobTitle: "Associate to the Chairman", companyName: "GVW Group" },
 }
 
 // ── Minimal CSV parser (handles quoted fields with embedded newlines/commas/quotes)
