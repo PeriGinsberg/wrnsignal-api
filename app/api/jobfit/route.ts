@@ -47,7 +47,24 @@ function isBypassAllowed(req: NextRequest): boolean {
  * Fingerprint helpers (best-effort)
  * ---------------------------------- */
 const MISSING = "__MISSING__"
-const JOBFIT_LOGIC_VERSION = process.env.JOBFIT_LOGIC_VERSION || "rules_local_dev"
+// Cache version tied to the deployment commit SHA so every Vercel deploy
+// automatically invalidates stale jobfit_runs cache entries — no manual
+// DELETE queries or forced reruns needed.
+//
+// Resolution order:
+//   1. JOBFIT_LOGIC_VERSION env var (manual override if someone wants to
+//      pin a version for A/B testing or rollback diagnostics)
+//   2. VERCEL_GIT_COMMIT_SHA (set automatically by Vercel on every deploy;
+//      preview, staging, and production all get distinct SHAs)
+//   3. "local-dev" fallback for `next dev` / unit test runs
+//
+// Old rows in jobfit_runs are preserved as an audit trail but stop being
+// matched once the SHA changes, because the fingerprint_hash changes with
+// every deploy.
+const JOBFIT_LOGIC_VERSION =
+  process.env.JOBFIT_LOGIC_VERSION ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  "local-dev"
 
 function normalize(value: any): any {
   if (typeof value === "string") {
