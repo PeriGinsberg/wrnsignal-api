@@ -1,0 +1,1080 @@
+import * as React from "react"
+import { createClient } from "@supabase/supabase-js"
+
+/**
+ * SIGNAL Full-Access Intake — Restyled to match nav brand system
+ */
+
+// ---------- BRAND ----------
+const WRN_BLUE = "#51ADE5"
+const WRN_ORANGE = "#FEB06A"
+
+// ---------- UI COLORS ----------
+const BG = "#13294A"
+const NAV_BG = "#0F1F38"
+const CARD = "#0F1F38"
+const GLASS = "rgba(255,255,255,0.07)"
+const BORDER = "rgba(255,255,255,0.12)"
+const BORDER_SOFT = "rgba(255,255,255,0.08)"
+const TEXT = "rgba(255,255,255,0.92)"
+const MUTED = "rgba(255,255,255,0.60)"
+const DIM = "rgba(255,255,255,0.35)"
+const ERROR = "rgba(255,120,120,0.95)"
+
+const SELECT_BG = "#0D1E36"
+const optionStyle: React.CSSProperties = {
+    backgroundColor: SELECT_BG,
+    color: TEXT,
+}
+
+// ---------- PROD CONFIG ----------
+const API_BASE = "https://wrnsignal-api.vercel.app"
+const SUPABASE_URL = "https://ejhnokcnahauvrcbcmic.supabase.co"
+const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqaG5va2NuYWhhdXZyY2JjbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMzczNzMsImV4cCI6MjA4MzcxMzM3M30.LzTMZDzDrx4UMWGu9y5qeg4AzwxukEWUu06q7Ts9Wb0"
+const START_PATH = "/signal/jobfittrial/intake"
+const JOBFIT_PATH = "/signal/jobfit"
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true },
+})
+
+// ---------- Types ----------
+type Step = 1 | 2 | 3
+type JobType = "Full Time Role" | "Internship" | "Both"
+
+type IntakePayload = {
+    name: string | null
+    current_status: string | null
+    university: string | null
+    major: string | null
+    grad_year: string | null
+    job_type: JobType | null
+    target_roles: string | null
+    target_locations: string | null
+    preferred_locations: string | null
+    timeline: string | null
+    strong_skills: string | null
+    biggest_concern: string | null
+    entry_openness: string | null
+    hard_nos: string | null
+    constraints: string | null
+    resume_text: string | null
+    writing_samples: string | null
+    extra_context: string | null
+}
+
+export default function SignalIntakeFullAccess() {
+    const [booting, setBooting] = React.useState(true)
+    const [authed, setAuthed] = React.useState(false)
+    const [step, setStep] = React.useState<Step>(1)
+    const [loading, setLoading] = React.useState(false)
+    const [error, setError] = React.useState("")
+
+    const [jobType, setJobType] = React.useState<JobType>("Full Time Role")
+    const [targetRoles, setTargetRoles] = React.useState("")
+    const [targetLocations, setTargetLocations] = React.useState("")
+    const [timeline, setTimeline] = React.useState("")
+    const [hardNos, setHardNos] = React.useState("")
+
+    const [name, setName] = React.useState("")
+    const [currentStatus, setCurrentStatus] = React.useState("")
+    const [university, setUniversity] = React.useState("")
+    const [major, setMajor] = React.useState("")
+    const [gradYear, setGradYear] = React.useState("")
+    const [strongSkills, setStrongSkills] = React.useState("")
+    const [biggestConcern, setBiggestConcern] = React.useState("")
+    const [entryOpenness, setEntryOpenness] = React.useState("")
+
+    const [resumeText, setResumeText] = React.useState("")
+    const [resumeUploading, setResumeUploading] = React.useState(false)
+    const [writingSamples, setWritingSamples] = React.useState("")
+    const [extraContext, setExtraContext] = React.useState("")
+    const [constraints, setConstraints] = React.useState("")
+
+    React.useEffect(() => {
+        let alive = true
+        async function boot() {
+            try {
+                const { data } = await supabase.auth.getSession()
+                if (!alive) return
+                setAuthed(Boolean(data?.session?.access_token))
+            } finally {
+                if (!alive) return
+                setBooting(false)
+            }
+        }
+        boot()
+        const { data: sub } = supabase.auth.onAuthStateChange(
+            (_event, session) => {
+                setAuthed(Boolean(session?.access_token))
+            }
+        )
+        return () => {
+            alive = false
+            sub?.subscription?.unsubscribe()
+        }
+    }, [])
+
+    function setErr(message: string) {
+        setError(message)
+        try {
+            window.scrollTo({ top: 0, behavior: "smooth" })
+        } catch {}
+    }
+
+    function validateStep1(): string | null {
+        if (!targetRoles.trim())
+            return `Enter at least one target role. "Finance" is not a role.`
+        if (!targetLocations.trim())
+            return "Enter at least one target location. If you're open, say ANY."
+        if (!timeline.trim()) return "Pick a timeline."
+        return null
+    }
+
+    function validateStep2(): string | null {
+        if (!currentStatus.trim()) return "Select your current status."
+        if (currentStatus === "Current student") {
+            if (!university.trim()) return "Enter your university."
+            if (!major.trim()) return "Enter your major."
+            if (!gradYear.trim()) return "Enter your graduation year."
+        }
+        if (!strongSkills.trim()) return "List your strongest skills right now."
+        if (!biggestConcern.trim())
+            return "Tell me what is worrying you most about the job search."
+        if (!entryOpenness.trim())
+            return "Pick how open you are to non-obvious entry points."
+        return null
+    }
+
+    function validateStep3(): string | null {
+        if (!resumeText.trim()) return "Paste your resume. This is required."
+        if (resumeText.trim().length < 300)
+            return "Your resume paste is too short. Paste the full resume. Minimum 300 characters."
+        return null
+    }
+
+    function goNext() {
+        setError("")
+        if (step === 1) {
+            const e = validateStep1()
+            if (e) return setErr(e)
+            setStep(2)
+            return
+        }
+        if (step === 2) {
+            const e = validateStep2()
+            if (e) return setErr(e)
+            setStep(3)
+        }
+    }
+
+    function goBack() {
+        setError("")
+        if (step === 2) setStep(1)
+        if (step === 3) setStep(2)
+    }
+
+    function buildPayload(): IntakePayload {
+        return {
+            name: clean(name),
+            current_status: clean(currentStatus),
+            university: clean(university),
+            major: clean(major),
+            grad_year: clean(gradYear),
+            job_type: jobType || null,
+            target_roles: clean(targetRoles),
+            target_locations: clean(targetLocations),
+            preferred_locations: clean(targetLocations),
+            timeline: clean(timeline),
+            strong_skills: clean(strongSkills),
+            biggest_concern: clean(biggestConcern),
+            entry_openness: clean(entryOpenness),
+            hard_nos: clean(hardNos),
+            constraints: clean(constraints),
+            resume_text: clean(resumeText),
+            writing_samples: clean(writingSamples),
+            extra_context: clean(extraContext),
+        }
+    }
+
+    async function handleResumeUpload() {
+        const fileInput = document.createElement("input")
+        fileInput.type = "file"
+        fileInput.accept = ".pdf,.docx,.doc,.txt"
+        fileInput.onchange = async () => {
+            const file = fileInput.files?.[0]
+            if (!file) return
+            const { data: sess } = await supabase.auth.getSession()
+            const token = sess?.session?.access_token
+            if (!token) {
+                setErr("Not signed in. Use the link from your email.")
+                return
+            }
+            setResumeUploading(true)
+            try {
+                const formData = new FormData()
+                formData.append("file", file)
+                const res = await fetch(`${API_BASE}/api/resume-upload`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData,
+                })
+                const data = await res.json()
+                if (!res.ok)
+                    throw new Error(data?.error || "Upload failed")
+                setResumeText(data.text)
+            } catch (err: any) {
+                setErr(
+                    err?.message ||
+                        "Upload failed. Try pasting your resume instead."
+                )
+            } finally {
+                setResumeUploading(false)
+            }
+        }
+        fileInput.click()
+    }
+
+    async function submitAll() {
+        setError("")
+        const e = validateStep3()
+        if (e) return setErr(e)
+        setLoading(true)
+        try {
+            const { data: sess } = await supabase.auth.getSession()
+            const accessToken = sess?.session?.access_token
+            if (!accessToken) {
+                setAuthed(false)
+                throw new Error("Not signed in. Use the link from your email.")
+            }
+            const payload = buildPayload()
+            const res = await fetch(`${API_BASE}/api/profile-intake`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify(payload),
+            })
+            const raw = await res.text()
+            let data: any = null
+            try {
+                data = JSON.parse(raw)
+            } catch {}
+            if (!res.ok) {
+                throw new Error(
+                    data?.error ||
+                        data?.detail ||
+                        raw ||
+                        `Request failed (${res.status})`
+                )
+            }
+            window.location.assign(
+                "https://wrnsignal.workforcereadynow.com/signal/jobfit"
+            )
+        } catch (err: any) {
+            setErr(err?.message || "Submission failed.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (booting) {
+        return (
+            <div style={page}>
+                <Shell>
+                    <div style={headline}>Loading…</div>
+                    <div style={subhead}>Checking your access.</div>
+                </Shell>
+            </div>
+        )
+    }
+
+    if (!authed) {
+        return (
+            <div style={page}>
+                <Shell>
+                    <Header />
+                    <div style={headline}>You are not signed in.</div>
+                    <div style={subhead}>
+                        Use the access link from your email. That is how SIGNAL
+                        knows it is you.
+                    </div>
+                    <a href={START_PATH} style={linkBtn}>
+                        Go back to start
+                    </a>
+                    <div style={{ height: 10 }} />
+                    <div style={finePrint}>
+                        If you already clicked your email link and still got
+                        kicked here, try the link again in the same browser.
+                    </div>
+                </Shell>
+            </div>
+        )
+    }
+
+    return (
+        <div style={page}>
+            <Shell>
+                <Header />
+                <Progress step={step} />
+                {error ? <div style={errorBox}>{error}</div> : null}
+
+                {step === 1 ? (
+                    <section>
+                        <div style={headline}>Where are you aiming?</div>
+                        <div style={subhead}>
+                            Set your direction. Be broad enough to be honest and
+                            specific enough to be useful.
+                        </div>
+
+                        <FieldLabel text="Job type *" />
+                        <select
+                            value={jobType}
+                            onChange={(e) =>
+                                setJobType(e.target.value as JobType)
+                            }
+                            style={select}
+                        >
+                            <option value="Full Time Role" style={optionStyle}>
+                                Full Time Role
+                            </option>
+                            <option value="Internship" style={optionStyle}>
+                                Internship
+                            </option>
+                            <option value="Both" style={optionStyle}>
+                                Both
+                            </option>
+                        </select>
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Target roles *" />
+                        <input
+                            value={targetRoles}
+                            onChange={(e) => setTargetRoles(e.target.value)}
+                            placeholder="Investment Banking Analyst, Product Marketing, Strategy Associate..."
+                            style={input}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Preferred locations *" />
+                        <input
+                            value={targetLocations}
+                            onChange={(e) => setTargetLocations(e.target.value)}
+                            placeholder="NYC primary, Miami secondary, ANY"
+                            style={input}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Timeline *" />
+                        <select
+                            value={timeline}
+                            onChange={(e) => setTimeline(e.target.value)}
+                            style={select}
+                        >
+                            <option value="" disabled style={optionStyle}>
+                                Select one
+                            </option>
+                            <option value="Immediate" style={optionStyle}>
+                                Immediate
+                            </option>
+                            <option value="Summer 2026" style={optionStyle}>
+                                Summer 2026
+                            </option>
+                            <option value="Fall 2026" style={optionStyle}>
+                                Fall 2026
+                            </option>
+                            <option value="Winter 2026" style={optionStyle}>
+                                Winter 2026
+                            </option>
+                            <option value="Spring 2027" style={optionStyle}>
+                                Spring 2027
+                            </option>
+                            <option value="Summer 2027" style={optionStyle}>
+                                Summer 2027
+                            </option>
+                            <option value="Flexible" style={optionStyle}>
+                                Flexible
+                            </option>
+                        </select>
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Hard no's" optional />
+                        <input
+                            value={hardNos}
+                            onChange={(e) => setHardNos(e.target.value)}
+                            placeholder="Commission-only sales, fully remote, startups, night shift..."
+                            style={input}
+                        />
+
+                        <div style={btnRow}>
+                            <button
+                                type="button"
+                                onClick={goNext}
+                                style={primaryBtn}
+                            >
+                                Continue →
+                            </button>
+                        </div>
+                    </section>
+                ) : null}
+
+                {step === 2 ? (
+                    <section>
+                        <div style={headline}>
+                            What is your current situation?
+                        </div>
+                        <div style={subhead}>
+                            Enough context to calibrate the advice without
+                            cluttering the profile.
+                        </div>
+
+                        <FieldLabel text="Your name" optional />
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="First and last name"
+                            style={input}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Current status *" />
+                        <select
+                            value={currentStatus}
+                            onChange={(e) => setCurrentStatus(e.target.value)}
+                            style={select}
+                        >
+                            <option value="" disabled style={optionStyle}>
+                                Select one
+                            </option>
+                            <option value="Current student" style={optionStyle}>
+                                Current student
+                            </option>
+                            <option value="Recent graduate" style={optionStyle}>
+                                Recent graduate
+                            </option>
+                            <option
+                                value="Working professional"
+                                style={optionStyle}
+                            >
+                                Working professional
+                            </option>
+                            <option value="Career pivot" style={optionStyle}>
+                                Career pivot
+                            </option>
+                        </select>
+
+                        {currentStatus === "Current student" ? (
+                            <div style={{ marginTop: 14 }}>
+                                <FieldLabel text="University *" />
+                                <input
+                                    value={university}
+                                    onChange={(e) =>
+                                        setUniversity(e.target.value)
+                                    }
+                                    placeholder="University of Florida"
+                                    style={input}
+                                />
+                                <div style={{ height: 14 }} />
+                                <FieldLabel text="Major *" />
+                                <input
+                                    value={major}
+                                    onChange={(e) => setMajor(e.target.value)}
+                                    placeholder="Finance"
+                                    style={input}
+                                />
+                                <div style={{ height: 14 }} />
+                                <FieldLabel text="Graduation year *" />
+                                <input
+                                    value={gradYear}
+                                    onChange={(e) =>
+                                        setGradYear(e.target.value)
+                                    }
+                                    placeholder="2027"
+                                    style={input}
+                                    inputMode="numeric"
+                                />
+                            </div>
+                        ) : null}
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Strongest skills *" />
+                        <textarea
+                            value={strongSkills}
+                            onChange={(e) => setStrongSkills(e.target.value)}
+                            placeholder="What can you already do well?"
+                            rows={4}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Biggest concern in the job search *" />
+                        <textarea
+                            value={biggestConcern}
+                            onChange={(e) => setBiggestConcern(e.target.value)}
+                            placeholder="Getting interviews, knowing what roles to target, networking, resume strength..."
+                            rows={4}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Openness to non-obvious entry points *" />
+                        <select
+                            value={entryOpenness}
+                            onChange={(e) => setEntryOpenness(e.target.value)}
+                            style={select}
+                        >
+                            <option value="" disabled style={optionStyle}>
+                                Select one
+                            </option>
+                            <option value="Not open" style={optionStyle}>
+                                Not open
+                            </option>
+                            <option value="Somewhat open" style={optionStyle}>
+                                Somewhat open
+                            </option>
+                            <option value="Very open" style={optionStyle}>
+                                Very open
+                            </option>
+                        </select>
+
+                        <div style={btnRow}>
+                            <button
+                                type="button"
+                                onClick={goBack}
+                                style={secondaryBtn}
+                            >
+                                ← Back
+                            </button>
+                            <button
+                                type="button"
+                                onClick={goNext}
+                                style={primaryBtn}
+                            >
+                                Continue →
+                            </button>
+                        </div>
+                    </section>
+                ) : null}
+
+                {step === 3 ? (
+                    <section>
+                        <div style={headline}>Give SIGNAL clean evidence.</div>
+                        <div style={subhead}>
+                            Paste your resume exactly as-is. Keep it clean.
+                            Extra context goes below.
+                        </div>
+
+                        <FieldLabel text="Your resume *" />
+                        <button
+                            type="button"
+                            onClick={handleResumeUpload}
+                            disabled={resumeUploading}
+                            style={{
+                                width: "100%",
+                                padding: "12px 18px",
+                                borderRadius: 12,
+                                background: "rgba(81,173,229,0.08)",
+                                border: "1px solid rgba(81,173,229,0.30)",
+                                color: "#51ADE5",
+                                fontWeight: 900,
+                                fontSize: 13,
+                                cursor: resumeUploading
+                                    ? "not-allowed"
+                                    : "pointer",
+                                opacity: resumeUploading ? 0.5 : 1,
+                                marginBottom: 8,
+                            }}
+                        >
+                            {resumeUploading
+                                ? "Uploading..."
+                                : "Upload Resume (PDF, DOCX, TXT)"}
+                        </button>
+                        <div
+                            style={{
+                                fontSize: 11,
+                                color: DIM,
+                                textAlign: "center",
+                                marginBottom: 8,
+                            }}
+                        >
+                            or paste manually
+                        </div>
+                        <textarea
+                            value={resumeText}
+                            onChange={(e) => setResumeText(e.target.value)}
+                            placeholder="Paste your resume only. No cover letter. No notes. No extra context."
+                            rows={12}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Writing samples" optional />
+                        <textarea
+                            value={writingSamples}
+                            onChange={(e) => setWritingSamples(e.target.value)}
+                            placeholder="Cover letters, emails, outreach messages, anything that shows how you write."
+                            rows={6}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Extra context" optional />
+                        <textarea
+                            value={extraContext}
+                            onChange={(e) => setExtraContext(e.target.value)}
+                            placeholder="Anything not obvious from your resume."
+                            rows={5}
+                            style={textarea}
+                        />
+
+                        <div style={{ height: 14 }} />
+
+                        <FieldLabel text="Hard constraints" optional />
+                        <textarea
+                            value={constraints}
+                            onChange={(e) => setConstraints(e.target.value)}
+                            placeholder="Visa, immovable geography, hard deadlines, family constraints, anything non-negotiable."
+                            rows={4}
+                            style={textarea}
+                        />
+
+                        <div style={btnRow}>
+                            <button
+                                type="button"
+                                onClick={goBack}
+                                style={secondaryBtn}
+                            >
+                                ← Back
+                            </button>
+                            <button
+                                type="button"
+                                onClick={submitAll}
+                                disabled={loading}
+                                style={{
+                                    ...primaryBtn,
+                                    opacity: loading ? 0.7 : 1,
+                                    cursor: loading ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                {loading ? "Activating..." : "Activate SIGNAL"}
+                            </button>
+                        </div>
+
+                        <div style={finePrint}>
+                            No confetti. Straight into JobFit.
+                        </div>
+                    </section>
+                ) : null}
+            </Shell>
+        </div>
+    )
+}
+
+function clean(value: string): string | null {
+    const v = value.trim()
+    return v ? v : null
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+    return (
+        <div style={shellOuter}>
+            <div style={shellInner}>{children}</div>
+        </div>
+    )
+}
+
+function Header() {
+    return (
+        <div style={headerWrap}>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                }}
+            >
+                {/* Logo */}
+                <div>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <span
+                            style={{
+                                fontSize: 26,
+                                fontWeight: 950,
+                                fontStyle: "italic",
+                                letterSpacing: -0.5,
+                                color: "#ffffff",
+                                lineHeight: 1,
+                            }}
+                        >
+                            SIGNAL
+                        </span>
+                        <div
+                            style={{
+                                width: 16,
+                                height: 4,
+                                background: WRN_ORANGE,
+                                borderRadius: 1,
+                                marginLeft: 4,
+                                marginBottom: 1,
+                                flexShrink: 0,
+                            }}
+                        />
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            marginTop: 3,
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: 8,
+                                fontWeight: 700,
+                                color: "rgba(255,255,255,0.28)",
+                            }}
+                        >
+                            by
+                        </span>
+                        <span
+                            style={{
+                                fontSize: 8,
+                                fontWeight: 900,
+                                letterSpacing: 0.8,
+                                color: WRN_ORANGE,
+                                textTransform: "uppercase" as const,
+                            }}
+                        >
+                            Workforce
+                        </span>
+                        <span
+                            style={{
+                                fontSize: 8,
+                                fontWeight: 900,
+                                letterSpacing: 0.8,
+                                color: WRN_BLUE,
+                                textTransform: "uppercase" as const,
+                            }}
+                        >
+                            Ready Now
+                        </span>
+                    </div>
+                </div>
+                {/* Badge */}
+                <div
+                    style={{
+                        fontSize: 9,
+                        fontWeight: 900,
+                        letterSpacing: 1.4,
+                        textTransform: "uppercase" as const,
+                        color: "rgba(255,255,255,0.30)",
+                        padding: "5px 11px",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 999,
+                    }}
+                >
+                    Full Access Setup
+                </div>
+            </div>
+            <div
+                style={{ height: 1, background: BORDER_SOFT, marginTop: 16 }}
+            />
+        </div>
+    )
+}
+
+function FieldLabel({ text, optional }: { text: string; optional?: boolean }) {
+    return (
+        <div
+            style={{
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: 0.5,
+                color: optional ? DIM : WRN_BLUE,
+                marginBottom: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+            }}
+        >
+            {text}
+            {optional ? (
+                <span
+                    style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        color: DIM,
+                        letterSpacing: 0.3,
+                    }}
+                >
+                    optional
+                </span>
+            ) : null}
+        </div>
+    )
+}
+
+function Progress({ step }: { step: Step }) {
+    const labels = ["Direction", "Situation", "Evidence"]
+    return (
+        <div style={{ margin: "16px 0 20px" }}>
+            {/* Step indicators */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {[1, 2, 3].map((s) => (
+                    <div
+                        key={s}
+                        style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column" as const,
+                            alignItems: "center",
+                            gap: 5,
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                background:
+                                    s < step
+                                        ? WRN_ORANGE
+                                        : s === step
+                                          ? "linear-gradient(135deg,#FEB06A,#51ADE5)"
+                                          : "rgba(255,255,255,0.06)",
+                                border:
+                                    s === step
+                                        ? "none"
+                                        : s < step
+                                          ? "none"
+                                          : "1px solid rgba(255,255,255,0.14)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                                fontWeight: 950,
+                                color:
+                                    s <= step
+                                        ? "#04060F"
+                                        : "rgba(255,255,255,0.25)",
+                            }}
+                        >
+                            {s < step ? "✓" : s}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 9,
+                                fontWeight: 900,
+                                letterSpacing: 0.8,
+                                textTransform: "uppercase" as const,
+                                color:
+                                    s === step
+                                        ? TEXT
+                                        : s < step
+                                          ? WRN_ORANGE
+                                          : DIM,
+                            }}
+                        >
+                            {labels[s - 1]}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {/* Progress bar */}
+            <div
+                style={{
+                    height: 3,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.08)",
+                    overflow: "hidden",
+                }}
+            >
+                <div
+                    style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        background: `linear-gradient(90deg, ${WRN_ORANGE}, ${WRN_BLUE})`,
+                        width:
+                            step === 1
+                                ? "33.33%"
+                                : step === 2
+                                  ? "66.66%"
+                                  : "100%",
+                        transition: "width 0.3s ease",
+                    }}
+                />
+            </div>
+        </div>
+    )
+}
+
+// ---------- Styles ----------
+// Page root — width 100vw so the form fills the browser window
+// regardless of how Framer sizes its parent frame. minHeight 100dvh
+// fixes the mobile Safari 100vh bug (toolbar collapse pushes content
+// below the fold). overflowX hidden prevents horizontal scrollbars
+// from any fixed-width children.
+const page: React.CSSProperties = {
+    background: BG,
+    width: "100vw",
+    minHeight: "100dvh",
+    padding: "24px 16px 60px",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+}
+
+const shellOuter: React.CSSProperties = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+}
+
+const shellInner: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 760,
+    background: CARD,
+    borderRadius: 20,
+    border: `1px solid ${BORDER_SOFT}`,
+    boxSizing: "border-box",
+    padding: "24px 28px 32px",
+}
+
+const headerWrap: React.CSSProperties = {
+    marginBottom: 20,
+}
+
+const headline: React.CSSProperties = {
+    fontSize: 22,
+    fontWeight: 950,
+    color: TEXT,
+    marginBottom: 6,
+    letterSpacing: -0.3,
+}
+
+const subhead: React.CSSProperties = {
+    fontSize: 13,
+    lineHeight: "20px",
+    color: MUTED,
+    marginBottom: 20,
+}
+
+const input: React.CSSProperties = {
+    width: "100%",
+    height: 44,
+    background: GLASS,
+    color: TEXT,
+    padding: "0 14px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 14,
+}
+
+const select: React.CSSProperties = {
+    width: "100%",
+    height: 44,
+    background: SELECT_BG,
+    color: TEXT,
+    padding: "0 14px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 14,
+    appearance: "none",
+    colorScheme: "dark",
+}
+
+const textarea: React.CSSProperties = {
+    width: "100%",
+    background: GLASS,
+    color: TEXT,
+    padding: 14,
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    boxSizing: "border-box",
+    outline: "none",
+    fontSize: 14,
+    lineHeight: "22px",
+    resize: "vertical",
+}
+
+const btnRow: React.CSSProperties = {
+    display: "flex",
+    gap: 10,
+    marginTop: 20,
+    flexWrap: "wrap" as const,
+}
+
+const primaryBtn: React.CSSProperties = {
+    flex: 1,
+    minWidth: 220,
+    padding: "13px 18px",
+    borderRadius: 13,
+    background: "linear-gradient(90deg, #FEB06A, #51ADE5)",
+    fontWeight: 900,
+    fontSize: 14,
+    border: "none",
+    color: "#04060F",
+    cursor: "pointer",
+}
+
+const secondaryBtn: React.CSSProperties = {
+    flex: 1,
+    minWidth: 160,
+    padding: "13px 18px",
+    borderRadius: 13,
+    background: "rgba(255,255,255,0.04)",
+    fontWeight: 900,
+    fontSize: 14,
+    border: `1px solid ${BORDER_SOFT}`,
+    color: TEXT,
+    cursor: "pointer",
+}
+
+const linkBtn: React.CSSProperties = {
+    display: "inline-block",
+    width: "100%",
+    textAlign: "center",
+    padding: "13px 18px",
+    borderRadius: 13,
+    border: `1px solid ${BORDER_SOFT}`,
+    color: TEXT,
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: 14,
+}
+
+const errorBox: React.CSSProperties = {
+    color: ERROR,
+    fontWeight: 800,
+    marginTop: 6,
+    marginBottom: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "rgba(255,120,120,0.08)",
+    border: "1px solid rgba(255,120,120,0.20)",
+    fontSize: 13,
+    lineHeight: "18px",
+}
+
+const finePrint: React.CSSProperties = {
+    marginTop: 12,
+    fontSize: 11,
+    color: DIM,
+    textAlign: "center" as const,
+}

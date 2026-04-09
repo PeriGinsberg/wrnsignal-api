@@ -2360,14 +2360,25 @@ function WygCard({
 
 // ===================== STYLES =====================
 
+// Root container for the full Job Analysis page. Fixes:
+//  - width 100vw so the page fills the browser window regardless of
+//    how Framer sizes its parent frame (was relying on parent width)
+//  - minHeight 100dvh (dynamic viewport height) instead of 100vh so the
+//    mobile Safari collapsible toolbar doesn't push the submit button
+//    below the visible viewport on first paint
+//  - overflowX hidden / overflowY visible so long results content can
+//    actually scroll (was clipped by the blanket overflow: hidden)
+//  - borderRadius removed because the component is full-window now,
+//    not a card that needs rounding
 const pageStyle: React.CSSProperties = {
     background: C.bg,
     fontFamily: SANS,
     color: C.white,
-    borderRadius: 12,
-    overflow: "hidden",
     position: "relative",
-    minHeight: "100vh",
+    width: "100vw",
+    minHeight: "100dvh",
+    overflowX: "hidden",
+    boxSizing: "border-box",
 }
 
 // Results page styles

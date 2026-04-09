@@ -6595,9 +6595,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 <div
                     style={{
                         ...shell,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflowY: "auto",
+                        // Block layout with vertical padding instead of flex
+                        // center. Flex center with alignItems: center cuts
+                        // off content that exceeds the container height
+                        // (classic flexbox gotcha) — and the login screen
+                        // can exceed viewport on small windows. Block
+                        // layout lets the inner div center horizontally
+                        // via margin: 0 auto while the natural document
+                        // flow handles vertical overflow gracefully.
+                        display: "block",
+                        paddingTop: 48,
+                        paddingBottom: 48,
                     }}
                 >
                     <div
@@ -8681,23 +8689,36 @@ function SideNavItem({
 /* ---------- APP SHELL ---------- */
 
 // Fix: outer padding prevents left-edge clipping inside Framer canvas
+// Root frame for the full app. Sets viewport-based dimensions so the
+// component always fills the browser window regardless of how Framer
+// sizes its parent frame. Uses 100dvh (dynamic viewport height) instead
+// of 100vh so the mobile Safari collapsing toolbar doesn't push content
+// below the visible area — the classic "login appears below the fold"
+// bug was caused by 100vh being larger than the visible viewport on
+// first paint. overflowX is hidden to prevent accidental horizontal
+// scrollbars from fixed-width children, but overflowY is auto so long
+// content (login, results pages, paginated lists) can actually scroll.
 const outerFrame: React.CSSProperties = {
-    width: "100%",
-    height: "100vh",
+    width: "100vw",
+    minHeight: "100dvh",
     background: BG,
     boxSizing: "border-box",
-    overflow: "hidden",
+    overflowX: "hidden",
+    overflowY: "auto",
     position: "relative",
 }
 
+// Inner shell container — the flex row holding nav + main content.
+// minHeight 100dvh so the side nav always fills the visible area even
+// when main content is short. Does not set overflow — outerFrame
+// already handles scrolling for the whole app.
 const shell: React.CSSProperties = {
     background: BG,
     color: TEXT,
     width: "100%",
-    height: "100%",
+    minHeight: "100dvh",
     display: "flex",
     boxSizing: "border-box",
-    overflow: "hidden",
 }
 
 const main: React.CSSProperties = {
