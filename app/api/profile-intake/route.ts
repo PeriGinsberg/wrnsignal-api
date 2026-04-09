@@ -98,6 +98,53 @@ function getCurrentYearUtc(): number {
   return new Date().getUTCFullYear()
 }
 
+// Extract only the professional experience portions of a resume.
+// Lines under professional headers (EXPERIENCE, WORK EXPERIENCE, etc.) are
+// kept; lines under non-professional headers (LEADERSHIP, INVOLVEMENT,
+// EXTRACURRICULAR, VOLUNTEER, CERTIFICATIONS, EDUCATION, etc.) are dropped.
+// This prevents student extracurricular and volunteer date ranges from
+// inflating years-of-experience estimates. Falls back to full text when
+// no recognizable headers exist. Kept in sync with extract.ts.
+function extractProfessionalExperienceText(resumeText: string): string {
+  if (!resumeText) return ""
+
+  const PRO_HEADERS =
+    /^\s*(?:professional experience|relevant experience|work experience|employment(?: history)?|experience|career history|career experience|internships?)\s*:?\s*$/i
+  const NON_PRO_HEADERS =
+    /^\s*(?:leadership(?:\s*[&and]+\s*involvement)?|involvement|extracurricular(?:\s*activities)?|activities|volunteer(?:\s*experience|\s*work)?|community(?:\s*service|\s*involvement)?|affiliations?|certifications?|education(?:\s*[&and]+\s*certifications?)?|skills(?:\s*[&and]+\s*interests)?|tools(?:\s*[&and]+\s*systems)?|interests|awards(?:\s*[&and]+\s*honors)?|honors(?:\s*[&and]+\s*awards)?|hobbies|core competencies|summary|objective|profile|references|publications|projects|coursework|training)\s*[:&]?\s*$/i
+
+  const lines = resumeText.split(/\r?\n/)
+  let inProfessional = true
+  let sawAnyHeader = false
+  const kept: string[] = []
+
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) {
+      kept.push(raw)
+      continue
+    }
+
+    if (PRO_HEADERS.test(line)) {
+      sawAnyHeader = true
+      inProfessional = true
+      kept.push(raw)
+      continue
+    }
+    if (NON_PRO_HEADERS.test(line)) {
+      sawAnyHeader = true
+      inProfessional = false
+      continue
+    }
+
+    if (inProfessional) kept.push(raw)
+  }
+
+  if (!sawAnyHeader) return resumeText
+  const joined = kept.join("\n").trim()
+  return joined.length > 20 ? joined : resumeText
+}
+
 // Deterministic years-of-experience estimator.
 //
 // Handles three common patterns in order of reliability:
@@ -106,6 +153,10 @@ function getCurrentYearUtc(): number {
 //      "Jan 2025 – Present". Overlapping ranges are merged so a candidate
 //      isn't double-counted for concurrent roles.
 //   3. Bare Year-Year ranges as a last resort: "2019 - 2022".
+//
+// Range parsing is restricted to the professional-experience portion of
+// the resume via extractProfessionalExperienceText, so student volunteer /
+// camp / fraternity date ranges don't inflate the count.
 //
 // Returns null only when nothing is found, so downstream code can distinguish
 // "unknown" from "zero". Previously capped at 2 years for entry-level flows,
@@ -126,6 +177,8 @@ function inferYearsExperienceApprox(resumeText: string): number | null {
   }
 
   // ── 2. Month Year – Month Year (or Present) ranges ──────────────────────
+  const professionalText = extractProfessionalExperienceText(resumeText)
+
   const monthMap: Record<string, number> = {
     jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
     jul: 6, aug: 7, sept: 8, sep: 8, oct: 9, nov: 10, dec: 11,
@@ -141,7 +194,7 @@ function inferYearsExperienceApprox(resumeText: string): number | null {
     /(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})\s*(?:[-–—]|to)\s*(?:(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})|present|current|now|today)/gi
 
   let m: RegExpExecArray | null
-  while ((m = monthRangeRx.exec(resumeText)) !== null) {
+  while ((m = monthRangeRx.exec(professionalText)) !== null) {
     const startM = monthMap[m[1].toLowerCase()] ?? 0
     const startY = parseInt(m[2], 10)
     if (!Number.isFinite(startY) || startY < 1970 || startY > 2100) continue
@@ -164,7 +217,7 @@ function inferYearsExperienceApprox(resumeText: string): number | null {
   // Only used if we don't already have month-level data (or to extend it).
   const yearRangeRx =
     /\b(19[89]\d|20\d{2})\s*(?:[-–—]|to)\s*(?:(19[89]\d|20\d{2})|present|current|now|today)\b/gi
-  while ((m = yearRangeRx.exec(resumeText)) !== null) {
+  while ((m = yearRangeRx.exec(professionalText)) !== null) {
     const startY = parseInt(m[1], 10)
     if (!Number.isFinite(startY)) continue
     const startAbs = startY * 12 // January of startY

@@ -2153,6 +2153,65 @@ function inferProfileGradYear(text: string): number | null {
 //   3. Bare Year-Year date ranges as a fallback
 //   4. Role-signal heuristic as a final fallback for resumes without
 //      machine-readable dates
+// Extract only the professional experience portions of a resume.
+// Walks the text line by line, tracking which section header is currently
+// in scope. Lines under professional headers (EXPERIENCE, WORK EXPERIENCE,
+// PROFESSIONAL EXPERIENCE, EMPLOYMENT, CAREER HISTORY, RELEVANT EXPERIENCE)
+// are kept. Lines under non-professional headers (LEADERSHIP, INVOLVEMENT,
+// EXTRACURRICULAR, ACTIVITIES, VOLUNTEER, COMMUNITY, AFFILIATIONS,
+// CERTIFICATIONS, EDUCATION, SKILLS, INTERESTS, AWARDS, HONORS, HOBBIES)
+// are dropped — their date ranges reflect club officer tenure, camp
+// counselor summers, or fraternity membership, not professional tenure.
+//
+// If the resume has no recognizable section headers at all, returns the
+// full text unchanged so the caller's range parser still has something to
+// work with. Better to slightly over-estimate for an unstructured resume
+// than to return null and trigger the "zero experience" fallback.
+function extractProfessionalExperienceText(profileText: string): string {
+  if (!profileText) return ""
+
+  const PRO_HEADERS =
+    /^\s*(?:professional experience|relevant experience|work experience|employment(?: history)?|experience|career history|career experience|internships?)\s*:?\s*$/i
+  const NON_PRO_HEADERS =
+    /^\s*(?:leadership(?:\s*[&and]+\s*involvement)?|involvement|extracurricular(?:\s*activities)?|activities|volunteer(?:\s*experience|\s*work)?|community(?:\s*service|\s*involvement)?|affiliations?|certifications?|education(?:\s*[&and]+\s*certifications?)?|skills(?:\s*[&and]+\s*interests)?|tools(?:\s*[&and]+\s*systems)?|interests|awards(?:\s*[&and]+\s*honors)?|honors(?:\s*[&and]+\s*awards)?|hobbies|core competencies|summary|objective|profile|references|publications|projects|coursework|training)\s*[:&]?\s*$/i
+
+  const lines = profileText.split(/\r?\n/)
+  let inProfessional = true // default true so content BEFORE any header is kept
+  let sawAnyHeader = false
+  const kept: string[] = []
+
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) {
+      kept.push(raw)
+      continue
+    }
+
+    if (PRO_HEADERS.test(line)) {
+      sawAnyHeader = true
+      inProfessional = true
+      kept.push(raw)
+      continue
+    }
+    if (NON_PRO_HEADERS.test(line)) {
+      sawAnyHeader = true
+      inProfessional = false
+      continue
+    }
+
+    if (inProfessional) kept.push(raw)
+  }
+
+  // No headers found at all → return original text. The resume is either
+  // unstructured or too short to segment, and over-filtering risks returning
+  // an empty string.
+  if (!sawAnyHeader) return profileText
+
+  const joined = kept.join("\n").trim()
+  // If section filtering produced nothing meaningful, fall back to full text.
+  return joined.length > 20 ? joined : profileText
+}
+
 function inferYearsExperienceApprox(profileText: string): number | null {
   if (!profileText || profileText.trim().length === 0) return null
 
@@ -2166,6 +2225,13 @@ function inferYearsExperienceApprox(profileText: string): number | null {
   }
 
   // ── 2. Month Year – Month Year (or Present) ranges ──────────────────────
+  // Range parsing runs against the professional-experience-only slice of
+  // the resume. Volunteer, camp, fraternity, and club membership date
+  // ranges under LEADERSHIP / INVOLVEMENT / VOLUNTEER headers are excluded
+  // so student candidates with long-running extracurriculars don't get
+  // counted as having 5+ years of professional experience.
+  const professionalText = extractProfessionalExperienceText(profileText)
+
   const monthMap: Record<string, number> = {
     jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
     jul: 6, aug: 7, sept: 8, sep: 8, oct: 9, nov: 10, dec: 11,
@@ -2180,7 +2246,7 @@ function inferYearsExperienceApprox(profileText: string): number | null {
     /(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})\s*(?:[-–—]|to)\s*(?:(jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})|present|current|now|today)/gi
 
   let m: RegExpExecArray | null
-  while ((m = monthRangeRx.exec(profileText)) !== null) {
+  while ((m = monthRangeRx.exec(professionalText)) !== null) {
     const startM = monthMap[m[1].toLowerCase()] ?? 0
     const startY = parseInt(m[2], 10)
     if (!Number.isFinite(startY) || startY < 1970 || startY > 2100) continue
@@ -2201,7 +2267,7 @@ function inferYearsExperienceApprox(profileText: string): number | null {
   // ── 3. Bare "2019 – 2022" / "2019 to Present" ranges ────────────────────
   const yearRangeRx =
     /\b(19[89]\d|20\d{2})\s*(?:[-–—]|to)\s*(?:(19[89]\d|20\d{2})|present|current|now|today)\b/gi
-  while ((m = yearRangeRx.exec(profileText)) !== null) {
+  while ((m = yearRangeRx.exec(professionalText)) !== null) {
     const startY = parseInt(m[1], 10)
     if (!Number.isFinite(startY)) continue
     const startAbs = startY * 12
