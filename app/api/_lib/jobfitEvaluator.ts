@@ -6,7 +6,7 @@
 import { extractJobSignals, extractProfileSignals } from "../jobfit/extract"
 import { evaluateGates } from "../jobfit/constraints"
 import { scoreJobFit } from "../jobfit/scoring"
-import { decisionFromScore, applyGateOverrides, applyRiskDowngrades } from "../jobfit/decision"
+import { decisionFromScore, applyGateOverrides, applyRiskDowngrades, applyEvidenceGuardrails, capScoreForDecision } from "../jobfit/decision"
 import type {
   EvalOutput,
   StructuredProfileSignals,
@@ -64,11 +64,20 @@ export async function runJobFit(args: {
     debug: Record<string, unknown>
   }
 > {
-  const jobSignals = extractJobSignals(args.jobText || "")
+  // Pass the user-provided title INTO extraction so title-based family
+  // detectors (jobTitleIsSoftware, jobTitleIsCyberSecurity, jobTitleIsHR,
+  // etc.) can see it. Without this, short or company-heavy JDs whose
+  // first 1500 chars do not repeat the title get misclassified —
+  // e.g. a Maybern "Software Engineer" JD that opens with a company
+  // blurb was classifying as Marketing family.
+  const jobSignals = extractJobSignals(args.jobText || "", {
+    userJobTitle: args.userJobTitle,
+  })
 
-  // Inject user-provided title / company BEFORE any scoring path reads them.
-  // The route handler also does this post-scoring for display, but scoring
-  // itself needs them too for target-role matching.
+  // Overwrite the surface jobTitle / companyName fields for display.
+  // Extraction used the title for family detection but may have set its
+  // own `jobTitle` from the JD body; the user-entered value is
+  // authoritative for downstream consumers.
   if (args.userJobTitle) jobSignals.jobTitle = args.userJobTitle
   if (args.userCompanyName) jobSignals.companyName = args.userCompanyName
 
@@ -79,14 +88,19 @@ export async function runJobFit(args: {
 
   const decisionInitial = decisionFromScore(scored.score)
   const decisionAfterGate = applyGateOverrides(decisionInitial, gate)
-  const decisionFinal = applyRiskDowngrades(decisionAfterGate, scored.penaltySum)
+  const decisionAfterRisk = applyRiskDowngrades(decisionAfterGate, scored.penaltySum, scored.riskCodes)
+  // Evidence guardrails: cap decision when the underlying evidence is
+  // too thin or the risk load is too heavy, regardless of raw score.
+  // Prevents "Apply" with zero WHY codes or 4+ high-severity risks.
+  const guardrail = applyEvidenceGuardrails(decisionAfterRisk, scored.whyCodes, scored.riskCodes)
+  const decisionFinal = guardrail.decision
 
   // When a hard gate fires, the raw score is misleading — a candidate who
   // cannot get an interview should never see a 60+ score. Cap gate scores
   // at 25 so the number clearly matches the Pass decision.
   const gateScore = gate.type === "force_pass"
     ? Math.min(scored.score, 25)
-    : scored.score
+    : capScoreForDecision(scored.score, decisionFinal)
 
   const baseOut: EvalOutput = {
     decision: decisionFinal,

@@ -2643,9 +2643,19 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   return null
 }
 
-export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
+export function extractJobSignals(
+  jobTextRaw: string,
+  opts?: { userJobTitle?: string }
+): StructuredJobSignals {
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
+  // Prepend the user-provided title (if any) so all the title-based
+  // detectors below (jobTitleIsSoftware, jobTitleIsFinance, etc.) see
+  // the authoritative title rather than relying on whether the JD body
+  // happens to contain the title in its first 1500 chars. Real JDs
+  // frequently bury the title below a long "About Us" company blurb,
+  // which causes title-based family inference to silently no-op.
+  const userTitleNorm = opts?.userJobTitle ? norm(opts.userJobTitle) : ""
 
   const rawLines = jobTextRaw.split(/\r?\n/)
   const jobTitle = extractJobTitle(rawLines)
@@ -2671,7 +2681,15 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // text for tag-based classification to work correctly.
   // Check first 1500 chars (covers title + department + reporting line).
   // Note: norm() lowercases and preserves & so "FP&A" becomes "fp&a"
-  const jobTitleSlice = normalized.slice(0, 1500)
+  //
+  // When a user-provided title is available, we prepend it so the
+  // title-based regex detectors can match against the authoritative value
+  // instead of hunting through the JD body. This is critical for short /
+  // company-heavy JDs where the actual title never appears in the first
+  // 1500 chars of the body.
+  const jobTitleSlice = userTitleNorm
+    ? userTitleNorm + "\n" + normalized.slice(0, 1500)
+    : normalized.slice(0, 1500)
   const jobTitleIsFinance =
     /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst|wealth management|wealth advisor|financial advisor|financial professional|financial consultant|financial planner|client associate|client service associate|advisor development|wealth relationship|relationship manager|series 7|finra|securities|broker dealer)\b/i.test(jobTitleSlice)
   const jobTitleIsSales =
@@ -2725,6 +2743,18 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   // keywords) or IT_Software (from "technical" / "analysis" keywords).
   const jobTitleIsLifeSciences =
     /\b(scientist( i| ii| iii)?|chemist( i| ii| iii)?|biologist( i| ii| iii)?|biochemist|microbiologist|analytical scientist|analytical chemist|research scientist|research associate|laboratory (technician|scientist|analyst)|lab technician|lab analyst|quality control (analyst|scientist|chemist|technician)|qc analyst|qc chemist|qc scientist|qc technician|process development (scientist|engineer|associate)|formulation (scientist|chemist)|analytical development|bioinformatics|cell biologist|molecular biologist|clinical trials associate|clinical research associate|vaccines associate|pharmacology|toxicology)\b/i.test(
+      jobTitleSlice
+    )
+
+  // Cybersecurity / InfoSec titles. Route to IT_Software family because
+  // the scoring engine has no dedicated security family and cybersecurity
+  // work sits in the same technical/IT space as software engineering.
+  // Without this, short cybersecurity JDs (SOC Analyst, Security Engineer,
+  // Cyber Intelligence Analyst) fall through to tag-based inference and
+  // get misclassified as Marketing because their body text is heavy on
+  // "communicate", "report", "analyze" language.
+  const jobTitleIsCyberSecurity =
+    /\b(cyber security|cybersecurity|cyber intelligence|information security|info\s?sec|network security|application security|cloud security|security (engineer|analyst|architect|consultant|specialist|associate|operations|administrator|engineer ii|engineer i)|security operations center|soc analyst|threat intelligence analyst|penetration tester|pen tester|pentester|vulnerability analyst|grc analyst|siem|incident response|red team|blue team|ethical hacker|malware analyst|forensics analyst)\b/i.test(
       jobTitleSlice
     )
 
@@ -2810,6 +2840,9 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
   if (jobTitleIsPRCommsAgency && !functionTags.includes("communications_pr")) {
     functionTags.push("communications_pr")
   }
+  if (jobTitleIsCyberSecurity && !functionTags.includes("software_it")) {
+    functionTags.push("software_it")
+  }
 
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
   const jobFamily: JobFamily = isLegalOpsContext
@@ -2831,6 +2864,11 @@ export function extractJobSignals(jobTextRaw: string): StructuredJobSignals {
           ? "Engineering"
           : jobTitleIsSoftware
             ? "IT_Software"
+            : jobTitleIsCyberSecurity
+              // Cybersecurity / InfoSec routes to IT_Software. Placed
+              // alongside jobTitleIsSoftware since they both belong in
+              // the same IT family.
+              ? "IT_Software"
             : jobTitleIsHealthcare
               ? "Healthcare"
               : jobTitleIsTrades

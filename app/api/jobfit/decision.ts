@@ -1,4 +1,4 @@
-import type { Decision, GateTriggered, RiskCode } from "./signals"
+import type { Decision, GateTriggered, RiskCode, WhyCode } from "./signals"
 import { POLICY } from "./policy"
 
 // Priority Apply threshold raised from 92 → 96.
@@ -42,4 +42,101 @@ export function applyRiskDowngrades(
   if (decision === "Apply" && penaltySum >= POLICY.downgrade.applyToReviewPenaltySum) return "Review"
   if (decision === "Review" && penaltySum >= POLICY.downgrade.reviewToPassPenaltySum) return "Pass"
   return decision
+}
+
+// Rank decisions so we can take a min()-style cap.
+const DECISION_RANK: Record<Decision, number> = {
+  "Priority Apply": 3,
+  "Apply": 2,
+  "Review": 1,
+  "Pass": 0,
+}
+const RANK_TO_DECISION: Decision[] = ["Pass", "Review", "Apply", "Priority Apply"]
+function capDecision(current: Decision, ceiling: Decision): Decision {
+  return DECISION_RANK[current] > DECISION_RANK[ceiling]
+    ? RANK_TO_DECISION[DECISION_RANK[ceiling]]
+    : current
+}
+
+// Evidence and risk guardrails — applied after score/gate/risk-downgrade logic.
+//
+// The score-based decision threshold is optimistic: title + family + tool
+// matches can push a case to Apply even when there is no actual proof the
+// candidate has done the work, or when the posting carries multiple
+// high-severity warnings. These guardrails translate those signals into
+// decision caps so the candidate never sees "Apply" alongside 4 red flags
+// and zero evidence matches.
+//
+// Rules:
+//   1. Zero WHY codes         → cap at Pass    (no evidence of any fit)
+//   2. Zero DIRECT WHY codes  → cap at Review  (only adjacent/inferred)
+//   3. 4+ high-severity risks → cap at Pass    (too many red flags)
+//   4. 3  high-severity risks → cap at Review
+export function applyEvidenceGuardrails(
+  decision: Decision,
+  whyCodes: WhyCode[] = [],
+  riskCodes: RiskCode[] = []
+): { decision: Decision; reason: string | null } {
+  const whyCount = whyCodes.length
+  const directCount = whyCodes.filter((w) => w.match_strength === "direct").length
+  const highRiskCount = riskCodes.filter((r) => r.severity === "high").length
+
+  // Rule 1: zero WHY codes means we found nothing — Pass.
+  if (whyCount === 0) {
+    const capped = capDecision(decision, "Pass")
+    if (capped !== decision) {
+      const reason = `zero WHY codes — no evidence of fit`
+      console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
+      return { decision: capped, reason }
+    }
+  }
+
+  // Rule 3 & 4: high-severity risk ceilings. Check BEFORE rule 2 because
+  // risk ceilings should apply even when direct evidence exists — a role
+  // with 4 high-severity risks is not an Apply regardless of proof.
+  if (highRiskCount >= 4) {
+    const capped = capDecision(decision, "Pass")
+    if (capped !== decision) {
+      const reason = `${highRiskCount} high-severity risks (>= 4)`
+      console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
+      return { decision: capped, reason }
+    }
+  } else if (highRiskCount >= 3) {
+    const capped = capDecision(decision, "Review")
+    if (capped !== decision) {
+      const reason = `${highRiskCount} high-severity risks (>= 3)`
+      console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
+      return { decision: capped, reason }
+    }
+  }
+
+  // Rule 2: no direct evidence means only adjacent/inferred matches —
+  // not strong enough to recommend applying.
+  if (directCount === 0 && whyCount > 0) {
+    const capped = capDecision(decision, "Review")
+    if (capped !== decision) {
+      const reason = `no direct WHY codes — only adjacent evidence`
+      console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
+      return { decision: capped, reason }
+    }
+  }
+
+  return { decision, reason: null }
+}
+
+// Cap the displayed score to the ceiling of the decision band so the
+// number matches the label. A Pass with score 86 is confusing — the
+// decision says don't apply but the score looks good. After a guardrail
+// downgrade, clamp the score into the target band.
+export function capScoreForDecision(score: number, decision: Decision): number {
+  switch (decision) {
+    case "Pass":
+      return Math.min(score, 55)
+    case "Review":
+      return Math.min(score, 74)
+    case "Apply":
+      return Math.min(score, 95)
+    case "Priority Apply":
+      return score
+  }
 }

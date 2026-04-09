@@ -37,6 +37,11 @@ const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> 
   "40926n": { jobTitle: "Finance Strategy & Department Lead", companyName: "Affirm" },
   "40926o": { jobTitle: "Strategy and Operations Consultant", companyName: "SEI" },
   "40926p": { jobTitle: "Associate to the Chairman", companyName: "GVW Group" },
+  "40926q": { jobTitle: "Software Engineer", companyName: "Intuit" },
+  "40926r": { jobTitle: "Software Engineer", companyName: "Maybern" },
+  "40926s": { jobTitle: "Early Career Software Engineer", companyName: "Notion" },
+  "40926t": { jobTitle: "Cyber Security Associate", companyName: "(Unknown)" },
+  "40926u": { jobTitle: "Cyber Intelligence Analyst", companyName: "RightClick (client unnamed)" },
 }
 
 // ── Minimal CSV parser (handles quoted fields with embedded newlines/commas/quotes)
@@ -194,8 +199,31 @@ async function main() {
     try {
       profileArray = JSON.parse(profileJsonRaw)
     } catch (e: any) {
-      console.error(`  ✗ Profile JSON parse failed: ${e.message}`)
-      continue
+      // Tolerant fallback: some CSV cells contain two concatenated arrays
+      // like `[{...}][{...}]` when the same profile gets pasted twice.
+      // Walk the first balanced top-level `[...]` and parse only that.
+      let depth = 0
+      let end = -1
+      for (let k = 0; k < profileJsonRaw.length; k++) {
+        const ch = profileJsonRaw[k]
+        if (ch === "[") depth++
+        else if (ch === "]") {
+          depth--
+          if (depth === 0) { end = k; break }
+        }
+      }
+      if (end > 0) {
+        try {
+          profileArray = JSON.parse(profileJsonRaw.slice(0, end + 1))
+          console.warn(`  ⚠ Profile JSON had trailing content — parsed first ${end + 1} of ${profileJsonRaw.length} chars`)
+        } catch (e2: any) {
+          console.error(`  ✗ Profile JSON parse failed: ${e.message} (fallback: ${e2.message})`)
+          continue
+        }
+      } else {
+        console.error(`  ✗ Profile JSON parse failed: ${e.message}`)
+        continue
+      }
     }
 
     const profileRow = Array.isArray(profileArray) ? profileArray[0] : profileArray
