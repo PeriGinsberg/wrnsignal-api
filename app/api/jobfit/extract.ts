@@ -437,6 +437,12 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "closed new advertising accounts",
     ],
     profileWeakPhrases: ["client communication", "client meetings", "scheduling client meetings"],
+    // jobPhrases broadened to include pharmaceutical / medical / field
+    // sales vocabulary. Previous list only matched SDR-style cold-call
+    // language, so pharma JDs (which use "partner with HCPs", "gain
+    // access to customers", "achieve sales growth", "product expert",
+    // "tailor solutions for therapy") produced zero sales requirement
+    // units even with a very explicit sales_bd tag.
     jobPhrases: [
       "prospect",
       "prospecting",
@@ -448,6 +454,28 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "new business",
       "sales calls",
       "sales presentations",
+      // Pharma / field sales language
+      "partner with health care professionals",
+      "partner with healthcare professionals",
+      "partner with hcps",
+      "gain access to the customers",
+      "gain access to customers",
+      "customer access",
+      "achieve sales growth",
+      "deliver on strong sales results",
+      "deliver sales results",
+      "drive sales growth",
+      "sell in a changing",
+      "sell in a",
+      "product expert",
+      "tailor solutions",
+      "detail product",
+      "product detailing",
+      "physician call",
+      "physician calls",
+      "hcp engagement",
+      "call on physicians",
+      "call on accounts",
     ],
     adjacentKeys: ["account_management", "territory_execution"],
   },
@@ -467,6 +495,9 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "supported accounts",
     ],
     profileWeakPhrases: ["client communication", "client meetings", "scheduling client meetings"],
+    // Broadened to include HCP / customer relationship language that
+    // pharma and medical-device sales JDs use in place of generic
+    // "account management" phrasing.
     jobPhrases: [
       "account management",
       "account support",
@@ -475,6 +506,14 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "account growth",
       "customer accounts",
       "book of business",
+      "relationships with physicians",
+      "relationships with health care professionals",
+      "relationships with healthcare professionals",
+      "build relationships with customers",
+      "patient care as a product expert",
+      "those involved with patient care",
+      "alliance partners",
+      "partner with team members and alliance partners",
     ],
     adjacentKeys: ["prospecting_pipeline_management", "post_sale_support"],
   },
@@ -496,6 +535,10 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "territory",
       "territory coverage",
       "territory management",
+      "sales territory",
+      "pharmaceutical sales territory",
+      "your own territory",
+      "your own pharmaceutical sales territory",
       "field sales",
       "assigned territory",
       "regional sales",
@@ -503,6 +546,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "grow utilization",
       "onsite account visits",
       "cover cases",
+      "work in your own",
     ],
     adjacentKeys: ["account_management", "hospital_or_environment"],
   },

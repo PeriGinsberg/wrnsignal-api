@@ -89,6 +89,16 @@ async function main() {
     console.log(`  [${r.code}] sev=${r.severity} w=${r.weight}`)
     console.log("   ", String(r.risk || "").slice(0, 220))
   }
+
+  console.log("\nProfile evidence units (top 15):")
+  for (const pu of (result.profile_signals.profile_evidence_units || []).slice(0, 15)) {
+    console.log(`  [${pu.key}] ${pu.kind} s=${pu.strength} :`, String(pu.snippet || "").slice(0, 120))
+  }
+
+  console.log("\nJob requirement units (top 12):")
+  for (const ju of (result.job_signals.requirement_units || []).slice(0, 12)) {
+    console.log(`  [${ju.key}] ${ju.kind} req=${ju.requiredness} s=${ju.strength} :`, String(ju.snippet || "").slice(0, 120))
+  }
 }
 
 main().catch((e) => {
