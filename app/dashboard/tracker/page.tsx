@@ -32,7 +32,30 @@ const INTERVIEW_GRADIENT: Record<string, string> = {
 }
 
 const APP_LOCATIONS = ["Company Website", "LinkedIn", "Indeed", "Handshake", "Referral", "Other"]
-const INTERVIEW_STAGES = ["hr_screening", "phone", "zoom", "in_person", "take_home", "final_round", "other"]
+// Interview stage options for the dropdown. Most entries are plain strings
+// that get rendered with underscores replaced by spaces, but AI/HireVue
+// uses a {value, label} tuple because the slash needs to be preserved in
+// the displayed label (the default string rendering would lowercase it
+// and drop the slash). The stored value "ai_hirevue" is still safe to
+// round-trip through the database and API.
+const INTERVIEW_STAGES: (string | { value: string; label: string })[] = [
+  "hr_screening",
+  "phone",
+  "zoom",
+  { value: "ai_hirevue", label: "AI / HireVue" },
+  "in_person",
+  "take_home",
+  "final_round",
+  "other",
+]
+
+// Formats an interview_stage value for display. Mirrors the SelectField
+// label logic so that the list view, card header, and edit dropdown all
+// show the same string for a given stored value.
+function formatInterviewStage(stage: string): string {
+  if (stage === "ai_hirevue") return "AI / HireVue"
+  return stage.replace(/_/g, " ")
+}
 const INTERVIEW_STATUSES = ["not_scheduled", "scheduled", "awaiting_feedback", "offer_extended", "rejected", "ghosted"]
 const APP_STATUSES = ["saved", "applied", "interviewing", "offer", "rejected", "withdrawn"]
 
@@ -760,7 +783,7 @@ export default function TrackerPage() {
                 <div style={{ padding: "16px 18px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.WRN_ORANGE }}>{iv.interview_stage.replace(/_/g, " ")}</div>
+                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.WRN_ORANGE }}>{formatInterviewStage(iv.interview_stage)}</div>
                       <div style={{ fontSize: 15, fontWeight: 900, color: T.TEXT, marginTop: 4 }}>{iv.company_name}</div>
                       <div style={{ fontSize: 12, color: T.MUTED, marginTop: 2 }}>{iv.job_title}</div>
                     </div>
