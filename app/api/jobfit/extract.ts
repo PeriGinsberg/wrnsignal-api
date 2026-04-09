@@ -2674,7 +2674,13 @@ function inferJobFinanceSubFamily(
   // firm descriptions.
   const ibRoleContext = /\binvestment banking\s+(analyst|associate|vice president|vp|division|group|team|role|department|intern|internship|summer|full.?time)\b|\b(analyst|associate|vp|vice president|intern)\s+(in|at|within|for)\s+investment banking\b/i
   const ibKeywords = /\b(mergers and acquisitions|m&a advisory|capital raising|pitch book|pitchbook|coverage group|bulge bracket|leveraged buyout|lbo modeling|deal execution|ib analyst|ib associate|ib intern|ibd\b)\b/i
-  if (ibRoleContext.test(normalized) || ibKeywords.test(normalized) || (hasProspecting && hasFinancialAnalysis)) {
+  // Previously had a `(hasProspecting && hasFinancialAnalysis)` fallback
+  // that fired IB on any wealth-management support role whose JD
+  // included client prospecting language AND a company About Us blurb
+  // mentioning financial services (e.g., Raymond James Client Service
+  // Associate in Boca Raton). The fallback is removed — IB classification
+  // now requires explicit IB vocabulary or role context.
+  if (ibRoleContext.test(normalized) || ibKeywords.test(normalized)) {
     return "ib"
   }
 
