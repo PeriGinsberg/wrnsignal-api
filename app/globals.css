@@ -19,6 +19,16 @@
   }
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* Use dynamic viewport height on browsers that support it. Fixes the
+     mobile Safari "100vh is taller than the visible area" bug where
+     content gets pushed below the bottom toolbar. */
+  min-height: 100dvh;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
