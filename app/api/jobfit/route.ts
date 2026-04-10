@@ -490,6 +490,7 @@ export async function POST(req: NextRequest) {
           fingerprint_code,
           verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
           result_json: result,
+          job_description: jobText,
           persona_id: personaId || null,
           profile_version_at_run: profileVersionAtRun,
           persona_version_at_run: personaVersionAtRun,

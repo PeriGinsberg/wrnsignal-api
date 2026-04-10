@@ -92,7 +92,7 @@ export async function GET(
     // Fetch the jobfit run
     const { data: run, error: runErr } = await supabase
       .from("jobfit_runs")
-      .select("id, client_profile_id, fingerprint_hash, fingerprint_code, verdict, result_json, created_at")
+      .select("id, client_profile_id, fingerprint_hash, fingerprint_code, verdict, result_json, job_description, created_at")
       .eq("id", id)
       .maybeSingle()
 
@@ -132,6 +132,9 @@ export async function GET(
       verdict: run.verdict,
       score: run.result_json?.score ?? null,
       createdAt: run.created_at,
+      jobDescription: run.job_description ?? null,
+      jobTitle: run.result_json?.job_signals?.jobTitle ?? null,
+      companyName: run.result_json?.job_signals?.companyName ?? null,
       jobfit: run.result_json,
       positioning: posRes,
       coverLetter: clRes,
