@@ -3,3 +3,5 @@ docs/test_cases/out/
 .env*.local
 .next
 node_modules/
+.vercel
+signal-mobile/
