@@ -1507,6 +1507,192 @@ function countWeakHits(hay: string, phrases?: string[]): number {
   return countHits(hay, phrases)
 }
 
+// ── Section-aware JD parsing ────────────────────────────────────────────────
+//
+// Before this, the requirement unit extractor treated every line in the
+// JD equally — including lines under "About the company" or "Benefits"
+// headers. That was the root cause of several recurring bugs:
+//
+//   - Ryan vs Raymond James: a `financial_analysis` direct match fired
+//     from "Founded in 1962... investment and financial planning, in
+//     addition to capital markets and asset management" — the About the
+//     company paragraph, not a requirement.
+//   - Maybern SWE: produced zero sales requirement units because the
+//     JD body was mostly company blurb.
+//   - Josselyn vs Fanatics and others: company-context phrases getting
+//     credit as if they were job responsibilities.
+//
+// This pass segments the JD into sections based on explicit headers and
+// drops lines from `company`, `benefits`, and `how_to_apply` sections
+// before running unit detection. Everything else (title-based family
+// detectors, training-program detection, hourly / location detection,
+// advisory-background detection) still uses the full raw body because
+// those are ambient context signals, not requirement extraction.
+
+type SectionKind =
+  | "overview"
+  | "responsibilities"
+  | "qualifications"
+  | "benefits"
+  | "company"
+  | "how_to_apply"
+  | "other"
+
+type JobSection = {
+  kind: SectionKind
+  headerText: string | null
+  lines: string[]
+}
+
+// Each entry is a regex tested against the lowercased + trailing-colon-
+// stripped header line. Order matters: more specific entries first.
+const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
+  // COMPANY — About the company, Who we are, Our story
+  { pattern: /^(about (the )?company|about us|who we are|our story|our mission|company (overview|description|profile|background))$/, kind: "company" },
+
+  // BENEFITS — what we offer, perks, compensation
+  { pattern: /^(benefits|perks( and benefits)?|what('s| is) in it for you|why (join|work at|work for|us)|compensation( and benefits)?|our offer|we offer|pay range|salary range|(base )?compensation)$/, kind: "benefits" },
+
+  // HOW TO APPLY
+  { pattern: /^(how to apply|application (process|instructions)|to apply|next steps)$/, kind: "how_to_apply" },
+
+  // RESPONSIBILITIES — must come before generic "overview" rules
+  { pattern: /^(key )?responsibilities$/, kind: "responsibilities" },
+  { pattern: /^essential (duties|job functions|responsibilities)( and responsibilities)?$/, kind: "responsibilities" },
+  { pattern: /^(your|core|main|primary|position) responsibilities$/, kind: "responsibilities" },
+  { pattern: /^(day.to.day|day to day)( responsibilities| activities)?$/, kind: "responsibilities" },
+  { pattern: /^what (you'll|you will|you are going to|you would|you can expect to) (do|be doing|work on)$/, kind: "responsibilities" },
+  { pattern: /^in this role( you will| you'll)?$/, kind: "responsibilities" },
+  { pattern: /^job (duties|responsibilities|functions)$/, kind: "responsibilities" },
+  { pattern: /^(role and responsibilities|duties and responsibilities)$/, kind: "responsibilities" },
+  { pattern: /^what you('ll| will) achieve$/, kind: "responsibilities" },
+
+  // QUALIFICATIONS
+  { pattern: /^(qualifications|requirements)$/, kind: "qualifications" },
+  { pattern: /^(required|basic|minimum|preferred|additional|desired) (qualifications|requirements|skills|experience)$/, kind: "qualifications" },
+  { pattern: /^what we('re| are) (looking for|seeking|after)$/, kind: "qualifications" },
+  { pattern: /^your profile$/, kind: "qualifications" },
+  { pattern: /^(about you|who you are|who we('re| are) looking for)$/, kind: "qualifications" },
+  { pattern: /^(must have|nice to have|nice.to.have|must.have|must haves|nice.to.haves)$/, kind: "qualifications" },
+  { pattern: /^(education|work experience|education\/previous experience|education\/experience|experience)$/, kind: "qualifications" },
+  { pattern: /^(skill in|knowledge of|ability to)$/, kind: "qualifications" },
+  { pattern: /^what you('ll| will) bring$/, kind: "qualifications" },
+  { pattern: /^what you need$/, kind: "qualifications" },
+
+  // OVERVIEW — role-level, placed after more specific rules
+  { pattern: /^(role|position|job) (overview|summary|description)$/, kind: "overview" },
+  { pattern: /^(overview|summary|description)$/, kind: "overview" },
+  { pattern: /^(about (the )?(job|role|position|opportunity|internship|team))$/, kind: "overview" },
+  { pattern: /^(the role|the opportunity|the position|the job)$/, kind: "overview" },
+  { pattern: /^job description summary$/, kind: "overview" },
+  { pattern: /^(your (internship|role) experience|internship experience)$/, kind: "overview" },
+  { pattern: /^(opportunity|what we do)$/, kind: "overview" },
+]
+
+function classifyHeader(line: string): SectionKind | null {
+  const clean = String(line || "")
+    .trim()
+    .toLowerCase()
+    // Strip trailing colon / dash / em-dash
+    .replace(/[:：\-–—]\s*$/, "")
+    // Collapse whitespace
+    .replace(/\s+/g, " ")
+    .trim()
+  if (!clean || clean.length > 80) return null
+  for (const rule of SECTION_HEADER_RULES) {
+    if (rule.pattern.test(clean)) return rule.kind
+  }
+  return null
+}
+
+export function segmentJobText(raw: string): JobSection[] {
+  const rawLines = String(raw || "").split(/\r?\n/)
+  const sections: JobSection[] = []
+  // Default for content before the first header is "overview" — most JDs
+  // open with an intro paragraph describing the role, and treating that
+  // as overview (kept, full weight) is conservative.
+  let current: JobSection = {
+    kind: "overview",
+    headerText: null,
+    lines: [],
+  }
+
+  for (const line of rawLines) {
+    const newKind = classifyHeader(line)
+    if (newKind) {
+      // close previous section if it has any content
+      if (current.lines.length > 0 || current.headerText !== null) {
+        sections.push(current)
+      }
+      current = {
+        kind: newKind,
+        headerText: line.trim(),
+        lines: [],
+      }
+    } else {
+      current.lines.push(line)
+    }
+  }
+  if (current.lines.length > 0 || current.headerText !== null) {
+    sections.push(current)
+  }
+  return sections
+}
+
+// Sections whose content should NOT feed requirement unit extraction.
+// Company blurbs and benefits / compensation / how-to-apply text aren't
+// job requirements, so they shouldn't produce requirement_units.
+const REQUIREMENT_SKIP_KINDS: Set<SectionKind> = new Set([
+  "company",
+  "benefits",
+  "how_to_apply",
+])
+
+// Build a filtered job-text containing only the sections that describe
+// what the role actually requires / involves. Used as input to
+// splitEvidenceLines + buildUnitsFromLines. The full raw JD is still
+// used by ambient detectors (title family, training program, hourly,
+// location, advisory background, etc.).
+export function filterJobTextToRequirements(raw: string): {
+  filteredText: string
+  sections: JobSection[]
+  droppedKinds: Set<SectionKind>
+} {
+  const sections = segmentJobText(raw)
+  const droppedKinds = new Set<SectionKind>()
+  const kept: string[] = []
+
+  for (const s of sections) {
+    if (REQUIREMENT_SKIP_KINDS.has(s.kind)) {
+      droppedKinds.add(s.kind)
+      continue
+    }
+    // Keep the header itself as an anchor line (some detectors may key
+    // off header-adjacent text when searching for context).
+    if (s.headerText) kept.push(s.headerText)
+    kept.push(...s.lines)
+  }
+
+  // Safety net: if filtering left us with almost nothing (< 3 non-empty
+  // lines), fall back to the raw text. This avoids silently gutting JDs
+  // whose headers don't match our rules — we'd rather extract noisy
+  // units from the whole body than zero units from an over-filtered body.
+  const nonEmptyKeptLines = kept.map((l) => l.trim()).filter(Boolean)
+  if (nonEmptyKeptLines.length < 3) {
+    return {
+      filteredText: String(raw || ""),
+      sections,
+      droppedKinds: new Set(),
+    }
+  }
+
+  return {
+    filteredText: kept.join("\n"),
+    sections,
+    droppedKinds,
+  }
+}
+
 function splitEvidenceLines(text: string): string[] {
   const raw = String(text || "")
   if (!raw.trim()) return []
@@ -3004,7 +3190,18 @@ export function extractJobSignals(
   const jobTitle = extractJobTitle(rawLines)
   const companyName = extractCompanyName(jobTextRaw, rawLines)
 
-  const lines = splitEvidenceLines(jobTextRaw)
+  // Section-aware extraction: filter out "About the company", "Benefits",
+  // and "How to apply" sections before building requirement units so
+  // company blurbs and compensation language don't pollute the
+  // requirement_units stream. The full raw body is still used by
+  // ambient detectors (title family, training program, hourly, etc.)
+  // later in this function.
+  const { filteredText: filteredJobText, droppedKinds } = filterJobTextToRequirements(jobTextRaw)
+  if (droppedKinds.size > 0) {
+    console.log(`[extract] Section filter dropped: ${Array.from(droppedKinds).join(", ")}`)
+  }
+
+  const lines = splitEvidenceLines(filteredJobText)
   const built = buildUnitsFromLines(lines, "job")
 
   const fallback = built.jobUnits.length === 0 ? buildFallbackJobUnits(lines) : { units: [], functionTags: [], hits: {} }
