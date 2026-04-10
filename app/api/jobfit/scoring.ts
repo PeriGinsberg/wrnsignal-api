@@ -15,6 +15,7 @@ import type {
   WhyCode,
 } from "./signals"
 import { getFinanceSubFamilyDistance } from "./extract"
+import { familyDisplayName } from "./deterministicBulletRendererV4"
 
 export const SCORING_V5_STAMP =
   "SCORING_V5_STAMP__2026_03_14__CAPABILITY_COVERAGE_AND_DIRECTNESS"
@@ -1682,12 +1683,14 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
     // why their score dropped. Previously weight was 0 which made this
     // risk a cosmetic label hiding a real -12/-30 penalty in base score.
     const hiddenWeight = isTechnicalJob ? -30 : -12
+    const jobFamilyLabel = familyDisplayName(job.jobFamily)
+    const profileFamilyLabels = profile.targetFamilies.map(familyDisplayName)
     riskOnlyCodes.push({
       code: "RISK_FAMILY_MISMATCH",
-      job_fact: `This role is in the ${job.jobFamily} field.`,
-      profile_fact: `Your stated target field${profile.targetFamilies.length === 1 ? " is" : "s are"} ${profile.targetFamilies.join(", ")}.`,
+      job_fact: `This role is in the ${jobFamilyLabel} field.`,
+      profile_fact: `Your stated target field${profileFamilyLabels.length === 1 ? " is" : "s are"} ${profileFamilyLabels.join(", ")}.`,
       risk: isTechnicalJob
-        ? `This is a specialized ${job.jobFamily} role that typically requires direct field experience. Your profile targets a different field.`
+        ? `This is a specialized ${jobFamilyLabel} role that typically requires direct field experience. Your profile targets a different field.`
         : `The role's field doesn't match your stated targets. You can still apply, but expect more scrutiny on transferable skills in interviews.`,
       severity: isTechnicalJob ? "high" : "medium",
       weight: hiddenWeight,

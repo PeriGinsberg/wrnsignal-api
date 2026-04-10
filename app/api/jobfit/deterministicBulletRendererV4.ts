@@ -11,6 +11,30 @@ export const RENDERER_V4_STAMP =
 type RenderCaps = { whyMax: number; riskMax: number }
 type Group = "proof" | "tools" | "execution" | "other"
 
+// Human-friendly family labels. Raw enum values like "IT_Software" and
+// "PreMed" should never appear in user-facing bullet text.
+const FAMILY_DISPLAY: Record<string, string> = {
+  it_software: "IT / Software Engineering",
+  premed: "Pre-Med / Life Sciences",
+  healthcare: "Healthcare",
+  engineering: "Engineering",
+  finance: "Finance",
+  accounting: "Accounting",
+  analytics: "Analytics / Data",
+  marketing: "Marketing",
+  sales: "Sales",
+  consulting: "Consulting / Strategy",
+  legal: "Legal",
+  government: "Government / Public Sector",
+  trades: "Skilled Trades",
+  other: "General / Cross-Functional",
+}
+
+export function familyDisplayName(raw: string): string {
+  const key = String(raw || "").toLowerCase().replace(/[\s_]+/g, "_")
+  return FAMILY_DISPLAY[key] || raw.replace(/_/g, " ")
+}
+
 type SafeEvidenceContext = {
   matchKey?: string
   matchKind?: string
@@ -472,6 +496,19 @@ function summarizeProfileFact(profileFact: string, matchKey?: string): string {
     return "You have supported instruction and fundamentals-based coaching"
   }
 
+  // Fallback: if the profile fact looks like a skills-list dump (pipe-separated,
+  // comma-heavy, or starts with "Skills:" / "Strengths:"), substitute a generic
+  // summary instead of dumping raw text into the bullet.
+  const pipeCount = (p.match(/\|/g) || []).length
+  if (pipeCount >= 2) return "Your profile demonstrates relevant competencies in this area"
+  if (/^(strengths?|skills?|competenc(?:y|ies)|tools?|certifications?|proficiencies|areas of expertise)\s*:/i.test(p)) {
+    return "Your profile demonstrates relevant competencies in this area"
+  }
+  // Comma-heavy one-liners that list 4+ items are likely skill tags, not narrative
+  if ((p.match(/,/g) || []).length >= 4 && !p.includes(". ")) {
+    return "Your profile shows relevant background in this area"
+  }
+
   return sentence(p)
 }
 
@@ -787,7 +824,7 @@ function buildDomainMismatchBullet(
     ? profileSignals.targetFamilies.map((f: string) => String(f).toLowerCase())
     : []
   const targetStr = profileFamilies.length > 0
-    ? profileFamilies.map((f) => f.charAt(0).toUpperCase() + f.slice(1)).join(" and ")
+    ? profileFamilies.map((f) => familyDisplayName(f)).join(" and ")
     : null
 
   const functionTags = Array.isArray(jobSignals?.function_tags)
