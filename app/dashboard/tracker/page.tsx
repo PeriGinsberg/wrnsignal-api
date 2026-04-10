@@ -524,6 +524,17 @@ export default function TrackerPage() {
                               {a.signal_decision} · {a.signal_score}
                             </div>
                           )}
+                          {a.jobfit_run_id && (
+                            <a
+                              href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ display: "inline-block", marginTop: 6, fontSize: 9, fontWeight: 900, color: "#4ade80", textDecoration: "none", letterSpacing: 0.5 }}
+                            >
+                              View in SIGNAL →
+                            </a>
+                          )}
                         </div>
                       )
                     })}
@@ -566,9 +577,22 @@ export default function TrackerPage() {
                       {ds ? <Pill text={a.signal_decision} style={ds} /> : <span style={{ fontSize: 12, color: T.DIM }}>—</span>}
                       <span style={{ fontSize: 14, fontWeight: 900, color: scoreColor(a.signal_score) }}>{a.signal_score ?? "—"}</span>
                       <Stars count={a.interest_level || 0} />
-                      <button onClick={(e) => { e.stopPropagation(); expanded ? collapseApp() : expandApp(a) }} style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
-                        {expanded ? "Close" : "View"}
-                      </button>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {a.jobfit_run_id && (
+                          <a
+                            href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ background: "none", border: `1px solid rgba(74,222,128,0.3)`, color: "#4ade80", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "3px 8px", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" }}
+                          >
+                            SIGNAL
+                          </a>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); expanded ? collapseApp() : expandApp(a) }} style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
+                          {expanded ? "Close" : "View"}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Expanded detail — edits go to draft, Save flushes */}
