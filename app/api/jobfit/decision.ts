@@ -64,6 +64,43 @@ function capDecision(current: Decision, ceiling: Decision): Decision {
     : current
 }
 
+// Detect profile snippets that are skills-list boilerplate rather than
+// action-backed proof. A direct WHY whose profile_fact is a pipe-separated
+// competency list ("Financial Modeling | Investment Analysis | ...") or a
+// "Strengths: client relationship building. analytical skills." tag line
+// doesn't prove the candidate has actually DONE the work — it proves they
+// listed it. These should not escape the no-direct-WHY Review cap on their
+// own.
+function isSkillsListBoilerplate(profileFact: string): boolean {
+  if (!profileFact) return false
+  const f = String(profileFact).trim()
+  if (!f) return false
+  // Pipe-separated skills lists: 3+ pipes means a tag row.
+  const pipeCount = (f.match(/\|/g) || []).length
+  if (pipeCount >= 3) return true
+  // Explicit skills-list labels at the start of the snippet.
+  if (/^(strengths?|skills?|competenc(?:y|ies)|tools?|certifications?|proficiencies|areas of expertise)\s*:/i.test(f)) {
+    return true
+  }
+  // "Proficient in X, Y, Z" / "Proficient with X, Y, Z" style lists.
+  if (/\bproficient (in|with)\b/i.test(f) && (f.match(/,/g) || []).length >= 2) return true
+  return false
+}
+
+// A direct WHY is "high-quality" (counts toward the no-direct-WHY cap
+// escape) only if its weight is >= MIN_QUALITY_DIRECT_WEIGHT AND its
+// profile_fact is not skills-list boilerplate. This prevents a single
+// inflated tool proof (weight ~60) or a single skills-list tag row from
+// being the sole "proof" that a candidate should Apply.
+const MIN_QUALITY_DIRECT_WEIGHT = 75
+
+function isQualityDirectWhy(w: WhyCode): boolean {
+  if (w.match_strength !== "direct") return false
+  if ((w.weight ?? 0) < MIN_QUALITY_DIRECT_WEIGHT) return false
+  if (isSkillsListBoilerplate(w.profile_fact || "")) return false
+  return true
+}
+
 // Evidence and risk guardrails — applied after score/gate/risk-downgrade logic.
 //
 // The score-based decision threshold is optimistic: title + family + tool
@@ -74,10 +111,14 @@ function capDecision(current: Decision, ceiling: Decision): Decision {
 // and zero evidence matches.
 //
 // Rules:
-//   1. Zero WHY codes         → cap at Pass    (no evidence of any fit)
-//   2. Zero DIRECT WHY codes  → cap at Review  (only adjacent/inferred)
-//   3. 4+ high-severity risks → cap at Pass    (too many red flags)
-//   4. 3  high-severity risks → cap at Review
+//   1. Zero WHY codes               → cap at Pass    (no evidence of any fit)
+//   2. Zero QUALITY direct WHY codes → cap at Review  (only weak/boilerplate proof)
+//      "Quality" means match_strength=direct AND weight >= 75 AND profile_fact
+//      isn't a skills-list boilerplate snippet. A candidate whose only direct
+//      matches are low-weight tool proofs or pipe-separated competency tags
+//      hasn't actually demonstrated they've done the work.
+//   3. 4+ high-severity risks       → cap at Pass    (too many red flags)
+//   4. 3  high-severity risks       → cap at Review
 export function applyEvidenceGuardrails(
   decision: Decision,
   whyCodes: WhyCode[] = [],
@@ -85,6 +126,7 @@ export function applyEvidenceGuardrails(
 ): { decision: Decision; reason: string | null } {
   const whyCount = whyCodes.length
   const directCount = whyCodes.filter((w) => w.match_strength === "direct").length
+  const qualityDirectCount = whyCodes.filter(isQualityDirectWhy).length
   const highRiskCount = riskCodes.filter((r) => r.severity === "high").length
 
   // Rule 1: zero WHY codes means we found nothing — Pass.
@@ -116,12 +158,15 @@ export function applyEvidenceGuardrails(
     }
   }
 
-  // Rule 2: no direct evidence means only adjacent/inferred matches —
-  // not strong enough to recommend applying.
-  if (directCount === 0 && whyCount > 0) {
+  // Rule 2: no QUALITY direct evidence means only weak, boilerplate, or
+  // adjacent/inferred matches — not strong enough to recommend applying.
+  // Quality = direct + weight >= 75 + profile_fact isn't skills-list boilerplate.
+  if (qualityDirectCount === 0 && whyCount > 0) {
     const capped = capDecision(decision, "Review")
     if (capped !== decision) {
-      const reason = `no direct WHY codes — only adjacent evidence`
+      const reason = directCount === 0
+        ? `no direct WHY codes — only adjacent evidence`
+        : `no quality direct WHY codes (${directCount} direct WHYs were all low-weight or skills-list boilerplate)`
       console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
       return { decision: capped, reason }
     }
