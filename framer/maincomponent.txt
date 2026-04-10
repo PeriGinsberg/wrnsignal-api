@@ -1,6 +1,6 @@
 // START FILE
 import * as React from "react"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 /**
  * SIGNAL Tabs (Framer Code Component) — FULL REWRITE (DEV)
@@ -20,7 +20,7 @@ import { createClient } from "@supabase/supabase-js"
  * - Diff highlight is TEAL (not orange)
  * - No user-facing mentions of “API”
  * - Decision-first JobFit layout and accordions
- *
+ * - needced new message
  * Avoid em dashes.
  */
 
@@ -1233,7 +1233,42 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     setAuthedEmail(session.user?.email || null)
                     setAuthStatus("logged_in")
                     setAccessMode(computeAccessMode(session.access_token))
-                    loadPersonas(session.access_token) // ← ADD THIS LINE
+                    loadPersonas(session.access_token)
+
+                    // ── Deep link: hydrate from ?run=<uuid> ──────────────
+                    // When the tracker links to /signal/jobfit?run=<id>,
+                    // fetch the cached run and hydrate all four result tabs
+                    // so the user sees their previous results immediately.
+                    if (typeof window !== "undefined") {
+                        const deepUrl = new URL(window.location.href)
+                        const runId = deepUrl.searchParams.get("run")
+                        if (runId && mounted) {
+                            setLoadingJobFit(true)
+                            fetch(`https://wrnsignal-api.vercel.app/api/runs/${encodeURIComponent(runId)}`, {
+                                headers: { Authorization: `Bearer ${session.access_token}` },
+                            })
+                                .then((res) => {
+                                    if (!res.ok) throw new Error(`${res.status}`)
+                                    return res.json()
+                                })
+                                .then((data) => {
+                                    if (!mounted) return
+                                    if (data.jobfit) setJobFitResult(normalizeJobFitResponseForUI(data.jobfit))
+                                    if (data.positioning) setPositioningResult(data.positioning)
+                                    if (data.coverLetter) setCoverLetterResult(data.coverLetter)
+                                    if (data.networking) setNetworkingResult(data.networking)
+                                    setTab("jobfit")
+                                    window.history.replaceState({}, "", window.location.pathname)
+                                })
+                                .catch((err) => {
+                                    console.warn("[deep-link] Failed to load run:", err)
+                                })
+                                .finally(() => {
+                                    if (mounted) setLoadingJobFit(false)
+                                })
+                        }
+                    }
+                    // ── End deep link ────────────────────────────────────
                 } else {
                     setAccessToken(null)
                     setAuthedEmail(null)
@@ -8253,8 +8288,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             color: MUTED,
                                         }}
                                     >
-                                        — copy the exact company and job
-                                        title from the posting
+                                        — copy the exact company and job title
+                                        from the posting
                                     </span>
                                 </div>
                                 <div
@@ -8272,9 +8307,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         style={input}
                                         value={manualCompanyName}
                                         onChange={(e) =>
-                                            setManualCompanyName(
-                                                e.target.value
-                                            )
+                                            setManualCompanyName(e.target.value)
                                         }
                                         placeholder="Company name *"
                                         maxLength={200}
@@ -8737,12 +8770,11 @@ function SideNavItem({
 // scrollbars from fixed-width children, but overflowY is auto so long
 // content (login, results pages, paginated lists) can actually scroll.
 const outerFrame: React.CSSProperties = {
-    width: "100vw",
-    minHeight: "100dvh",
+    width: "100%",
+    height: "100%",
     background: BG,
     boxSizing: "border-box",
-    overflowX: "hidden",
-    overflowY: "auto",
+    overflow: "hidden",
     position: "relative",
 }
 
