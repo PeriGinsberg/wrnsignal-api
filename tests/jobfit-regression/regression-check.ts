@@ -63,6 +63,11 @@ const BATCH_CSV_PATH = join(
   "issues",
   "040926ProdIssues.csv"
 )
+const SYNTHETIC_CSV_PATH = join(
+  __dirname,
+  "fixtures",
+  "synthetic-cases-4102026.csv"
+)
 
 // Run one of the inline retest cases through runJobFit and return a snapshot.
 async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapshot> {
@@ -105,11 +110,20 @@ async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapsh
 async function collectLiveSnapshots(): Promise<Record<string, CaseSnapshot>> {
   const out: Record<string, CaseSnapshot> = {}
 
-  // Batch cases from the CSV.
+  // Batch cases from the production issues CSV.
   const batch = await runBatch(BATCH_CSV_PATH, { verbose: false })
   for (const b of batch) {
     const id = `batch-${b.caseNo}`
     out[id] = toSnapshot(id, b.label, b.result)
+  }
+
+  // Synthetic cases from the generated CSV.
+  if (existsSync(SYNTHETIC_CSV_PATH)) {
+    const synthetic = await runBatch(SYNTHETIC_CSV_PATH, { verbose: false })
+    for (const s of synthetic) {
+      const id = `synthetic-${s.caseNo}`
+      out[id] = toSnapshot(id, `[synthetic] ${s.label}`, s.result)
+    }
   }
 
   // One-off retest cases.
