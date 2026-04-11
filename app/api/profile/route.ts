@@ -35,7 +35,7 @@ async function getAuthedUser(req: Request) {
 }
 
 const PROFILE_SELECT =
-  "id, user_id, email, name, job_type, target_roles, target_locations, preferred_locations, timeline, resume_text, profile_text, profile_structured, profile_version, updated_at"
+  "id, user_id, email, name, job_type, target_roles, target_locations, preferred_locations, timeline, resume_text, profile_text, profile_structured, profile_version, profile_complete, updated_at"
 
 /**
  * When the intake form sends everything as a single blob, the individual

@@ -8737,11 +8737,6 @@ function SideNav({
                 Log Out
             </button>
 
-            <div style={{ height: 18 }} />
-
-            <div style={sideSectionTitle}>PLACEHOLDERS</div>
-            <div style={sideDisabledItem}>Profile (future)</div>
-            <div style={sideDisabledItem}>Saved Jobs (future)</div>
         </div>
     )
 }

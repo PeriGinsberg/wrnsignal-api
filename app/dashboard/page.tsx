@@ -26,6 +26,7 @@ type Profile = {
   resume_text: string | null
   profile_version: number
   profile_structured: Record<string, any> | null
+  profile_complete: boolean
 }
 
 type Persona = {
@@ -99,6 +100,7 @@ export default function DashboardPage() {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [resumeUploading, setResumeUploading] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
 
   async function getToken() {
     const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -160,6 +162,15 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  // Show welcome modal for first-time users
+  useEffect(() => {
+    if (!profile) return
+    if (profile.profile_complete) return
+    if (typeof window === "undefined") return
+    if (localStorage.getItem("signal_welcomed") === "true") return
+    setShowWelcome(true)
+  }, [profile])
 
   // --- Profile actions ---
   function openProfileEdit() {
@@ -267,6 +278,54 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Welcome modal for first-time users */}
+      {showWelcome && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.75)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "#0D1F35",
+            border: "0.5px solid #1E3A5F",
+            borderRadius: 16,
+            padding: 40,
+            maxWidth: 480,
+            width: "90%",
+          }}>
+            <h2 style={{
+              color: "#ffffff", fontSize: 24, fontWeight: 900,
+              fontStyle: "italic", margin: 0,
+            }}>
+              Welcome to SIGNAL.
+            </h2>
+            <p style={{
+              color: "#7A99BA", fontSize: 14, lineHeight: "1.75",
+              marginTop: 16, marginBottom: 0,
+            }}>
+              Before we can score any job for you, we need to know you. It takes about 3 minutes
+              — upload your resume, tell us your targets, and set your constraints. Everything
+              SIGNAL does from here runs on this profile.
+            </p>
+            <button
+              onClick={() => {
+                localStorage.setItem("signal_welcomed", "true")
+                setShowWelcome(false)
+              }}
+              style={{
+                width: "100%", marginTop: 28, padding: 16,
+                background: "linear-gradient(90deg, #FF6B00, #FF9A3C)",
+                color: "#ffffff", fontWeight: 900, fontStyle: "italic",
+                fontSize: 16, borderRadius: 12, border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Build my profile
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 }}>CONTROL CENTER</div>
       <h1 style={{ ...headline, fontSize: 32, letterSpacing: -1 }}>
         Welcome{profile?.name ? `, ${profile.name}` : ""}
@@ -314,7 +373,18 @@ export default function DashboardPage() {
                         <span style={{ ...label, color: req ? T.WRN_BLUE : T.DIM }}>{lbl}</span>
                         {!req && <span style={{ fontSize: 9, color: T.DIM }}>optional</span>}
                       </div>
-                      {multi ? (
+                      {key === "job_type" ? (
+                        <select
+                          style={{ ...input, cursor: "pointer", colorScheme: "dark" }}
+                          value={(editProfile[key] as string) ?? ""}
+                          onChange={(e) => setEditProfile({ ...editProfile, [key]: e.target.value })}
+                        >
+                          <option value="" disabled>Select job type</option>
+                          <option value="Full Time">Full Time</option>
+                          <option value="Internship">Internship</option>
+                          <option value="Both">Both</option>
+                        </select>
+                      ) : multi ? (
                         <textarea
                           style={{ ...textarea, minHeight: 100 }}
                           value={(editProfile[key] as string) ?? ""}
@@ -327,6 +397,11 @@ export default function DashboardPage() {
                           value={(editProfile[key] as string) ?? ""}
                           onChange={(e) => setEditProfile({ ...editProfile, [key]: e.target.value })}
                         />
+                      )}
+                      {key === "timeline" && (
+                        <span style={{ display: "block", marginTop: 4, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                          e.g. Immediate, Summer 2026, Fall 2026, Spring 2027, Summer 2027
+                        </span>
                       )}
                     </div>
                   ))}
