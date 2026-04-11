@@ -63,24 +63,20 @@ export async function POST(req: NextRequest) {
       ? "https://wrnsignal-api.vercel.app/jobfit"
       : "https://wrnsignal-api.vercel.app/dashboard/onboarding"
 
-    // Send the magic link
-    const { error: otpErr } = await supabase.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: { redirectTo },
-    })
-
-    // generateLink creates the user + link server-side but doesn't send email.
-    // Use signInWithOtp to actually send the email.
+    // Send the magic link via OTP. signInWithOtp handles everything:
+    // creates the Supabase Auth user if it doesn't exist yet, and sends
+    // the email with the redirect URL embedded. No need for generateLink.
+    console.log("[send-link] Sending OTP to:", email, "redirectTo:", redirectTo)
     const { error: sendErr } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo },
     })
 
     if (sendErr) {
-      console.error("[send-link] OTP send error:", sendErr.message)
+      console.error("[send-link] OTP send error:", sendErr.message, sendErr)
       return withCorsJson(req, { error: "send_failed", message: sendErr.message }, 500)
     }
+    console.log("[send-link] OTP sent successfully to:", email)
 
     return withCorsJson(req, {
       ok: true,
