@@ -59,10 +59,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine redirect based on profile completeness
-    const origin = req.headers.get("origin") || "https://wrnsignal.workforcereadynow.com"
     const redirectTo = profile.profile_complete
-      ? `${origin}/signal/jobfit`
-      : `${origin}/dashboard/onboarding`
+      ? "https://wrnsignal-api.vercel.app/jobfit"
+      : "https://wrnsignal-api.vercel.app/dashboard/onboarding"
 
     // Send the magic link
     const { error: otpErr } = await supabase.auth.admin.generateLink({
