@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send magic link to onboarding
-    const redirectTo = "https://wrnsignal-api.vercel.app/dashboard/onboarding"
+    const redirectTo = "https://wrnsignal-api.vercel.app/dashboard"
     const { error: otpErr } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo },

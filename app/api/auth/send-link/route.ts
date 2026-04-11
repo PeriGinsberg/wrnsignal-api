@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
 
     // Determine redirect based on profile completeness
     const redirectTo = profile.profile_complete
-      ? "https://wrnsignal-api.vercel.app/jobfit"
-      : "https://wrnsignal-api.vercel.app/dashboard/onboarding"
+      ? "https://wrnsignal-api.vercel.app/signal/jobfit"
+      : "https://wrnsignal-api.vercel.app/dashboard"
 
     // Send the magic link via OTP. signInWithOtp handles everything:
     // creates the Supabase Auth user if it doesn't exist yet, and sends
