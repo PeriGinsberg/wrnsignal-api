@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     // Determine redirect based on profile completeness
     const redirectTo = profile.profile_complete
-      ? "https://wrnsignal-api.vercel.app/signal/jobfit"
+      ? "https://wrnsignal.workforcereadynow.com/signal/jobfit"
       : "https://wrnsignal-api.vercel.app/dashboard"
 
     // Send the magic link via OTP. signInWithOtp handles everything:
