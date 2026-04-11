@@ -136,6 +136,40 @@ export async function PUT(
 
     if (updateErr) throw new Error(`Persona update failed: ${updateErr.message}`)
 
+    // Sync resume_text to client_profiles and re-evaluate profile_complete.
+    // The profile_complete flag checks client_profiles.resume_text, but users
+    // enter their resume on a persona. Sync the default persona's resume back
+    // so profile_complete can flip to true.
+    if (body.resume_text !== undefined) {
+      try {
+        const { data: prof } = await supabase
+          .from("client_profiles")
+          .select("name, job_type, target_roles, target_locations")
+          .eq("id", profileId)
+          .single()
+
+        const resumeText = String(body.resume_text || "").trim()
+        const profileComplete = !!(
+          prof?.name &&
+          resumeText &&
+          prof?.target_roles &&
+          prof?.job_type &&
+          prof?.target_locations
+        )
+
+        await supabase
+          .from("client_profiles")
+          .update({
+            resume_text: resumeText || null,
+            profile_complete: profileComplete,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", profileId)
+      } catch (syncErr: any) {
+        console.warn("[personas] resume sync to client_profiles failed:", syncErr.message)
+      }
+    }
+
     return withCorsJson(req, { ok: true, persona: updated })
   } catch (err: any) {
     const msg = err?.message || String(err)
