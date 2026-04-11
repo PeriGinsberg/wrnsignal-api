@@ -8,6 +8,7 @@ import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/tracker", label: "Job Tracker" },
+  { href: "https://wrnsignal.workforcereadynow.com/signal/jobfit", label: "Back to SIGNAL →", external: true },
 ]
 
 function Logo() {
@@ -225,11 +226,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               DASHBOARD
             </div>
             {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href
+              const isExternal = (item as any).external === true
+              const active = !isExternal && pathname === item.href
               return (
                 <a
                   key={item.href}
                   href={item.href}
+                  {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   style={{
                     display: "block",
                     padding: "10px 12px",
@@ -238,9 +241,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     fontSize: 13,
                     fontWeight: 900,
                     textDecoration: "none",
-                    border: active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
-                    background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
-                    color: active ? T.WRN_ORANGE : T.TEXT,
+                    border: isExternal
+                      ? `1px solid rgba(74,222,128,0.3)`
+                      : active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
+                    background: isExternal
+                      ? "rgba(74,222,128,0.06)"
+                      : active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
+                    color: isExternal ? "#4ade80" : active ? T.WRN_ORANGE : T.TEXT,
                   }}
                 >
                   {item.label}
