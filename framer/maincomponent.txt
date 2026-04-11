@@ -8810,8 +8810,6 @@ const main: React.CSSProperties = {
     boxSizing: "border-box",
     width: "100%",
     minWidth: 0,
-    height: "100%",
-    overflowY: "auto",
 }
 const headerTop: React.CSSProperties = {
     display: "flex",
