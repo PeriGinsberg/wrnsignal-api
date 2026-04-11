@@ -260,6 +260,45 @@ export async function PUT(req: NextRequest) {
 
     if (updateErr) throw new Error(`Profile update failed: ${updateErr.message}`)
 
+    // Rebuild canonical profile_text from individual fields so the scoring
+    // engine gets targeting context (target_roles, job_type, constraints, etc.)
+    // alongside the resume. Without this, dashboard-edited profiles have an
+    // empty profile_text and the scorer runs blind on targeting info.
+    if (updated) {
+      try {
+        const p = updated as any
+        const lines: string[] = []
+        const add = (label: string, val: any) => {
+          const v = String(val || "").trim()
+          if (v) lines.push(`${label}: ${v}`)
+        }
+        add("Name", p.name)
+        add("Job type", p.job_type)
+        add("Target roles", p.target_roles)
+        add("Target locations", p.target_locations)
+        add("Preferred locations", p.preferred_locations)
+        add("Timeline", p.timeline)
+        const resume = String(p.resume_text || "").trim()
+        if (resume) lines.push(`\nResume:\n${resume}`)
+        const profileText = lines.join("\n").trim()
+
+        const profileComplete = !!(
+          p.name && p.resume_text && p.target_roles && p.job_type && p.target_locations
+        )
+
+        if (profileText) {
+          await supabase
+            .from("client_profiles")
+            .update({ profile_text: profileText, profile_complete: profileComplete })
+            .eq("id", existing.id)
+          ;(updated as any).profile_text = profileText
+          ;(updated as any).profile_complete = profileComplete
+        }
+      } catch (rebuildErr: any) {
+        console.warn("[profile] profile_text rebuild failed:", rebuildErr.message)
+      }
+    }
+
     return withCorsJson(req, { ok: true, profile: updated })
   } catch (err: any) {
     const msg = err?.message || String(err)

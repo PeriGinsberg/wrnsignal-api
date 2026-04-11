@@ -144,7 +144,7 @@ export async function PUT(
       try {
         const { data: prof } = await supabase
           .from("client_profiles")
-          .select("name, job_type, target_roles, target_locations")
+          .select("name, job_type, target_roles, target_locations, preferred_locations, timeline")
           .eq("id", profileId)
           .single()
 
@@ -157,10 +157,26 @@ export async function PUT(
           prof?.target_locations
         )
 
+        // Rebuild profile_text so the scoring engine gets targeting context
+        const lines: string[] = []
+        const add = (label: string, val: any) => {
+          const v = String(val || "").trim()
+          if (v) lines.push(`${label}: ${v}`)
+        }
+        add("Name", prof?.name)
+        add("Job type", prof?.job_type)
+        add("Target roles", prof?.target_roles)
+        add("Target locations", prof?.target_locations)
+        add("Preferred locations", (prof as any)?.preferred_locations)
+        add("Timeline", (prof as any)?.timeline)
+        if (resumeText) lines.push(`\nResume:\n${resumeText}`)
+        const profileText = lines.join("\n").trim()
+
         await supabase
           .from("client_profiles")
           .update({
             resume_text: resumeText || null,
+            profile_text: profileText || null,
             profile_complete: profileComplete,
             updated_at: new Date().toISOString(),
           })
