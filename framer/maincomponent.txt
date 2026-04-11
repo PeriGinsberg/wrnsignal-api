@@ -1358,23 +1358,32 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setAuthStatus("checking")
 
         try {
-            const { data, error } = await supabase.auth.signInWithOtp({
-                email: e,
-                options: {
-                    emailRedirectTo: getMagicLinkRedirect(),
-                },
+            const res = await fetch(`${API_BASE}/api/auth/send-link`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: e }),
             })
+            const data = await res.json()
 
-            console.log("MAGIC LINK RESULT", { data, error })
-
-            if (error) throw error
-            setAuthStatus("email_sent")
-            setMagicLinkSent(true) // ← ADD THIS
+            if (res.ok && data.sent) {
+                setAuthStatus("email_sent")
+                setMagicLinkSent(true)
+            } else if (res.status === 403 && data.error === "no_account") {
+                setAuthStatus("logged_out")
+                setAccessMode(computeAccessMode(null))
+                setErrorMsg(
+                    "No account found for that email. Purchase access or run a free job analysis below."
+                )
+            } else {
+                throw new Error(data.message || data.error || "Unknown error")
+            }
         } catch (err: any) {
             console.error("MAGIC LINK ERROR", err)
             setAuthStatus("logged_out")
             setAccessMode(computeAccessMode(null))
-            setErrorMsg(err?.message || "Could not send access link.")
+            setErrorMsg(
+                "Something went wrong. Please try again or contact support."
+            )
         }
     }
 
