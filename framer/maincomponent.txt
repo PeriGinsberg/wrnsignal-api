@@ -935,6 +935,13 @@ function StepLanding({
 }
 
 export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
+    // Hydration guard: prevent render until React has fully mounted on
+    // the client. Without this, Framer code components can disappear on
+    // page refresh due to a server/client mismatch during hydration.
+    const [mounted, setMounted] = React.useState(false)
+    React.useEffect(() => { setMounted(true) }, [])
+    if (!mounted) return null
+
     console.log("WRNSignalTabs loaded", {
         marker: "RUN-CHECK-0317-B",
         path:
