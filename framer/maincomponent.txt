@@ -8786,7 +8786,8 @@ const outerFrame: React.CSSProperties = {
     height: "100%",
     background: BG,
     boxSizing: "border-box",
-    overflow: "hidden",
+    overflowX: "hidden",
+    overflowY: "auto",
     position: "relative",
 }
 
