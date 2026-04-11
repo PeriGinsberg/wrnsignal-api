@@ -935,13 +935,6 @@ function StepLanding({
 }
 
 export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
-    // Hydration guard: prevent render until React has fully mounted on
-    // the client. Without this, Framer code components can disappear on
-    // page refresh due to a server/client mismatch during hydration.
-    const [mounted, setMounted] = React.useState(false)
-    React.useEffect(() => { setMounted(true) }, [])
-    if (!mounted) return null
-
     console.log("WRNSignalTabs loaded", {
         marker: "RUN-CHECK-0317-B",
         path:
@@ -1023,6 +1016,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [posSummaryOpen, setPosSummaryOpen] = React.useState(false)
 
     // Networking open set
+    // Hydration guard — state declared here with all other hooks
+    const [mounted, setMounted] = React.useState(false)
+
     const [netOpenSet, setNetOpenSet] = React.useState<Set<number>>(
         () => new Set()
     )
@@ -1352,6 +1348,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         }, 1500)
         return () => clearTimeout(t)
     }, [authStatus])
+
+    // Hydration guard — effect and early return placed after ALL hooks
+    // so hook call order is identical on every render.
+    React.useEffect(() => { setMounted(true) }, [])
+    if (!mounted) return null
 
     async function sendMagicLink() {
         clearErrorAndDebug()
