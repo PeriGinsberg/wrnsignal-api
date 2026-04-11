@@ -625,6 +625,15 @@ export async function POST(req: Request) {
       risk_overrides,
     })
 
+    // Set profile_complete = true when all 5 required fields are present
+    const profileComplete = !!(
+      name &&
+      resume_text &&
+      target_roles &&
+      job_type &&
+      target_locations
+    )
+
     const { error: upErr } = await supabaseAdmin
       .from("client_profiles")
       .update({
@@ -638,6 +647,7 @@ export async function POST(req: Request) {
         resume_text: resume_text || null,
         risk_overrides,
         profile_structured,
+        profile_complete: profileComplete,
         updated_at: new Date().toISOString(),
       })
       .eq("id", client_profile_id)

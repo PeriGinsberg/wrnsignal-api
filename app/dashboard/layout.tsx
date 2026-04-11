@@ -142,13 +142,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!trimmed) return
     setSending(true)
     setError("")
-    const supabase = getSupabaseBrowser()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-    })
-    if (otpError) setError(otpError.message)
-    else setLinkSent(true)
+    try {
+      const res = await fetch("/api/auth/send-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.message || data.error || "Failed to send link.")
+      } else {
+        setLinkSent(true)
+      }
+    } catch {
+      setError("Network error — please try again.")
+    }
     setSending(false)
   }
 
