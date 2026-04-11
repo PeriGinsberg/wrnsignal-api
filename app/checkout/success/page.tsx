@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 const BG = "#04060F"
@@ -10,6 +10,20 @@ const GREEN = "#4ade80"
 const ORANGE = "#FEB06A"
 
 export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ minHeight: "100vh", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: MUTED, fontSize: 13 }}>Loading...</span>
+        </div>
+      }
+    >
+      <CheckoutSuccessInner />
+    </Suspense>
+  )
+}
+
+function CheckoutSuccessInner() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
 
