@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       mode: "payment",
       customer_email: email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `https://wrnsignal-api.vercel.app/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: origin,
     })
 
