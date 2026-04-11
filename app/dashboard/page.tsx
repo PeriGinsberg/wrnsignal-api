@@ -379,10 +379,10 @@ export default function DashboardPage() {
                           value={(editProfile[key] as string) ?? ""}
                           onChange={(e) => setEditProfile({ ...editProfile, [key]: e.target.value })}
                         >
-                          <option value="" disabled>Select job type</option>
-                          <option value="Full Time">Full Time</option>
-                          <option value="Internship">Internship</option>
-                          <option value="Both">Both</option>
+                          <option value="" disabled style={{ background: "#0a1628", color: "#E8E6E1" }}>Select job type</option>
+                          <option value="Full Time" style={{ background: "#0a1628", color: "#E8E6E1" }}>Full Time</option>
+                          <option value="Internship" style={{ background: "#0a1628", color: "#E8E6E1" }}>Internship</option>
+                          <option value="Both" style={{ background: "#0a1628", color: "#E8E6E1" }}>Both</option>
                         </select>
                       ) : multi ? (
                         <textarea
