@@ -143,6 +143,7 @@ export async function POST(req: NextRequest) {
     // Clamped to 200 chars to bound storage.
     const userJobTitle = String(body?.job_title || "").trim().slice(0, 200)
     const userCompanyName = String(body?.company_name || "").trim().slice(0, 200)
+    const userJobUrl = String(body?.job_url || "").trim().slice(0, 2000) || null
     if (!userJobTitle) {
       return withCorsJson(req, { error: "job_title is required" }, 400)
     }
@@ -384,6 +385,7 @@ export async function POST(req: NextRequest) {
                 company_name: cachedCompany || "(Unknown Company)",
                 job_title: cachedTitle || "(Unknown Role)",
                 location: cachedLocation || "",
+                job_url: userJobUrl,
                 signal_decision: String(cleaned?.decision || ""),
                 signal_score: (cleaned as any)?.score ?? null,
                 signal_run_at: new Date().toISOString(),
@@ -485,7 +487,7 @@ export async function POST(req: NextRequest) {
       try {
         const { data: runRow, error: runInsertErr } = await supabase.from("jobfit_runs").insert({
           client_profile_id: profileId,
-          job_url: null,
+          job_url: userJobUrl,
           fingerprint_hash,
           fingerprint_code,
           verdict: String((result as any)?.decision ?? (result as any)?.verdict ?? "unknown"),
@@ -604,6 +606,7 @@ export async function POST(req: NextRequest) {
               company_name: companyName || "(Unknown Company)",
               job_title: jobTitle || "(Unknown Role)",
               location: jobLocation || "",
+              job_url: userJobUrl,
               signal_decision: String((result as any)?.decision || ""),
               signal_score: (result as any)?.score ?? null,
               signal_run_at: new Date().toISOString(),
