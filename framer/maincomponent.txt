@@ -1215,6 +1215,22 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         url.searchParams.delete("code")
                         window.history.replaceState({}, "", url.toString())
                     }
+
+                    // Token handoff from dashboard: when the user clicks
+                    // "Back to SIGNAL" from the Next.js dashboard, the
+                    // session tokens are passed as URL params because
+                    // the Supabase session cookies live on a different domain.
+                    const accessToken = url.searchParams.get("access_token")
+                    const refreshToken = url.searchParams.get("refresh_token")
+                    if (accessToken && refreshToken) {
+                        await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken,
+                        })
+                        url.searchParams.delete("access_token")
+                        url.searchParams.delete("refresh_token")
+                        window.history.replaceState({}, "", url.toString())
+                    }
                 }
 
                 const { data, error } = await supabase.auth.getSession()

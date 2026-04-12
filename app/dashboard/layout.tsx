@@ -233,6 +233,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={item.href}
                   href={item.href}
                   {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  onClick={isExternal ? async (e) => {
+                    e.preventDefault()
+                    const supabase = getSupabaseBrowser()
+                    const { data } = await supabase.auth.getSession()
+                    const token = data.session?.access_token
+                    const refreshToken = data.session?.refresh_token
+                    const url = new URL(item.href)
+                    if (token) url.searchParams.set("access_token", token)
+                    if (refreshToken) url.searchParams.set("refresh_token", refreshToken)
+                    window.open(url.toString(), "_blank")
+                  } : undefined}
                   style={{
                     display: "block",
                     padding: "10px 12px",
