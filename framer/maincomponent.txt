@@ -970,6 +970,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [manualCompanyName, setManualCompanyName] = React.useState("")
     const [manualJobTitle, setManualJobTitle] = React.useState("")
     const [jobInputOpen, setJobInputOpen] = React.useState(true)
+    const [jobUrl, setJobUrl] = React.useState("")
+    const [urlLoading, setUrlLoading] = React.useState(false)
+    const [urlError, setUrlError] = React.useState("")
+    const [showLinkedInHelper, setShowLinkedInHelper] = React.useState(false)
+    const [linkedInPasteText, setLinkedInPasteText] = React.useState("")
+    const [linkedInPasteLoading, setLinkedInPasteLoading] = React.useState(false)
     // Personas
     const [personas, setPersonas] = React.useState<any[]>([])
     const [selectedPersonaId, setSelectedPersonaId] = React.useState<
@@ -1557,6 +1563,71 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         const defaultPersona =
             personas.find((p: any) => p.is_default) ?? personas[0]
         if (defaultPersona) setSelectedPersonaId(defaultPersona.id)
+    }
+
+    async function handleFetchUrl() {
+        if (!jobUrl.trim()) return
+        setUrlLoading(true)
+        setUrlError("")
+        setShowLinkedInHelper(false)
+        try {
+            const res = await fetch(`${API_BASE}/api/parse-job-url`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: jobUrl.trim() }),
+            })
+            const data = await res.json()
+            if (data.code === "LINKEDIN") {
+                setShowLinkedInHelper(true)
+                window.open(jobUrl.trim(), "_blank")
+                return
+            }
+            if (data.error) {
+                setUrlError(data.error)
+                return
+            }
+            if (data.companyName) setManualCompanyName(data.companyName)
+            if (data.jobTitle) setManualJobTitle(data.jobTitle)
+            if (data.jobDescription) setJob(data.jobDescription)
+            setJobUrl("")
+            setUrlError("")
+            setShowLinkedInHelper(false)
+        } catch {
+            setUrlError("Something went wrong. Please paste the job description manually.")
+        } finally {
+            setUrlLoading(false)
+        }
+    }
+
+    async function handleLinkedInPaste() {
+        if (!linkedInPasteText.trim() || linkedInPasteText.length < 50) {
+            setUrlError("Please paste more content — select the full page.")
+            return
+        }
+        setLinkedInPasteLoading(true)
+        try {
+            const res = await fetch(`${API_BASE}/api/parse-job-text`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: linkedInPasteText.trim() }),
+            })
+            const data = await res.json()
+            if (data.error) {
+                setUrlError(data.error)
+                return
+            }
+            if (data.companyName) setManualCompanyName(data.companyName)
+            if (data.jobTitle) setManualJobTitle(data.jobTitle)
+            if (data.jobDescription) setJob(data.jobDescription)
+            setShowLinkedInHelper(false)
+            setLinkedInPasteText("")
+            setJobUrl("")
+            setUrlError("")
+        } catch {
+            setUrlError("Extraction failed. Please paste the description manually below.")
+        } finally {
+            setLinkedInPasteLoading(false)
+        }
     }
 
     function isLockedTab(key: TabKey) {
@@ -8292,6 +8363,126 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                         {jobInputOpen ? (
                             <div style={{ marginTop: 10 }}>
+                                {/* URL Fetch */}
+                                <div style={{
+                                    background: "#0D1F35",
+                                    border: "1px solid rgba(255,149,0,0.2)",
+                                    borderRadius: 12,
+                                    padding: 16,
+                                    marginBottom: 12,
+                                }}>
+                                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#FF9500", marginBottom: 4 }}>
+                                        PASTE JOB URL
+                                    </div>
+                                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+                                        LinkedIn, Indeed, Greenhouse, Lever, Handshake — paste any job URL
+                                    </div>
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                        <input
+                                            type="text"
+                                            value={jobUrl}
+                                            onChange={(e) => setJobUrl(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === "Enter") handleFetchUrl() }}
+                                            placeholder="https://linkedin.com/jobs/view/..."
+                                            style={{
+                                                flex: 1,
+                                                padding: "10px 12px",
+                                                background: "rgba(255,255,255,0.06)",
+                                                border: "1px solid rgba(255,255,255,0.12)",
+                                                borderRadius: 8,
+                                                color: "#fff",
+                                                fontSize: 13,
+                                                outline: "none",
+                                                fontFamily: "inherit",
+                                            }}
+                                        />
+                                        <button
+                                            onClick={handleFetchUrl}
+                                            disabled={urlLoading}
+                                            style={{
+                                                padding: "10px 16px",
+                                                background: urlLoading ? "#333" : "#FF9500",
+                                                border: "none",
+                                                borderRadius: 8,
+                                                color: urlLoading ? "#999" : "#0B0F1A",
+                                                fontSize: 12,
+                                                fontWeight: 900,
+                                                cursor: urlLoading ? "not-allowed" : "pointer",
+                                                whiteSpace: "nowrap" as const,
+                                                fontFamily: "inherit",
+                                            }}
+                                        >
+                                            {urlLoading ? "Fetching..." : "FETCH →"}
+                                        </button>
+                                    </div>
+                                    {urlError && <div style={{ fontSize: 12, color: "#FF3B5C", marginTop: 8 }}>{urlError}</div>}
+
+                                    {/* LinkedIn Helper */}
+                                    {showLinkedInHelper && (
+                                        <div style={{
+                                            background: "rgba(255,214,10,0.04)",
+                                            border: "1px solid rgba(255,214,10,0.25)",
+                                            borderRadius: 10,
+                                            padding: 14,
+                                            marginTop: 10,
+                                        }}>
+                                            <div style={{ fontSize: 12, fontWeight: 900, color: "#FFD60A", marginBottom: 8 }}>
+                                                ⚡ LINKEDIN DETECTED
+                                            </div>
+                                            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: "18px", marginBottom: 10 }}>
+                                                LinkedIn blocks automated access. Here's the fastest way:<br />
+                                                1. Your job is open in a new tab<br />
+                                                2. Press Cmd+A (Mac) or Ctrl+A (Windows) to select all<br />
+                                                3. Press Cmd+C / Ctrl+C to copy<br />
+                                                4. Paste everything below
+                                            </div>
+                                            <textarea
+                                                value={linkedInPasteText}
+                                                onChange={(e) => setLinkedInPasteText(e.target.value)}
+                                                placeholder="Paste the full LinkedIn page here..."
+                                                style={{
+                                                    width: "100%",
+                                                    minHeight: 100,
+                                                    padding: "10px 12px",
+                                                    background: "rgba(255,255,255,0.06)",
+                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                    borderRadius: 8,
+                                                    color: "#fff",
+                                                    fontSize: 13,
+                                                    resize: "vertical" as const,
+                                                    outline: "none",
+                                                    fontFamily: "inherit",
+                                                    boxSizing: "border-box" as const,
+                                                }}
+                                            />
+                                            <button
+                                                onClick={handleLinkedInPaste}
+                                                disabled={linkedInPasteLoading}
+                                                style={{
+                                                    marginTop: 8,
+                                                    padding: "10px 16px",
+                                                    background: linkedInPasteLoading ? "#333" : "#FFD60A",
+                                                    border: "none",
+                                                    borderRadius: 8,
+                                                    color: linkedInPasteLoading ? "#999" : "#0B0F1A",
+                                                    fontSize: 12,
+                                                    fontWeight: 900,
+                                                    cursor: linkedInPasteLoading ? "not-allowed" : "pointer",
+                                                    whiteSpace: "nowrap" as const,
+                                                    fontFamily: "inherit",
+                                                    width: "100%",
+                                                }}
+                                            >
+                                                {linkedInPasteLoading ? "Extracting..." : "EXTRACT FROM PASTE →"}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div style={{ textAlign: "center" as const, fontSize: 11, color: "rgba(255,255,255,0.2)", margin: "12px 0 0" }}>
+                                        — or paste the description manually below —
+                                    </div>
+                                </div>
+
                                 {/* REQUIRED company name + job title inputs.
                                     The deterministic extractor has ~0%
                                     accuracy on varied JD formats so we ask
