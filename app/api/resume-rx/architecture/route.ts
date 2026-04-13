@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     // Verify session ownership
     const { data: session, error: sessionErr } = await supabase
       .from("resume_rx_sessions")
-      .select("id, profile_id, mode, year_in_school, target_field, resume_text, diagnosis, education_intake")
+      .select("id, profile_id, mode, year_in_school, target_field, original_resume_text, diagnosis, education_intake")
       .eq("id", session_id)
       .maybeSingle()
 
