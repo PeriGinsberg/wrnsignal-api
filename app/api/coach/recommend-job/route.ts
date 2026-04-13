@@ -185,10 +185,47 @@ export async function POST(req: NextRequest) {
       userCompanyName: companyName,
     })
 
-    // Determine jobfit_run_id if available
-    const jobfitRunId: string | null = (result as any).run_id || null
+    // Store full analysis result (everything the scoring engine produced)
+    const fullAnalysis = {
+      decision: result.decision,
+      score: result.score,
+      icon: (result as any).icon,
+      bullets: (result as any).bullets,
+      risk_flags: (result as any).risk_flags,
+      next_step: (result as any).next_step,
+      why_codes: result.why_codes,
+      risk_codes: result.risk_codes,
+      job_signals: result.job_signals,
+      profile_signals: result.profile_signals,
+      gate_triggered: result.gate_triggered,
+      score_breakdown: result.score_breakdown,
+      location_constraint: result.location_constraint,
+      why: (result as any).why,
+      risk: (result as any).risk,
+      why_structured: (result as any).why_structured,
+      risk_structured: (result as any).risk_structured,
+    }
 
-    // Create coach_job_recommendations row
+    // Create a jobfit_runs row for audit trail (owned by client)
+    const { data: runRow } = await supabase
+      .from("jobfit_runs")
+      .insert({
+        client_profile_id: clientProfileId,
+        job_url: body.job_url || null,
+        fingerprint_hash: `coach-${coachProfileId}-${Date.now()}`,
+        fingerprint_code: `COACH-${Date.now().toString(36).toUpperCase()}`,
+        verdict: String(result.decision || "unknown"),
+        result_json: fullAnalysis,
+        job_description: jobDescription,
+        persona_id: persona?.id || null,
+        sourced_by_coach_id: coachProfileId,
+      })
+      .select("id")
+      .single()
+
+    const jobfitRunId = runRow?.id || null
+
+    // Create coach_job_recommendations row with full analysis
     const { data: recRow, error: recErr } = await supabase
       .from("coach_job_recommendations")
       .insert({
@@ -204,6 +241,7 @@ export async function POST(req: NextRequest) {
         signal_decision: result.decision,
         signal_score: result.score,
         jobfit_run_id: jobfitRunId,
+        full_analysis: fullAnalysis,
         coaching_note: body.coaching_note || null,
         priority: body.priority || "this_week",
         recommended_action: body.recommended_action || "apply",
@@ -228,6 +266,7 @@ export async function POST(req: NextRequest) {
         signal_decision: result.decision,
         signal_score: result.score,
         signal_run_at: new Date().toISOString(),
+        jobfit_run_id: jobfitRunId,
       })
       .select("*")
       .single()
@@ -244,16 +283,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       recommendation: { ...recRow, application_id: appRow.id },
       application: appRow,
-      jobfit: {
-        decision: result.decision,
-        score: result.score,
-        icon: result.icon,
-        bullets: result.bullets,
-        risk_flags: result.risk_flags,
-        next_step: result.next_step,
-        why_codes: result.why_codes,
-        risk_codes: result.risk_codes,
-      },
+      jobfit: fullAnalysis,
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
