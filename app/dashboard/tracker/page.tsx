@@ -192,6 +192,11 @@ export default function TrackerPage() {
   // Personas
   const [personas, setPersonas] = useState<any[]>([])
 
+  // Coach recommendations keyed by application_id
+  const [coachRecMap, setCoachRecMap] = useState<Record<string, any>>({})
+  const [coachRecsRaw, setCoachRecsRaw] = useState<any[]>([])
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({})
+
   // Add job form
   const [newJob, setNewJob] = useState({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "", persona_id: "" })
 
@@ -208,14 +213,27 @@ export default function TrackerPage() {
     const token = await getToken()
     if (!token) return
     const h = { Authorization: `Bearer ${token}` }
-    const [aRes, iRes, pRes] = await Promise.all([
+    const [aRes, iRes, pRes, crRes] = await Promise.all([
       fetch("/api/applications", { headers: h }),
       fetch("/api/interviews", { headers: h }),
       fetch("/api/personas", { headers: h }),
+      fetch("/api/coach/my-recommendations", { headers: h }),
     ])
     if (aRes.ok) { const j = await aRes.json(); setApplications(j.applications || []) }
     if (iRes.ok) { const j = await iRes.json(); setInterviews(j.interviews || []) }
     if (pRes.ok) { const j = await pRes.json(); setPersonas(j.personas || []) }
+    if (crRes.ok) {
+      const j = await crRes.json()
+      const recs = j.recommendations || []
+      setCoachRecsRaw(recs)
+      const map: Record<string, any> = {}
+      for (const r of recs) { if (r.application_id) map[r.application_id] = r }
+      setCoachRecMap(map)
+      // Auto-expand notes for 'new' recommendations
+      const expanded: Record<string, boolean> = {}
+      for (const r of recs) { if (r.client_status === "new" && r.application_id) expanded[r.application_id] = true }
+      setExpandedNotes(expanded)
+    }
     setLoading(false)
   }, [])
 
@@ -297,6 +315,49 @@ export default function TrackerPage() {
     setToast("Application deleted")
   }
 
+  async function respondToRec(recId: string, appId: string, clientStatus: string) {
+    const token = await getToken()
+    if (!token) return
+    const res = await fetch(`/api/coach/my-recommendations/${recId}/respond`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ client_status: clientStatus }),
+    })
+    if (res.ok) {
+      setCoachRecMap((prev) => {
+        const rec = prev[appId]
+        if (!rec) return prev
+        return { ...prev, [appId]: { ...rec, client_status: clientStatus } }
+      })
+      setCoachRecsRaw((prev) => prev.map((r) => r.id === recId ? { ...r, client_status: clientStatus } : r))
+      if (clientStatus === "applying") {
+        setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, application_status: "applied" } : a))
+      }
+      setToast(clientStatus === "applying" ? "Marked as applying" : clientStatus === "not_for_me" ? "Marked as pass" : "Updated")
+    }
+  }
+
+  async function markAllSeen() {
+    const token = await getToken()
+    if (!token) return
+    const res = await fetch("/api/coach/my-recommendations", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "mark_all_seen" }),
+    })
+    if (res.ok) {
+      setCoachRecMap((prev) => {
+        const next = { ...prev }
+        for (const k of Object.keys(next)) {
+          if (next[k].client_status === "new") next[k] = { ...next[k], client_status: "interested" }
+        }
+        return next
+      })
+      setCoachRecsRaw((prev) => prev.map((r) => r.client_status === "new" ? { ...r, client_status: "interested" } : r))
+      setToast("All marked as seen")
+    }
+  }
+
   async function createApp() {
     const token = await getToken()
     if (!token || !newJob.company_name.trim() || !newJob.job_title.trim()) return
@@ -357,6 +418,17 @@ export default function TrackerPage() {
   const submitted = applications.filter((a) => ["applied", "interviewing", "offer", "rejected"].includes(a.application_status))
   const reachedInterview = applications.filter((a) => ["interviewing", "offer"].includes(a.application_status))
   const interviewRate = submitted.length > 0 ? Math.round(reachedInterview.length / submitted.length * 100) : 0
+
+  // Coach recommendation stats
+  const activeCoachRecs = coachRecsRaw.filter((r) => r.client_status === "new" || r.client_status === "interested")
+  const newCoachRecs = coachRecsRaw.filter((r) => r.client_status === "new")
+  const coachName = coachRecsRaw[0]?.coach_name || "Your Coach"
+
+  const PRIORITY_BORDER: Record<string, string> = {
+    urgent: "#FF3B5C",
+    this_week: "#FF9500",
+    when_ready: "#4DB8FF",
+  }
 
   // ── Filtered lists ────────────────────────────────────────
 
@@ -497,6 +569,39 @@ export default function TrackerPage() {
             </div>
           )}
 
+          {/* ── From Your Coach banner ── */}
+          {activeCoachRecs.length > 0 && (
+            <div style={{
+              background: "rgba(255,149,0,0.06)", border: "1px solid rgba(255,149,0,0.2)",
+              borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14,
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>⚡</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
+                    {coachName} added {activeCoachRecs.length} job{activeCoachRecs.length !== 1 ? "s" : ""} to your tracker — review below
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginTop: 2 }}>
+                    Jobs marked with ⚡ were sourced by your coach
+                  </div>
+                </div>
+              </div>
+              {newCoachRecs.length > 0 && (
+                <button
+                  onClick={markAllSeen}
+                  style={{
+                    background: "none", border: "1px solid rgba(255,149,0,0.3)",
+                    color: "#FF9500", fontSize: 11, fontWeight: 900, borderRadius: 6,
+                    padding: "5px 12px", cursor: "pointer", whiteSpace: "nowrap",
+                  }}
+                >
+                  Mark all seen
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Pipeline view */}
           {viewMode === "pipeline" && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
@@ -511,14 +616,21 @@ export default function TrackerPage() {
                     </div>
                     {col.map((a) => {
                       const ds = DECISION_STYLE[a.signal_decision] || null
+                      const pipeCoachRec = coachRecMap[a.id] || null
+                      const pipePriority = pipeCoachRec ? PRIORITY_BORDER[pipeCoachRec.priority] || null : null
                       return (
                         <div
                           key={a.id}
                           onClick={() => { expandApp(a); setViewMode("list"); setFilterStatus("all") }}
-                          style={{ background: T.CARD, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8, cursor: "pointer" }}
+                          style={{ background: T.CARD, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8, cursor: "pointer", ...(pipePriority ? { borderLeft: `3px solid ${pipePriority}` } : {}) }}
                         >
                           <div style={{ fontSize: 12, fontWeight: 900, color: T.TEXT, opacity: 0.85 }}>{a.company_name}</div>
                           <div style={{ fontSize: 11, color: T.MUTED, marginTop: 2 }}>{a.job_title}</div>
+                          {pipeCoachRec && (
+                            <span style={{ display: "inline-block", marginTop: 4, background: "rgba(0,245,212,0.1)", border: "1px solid rgba(0,245,212,0.3)", color: "#00F5D4", fontSize: 9, fontWeight: 900, borderRadius: 4, padding: "1px 6px" }}>
+                              ⚡ {pipeCoachRec.coach_name || "Coach"}
+                            </span>
+                          )}
                           {a.signal_score != null && ds && (
                             <div style={{ marginTop: 6, fontSize: 10, fontWeight: 900, color: ds.color }}>
                               {a.signal_decision} · {a.signal_score}
@@ -561,15 +673,29 @@ export default function TrackerPage() {
                 const ss = STATUS_STYLE[a.application_status] || STATUS_STYLE.saved
                 const ds = DECISION_STYLE[a.signal_decision] || null
                 const expanded = expandedId === a.id
+                const coachRec = coachRecMap[a.id] || null
+                const priorityBorder = coachRec ? PRIORITY_BORDER[coachRec.priority] || null : null
+                const noteExpanded = expandedNotes[a.id] ?? false
                 return (
-                  <div key={a.id}>
+                  <div key={a.id} style={priorityBorder ? { borderLeft: `3px solid ${priorityBorder}` } : undefined}>
                     <div
                       onClick={() => expanded ? collapseApp() : expandApp(a)}
-                      style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1fr 0.9fr 1fr 0.6fr 0.8fr 0.7fr", padding: "13px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, cursor: "pointer", alignItems: "center", background: expanded ? "rgba(255,255,255,0.02)" : "transparent" }}
+                      style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1fr 0.9fr 1fr 0.6fr 0.8fr 0.7fr", padding: "13px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, cursor: "pointer", alignItems: "center", background: expanded ? "rgba(255,255,255,0.02)" : coachRec ? "rgba(0,245,212,0.02)" : "transparent" }}
                     >
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 900, color: T.TEXT }}>{a.company_name}</div>
                         <div style={{ fontSize: 11, color: T.MUTED, marginTop: 2 }}>{a.job_title}</div>
+                        {/* Coach badge */}
+                        {coachRec && (
+                          <span style={{
+                            display: "inline-block", marginTop: 4,
+                            background: "rgba(0,245,212,0.1)", border: "1px solid rgba(0,245,212,0.3)",
+                            color: "#00F5D4", fontSize: 11, fontWeight: 900, borderRadius: 4,
+                            padding: "2px 8px", whiteSpace: "nowrap",
+                          }}>
+                            ⚡ From {coachRec.coach_name || "Coach"}
+                          </span>
+                        )}
                       </div>
                       <span style={{ fontSize: 11, color: a.persona_name ? T.WRN_ORANGE : T.DIM }}>{a.persona_name || "—"}</span>
                       <span style={{ fontSize: 12, color: T.MUTED }}>{a.location || "—"}</span>
@@ -577,7 +703,26 @@ export default function TrackerPage() {
                       {ds ? <Pill text={a.signal_decision} style={ds} /> : <span style={{ fontSize: 12, color: T.DIM }}>—</span>}
                       <span style={{ fontSize: 14, fontWeight: 900, color: scoreColor(a.signal_score) }}>{a.signal_score ?? "—"}</span>
                       <Stars count={a.interest_level || 0} />
-                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                        {/* Coach response buttons */}
+                        {coachRec && (coachRec.client_status === "new" || coachRec.client_status === "interested") && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); respondToRec(coachRec.id, a.id, "applying") }} style={{
+                              background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.35)",
+                              color: "#4ade80", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "3px 8px", cursor: "pointer", whiteSpace: "nowrap",
+                            }}>✓ Apply</button>
+                            <button onClick={(e) => { e.stopPropagation(); respondToRec(coachRec.id, a.id, "not_for_me") }} style={{
+                              background: "rgba(255,255,255,0.04)", border: `1px solid ${T.BORDER_SOFT}`,
+                              color: T.DIM, fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "3px 8px", cursor: "pointer", whiteSpace: "nowrap",
+                            }}>✗ Pass</button>
+                          </>
+                        )}
+                        {coachRec && coachRec.client_status === "applying" && (
+                          <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80" }}>Applying</span>
+                        )}
+                        {coachRec && coachRec.client_status === "not_for_me" && (
+                          <span style={{ fontSize: 10, fontWeight: 900, color: T.DIM }}>Passed</span>
+                        )}
                         {a.jobfit_run_id && (
                           <a
                             href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
@@ -594,6 +739,31 @@ export default function TrackerPage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Coaching note (collapsible) */}
+                    {coachRec?.coaching_note && (
+                      <div style={{ padding: "0 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, background: "rgba(255,149,0,0.02)" }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setExpandedNotes((prev) => ({ ...prev, [a.id]: !prev[a.id] })) }}
+                          style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 0", fontSize: 11, fontWeight: 700, color: "#FF9500" }}
+                        >
+                          {noteExpanded ? "▴ Hide coach note" : "▾ Coach note"}
+                        </button>
+                        {noteExpanded && (
+                          <div style={{
+                            borderLeft: "2px solid #FF9500", background: "rgba(255,149,0,0.05)",
+                            borderRadius: "0 6px 6px 0", padding: "8px 12px", marginBottom: 8,
+                          }}>
+                            <div style={{ fontSize: 12, fontStyle: "italic", color: "rgba(255,255,255,0.7)", lineHeight: "18px" }}>
+                              {coachRec.coaching_note}
+                            </div>
+                            <div style={{ fontSize: 11, color: T.DIM, textAlign: "right", marginTop: 4 }}>
+                              — {coachRec.coach_name || "Coach"}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Expanded detail — edits go to draft, Save flushes */}
                     {expanded && editingApp && (

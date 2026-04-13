@@ -833,33 +833,142 @@ export default function CoachClientPage() {
                 )}
               </div>
 
-              {runResult.why_codes?.length > 0 && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ ...eyebrow, fontSize: 9, color: "#4ade80", marginBottom: 6 }}>WHY CODES ({runResult.why_codes.length})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {runResult.why_codes.map((c: any, i: number) => (
-                      <div key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", paddingLeft: 10, borderLeft: "2px solid rgba(74,222,128,0.3)" }}>
-                        <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", marginRight: 6 }}>{c.match_key || c.code || ""}</span>
-                        {c.note || c.job_fact || String(c)}
-                      </div>
-                    ))}
+              {/* ── ACTION BANNER ── */}
+              {((runResult.bullets || runResult.why || []).length > 0 || (runResult.risk || runResult.risk_flags || []).length > 0) && (
+                <div style={{
+                  borderRadius: 14,
+                  background: "linear-gradient(135deg, rgba(254,176,106,0.10) 0%, rgba(81,173,229,0.08) 100%)",
+                  border: "1px solid rgba(254,176,106,0.28)",
+                  padding: "14px 18px", marginBottom: 16,
+                  display: "flex", alignItems: "flex-start", gap: 12,
+                }}>
+                  <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>⚡</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.95)", marginBottom: 3 }}>
+                      Read this before you apply.
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: "18px" }}>
+                      Your strengths tell you what to lead with. Your risks tell you what to address.
+                      This is how you stand out — most applicants never do this work.
+                    </div>
                   </div>
                 </div>
               )}
 
-              {runResult.risk_codes?.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...eyebrow, fontSize: 9, color: "#f87171", marginBottom: 6 }}>RISK CODES ({runResult.risk_codes.length})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {runResult.risk_codes.map((c: any, i: number) => (
-                      <div key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", paddingLeft: 10, borderLeft: "2px solid rgba(248,113,113,0.3)" }}>
-                        <span style={{ fontSize: 10, fontWeight: 900, color: "#f87171", marginRight: 6 }}>{c.code || ""}</span>
-                        {c.risk || c.note || String(c)}
+              {/* ── TWO COLUMN WHY / RISK CARDS ── */}
+              {(() => {
+                const whyBullets: string[] = (runResult.bullets || runResult.why || []).filter(Boolean)
+                const riskBullets: string[] = (runResult.risk || runResult.risk_flags || []).filter(Boolean)
+                const isPass = String(runResult.decision || "").toLowerCase().includes("pass")
+                if (whyBullets.length === 0 && riskBullets.length === 0) return null
+                return (
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: whyBullets.length > 0 && riskBullets.length > 0 ? "1fr 1fr" : "1fr",
+                    gap: 14, alignItems: "start", marginBottom: 16,
+                  }}>
+                    {/* WHY CARD */}
+                    {whyBullets.length > 0 && (
+                      <div style={{
+                        borderRadius: 18, border: "1px solid rgba(74,222,128,0.22)",
+                        background: "#0D1829", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                      }}>
+                        <div style={{ height: 3, background: "linear-gradient(90deg, #4ade80, #22c55e, #51ADE5)" }} />
+                        <div style={{
+                          padding: "16px 20px 14px", borderBottom: "1px solid rgba(74,222,128,0.12)",
+                          background: "rgba(74,222,128,0.06)", display: "flex", alignItems: "center", gap: 10,
+                        }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                            background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.35)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 15, color: "#4ade80",
+                          }}>✦</div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>
+                              {isPass ? "Strengths to Remember" : "Why You Are Competitive"}
+                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                              Lead with these in your application
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ padding: "14px 18px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+                          {whyBullets.map((bullet: string, i: number) => {
+                            const mWhy = bullet.match(/this role relies on (.+?),\s+and you\b/i)
+                            const keyword = mWhy ? mWhy[1].trim().toUpperCase() : ""
+                            return (
+                              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                                <div style={{
+                                  width: 22, height: 22, borderRadius: "50%",
+                                  background: "rgba(74,222,128,0.15)", border: "1.5px solid rgba(74,222,128,0.50)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  flexShrink: 0, marginTop: 2, fontSize: 11, color: "#4ade80", fontWeight: 900,
+                                }}>✓</div>
+                                <div style={{ flex: 1 }}>
+                                  {keyword && (
+                                    <div style={{
+                                      fontSize: 10, fontWeight: 900, letterSpacing: "1.4px",
+                                      textTransform: "uppercase" as const, color: "#4ade80", marginBottom: 4,
+                                    }}>{keyword} |</div>
+                                  )}
+                                  <div style={{ fontSize: 13, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400 }}>
+                                    {bullet}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {/* RISK CARD */}
+                    {riskBullets.length > 0 && (
+                      <div style={{
+                        borderRadius: 18, border: "1px solid rgba(248,113,113,0.22)",
+                        background: "#0D1829", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                      }}>
+                        <div style={{ height: 3, background: "linear-gradient(90deg, #f87171, #ef4444, #FEB06A)" }} />
+                        <div style={{
+                          padding: "16px 20px 14px", borderBottom: "1px solid rgba(248,113,113,0.12)",
+                          background: "rgba(248,113,113,0.06)", display: "flex", alignItems: "center", gap: 10,
+                        }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                            background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.35)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 15, color: "#f87171",
+                          }}>⚠</div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#f87171" }}>
+                              {isPass ? "Why This Is a Pass" : "Your Risks"}
+                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                              Address these before you apply
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ padding: "14px 18px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+                          {riskBullets.map((bullet: string, i: number) => (
+                            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                              <div style={{
+                                width: 22, height: 22, borderRadius: "50%",
+                                background: "rgba(248,113,113,0.15)", border: "1.5px solid rgba(248,113,113,0.50)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0, marginTop: 2, fontSize: 11, color: "#f87171", fontWeight: 900,
+                              }}>!</div>
+                              <div style={{ fontSize: 13, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400, flex: 1 }}>
+                                {bullet}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               {(runResult.decision === "Pass") && (
                 <p style={{ fontSize: 12, color: T.DIM, marginBottom: 16, fontStyle: "italic" }}>
