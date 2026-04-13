@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
 
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const userPrompt = `Generate a polished Education section for this resume.
+    const userPrompt = `Generate a polished Education section for this resume using the RESUME TEMPLATE FORMAT from your instructions.
 
 Candidate: ${session.year_in_school}, mode: ${session.mode}, targeting ${session.target_field}
 
@@ -137,13 +137,28 @@ ${JSON.stringify(resolvedEducation, null, 2)}
 
 GPA display: ${resolved_show_gpa ? `Show GPA (${gpa})` : "Do not show GPA"}
 
+Format the education section EXACTLY like this template:
+
+University Name — City, ST
+Degree in Major    GPA: X.XX                                                Graduation Date
+Awards/Honors: Honor 1 | Honor 2 | Scholarship Name
+Study Abroad Program — Location                                             Date
+Relevant Coursework: Course 1, Course 2, Course 3
+
+RULES:
+- University name and location on one line
+- Degree, GPA (if shown), and graduation date on one line
+- Awards/Honors pipe-separated on one line (Dean's List semesters, scholarships)
+- Study abroad on its own line with location and date if applicable
+- ALWAYS include a "Relevant Coursework:" line for students and recent grads — this is pure keyword value for ATS. Use courses from the data provided, or recommend field-appropriate courses if none listed.
+- Each line should be a complete, formatted string ready to paste into a resume
+- No bullet points in the education section — just clean lines
+
 Return ONLY valid JSON — no markdown, no explanation:
 {
-  "formatted_lines": [<array of strings, each line of the education section>],
+  "formatted_lines": [<array of strings — each line of the education section, in order>],
   "show_gpa": <boolean>,
-  "gpa_note": <string or null — any coaching note about the GPA decision>,
-  "coursework_line": <string or null — formatted Relevant Coursework line if applicable>,
-  "honors_line": <string or null>,
+  "gpa_note": <string or null — coaching note about the GPA decision>,
   "coaching_note": <1-2 sentences of Peri coaching about this education section>
 }`
 

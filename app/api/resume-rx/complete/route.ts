@@ -120,8 +120,12 @@ export async function POST(req: NextRequest) {
 
     const architecture = session.architecture
 
+    // Determine education placement
+    const isStudent = ["student_internship", "student_first_job"].includes(session.mode || "")
+    const eduPlacement = isStudent ? "FIRST (right after Professional Summary)" : "LAST (after all experience sections)"
+
     // Step 1: Assemble final resume
-    const assemblePrompt = `Assemble a complete, final resume from the components below.
+    const assemblePrompt = `Assemble a complete, final, one-page resume using the RESUME TEMPLATE FORMAT from your instructions.
 
 Candidate: ${session.year_in_school}, mode: ${session.mode}, targeting ${session.target_field}
 
@@ -137,15 +141,41 @@ ${educationLines || "(use original education from resume)"}
 SECTION ARCHITECTURE (follow this order):
 ${architecture ? JSON.stringify(architecture.section_order ?? []) : "(use original order)"}
 ${architecture?.remove_sections?.length ? `Remove these sections: ${JSON.stringify(architecture.remove_sections)}` : ""}
-${architecture?.positioning_statement ? `Add positioning statement: ${architecture.positioning_statement}` : ""}
+${architecture?.positioning_statement ? `Add positioning statement as PROFESSIONAL SUMMARY: ${architecture.positioning_statement}` : ""}
+
+Education placement: ${eduPlacement}
+
+FORMAT THE RESUME EXACTLY LIKE THIS:
+
+CANDIDATE NAME (all caps, centered)
+Phone | Email | LinkedIn Profile
+
+PROFESSIONAL SUMMARY
+2-3 sentence positioning statement.
+
+${isStudent ? "EDUCATION\n[education section lines]\n\n" : ""}RELEVANT EXPERIENCE
+Job Title | Organization — City, ST                                          Date Range
+Action verb bullet, one line, answers "so what?"
+Action verb bullet with context and outcome
+
+ADDITIONAL EXPERIENCE
+Same format, shorter entries for less relevant roles
+
+${!isStudent ? "EDUCATION\n[education section lines]\n\n" : ""}INVOLVEMENT & VOLUNTEERISM
+One-liner entries pipe-separated
 
 Instructions:
 - Replace weak bullets with approved rewrites where item_id matches
 - Follow the section order from architecture
+- Section headers: ALL CAPS
+- Job entries: Title | Organization — City, ST [right-aligned date]
+- Pipe separators for honors, competencies, involvement items
 - Remove any sections flagged for removal
 - Keep all other original content intact
-- Format as clean plain text (no markdown, no columns)
-- One page unless experience warrants more
+- ONE PAGE MAXIMUM — be concise, trim low-value content if needed
+- No hyphens or em dashes in bullets
+- No markdown formatting — clean plain text only
+- Relevant Coursework must be inside the Education section
 
 Return the complete resume as plain text only — no JSON wrapper, no explanation.`
 
