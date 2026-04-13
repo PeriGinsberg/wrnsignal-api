@@ -54,7 +54,8 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 }
 
 function ProgressDots({ score }: { score: number }) {
-  const filled = Math.round((score / 100) * 5)
+  // score is 1-5 from Claude, fill that many dots
+  const filled = Math.min(Math.max(Math.round(score), 0), 5)
   return (
     <div style={{ display: "flex", gap: 4 }}>
       {[0,1,2,3,4].map(i => (
@@ -669,24 +670,42 @@ export default function ResumeRxPage() {
               <div style={{ fontSize: 13, color: T.DIM, fontStyle: "italic", lineHeight: "19px", marginBottom: 12 }}>
                 Recruiters spend an average of 7 seconds scanning a resume before deciding to read further or move on. This test checks whether your resume communicates your target role and strongest proof point within that window.
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <div style={{ fontSize: 20 }}>{d.skim_test.pass ? "✓" : "✗"}</div>
-                <span style={{ fontSize: 15, fontWeight: 900, color: d.skim_test.pass ? T.SUCCESS : T.ERROR }}>
-                  {d.skim_test.pass ? "Passes" : "Fails"} the skim test
-                </span>
-              </div>
-              {d.skim_test.items && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {d.skim_test.items.map((item: any, i: number) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      <span style={{ fontSize: 12, color: item.pass ? T.SUCCESS : T.ERROR, flexShrink: 0 }}>
-                        {item.pass ? "✓" : "✗"}
+              {(() => {
+                const sk = d.skim_test
+                const passes = sk.passes ?? sk.pass ?? false
+                const items = [
+                  { label: "Role Clarity", value: sk.role_clarity, pass: sk.role_clarity === "clear" },
+                  { label: "Anchor Proof", value: sk.anchor_proof, pass: !!sk.anchor_proof && sk.anchor_proof !== "missing" && sk.anchor_proof !== "none" },
+                  { label: "Reason to Keep Reading", value: sk.reason_to_read, pass: sk.reason_to_read === "present" },
+                ]
+                return (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <div style={{ fontSize: 20 }}>{passes ? "✓" : "✗"}</div>
+                      <span style={{ fontSize: 15, fontWeight: 900, color: passes ? T.SUCCESS : T.ERROR }}>
+                        {passes ? "Passes" : "Fails"} the skim test
                       </span>
-                      <span style={{ fontSize: 13, color: T.MUTED }}>{item.text}</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: sk.notes ? 12 : 0 }}>
+                      {items.map((item, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                          <span style={{ fontSize: 12, color: item.pass ? T.SUCCESS : T.ERROR, flexShrink: 0 }}>
+                            {item.pass ? "✓" : "✗"}
+                          </span>
+                          <span style={{ fontSize: 13, color: T.MUTED }}>
+                            <strong>{item.label}:</strong> {typeof item.value === "string" ? item.value : item.pass ? "Good" : "Missing"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {sk.notes && (
+                      <div style={{ fontSize: 13, color: T.MUTED, lineHeight: "20px", paddingTop: 8, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
+                        {sk.notes}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         )}
@@ -712,15 +731,28 @@ export default function ResumeRxPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
           {dimensions.map(({ key, label: lbl }) => {
             const dim = d.dimensions?.[key] ?? {}
-            const score = typeof dim.score === "number" ? dim.score : 50
+            const score = typeof dim.score === "number" ? dim.score : 0
+            const findings: string[] = Array.isArray(dim.findings) ? dim.findings : []
             return (
               <div key={key} style={card}>
                 <div style={{ padding: "14px 16px" }}>
                   <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 } as React.CSSProperties}>{lbl}</div>
                   <ProgressDots score={score} />
-                  <div style={{ fontSize: 11, color: T.MUTED, marginTop: 8, lineHeight: "17px" }}>
-                    {dim.finding ?? ""}
-                  </div>
+                  {dim.verdict && (
+                    <div style={{ fontSize: 12, color: T.TEXT, fontWeight: 700, marginTop: 8 }}>{dim.verdict}</div>
+                  )}
+                  {findings.length > 0 && (
+                    <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
+                      {findings.map((f: string, fi: number) => (
+                        <div key={fi} style={{ fontSize: 11, color: T.MUTED, lineHeight: "16px" }}>• {f}</div>
+                      ))}
+                    </div>
+                  )}
+                  {!dim.verdict && findings.length === 0 && (
+                    <div style={{ fontSize: 11, color: T.MUTED, marginTop: 8, lineHeight: "17px" }}>
+                      {dim.finding ?? ""}
+                    </div>
+                  )}
                 </div>
               </div>
             )
@@ -779,7 +811,7 @@ export default function ResumeRxPage() {
         <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 } as React.CSSProperties}>RESUME RX — STEP 1</div>
         <h1 style={{ ...headline, fontSize: 28, letterSpacing: -1, marginBottom: 6 }}>Confirm Your Education</h1>
         <p style={{ fontSize: 13, color: T.MUTED, marginBottom: 24, lineHeight: "20px" }}>
-          Let's make sure your education section is set up correctly before we start rewriting.
+          We extracted what we could from your resume. Review each field — edit, delete, or add anything that's missing or wrong.
         </p>
 
         {error && (

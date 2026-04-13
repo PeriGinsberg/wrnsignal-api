@@ -134,7 +134,20 @@ Return ONLY valid JSON — no markdown, no explanation:
   "ats_issues": [<specific problems>],
   "weak_bullets": [{ "original": <text>, "reason": <why weak>, "section": <name> }],
   "missing_opportunities": [<things likely missing>],
-  "qa_agenda": [{ "id": <unique id>, "type": "bullet"|"project"|"section"|"coursework"|"activity", "target": <text>, "section": <name>, "priority": "high"|"medium", "questions": [<2-4 questions>] }]
+  "qa_agenda": [{ "id": <unique id>, "type": "bullet"|"project"|"section"|"coursework"|"activity", "target": <text>, "section": <name>, "priority": "high"|"medium", "questions": [<2-4 questions>] }],
+  "current_education": {
+    "university": <extracted university name or "">,
+    "location": <extracted location or "">,
+    "college": <extracted college/school or "">,
+    "graduation_date": <extracted grad date or "">,
+    "majors": <extracted majors comma-separated or "">,
+    "minors": <extracted minors comma-separated or "">,
+    "gpa": <extracted GPA as number or null>,
+    "honors": <extracted honors comma-separated or "">,
+    "relevant_courses": <extracted courses comma-separated or "">,
+    "study_abroad": <boolean or null>,
+    "additional_notes": ""
+  }
 }
 
 Resume:
