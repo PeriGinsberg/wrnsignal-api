@@ -165,11 +165,11 @@ export default function ResumeRxPage() {
     try {
       const res = await authFetch("/api/resume-rx/start", {
         method: "POST",
-        body: JSON.stringify({ resumeText, sourcePersonaId, mode, yearInSchool, targetField }),
+        body: JSON.stringify({ resume_text: resumeText, source_persona_id: sourcePersonaId, mode, year_in_school: yearInSchool, target_field: targetField }),
       })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Analysis failed")
-      setSessionId(j.sessionId)
+      setSessionId(j.session_id)
       setDiagnosis(j.diagnosis)
       setQaItems(j.diagnosis?.qa_agenda ?? [])
       setStage("diagnosis")
@@ -186,7 +186,7 @@ export default function ResumeRxPage() {
     try {
       const res = await authFetch("/api/resume-rx/education", {
         method: "POST",
-        body: JSON.stringify({ sessionId, educationData }),
+        body: JSON.stringify({ session_id: sessionId, education: educationData }),
       })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Education step failed")
@@ -201,7 +201,7 @@ export default function ResumeRxPage() {
     try {
       const res = await authFetch("/api/resume-rx/architecture", {
         method: "POST",
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ session_id: sessionId, confirmed: true }),
       })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Architecture step failed")
@@ -224,7 +224,7 @@ export default function ResumeRxPage() {
       const answers = qaAnswers[item.bullet_id] ?? ""
       const res = await authFetch("/api/resume-rx/answer", {
         method: "POST",
-        body: JSON.stringify({ sessionId, bulletId: item.bullet_id, answers }),
+        body: JSON.stringify({ session_id: sessionId, item_id: item.id, type: item.type || "bullet", original: item.target, section: item.section, answers }),
       })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Answer failed")
@@ -243,7 +243,7 @@ export default function ResumeRxPage() {
     try {
       await authFetch("/api/resume-rx/approve", {
         method: "POST",
-        body: JSON.stringify({ sessionId, bulletId: item.bullet_id, variantIndex }),
+        body: JSON.stringify({ session_id: sessionId, item_id: item.id, approved_bullets: [qaResult?.variants?.[variantIndex]?.text || ""], skipped: false }),
       })
       advanceQA()
     } catch (err: any) {
@@ -267,7 +267,7 @@ export default function ResumeRxPage() {
     try {
       const res = await authFetch("/api/resume-rx/complete", {
         method: "POST",
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ session_id: sessionId }),
       })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Complete failed")
@@ -282,7 +282,7 @@ export default function ResumeRxPage() {
     try {
       const res = await authFetch("/api/resume-rx/save-to-profile", {
         method: "POST",
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ session_id: sessionId }),
       })
       if (res.ok) setToast("Resume saved to profile!")
       else {
