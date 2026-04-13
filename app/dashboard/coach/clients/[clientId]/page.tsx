@@ -36,11 +36,12 @@ type CoachRec = {
   id: string
   company: string
   title: string
-  priority: "urgent" | "high" | "normal" | null
+  priority: string | null
   coaching_note: string | null
   client_status: string | null
   apply_by: string | null
   verdict: string | null
+  created_at: string | null
 }
 
 type ClientApplication = {
@@ -143,6 +144,8 @@ export default function CoachClientPage() {
   const [showAnnotation, setShowAnnotation] = useState(false)
   const [sending, setSending] = useState(false)
   const [sendSuccess, setSendSuccess] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   // Application card expand state (tracker tab)
   const [openAppIds, setOpenAppIds] = useState<Set<string>>(new Set())
@@ -378,38 +381,101 @@ export default function CoachClientPage() {
               <p style={{ color: T.MUTED, fontSize: 13 }}>No recommendations sent yet. Use the "Source a Job" tab to find and send jobs.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {coachRecs.map((rec) => (
-                  <div key={rec.id} style={{ ...card, padding: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
-                      <span style={{ fontSize: 13, color: T.MUTED }}>— {rec.title}</span>
-                      {rec.priority && (
-                        <Badge text={rec.priority} style={PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal} />
+                {coachRecs.map((rec) => {
+                  const sentDate = rec.created_at
+                    ? new Date(rec.created_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })
+                    : null
+                  const priorityLabels: Record<string, string> = { urgent: "Urgent", this_week: "This Week", when_ready: "When Ready", not_recommended: "For Awareness" }
+                  const priorityLabel = rec.priority ? priorityLabels[rec.priority] || rec.priority : null
+
+                  return (
+                    <div key={rec.id} style={{ ...card, padding: 20 }}>
+                      {/* Company + title + verdict */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                        <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
+                        <span style={{ fontSize: 13, color: T.MUTED }}>— {rec.title}</span>
+                        {rec.verdict && (
+                          <Badge text={rec.verdict} style={DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
+                        )}
+                      </div>
+
+                      {/* Sent date + priority pill */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        {sentDate && (
+                          <span style={{ fontSize: 12, color: T.MUTED }}>
+                            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: T.DIM, marginRight: 6 }}>SENT</span>
+                            {sentDate}
+                          </span>
+                        )}
+                        {priorityLabel && (
+                          <span style={{
+                            fontSize: 9, fontWeight: 900, padding: "2px 8px", borderRadius: 99, letterSpacing: 0.5,
+                            ...(PRIORITY_STYLE[rec.priority || ""] || PRIORITY_STYLE.normal),
+                          }}>
+                            {priorityLabel}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Coaching note + delete */}
+                      {rec.coaching_note && (
+                        <div style={{ marginBottom: 8 }}>
+                          <p style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px" }}>
+                            <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Note: </span>
+                            {rec.coaching_note}
+                          </p>
+                          {confirmDeleteId === rec.id ? (
+                            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                              <span style={{ fontSize: 11, color: T.DIM }}>Delete this note?</span>
+                              <span
+                                style={{ fontSize: 11, color: "#f87171", cursor: "pointer", fontWeight: 700 }}
+                                onClick={async () => {
+                                  setDeletingNoteId(rec.id)
+                                  await authFetch(`/api/coach/recommendations/${rec.id}`, {
+                                    method: "PATCH",
+                                    body: JSON.stringify({ coaching_note: "" }),
+                                  })
+                                  setCoachRecs(prev => prev.map(r => r.id === rec.id ? { ...r, coaching_note: null } : r))
+                                  setConfirmDeleteId(null)
+                                  setDeletingNoteId(null)
+                                }}
+                              >
+                                {deletingNoteId === rec.id ? "Deleting..." : "Yes, delete"}
+                              </span>
+                              <span
+                                style={{ fontSize: 11, color: T.DIM, cursor: "pointer" }}
+                                onClick={() => setConfirmDeleteId(null)}
+                              >
+                                Cancel
+                              </span>
+                            </div>
+                          ) : (
+                            <span
+                              style={{ fontSize: 11, color: T.DIM, cursor: "pointer", marginTop: 4, display: "inline-block" }}
+                              onClick={() => setConfirmDeleteId(rec.id)}
+                            >
+                              Delete note
+                            </span>
+                          )}
+                        </div>
                       )}
-                      {rec.verdict && (
-                        <Badge text={rec.verdict} style={DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
-                      )}
+
+                      {/* Client status + apply by */}
+                      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                        {rec.client_status && (
+                          <span style={{ fontSize: 11, color: T.DIM }}>
+                            Client: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.client_status}</span>
+                          </span>
+                        )}
+                        {rec.apply_by && (
+                          <span style={{ fontSize: 11, color: T.DIM }}>
+                            Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {rec.coaching_note && (
-                      <p style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", marginBottom: 8 }}>
-                        <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Note: </span>
-                        {rec.coaching_note}
-                      </p>
-                    )}
-                    <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                      {rec.client_status && (
-                        <span style={{ fontSize: 11, color: T.DIM }}>
-                          Client status: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.client_status}</span>
-                        </span>
-                      )}
-                      {rec.apply_by && (
-                        <span style={{ fontSize: 11, color: T.DIM }}>
-                          Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
