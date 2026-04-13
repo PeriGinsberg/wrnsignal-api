@@ -77,6 +77,38 @@ function SectionDivider({ label: lbl }: { label: string }) {
   )
 }
 
+const ANALYSIS_STAGES = [
+  { pct: 15, text: "Reading your resume..." },
+  { pct: 35, text: "Identifying strengths and gaps..." },
+  { pct: 55, text: "Running the 7-second skim test..." },
+  { pct: 72, text: "Scoring each dimension..." },
+  { pct: 88, text: "Building your Q&A agenda..." },
+  { pct: 95, text: "Almost done..." },
+]
+
+function AnalysisProgress({ stage }: { stage: number }) {
+  const s = ANALYSIS_STAGES[Math.min(stage, ANALYSIS_STAGES.length - 1)]
+  return (
+    <div style={{ ...card, padding: 24, marginBottom: 32, textAlign: "center" }}>
+      <div style={{ fontSize: 18, fontWeight: 900, color: T.TEXT, marginBottom: 6 }}>
+        Analyzing your resume...
+      </div>
+      <div style={{ fontSize: 13, color: T.MUTED, marginBottom: 18 }}>{s.text}</div>
+      <div style={{ height: 8, borderRadius: 4, background: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 16 }}>
+        <div style={{
+          height: "100%", borderRadius: 4,
+          background: "linear-gradient(90deg, #FEB06A, #51ADE5)",
+          width: `${s.pct}%`,
+          transition: "width 0.8s ease-in-out",
+        }} />
+      </div>
+      <div style={{ fontSize: 11, color: T.DIM }}>
+        This takes about 30 seconds. Hang tight — we're reading every line.
+      </div>
+    </div>
+  )
+}
+
 // ─── main page ──────────────────────────────────────────────────────────────
 
 export default function ResumeRxPage() {
@@ -92,6 +124,7 @@ export default function ResumeRxPage() {
   const [showUpload, setShowUpload] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [analysisStage, setAnalysisStage] = useState(0)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [diagnosis, setDiagnosis] = useState<any>(null)
   const [educationData, setEducationData] = useState<any>(null)
@@ -162,6 +195,12 @@ export default function ResumeRxPage() {
     if (!targetField.trim()) { setError("Please enter your target field."); return }
     setError("")
     setAnalyzing(true)
+    setAnalysisStage(0)
+
+    // Advance fake progress stages on timers
+    const delays = [2000, 4000, 8000, 14000, 22000]
+    const timers = delays.map((ms, i) => setTimeout(() => setAnalysisStage(i + 1), ms))
+
     try {
       const res = await authFetch("/api/resume-rx/start", {
         method: "POST",
@@ -169,14 +208,17 @@ export default function ResumeRxPage() {
       })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Analysis failed")
+      timers.forEach(clearTimeout)
       setSessionId(j.session_id)
       setDiagnosis(j.diagnosis)
       setQaItems(j.diagnosis?.qa_agenda ?? [])
       setStage("diagnosis")
     } catch (err: any) {
+      timers.forEach(clearTimeout)
       setError(err?.message || "Analysis failed. Please try again.")
     } finally {
       setAnalyzing(false)
+      setAnalysisStage(0)
     }
   }
 
@@ -291,6 +333,51 @@ export default function ResumeRxPage() {
       }
     } catch (err: any) {
       setError(err?.message || "Save failed.")
+    }
+  }
+
+  const [loadingSession, setLoadingSession] = useState<string | null>(null)
+
+  async function loadSession(id: string, targetStage: string) {
+    setLoadingSession(id)
+    setError("")
+    try {
+      const res = await authFetch(`/api/resume-rx/sessions/${id}`)
+      const j = await res.json()
+      if (!res.ok) throw new Error(j?.error || "Failed to load session")
+      const s = j.session
+      setSessionId(s.id)
+      setResumeText(s.original_resume_text || "")
+      setMode(s.mode || "")
+      setYearInSchool(s.year_in_school || "")
+      setTargetField(s.target_field || "")
+      setDiagnosis(s.diagnosis || null)
+      setEducationData(s.education_intake || null)
+      setArchitecture(s.architecture || null)
+      setQaItems(s.qa_items || s.diagnosis?.qa_agenda || [])
+      setQaIndex(0)
+      setQaAnswers({})
+      setQaResult(null)
+      if (targetStage === "complete" && s.status === "complete") {
+        setCompletionResult({
+          finalResume: s.final_resume_text,
+          coaching_summary: s.coaching_summary,
+        })
+      }
+      // Map status to stage
+      const stageMap: Record<string, string> = {
+        diagnosis: "diagnosis",
+        education: "education",
+        architecture: "architecture",
+        qa: "qa",
+        rewrite: "complete",
+        complete: "complete",
+      }
+      setStage(stageMap[targetStage] || stageMap[s.status] || "diagnosis")
+    } catch (err: any) {
+      setError(err?.message || "Failed to load session.")
+    } finally {
+      setLoadingSession(null)
     }
   }
 
@@ -436,60 +523,89 @@ export default function ResumeRxPage() {
                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>TARGET FIELD</span>
                 <input
                   type="text"
-                  list="target-field-list"
                   style={input}
-                  placeholder="e.g. Marketing, Finance, Consulting..."
+                  placeholder="e.g. Marketing, Finance, Law, Consulting, Technology, HR..."
                   value={targetField}
                   onChange={e => setTargetField(e.target.value)}
                 />
-                <datalist id="target-field-list">
-                  {["Marketing","Finance","Consulting","Technology","Operations","Human Resources","Non-Profit","Healthcare","Law","Other"].map(f => (
-                    <option key={f} value={f} />
-                  ))}
-                </datalist>
+                <div style={{ fontSize: 11, color: T.DIM, marginTop: 6, lineHeight: "16px" }}>
+                  Enter one or more fields you are targeting. Examples: Marketing, Finance, Consulting, Technology, Law, Operations, Healthcare, Non-Profit, Real Estate, Data Analytics
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <button
-          onClick={startAnalysis}
-          disabled={analyzing || !resumeText.trim() || !mode || !targetField.trim()}
-          style={{
-            ...btnPrimary,
-            fontSize: 15,
-            padding: "15px 28px",
-            opacity: (analyzing || !resumeText.trim() || !mode || !targetField.trim()) ? 0.5 : 1,
-            cursor: (analyzing || !resumeText.trim() || !mode || !targetField.trim()) ? "not-allowed" : "pointer",
-            marginBottom: 32,
-          }}
-        >
-          {analyzing ? "Analyzing... ~30 seconds" : "Analyze My Resume →"}
-        </button>
+        {analyzing ? (
+          <AnalysisProgress stage={analysisStage} />
+        ) : (
+          <button
+            onClick={startAnalysis}
+            disabled={!resumeText.trim() || !mode || !targetField.trim()}
+            style={{
+              ...btnPrimary,
+              fontSize: 15,
+              padding: "15px 28px",
+              opacity: (!resumeText.trim() || !mode || !targetField.trim()) ? 0.5 : 1,
+              cursor: (!resumeText.trim() || !mode || !targetField.trim()) ? "not-allowed" : "pointer",
+              marginBottom: 32,
+            }}
+          >
+            Analyze My Resume →
+          </button>
+        )}
 
         {/* Past sessions */}
         {pastSessions.length > 0 && (
           <div>
             <SectionDivider label="Past Sessions" />
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {pastSessions.map((s: any) => (
-                <div key={s.id} style={{ ...card, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: 13, color: T.TEXT, fontWeight: 900 }}>{s.targetField ?? "Resume Session"}</div>
-                    <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }}>
-                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ""} · {s.mode ?? ""}
+              {pastSessions.map((s: any) => {
+                const isComplete = s.status === "complete"
+                const stageLabel: Record<string, string> = { diagnosis: "Diagnosis", education: "Education", architecture: "Architecture", qa: "Q&A", rewrite: "Rewrite" }
+                const isLoading = loadingSession === s.id
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => !isLoading && loadSession(s.id, isComplete ? "complete" : s.status)}
+                    style={{
+                      ...card, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center",
+                      cursor: isLoading ? "wait" : "pointer",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)" }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "" }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, color: T.TEXT, fontWeight: 900 }}>{s.target_field ?? "Resume Session"}</div>
+                      <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }}>
+                        {s.created_at ? new Date(s.created_at).toLocaleDateString() : ""} · {s.mode ?? ""}
+                      </div>
+                      {!isComplete && s.status && (
+                        <div style={{ fontSize: 10, color: T.DIM, marginTop: 3 }}>
+                          Stopped at: {stageLabel[s.status] || s.status}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+                        color: isComplete ? T.SUCCESS : T.WRN_ORANGE,
+                        background: isComplete ? T.SUCCESS_BG : T.WARNING_BG,
+                        padding: "3px 8px", borderRadius: 6,
+                      }}>
+                        {s.status ?? "in progress"}
+                      </span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 900,
+                        color: isComplete ? "#2DD4BF" : T.WRN_ORANGE,
+                      }}>
+                        {isLoading ? "Loading..." : isComplete ? "View Results →" : "Continue →"}
+                      </span>
                     </div>
                   </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-                    color: s.status === "complete" ? T.SUCCESS : T.WRN_ORANGE,
-                    background: s.status === "complete" ? T.SUCCESS_BG : T.WARNING_BG,
-                    padding: "3px 8px", borderRadius: 6,
-                  }}>
-                    {s.status ?? "in progress"}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -549,7 +665,10 @@ export default function ResumeRxPage() {
         {d.skim_test && (
           <div style={cardStyle}>
             <div style={{ padding: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 10 } as React.CSSProperties}>7-SECOND SKIM TEST</div>
+              <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 6 } as React.CSSProperties}>7-SECOND SKIM TEST</div>
+              <div style={{ fontSize: 13, color: T.DIM, fontStyle: "italic", lineHeight: "19px", marginBottom: 12 }}>
+                Recruiters spend an average of 7 seconds scanning a resume before deciding to read further or move on. This test checks whether your resume communicates your target role and strongest proof point within that window.
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 20 }}>{d.skim_test.pass ? "✓" : "✗"}</div>
                 <span style={{ fontSize: 15, fontWeight: 900, color: d.skim_test.pass ? T.SUCCESS : T.ERROR }}>
