@@ -36,43 +36,23 @@ async function getAuthedUser(req: Request) {
 
 async function getProfileId(userId: string, email: string | null) {
   const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("client_profiles")
-    .select("id, user_id")
+    .select("id")
     .eq("user_id", userId)
     .maybeSingle()
-  if (error) throw new Error(`Profile lookup failed: ${error.message}`)
   if (data) return data.id as string
 
   if (email) {
-    const { data: byEmail, error: emailErr } = await supabase
+    const { data: byEmail } = await supabase
       .from("client_profiles")
-      .select("id, user_id")
+      .select("id")
       .eq("email", email)
       .maybeSingle()
-    if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
-    if (byEmail) {
-      if (byEmail.user_id !== userId) {
-        const { error: attachErr } = await supabase
-          .from("client_profiles")
-          .update({ user_id: userId, updated_at: new Date().toISOString() })
-          .eq("id", byEmail.id)
-        if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
-      }
-      return byEmail.id as string
-    }
+    if (byEmail) return byEmail.id as string
   }
 
   throw new Error("Profile not found")
-}
-
-async function verifyCoach(profileId: string, supabase: any): Promise<boolean> {
-  const { data } = await supabase
-    .from("client_profiles")
-    .select("is_coach")
-    .eq("id", profileId)
-    .single()
-  return data?.is_coach === true
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -85,9 +65,15 @@ export async function POST(req: NextRequest) {
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
-    const isCoach = await verifyCoach(profileId, supabase)
-    if (!isCoach) {
-      return withCorsJson(req, { ok: false, error: "Forbidden: caller is not a coach" }, 403)
+    // Verify caller is a coach
+    const { data: coachProfile } = await supabase
+      .from("client_profiles")
+      .select("id, name, is_coach, coach_org")
+      .eq("id", profileId)
+      .single()
+
+    if (!coachProfile?.is_coach) {
+      return withCorsJson(req, { ok: false, error: "Coach access required" }, 403)
     }
 
     const body = await req.json().catch(() => null)
@@ -95,107 +81,97 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
 
-    const clientEmail = String(body.client_email || "").trim().toLowerCase()
-    const accessLevel = String(body.access_level || "view").trim()
-    if (!clientEmail) return withCorsJson(req, { ok: false, error: "client_email is required" }, 400)
+    // Accept both "email" and "client_email" from the request
+    const clientEmail = String(body.email || body.client_email || "").trim().toLowerCase()
+    const accessLevel = String(body.access_level || "full").trim()
+    const personalNote = String(body.note || body.personal_note || "").trim()
 
-    const validLevels = ["view", "annotate", "full"]
-    if (!validLevels.includes(accessLevel)) {
+    if (!clientEmail) return withCorsJson(req, { ok: false, error: "Email is required" }, 400)
+
+    if (!["view", "annotate", "full"].includes(accessLevel)) {
       return withCorsJson(req, { ok: false, error: "access_level must be view, annotate, or full" }, 400)
     }
 
-    // Check if client already has an account
-    const { data: existingProfile } = await supabase
+    // Check if client already has a SIGNAL account
+    const { data: existingClient } = await supabase
       .from("client_profiles")
-      .select("id, email")
+      .select("id")
       .eq("email", clientEmail)
       .maybeSingle()
 
-    const clientProfileId = existingProfile?.id ?? null
+    const clientProfileId = existingClient?.id ?? null
 
-    // Get coach profile for invite token context
-    const { data: coachProfile } = await supabase
-      .from("client_profiles")
-      .select("id, full_name, org_name")
-      .eq("id", profileId)
-      .single()
-
-    // Create invite token
-    const inviteToken = crypto.randomUUID()
-
-    // Check for existing pending invite from this coach to this email
+    // Check for existing invite from this coach to this email
     const { data: existingInvite } = await supabase
       .from("coach_clients")
       .select("id, status")
       .eq("coach_profile_id", profileId)
-      .eq("client_email", clientEmail)
+      .eq("invited_email", clientEmail)
       .maybeSingle()
 
-    let inviteRow: any
+    const inviteToken = crypto.randomUUID()
+
     if (existingInvite) {
-      // Update existing invite
-      const { data, error } = await supabase
+      const { error: updateErr } = await supabase
         .from("coach_clients")
         .update({
           status: "pending",
           access_level: accessLevel,
           invite_token: inviteToken,
-          invite_sent_at: new Date().toISOString(),
+          invited_at: new Date().toISOString(),
           client_profile_id: clientProfileId,
         })
         .eq("id", existingInvite.id)
-        .select("*")
-        .single()
-      if (error) throw new Error(`Failed to update invite: ${error.message}`)
-      inviteRow = data
+
+      if (updateErr) throw new Error(`Failed to update invite: ${updateErr.message}`)
     } else {
-      // Create new invite
-      const { data, error } = await supabase
+      const { error: insertErr } = await supabase
         .from("coach_clients")
         .insert({
           coach_profile_id: profileId,
-          client_email: clientEmail,
           client_profile_id: clientProfileId,
+          invited_email: clientEmail,
           access_level: accessLevel,
           status: "pending",
           invite_token: inviteToken,
-          invite_sent_at: new Date().toISOString(),
         })
-        .select("*")
-        .single()
-      if (error) throw new Error(`Failed to create invite: ${error.message}`)
-      inviteRow = data
+
+      if (insertErr) throw new Error(`Failed to create invite: ${insertErr.message}`)
     }
 
-    // Send OTP magic link to client
-    const { error: otpError } = await supabase.auth.signInWithOtp({
+    // Send magic link to the client
+    const redirectUrl = `https://wrnsignal-api.vercel.app/dashboard/accept-invite?token=${inviteToken}`
+
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
       email: clientEmail,
       options: {
-        data: {
-          invite_token: inviteToken,
-          coach_name: coachProfile?.full_name || null,
-          coach_org: coachProfile?.org_name || null,
-        },
+        emailRedirectTo: redirectUrl,
       },
     })
 
-    if (otpError) {
+    if (otpErr) {
+      console.error("[coach/invite] OTP send failed:", otpErr.message)
       return withCorsJson(req, {
         ok: false,
-        error: `Failed to send invite email: ${otpError.message}`,
+        error: `Failed to send invite: ${otpErr.message}`,
       }, 500)
     }
 
-    const scenario = clientProfileId ? "existing_user" : "new_user"
+    console.log("[coach/invite] Invite sent:", {
+      coach: coachProfile.name,
+      client: clientEmail,
+      scenario: clientProfileId ? "existing_user" : "new_user",
+      redirectUrl,
+    })
 
     return withCorsJson(req, {
       ok: true,
       status: "invited",
-      scenario,
-      invite_id: inviteRow.id,
+      scenario: clientProfileId ? "existing_user" : "new_user",
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
+    console.error("[coach/invite] Error:", msg)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
