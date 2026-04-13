@@ -1057,16 +1057,19 @@ export default function ResumeRxPage() {
           </>
         )}
 
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button
             onClick={startQA}
             disabled={!architecture}
             style={{ ...btnPrimary, fontSize: 15, padding: "15px 28px", opacity: !architecture ? 0.5 : 1 }}
           >
-            This looks right →
+            Looks Good →
           </button>
-          <button onClick={() => setStage("education")} style={{ ...btnSecondary, fontSize: 13 }}>
-            ← Back
+          <button onClick={() => { setArchitecture(null); setStage("education") }} style={{ ...btnSecondary, fontSize: 13, padding: "13px 22px" }}>
+            Edit Education
+          </button>
+          <button onClick={() => { setArchitecture(null); setEducationProposal(null); setStage("diagnosis") }} style={{ ...btnSecondary, fontSize: 13 }}>
+            ← Back to Diagnosis
           </button>
         </div>
 
