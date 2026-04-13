@@ -14,6 +14,18 @@ import {
   label,
 } from "../../lib/dashboard-theme"
 
+type CoachRecommendation = {
+  id: string
+  company: string
+  title: string
+  priority: "urgent" | "high" | "normal" | null
+  coaching_note: string | null
+  verdict: string | null
+  apply_by: string | null
+  seen: boolean
+  responded: string | null
+}
+
 type Profile = {
   id: string
   name: string | null
@@ -83,11 +95,36 @@ function SummaryRow({ label: lbl, value }: { label: string; value: string }) {
   )
 }
 
+const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
+  urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
+  high: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
+  normal: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+}
+
+const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
+  "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
+  Apply: { bg: "rgba(74,222,128,0.12)", color: "#4ade80" },
+  Review: { bg: "rgba(212,164,68,0.15)", color: "#D4A444" },
+  Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
+}
+
+const RESPOND_OPTIONS = [
+  { value: "interested", label: "Interested" },
+  { value: "applying", label: "Applying" },
+  { value: "applied", label: "Applied" },
+  { value: "not_for_me", label: "Not for me" },
+]
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+
+  // Coach state
+  const [coachNotifUnseen, setCoachNotifUnseen] = useState(0)
+  const [coachRecs, setCoachRecs] = useState<CoachRecommendation[]>([])
+  const [respondingId, setRespondingId] = useState<string | null>(null)
 
   // UI state
   const [profileEditOpen, setProfileEditOpen] = useState(false)
@@ -144,9 +181,10 @@ export default function DashboardPage() {
     const token = await getToken()
     if (!token) return
     const headers = { Authorization: `Bearer ${token}` }
-    const [pRes, personasRes] = await Promise.all([
+    const [pRes, personasRes, notifRes] = await Promise.all([
       fetch("/api/profile", { headers }),
       fetch("/api/personas", { headers }),
+      fetch("/api/coach/notifications", { headers }),
     ])
     if (pRes.ok) {
       const j = await pRes.json()
@@ -157,6 +195,11 @@ export default function DashboardPage() {
     if (personasRes.ok) {
       const j = await personasRes.json()
       setPersonas(j.personas || [])
+    }
+    if (notifRes.ok) {
+      const j = await notifRes.json()
+      setCoachNotifUnseen(j.total_unseen || 0)
+      setCoachRecs(j.recommendations || [])
     }
     setLoading(false)
   }, [])
@@ -271,6 +314,20 @@ export default function DashboardPage() {
     setSaving(false)
   }
 
+  async function respondToRec(recId: string, response: string) {
+    setRespondingId(recId)
+    const token = await getToken()
+    if (!token) { setRespondingId(null); return }
+    await fetch(`/api/coach/recommendations/${recId}/respond`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ response }),
+    })
+    setCoachRecs((prev) => prev.map((r) => r.id === recId ? { ...r, responded: response } : r))
+    if (coachNotifUnseen > 0) setCoachNotifUnseen((n) => n - 1)
+    setRespondingId(null)
+  }
+
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
   if (error && !profile) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
 
@@ -326,11 +383,137 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Coach notification banner */}
+      {coachNotifUnseen > 0 && (
+        <div style={{
+          background: "rgba(254,176,106,0.09)",
+          border: "1px solid rgba(254,176,106,0.25)",
+          borderRadius: 14,
+          padding: "14px 20px",
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{
+              background: T.WRN_ORANGE, color: "#04060F", fontWeight: 900,
+              fontSize: 11, padding: "2px 8px", borderRadius: 999,
+            }}>
+              {coachNotifUnseen}
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 900, color: T.TEXT }}>
+              New recommendation{coachNotifUnseen !== 1 ? "s" : ""} from your coach
+            </span>
+          </div>
+          <span style={{ fontSize: 12, color: T.WRN_ORANGE, fontWeight: 700 }}>↓ See below</span>
+        </div>
+      )}
+
       <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 }}>CONTROL CENTER</div>
       <h1 style={{ ...headline, fontSize: 32, letterSpacing: -1 }}>
         Welcome{profile?.name ? `, ${profile.name}` : ""}
       </h1>
       <p style={{ fontSize: 13, color: T.MUTED, marginTop: 4 }}>{profile?.email}</p>
+
+      {/* From Your Coach section */}
+      {coachRecs.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 14 }}>FROM YOUR COACH</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {coachRecs.map((rec) => (
+              <div key={rec.id} style={{
+                ...card,
+                border: rec.responded ? `1px solid ${T.BORDER_SOFT}` : "1px solid rgba(254,176,106,0.22)",
+                opacity: rec.responded ? 0.8 : 1,
+              }}>
+                <div style={{ height: 3, background: rec.responded ? "rgba(255,255,255,0.06)" : "linear-gradient(90deg,#FEB06A,#f97316)" }} />
+                <div style={{ padding: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                    <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
+                    <span style={{ fontSize: 13, color: T.MUTED }}>— {rec.title}</span>
+                    {rec.priority && (
+                      <span style={{
+                        ...(PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal),
+                        fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase" as const,
+                        padding: "3px 10px", borderRadius: 999,
+                        background: (PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal).bg,
+                        color: (PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal).color,
+                      }}>
+                        {rec.priority}
+                      </span>
+                    )}
+                    {rec.verdict && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase" as const,
+                        padding: "3px 10px", borderRadius: 999,
+                        background: (DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }).bg,
+                        color: (DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }).color,
+                      }}>
+                        {rec.verdict}
+                      </span>
+                    )}
+                    {rec.apply_by && (
+                      <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
+                        Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {rec.coaching_note && (
+                    <p style={{ fontSize: 13, color: T.MUTED, lineHeight: "19px", marginBottom: 14 }}>
+                      <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Coach: </span>
+                      {rec.coaching_note}
+                    </p>
+                  )}
+
+                  {/* Response pills */}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
+                    {rec.responded ? (
+                      <span style={{ fontSize: 11, color: T.DIM }}>
+                        You responded: <span style={{ color: T.SUCCESS, fontWeight: 900 }}>
+                          {RESPOND_OPTIONS.find((o) => o.value === rec.responded)?.label || rec.responded}
+                        </span>
+                      </span>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 11, color: T.DIM, marginRight: 4 }}>Your status:</span>
+                        {RESPOND_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => respondToRec(rec.id, opt.value)}
+                            disabled={respondingId === rec.id}
+                            style={{
+                              fontSize: 11, fontWeight: 900, padding: "5px 14px", borderRadius: 999, cursor: "pointer",
+                              border: `1px solid ${T.BORDER_SOFT}`,
+                              background: "rgba(255,255,255,0.04)",
+                              color: T.MUTED,
+                              opacity: respondingId === rec.id ? 0.5 : 1,
+                              transition: "all 0.15s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "rgba(254,176,106,0.1)"
+                              e.currentTarget.style.color = T.WRN_ORANGE
+                              e.currentTarget.style.borderColor = "rgba(254,176,106,0.3)"
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(255,255,255,0.04)"
+                              e.currentTarget.style.color = T.MUTED
+                              e.currentTarget.style.borderColor = T.BORDER_SOFT
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 24, marginTop: 28, alignItems: "flex-start" }}>
         {/* LEFT COLUMN — Profile */}

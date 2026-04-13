@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/tracker", label: "Job Tracker" },
   { href: "/dashboard/resume-rx", label: "Resume Rx" },
-  { href: "https://wrnsignal.workforcereadynow.com/signal/jobfit", label: "Back to SIGNAL →", external: true },
 ]
+
+const COACH_NAV_ITEM = { href: "/dashboard/coach", label: "My Clients" }
+
+const EXTERNAL_NAV_ITEM = { href: "https://wrnsignal.workforcereadynow.com/signal/jobfit", label: "Back to SIGNAL →", external: true }
 
 function Logo() {
   return (
@@ -77,6 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
   const [fromFramer, setFromFramer] = useState(false)
+  const [isCoach, setIsCoach] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -135,8 +139,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setStatus(session ? "authed" : "unauthed")
     })
+
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  // Check coach status once authed
+  useEffect(() => {
+    if (status !== "authed") return
+    async function checkCoach() {
+      try {
+        const supabase = getSupabaseBrowser()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token || sessionStorage.getItem("signal_handoff_token")
+        if (!token) return
+        const res = await fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) return
+        const j = await res.json()
+        setIsCoach(!!j.profile?.is_coach)
+      } catch {}
+    }
+    checkCoach()
+  }, [status])
 
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault()
@@ -226,7 +249,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div style={{ ...eyebrow, fontSize: 11, letterSpacing: 1.2, color: "rgba(255,255,255,0.42)", padding: "0 8px", marginBottom: 8 }}>
               DASHBOARD
             </div>
-            {NAV_ITEMS.map((item) => {
+            {[...BASE_NAV_ITEMS, ...(isCoach ? [COACH_NAV_ITEM] : []), EXTERNAL_NAV_ITEM].map((item) => {
               const isExternal = (item as any).external === true
               const active = !isExternal && pathname === item.href
               return (
