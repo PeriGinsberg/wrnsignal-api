@@ -769,13 +769,13 @@ export default function CoachClientPage() {
 
               {runResult.why_codes?.length > 0 && (
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{ ...eyebrow, fontSize: 9, color: "#4ade80", marginBottom: 6 }}>WHY CODES</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {runResult.why_codes.map((c: string, i: number) => (
-                      <span key={i} style={{
-                        fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
-                        background: "rgba(74,222,128,0.1)", color: "#4ade80",
-                      }}>{c}</span>
+                  <div style={{ ...eyebrow, fontSize: 9, color: "#4ade80", marginBottom: 6 }}>WHY CODES ({runResult.why_codes.length})</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {runResult.why_codes.map((c: any, i: number) => (
+                      <div key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", paddingLeft: 10, borderLeft: "2px solid rgba(74,222,128,0.3)" }}>
+                        <span style={{ fontSize: 10, fontWeight: 900, color: "#4ade80", marginRight: 6 }}>{c.match_key || c.code || ""}</span>
+                        {c.note || c.job_fact || String(c)}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -783,13 +783,13 @@ export default function CoachClientPage() {
 
               {runResult.risk_codes?.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...eyebrow, fontSize: 9, color: "#f87171", marginBottom: 6 }}>RISK CODES</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {runResult.risk_codes.map((c: string, i: number) => (
-                      <span key={i} style={{
-                        fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
-                        background: "rgba(248,113,113,0.1)", color: "#f87171",
-                      }}>{c}</span>
+                  <div style={{ ...eyebrow, fontSize: 9, color: "#f87171", marginBottom: 6 }}>RISK CODES ({runResult.risk_codes.length})</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {runResult.risk_codes.map((c: any, i: number) => (
+                      <div key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", paddingLeft: 10, borderLeft: "2px solid rgba(248,113,113,0.3)" }}>
+                        <span style={{ fontSize: 10, fontWeight: 900, color: "#f87171", marginRight: 6 }}>{c.code || ""}</span>
+                        {c.risk || c.note || String(c)}
+                      </div>
                     ))}
                   </div>
                 </div>
