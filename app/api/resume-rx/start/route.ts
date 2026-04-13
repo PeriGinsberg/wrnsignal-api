@@ -120,6 +120,19 @@ Return ONLY valid JSON — no markdown, no explanation:
     "reason_to_read": "present"|"weak"|"missing",
     "notes": <1-2 sentences>
   },
+  "current_education": {
+    "university": <extracted university name or "">,
+    "location": <extracted city, state or "">,
+    "college": <extracted college/school within university or "">,
+    "graduation_date": <extracted expected or actual grad date or "">,
+    "majors": <extracted majors comma-separated or "">,
+    "minors": <extracted minors comma-separated or "">,
+    "gpa": <extracted GPA as number or null>,
+    "honors": <extracted honors/awards comma-separated or "">,
+    "relevant_courses": <extracted coursework comma-separated or "">,
+    "study_abroad": <true if mentioned, false if not, null if unclear>,
+    "additional_notes": ""
+  },
   "summary": <2-3 sentence assessment in Peri's voice>,
   "high_school_items": [<exact text of any HS content>],
   "should_remove_hs": <boolean>,
@@ -134,20 +147,7 @@ Return ONLY valid JSON — no markdown, no explanation:
   "ats_issues": [<specific problems>],
   "weak_bullets": [{ "original": <text>, "reason": <why weak>, "section": <name> }],
   "missing_opportunities": [<things likely missing>],
-  "qa_agenda": [{ "id": <unique id>, "type": "bullet"|"project"|"section"|"coursework"|"activity", "target": <text>, "section": <name>, "priority": "high"|"medium", "questions": [<2-4 questions>] }],
-  "current_education": {
-    "university": <extracted university name or "">,
-    "location": <extracted location or "">,
-    "college": <extracted college/school or "">,
-    "graduation_date": <extracted grad date or "">,
-    "majors": <extracted majors comma-separated or "">,
-    "minors": <extracted minors comma-separated or "">,
-    "gpa": <extracted GPA as number or null>,
-    "honors": <extracted honors comma-separated or "">,
-    "relevant_courses": <extracted courses comma-separated or "">,
-    "study_abroad": <boolean or null>,
-    "additional_notes": ""
-  }
+  "qa_agenda": [{ "id": <unique id>, "type": "bullet"|"project"|"section"|"coursework"|"activity", "target": <text>, "section": <name>, "priority": "high"|"medium", "questions": [<2-4 questions>] }]
 }
 
 Resume:
@@ -155,7 +155,7 @@ ${resume_text}`
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 6000,
       system: PERI_SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     })
