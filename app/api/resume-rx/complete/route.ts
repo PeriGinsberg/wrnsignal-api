@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
 Candidate: ${session.year_in_school}, mode: ${session.mode}, targeting ${session.target_field}
 
 ORIGINAL RESUME:
-${session.resume_text}
+${session.original_resume_text}
 
 APPROVED REWRITES (replace matching original bullets with these):
 ${approvedBulletsText || "(none — use original bullets)"}

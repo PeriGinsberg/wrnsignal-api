@@ -166,11 +166,11 @@ ${resume_text}`
       .insert({
         profile_id: profileId,
         status: "diagnosis",
+        original_resume_text: resume_text,
         mode,
         year_in_school,
         target_field,
-        source_persona_id,
-        resume_text,
+        source_persona_id: source_persona_id || null,
         diagnosis,
       })
       .select("id")

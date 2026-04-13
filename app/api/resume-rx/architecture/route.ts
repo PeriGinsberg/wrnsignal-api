@@ -126,7 +126,7 @@ Diagnosis summary:
 - Missing opportunities: ${JSON.stringify(session.diagnosis?.missing_opportunities ?? [])}
 
 Current resume sections (inferred from resume text, first 800 chars):
-${String(session.resume_text || "").slice(0, 800)}
+${String(session.original_resume_text || "").slice(0, 800)}
 
 Return ONLY valid JSON — no markdown, no explanation:
 {
