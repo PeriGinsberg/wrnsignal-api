@@ -171,12 +171,13 @@ export async function GET(req: NextRequest) {
           stats.interviewing_count > 0
 
         return {
-          relationship_id: rel.id,
+          id: rel.id,
           client_profile_id: clientProfileId,
-          client_email: rel.invited_email,
+          email: rel.invited_email,
+          name: profile?.name || null,
+          status: rel.status,
           access_level: rel.access_level,
           accepted_at: rel.accepted_at,
-          client_name: profile?.name || null,
           target_roles: profile?.target_roles || null,
           ...stats,
           needs_attention,

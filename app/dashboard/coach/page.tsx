@@ -17,6 +17,7 @@ import {
 
 type CoachClient = {
   id: string
+  client_profile_id: string
   name: string | null
   email: string | null
   status: string | null
