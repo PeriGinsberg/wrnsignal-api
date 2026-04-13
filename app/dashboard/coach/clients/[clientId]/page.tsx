@@ -45,12 +45,12 @@ type CoachRec = {
 
 type ClientApplication = {
   id: string
-  company: string
-  title: string
+  company_name: string
+  job_title: string
   application_status: string
-  decision: string | null
-  score: number | null
-  coach_annotation: string | null
+  signal_decision: string | null
+  signal_score: number | null
+  coach_annotations: any[]
 }
 
 type HistoryRun = {
@@ -141,23 +141,35 @@ export default function CoachClientPage() {
 
   const loadAll = useCallback(async () => {
     setLoading(true)
-    const res = await authFetch(`/api/coach/clients/${clientId}/tracker`)
-    if (!res.ok) {
-      setError("Failed to load client data")
-      setLoading(false)
-      return
-    }
-    const j = await res.json()
-    setClientProfile(j.client || null)
-    setClientPersonas(j.personas || [])
-    setCoachRecs(j.coach_recs || [])
-    setClientApps(j.applications || [])
-    setHistoryRuns(j.history || [])
+    try {
+      const [trackerRes, profileRes] = await Promise.all([
+        authFetch(`/api/coach/clients/${clientId}/tracker`),
+        authFetch(`/api/coach/clients/${clientId}/profile`),
+      ])
 
-    // Default to first persona
-    if (j.personas?.length > 0 && !selectedPersona) {
-      const def = j.personas.find((p: ClientPersona) => p.is_default) || j.personas[0]
-      setSelectedPersona(def.id)
+      if (!trackerRes.ok || !profileRes.ok) {
+        setError("Failed to load client data")
+        setLoading(false)
+        return
+      }
+
+      const trackerData = await trackerRes.json()
+      const profileData = await profileRes.json()
+
+      setClientProfile(profileData.profile || null)
+      setClientPersonas(profileData.personas || [])
+      setClientApps(trackerData.applications || [])
+      setCoachRecs(trackerData.recommendations || [])
+      setHistoryRuns(trackerData.history || [])
+
+      // Default to first persona
+      const personas = profileData.personas || []
+      if (personas.length > 0 && !selectedPersona) {
+        const def = personas.find((p: ClientPersona) => p.is_default) || personas[0]
+        setSelectedPersona(def.id)
+      }
+    } catch {
+      setError("Failed to load client data")
     }
     setLoading(false)
   }, [clientId])
@@ -168,15 +180,15 @@ export default function CoachClientPage() {
     if (!sourceUrl.trim()) return
     setFetchingUrl(true)
     try {
-      const res = await authFetch("/api/fetch-jd", {
+      const res = await authFetch("/api/parse-job-url", {
         method: "POST",
         body: JSON.stringify({ url: sourceUrl.trim() }),
       })
       if (res.ok) {
         const j = await res.json()
-        setSourceJD(j.text || "")
-        setSourceCompany(j.company || "")
-        setSourceTitle(j.title || "")
+        if (j.jobDescription) setSourceJD(j.jobDescription)
+        if (j.companyName) setSourceCompany(j.companyName)
+        if (j.jobTitle) setSourceTitle(j.jobTitle)
       }
     } finally {
       setFetchingUrl(false)
@@ -342,26 +354,30 @@ export default function CoachClientPage() {
                 {clientApps.map((app) => (
                   <div key={app.id} style={{ ...card, padding: 18 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 14, fontWeight: 950, color: T.TEXT }}>{app.company}</span>
-                      <span style={{ fontSize: 13, color: T.MUTED }}>— {app.title}</span>
+                      <span style={{ fontSize: 14, fontWeight: 950, color: T.TEXT }}>{app.company_name}</span>
+                      <span style={{ fontSize: 13, color: T.MUTED }}>— {app.job_title}</span>
                       <span style={{
                         fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 999,
                         background: "rgba(255,255,255,0.06)", color: T.MUTED,
                       }}>
                         {app.application_status}
                       </span>
-                      {app.decision && (
-                        <Badge text={app.decision} style={DECISION_STYLE[app.decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
+                      {app.signal_decision && (
+                        <Badge text={app.signal_decision} style={DECISION_STYLE[app.signal_decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
                       )}
-                      {app.score !== null && (
-                        <span style={{ fontSize: 11, color: T.DIM }}>Score: {app.score}</span>
+                      {app.signal_score !== null && (
+                        <span style={{ fontSize: 11, color: T.DIM }}>Score: {app.signal_score}</span>
                       )}
                     </div>
-                    {app.coach_annotation && (
-                      <p style={{ fontSize: 12, color: T.MUTED, marginTop: 8, lineHeight: "18px" }}>
-                        <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Your note: </span>
-                        {app.coach_annotation}
-                      </p>
+                    {app.coach_annotations?.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        {app.coach_annotations.map((ann: any, i: number) => (
+                          <p key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", marginBottom: 4 }}>
+                            <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Your note: </span>
+                            {ann.note}
+                          </p>
+                        ))}
+                      </div>
                     )}
                   </div>
                 ))}

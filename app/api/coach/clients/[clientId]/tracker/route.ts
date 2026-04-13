@@ -118,13 +118,14 @@ export async function GET(
       const { data: annotations } = await supabase
         .from("coach_annotations")
         .select("*")
-        .in("application_id", appIds)
+        .in("target_id", appIds)
+        .eq("target_type", "application")
         .eq("coach_profile_id", profileId)
         .order("created_at", { ascending: false })
 
       for (const ann of annotations || []) {
-        if (!annotationsByApp[ann.application_id]) annotationsByApp[ann.application_id] = []
-        annotationsByApp[ann.application_id].push(ann)
+        if (!annotationsByApp[ann.target_id]) annotationsByApp[ann.target_id] = []
+        annotationsByApp[ann.target_id].push(ann)
       }
     }
 
@@ -145,10 +146,28 @@ export async function GET(
       .eq("client_profile_id", clientProfileId)
       .order("created_at", { ascending: false })
 
+    // Fetch recent jobfit runs for history tab
+    const { data: history } = await supabase
+      .from("jobfit_runs")
+      .select("id, created_at, verdict, result_json")
+      .eq("client_profile_id", clientProfileId)
+      .order("created_at", { ascending: false })
+      .limit(20)
+
+    const historyRuns = (history || []).map((r: any) => ({
+      id: r.id,
+      company: r.result_json?.job_signals?.companyName || null,
+      title: r.result_json?.job_signals?.jobTitle || null,
+      decision: r.result_json?.decision || r.verdict || null,
+      score: r.result_json?.score ?? null,
+      created_at: r.created_at,
+    }))
+
     return withCorsJson(req, {
       ok: true,
       applications: enrichedApps,
       recommendations: recommendations || [],
+      history: historyRuns,
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
