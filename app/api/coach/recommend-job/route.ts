@@ -112,12 +112,12 @@ export async function POST(req: NextRequest) {
     }
 
     const clientProfileId = String(body.client_profile_id || "").trim()
-    const jobText = String(body.job_text || "").trim()
+    const jobDescription = String(body.job_description || "").trim()
     const jobTitle = String(body.job_title || "").trim()
     const companyName = String(body.company_name || "").trim()
 
     if (!clientProfileId) return withCorsJson(req, { ok: false, error: "client_profile_id is required" }, 400)
-    if (!jobText) return withCorsJson(req, { ok: false, error: "job_text is required" }, 400)
+    if (!jobDescription) return withCorsJson(req, { ok: false, error: "job_description is required" }, 400)
     if (!jobTitle) return withCorsJson(req, { ok: false, error: "job_title is required" }, 400)
     if (!companyName) return withCorsJson(req, { ok: false, error: "company_name is required" }, 400)
 
@@ -125,6 +125,16 @@ export async function POST(req: NextRequest) {
     if (!access) {
       return withCorsJson(req, { ok: false, error: "Forbidden: full access required to recommend jobs" }, 403)
     }
+
+    // Look up coach_client_id (required NOT NULL FK on coach_job_recommendations)
+    const { data: coachClientRow, error: ccErr } = await supabase
+      .from("coach_clients")
+      .select("id")
+      .eq("coach_profile_id", coachProfileId)
+      .eq("client_profile_id", clientProfileId)
+      .eq("status", "active")
+      .maybeSingle()
+    if (ccErr || !coachClientRow) throw new Error("coach_clients relationship not found")
 
     // Load client profile and persona — use CLIENT's data, not coach's
     const { data: clientProfile, error: cpErr } = await supabase
@@ -169,29 +179,36 @@ export async function POST(req: NextRequest) {
     // Run JobFit using client's profile
     const result = await runJobFit({
       profileText,
-      jobText,
+      jobText: jobDescription,
       profileOverrides,
       userJobTitle: jobTitle,
       userCompanyName: companyName,
     })
 
+    // Determine jobfit_run_id if available
+    const jobfitRunId: string | null = (result as any).run_id || null
+
     // Create coach_job_recommendations row
     const { data: recRow, error: recErr } = await supabase
       .from("coach_job_recommendations")
       .insert({
+        coach_client_id: coachClientRow.id,
         coach_profile_id: coachProfileId,
         client_profile_id: clientProfileId,
         job_title: jobTitle,
         company_name: companyName,
-        job_text: jobText,
+        job_description: jobDescription,
         job_url: body.job_url || null,
         persona_id: persona?.id || null,
-        jobfit_decision: result.decision,
-        jobfit_score: result.score,
-        jobfit_result: result,
-        coach_note: body.coach_note || null,
-        client_status: null,
-        notification_seen: false,
+        persona_name: persona?.name || null,
+        signal_decision: result.decision,
+        signal_score: result.score,
+        jobfit_run_id: jobfitRunId,
+        coaching_note: body.coaching_note || null,
+        priority: body.priority || "this_week",
+        recommended_action: body.recommended_action || "apply",
+        apply_by_date: body.apply_by_date || null,
+        client_status: "new",
       })
       .select("*")
       .single()
@@ -211,7 +228,6 @@ export async function POST(req: NextRequest) {
         signal_decision: result.decision,
         signal_score: result.score,
         signal_run_at: new Date().toISOString(),
-        coach_recommendation_id: recRow.id,
       })
       .select("*")
       .single()

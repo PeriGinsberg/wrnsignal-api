@@ -148,13 +148,13 @@ export async function GET(req: NextRequest) {
             stats.last_activity_at = apps[0]?.created_at || null
           }
 
-          // Query pending coach recommendations
+          // Query pending coach recommendations (client_status = 'new' means unseen)
           const { data: recs } = await supabase
             .from("coach_job_recommendations")
             .select("id, created_at")
             .eq("client_profile_id", clientProfileId)
             .eq("coach_profile_id", profileId)
-            .is("client_status", null)
+            .eq("client_status", "new")
 
           if (recs && recs.length > 0) {
             stats.pending_recommendations = recs.length
@@ -179,7 +179,15 @@ export async function GET(req: NextRequest) {
           access_level: rel.access_level,
           accepted_at: rel.accepted_at,
           target_roles: profile?.target_roles || null,
-          ...stats,
+          last_activity_at: stats.last_activity_at,
+          stats: {
+            applications: stats.total_applications,
+            interviewing: stats.interviewing_count,
+            pending_recs: stats.pending_recommendations,
+            interview_rate: stats.applied_count > 0
+              ? Math.round((stats.interviewing_count / stats.applied_count) * 100)
+              : 0,
+          },
           needs_attention,
         }
       })
