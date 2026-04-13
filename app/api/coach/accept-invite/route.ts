@@ -118,14 +118,14 @@ export async function POST(req: NextRequest) {
     // Fetch coach name and org for response
     const { data: coachProfile } = await supabase
       .from("client_profiles")
-      .select("full_name, org_name")
+      .select("name, coach_org")
       .eq("id", invite.coach_profile_id)
       .single()
 
     return withCorsJson(req, {
       ok: true,
-      coach_name: coachProfile?.full_name || null,
-      coach_org: coachProfile?.org_name || null,
+      coach_name: coachProfile?.name || null,
+      coach_org: coachProfile?.coach_org || null,
     })
   } catch (err: any) {
     const msg = err?.message || String(err)

@@ -168,9 +168,9 @@ export default function CoachPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {clients.map((client) => {
           const accentColor = ATTENTION_COLOR[client.attention_level || "low"] || T.WRN_BLUE
-          const isNotesOpen = notesOpen === client.id
+          const isNotesOpen = notesOpen === client.client_profile_id
           return (
-            <div key={client.id} style={{ ...card, display: "flex" }}>
+            <div key={client.client_profile_id} style={{ ...card, display: "flex" }}>
               {/* Left accent bar */}
               <div style={{ width: 4, background: accentColor, flexShrink: 0 }} />
               <div style={{ flex: 1, padding: 24 }}>
@@ -208,19 +208,19 @@ export default function CoachPage() {
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <button
-                    onClick={() => router.push(`/dashboard/coach/clients/${client.id}`)}
+                    onClick={() => router.push(`/dashboard/coach/clients/${client.client_profile_id}`)}
                     style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900, fontSize: 12, padding: "9px 16px", borderRadius: 10 }}
                   >
                     Open Dashboard →
                   </button>
                   <button
-                    onClick={() => router.push(`/dashboard/coach/clients/${client.id}?tab=source`)}
+                    onClick={() => router.push(`/dashboard/coach/clients/${client.client_profile_id}?tab=source`)}
                     style={{ ...btnSecondary, fontSize: 12, padding: "9px 16px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
                   >
                     Add Job +
                   </button>
                   <button
-                    onClick={() => setNotesOpen(isNotesOpen ? null : client.id)}
+                    onClick={() => setNotesOpen(isNotesOpen ? null : client.client_profile_id)}
                     style={{ ...btnSecondary, fontSize: 12, padding: "9px 16px", borderRadius: 10 }}
                   >
                     Notes {isNotesOpen ? "▲" : "▼"}

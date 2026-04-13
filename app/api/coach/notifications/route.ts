@@ -99,10 +99,10 @@ export async function GET(req: NextRequest) {
     if (coachIds.length > 0) {
       const { data: coaches } = await supabase
         .from("client_profiles")
-        .select("id, full_name, org_name")
+        .select("id, name, coach_org")
         .in("id", coachIds)
       for (const c of coaches || []) {
-        coachNames[c.id] = c.full_name || c.org_name || "Your coach"
+        coachNames[c.id] = c.name || c.coach_org || "Your coach"
       }
     }
 

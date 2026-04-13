@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
     if (clientProfileIds.length > 0) {
       const { data: profiles } = await supabase
         .from("client_profiles")
-        .select("id, full_name, email, target_roles, updated_at")
+        .select("id, name, email, target_roles, updated_at")
         .in("id", clientProfileIds)
       for (const p of profiles || []) {
         profileMap[p.id] = p
@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
           client_email: rel.invited_email,
           access_level: rel.access_level,
           accepted_at: rel.accepted_at,
-          full_name: profile?.full_name || null,
+          client_name: profile?.name || null,
           target_roles: profile?.target_roles || null,
           ...stats,
           needs_attention,
