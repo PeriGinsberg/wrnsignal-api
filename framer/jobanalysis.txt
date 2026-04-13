@@ -71,49 +71,6 @@ type AnalysisResult = {
     market_reality?: MarketReality
 }
 
-type Verdict = "APPLY" | "REVIEW" | "PASS"
-
-function getVerdict(r: AnalysisResult): Verdict {
-    const comp = r.competitiveness
-    const level = r.role_level
-    const hiddenCount = r.hidden_requirements?.length ?? 0
-    if (comp === "Very High" && hiddenCount >= 5) return "PASS"
-    if (
-        (comp === "Low" || comp === "Medium") &&
-        (level === "Entry" || level === "Early Career")
-    )
-        return "APPLY"
-    return "REVIEW"
-}
-
-function getGenericScore(r: AnalysisResult): number {
-    const compMap: Record<string, number> = {
-        Low: 75,
-        Medium: 55,
-        High: 40,
-        "Very High": 25,
-    }
-    let base = compMap[r.competitiveness] ?? 50
-    const levelAdj: Record<string, number> = {
-        Entry: -5,
-        "Early Career": 0,
-        "Mid-Level": 5,
-        Experienced: 10,
-    }
-    base += levelAdj[r.role_level] ?? 0
-    return Math.max(10, Math.min(90, base))
-}
-
-function getCompSegments(comp: string): number {
-    const map: Record<string, number> = {
-        Low: 1,
-        Medium: 2,
-        High: 3,
-        "Very High": 4,
-    }
-    return map[comp] ?? 2
-}
-
 const LOADING_MSGS = [
     "Reading the job description...",
     "Identifying hidden requirements...",
@@ -135,6 +92,21 @@ export default function SignalJobAnalysis() {
     const [loadingMsg, setLoadingMsg] = React.useState(LOADING_MSGS[0])
     const [error, setError] = React.useState("")
     const [result, setResult] = React.useState<AnalysisResult | null>(null)
+    const [capturedEmail, setCapturedEmail] = React.useState("")
+    const [upgradeLoading, setUpgradeLoading] = React.useState(false)
+
+    // Read email param from URL on mount (passed from landing page free CTA)
+    React.useEffect(() => {
+        try {
+            const params = new URLSearchParams(window.location.search)
+            const emailParam = params.get("email")
+            if (emailParam) {
+                setCapturedEmail(decodeURIComponent(emailParam))
+            }
+        } catch {
+            // silently fail
+        }
+    }, [])
 
     // Track page view on mount
     React.useEffect(() => {
@@ -290,7 +262,7 @@ export default function SignalJobAnalysis() {
         // supposed to survive unload, but in practice ~50ms makes delivery
         // much more reliable across browsers.
         setTimeout(() => {
-            window.location.assign(GHL_URL)
+            window.top!.location.replace("https://wrnsignal.workforcereadynow.com/signal/jobfit")
         }, 50)
     }
 
@@ -303,6 +275,35 @@ export default function SignalJobAnalysis() {
         try {
             window.scrollTo({ top: 0, behavior: "smooth" })
         } catch {}
+    }
+
+    async function handleUpgrade() {
+        if (upgradeLoading) return
+        if (!capturedEmail) {
+            window.top!.location.replace("https://wrnsignal.workforcereadynow.com/signal/jobfit")
+            return
+        }
+        setUpgradeLoading(true)
+        try {
+            const response = await fetch(
+                "https://wrnsignal-api.vercel.app/api/checkout/create-session",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: capturedEmail }),
+                }
+            )
+            const data = await response.json()
+            if (data.url) {
+                window.open(data.url, "_blank")
+            } else {
+                window.top!.location.replace("https://wrnsignal.workforcereadynow.com/signal/jobfit")
+            }
+        } catch {
+            window.top!.location.replace("https://wrnsignal.workforcereadynow.com/signal/jobfit")
+        } finally {
+            setUpgradeLoading(false)
+        }
     }
 
     function charHint(): { text: string; ready: boolean } {
@@ -468,12 +469,17 @@ export default function SignalJobAnalysis() {
                         error={error}
                         charHint={charHint()}
                         onAnalyze={handleAnalyze}
+                        onUpgrade={handleUpgrade}
+                        upgradeLoading={upgradeLoading}
                     />
                 ) : (
                     <ResultsState
                         result={result}
-                        onCTA={handleCTA}
+                        jobTitle={jobTitle}
+                        companyName={companyName}
                         onStartOver={handleStartOver}
+                        onUpgrade={handleUpgrade}
+                        upgradeLoading={upgradeLoading}
                     />
                 )}
             </div>
@@ -501,6 +507,8 @@ function InputState({
     error,
     charHint,
     onAnalyze,
+    onUpgrade,
+    upgradeLoading,
 }: {
     jd: string
     setJd: (v: string) => void
@@ -513,6 +521,8 @@ function InputState({
     error: string
     charHint: { text: string; ready: boolean }
     onAnalyze: () => void
+    onUpgrade: () => void
+    upgradeLoading: boolean
 }) {
     return (
         <>
@@ -877,22 +887,33 @@ function InputState({
                             role.
                         </div>
                     </div>
-                    <div
-                        onClick={() => window.location.assign(GHL_URL)}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ADE80", background: "#4ADE8018", border: "1px solid #4ADE8044", borderRadius: 6, padding: "4px 12px", letterSpacing: ".05em" }}>FREE</span>
+                        <span style={{ fontSize: 11, color: "#2A4A6A" }}>30-day money-back guarantee</span>
+                    </div>
+                    <button
+                        onClick={onUpgrade}
+                        disabled={upgradeLoading}
                         style={{
-                            background: C.orange,
-                            color: C.bg,
-                            fontSize: 11,
-                            fontWeight: 800,
-                            padding: "8px 14px",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            whiteSpace: "nowrap" as const,
-                            fontFamily: SANS,
+                            display: "block",
+                            width: "100%",
+                            padding: "14px 22px",
+                            background: upgradeLoading ? "#3A3A3A" : "linear-gradient(90deg, #FF6B00, #FEB06A)",
+                            borderRadius: 10,
+                            color: "#fff",
+                            fontSize: 15,
+                            fontWeight: 900,
+                            fontStyle: "italic" as const,
+                            cursor: upgradeLoading ? "not-allowed" : "pointer",
+                            textDecoration: "none",
+                            textAlign: "center" as const,
+                            fontFamily: "inherit",
+                            border: "none",
+                            boxSizing: "border-box" as const,
                         }}
                     >
-                        Get Full Access {"\u2192"}
-                    </div>
+                        {upgradeLoading ? "Setting up checkout..." : "Unlock full SIGNAL \u2192"}
+                    </button>
                 </div>
             </div>
         </>
@@ -903,1320 +924,2101 @@ function InputState({
 
 function ResultsState({
     result,
-    onCTA,
+    jobTitle,
+    companyName,
     onStartOver,
+    onUpgrade,
+    upgradeLoading,
 }: {
     result: AnalysisResult
-    onCTA: () => void
+    jobTitle: string
+    companyName: string
     onStartOver: () => void
+    onUpgrade: () => void
+    upgradeLoading: boolean
 }) {
-    const verdict = getVerdict(result)
-    const score = getGenericScore(result)
-    const compSegs = getCompSegments(result.competitiveness)
-    const co = result.company_name || ""
+    const co = result.company_name || companyName || ""
     const cc = result.company_context
     const mr = result.market_reality
-    const checkItems = result.target_candidate_profile ?? []
-    const findingColors = [C.orange, C.blue, C.purple, C.green, C.teal, C.red]
 
-    const vColor =
-        verdict === "APPLY" ? C.green : verdict === "PASS" ? C.red : C.orange
+    const compColor =
+        result.competitiveness === "Low"
+            ? "#2DD4BF"
+            : result.competitiveness === "Medium"
+              ? "#FEB06A"
+              : "#FF4F6D"
 
-    const skillPalettes = [
-        {
-            color: C.blue,
-            bg: "rgba(81,173,229,0.08)",
-            border: "rgba(81,173,229,0.18)",
-        },
-        {
-            color: C.purple,
-            bg: "rgba(192,132,252,0.08)",
-            border: "rgba(192,132,252,0.18)",
-        },
-        {
-            color: C.teal,
-            bg: "rgba(45,212,191,0.06)",
-            border: "rgba(45,212,191,0.18)",
-        },
-        {
-            color: C.orange,
-            bg: "rgba(254,176,106,0.06)",
-            border: "rgba(254,176,106,0.18)",
-        },
-    ]
-
-    const Divider = () => (
-        <div
-            style={{
-                height: 1,
-                background: "rgba(255,255,255,0.06)",
-                margin: "0 32px",
-            }}
-        />
-    )
-    const secEyebrow = (text: string, color: string): React.CSSProperties => ({
-        fontSize: 9,
-        letterSpacing: ".18em",
-        fontWeight: 700,
-        color,
-        marginBottom: 8,
-    })
-    const secTitle: React.CSSProperties = {
-        fontSize: 20,
-        fontWeight: 800,
-        color: C.white,
-        marginBottom: 24,
-        letterSpacing: "-.01em",
+    // ── Card header helper ──
+    function CardHeader({
+        dot,
+        label,
+        badge,
+        badgeBg,
+        badgeColor,
+    }: {
+        dot: string
+        label: string
+        badge?: string
+        badgeBg?: string
+        badgeColor?: string
+    }) {
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: 11,
+                    borderBottom: "0.5px solid #071220",
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: dot,
+                            flexShrink: 0,
+                        }}
+                    />
+                    <span
+                        style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase" as const,
+                            color: dot,
+                        }}
+                    >
+                        {label}
+                    </span>
+                </div>
+                {badge ? (
+                    <span
+                        style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: ".1em",
+                            padding: "3px 8px",
+                            borderRadius: 4,
+                            background: badgeBg,
+                            color: badgeColor,
+                        }}
+                    >
+                        {badge}
+                    </span>
+                ) : null}
+            </div>
+        )
     }
 
     return (
         <>
-            {/* ── Verdict Hero (2-column) ── */}
+            {/* ══════════════════════════════════════════
+                ZONE 1 — JOB HEADER
+            ══════════════════════════════════════════ */}
             <div
                 style={{
-                    padding: "48px 32px 0",
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1.4fr",
-                    gap: 48,
-                    alignItems: "start",
+                    background: "#040D1A",
+                    padding: "0 0 32px",
                 }}
             >
-                {/* Left: stamp + score + competition */}
-                <div>
-                    <div
-                        style={{
-                            fontSize: 96,
-                            fontWeight: 900,
-                            letterSpacing: "-.05em",
-                            lineHeight: 0.95,
-                            marginBottom: 20,
-                            color: vColor,
-                        }}
-                    >
-                        {verdict}
-                    </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "baseline",
-                            gap: 6,
-                            marginBottom: 16,
-                        }}
-                    >
-                        <div
-                            style={{
-                                fontSize: 44,
-                                fontWeight: 900,
-                                color: C.white,
-                                lineHeight: 1,
-                            }}
-                        >
-                            {score}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 16,
-                                color: "rgba(255,255,255,0.25)",
-                            }}
-                        >
-                            /100
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 10,
-                                letterSpacing: ".1em",
-                                color: "#4a6a85",
-                            }}
-                        >
-                            {" "}
-                            GENERIC FIT
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                            marginBottom: 6,
-                        }}
-                    >
-                        <div
-                            style={{
-                                fontSize: 9,
-                                letterSpacing: ".14em",
-                                color: "#4a6a85",
-                                whiteSpace: "nowrap" as const,
-                            }}
-                        >
-                            COMPETITION
-                        </div>
-                        <div style={{ display: "flex", gap: 4 }}>
-                            {[1, 2, 3, 4].map((s) => (
-                                <div
-                                    key={s}
-                                    style={{
-                                        width: 32,
-                                        height: 4,
-                                        borderRadius: 2,
-                                        background:
-                                            s <= compSegs
-                                                ? C.orange
-                                                : "rgba(255,255,255,0.07)",
-                                    }}
-                                />
-                            ))}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                color: C.orange,
-                                letterSpacing: ".08em",
-                            }}
-                        >
-                            {result.competitiveness.toUpperCase()}
-                        </div>
-                    </div>
-                    {mr?.estimated_applicants ? (
-                        <div style={{ fontSize: 10, color: "#4a6a85" }}>
-                            Est. {mr.estimated_applicants} applicants
-                        </div>
-                    ) : null}
-                </div>
+                {/* Top bar removed — logo renders in parent component topbar */}
 
-                {/* Right: role + summary */}
-                <div style={{ paddingTop: 8 }}>
+                <div style={{ padding: "28px 48px 0" }}>
+                    {/* Breadcrumb */}
                     <div
                         style={{
                             fontSize: 10,
-                            letterSpacing: ".12em",
-                            color: C.blue,
+                            letterSpacing: ".1em",
                             textTransform: "uppercase" as const,
-                            marginBottom: 14,
+                            color: "#2A4A6A",
+                            marginBottom: 10,
                         }}
                     >
-                        {result.role_level} {" \u00B7 "} {result.function}{" "}
-                        {co ? " \u00B7 " + co : ""}
+                        {result.role_level}
+                        {" · "}
+                        {result.function}
+                        {co ? " · " + co : ""}
                     </div>
+
+                    {/* Job title */}
                     <div
                         style={{
-                            fontSize: 22,
-                            fontWeight: 800,
-                            color: C.white,
-                            lineHeight: 1.3,
-                            marginBottom: 16,
-                            letterSpacing: "-.01em",
+                            fontSize: 32,
+                            fontWeight: 900,
+                            fontStyle: "italic",
+                            color: "#ffffff",
+                            letterSpacing: "-.02em",
+                            lineHeight: 1.1,
+                            marginBottom: 8,
                         }}
                     >
-                        {extractRoleTitle(result)}
-                        {co ? " \u2014 " + co : ""}
+                        {jobTitle}
                     </div>
+
+                    {/* Company line */}
+                    {co ? (
+                        <div
+                            style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "#51ADE5",
+                                marginBottom: 12,
+                            }}
+                        >
+                            {co}
+                        </div>
+                    ) : null}
+
+                    {/* Summary */}
                     <div
                         style={{
-                            fontSize: 15,
-                            lineHeight: 1.8,
-                            color: "#7a9bbf",
+                            fontSize: 13,
+                            color: "#4A6A8A",
+                            lineHeight: 1.75,
+                            maxWidth: 720,
+                            marginBottom: 20,
                         }}
                     >
                         {result.summary}
                     </div>
+
+                    {/* Stat pills */}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap" as const,
+                        }}
+                    >
+                        {/* Applicants */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>APPLICANTS</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: "#FEB06A",
+                                }}
+                            >
+                                {mr?.stats?.[0]?.value ||
+                                    mr?.estimated_applicants ||
+                                    "—"}
+                            </div>
+                        </div>
+                        {/* Competition */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>COMPETITION</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: compColor,
+                                }}
+                            >
+                                {result.competitiveness}
+                            </div>
+                        </div>
+                        {/* Hard skills */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>HARD SKILLS</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: "#51ADE5",
+                                }}
+                            >
+                                {result.core_skills.length} required
+                            </div>
+                        </div>
+                        {/* Role level */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>ROLE LEVEL</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: "#8B7FE8",
+                                }}
+                            >
+                                {result.role_level}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Divider */}
+            {/* ══════════════════════════════════════════
+                ZONE 2 — INTELLIGENCE GRID
+            ══════════════════════════════════════════ */}
             <div
                 style={{
-                    height: 1,
-                    background: "rgba(255,255,255,0.06)",
-                    margin: "36px 32px 0",
+                    background: "#040D1A",
+                    padding: "40px 48px",
+                    display: "flex",
+                    flexDirection: "column" as const,
+                    gap: 14,
                 }}
-            />
-
-            {/* ── Company Intelligence ── */}
-            {cc ? (
-                <>
-                    <div style={{ padding: "36px 32px" }}>
-                        <div style={secEyebrow("COMPANY INTELLIGENCE", C.blue)}>
-                            COMPANY INTELLIGENCE
-                        </div>
-                        <div style={secTitle}>
-                            What you need to know about {co}
-                        </div>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                gap: 1,
-                                background: "rgba(81,173,229,0.1)",
-                                borderRadius: 12,
-                                overflow: "hidden",
-                                marginBottom: 20,
-                            }}
-                        >
-                            {cc.what_they_do ? (
-                                <div style={coCell}>
-                                    <div style={coCellLbl}>
-                                        WHAT THEY ACTUALLY DO
-                                    </div>
-                                    <div style={coCellVal}>
-                                        {cc.what_they_do}
-                                    </div>
-                                </div>
-                            ) : null}
-                            {cc.company_stage ? (
-                                <div style={coCell}>
-                                    <div style={coCellLbl}>COMPANY STAGE</div>
-                                    <div style={coCellVal}>
-                                        {cc.company_stage}
-                                    </div>
-                                </div>
-                            ) : null}
-                            {cc.clients ? (
-                                <div style={coCell}>
-                                    <div style={coCellLbl}>
-                                        WHO THEIR CLIENTS ARE
-                                    </div>
-                                    <div style={coCellVal}>{cc.clients}</div>
-                                </div>
-                            ) : null}
-                            {cc.marketing_context ? (
-                                <div style={coCell}>
-                                    <div style={coCellLbl}>
-                                        MARKETING CONTEXT
-                                    </div>
-                                    <div style={coCellVal}>
-                                        {cc.marketing_context}
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
-                        {cc.application_insight ? (
+            >
+                {/* Layout: left col (Company Intel) + right col (Hard Skills + Strong Candidate) */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 14,
+                    }}
+                >
+                    {/* ── Card 1: Company Intelligence ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #7B5CF633",
+                        }}
+                    >
+                        <CardHeader
+                            dot="#7B5CF6"
+                            label="Company Intelligence"
+                            badge="CLASSIFIED"
+                            badgeBg="#7B5CF622"
+                            badgeColor="#7B5CF6"
+                        />
+                        <div style={{ padding: "14px 14px 10px" }}>
                             <div
                                 style={{
-                                    fontSize: 14,
-                                    color: "#b8cedf",
-                                    lineHeight: 1.75,
-                                    borderLeft: "2px solid " + C.blue,
-                                    padding: "16px 20px",
-                                    background: "rgba(81,173,229,0.04)",
-                                    borderRadius: "0 8px 8px 0",
+                                    fontSize: 16,
+                                    fontWeight: 900,
+                                    fontStyle: "italic",
+                                    color: "#ffffff",
+                                    marginBottom: 14,
+                                    lineHeight: 1.3,
                                 }}
                             >
-                                <strong
-                                    style={{ color: C.blue, fontWeight: 600 }}
-                                >
-                                    Why this matters for your application:
-                                </strong>{" "}
-                                {cc.application_insight}
+                                What you need to know about {co || "this company"}
                             </div>
-                        ) : null}
-                    </div>
-                    <Divider />
-                </>
-            ) : null}
 
-            {/* ── Signals + Skills ── */}
-            <div style={{ padding: "36px 32px" }}>
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 32,
-                    }}
-                >
-                    <div>
-                        <div
-                            style={secEyebrow(
-                                "SIGNALS FROM THE POSTING",
-                                C.blue
-                            )}
-                        >
-                            SIGNALS FROM THE POSTING
-                        </div>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column" as const,
-                                gap: 10,
-                                marginTop: 14,
-                            }}
-                        >
-                            {(result.seniority_signals ?? []).map((s, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        fontSize: 14,
-                                        color: "#9ab8cf",
-                                        paddingLeft: 16,
-                                        position: "relative" as const,
-                                        lineHeight: 1.6,
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            position: "absolute" as const,
-                                            left: 0,
-                                            color: C.blue,
-                                        }}
-                                    >
-                                        {"\u2014"}
-                                    </span>
-                                    {s}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <div
-                            style={secEyebrow("HARD SKILLS REQUIRED", C.purple)}
-                        >
-                            HARD SKILLS REQUIRED
-                        </div>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexWrap: "wrap" as const,
-                                gap: 6,
-                                marginTop: 14,
-                            }}
-                        >
-                            {(result.core_skills ?? []).map((s, i) => {
-                                const p = skillPalettes[i % 4]
-                                return (
-                                    <span
-                                        key={i}
-                                        style={{
-                                            fontSize: 12,
-                                            padding: "5px 10px",
-                                            borderRadius: 4,
-                                            color: p.color,
-                                            background: p.bg,
-                                            border: "1px solid " + p.border,
-                                        }}
-                                    >
-                                        {s}
-                                    </span>
-                                )
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <Divider />
-
-            {/* ── Candidate + Target Profile ── */}
-            <div style={{ padding: "36px 32px" }}>
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 32,
-                    }}
-                >
-                    <div>
-                        <div
-                            style={secEyebrow(
-                                "STRONG CANDIDATE LOOKS LIKE",
-                                C.green
-                            )}
-                        >
-                            STRONG CANDIDATE LOOKS LIKE
-                        </div>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column" as const,
-                                gap: 12,
-                                marginTop: 14,
-                            }}
-                        >
-                            {checkItems.map((item, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 12,
-                                        fontSize: 14,
-                                        color: "#9ab8cf",
-                                        lineHeight: 1.65,
-                                    }}
-                                >
+                            {cc ? (
+                                <>
                                     <div
                                         style={{
-                                            width: 14,
-                                            height: 14,
-                                            border: "1.5px solid rgba(74,222,128,0.4)",
-                                            borderRadius: 3,
-                                            flexShrink: 0,
-                                            marginTop: 2,
-                                        }}
-                                    />
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <div style={secEyebrow("TARGET PROFILE", C.teal)}>
-                            TARGET PROFILE
-                        </div>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column" as const,
-                                gap: 10,
-                                marginTop: 14,
-                            }}
-                        >
-                            {checkItems.slice(0, 3).map((item, i) => {
-                                const labels = [
-                                    "EXPERIENCE",
-                                    "BACKGROUND",
-                                    "DIFFERENTIATOR",
-                                ]
-                                return (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            padding: "14px 16px",
-                                            borderRadius: 8,
-                                            background: "rgba(74,222,128,0.04)",
-                                            border: "1px solid rgba(74,222,128,0.12)",
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 1fr",
+                                            gap: 10,
+                                            marginBottom: cc.recent_news ? 10 : 0,
                                         }}
                                     >
-                                        <div
-                                            style={{
-                                                fontSize: 9,
-                                                letterSpacing: ".12em",
-                                                color: "rgba(74,222,128,0.5)",
-                                                marginBottom: 4,
-                                            }}
-                                        >
-                                            {labels[i] || "DETAIL"}
-                                        </div>
-                                        <div
-                                            style={{
-                                                fontSize: 13,
-                                                color: "#8ade9a",
-                                                lineHeight: 1.5,
-                                            }}
-                                        >
-                                            {item}
-                                        </div>
+                                        {cc.what_they_do ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>WHAT THEY ACTUALLY DO</div>
+                                                <div style={intelItemText}>{cc.what_they_do}</div>
+                                            </div>
+                                        ) : null}
+                                        {cc.company_stage ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>COMPANY STAGE</div>
+                                                <div style={intelItemText}>{cc.company_stage}</div>
+                                            </div>
+                                        ) : null}
+                                        {cc.clients ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>WHO THEIR CLIENTS ARE</div>
+                                                <div style={intelItemText}>{cc.clients}</div>
+                                            </div>
+                                        ) : null}
+                                        {cc.marketing_context ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>MARKETING CONTEXT</div>
+                                                <div style={intelItemText}>{cc.marketing_context}</div>
+                                            </div>
+                                        ) : null}
                                     </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <Divider />
-
-            {/* ── Market Reality ── */}
-            {mr ? (
-                <>
-                    <div style={{ padding: "36px 32px" }}>
-                        <div style={secEyebrow("MARKET REALITY", C.purple)}>
-                            MARKET REALITY
-                        </div>
-                        <div style={secTitle}>
-                            What the applicant pool actually looks like
-                        </div>
-                        {mr.stats && mr.stats.length > 0 ? (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: 0,
-                                    marginBottom: 20,
-                                    border: "1px solid rgba(192,132,252,0.12)",
-                                    borderRadius: 12,
-                                    overflow: "hidden",
-                                }}
-                            >
-                                {mr.stats.map((st, i) => {
-                                    const statColors = [
-                                        C.purple,
-                                        C.orange,
-                                        C.red,
-                                    ]
-                                    return (
+                                    {cc.recent_news ? (
                                         <div
-                                            key={i}
                                             style={{
-                                                ...mStatCell,
-                                                borderLeft:
-                                                    i > 0
-                                                        ? "1px solid rgba(192,132,252,0.1)"
-                                                        : "none",
+                                                ...intelItem,
+                                                marginBottom: 10,
+                                            }}
+                                        >
+                                            <div style={intelItemLabel}>RECENT NEWS</div>
+                                            <div style={intelItemText}>{cc.recent_news}</div>
+                                        </div>
+                                    ) : null}
+                                    {cc.application_insight ? (
+                                        <div
+                                            style={{
+                                                background: "#071220",
+                                                borderLeft: "2px solid #7B5CF6",
+                                                borderRadius: "0 8px 8px 0",
+                                                padding: "9px 12px",
+                                                marginTop: 10,
                                             }}
                                         >
                                             <div
                                                 style={{
-                                                    fontSize: 32,
-                                                    fontWeight: 900,
-                                                    lineHeight: 1,
-                                                    marginBottom: 6,
-                                                    color: statColors[i % 3],
+                                                    fontSize: 9,
+                                                    fontWeight: 700,
+                                                    letterSpacing: ".1em",
+                                                    textTransform: "uppercase" as const,
+                                                    color: "#7B5CF6",
+                                                    marginBottom: 4,
                                                 }}
                                             >
-                                                {st.value}
+                                                WHY THIS MATTERS
                                             </div>
                                             <div
                                                 style={{
                                                     fontSize: 11,
-                                                    color: "#4a6a85",
-                                                    lineHeight: 1.4,
+                                                    color: "#8AAAC0",
+                                                    lineHeight: 1.6,
                                                 }}
                                             >
-                                                {st.label}
+                                                {cc.application_insight}
                                             </div>
                                         </div>
-                                    )
-                                })}
-                            </div>
-                        ) : mr.estimated_applicants ? (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: 0,
-                                    marginBottom: 20,
-                                    border: "1px solid rgba(192,132,252,0.12)",
-                                    borderRadius: 12,
-                                    overflow: "hidden",
-                                }}
-                            >
-                                <div style={mStatCell}>
-                                    <div
-                                        style={{
-                                            fontSize: 32,
-                                            fontWeight: 900,
-                                            lineHeight: 1,
-                                            marginBottom: 6,
-                                            color: C.purple,
-                                        }}
-                                    >
-                                        {mr.estimated_applicants}
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: 11,
-                                            color: "#4a6a85",
-                                            lineHeight: 1.4,
-                                        }}
-                                    >
-                                        estimated applicants
-                                    </div>
-                                </div>
-                            </div>
-                        ) : null}
-                        {mr.competitive_dynamic ? (
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    color: "#b8cedf",
-                                    lineHeight: 1.75,
-                                    borderLeft: "2px solid " + C.purple,
-                                    padding: "16px 20px",
-                                    background: "rgba(192,132,252,0.03)",
-                                    borderRadius: "0 8px 8px 0",
-                                }}
-                            >
-                                <strong style={{ color: C.purple }}>
-                                    The real competitive dynamic:
-                                </strong>{" "}
-                                {mr.competitive_dynamic}
-                            </div>
-                        ) : null}
-                    </div>
-                    <Divider />
-                </>
-            ) : null}
-
-            {/* ── Classified ── */}
-            <div style={{ padding: "36px 32px 36px" }}>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "baseline",
-                        gap: 14,
-                        marginBottom: 24,
-                    }}
-                >
-                    <span
-                        style={{
-                            fontSize: 9,
-                            letterSpacing: ".18em",
-                            color: C.orange,
-                            border: "1px solid rgba(254,176,106,0.35)",
-                            padding: "4px 8px",
-                            borderRadius: 3,
-                        }}
-                    >
-                        CLASSIFIED
-                    </span>
-                    <span
-                        style={{
-                            fontSize: 24,
-                            fontWeight: 900,
-                            color: C.white,
-                            letterSpacing: "-.02em",
-                        }}
-                    >
-                        The hidden reality
-                    </span>
-                    <span
-                        style={{
-                            fontSize: 12,
-                            color: "#4a6a85",
-                            marginLeft: "auto",
-                        }}
-                    >
-                        What the JD doesn't say {"\u2014"} but every hiring
-                        manager expects.
-                    </span>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column" as const,
-                        gap: 0,
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                    }}
-                >
-                    {(result.hidden_requirements ?? []).map((item, i) => {
-                        const fc = findingColors[i % 6]
-                        return (
-                            <div
-                                key={i}
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "auto 1fr",
-                                    gap: 0,
-                                    borderBottom:
-                                        i <
-                                        result.hidden_requirements.length - 1
-                                            ? "1px solid rgba(255,255,255,0.05)"
-                                            : "none",
-                                }}
-                            >
+                                    ) : null}
+                                </>
+                            ) : (
                                 <div
                                     style={{
-                                        width: 80,
-                                        padding: "20px 0 20px 20px",
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        alignItems: "flex-start",
-                                        gap: 4,
-                                        borderRight:
-                                            "1px solid rgba(255,255,255,0.05)",
+                                        fontSize: 12,
+                                        color: "#2A4A6A",
+                                        fontStyle: "italic",
+                                    }}
+                                >
+                                    No company intelligence available for this role.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right column: Hard Skills + Strong Candidate */}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column" as const,
+                            gap: 14,
+                        }}
+                    >
+                        {/* ── Card 2: Hard Skills ── */}
+                        <div
+                            style={{
+                                background: "#0A1828",
+                                borderRadius: 14,
+                                border: "0.5px solid #FEB06A33",
+                            }}
+                        >
+                            <CardHeader dot="#FEB06A" label="Hard Skills Required" />
+                            <div
+                                style={{
+                                    padding: "12px 14px 14px",
+                                    display: "flex",
+                                    flexWrap: "wrap" as const,
+                                    gap: 6,
+                                }}
+                            >
+                                {(result.core_skills ?? []).map((s, i) => (
+                                    <span
+                                        key={i}
+                                        style={{
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            padding: "4px 9px",
+                                            borderRadius: 6,
+                                            background: "#51ADE522",
+                                            color: "#51ADE5",
+                                            border: "0.5px solid #51ADE544",
+                                        }}
+                                    >
+                                        {s}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ── Card 3: Strong Candidate ── */}
+                        <div
+                            style={{
+                                background: "#0A1828",
+                                borderRadius: 14,
+                                border: "0.5px solid #2DD4BF33",
+                                flex: 1,
+                            }}
+                        >
+                            <CardHeader dot="#2DD4BF" label="Strong Candidate Looks Like" />
+                            <div
+                                style={{
+                                    padding: "12px 14px 14px",
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                }}
+                            >
+                                {(result.target_candidate_profile ?? []).map((item, i) => (
+                                    <div
+                                        key={i}
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: 6,
+                                        }}
+                                    >
+                                        <svg
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 12 12"
+                                            fill="none"
+                                            style={{ flexShrink: 0, marginTop: 1 }}
+                                        >
+                                            <path
+                                                d="M2 6l2.5 2.5L10 4"
+                                                stroke="#2DD4BF"
+                                                strokeWidth="1.4"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                        <span
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#6A8AAA",
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
+                                            {item}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Card 4: Hidden Reality (full width) ── */}
+                <div
+                    style={{
+                        background: "#0A1828",
+                        borderRadius: 14,
+                        border: "0.5px solid #7B5CF633",
+                    }}
+                >
+                    <CardHeader
+                        dot="#7B5CF6"
+                        label="Hidden Reality"
+                        badge="WHAT THE JD DOESN’T SAY"
+                        badgeBg="#7B5CF622"
+                        badgeColor="#7B5CF6"
+                    />
+                    <div style={{ padding: "14px 14px 6px" }}>
+                        <div
+                            style={{
+                                fontSize: 15,
+                                fontWeight: 900,
+                                fontStyle: "italic",
+                                color: "#ffffff",
+                                marginBottom: 14,
+                                lineHeight: 1.3,
+                            }}
+                        >
+                            What every hiring manager expects{" "}
+                            {"—"} but no one writes down
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column" as const,
+                            }}
+                        >
+                            {(result.hidden_requirements ?? []).map((item, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "26px 1fr",
+                                        gap: 10,
+                                        padding: "9px 0",
+                                        borderBottom:
+                                            i < result.hidden_requirements.length - 1
+                                                ? "0.5px solid #071220"
+                                                : "none",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            fontSize: 9,
-                                            letterSpacing: ".14em",
-                                            color: fc,
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            fontStyle: "italic",
+                                            color: "#7B5CF6",
+                                            lineHeight: 1.6,
                                         }}
                                     >
                                         {String(i + 1).padStart(2, "0")}
                                     </div>
                                     <div
                                         style={{
-                                            width: 2,
-                                            flex: 1,
-                                            minHeight: 20,
-                                            borderRadius: 1,
-                                            background: fc,
+                                            fontSize: 12,
+                                            color: "#7A99BA",
+                                            lineHeight: 1.6,
                                         }}
-                                    />
+                                    >
+                                        {item}
+                                    </div>
                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Card 5: Risk Flags (full width) ── */}
+                <div
+                    style={{
+                        background: "#0A1828",
+                        borderRadius: 14,
+                        border: "0.5px solid #FF4F6D33",
+                    }}
+                >
+                    <CardHeader
+                        dot="#FF4F6D"
+                        label="Risk Flags"
+                        badge="READ BEFORE YOU APPLY"
+                        badgeBg="#FF4F6D22"
+                        badgeColor="#FF4F6D"
+                    />
+                    <div
+                        style={{
+                            padding: "12px 14px 14px",
+                            display: "flex",
+                            flexDirection: "column" as const,
+                            gap: 8,
+                        }}
+                    >
+                        {(result.risk_flags ?? []).map((flag, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "9px 12px",
+                                    borderLeft: "2px solid #FF4F6D",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 9,
+                                }}
+                            >
+                                <svg
+                                    width="13"
+                                    height="13"
+                                    viewBox="0 0 14 14"
+                                    fill="none"
+                                    style={{ flexShrink: 0, marginTop: 1 }}
+                                >
+                                    <path
+                                        d="M7 1L13.5 13H.5L7 1Z"
+                                        stroke="#FF4F6D"
+                                        strokeWidth="1.2"
+                                    />
+                                    <line
+                                        x1="7"
+                                        y1="5"
+                                        x2="7"
+                                        y2="9"
+                                        stroke="#FF4F6D"
+                                        strokeWidth="1.2"
+                                        strokeLinecap="round"
+                                    />
+                                    <circle cx="7" cy="11" r=".6" fill="#FF4F6D" />
+                                </svg>
                                 <div
                                     style={{
-                                        padding: "20px 24px",
-                                        fontSize: 14,
-                                        color: "#c8daea",
-                                        lineHeight: 1.72,
+                                        fontSize: 12,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.6,
                                     }}
                                 >
-                                    {item}
+                                    {flag}
                                 </div>
                             </div>
-                        )
-                    })}
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* ── Risk Flags ── */}
-            <div style={{ padding: "0 32px 36px" }}>
-                <div style={secEyebrow("RISK FLAGS", C.red)}>RISK FLAGS</div>
+            {/* ══════════════════════════════════════════
+                ZONE D — DASHBOARD SHOWCASE
+            ══════════════════════════════════════════ */}
+            <div
+                style={{
+                    background:
+                        "linear-gradient(180deg, #040D1A 0%, #071220 100%)",
+                    padding: "40px 48px",
+                }}
+            >
+                {/* Eyebrow */}
                 <div
                     style={{
                         display: "flex",
-                        flexDirection: "column" as const,
-                        gap: 0,
-                        borderLeft: "2px solid rgba(248,113,113,0.3)",
-                        marginTop: 14,
+                        alignItems: "center",
+                        gap: 7,
+                        marginBottom: 12,
                     }}
                 >
-                    {(result.risk_flags ?? []).map((flag, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 14,
-                                padding: "14px 20px",
-                                borderBottom:
-                                    i < result.risk_flags.length - 1
-                                        ? "1px solid rgba(248,113,113,0.07)"
-                                        : "none",
-                            }}
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                                style={{ flexShrink: 0, marginTop: 2 }}
-                            >
-                                <path
-                                    d="M7 1L13.5 13H.5L7 1Z"
-                                    stroke={C.red}
-                                    strokeWidth="1.2"
-                                />
-                                <line
-                                    x1="7"
-                                    y1="5"
-                                    x2="7"
-                                    y2="9"
-                                    stroke={C.red}
-                                    strokeWidth="1.2"
-                                    strokeLinecap="round"
-                                />
-                                <circle cx="7" cy="11" r=".6" fill={C.red} />
-                            </svg>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    color: "#b8cedf",
-                                    lineHeight: 1.65,
-                                }}
-                            >
-                                {flag}
-                            </div>
-                        </div>
-                    ))}
+                    <div
+                        style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "#2DD4BF",
+                            animation: "pulse 2s ease-in-out infinite",
+                        }}
+                    />
+                    <span
+                        style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase" as const,
+                            color: "#2DD4BF",
+                        }}
+                    >
+                        YOUR COMMAND CENTER
+                    </span>
                 </div>
-            </div>
-
-            {/* ── CTA Section ── */}
-            <div style={{ padding: "0 32px 32px" }}>
-                {/* Divider */}
-                <div
-                    style={{
-                        height: 1,
-                        background: "rgba(255,255,255,0.06)",
-                        marginBottom: 36,
-                    }}
-                />
 
                 {/* Headline */}
                 <div
                     style={{
-                        fontSize: 10,
-                        letterSpacing: ".16em",
-                        fontWeight: 700,
-                        color: C.orange,
-                        textTransform: "uppercase" as const,
-                        marginBottom: 12,
-                    }}
-                >
-                    Full Signal Access
-                </div>
-                <div
-                    style={{
-                        fontSize: 30,
+                        fontSize: 28,
                         fontWeight: 900,
+                        fontStyle: "italic",
+                        color: "#ffffff",
                         letterSpacing: "-.02em",
                         lineHeight: 1.15,
                         marginBottom: 10,
                     }}
                 >
-                    <span
-                        style={{
-                            background:
-                                "linear-gradient(90deg, #FEB06A 0%, #f97316 30%, #e85d9a 60%, #51ADE5 100%)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                        }}
-                    >
-                        See How Competitive YOU Are.
-                    </span>
+                    Every application. Every score. Every move{" "}
+                    {"—"} in one place.
                 </div>
                 <div
                     style={{
-                        fontSize: 14,
-                        color: C.muted,
-                        marginBottom: 26,
-                        lineHeight: 1.7,
-                        maxWidth: 560,
+                        fontSize: 13,
+                        color: "#2A4A6A",
+                        maxWidth: 580,
+                        marginBottom: 28,
+                        lineHeight: 1.6,
                     }}
                 >
-                    The analysis above is based on the job and company. Full
-                    SIGNAL reads your specific background and tells you exactly
-                    where you stand against the real competition {"\u2014"} then
-                    gives you everything you need to win.
+                    Full SIGNAL access puts every role you analyze, score, and
+                    track into a single dashboard. See your interview rate, spot
+                    patterns, and know which applications are actually worth your
+                    time.
                 </div>
 
-                {/* Feature list */}
+                {/* Dashboard mockup frame */}
+                <div
+                    style={{
+                        background: "#0D1829",
+                        border: "1px solid #1E3A5F",
+                        borderRadius: 14,
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* Frame top bar */}
+                    <div
+                        style={{
+                            background: "#071220",
+                            borderBottom: "0.5px solid #1E3A5F",
+                            padding: "8px 16px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <span style={{ fontSize: 11, color: "#218C8C" }}>
+                            {"←"} Back to SIGNAL
+                        </span>
+                        <span style={{ fontSize: 11, color: "#2A4A6A" }}>
+                            {"You're in your SIGNAL Dashboard"}
+                        </span>
+                    </div>
+
+                    {/* Frame body: sidebar + main */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "140px 1fr",
+                        }}
+                    >
+                        {/* Sidebar */}
+                        <div
+                            style={{
+                                background: "#071220",
+                                borderRight: "0.5px solid #1E3A5F",
+                                padding: "16px 12px",
+                                display: "flex",
+                                flexDirection: "column" as const,
+                                gap: 8,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontSize: 12,
+                                    fontWeight: 900,
+                                    fontStyle: "italic",
+                                    color: "#ffffff",
+                                    marginBottom: 12,
+                                    letterSpacing: "-.01em",
+                                }}
+                            >
+                                SIGNAL
+                            </div>
+                            {["Overview", "Job Tracker", "Back to SIGNAL"].map(
+                                (item) => (
+                                    <div
+                                        key={item}
+                                        style={{
+                                            fontSize: 11,
+                                            color:
+                                                item === "Job Tracker"
+                                                    ? "#ffffff"
+                                                    : item === "Back to SIGNAL"
+                                                      ? "#2DD4BF"
+                                                      : "#2A4A6A",
+                                            padding: "5px 8px",
+                                            borderRadius: 6,
+                                            background:
+                                                item === "Job Tracker"
+                                                    ? "#1E3A5F"
+                                                    : "transparent",
+                                        }}
+                                    >
+                                        {item}
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        {/* Main content */}
+                        <div style={{ padding: "16px 20px" }}>
+                            <div
+                                style={{
+                                    fontSize: 9,
+                                    letterSpacing: ".14em",
+                                    color: "#2A4A6A",
+                                    marginBottom: 4,
+                                }}
+                            >
+                                JOB TRACKER
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 18,
+                                    fontWeight: 900,
+                                    color: "#ffffff",
+                                    marginBottom: 14,
+                                    letterSpacing: "-.01em",
+                                }}
+                            >
+                                Applications &amp; Interviews
+                            </div>
+
+                            {/* 7 stat boxes */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 6,
+                                    flexWrap: "wrap" as const,
+                                    marginBottom: 16,
+                                }}
+                            >
+                                {[
+                                    { val: "24", lbl: "TOTAL", col: "#ffffff" },
+                                    { val: "23", lbl: "ANALYZED", col: "#51ADE5" },
+                                    { val: "2", lbl: "APPLIED", col: "#2DD4BF" },
+                                    { val: "3", lbl: "INTERVIEWING", col: "#8B7FE8" },
+                                    { val: "1", lbl: "REJECTED", col: "#FF4F6D" },
+                                    { val: "0", lbl: "OFFERS", col: "#4ADE80" },
+                                    { val: "50%", lbl: "INT. RATE", col: "#FEB06A" },
+                                ].map((s) => (
+                                    <div
+                                        key={s.lbl}
+                                        style={{
+                                            background: "#0A1828",
+                                            border: "0.5px solid #1E3A5F",
+                                            borderRadius: 8,
+                                            padding: "7px 10px",
+                                            minWidth: 56,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 16,
+                                                fontWeight: 900,
+                                                color: s.col,
+                                                lineHeight: 1,
+                                                marginBottom: 3,
+                                            }}
+                                        >
+                                            {s.val}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 8,
+                                                letterSpacing: ".1em",
+                                                color: "#2A4A6A",
+                                            }}
+                                        >
+                                            {s.lbl}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Tabs */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 0,
+                                    borderBottom: "0.5px solid #1E3A5F",
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {["Applications", "Interviews", "Insights"].map(
+                                    (tab) => (
+                                        <div
+                                            key={tab}
+                                            style={{
+                                                fontSize: 11,
+                                                fontWeight: tab === "Insights" ? 700 : 500,
+                                                color: tab === "Insights" ? "#FEB06A" : "#2A4A6A",
+                                                padding: "6px 14px",
+                                                borderBottom:
+                                                    tab === "Insights"
+                                                        ? "2px solid #FEB06A"
+                                                        : "none",
+                                                cursor: "default",
+                                            }}
+                                        >
+                                            {tab}
+                                        </div>
+                                    )
+                                )}
+                            </div>
+
+                            {/* 4 insight cards */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {[
+                                    { val: "50%", lbl: "INTERVIEW RATE", col: "#8B7FE8" },
+                                    { val: "80", lbl: "AVG SIGNAL SCORE", col: "#2DD4BF" },
+                                    { val: "13", lbl: "HIGH SCORE UNAPPLIED", col: "#FEB06A" },
+                                    { val: "Marketing", lbl: "TOP CATEGORY", col: "#51ADE5" },
+                                ].map((ic) => (
+                                    <div
+                                        key={ic.lbl}
+                                        style={{
+                                            background: "#0A1828",
+                                            border: "0.5px solid #1E3A5F",
+                                            borderRadius: 8,
+                                            padding: "10px 12px",
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 18,
+                                                fontWeight: 900,
+                                                color: ic.col,
+                                                lineHeight: 1,
+                                                marginBottom: 5,
+                                            }}
+                                        >
+                                            {ic.val}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 8,
+                                                letterSpacing: ".1em",
+                                                color: "#2A4A6A",
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            {ic.lbl}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Charts row: donut + status bars */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {/* Donut chart mock */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 14,
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            position: "relative" as const,
+                                            width: 56,
+                                            height: 56,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <svg width="56" height="56" viewBox="0 0 56 56">
+                                            <circle
+                                                cx="28"
+                                                cy="28"
+                                                r="22"
+                                                fill="none"
+                                                stroke="#1E3A5F"
+                                                strokeWidth="6"
+                                            />
+                                            <circle
+                                                cx="28"
+                                                cy="28"
+                                                r="22"
+                                                fill="none"
+                                                stroke="url(#donutGrad)"
+                                                strokeWidth="6"
+                                                strokeDasharray="69 69"
+                                                strokeDashoffset="17"
+                                                strokeLinecap="round"
+                                                transform="rotate(-90 28 28)"
+                                            />
+                                            <defs>
+                                                <linearGradient
+                                                    id="donutGrad"
+                                                    x1="0"
+                                                    y1="0"
+                                                    x2="1"
+                                                    y2="0"
+                                                >
+                                                    <stop offset="0%" stopColor="#7B5CF6" />
+                                                    <stop offset="100%" stopColor="#8B7FE8" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                        <div
+                                            style={{
+                                                position: "absolute" as const,
+                                                inset: 0,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: 12,
+                                                fontWeight: 900,
+                                                color: "#8B7FE8",
+                                            }}
+                                        >
+                                            50%
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div
+                                            style={{
+                                                fontSize: 9,
+                                                color: "#2A4A6A",
+                                                letterSpacing: ".1em",
+                                                marginBottom: 3,
+                                            }}
+                                        >
+                                            INTERVIEW RATE
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#6A8AAA",
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            3 of 6 applications reached interview
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Status bars */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            color: "#2A4A6A",
+                                            letterSpacing: ".1em",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        STATUS BREAKDOWN
+                                    </div>
+                                    {[
+                                        { lbl: "Applied", pct: 33, col: "#2DD4BF" },
+                                        { lbl: "Interviewing", pct: 50, col: "#8B7FE8" },
+                                        { lbl: "Saved", pct: 17, col: "#51ADE5" },
+                                    ].map((b) => (
+                                        <div key={b.lbl} style={{ marginBottom: 6 }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    fontSize: 9,
+                                                    color: "#4A6A8A",
+                                                    marginBottom: 3,
+                                                }}
+                                            >
+                                                <span>{b.lbl}</span>
+                                                <span>{b.pct}%</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    height: 4,
+                                                    borderRadius: 2,
+                                                    background: "#1E3A5F",
+                                                    overflow: "hidden",
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        height: "100%",
+                                                        width: b.pct + "%",
+                                                        borderRadius: 2,
+                                                        background: b.col,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Score distribution + SIGNAL decisions row */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {/* Score distribution */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            color: "#2A4A6A",
+                                            letterSpacing: ".1em",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        SCORE DISTRIBUTION
+                                    </div>
+                                    {[
+                                        { range: "90–100", n: 2, col: "#4ADE80" },
+                                        { range: "70–89", n: 8, col: "#2DD4BF" },
+                                        { range: "50–69", n: 9, col: "#FEB06A" },
+                                        { range: "Below 50", n: 4, col: "#FF4F6D" },
+                                    ].map((b) => (
+                                        <div key={b.range} style={{ marginBottom: 5 }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    fontSize: 9,
+                                                    color: "#4A6A8A",
+                                                    marginBottom: 3,
+                                                }}
+                                            >
+                                                <span>{b.range}</span>
+                                                <span>{b.n}</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    height: 4,
+                                                    borderRadius: 2,
+                                                    background: "#1E3A5F",
+                                                    overflow: "hidden",
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        height: "100%",
+                                                        width: (b.n / 23) * 100 + "%",
+                                                        borderRadius: 2,
+                                                        background: b.col,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* SIGNAL decisions */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            color: "#2A4A6A",
+                                            letterSpacing: ".1em",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        SIGNAL DECISIONS
+                                    </div>
+                                    {[
+                                        { lbl: "Priority Apply", n: 5, col: "#4ADE80" },
+                                        { lbl: "Apply", n: 7, col: "#2DD4BF" },
+                                        { lbl: "Review", n: 8, col: "#FEB06A" },
+                                        { lbl: "Pass", n: 3, col: "#FF4F6D" },
+                                    ].map((d) => (
+                                        <div
+                                            key={d.lbl}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                marginBottom: 6,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: 5,
+                                                        height: 5,
+                                                        borderRadius: "50%",
+                                                        background: d.col,
+                                                        flexShrink: 0,
+                                                    }}
+                                                />
+                                                <span
+                                                    style={{
+                                                        fontSize: 10,
+                                                        color: "#6A8AAA",
+                                                    }}
+                                                >
+                                                    {d.lbl}
+                                                </span>
+                                            </div>
+                                            <span
+                                                style={{
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color: d.col,
+                                                }}
+                                            >
+                                                {d.n}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 4 feature callout cards */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                }}
+                            >
+                                {[
+                                    {
+                                        title: "Role-specific fit scores",
+                                        desc: "Every analyzed role gets a score vs your profile",
+                                        col: "#7B5CF6",
+                                    },
+                                    {
+                                        title: "Cover letter per role",
+                                        desc: "Written from your background + hidden requirements",
+                                        col: "#FEB06A",
+                                    },
+                                    {
+                                        title: "Networking contacts",
+                                        desc: "Outreach strategy + copy-paste messages",
+                                        col: "#2DD4BF",
+                                    },
+                                    {
+                                        title: "Resume positioning",
+                                        desc: "Bullets rewritten to match what they filter on",
+                                        col: "#51ADE5",
+                                    },
+                                ].map((fc) => (
+                                    <div
+                                        key={fc.title}
+                                        style={{
+                                            background: "#071220",
+                                            border: "0.5px solid #1E3A5F",
+                                            borderRadius: 8,
+                                            padding: "10px 12px",
+                                            borderLeft: "2px solid " + fc.col,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                color: "#ffffff",
+                                                marginBottom: 3,
+                                            }}
+                                        >
+                                            {fc.title}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 10,
+                                                color: "#4A6A8A",
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            {fc.desc}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ══════════════════════════════════════════
+                ZONE 3 — LOCKED PREVIEW + UPGRADE
+            ══════════════════════════════════════════ */}
+            <div
+                style={{
+                    background:
+                        "linear-gradient(180deg, #040D1A 0%, #071220 100%)",
+                    padding: "40px 48px 56px",
+                }}
+            >
+                {/* Eyebrow */}
                 <div
                     style={{
                         display: "flex",
-                        flexDirection: "column" as const,
-                        gap: 0,
-                        marginBottom: 28,
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                    }}
-                >
-                    <UpgradeFeature
-                        iconBg="rgba(254,176,106,0.12)"
-                        iconBorder="rgba(254,176,106,0.2)"
-                        icon={
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <path
-                                    d="M8 2l1.8 3.6L14 6.5l-3 2.9.7 4.1L8 11.4l-3.7 2.1.7-4.1L2 6.5l4.2-.9L8 2z"
-                                    stroke="#FEB06A"
-                                    strokeWidth="1.2"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        }
-                        title="Personal Fit Score"
-                        tag="Your edge"
-                        tagColor="#FEB06A"
-                        tagBg="rgba(254,176,106,0.1)"
-                        tagBorder="rgba(254,176,106,0.2)"
-                        desc="Find out exactly how your background stacks up against the real applicant pool. Know before you apply whether you're competitive or wasting your time."
-                        last={false}
-                    />
-                    <UpgradeFeature
-                        iconBg="rgba(81,173,229,0.1)"
-                        iconBorder="rgba(81,173,229,0.18)"
-                        icon={
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <rect
-                                    x="2"
-                                    y="3"
-                                    width="12"
-                                    height="10"
-                                    rx="2"
-                                    stroke="#51ADE5"
-                                    strokeWidth="1.2"
-                                />
-                                <path
-                                    d="M5 7h4M5 9.5h6"
-                                    stroke="#51ADE5"
-                                    strokeWidth="1.2"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                        }
-                        title="Resume Positioning"
-                        tag="Stand out"
-                        tagColor="#51ADE5"
-                        tagBg="rgba(81,173,229,0.08)"
-                        tagBorder="rgba(81,173,229,0.18)"
-                        desc="Your resume bullets rewritten to match exactly what this company filters on \u2014 including the hidden requirements most candidates never address."
-                        last={false}
-                    />
-                    <UpgradeFeature
-                        iconBg="rgba(74,222,128,0.08)"
-                        iconBorder="rgba(74,222,128,0.16)"
-                        icon={
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <path
-                                    d="M3 8l3.5 3.5L13 5"
-                                    stroke="#4ADE80"
-                                    strokeWidth="1.4"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        }
-                        title="Interview Intelligence"
-                        desc="Learn exactly how to represent yourself for this specific role \u2014 what to emphasize, what gaps to address, and how to speak the company's language."
-                        last={false}
-                    />
-                    <UpgradeFeature
-                        iconBg="rgba(192,132,252,0.1)"
-                        iconBorder="rgba(192,132,252,0.18)"
-                        icon={
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <circle
-                                    cx="8"
-                                    cy="8"
-                                    r="6"
-                                    stroke="#c084fc"
-                                    strokeWidth="1.2"
-                                />
-                                <path
-                                    d="M8 5v3l2 2"
-                                    stroke="#c084fc"
-                                    strokeWidth="1.2"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                        }
-                        title="Cover Letter + Networking Plan"
-                        desc="A cover letter built from your background and the hidden requirements above, plus a post-apply outreach strategy with copy-paste messages."
-                        last={false}
-                    />
-                    <UpgradeFeature
-                        iconBg="rgba(45,212,191,0.08)"
-                        iconBorder="rgba(45,212,191,0.16)"
-                        icon={
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <rect
-                                    x="2"
-                                    y="2"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                    stroke="#2dd4bf"
-                                    strokeWidth="1.2"
-                                />
-                                <rect
-                                    x="9"
-                                    y="2"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                    stroke="#2dd4bf"
-                                    strokeWidth="1.2"
-                                />
-                                <rect
-                                    x="2"
-                                    y="9"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                    stroke="#2dd4bf"
-                                    strokeWidth="1.2"
-                                />
-                                <rect
-                                    x="9"
-                                    y="9"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                    stroke="#2dd4bf"
-                                    strokeWidth="1.2"
-                                />
-                            </svg>
-                        }
-                        title="Application Tracker"
-                        tag="All in one place"
-                        tagColor="#4ADE80"
-                        tagBg="rgba(74,222,128,0.07)"
-                        tagBorder="rgba(74,222,128,0.16)"
-                        desc="Every application tracked in one dashboard \u2014 status, your fit score, interview rate, and what's working."
-                        last={true}
-                    />
-                </div>
-
-                {/* CTA card */}
-                <div
-                    style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(254,176,106,0.18)",
-                        borderRadius: 12,
-                        overflow: "hidden",
+                        alignItems: "center",
+                        gap: 7,
+                        marginBottom: 12,
                     }}
                 >
                     <div
                         style={{
-                            padding: "22px 24px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: 24,
-                            borderBottom: "1px solid rgba(255,255,255,0.06)",
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "#FEB06A",
+                            animation: "pulse 2s ease-in-out infinite",
+                        }}
+                    />
+                    <span
+                        style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase" as const,
+                            color: "#FEB06A",
                         }}
                     >
-                        <div>
+                        FULL SIGNAL ACCESS
+                    </span>
+                </div>
+
+                {/* Headline */}
+                <div
+                    style={{
+                        fontSize: 30,
+                        fontWeight: 900,
+                        fontStyle: "italic",
+                        color: "#ffffff",
+                        letterSpacing: "-.02em",
+                        lineHeight: 1.15,
+                        marginBottom: 10,
+                    }}
+                >
+                    See how competitive{" "}
+                    <span style={{ color: "#FEB06A" }}>YOU</span> actually are.
+                </div>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: "#4A6A8A",
+                        maxWidth: 600,
+                        marginBottom: 28,
+                        lineHeight: 1.65,
+                    }}
+                >
+                    The analysis above is based on the job and company. Full
+                    SIGNAL reads your specific background and tells you exactly
+                    where you stand against the real competition{" "}
+                    {"—"} then gives you everything you need to win.
+                </div>
+
+                {/* 4 locked preview cards (2x2) */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 11,
+                        marginBottom: 28,
+                    }}
+                >
+                    {/* ── Card A: Fit Score ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #FEB06A33",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#FEB06A"
+                            label="Fit Score"
+                            badge="LOCKED"
+                            badgeBg="#FEB06A22"
+                            badgeColor="#FEB06A"
+                        />
+                        <div style={{ padding: "14px 14px 0" }}>
+                            {/* Blurred score */}
                             <div
                                 style={{
                                     display: "flex",
                                     alignItems: "baseline",
                                     gap: 6,
-                                    marginBottom: 5,
+                                    marginBottom: 10,
                                 }}
                             >
                                 <div
                                     style={{
-                                        fontSize: 32,
+                                        fontSize: 48,
                                         fontWeight: 900,
-                                        color: C.orange,
+                                        fontStyle: "italic",
+                                        color: "#FEB06A",
+                                        filter: "blur(7px)",
                                         lineHeight: 1,
+                                        userSelect: "none" as const,
                                     }}
                                 >
-                                    $99
+                                    74
                                 </div>
                                 <div
                                     style={{
-                                        fontSize: 13,
-                                        color: "rgba(254,176,106,0.55)",
-                                        fontWeight: 500,
+                                        fontSize: 14,
+                                        color: "#2A4A6A",
+                                        filter: "blur(5px)",
                                     }}
                                 >
-                                    / 3 months {"\u00B7"} unlimited roles
+                                    /100
                                 </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: "#FEB06A",
+                                        filter: "blur(4px)",
+                                        letterSpacing: ".06em",
+                                    }}
+                                >
+                                    STRONG MATCH
+                                </div>
+                            </div>
+                            {/* Score bar */}
+                            <div
+                                style={{
+                                    height: 6,
+                                    borderRadius: 3,
+                                    background: "#1E3A5F",
+                                    marginBottom: 12,
+                                    overflow: "hidden",
+                                    filter: "blur(2px)",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        height: "100%",
+                                        width: "74%",
+                                        borderRadius: 3,
+                                        background:
+                                            "linear-gradient(90deg, #FEB06A, #FFD085)",
+                                    }}
+                                />
+                            </div>
+                            {/* Recruiter note box */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderLeft: "2px solid #FEB06A",
+                                    borderRadius: "0 8px 8px 0",
+                                    padding: "8px 10px",
+                                    marginBottom: 10,
+                                    filter: "blur(3px)",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 8,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#FEB06A",
+                                        marginBottom: 3,
+                                    }}
+                                >
+                                    {"RECRUITER'S PRIVATE READ"}
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#6A8AAA",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    Strong background for this level. Marketing
+                                    ops experience directly maps to the role
+                                    requirements.
+                                </div>
+                            </div>
+                            {/* Pass rows */}
+                            {[
+                                "4+ years marketing experience",
+                                "B2B SaaS background",
+                            ].map((row) => (
+                                <div
+                                    key={row}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 7,
+                                        marginBottom: 7,
+                                    }}
+                                >
+                                    <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M2 6l2.5 2.5L10 4"
+                                            stroke="#2DD4BF"
+                                            strokeWidth="1.4"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                    <span
+                                        style={{
+                                            fontSize: 11,
+                                            color: "#6A8AAA",
+                                        }}
+                                    >
+                                        {row}
+                                    </span>
+                                </div>
+                            ))}
+                            {/* Blurred fail rows */}
+                            {[
+                                "Martech stack fluency",
+                                "Enterprise sales cycle exposure",
+                            ].map((row) => (
+                                <div
+                                    key={row}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 7,
+                                        marginBottom: 7,
+                                        filter: "blur(4px)",
+                                        userSelect: "none" as const,
+                                    }}
+                                >
+                                    <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M3 3l6 6M9 3l-6 6"
+                                            stroke="#FF4F6D"
+                                            strokeWidth="1.4"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                    <span
+                                        style={{
+                                            fontSize: 11,
+                                            color: "#6A8AAA",
+                                        }}
+                                    >
+                                        {row}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 60,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+
+                    {/* ── Card B: Cover Letter ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #7B5CF633",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#7B5CF6"
+                            label="Cover Letter"
+                            badge="WRITTEN FROM YOUR ACTUAL BACKGROUND"
+                            badgeBg="#7B5CF622"
+                            badgeColor="#7B5CF6"
+                        />
+                        <div style={{ padding: "14px 14px 40px" }}>
+                            <div
+                                style={{
+                                    fontSize: 11,
+                                    color: "#8AAAC0",
+                                    lineHeight: 1.65,
+                                    marginBottom: 10,
+                                }}
+                            >
+                                {"I'm applying for this role because my background"}
+                                {" in marketing operations and B2B campaign execution"}
+                                {" maps directly to what you're building. Over the"}
+                                {" last four years I've owned end-to-end demand gen"}
+                                {" programs that have driven pipeline at companies at"}
+                                {" similar growth stages."}
                             </div>
                             <div
                                 style={{
-                                    fontSize: 12,
-                                    color: C.muted,
-                                    lineHeight: 1.5,
+                                    fontSize: 11,
+                                    color: "#6A8AAA",
+                                    lineHeight: 1.65,
+                                    marginBottom: 8,
+                                    filter: "blur(2px)",
+                                    userSelect: "none" as const,
                                 }}
                             >
-                                Full access to every tool {"\u2014"} score,
-                                position, cover letter, network, and track.
+                                What sets me apart is my ability to translate
+                                product positioning into campaigns that actually
+                                convert {"—"} not just awareness plays...
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 11,
+                                    color: "#4A6A8A",
+                                    lineHeight: 1.65,
+                                    filter: "blur(5px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                Lorem ipsum dolor sit amet consectetur
+                                adipiscing elit sed do eiusmod tempor incididunt
+                                ut labore et dolore magna aliqua ut enim ad
+                                minim veniam quis nostrud exercitation ullamco.
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={onCTA}
-                            className="signal-cta-btn"
+                        {/* Fade overlay */}
+                        <div
                             style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 80,
                                 background:
-                                    "linear-gradient(90deg, #FEB06A, #51ADE5)",
-                                color: "#0b1929",
-                                fontSize: 17,
-                                fontWeight: 900,
-                                padding: "18px 40px",
-                                borderRadius: 10,
-                                cursor: "pointer",
-                                whiteSpace: "nowrap" as const,
-                                border: "none",
-                                letterSpacing: ".02em",
-                                flexShrink: 0,
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
                             }}
-                        >
-                            {"See How I Compare \u2192"}
-                        </button>
+                        />
                     </div>
+
+                    {/* ── Card C: Networking Campaign ── */}
                     <div
                         style={{
-                            padding: "11px 24px",
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #2DD4BF33",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#2DD4BF"
+                            label="Networking Campaign"
+                            badge="LOCKED"
+                            badgeBg="#2DD4BF22"
+                            badgeColor="#2DD4BF"
+                        />
+                        <div style={{ padding: "14px 14px 40px" }}>
+                            {/* Contact 1: visible */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    marginBottom: 8,
+                                    borderLeft: "2px solid #2DD4BF",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: "#ffffff",
+                                        marginBottom: 2,
+                                    }}
+                                >
+                                    Head of Marketing {"·"} {co || "Company"}
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#4A6A8A",
+                                        marginBottom: 6,
+                                    }}
+                                >
+                                    LinkedIn {"·"} 2nd connection
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#6A8AAA",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    {"\u201cHi [Name], I came across your team\u2019s recent campaign on...\u201d"}
+                                </div>
+                            </div>
+                            {/* Contact 2: blurred */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    borderLeft: "2px solid #2DD4BF",
+                                    filter: "blur(5px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: "#ffffff",
+                                        marginBottom: 2,
+                                    }}
+                                >
+                                    Senior Marketing Manager
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#4A6A8A",
+                                        marginBottom: 6,
+                                    }}
+                                >
+                                    LinkedIn {"·"} 3rd connection
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#6A8AAA",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    {"\u201cI noticed you\u2019ve been scaling the demand gen team...\u201d"}
+                                </div>
+                            </div>
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 60,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+
+                    {/* ── Card D: Resume Positioning ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #51ADE533",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#51ADE5"
+                            label="Resume Positioning"
+                            badge="LOCKED"
+                            badgeBg="#51ADE522"
+                            badgeColor="#51ADE5"
+                        />
+                        <div style={{ padding: "14px 14px 40px" }}>
+                            {/* Section 1: visible */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    marginBottom: 8,
+                                    borderLeft: "2px solid #51ADE5",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#51ADE5",
+                                        marginBottom: 5,
+                                    }}
+                                >
+                                    LEAD WITH THIS
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.55,
+                                    }}
+                                >
+                                    Your demand gen experience should appear in
+                                    the first bullet of every relevant role.
+                                    Lead with pipeline numbers.
+                                </div>
+                            </div>
+                            {/* Section 2: label visible, content blurred */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    marginBottom: 8,
+                                    borderLeft: "2px solid #FEB06A",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#FEB06A",
+                                        marginBottom: 5,
+                                    }}
+                                >
+                                    REFRAME THIS
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.55,
+                                        filter: "blur(4px)",
+                                        userSelect: "none" as const,
+                                    }}
+                                >
+                                    Your content marketing section needs to be
+                                    repositioned around performance metrics
+                                    rather than output volume...
+                                </div>
+                            </div>
+                            {/* Section 3: fully blurred */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    borderLeft: "2px solid #FF4F6D",
+                                    filter: "blur(5px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#FF4F6D",
+                                        marginBottom: 5,
+                                    }}
+                                >
+                                    REMOVE IMMEDIATELY
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.55,
+                                    }}
+                                >
+                                    Three items on your resume will actively
+                                    hurt your chances for this role...
+                                </div>
+                            </div>
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 60,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* ── UPGRADE BOX ── */}
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "row" as const,
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 32,
+                        padding: "28px 32px",
+                        background: "linear-gradient(135deg, #0D1828, #0A1F35)",
+                        border: "1px solid #FEB06A33",
+                        borderRadius: 16,
+                        position: "relative" as const,
+                        overflow: "hidden" as const,
+                        width: "100%",
+                        boxSizing: "border-box" as const,
+                    }}
+                >
+                    {/* Left */}
+                    <div style={{ flex: "1 1 auto", minWidth: 0, maxWidth: "calc(100% - 232px)" }}>
+                        <div
+                            style={{
+                                fontSize: 20,
+                                fontWeight: 900,
+                                fontStyle: "italic",
+                                color: "#ffffff",
+                                letterSpacing: "-.02em",
+                                marginBottom: 8,
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            Unlock your complete{" "}
+                            <span style={{ color: "#FEB06A" }}>
+                                SIGNAL analysis
+                            </span>
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 13,
+                                color: "#2A4A6A",
+                                lineHeight: 1.65,
+                                marginBottom: 14,
+                                maxWidth: 420,
+                            }}
+                        >
+                            Get your personal fit score, a cover letter written
+                            from your actual background, a networking campaign
+                            with copy-paste messages, and resume bullets
+                            rewritten to match what this company filters on.
+                        </div>
+                        {/* Feature chips */}
+                        <div
+                            style={{
+                                display: "flex",
+                                flexWrap: "wrap" as const,
+                                gap: 6,
+                            }}
+                        >
+                            {[
+                                { lbl: "Fit Score", col: "#FEB06A" },
+                                { lbl: "Cover Letter", col: "#7B5CF6" },
+                                { lbl: "Networking", col: "#2DD4BF" },
+                                { lbl: "Resume Bullets", col: "#51ADE5" },
+                                { lbl: "Job Tracker", col: "#4ADE80" },
+                            ].map((chip) => (
+                                <span
+                                    key={chip.lbl}
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        padding: "3px 9px",
+                                        borderRadius: 20,
+                                        background: chip.col + "18",
+                                        color: chip.col,
+                                        border: "0.5px solid " + chip.col + "44",
+                                    }}
+                                >
+                                    {chip.lbl}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right */}
+                    <div
+                        style={{
+                            flex: "0 0 200px",
+                            width: 200,
+                            minWidth: 200,
+                            textAlign: "center" as const,
                             display: "flex",
-                            justifyContent: "center",
-                            gap: 20,
+                            flexDirection: "column" as const,
                             alignItems: "center",
                         }}
                     >
-                        <span
+                        <div
                             style={{
-                                fontSize: 11,
-                                color: "#4a6a85",
-                                fontWeight: 500,
+                                display: "flex",
+                                alignItems: "baseline",
+                                gap: 6,
                             }}
                         >
-                            No subscription trap
-                        </span>
-                        <span
+                            <span
+                                style={{
+                                    fontSize: 38,
+                                    fontWeight: 900,
+                                    fontStyle: "italic",
+                                    color: "#FEB06A",
+                                    lineHeight: 1,
+                                }}
+                            >
+                                $99
+                            </span>
+                            <span
+                                style={{
+                                    fontSize: 11,
+                                    color: "#4A6A8A",
+                                }}
+                            >
+                                3 months {"·"} unlimited roles
+                            </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 16, fontWeight: 900, color: "#4ADE80", background: "#4ADE8018", border: "1px solid #4ADE8044", borderRadius: 6, padding: "4px 12px", letterSpacing: ".05em" }}>FREE</span>
+                        </div>
+                        <button
+                            onClick={onUpgrade}
+                            disabled={upgradeLoading}
+                            className="signal-cta-btn"
                             style={{
-                                width: 3,
-                                height: 3,
-                                borderRadius: "50%",
-                                background: "#2a3f55",
-                                display: "inline-block",
-                            }}
-                        />
-                        <span
-                            style={{
-                                fontSize: 11,
-                                color: "#4a6a85",
-                                fontWeight: 500,
+                                display: "block",
+                                width: "100%",
+                                padding: "14px 22px",
+                                background: upgradeLoading ? "#3A3A3A" : "linear-gradient(90deg, #FF6B00, #FEB06A)",
+                                borderRadius: 10,
+                                color: "#fff",
+                                fontSize: 15,
+                                fontWeight: 900,
+                                fontStyle: "italic" as const,
+                                cursor: upgradeLoading ? "not-allowed" as const : "pointer" as const,
+                                border: "none",
+                                boxSizing: "border-box" as const,
+                                fontFamily: "inherit",
+                                whiteSpace: "nowrap" as const,
                             }}
                         >
-                            Full access for 3 months
-                        </span>
-                        <span
+                            {upgradeLoading ? "Setting up checkout..." : "Unlock full SIGNAL →"}
+                        </button>
+                        {/* Guarantee */}
+                        <div
                             style={{
-                                width: 3,
-                                height: 3,
-                                borderRadius: "50%",
-                                background: "#2a3f55",
-                                display: "inline-block",
-                            }}
-                        />
-                        <span
-                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 5,
                                 fontSize: 11,
-                                color: "#4a6a85",
-                                fontWeight: 500,
+                                color: "#2A4A6A",
                             }}
                         >
-                            Cancel anytime
-                        </span>
+                            <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                            >
+                                <path
+                                    d="M2 6l2.5 2.5L10 4"
+                                    stroke="#2DD4BF"
+                                    strokeWidth="1.4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                            No subscription trap {"·"} Full access for 3 months
+                        </div>
                     </div>
                 </div>
             </div>
         </>
-    )
-}
-
-function CoField({ label, value }: { label: string; value: string }) {
-    return (
-        <div
-            style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(81,173,229,0.1)",
-                borderRadius: 10,
-                padding: 14,
-            }}
-        >
-            <div
-                style={{
-                    fontSize: 10,
-                    letterSpacing: ".1em",
-                    color: C.blue,
-                    marginBottom: 5,
-                }}
-            >
-                {label}
-            </div>
-            <div
-                style={{
-                    fontSize: 14,
-                    color: "#ddeef8",
-                    lineHeight: 1.5,
-                    fontWeight: 500,
-                }}
-            >
-                {value}
-            </div>
-        </div>
-    )
-}
-
-function UpgradeFeature({
-    iconBg,
-    iconBorder,
-    icon,
-    title,
-    tag,
-    tagColor,
-    tagBg,
-    tagBorder,
-    desc,
-    last,
-}: {
-    iconBg: string
-    iconBorder: string
-    icon: React.ReactNode
-    title: string
-    tag?: string
-    tagColor?: string
-    tagBg?: string
-    tagBorder?: string
-    desc: string
-    last: boolean
-}) {
-    return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 16,
-                padding: "17px 20px",
-                borderBottom: last
-                    ? "none"
-                    : "1px solid rgba(255,255,255,0.05)",
-            }}
-        >
-            <div
-                style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: iconBg,
-                    border: "1px solid " + iconBorder,
-                }}
-            >
-                {icon}
-            </div>
-            <div style={{ flex: 1 }}>
-                <div
-                    style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: C.white,
-                        marginBottom: 3,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                    }}
-                >
-                    {title}
-                    {tag ? (
-                        <span
-                            style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                padding: "2px 8px",
-                                borderRadius: 4,
-                                letterSpacing: ".04em",
-                                color: tagColor,
-                                background: tagBg,
-                                border: "1px solid " + tagBorder,
-                            }}
-                        >
-                            {tag}
-                        </span>
-                    ) : null}
-                </div>
-                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
-                    {desc}
-                </div>
-            </div>
-        </div>
     )
 }
 
@@ -2414,32 +3216,12 @@ const pageStyle: React.CSSProperties = {
     fontFamily: SANS,
     color: C.white,
     position: "relative",
-    width: "100vw",
+    width: "100%",
+    maxWidth: 1440,
+    margin: "0 auto",
     minHeight: "100dvh",
     overflowX: "hidden",
     boxSizing: "border-box",
-}
-
-// Results page styles
-const coCell: React.CSSProperties = {
-    background: C.bg,
-    padding: "20px 22px",
-}
-const coCellLbl: React.CSSProperties = {
-    fontSize: 9,
-    letterSpacing: ".14em",
-    color: C.blue,
-    marginBottom: 8,
-}
-const coCellVal: React.CSSProperties = {
-    fontSize: 14,
-    color: "#c8daea",
-    lineHeight: 1.65,
-}
-const mStatCell: React.CSSProperties = {
-    flex: 1,
-    padding: "22px 20px",
-    textAlign: "center" as const,
 }
 
 const orbBase: React.CSSProperties = {
@@ -2577,112 +3359,48 @@ const personalTeaser: React.CSSProperties = {
     marginTop: 16,
 }
 
-const verdictCard: React.CSSProperties = {
-    background: C.glass,
-    backdropFilter: "blur(16px)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 20,
-    display: "grid",
-    gridTemplateColumns: "auto 1fr auto",
-    gap: 24,
-    alignItems: "center",
-}
-
-const compRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 16,
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.07)",
+// Results-specific styles
+const statPill: React.CSSProperties = {
+    background: "#071220",
+    border: "0.5px solid #1E3A5F",
     borderRadius: 8,
-    padding: "10px 14px",
+    padding: "8px 14px",
 }
 
-const cardsRow: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-    marginBottom: 12,
-    padding: "0 24px",
-}
-
-const profileTag: React.CSSProperties = {
-    fontSize: 12,
-    color: C.green,
-    background: "rgba(74,222,128,0.06)",
-    border: "1px solid rgba(74,222,128,0.15)",
-    padding: "8px 10px",
-    borderRadius: 8,
-    marginBottom: 6,
-    lineHeight: 1.45,
-}
-
-const classHeaderCard: React.CSSProperties = {
-    background: "rgba(254,176,106,0.06)",
-    backdropFilter: "blur(16px)",
-    border: "1px solid rgba(254,176,106,0.2)",
-    borderRadius: "14px 14px 0 0",
-    borderBottom: "none",
-    padding: "18px 20px 14px",
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-}
-
-const classBadge: React.CSSProperties = {
+const statPillLabel: React.CSSProperties = {
     fontSize: 9,
-    letterSpacing: ".18em",
-    color: C.orange,
-    border: "1px solid rgba(254,176,106,0.4)",
-    padding: "3px 8px",
-    borderRadius: 4,
+    letterSpacing: ".1em",
+    textTransform: "uppercase" as const,
+    color: "#2A4A6A",
+    marginBottom: 3,
     fontFamily: MONO,
-    background: "rgba(254,176,106,0.08)",
 }
 
-const findingsWrap: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 2,
-    background: "rgba(254,176,106,0.08)",
-    border: "1px solid rgba(254,176,106,0.15)",
-    borderTop: "none",
-    overflow: "hidden",
-}
-
-const findingCell: React.CSSProperties = {
-    padding: 16,
-    background: C.bg,
-}
-
-const riskCard: React.CSSProperties = {
-    background: "rgba(10,22,40,0.95)",
-    backdropFilter: "blur(16px)",
-    border: "1px solid rgba(248,113,113,0.15)",
-    borderTop: "none",
-    borderRadius: "0 0 14px 14px",
-    padding: "16px 20px",
-    marginTop: 2,
-}
-
-const ctaCard: React.CSSProperties = {
-    background: C.orange,
-    borderRadius: 14,
-    padding: "32px 28px",
-    textAlign: "center" as const,
-}
-
-const ctaBtn: React.CSSProperties = {
-    display: "inline-block",
-    background: C.bg,
-    color: C.orange,
+const statPillValue: React.CSSProperties = {
     fontSize: 14,
-    fontWeight: 800,
-    padding: "13px 36px",
+    fontWeight: 900,
+    fontStyle: "italic",
+    lineHeight: 1,
+}
+
+const intelItem: React.CSSProperties = {
+    background: "#071220",
     borderRadius: 8,
-    cursor: "pointer",
-    letterSpacing: ".02em",
+    padding: "10px 12px",
+}
+
+const intelItemLabel: React.CSSProperties = {
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: ".1em",
+    textTransform: "uppercase" as const,
+    color: "#2A4A6A",
+    marginBottom: 5,
+    fontFamily: MONO,
+}
+
+const intelItemText: React.CSSProperties = {
+    fontSize: 11,
+    color: "#6A8AAA",
+    lineHeight: 1.6,
 }

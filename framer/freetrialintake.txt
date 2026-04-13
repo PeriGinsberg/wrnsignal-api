@@ -19,7 +19,7 @@ function goToJobFitRun() {
     const url = isFramerHost()
         ? `${JOBFIT_RUN_PROD_ORIGIN}${JOBFIT_RUN_PATH}`
         : `${window.location.origin}${JOBFIT_RUN_PATH}`
-    window.location.assign(url)
+    window.top!.location.replace(url)
 }
 
 function isFramerPreview(): boolean {

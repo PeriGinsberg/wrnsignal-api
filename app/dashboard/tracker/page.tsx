@@ -639,8 +639,6 @@ export default function TrackerPage() {
                           {a.jobfit_run_id && (
                             <a
                               href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
                               style={{ display: "inline-block", marginTop: 6, fontSize: 9, fontWeight: 900, color: "#4ade80", textDecoration: "none", letterSpacing: 0.5 }}
                             >
@@ -726,8 +724,6 @@ export default function TrackerPage() {
                         {a.jobfit_run_id && (
                           <a
                             href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             style={{ background: "none", border: `1px solid rgba(74,222,128,0.3)`, color: "#4ade80", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "3px 8px", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" }}
                           >
