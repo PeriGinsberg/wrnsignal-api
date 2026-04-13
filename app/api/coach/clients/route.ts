@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
     // Fetch all active coach-client relationships
     const { data: relationships, error: relErr } = await supabase
       .from("coach_clients")
-      .select("id, client_profile_id, client_email, access_level, status, accepted_at, private_notes")
+      .select("id, client_profile_id, invited_email, access_level, status, accepted_at, private_notes")
       .eq("coach_profile_id", profileId)
       .eq("status", "active")
 
@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
         return {
           relationship_id: rel.id,
           client_profile_id: clientProfileId,
-          client_email: rel.client_email,
+          client_email: rel.invited_email,
           access_level: rel.access_level,
           accepted_at: rel.accepted_at,
           full_name: profile?.full_name || null,

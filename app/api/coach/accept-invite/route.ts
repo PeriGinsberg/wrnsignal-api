@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     // Find pending coach_clients row by invite token
     const { data: invite, error: inviteErr } = await supabase
       .from("coach_clients")
-      .select("id, coach_profile_id, client_email, status")
+      .select("id, coach_profile_id, invited_email, status")
       .eq("invite_token", inviteToken)
       .maybeSingle()
 
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify the accepting user's email matches the invite
-    if (invite.client_email && email && invite.client_email !== email) {
+    if (invite.invited_email && email && invite.invited_email !== email) {
       return withCorsJson(req, { ok: false, error: "This invite was sent to a different email address" }, 403)
     }
 
