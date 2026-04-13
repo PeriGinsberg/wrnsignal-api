@@ -130,6 +130,7 @@ export default function ResumeRxPage() {
   const [diagnosis, setDiagnosis] = useState<any>(null)
   const [educationData, setEducationData] = useState<any>(null)
   const [educationProposal, setEducationProposal] = useState<any>(null)
+  const [editingEducation, setEditingEducation] = useState(false)
   const [architecture, setArchitecture] = useState<any>(null)
   const [qaItems, setQaItems] = useState<any[]>([])
   const [qaIndex, setQaIndex] = useState(0)
@@ -820,6 +821,7 @@ export default function ResumeRxPage() {
           </div>
         )}
 
+        {(!educationProposal || editingEducation) && (
         <div style={cardStyle}>
           <div style={{ height: 3, background: T.GRAD_PRIMARY }} />
           <div style={{ padding: 24 }}>
@@ -912,31 +914,72 @@ export default function ResumeRxPage() {
             </div>
           </div>
         </div>
-
-        {/* Proposal preview */}
-        {educationProposal && (
-          <div style={{ ...cardStyle, background: T.SUCCESS_BG, border: "1px solid rgba(74,222,128,0.2)" }}>
-            <div style={{ padding: 20 }}>
-              <div style={{ ...eyebrow, color: T.SUCCESS, marginBottom: 10 } as React.CSSProperties}>EDUCATION SECTION PREVIEW</div>
-              <pre style={{ fontSize: 13, color: T.TEXT, lineHeight: "20px", whiteSpace: "pre-wrap", margin: 0 }}>
-                {typeof educationProposal === "string" ? educationProposal : JSON.stringify(educationProposal, null, 2)}
-              </pre>
-            </div>
-          </div>
         )}
 
-        <div style={{ display: "flex", gap: 12 }}>
+        {/* Proposal preview — polished resume section */}
+        {educationProposal && !editingEducation && (() => {
+          const p = educationProposal
+          const lines: string[] = Array.isArray(p.formatted_lines) ? p.formatted_lines : typeof p === "string" ? [p] : []
+          return (
+            <div style={{ ...cardStyle, border: "1px solid rgba(74,222,128,0.22)", background: "#0D1829", overflow: "hidden" }}>
+              <div style={{ height: 3, background: "linear-gradient(90deg, #4ade80, #22c55e, #51ADE5)" }} />
+              <div style={{ padding: "20px 24px" }}>
+                <div style={{ ...eyebrow, color: T.SUCCESS, marginBottom: 14 } as React.CSSProperties}>EDUCATION SECTION PREVIEW</div>
+                <div style={{ fontFamily: "'Georgia', 'Times New Roman', serif", lineHeight: "22px" }}>
+                  {lines.length > 0 ? lines.map((line: string, i: number) => (
+                    <div key={i} style={{
+                      fontSize: i === 0 ? 15 : 13,
+                      fontWeight: i === 0 ? 700 : 400,
+                      color: i === 0 ? T.TEXT : T.MUTED,
+                      marginBottom: i === 0 ? 4 : 2,
+                    }}>
+                      {line}
+                    </div>
+                  )) : (
+                    <pre style={{ fontSize: 13, color: T.TEXT, lineHeight: "20px", whiteSpace: "pre-wrap", margin: 0 }}>
+                      {typeof p === "string" ? p : JSON.stringify(p, null, 2)}
+                    </pre>
+                  )}
+                </div>
+                {p.coaching_note && (
+                  <div style={{
+                    marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`,
+                    fontSize: 13, color: T.MUTED, fontStyle: "italic", lineHeight: "20px",
+                  }}>
+                    {p.coaching_note}
+                  </div>
+                )}
+                {p.gpa_note && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: T.DIM, lineHeight: "18px" }}>
+                    <strong style={{ color: T.WRN_ORANGE }}>GPA note:</strong> {p.gpa_note}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {!educationProposal ? (
             <button onClick={confirmEducation} style={{ ...btnPrimary, fontSize: 15, padding: "15px 28px" }}>
               Confirm Education →
             </button>
-          ) : (
-            <button onClick={approveEducation} style={{ ...btnPrimary, fontSize: 15, padding: "15px 28px" }}>
-              Looks Good →
+          ) : editingEducation ? (
+            <button onClick={() => { setEditingEducation(false); confirmEducation() }} style={{ ...btnPrimary, fontSize: 15, padding: "15px 28px" }}>
+              Update Preview →
             </button>
+          ) : (
+            <>
+              <button onClick={approveEducation} style={{ ...btnPrimary, fontSize: 15, padding: "15px 28px" }}>
+                Looks Good →
+              </button>
+              <button onClick={() => setEditingEducation(true)} style={{ ...btnSecondary, fontSize: 13, padding: "13px 22px" }}>
+                Edit
+              </button>
+            </>
           )}
-          <button onClick={() => setStage("diagnosis")} style={{ ...btnSecondary, fontSize: 13 }}>
-            ← Back
+          <button onClick={() => { setEducationProposal(null); setEditingEducation(false); setStage("diagnosis") }} style={{ ...btnSecondary, fontSize: 13 }}>
+            ← Back to Diagnosis
           </button>
         </div>
 
