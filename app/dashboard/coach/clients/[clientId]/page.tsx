@@ -872,7 +872,7 @@ export default function CoachClientPage() {
                   onClick={() => setShowAnnotation(true)}
                   style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900 }}
                 >
-                  Send to Dashboard →
+                  Add Coaching Note & Send →
                 </button>
                 <button
                   onClick={clearSourceForm}
