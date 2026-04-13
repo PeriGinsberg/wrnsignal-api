@@ -8,7 +8,7 @@ import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 const BASE_NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/tracker", label: "Job Tracker" },
-  { href: "/dashboard/resume-rx", label: "Resume Rx" },
+  { href: "/dashboard/resume-rx", label: "ResumeRx (Coming Soon)" },
 ]
 
 const COACH_NAV_ITEM = { href: "/dashboard/coach", label: "My Clients" }
