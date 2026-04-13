@@ -1,14 +1,21 @@
 // app/api/resume-upload/route.ts
 //
 // Accepts a resume file (PDF, DOCX, or TXT), extracts the text,
-// and returns it. Used by the mobile app for resume upload.
+// and returns it. Used by the mobile app and dashboard for resume upload.
+//
+// PDF: Claude API document reading (pdf-parse removed — it requires
+//      DOM APIs that don't exist in serverless environments).
+// DOCX: mammoth
+// TXT: direct read
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import Anthropic from "@anthropic-ai/sdk"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 30
 
 function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -64,12 +71,55 @@ export async function POST(req: NextRequest) {
     if (name.endsWith(".txt")) {
       text = buffer.toString("utf-8")
     } else if (name.endsWith(".pdf")) {
+      // Use Claude API to read PDF — pdf-parse requires DOM APIs
+      // (DOMMatrix, ImageData) that don't exist in serverless environments.
       try {
-        const pdfParse = require("pdf-parse")
-        const data = await pdfParse(buffer)
-        text = data.text
+        const anthropic = new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY,
+        })
+
+        const base64 = buffer.toString("base64")
+
+        const message = await anthropic.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 4096,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "document",
+                  source: {
+                    type: "base64",
+                    media_type: "application/pdf",
+                    data: base64,
+                  },
+                },
+                {
+                  type: "text",
+                  text: `Extract the complete text content of this resume. Return ONLY the raw text — no commentary, no formatting suggestions, no JSON. Preserve the structure: name, contact info, sections, job titles, companies, dates, bullet points, education, skills. Do not summarize. Return everything.`,
+                },
+              ],
+            },
+          ],
+        })
+
+        text = message.content
+          .filter((block): block is Anthropic.TextBlock => block.type === "text")
+          .map((block) => block.text)
+          .join("\n")
+          .trim()
+
+        if (!text) {
+          return withCorsJson(req, {
+            error: "Could not extract text from this PDF. Try a different file or paste your resume text directly.",
+          }, 400)
+        }
       } catch (e: any) {
-        return withCorsJson(req, { error: "Could not read PDF. Try pasting your resume text instead." }, 400)
+        console.error("[resume-upload] PDF extraction via Claude failed:", e?.message, e)
+        return withCorsJson(req, {
+          error: "PDF extraction failed. Please paste your resume text directly.",
+        }, 400)
       }
     } else if (name.endsWith(".docx") || name.endsWith(".doc")) {
       // Use mammoth for DOCX text extraction
@@ -78,6 +128,7 @@ export async function POST(req: NextRequest) {
         const result = await mammoth.extractRawText({ buffer })
         text = result.value
       } catch (e: any) {
+        console.error("[resume-upload] DOCX extraction failed:", e?.message)
         return withCorsJson(req, { error: "Could not read Word document. Try pasting your resume text instead." }, 400)
       }
     } else {
@@ -92,6 +143,7 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, { ok: true, text: trimmed })
   } catch (err: any) {
     const msg = err?.message || String(err)
+    console.error("[resume-upload] Error:", msg)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
