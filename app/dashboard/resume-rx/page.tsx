@@ -241,7 +241,8 @@ export default function ResumeRxPage() {
   }
 
   async function approveEducation() {
-    setStage("architecture")
+    // Run architecture API silently (backend needs it), then skip straight to QA
+    setStage("qa")
     try {
       const res = await authFetch("/api/resume-rx/architecture", {
         method: "POST",
@@ -251,12 +252,9 @@ export default function ResumeRxPage() {
       if (!res.ok) throw new Error(j?.error || "Architecture step failed")
       setArchitecture(j.architecture)
     } catch (err: any) {
-      setError(err?.message || "Failed to load architecture.")
+      // Architecture is informational — don't block the flow
+      console.error("Architecture step failed:", err?.message)
     }
-  }
-
-  async function startQA() {
-    setStage("qa")
   }
 
   async function submitQAAnswer() {
@@ -370,7 +368,7 @@ export default function ResumeRxPage() {
       const stageMap: Record<string, string> = {
         diagnosis: "diagnosis",
         education: "education",
-        architecture: "architecture",
+        architecture: "qa",
         qa: "qa",
         rewrite: "complete",
         complete: "complete",
@@ -564,7 +562,7 @@ export default function ResumeRxPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {pastSessions.map((s: any) => {
                 const isComplete = s.status === "complete"
-                const stageLabel: Record<string, string> = { diagnosis: "Diagnosis", education: "Education", architecture: "Architecture", qa: "Q&A", rewrite: "Rewrite" }
+                const stageLabel: Record<string, string> = { diagnosis: "Diagnosis", education: "Education", architecture: "Q&A", qa: "Q&A", rewrite: "Rewrite" }
                 const isLoading = loadingSession === s.id
                 return (
                   <div
@@ -988,95 +986,7 @@ export default function ResumeRxPage() {
     )
   }
 
-  // ── stage: ARCHITECTURE ───────────────────────────────────────────────────
-
-  if (stage === "architecture") {
-    const arch = architecture ?? {}
-    return (
-      <div style={{ maxWidth: 680 }}>
-        <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 } as React.CSSProperties}>RESUME RX — STEP 2</div>
-        <h1 style={{ ...headline, fontSize: 28, letterSpacing: -1, marginBottom: 6 }}>Resume Architecture</h1>
-        <p style={{ fontSize: 13, color: T.MUTED, marginBottom: 24, lineHeight: "20px" }}>
-          Here's how we'll position and structure your resume.
-        </p>
-
-        {error && (
-          <div style={{ ...cardStyle, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.25)", padding: 16 }}>
-            <p style={{ fontSize: 13, color: T.ERROR, margin: 0 }}>{error}</p>
-          </div>
-        )}
-
-        {!architecture ? (
-          <div style={{ ...card, padding: 40, textAlign: "center" }}>
-            <p style={{ color: T.MUTED, fontSize: 13 }}>Building your resume architecture...</p>
-          </div>
-        ) : (
-          <>
-            {/* Positioning statement */}
-            {arch.positioning_statement && (
-              <div style={{ ...cardStyle, background: "rgba(81,173,229,0.06)", border: "1px solid rgba(81,173,229,0.2)" }}>
-                <div style={{ padding: 24 }}>
-                  <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 12 } as React.CSSProperties}>POSITIONING STATEMENT</div>
-                  <p style={{ fontSize: 16, color: T.TEXT, lineHeight: "26px", fontStyle: "italic", margin: 0 }}>
-                    "{arch.positioning_statement}"
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Section order */}
-            {arch.section_order?.length > 0 && (
-              <div style={cardStyle}>
-                <div style={{ padding: 24 }}>
-                  <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 14 } as React.CSSProperties}>SECTION ORDER</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {arch.section_order.map((section: string, i: number) => (
-                      <div key={i} style={{
-                        display: "flex", alignItems: "center", gap: 12,
-                        padding: "10px 14px", borderRadius: 10,
-                        background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`,
-                      }}>
-                        <span style={{ fontSize: 11, fontWeight: 900, color: T.DIM, width: 20 }}>{i + 1}</span>
-                        <span style={{ fontSize: 13, color: T.TEXT, fontWeight: 900 }}>{section}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Rationale */}
-            {arch.rationale && (
-              <div style={cardStyle}>
-                <div style={{ padding: 20 }}>
-                  <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 } as React.CSSProperties}>WHY THIS STRUCTURE</div>
-                  <p style={{ fontSize: 13, color: T.MUTED, margin: 0, lineHeight: "20px" }}>{arch.rationale}</p>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <button
-            onClick={startQA}
-            disabled={!architecture}
-            style={{ ...btnPrimary, fontSize: 15, padding: "15px 28px", opacity: !architecture ? 0.5 : 1 }}
-          >
-            Looks Good →
-          </button>
-          <button onClick={() => { setArchitecture(null); setStage("education") }} style={{ ...btnSecondary, fontSize: 13, padding: "13px 22px" }}>
-            Edit Education
-          </button>
-          <button onClick={() => { setArchitecture(null); setEducationProposal(null); setStage("diagnosis") }} style={{ ...btnSecondary, fontSize: 13 }}>
-            ← Back to Diagnosis
-          </button>
-        </div>
-
-        {toast && <Toast message={toast} onDone={() => setToast(null)} />}
-      </div>
-    )
-  }
+  // Architecture stage removed from Phase 1 — runs silently in approveEducation()
 
   // ── stage: QA ─────────────────────────────────────────────────────────────
 
