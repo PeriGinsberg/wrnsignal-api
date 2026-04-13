@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
     const jobDescription = String(body.job_description || "").trim()
     const jobTitle = String(body.job_title || "").trim()
     const companyName = String(body.company_name || "").trim()
+    const dryRun = body.dry_run === true
 
     if (!clientProfileId) return withCorsJson(req, { ok: false, error: "client_profile_id is required" }, 400)
     if (!jobDescription) return withCorsJson(req, { ok: false, error: "job_description is required" }, 400)
@@ -125,16 +126,6 @@ export async function POST(req: NextRequest) {
     if (!access) {
       return withCorsJson(req, { ok: false, error: "Forbidden: full access required to recommend jobs" }, 403)
     }
-
-    // Look up coach_client_id (required NOT NULL FK on coach_job_recommendations)
-    const { data: coachClientRow, error: ccErr } = await supabase
-      .from("coach_clients")
-      .select("id")
-      .eq("coach_profile_id", coachProfileId)
-      .eq("client_profile_id", clientProfileId)
-      .eq("status", "active")
-      .maybeSingle()
-    if (ccErr || !coachClientRow) throw new Error("coach_clients relationship not found")
 
     // Load client profile and persona — use CLIENT's data, not coach's
     const { data: clientProfile, error: cpErr } = await supabase
@@ -176,35 +167,58 @@ export async function POST(req: NextRequest) {
       preferredLocations: clientProfile.preferred_locations || null,
     })
 
-    // Run JobFit using client's profile
-    const result = await runJobFit({
-      profileText,
-      jobText: jobDescription,
-      profileOverrides,
-      userJobTitle: jobTitle,
-      userCompanyName: companyName,
-    })
+    // Determine fullAnalysis: use cached if provided, otherwise run JobFit
+    let fullAnalysis: any
 
-    // Store full analysis result (everything the scoring engine produced)
-    const fullAnalysis = {
-      decision: result.decision,
-      score: result.score,
-      icon: (result as any).icon,
-      bullets: (result as any).bullets,
-      risk_flags: (result as any).risk_flags,
-      next_step: (result as any).next_step,
-      why_codes: result.why_codes,
-      risk_codes: result.risk_codes,
-      job_signals: result.job_signals,
-      profile_signals: result.profile_signals,
-      gate_triggered: result.gate_triggered,
-      score_breakdown: result.score_breakdown,
-      location_constraint: result.location_constraint,
-      why: (result as any).why,
-      risk: (result as any).risk,
-      why_structured: (result as any).why_structured,
-      risk_structured: (result as any).risk_structured,
+    if (!dryRun && body.cached_analysis && body.cached_analysis.decision !== undefined && body.cached_analysis.score !== undefined) {
+      // Use cached analysis from dry run — no re-computation
+      fullAnalysis = body.cached_analysis
+    } else {
+      // Run JobFit using client's profile
+      const result = await runJobFit({
+        profileText,
+        jobText: jobDescription,
+        profileOverrides,
+        userJobTitle: jobTitle,
+        userCompanyName: companyName,
+      })
+
+      // Store full analysis result (everything the scoring engine produced)
+      fullAnalysis = {
+        decision: result.decision,
+        score: result.score,
+        icon: (result as any).icon,
+        bullets: (result as any).bullets,
+        risk_flags: (result as any).risk_flags,
+        next_step: (result as any).next_step,
+        why_codes: result.why_codes,
+        risk_codes: result.risk_codes,
+        job_signals: result.job_signals,
+        profile_signals: result.profile_signals,
+        gate_triggered: result.gate_triggered,
+        score_breakdown: result.score_breakdown,
+        location_constraint: result.location_constraint,
+        why: (result as any).why,
+        risk: (result as any).risk,
+        why_structured: (result as any).why_structured,
+        risk_structured: (result as any).risk_structured,
+      }
     }
+
+    // Dry run: return analysis result without creating any DB rows
+    if (dryRun) {
+      return withCorsJson(req, { ok: true, dry_run: true, jobfit: fullAnalysis })
+    }
+
+    // Look up coach_client_id (required NOT NULL FK on coach_job_recommendations)
+    const { data: coachClientRow, error: ccErr } = await supabase
+      .from("coach_clients")
+      .select("id")
+      .eq("coach_profile_id", coachProfileId)
+      .eq("client_profile_id", clientProfileId)
+      .eq("status", "active")
+      .maybeSingle()
+    if (ccErr || !coachClientRow) throw new Error("coach_clients relationship not found")
 
     // Create a jobfit_runs row for audit trail (owned by client)
     const { data: runRow } = await supabase
@@ -214,7 +228,7 @@ export async function POST(req: NextRequest) {
         job_url: body.job_url || null,
         fingerprint_hash: `coach-${coachProfileId}-${Date.now()}`,
         fingerprint_code: `COACH-${Date.now().toString(36).toUpperCase()}`,
-        verdict: String(result.decision || "unknown"),
+        verdict: String(fullAnalysis.decision || "unknown"),
         result_json: fullAnalysis,
         job_description: jobDescription,
         persona_id: persona?.id || null,
@@ -238,8 +252,8 @@ export async function POST(req: NextRequest) {
         job_url: body.job_url || null,
         persona_id: persona?.id || null,
         persona_name: persona?.name || null,
-        signal_decision: result.decision,
-        signal_score: result.score,
+        signal_decision: fullAnalysis.decision,
+        signal_score: fullAnalysis.score,
         jobfit_run_id: jobfitRunId,
         full_analysis: fullAnalysis,
         coaching_note: body.coaching_note || null,
@@ -263,8 +277,8 @@ export async function POST(req: NextRequest) {
         job_url: body.job_url || null,
         persona_id: persona?.id || null,
         application_status: "saved",
-        signal_decision: result.decision,
-        signal_score: result.score,
+        signal_decision: fullAnalysis.decision,
+        signal_score: fullAnalysis.score,
         signal_run_at: new Date().toISOString(),
         jobfit_run_id: jobfitRunId,
       })

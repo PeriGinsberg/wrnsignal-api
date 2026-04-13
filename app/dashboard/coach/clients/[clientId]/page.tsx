@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import {
@@ -140,6 +140,9 @@ export default function CoachClientPage() {
   const [annApplyBy, setAnnApplyBy] = useState("")
   const [runError, setRunError] = useState("")
   const [runSuccess, setRunSuccess] = useState(false)
+  const [showAnnotation, setShowAnnotation] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendSuccess, setSendSuccess] = useState(false)
 
   // Application card expand state (tracker tab)
   const [openAppIds, setOpenAppIds] = useState<Set<string>>(new Set())
@@ -234,13 +237,17 @@ export default function CoachClientPage() {
     }
   }
 
-  async function runAnalysis() {
-    if (!sourceJD.trim()) return
-    if (annNote.trim().length < 20) return
-    setRunning(true)
-    setRunResult(null)
-    setRunError("")
-    setRunSuccess(false)
+  function clearSourceForm() {
+    setSourceUrl(''); setSourceCompany(''); setSourceTitle(''); setSourceJD('')
+    setSelectedPersona(clientPersonas.find(p => p.is_default)?.id || clientPersonas[0]?.id || '')
+    setRunResult(null); setShowAnnotation(false); setSendSuccess(false)
+    setAnnPriority('this_week'); setAnnAction('apply'); setAnnNote(''); setAnnApplyBy('')
+    setRunError('')
+  }
+
+  async function runDryAnalysis() {
+    if (!sourceJD.trim() || !selectedPersona) return
+    setRunning(true); setRunResult(null); setRunError(''); setSendSuccess(false); setShowAnnotation(false)
     try {
       const res = await authFetch("/api/coach/recommend-job", {
         method: "POST",
@@ -251,24 +258,56 @@ export default function CoachClientPage() {
           job_title: sourceTitle,
           job_description: sourceJD,
           job_url: sourceUrl || null,
-          priority: annPriority || "this_week",
-          coaching_note: annNote,
-          recommended_action: annAction || "apply",
-          apply_by_date: annApplyBy || null,
+          dry_run: true,
         }),
       })
       const j = await res.json()
       if (res.ok) {
-        setRunResult(j)
+        setRunResult(j.jobfit || j)
+        const decision = j.jobfit?.decision || j.decision || ''
+        if (decision === 'Priority Apply') { setAnnPriority('urgent'); setAnnAction('apply'); setAnnNote('Strong fit — apply immediately. This aligns well with your background.') }
+        else if (decision === 'Apply') { setAnnPriority('this_week'); setAnnAction('apply'); setAnnNote('Good opportunity worth pursuing this week.') }
+        else if (decision === 'Review') { setAnnPriority('when_ready'); setAnnAction('research_first'); setAnnNote('Proceed carefully — review the requirements against your background before applying.') }
+        else { setAnnPriority('not_recommended'); setAnnAction('skip'); setAnnNote('Low fit based on your current profile — flagging for your awareness.') }
+      } else {
+        setRunError(j.error || "Analysis failed.")
+      }
+    } catch { setRunError("Network error.") }
+    setRunning(false)
+  }
+
+  async function sendToClientDashboard() {
+    if (annNote.trim().length < 20) return
+    setSending(true)
+    try {
+      const res = await authFetch("/api/coach/recommend-job", {
+        method: "POST",
+        body: JSON.stringify({
+          client_profile_id: clientId,
+          persona_id: selectedPersona,
+          company_name: sourceCompany,
+          job_title: sourceTitle,
+          job_description: sourceJD,
+          job_url: sourceUrl || null,
+          dry_run: false,
+          cached_analysis: runResult,
+          priority: annPriority,
+          coaching_note: annNote,
+          recommended_action: annAction,
+          apply_by_date: annApplyBy || null,
+        }),
+      })
+      if (res.ok) {
+        setSendSuccess(true)
         setRunSuccess(true)
         await loadAll()
+        setTimeout(() => clearSourceForm(), 3000)
       } else {
-        setRunError(j.error || "Analysis failed. Please try again.")
+        const j = await res.json()
+        setRunError(j.error || "Failed to send.")
       }
-    } catch {
-      setRunError("Network error. Please try again.")
-    }
-    setRunning(false)
+    } catch { setRunError("Network error.") }
+    setSending(false)
   }
 
   const TABS: { id: Tab; label: string }[] = [
@@ -554,220 +593,343 @@ export default function CoachClientPage() {
         <div style={{ maxWidth: 700 }}>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>SOURCE A JOB FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
 
-          {/* URL fetch block */}
-          <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-            <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: 9, marginBottom: 10 }}>FETCH FROM URL</div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <input
-                type="url"
-                style={{ ...input, flex: 1 }}
-                placeholder="Paste job posting URL..."
-                value={sourceUrl}
-                onChange={(e) => setSourceUrl(e.target.value)}
-              />
-              <button
-                onClick={fetchUrl}
-                disabled={fetchingUrl || !sourceUrl.trim()}
-                style={{ ...btnSecondary, fontSize: 12, padding: "0 18px", whiteSpace: "nowrap", opacity: fetchingUrl ? 0.5 : 1 }}
-              >
-                {fetchingUrl ? "Fetching..." : "Fetch JD"}
-              </button>
-            </div>
-            <p style={{ fontSize: 11, color: T.DIM, marginTop: 8 }}>
-              LinkedIn, Greenhouse, Lever, Workday, and most ATS URLs supported
-            </p>
+          {/* Step indicator */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+            {[
+              { n: 1, label: "Job Details", done: sourceJD.length > 50 },
+              { n: 2, label: "Run Analysis", done: !!runResult },
+              { n: 3, label: "Review Results", done: showAnnotation },
+              { n: 4, label: "Send to Client", done: sendSuccess },
+            ].map((step, i) => (
+              <React.Fragment key={step.n}>
+                {i > 0 && (
+                  <div style={{
+                    flex: 1, height: 1,
+                    background: step.done ? T.WRN_ORANGE : "rgba(255,255,255,0.1)",
+                  }} />
+                )}
+                <div style={{
+                  width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 900,
+                  background: step.done ? T.WRN_ORANGE : "rgba(255,255,255,0.08)",
+                  color: step.done ? "#04060F" : T.DIM,
+                  flexShrink: 0,
+                }}>
+                  {step.done ? "✓" : step.n}
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: step.done ? T.WRN_ORANGE : T.DIM, whiteSpace: "nowrap" }}>{step.label}</span>
+              </React.Fragment>
+            ))}
           </div>
 
-          {/* LinkedIn helper */}
-          {showLinkedInHelper && (
-            <div style={{
-              background: "rgba(253,186,40,0.08)", border: "1px solid rgba(253,186,40,0.3)",
-              borderRadius: 14, padding: 20, marginBottom: 20,
-            }}>
-              <div style={{ ...eyebrow, color: "#FBBF24", fontSize: 9, marginBottom: 8 }}>LINKEDIN — PASTE MANUALLY</div>
-              <p style={{ fontSize: 12, color: T.MUTED, marginBottom: 12, lineHeight: "18px" }}>
-                LinkedIn blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
-              </p>
-              <textarea
-                style={{ ...textarea, minHeight: 120, marginBottom: 10 }}
-                placeholder="Paste the full LinkedIn job page text here..."
-                value={linkedInPasteText}
-                onChange={(e) => setLinkedInPasteText(e.target.value)}
-              />
-              <button
-                onClick={parseLinkedInPaste}
-                disabled={fetchingUrl || !linkedInPasteText.trim()}
-                style={{ ...btnSecondary, fontSize: 12, padding: "8px 18px", opacity: fetchingUrl || !linkedInPasteText.trim() ? 0.5 : 1 }}
-              >
-                {fetchingUrl ? "Parsing..." : "Parse Text →"}
-              </button>
-            </div>
-          )}
-
-          {/* Manual entry */}
-          <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, textAlign: "center", marginBottom: 16 }}>OR ENTER MANUALLY</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
-            <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>COMPANY</span>
-              <input type="text" style={input} placeholder="Company name" value={sourceCompany} onChange={(e) => setSourceCompany(e.target.value)} />
-            </div>
-            <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB TITLE</span>
-              <input type="text" style={input} placeholder="Job title" value={sourceTitle} onChange={(e) => setSourceTitle(e.target.value)} />
-            </div>
-            <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB DESCRIPTION</span>
-              <textarea
-                style={{ ...textarea, minHeight: 200 }}
-                placeholder="Paste the full job description here..."
-                value={sourceJD}
-                onChange={(e) => setSourceJD(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Persona selector */}
-          {clientPersonas.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 10 }}>CLIENT PERSONA</span>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {clientPersonas.map((p) => (
-                  <label key={p.id} style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "10px 16px", borderRadius: 12, cursor: "pointer",
-                    border: selectedPersona === p.id ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                    background: selectedPersona === p.id ? "rgba(254,176,106,0.07)" : "rgba(255,255,255,0.03)",
-                  }}>
-                    <input
-                      type="radio"
-                      name="persona"
-                      value={p.id}
-                      checked={selectedPersona === p.id}
-                      onChange={() => setSelectedPersona(p.id)}
-                      style={{ accentColor: T.WRN_ORANGE }}
-                    />
-                    <span style={{ fontSize: 13, fontWeight: 900, color: selectedPersona === p.id ? T.WRN_ORANGE : T.TEXT }}>
-                      {p.name}
-                      {p.is_default && <span style={{ fontSize: 10, color: T.DIM, marginLeft: 6 }}>default</span>}
-                    </span>
-                  </label>
-                ))}
+          {/* STEP 1 — Job Details (always visible) */}
+          <div style={{ marginBottom: 24 }}>
+            {/* URL fetch block */}
+            <div style={{ ...card, padding: 24, marginBottom: 20 }}>
+              <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: 9, marginBottom: 10 }}>FETCH FROM URL</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input
+                  type="url"
+                  style={{ ...input, flex: 1 }}
+                  placeholder="Paste job posting URL..."
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                />
+                <button
+                  onClick={fetchUrl}
+                  disabled={fetchingUrl || !sourceUrl.trim()}
+                  style={{ ...btnSecondary, fontSize: 12, padding: "0 18px", whiteSpace: "nowrap", opacity: fetchingUrl ? 0.5 : 1 }}
+                >
+                  {fetchingUrl ? "Fetching..." : "Fetch JD"}
+                </button>
               </div>
+              <p style={{ fontSize: 11, color: T.DIM, marginTop: 8 }}>
+                LinkedIn, Greenhouse, Lever, Workday, and most ATS URLs supported
+              </p>
             </div>
-          )}
 
-          {/* Coaching annotation form — shown before running */}
-          <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-            <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 16 }}>COACHING ANNOTATION</div>
+            {/* LinkedIn helper */}
+            {showLinkedInHelper && (
+              <div style={{
+                background: "rgba(253,186,40,0.08)", border: "1px solid rgba(253,186,40,0.3)",
+                borderRadius: 14, padding: 20, marginBottom: 20,
+              }}>
+                <div style={{ ...eyebrow, color: "#FBBF24", fontSize: 9, marginBottom: 8 }}>LINKEDIN — PASTE MANUALLY</div>
+                <p style={{ fontSize: 12, color: T.MUTED, marginBottom: 12, lineHeight: "18px" }}>
+                  LinkedIn blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
+                </p>
+                <textarea
+                  style={{ ...textarea, minHeight: 120, marginBottom: 10 }}
+                  placeholder="Paste the full LinkedIn job page text here..."
+                  value={linkedInPasteText}
+                  onChange={(e) => setLinkedInPasteText(e.target.value)}
+                />
+                <button
+                  onClick={parseLinkedInPaste}
+                  disabled={fetchingUrl || !linkedInPasteText.trim()}
+                  style={{ ...btnSecondary, fontSize: 12, padding: "8px 18px", opacity: fetchingUrl || !linkedInPasteText.trim() ? 0.5 : 1 }}
+                >
+                  {fetchingUrl ? "Parsing..." : "Parse Text →"}
+                </button>
+              </div>
+            )}
+
+            {/* Manual entry */}
+            <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, textAlign: "center", marginBottom: 16 }}>OR ENTER MANUALLY</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>PRIORITY</span>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[
-                    { val: "this_week", label: "This Week" },
-                    { val: "urgent", label: "Urgent" },
-                    { val: "when_ready", label: "When Ready" },
-                  ].map((p) => (
-                    <button
-                      key={p.val}
-                      onClick={() => setAnnPriority(p.val)}
-                      style={{
-                        fontSize: 11, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
-                        textTransform: "uppercase", letterSpacing: 0.8,
-                        border: annPriority === p.val ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                        background: annPriority === p.val ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
-                        color: annPriority === p.val ? T.WRN_ORANGE : T.DIM,
-                      }}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>COMPANY</span>
+                <input type="text" style={input} placeholder="Company name" value={sourceCompany} onChange={(e) => setSourceCompany(e.target.value)} />
               </div>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RECOMMENDED ACTION</span>
-                <input
-                  type="text"
-                  style={input}
-                  placeholder="e.g. apply, tailor-resume, reach-out-first..."
-                  value={annAction}
-                  onChange={(e) => setAnnAction(e.target.value)}
-                />
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB TITLE</span>
+                <input type="text" style={input} placeholder="Job title" value={sourceTitle} onChange={(e) => setSourceTitle(e.target.value)} />
               </div>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>
-                  COACHING NOTE <span style={{ color: annNote.trim().length > 0 && annNote.trim().length < 20 ? T.ERROR : T.DIM, fontWeight: 400 }}>
-                    (required, min 20 chars)
-                  </span>
-                </span>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB DESCRIPTION</span>
                 <textarea
-                  style={{ ...textarea, minHeight: 80 }}
-                  placeholder="What should the client know about this role?"
-                  value={annNote}
-                  onChange={(e) => setAnnNote(e.target.value)}
-                />
-                {annNote.trim().length > 0 && annNote.trim().length < 20 && (
-                  <p style={{ fontSize: 11, color: T.ERROR, marginTop: 4 }}>{20 - annNote.trim().length} more characters needed</p>
-                )}
-              </div>
-              <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>APPLY-BY DATE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
-                <input
-                  type="date"
-                  style={{ ...input, colorScheme: "dark" }}
-                  value={annApplyBy}
-                  onChange={(e) => setAnnApplyBy(e.target.value)}
+                  style={{ ...textarea, minHeight: 200 }}
+                  placeholder="Paste the full job description here..."
+                  value={sourceJD}
+                  onChange={(e) => setSourceJD(e.target.value)}
                 />
               </div>
             </div>
           </div>
 
-          {runError && (
-            <div style={{ marginBottom: 16, padding: 14, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-              <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+          {/* STEP 2 — Persona + Run Analysis (visible once JD has content) */}
+          {sourceJD.length > 50 && (
+            <div style={{ ...card, padding: 24, marginBottom: 20 }}>
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
+
+              {clientPersonas.length > 0 && (
+                <div style={{ marginBottom: 18 }}>
+                  <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 10 }}>CLIENT PERSONA</span>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {clientPersonas.map((p) => (
+                      <label key={p.id} style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "10px 16px", borderRadius: 12, cursor: "pointer",
+                        border: selectedPersona === p.id ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
+                        background: selectedPersona === p.id ? "rgba(254,176,106,0.07)" : "rgba(255,255,255,0.03)",
+                      }}>
+                        <input
+                          type="radio"
+                          name="persona"
+                          value={p.id}
+                          checked={selectedPersona === p.id}
+                          onChange={() => setSelectedPersona(p.id)}
+                          style={{ accentColor: T.WRN_ORANGE }}
+                        />
+                        <span style={{ fontSize: 13, fontWeight: 900, color: selectedPersona === p.id ? T.WRN_ORANGE : T.TEXT }}>
+                          {p.name}
+                          {p.is_default && <span style={{ fontSize: 10, color: T.DIM, marginLeft: 6 }}>default</span>}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {runError && (
+                <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
+                  <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                </div>
+              )}
+
+              <button
+                onClick={runDryAnalysis}
+                disabled={running || !selectedPersona}
+                style={{
+                  ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
+                  width: "100%", opacity: running || !selectedPersona ? 0.5 : 1,
+                }}
+              >
+                {running ? "Running SIGNAL Analysis..." : "Run SIGNAL Analysis →"}
+              </button>
             </div>
           )}
 
-          <button
-            onClick={runAnalysis}
-            disabled={running || !sourceJD.trim() || annNote.trim().length < 20}
-            style={{
-              ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
-              width: "100%", opacity: running || !sourceJD.trim() || annNote.trim().length < 20 ? 0.5 : 1,
-            }}
-          >
-            {running ? "Running SIGNAL Analysis..." : "Run SIGNAL Analysis"}
-          </button>
+          {/* STEP 3 — Results (visible once runResult is set) */}
+          {runResult !== null && (
+            <div style={{ ...card, padding: 24, marginBottom: 20 }}>
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>STEP 3 — REVIEW RESULTS</div>
 
-          {/* Results */}
-          {runSuccess && runResult && (
-            <div style={{ marginTop: 28 }}>
-              <div style={{ padding: 16, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10, marginBottom: 20 }}>
-                <span style={{ color: "#4ade80", fontWeight: 900, fontSize: 13 }}>
-                  Sent to {clientProfile?.name || "client"}'s dashboard
-                </span>
-              </div>
-              <div style={{ ...card, padding: 24 }}>
-                <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 12 }}>ANALYSIS RESULT</div>
-                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12 }}>
-                  {runResult.jobfit?.decision && (
-                    <Badge
-                      text={runResult.jobfit.decision}
-                      style={DECISION_STYLE[runResult.jobfit.decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }}
-                    />
-                  )}
-                  {runResult.jobfit?.score !== undefined && (
-                    <span style={{ fontSize: 13, color: T.DIM }}>Score: <span style={{ color: T.TEXT, fontWeight: 900 }}>{runResult.jobfit.score}</span></span>
-                  )}
-                </div>
-                {runResult.jobfit?.bullets?.length > 0 && (
-                  <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
-                    {runResult.jobfit.bullets.map((b: string, i: number) => (
-                      <li key={i} style={{ fontSize: 13, color: T.MUTED, lineHeight: "20px", marginBottom: 4 }}>{b}</li>
-                    ))}
-                  </ul>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+                {runResult.decision && (
+                  <Badge
+                    text={runResult.decision}
+                    style={DECISION_STYLE[runResult.decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }}
+                  />
+                )}
+                {runResult.score !== undefined && (
+                  <span style={{ fontSize: 14, color: T.DIM }}>Score: <span style={{ color: T.TEXT, fontWeight: 900 }}>{runResult.score}</span></span>
                 )}
               </div>
+
+              {runResult.why_codes?.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ ...eyebrow, fontSize: 9, color: "#4ade80", marginBottom: 6 }}>WHY CODES</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {runResult.why_codes.map((c: string, i: number) => (
+                      <span key={i} style={{
+                        fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
+                        background: "rgba(74,222,128,0.1)", color: "#4ade80",
+                      }}>{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {runResult.risk_codes?.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...eyebrow, fontSize: 9, color: "#f87171", marginBottom: 6 }}>RISK CODES</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {runResult.risk_codes.map((c: string, i: number) => (
+                      <span key={i} style={{
+                        fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
+                        background: "rgba(248,113,113,0.1)", color: "#f87171",
+                      }}>{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(runResult.decision === "Pass") && (
+                <p style={{ fontSize: 12, color: T.DIM, marginBottom: 16, fontStyle: "italic" }}>
+                  Score suggests low fit. Send anyway?
+                </p>
+              )}
+
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button
+                  onClick={() => setShowAnnotation(true)}
+                  style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900 }}
+                >
+                  Send to Dashboard →
+                </button>
+                <button
+                  onClick={clearSourceForm}
+                  style={{ fontSize: 12, color: T.DIM, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "8px 4px" }}
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4 — Annotation (visible once showAnnotation is true) */}
+          {showAnnotation && (
+            <div style={{ ...card, padding: 24, marginBottom: 20 }}>
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 16 }}>STEP 4 — COACHING ANNOTATION</div>
+
+              {sendSuccess ? (
+                <div style={{ padding: 16, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10 }}>
+                  <span style={{ color: "#4ade80", fontWeight: 900, fontSize: 13 }}>
+                    Sent to {clientProfile?.name || "client"}'s dashboard. Clearing form...
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div>
+                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>PRIORITY</span>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[
+                        { val: "urgent", label: "Urgent" },
+                        { val: "this_week", label: "This Week" },
+                        { val: "when_ready", label: "When Ready" },
+                        { val: "not_recommended", label: "Not Recommended" },
+                      ].map((p) => (
+                        <button
+                          key={p.val}
+                          onClick={() => setAnnPriority(p.val)}
+                          style={{
+                            fontSize: 11, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                            textTransform: "uppercase", letterSpacing: 0.8,
+                            border: annPriority === p.val ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
+                            background: annPriority === p.val ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                            color: annPriority === p.val ? T.WRN_ORANGE : T.DIM,
+                          }}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>RECOMMENDED ACTION</span>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[
+                        { val: "apply", label: "Apply" },
+                        { val: "research_first", label: "Research First" },
+                        { val: "tailor_resume", label: "Tailor Resume" },
+                        { val: "reach_out_first", label: "Reach Out First" },
+                        { val: "skip", label: "Skip" },
+                      ].map((a) => (
+                        <button
+                          key={a.val}
+                          onClick={() => setAnnAction(a.val)}
+                          style={{
+                            fontSize: 11, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                            textTransform: "uppercase", letterSpacing: 0.8,
+                            border: annAction === a.val ? `1px solid rgba(81,173,229,0.4)` : `1px solid ${T.BORDER_SOFT}`,
+                            background: annAction === a.val ? "rgba(81,173,229,0.1)" : "rgba(255,255,255,0.04)",
+                            color: annAction === a.val ? T.WRN_BLUE : T.DIM,
+                          }}
+                        >
+                          {a.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>
+                      COACHING NOTE{" "}
+                      <span style={{ color: annNote.trim().length > 0 && annNote.trim().length < 20 ? T.ERROR : T.DIM, fontWeight: 400 }}>
+                        (required, min 20 chars — {annNote.trim().length} entered)
+                      </span>
+                    </span>
+                    <textarea
+                      style={{ ...textarea, minHeight: 90 }}
+                      placeholder="What should the client know about this role?"
+                      value={annNote}
+                      onChange={(e) => setAnnNote(e.target.value)}
+                    />
+                    {annNote.trim().length > 0 && annNote.trim().length < 20 && (
+                      <p style={{ fontSize: 11, color: T.ERROR, marginTop: 4 }}>{20 - annNote.trim().length} more characters needed</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>APPLY-BY DATE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
+                    <input
+                      type="date"
+                      style={{ ...input, colorScheme: "dark" }}
+                      value={annApplyBy}
+                      onChange={(e) => setAnnApplyBy(e.target.value)}
+                    />
+                  </div>
+
+                  {runError && (
+                    <div style={{ padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
+                      <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={sendToClientDashboard}
+                    disabled={sending || annNote.trim().length < 20}
+                    style={{
+                      ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
+                      width: "100%", opacity: sending || annNote.trim().length < 20 ? 0.5 : 1,
+                    }}
+                  >
+                    {sending ? "Sending..." : "Send to Dashboard ✓"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
