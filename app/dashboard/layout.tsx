@@ -8,6 +8,7 @@ import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/tracker", label: "Job Tracker" },
+  { href: "/dashboard/resume-rx", label: "Resume Rx" },
   { href: "https://wrnsignal.workforcereadynow.com/signal/jobfit", label: "Back to SIGNAL →", external: true },
 ]
 
