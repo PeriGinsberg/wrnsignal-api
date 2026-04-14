@@ -79,6 +79,8 @@ export default function CoachPage() {
   const [clients, setClients] = useState<CoachClient[]>([])
   const [loading, setLoading] = useState(true)
   const [notesOpen, setNotesOpen] = useState<string | null>(null)
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
 
   // Invite modal state
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -118,6 +120,18 @@ export default function CoachPage() {
     const j = await res.json()
     setInviteResult(j)
     setInviting(false)
+  }
+
+  async function removeClient(clientProfileId: string) {
+    setRemoving(true)
+    try {
+      const res = await authFetch(`/api/coach/clients/${clientProfileId}`, { method: "DELETE" })
+      if (res.ok) {
+        setClients(prev => prev.filter(c => c.client_profile_id !== clientProfileId))
+        setConfirmRemoveId(null)
+      }
+    } catch {}
+    setRemoving(false)
   }
 
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
@@ -226,6 +240,31 @@ export default function CoachPage() {
                   >
                     Notes {isNotesOpen ? "▲" : "▼"}
                   </button>
+                  {confirmRemoveId === client.client_profile_id ? (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span style={{ fontSize: 11, color: T.DIM }}>Remove this client?</span>
+                      <button
+                        onClick={() => removeClient(client.client_profile_id)}
+                        disabled={removing}
+                        style={{ background: "none", border: "1px solid rgba(248,113,113,0.4)", color: "#f87171", fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "5px 12px", cursor: "pointer", opacity: removing ? 0.5 : 1 }}
+                      >
+                        {removing ? "Removing..." : "Yes, remove"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmRemoveId(null)}
+                        style={{ background: "none", border: "none", color: T.DIM, fontSize: 11, cursor: "pointer", padding: 0 }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmRemoveId(client.client_profile_id)}
+                      style={{ background: "none", border: "none", color: T.DIM, fontSize: 11, cursor: "pointer", padding: "9px 4px" }}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
 
                 {isNotesOpen && (
