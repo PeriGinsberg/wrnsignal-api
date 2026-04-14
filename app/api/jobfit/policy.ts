@@ -20,6 +20,8 @@ export type PenaltyKey =
   | "finance_subfamily_mismatch"
   | "role_archetype_mismatch"
   | "content_role_conflict"
+  | "degree_in_progress"
+  | "degree_unknown"
 
 export type Severity = 1 | 2 | 3 | 4 | 5
 
@@ -243,6 +245,18 @@ export const POLICY: JobFitPolicy = {
       label: "Content-only role conflicts with candidate constraint",
       severity: 4,
       multiplier: 3.0,
+      maxStackCount: 1,
+    },
+    degree_in_progress: {
+      label: "Bachelor's degree in progress",
+      severity: 5,
+      multiplier: 3.5,
+      maxStackCount: 1,
+    },
+    degree_unknown: {
+      label: "Degree status unclear",
+      severity: 3,
+      multiplier: 2.0,
       maxStackCount: 1,
     },
   },

@@ -143,6 +143,7 @@ export type StructuredProfileSignals = {
   }
   tools: string[]
   gradYear: number | null
+  degreeStatus: "has_degree" | "in_progress" | "no_degree" | "unknown"
   yearsExperienceApprox: number | null
 
   // Stated interests — now fully exposed as structured signals
@@ -200,6 +201,8 @@ export type StructuredJobSignals = {
   isHourly: boolean
   yearsRequired: number | null
   mbaRequired: boolean
+  bachelorRequired: boolean
+  bachelorPreferred: boolean
 credentialRequired: boolean
   credentialDetail: string | null
   credentialSponsored: boolean

@@ -617,7 +617,6 @@ function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenc
     if (!t) return true
     if (t.length < 35) return true
     if (t.length > 320) return true
-    if (t.includes("education")) return true
     if (t.includes("core competencies")) return true
     if (t.includes("linkedin")) return true
     if (t.includes("portfolio")) return true
@@ -636,9 +635,7 @@ function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenc
     if (t.includes("about us")) return true
     if (t.includes("equal opportunity")) return true
     if (t.includes("benefits")) return true
-    if (t.includes("bachelor's degree")) return true
-    if (t.includes("bachelors degree")) return true
-    if (t.includes("degree in")) return true
+    // bachelor's degree lines no longer filtered — needed for RISK_DEGREE detection
     return false
   }
 
@@ -1449,6 +1446,44 @@ export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfil
         },
       })
     }
+  }
+
+  // Degree requirement risk
+  if (job.bachelorRequired && profile.degreeStatus === "in_progress") {
+    const isGradThisYear = profile.gradYear === new Date().getFullYear()
+    const amt = isGradThisYear ? computePenaltyAmount("grad_window_mismatch") : computePenaltyAmount("mba_required")
+    penalties.push({
+      key: "degree_in_progress",
+      amount: amt,
+      note: "Bachelor's degree in progress",
+      risk: {
+        code: "RISK_DEGREE_IN_PROGRESS",
+        job_fact: "Posting requires a completed Bachelor's degree.",
+        profile_fact: profile.gradYear ? `Expected graduation: ${profile.gradYear}.` : "Currently pursuing degree.",
+        risk: isGradThisYear
+          ? "You are expected to graduate this year. Some employers require the degree to be completed at time of hire — confirm the start date aligns with your graduation."
+          : "This posting requires a completed Bachelor's degree. Based on your profile, you appear to still be working toward your degree. You can still apply, but expect this to come up — be prepared to address your expected graduation date directly.",
+        severity: isGradThisYear ? "medium" : "high",
+        weight: -amt,
+      },
+    })
+  }
+
+  if (job.bachelorRequired && profile.degreeStatus === "unknown") {
+    const amt = Math.max(computePenaltyAmount("grad_window_mismatch") - 2, 3)
+    penalties.push({
+      key: "degree_unknown",
+      amount: amt,
+      note: "Degree status unclear",
+      risk: {
+        code: "RISK_DEGREE_UNKNOWN",
+        job_fact: "Posting requires a completed Bachelor's degree.",
+        profile_fact: "Degree status could not be confirmed from profile.",
+        risk: "This posting requires a completed Bachelor's degree. We could not confirm your degree status from your profile. If you have not yet completed your degree, be prepared to address this in your application.",
+        severity: "medium",
+        weight: -amt,
+      },
+    })
   }
 
   if (job.mbaRequired) {

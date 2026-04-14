@@ -72,7 +72,10 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
   }
 
   if (job.mbaRequired) {
-    return { type: "force_pass", gateCode: "GATE_MBA_REQUIRED", detail: "MBA required" }
+    const detail = profile.degreeStatus === "in_progress"
+      ? "This role requires an MBA. Based on your profile, you are currently pursuing an undergraduate degree. This is a hard requirement that cannot be overcome through other qualifications."
+      : "MBA required"
+    return { type: "force_pass", gateCode: "GATE_MBA_REQUIRED", detail }
   }
 if (job.credentialRequired) {
     // Training programs explicitly provide licensing as part of onboarding —

@@ -1754,7 +1754,7 @@ function scoreProfileLine(line: string): number {
   ) score += 2
   if (/\b\d+%|\$\d+|\d+\+?\b/.test(line)) score += 1
 
-  if (/\b(education|coursework|gpa|dean'?s list|honors|scholarship|university)\b/i.test(line)) score -= 4
+  if (/\b(education|coursework|gpa|dean'?s list|honors|scholarship|university)\b/i.test(line)) score -= 2
   if (/^[A-Z\s|/-]+$/.test(line)) score -= 5
   if (t.length < 22) score -= 4
 
@@ -2136,10 +2136,7 @@ function buildUnitsFromLines(
 
     if (
       side === "job" &&
-      (
-        /\bideal candidates will have\b/i.test(cleaned) ||
-        /\b(bachelor'?s degree|bachelors degree|degree in)\b/i.test(cleaned)
-      )
+      /\bideal candidates will have\b/i.test(cleaned)
     ) {
       continue
     }
@@ -2592,6 +2589,32 @@ function inferProfileGradYear(text: string): number | null {
   }
 
   return null
+}
+
+function inferCandidateDegreeStatus(
+  profileText: string,
+  gradYear: number | null,
+  currentYear: number
+): "has_degree" | "in_progress" | "no_degree" | "unknown" {
+  // Completed degree: gradYear in the past
+  if (gradYear && gradYear < currentYear) return "has_degree"
+
+  // Degree keywords in profile
+  const hasDegreeKeyword =
+    /\b(b\.?\s*[as]\.?|bachelor'?s?|bachelor of|graduated|alumnus|alumni)\b/i.test(profileText) ||
+    /\b(m\.?\s*[as]\.?|master'?s?|mba|ph\.?d|m\.?d\.?|j\.?d\.?)\b/i.test(profileText)
+
+  if (hasDegreeKeyword && (!gradYear || gradYear <= currentYear)) return "has_degree"
+
+  // In progress: gradYear in the future
+  if (gradYear && gradYear > currentYear) return "in_progress"
+
+  // In-progress keywords
+  if (/\b(pursuing|candidate for|expected graduation|currently enrolled|junior|senior|sophomore|freshman|rising|expected\s+\d{4})\b/i.test(profileText)) {
+    return "in_progress"
+  }
+
+  return "unknown"
 }
 
 // Deterministic years-of-experience estimator.
@@ -3464,6 +3487,18 @@ export function extractJobSignals(
   const hourlyKeywords = asStringArray((POLICY as any)?.extraction?.hourly?.keywords).map(norm)
 
   const mbaRequired = includesAny(normalized, mbaKeywords)
+
+  // Bachelor's degree detection
+  const bachelorRequired =
+    /\b(bachelor'?s?\s*(degree)?|b\.?s\.?|b\.?a\.?)\s*(degree)?\s*(required|minimum|plus|and\s+above)/i.test(jobTextRaw) ||
+    /\brequires?\s+a?\s*(bachelor'?s?|undergraduate)\s*degree/i.test(jobTextRaw) ||
+    /\bdegree\s+required/i.test(jobTextRaw) ||
+    /\beducation[:\s]+bachelor/i.test(jobTextRaw) ||
+    /\bminimum\s+[^.]{0,30}bachelor/i.test(jobTextRaw) ||
+    /\bbachelor'?s?\s+(or\s+(higher|above|equivalent))/i.test(jobTextRaw)
+  const bachelorPreferred =
+    !bachelorRequired &&
+    /\bbachelor'?s?\s*(degree)?\s*preferred/i.test(jobTextRaw)
 // Credential hard requirements
   const lawSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.lawSchoolKeywords).map(norm)
   const medSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.medSchoolKeywords).map(norm)
@@ -4118,6 +4153,8 @@ return {
     isHourly,
     yearsRequired,
     mbaRequired,
+    bachelorRequired,
+    bachelorPreferred,
     credentialRequired,
     credentialDetail,
     credentialSponsored,
@@ -4165,6 +4202,7 @@ export function extractProfileSignals(
     constraints: defaultConstraintsFromText(profileTextRaw, wantsInternship),
     tools: extractedTools,
     gradYear: inferProfileGradYear(profileTextRaw),
+    degreeStatus: inferCandidateDegreeStatus(profileTextRaw, inferProfileGradYear(profileTextRaw), new Date().getFullYear()),
     yearsExperienceApprox: inferYearsExperienceApprox(profileTextRaw),
     statedInterests: {
       targetRoles: [],
