@@ -87,6 +87,14 @@ const ANALYSIS_STAGES = [
   { pct: 95, text: "Almost done..." },
 ]
 
+const ASSEMBLE_STAGES = [
+  { pct: 20, text: "Applying your approved rewrites..." },
+  { pct: 45, text: "Formatting the education section..." },
+  { pct: 65, text: "Structuring sections and layout..." },
+  { pct: 82, text: "Writing your coaching summary..." },
+  { pct: 95, text: "Final polish..." },
+]
+
 function AnalysisProgress({ stage }: { stage: number }) {
   const s = ANALYSIS_STAGES[Math.min(stage, ANALYSIS_STAGES.length - 1)]
   return (
@@ -126,6 +134,8 @@ export default function ResumeRxPage() {
   const [uploading, setUploading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisStage, setAnalysisStage] = useState(0)
+  const [assembling, setAssembling] = useState(false)
+  const [assembleStage, setAssembleStage] = useState(0)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [diagnosis, setDiagnosis] = useState<any>(null)
   const [educationData, setEducationData] = useState<any>(null)
@@ -306,16 +316,25 @@ export default function ResumeRxPage() {
 
   async function finishQA() {
     setStage("complete")
+    setAssembling(true)
+    setAssembleStage(0)
+    const delays = [2000, 5000, 10000, 18000]
+    const timers = delays.map((ms, i) => setTimeout(() => setAssembleStage(i + 1), ms))
     try {
       const res = await authFetch("/api/resume-rx/complete", {
         method: "POST",
         body: JSON.stringify({ session_id: sessionId }),
       })
       const j = await res.json()
+      timers.forEach(clearTimeout)
       if (!res.ok) throw new Error(j?.error || "Complete failed")
       setCompletionResult(j)
     } catch (err: any) {
+      timers.forEach(clearTimeout)
       setError(err?.message || "Failed to load final result.")
+    } finally {
+      setAssembling(false)
+      setAssembleStage(0)
     }
   }
 
@@ -382,7 +401,7 @@ export default function ResumeRxPage() {
   }
 
   function copyResumeText() {
-    const text = completionResult?.finalResume ?? ""
+    const text = completionResult?.final_resume_text ?? completionResult?.finalResume ?? ""
     navigator.clipboard.writeText(text).then(() => setToast("Copied to clipboard!"))
   }
 
@@ -999,7 +1018,7 @@ export default function ResumeRxPage() {
       <div style={{ maxWidth: 720 }}>
         <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 } as React.CSSProperties}>RESUME RX — REWRITE</div>
         <h1 style={{ ...headline, fontSize: 28, letterSpacing: -1, marginBottom: 6 }}>
-          Bullet by Bullet
+          {item ? `${item.section ?? ""}${item.section && item.target ? " — " : ""}${item.target ?? ""}` : "Wrapping up..."}
         </h1>
 
         {/* Progress bar */}
@@ -1126,7 +1145,7 @@ export default function ResumeRxPage() {
                   disabled={qaLoading}
                   style={{ ...btnPrimary, fontSize: 14, padding: "13px 24px", opacity: qaLoading ? 0.5 : 1 }}
                 >
-                  {qaLoading ? "Generating..." : "Generate Rewrite →"}
+                  {qaLoading ? "Generating..." : qaIndex + 1 >= total ? "Generate Rewrite →" : "Next →"}
                 </button>
               ) : (
                 <button
@@ -1171,32 +1190,77 @@ export default function ResumeRxPage() {
         )}
 
         {!completionResult ? (
-          <div style={{ ...card, padding: 60, textAlign: "center" }}>
-            <p style={{ color: T.MUTED, fontSize: 14 }}>Assembling your final resume...</p>
-          </div>
+          (() => {
+            const s = ASSEMBLE_STAGES[Math.min(assembleStage, ASSEMBLE_STAGES.length - 1)]
+            return (
+              <div style={{ ...card, padding: 24, textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: T.TEXT, marginBottom: 6 }}>
+                  Assembling your final resume...
+                </div>
+                <div style={{ fontSize: 13, color: T.MUTED, marginBottom: 18 }}>{s.text}</div>
+                <div style={{ height: 8, borderRadius: 4, background: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 16 }}>
+                  <div style={{
+                    height: "100%", borderRadius: 4,
+                    background: "linear-gradient(90deg, #4ade80, #22c55e, #51ADE5)",
+                    width: `${s.pct}%`,
+                    transition: "width 0.8s ease-in-out",
+                  }} />
+                </div>
+                <div style={{ fontSize: 11, color: T.DIM }}>
+                  This takes about 20 seconds. We're building your resume from all your approved changes.
+                </div>
+              </div>
+            )
+          })()
         ) : (
           <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
             {/* Left: coaching summary */}
             <div style={{ width: 320, flexShrink: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-              {result.coaching_summary && (
-                <>
-                  {[
-                    { key: "what_changed", title: "WHAT CHANGED" },
-                    { key: "what_to_do_next", title: "WHAT TO DO NEXT" },
-                    { key: "field_advice", title: "FIELD ADVICE" },
-                    { key: "honest_assessment", title: "HONEST ASSESSMENT" },
-                  ].map(({ key, title }) => result.coaching_summary[key] ? (
-                    <div key={key} style={card}>
+              {result.coaching_summary && (() => {
+                const cs = result.coaching_summary
+                // Handle both string and structured coaching_summary
+                if (typeof cs === "string") {
+                  return (
+                    <div style={card}>
                       <div style={{ padding: "16px 18px" }}>
-                        <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 8 } as React.CSSProperties}>{title}</div>
-                        <p style={{ fontSize: 13, color: T.MUTED, margin: 0, lineHeight: "20px" }}>
-                          {result.coaching_summary[key]}
-                        </p>
+                        <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 8 } as React.CSSProperties}>COACHING SUMMARY</div>
+                        <p style={{ fontSize: 13, color: T.MUTED, margin: 0, lineHeight: "20px", whiteSpace: "pre-wrap" }}>{cs}</p>
                       </div>
                     </div>
-                  ) : null)}
-                </>
-              )}
+                  )
+                }
+                // Structured: try sections object or top-level keys
+                const sections = cs.sections ?? cs
+                const sectionMap = [
+                  { key: "what_we_fixed", title: "WHAT WE FIXED" },
+                  { key: "why_stronger", title: "WHY IT'S STRONGER NOW" },
+                  { key: "watch_for", title: "WHAT TO WATCH FOR" },
+                  { key: "next_move", title: "YOUR NEXT MOVE" },
+                  // Fallback keys from earlier schema
+                  { key: "what_changed", title: "WHAT CHANGED" },
+                  { key: "what_to_do_next", title: "WHAT TO DO NEXT" },
+                  { key: "field_advice", title: "FIELD ADVICE" },
+                  { key: "honest_assessment", title: "HONEST ASSESSMENT" },
+                ]
+                const rendered = sectionMap.filter(({ key }) => sections[key])
+                return rendered.length > 0 ? rendered.map(({ key, title }) => (
+                  <div key={key} style={card}>
+                    <div style={{ padding: "16px 18px" }}>
+                      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 8 } as React.CSSProperties}>{title}</div>
+                      <p style={{ fontSize: 13, color: T.MUTED, margin: 0, lineHeight: "20px" }}>{sections[key]}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div style={card}>
+                    <div style={{ padding: "16px 18px" }}>
+                      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 8 } as React.CSSProperties}>COACHING SUMMARY</div>
+                      <p style={{ fontSize: 13, color: T.MUTED, margin: 0, lineHeight: "20px", whiteSpace: "pre-wrap" }}>
+                        {cs.coaching_summary ?? JSON.stringify(cs, null, 2)}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Actions */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1247,14 +1311,14 @@ export default function ResumeRxPage() {
                 <div style={{ height: 3, background: T.GRAD_PRIMARY }} />
                 <div style={{ padding: 28 }}>
                   <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 14 } as React.CSSProperties}>FINAL RESUME</div>
-                  {result.finalResume ? (
+                  {(result.final_resume_text || result.finalResume) ? (
                     <pre style={{
                       fontSize: 12, color: T.TEXT, lineHeight: "19px",
                       whiteSpace: "pre-wrap", margin: 0,
                       fontFamily: "'Courier New', monospace",
                       maxHeight: 720, overflowY: "auto",
                     }}>
-                      {result.finalResume}
+                      {result.final_resume_text || result.finalResume}
                     </pre>
                   ) : (
                     <p style={{ fontSize: 13, color: T.MUTED }}>Resume text not available.</p>
