@@ -27,7 +27,7 @@ type Platform =
 function detectPlatform(hostname: string): Platform {
   const h = hostname.toLowerCase().replace(/^www\./, "")
   if (h === "linkedin.com" || h.endsWith(".linkedin.com")) return "linkedin"
-  if (h === "indeed.com" || h.endsWith(".indeed.com")) return "indeed"
+  if (h === "indeed.com" || h.endsWith(".indeed.com") || h === "indeed.app.link") return "indeed"
   if (h === "greenhouse.io" || h.endsWith(".greenhouse.io")) return "greenhouse"
   if (h === "lever.co" || h.endsWith(".lever.co")) return "lever"
   if (h === "joinhandshake.com" || h === "app.joinhandshake.com") return "handshake"
@@ -522,9 +522,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Validate URL
-  const rawUrl = String(body?.url ?? "").trim()
+  let rawUrl = String(body?.url ?? "").trim()
   if (!rawUrl) {
     return withCorsJson(req, { error: "url is required", code: "INVALID_URL" }, 400)
+  }
+
+  // Auto-prepend https:// if no protocol (common on mobile copy-paste)
+  if (!/^https?:\/\//i.test(rawUrl)) {
+    rawUrl = `https://${rawUrl}`
   }
 
   let parsedUrl: URL
