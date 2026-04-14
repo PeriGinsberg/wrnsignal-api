@@ -207,6 +207,7 @@ export default function CoachClientPage() {
     if (!sourceUrl.trim()) return
     setFetchingUrl(true)
     setShowLinkedInHelper(false)
+    setRunError('')
     try {
       const res = await authFetch("/api/parse-job-url", {
         method: "POST",
@@ -217,10 +218,17 @@ export default function CoachClientPage() {
         if (j.jobDescription) setSourceJD(j.jobDescription)
         if (j.companyName) setSourceCompany(j.companyName)
         if (j.jobTitle) setSourceTitle(j.jobTitle)
+        if (!j.jobDescription && !j.companyName && !j.jobTitle) {
+          setRunError("Fetched the URL but could not extract job details. Try pasting the job description manually below.")
+        }
       } else if (j.code === "LINKEDIN") {
         setShowLinkedInHelper(true)
         setLinkedInPasteText("")
+      } else {
+        setRunError(j.error || "Failed to fetch job details from this URL. Try pasting the description manually.")
       }
+    } catch {
+      setRunError("Network error fetching URL. Please try again or paste the job description manually.")
     } finally {
       setFetchingUrl(false)
     }
@@ -228,20 +236,39 @@ export default function CoachClientPage() {
 
   async function parseLinkedInPaste() {
     if (!linkedInPasteText.trim()) return
+    if (linkedInPasteText.trim().length < 50) {
+      setRunError("Please paste more content — select the full job page, not just the title.")
+      return
+    }
     setFetchingUrl(true)
+    setRunError('')
     try {
       const res = await authFetch("/api/parse-job-text", {
         method: "POST",
         body: JSON.stringify({ text: linkedInPasteText.trim() }),
       })
-      if (res.ok) {
-        const j = await res.json()
-        if (j.jobDescription) setSourceJD(j.jobDescription)
-        if (j.companyName) setSourceCompany(j.companyName)
-        if (j.jobTitle) setSourceTitle(j.jobTitle)
-        setShowLinkedInHelper(false)
-        setLinkedInPasteText("")
+      const j = await res.json()
+      if (!res.ok) {
+        setRunError(j.error || "Failed to parse the pasted text. Try pasting more content or enter the job details manually.")
+        return
       }
+      const hasDescription = j.jobDescription && j.jobDescription.length > 20
+      const hasTitle = j.jobTitle && j.jobTitle.length > 1
+      const hasCompany = j.companyName && j.companyName.length > 1
+      if (!hasDescription && !hasTitle && !hasCompany) {
+        setRunError("Could not extract job details from the pasted text. Try copying the entire page, or enter the company, title, and description manually below.")
+        return
+      }
+      if (j.jobDescription) setSourceJD(j.jobDescription)
+      if (j.companyName) setSourceCompany(j.companyName)
+      if (j.jobTitle) setSourceTitle(j.jobTitle)
+      setShowLinkedInHelper(false)
+      setLinkedInPasteText("")
+      if (!hasDescription) {
+        setRunError("Extracted company and title but the job description was too short. Paste the full description in the Job Description field below.")
+      }
+    } catch {
+      setRunError("Network error. Please try again or enter the job details manually.")
     } finally {
       setFetchingUrl(false)
     }
@@ -795,6 +822,13 @@ export default function CoachClientPage() {
                 >
                   {fetchingUrl ? "Parsing..." : "Parse Text →"}
                 </button>
+              </div>
+            )}
+
+            {/* Error from fetch/parse */}
+            {runError && (
+              <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
+                <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
               </div>
             )}
 
