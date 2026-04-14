@@ -147,6 +147,7 @@ export default function CoachClientPage() {
   const [sendSuccess, setSendSuccess] = useState(false)
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [recsExpanded, setRecsExpanded] = useState(false)
   const [editingRecId, setEditingRecId] = useState<string | null>(null)
   const [editRecNote, setEditRecNote] = useState("")
   const [editRecPriority, setEditRecPriority] = useState("")
@@ -408,10 +409,18 @@ export default function CoachClientPage() {
       {/* TAB 1 — Job Tracker */}
       {tab === "tracker" && (
         <div>
-          {/* Section A: From You */}
+          {/* Section A: From You (collapsible) */}
           <div style={{ marginBottom: 32 }}>
-            <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 12 }}>FROM YOU — COACH RECOMMENDATIONS</div>
-            {coachRecs.length === 0 ? (
+            <div
+              onClick={() => setRecsExpanded(!recsExpanded)}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", marginBottom: recsExpanded ? 12 : 0 }}
+            >
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE }}>
+                FROM YOU — COACH RECOMMENDATIONS {coachRecs.length > 0 && <span style={{ color: T.DIM, fontWeight: 700 }}>({coachRecs.length})</span>}
+              </div>
+              <span style={{ fontSize: 12, color: T.DIM }}>{recsExpanded ? "▲" : "▼"}</span>
+            </div>
+            {!recsExpanded ? null : coachRecs.length === 0 ? (
               <p style={{ color: T.MUTED, fontSize: 13 }}>No recommendations sent yet. Use the "Source a Job" tab to find and send jobs.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
