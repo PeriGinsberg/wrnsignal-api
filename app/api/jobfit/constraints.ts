@@ -50,6 +50,8 @@ const BUSINESS_FAMILIES = new Set([
   "Accounting",
   "Analytics",
   "Sales",
+  "Operations",
+  "HR",
   "Government",
   "PreMed",
   "Other",

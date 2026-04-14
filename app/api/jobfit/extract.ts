@@ -1853,6 +1853,8 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     Accounting: 0,
     Analytics: 0,
     Sales: 0,
+    Operations: 0,
+    HR: 0,
     Government: 0,
     PreMed: 0,
     Engineering: 0,
@@ -1865,35 +1867,33 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
 
   for (const tag of tags) {
     if (tag === "government_cleared") score.Government += 5
-    if (tag === "sales_bd") score.Sales += 6
+    if (tag === "sales_bd") score.Sales += 5
     if (tag === "premed_clinical") score.PreMed += 4
 
-    if (tag === "finance_corp") score.Finance += 5
-    if (tag === "accounting_finops") score.Accounting += 5
+    if (tag === "finance_corp") score.Finance += 6
+    if (tag === "accounting_finops") score.Accounting += 6
 
-    if (tag === "data_analytics_bi") score.Analytics += 3
+    if (tag === "data_analytics_bi") score.Analytics += 4
     // Consumer/market research is fundamentally Marketing work — it lives
     // inside marketing teams, advertising agencies, and brand orgs.
-    // Give Marketing the larger share so market research analyst roles
-    // classify correctly instead of falling to Analytics or Finance.
     if (tag === "consumer_insights_research") {
       score.Marketing += 4
       score.Analytics += 2
     }
 
-    if (tag === "brand_marketing") score.Marketing += 4
+    if (tag === "brand_marketing") score.Marketing += 5
     if (tag === "communications_pr") score.Marketing += 3
     if (tag === "content_social") score.Marketing += 3
     if (tag === "growth_performance") score.Marketing += 4
-    if (tag === "product_marketing") score.Marketing += 5
+    if (tag === "product_marketing") score.Marketing += 6
 
-    if (tag === "consulting_strategy") score.Consulting += 5
-    // Operations roles (Chief of Staff, BusinessOps, Strategy & Ops) route
-    // to Consulting because there is no dedicated Operations family. Bumped
-    // from +1 to +4 so a job with heavy operations signal can beat stray
-    // finance_corp / accounting_finops tags that pick up on budget and
-    // reporting language in the body.
-    if (tag === "operations_general") score.Consulting += 4
+    if (tag === "consulting_strategy") score.Consulting += 7
+    // Operations scores toward Operations when consulting_strategy is absent,
+    // toward Consulting when both fire
+    if (tag === "operations_general") {
+      score.Operations += 5
+      score.Consulting += 3
+    }
 
     if (tag === "engineering_technical") score.Engineering += 8
     if (tag === "software_it") score.IT_Software += 8
@@ -1907,11 +1907,15 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
   if (score.Sales > 0 && score.PreMed > 0) score.Sales += 2
 
   // When BOTH healthcare_clinical and premed_clinical fire, the role is
-  // clearly in the medical/life-sciences space. Boost Healthcare so it
-  // beats accidental Marketing/Consulting tag pollution.
+  // clearly in the medical/life-sciences space.
   if (score.Healthcare > 0 && score.PreMed > 0) {
     score.Healthcare += 5
     score.PreMed += 3
+  }
+
+  // When consulting_strategy fires, Consulting should beat Operations
+  if (score.Consulting > 0 && score.Operations > 0 && tags.includes("consulting_strategy")) {
+    score.Consulting += 3
   }
 
   const ordered: JobFamily[] = [
@@ -1920,10 +1924,12 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     "Healthcare",
     "Legal",
     "Trades",
+    "Finance",
     "Sales",
     "Marketing",
     "Consulting",
-    "Finance",
+    "Operations",
+    "HR",
     "Accounting",
     "Analytics",
     "Government",
@@ -1940,6 +1946,10 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
       bestScore = score[family]
     }
   }
+
+  // Minimum threshold — prevents single weak-tag noise from winning.
+  // Strong single-tag families (Engineering/IT/Legal/Trades at +8) always pass.
+  if (bestScore < 4) return "Other"
 
   return best
 }
@@ -3254,7 +3264,7 @@ export function extractJobSignals(
     ? userTitleNorm + "\n" + normalized.slice(0, 1500)
     : normalized.slice(0, 1500)
   const jobTitleIsFinance =
-    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|project finance|investor relations|investment analyst|capital markets|private equity|asset management|portfolio analyst|wealth management|wealth advisor|financial advisor|financial professional|financial consultant|financial planner|client associate|client service associate|advisor development|wealth relationship|relationship manager|series 7|finra|securities|broker dealer)\b/i.test(jobTitleSlice)
+    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|fpa associate|treasury analyst|treasury associate|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|financial reporting|project finance|investor relations|investment analyst|investment associate|capital markets|private equity analyst|private equity associate|private equity|venture capital analyst|vc analyst|asset management analyst|asset management|portfolio analyst|portfolio associate|wealth management|wealth advisor|financial advisor|financial professional|financial consultant|financial planner|client associate|client service associate|advisor development|wealth relationship|relationship manager|series 7|finra|securities|broker dealer|credit analyst|credit associate|risk analyst|risk associate|controller|assistant controller|budget analyst|financial coordinator)\b/i.test(jobTitleSlice)
   const jobTitleIsSales =
     /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
 
@@ -3339,7 +3349,7 @@ export function extractJobSignals(
   // a "Director of Human Resources" JD matches any Consulting candidate
   // just because its body uses the word "operations".
   const jobTitleIsHR =
-    /\b(human resources|hr director|hr manager|hrbp|hr business partner|director of (people|hr|human resources)|head of (people|hr|human resources)|chief (people|human resources) officer|people operations|talent acquisition|recruiter|compensation and benefits|labor relations)\b/i.test(
+    /\b(human resources|hr director|hr manager|hr coordinator|hr associate|hr generalist|hr specialist|hr analyst|hr intern|hrbp|hr business partner|director of (people|hr|human resources)|head of (people|hr|human resources)|chief (people|human resources) officer|people operations|people ops|talent acquisition|talent coordinator|talent development|recruiter|recruiting coordinator|compensation and benefits|compensation analyst|benefits coordinator|labor relations|employee relations|dei coordinator|learning and development|l&d coordinator|onboarding specialist)\b/i.test(
       jobTitleSlice
     )
 
@@ -3357,6 +3367,15 @@ export function extractJobSignals(
   const hasPRCommsAgencyContext =
     /\b(public relations|communications practice|pr agency|pr firm|communications agency|media relations|press release|press outreach|media pitch|media pitching|earned media|editorial placements|influencer relations|client communications|comms practice)\b/i.test(jobTitleSlice)
   const jobTitleIsPRCommsAgency = hasAccountTitle && hasPRCommsAgencyContext
+
+  const jobTitleIsOperations =
+    /\b(operations analyst|operations associate|operations coordinator|operations manager|operations specialist|operations intern|ops analyst|ops associate|supply chain analyst|supply chain coordinator|supply chain manager|logistics coordinator|logistics analyst|logistics manager|program coordinator|program manager|project coordinator|project manager|process analyst|process improvement|business operations|biz ops)\b/i.test(jobTitleSlice)
+
+  const jobTitleIsAnalytics =
+    /\b(data analyst|business analyst|business intelligence|bi analyst|bi developer|analytics analyst|analytics associate|analytics engineer|analytics coordinator|analytics intern|data scientist|quantitative analyst|quant analyst|research analyst|insights analyst|insights associate|reporting analyst|decision science)\b/i.test(jobTitleSlice)
+
+  const jobTitleIsConsulting =
+    /\b(consultant|consulting analyst|management consultant|strategy consultant|associate consultant|business consultant|advisory analyst|advisory associate|strategy analyst|strategy associate|transformation analyst|change management|process consultant|implementation consultant)\b/i.test(jobTitleSlice)
 
   // Seniority detection — check the first 300 chars (title line).
   // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
@@ -3423,58 +3442,45 @@ export function extractJobSignals(
   }
 
   const jobFamilyFromTags = familyFromFunctionTags(functionTags)
+
+  // Family assignment cascade — title overrides beat tag-based inference.
+  // Priority order: hard-field titles first, then business-field titles,
+  // then tag-based fallback.
   const jobFamily: JobFamily = jobTitleIsLegal
-    // Legal titles win over isLegalOpsContext (which routes to "Other"
-    // for in-house general counsel at non-legal companies). When the
-    // title itself is explicitly Legal, always route to Legal family.
     ? "Legal"
     : isLegalOpsContext
     ? "Other"
-    : jobTitleIsHR
-      // HR titles → "Other" so Consulting candidates don't match HR roles
-      // via operations_general bare-word leakage. HR is its own category
-      // that the scoring engine doesn't currently understand, so treating
-      // it as "Other" forces the family mismatch to fire correctly.
-      ? "Other"
-      : jobTitleIsLifeSciences
-        // Scientist / chemist / biologist / QC / lab titles route to
-        // Engineering because it's the closest existing family. Without
-        // this, "QC Analyst I" misclassified as IT_Software (from
-        // "technical" keywords) and "Scientist I" misclassified as
-        // Marketing (from "research" + "communications" tags).
+    : jobTitleIsLifeSciences
+      ? "Engineering"
+      : jobTitleIsEngineering
         ? "Engineering"
-        : jobTitleIsEngineering
-          ? "Engineering"
-          : jobTitleIsSoftware
+        : jobTitleIsSoftware
+          ? "IT_Software"
+          : jobTitleIsCyberSecurity
             ? "IT_Software"
-            : jobTitleIsCyberSecurity
-              // Cybersecurity / InfoSec routes to IT_Software. Placed
-              // alongside jobTitleIsSoftware since they both belong in
-              // the same IT family.
-              ? "IT_Software"
-            : jobTitleIsHealthcare
-              ? "Healthcare"
-              : jobTitleIsTrades
-                ? "Trades"
+          : jobTitleIsHealthcare
+            ? "Healthcare"
+            : jobTitleIsTrades
+              ? "Trades"
+              : jobTitleIsHR
+                ? "HR"
                 : jobTitleIsPRCommsAgency
-                  // PR/comms agency account ladder → Marketing family.
-                  // Placed BEFORE jobTitleIsMarketing because the account
-                  // titles are NOT marketing-titled, but the work clearly
-                  // sits in the Marketing family for our scoring model.
                   ? "Marketing"
                   : jobTitleIsMarketing
-                  ? "Marketing"
-                  // Strategy/BusinessOps/CoS titles force Consulting even when
-                  // the body has finance/analytics noise. Placed BEFORE the
-                  // Finance check so "Strategy and Business Operations" doesn't
-                  // lose to "financial modeling" bullets in the body.
-                  : jobTitleIsStrategyOps
-                    ? "Consulting"
-                    : jobTitleIsFinance && jobFamilyFromTags !== "Finance"
-                      ? "Finance"
-                      : jobTitleIsSales
-                        ? "Sales"
-                        : jobFamilyFromTags
+                    ? "Marketing"
+                    : jobTitleIsConsulting
+                      ? "Consulting"
+                      : jobTitleIsStrategyOps
+                        ? "Consulting"
+                        : jobTitleIsFinance
+                          ? "Finance"
+                          : jobTitleIsAnalytics
+                            ? "Analytics"
+                            : jobTitleIsOperations
+                              ? "Operations"
+                              : jobTitleIsSales
+                                ? "Sales"
+                                : jobFamilyFromTags
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)

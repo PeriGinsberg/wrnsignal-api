@@ -14,6 +14,8 @@ export type JobFamily =
   | "Accounting"
   | "Analytics"
   | "Sales"
+  | "Operations"
+  | "HR"
   | "Government"
   | "PreMed"
   | "Engineering"
