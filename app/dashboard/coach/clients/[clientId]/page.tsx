@@ -41,6 +41,7 @@ type CoachRec = {
   client_status: string | null
   apply_by: string | null
   verdict: string | null
+  recommended_action: string | null
   created_at: string | null
 }
 
@@ -146,6 +147,12 @@ export default function CoachClientPage() {
   const [sendSuccess, setSendSuccess] = useState(false)
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [editingRecId, setEditingRecId] = useState<string | null>(null)
+  const [editRecNote, setEditRecNote] = useState("")
+  const [editRecPriority, setEditRecPriority] = useState("")
+  const [editRecAction, setEditRecAction] = useState("")
+  const [editRecApplyBy, setEditRecApplyBy] = useState("")
+  const [savingRec, setSavingRec] = useState(false)
 
   // Application card expand state (tracker tab)
   const [openAppIds, setOpenAppIds] = useState<Set<string>>(new Set())
@@ -417,62 +424,113 @@ export default function CoachClientPage() {
                         )}
                       </div>
 
-                      {/* Coaching note + delete */}
-                      {rec.coaching_note && (
-                        <div style={{ marginBottom: 8 }}>
-                          <p style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px" }}>
-                            <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Note: </span>
-                            {rec.coaching_note}
-                          </p>
-                          {confirmDeleteId === rec.id ? (
-                            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                              <span style={{ fontSize: 11, color: T.DIM }}>Delete this note?</span>
-                              <span
-                                style={{ fontSize: 11, color: "#f87171", cursor: "pointer", fontWeight: 700 }}
-                                onClick={async () => {
-                                  setDeletingNoteId(rec.id)
+                      {/* Inline edit form */}
+                      {editingRecId === rec.id ? (
+                        <div style={{ marginBottom: 8, padding: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}` }}>
+                          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 10 }}>EDIT RECOMMENDATION</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div>
+                              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>COACHING NOTE</span>
+                              <textarea style={{ ...textarea, minHeight: 60 }} value={editRecNote} onChange={(e) => setEditRecNote(e.target.value)} placeholder="Your coaching note..." />
+                            </div>
+                            <div style={{ display: "flex", gap: 12 }}>
+                              <div style={{ flex: 1 }}>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>PRIORITY</span>
+                                <select style={{ ...input, cursor: "pointer", colorScheme: "dark", height: 38 } as React.CSSProperties} value={editRecPriority} onChange={(e) => setEditRecPriority(e.target.value)}>
+                                  <option value="urgent" style={{ background: "#0a1628" }}>Urgent</option>
+                                  <option value="this_week" style={{ background: "#0a1628" }}>This Week</option>
+                                  <option value="when_ready" style={{ background: "#0a1628" }}>When Ready</option>
+                                  <option value="not_recommended" style={{ background: "#0a1628" }}>For Awareness</option>
+                                </select>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>ACTION</span>
+                                <select style={{ ...input, cursor: "pointer", colorScheme: "dark", height: 38 } as React.CSSProperties} value={editRecAction} onChange={(e) => setEditRecAction(e.target.value)}>
+                                  <option value="apply" style={{ background: "#0a1628" }}>Apply</option>
+                                  <option value="research_first" style={{ background: "#0a1628" }}>Research First</option>
+                                  <option value="hold" style={{ background: "#0a1628" }}>Hold</option>
+                                  <option value="skip" style={{ background: "#0a1628" }}>Skip</option>
+                                </select>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>APPLY BY</span>
+                                <input type="date" style={{ ...input, height: 38, colorScheme: "dark" } as React.CSSProperties} value={editRecApplyBy} onChange={(e) => setEditRecApplyBy(e.target.value)} />
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                            <button
+                              disabled={savingRec}
+                              onClick={async () => {
+                                setSavingRec(true)
+                                try {
                                   await authFetch(`/api/coach/recommendations/${rec.id}`, {
                                     method: "PATCH",
-                                    body: JSON.stringify({ coaching_note: "" }),
+                                    body: JSON.stringify({
+                                      coaching_note: editRecNote || null,
+                                      priority: editRecPriority,
+                                      recommended_action: editRecAction,
+                                      apply_by_date: editRecApplyBy || null,
+                                    }),
                                   })
-                                  setCoachRecs(prev => prev.map(r => r.id === rec.id ? { ...r, coaching_note: null } : r))
-                                  setConfirmDeleteId(null)
-                                  setDeletingNoteId(null)
-                                }}
-                              >
-                                {deletingNoteId === rec.id ? "Deleting..." : "Yes, delete"}
-                              </span>
-                              <span
-                                style={{ fontSize: 11, color: T.DIM, cursor: "pointer" }}
-                                onClick={() => setConfirmDeleteId(null)}
-                              >
-                                Cancel
-                              </span>
-                            </div>
-                          ) : (
-                            <span
-                              style={{ fontSize: 11, color: T.DIM, cursor: "pointer", marginTop: 4, display: "inline-block" }}
-                              onClick={() => setConfirmDeleteId(rec.id)}
+                                  setCoachRecs(prev => prev.map(r => r.id === rec.id ? { ...r, coaching_note: editRecNote || null, priority: editRecPriority, recommended_action: editRecAction, apply_by: editRecApplyBy || null } : r))
+                                  setEditingRecId(null)
+                                } catch {}
+                                setSavingRec(false)
+                              }}
+                              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: savingRec ? 0.5 : 1 }}
                             >
-                              Delete note
-                            </span>
-                          )}
+                              {savingRec ? "Saving..." : "Save Changes"}
+                            </button>
+                            <button onClick={() => setEditingRecId(null)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px" }}>Cancel</button>
+                          </div>
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          {/* Coaching note (read-only) */}
+                          {rec.coaching_note && (
+                            <div style={{ marginBottom: 8 }}>
+                              <p style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px" }}>
+                                <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Note: </span>
+                                {rec.coaching_note}
+                              </p>
+                            </div>
+                          )}
 
-                      {/* Client status + apply by */}
-                      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                        {rec.client_status && (
-                          <span style={{ fontSize: 11, color: T.DIM }}>
-                            Client: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.client_status}</span>
-                          </span>
-                        )}
-                        {rec.apply_by && (
-                          <span style={{ fontSize: 11, color: T.DIM }}>
-                            Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
-                          </span>
-                        )}
-                      </div>
+                          {/* Client status + apply by */}
+                          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }}>
+                            {rec.client_status && (
+                              <span style={{ fontSize: 11, color: T.DIM }}>
+                                Client: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.client_status}</span>
+                              </span>
+                            )}
+                            {rec.apply_by && (
+                              <span style={{ fontSize: 11, color: T.DIM }}>
+                                Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
+                              </span>
+                            )}
+                            {rec.recommended_action && (
+                              <span style={{ fontSize: 11, color: T.DIM }}>
+                                Action: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.recommended_action.replace(/_/g, " ")}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Edit button */}
+                          <button
+                            onClick={() => {
+                              setEditingRecId(rec.id)
+                              setEditRecNote(rec.coaching_note || "")
+                              setEditRecPriority(rec.priority || "this_week")
+                              setEditRecAction(rec.recommended_action || "apply")
+                              setEditRecApplyBy(rec.apply_by || "")
+                            }}
+                            style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}
+                          >
+                            Edit
+                          </button>
+                        </>
+                      )}
                     </div>
                   )
                 })}
@@ -750,6 +808,11 @@ export default function CoachClientPage() {
               <div>
                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB TITLE</span>
                 <input type="text" style={input} placeholder="Job title" value={sourceTitle} onChange={(e) => setSourceTitle(e.target.value)} />
+              </div>
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB APPLICATION URL</span>
+                <input type="url" style={input} placeholder="https://... (link where client should apply)" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} />
+                <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>This link will appear on the client's tracker so they can apply directly</p>
               </div>
               <div>
                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB DESCRIPTION</span>
