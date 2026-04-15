@@ -39,7 +39,13 @@ type Profile = {
   profile_version: number
   profile_structured: Record<string, any> | null
   profile_complete: boolean
+  active: boolean | null
+  purchase_date: string | null
+  refunded_at: string | null
 }
+
+const REFUND_WINDOW_DAYS = 7
+const REFUND_WINDOW_MS = REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000
 
 type Persona = {
   id: string
@@ -138,6 +144,7 @@ export default function DashboardPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [resumeUploading, setResumeUploading] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [refunding, setRefunding] = useState(false)
 
   async function getToken() {
     const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -312,6 +319,44 @@ export default function DashboardPage() {
       setError(j?.error || "Create failed")
     }
     setSaving(false)
+  }
+
+  async function requestRefund() {
+    if (refunding) return
+    const ok = window.confirm(
+      "Are you sure? You will lose access immediately."
+    )
+    if (!ok) return
+
+    setRefunding(true)
+    try {
+      const token = await getToken()
+      if (!token) {
+        setError("You must be signed in to request a refund.")
+        return
+      }
+      const res = await fetch("/api/stripe/refund", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        setError(data?.error || "Refund request failed.")
+        return
+      }
+      // Sign the user out and return them to the unauthenticated state.
+      try {
+        await getSupabaseBrowser().auth.signOut()
+      } catch {
+        // ignore — we're redirecting regardless
+      }
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("signal_handoff_token")
+        window.location.href = "/dashboard"
+      }
+    } finally {
+      setRefunding(false)
+    }
   }
 
   async function respondToRec(recId: string, response: string) {
@@ -782,6 +827,53 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {(() => {
+        if (!profile?.purchase_date) return null
+        if (profile.refunded_at) return null
+        if (profile.active === false) return null
+        const purchasedAt = new Date(profile.purchase_date).getTime()
+        if (!Number.isFinite(purchasedAt)) return null
+        const ageMs = Date.now() - purchasedAt
+        if (ageMs > REFUND_WINDOW_MS) return null
+        const daysLeft = Math.max(
+          0,
+          Math.ceil((REFUND_WINDOW_MS - ageMs) / (24 * 60 * 60 * 1000))
+        )
+        return (
+          <div style={{ marginTop: 40 }}>
+            <div style={{ ...eyebrow, color: T.DIM, marginBottom: 10 }}>ACCOUNT</div>
+            <div style={{ ...card }}>
+              <div style={{ padding: 20, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: T.TEXT, marginBottom: 4 }}>
+                    7-day money-back guarantee
+                  </div>
+                  <div style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px" }}>
+                    You have {daysLeft} day{daysLeft === 1 ? "" : "s"} left to request a
+                    full refund. Refunding will revoke your SIGNAL access immediately.
+                  </div>
+                </div>
+                <button
+                  onClick={requestRefund}
+                  disabled={refunding}
+                  style={{
+                    ...btnSecondary,
+                    fontSize: 12,
+                    padding: "10px 16px",
+                    borderRadius: 10,
+                    color: "#f87171",
+                    borderColor: "rgba(248,113,113,0.3)",
+                    opacity: refunding ? 0.5 : 1,
+                  }}
+                >
+                  {refunding ? "Processing..." : "Request Refund"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>

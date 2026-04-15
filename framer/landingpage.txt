@@ -347,10 +347,10 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
             {heroState === "loading" && <div className="loading-msg">Setting up your checkout...</div>}
             {heroState === "error" && <div className="email-error">{heroError}</div>}
             {heroState === "success" && <div className="email-success">Redirecting to checkout...</div>}
-            <div className="price-tag">3 months unlimited · covers a full recruiting season</div>
+            <div className="price-tag">One-time $99 · no expiration · unlimited access</div>
             <div className="guarantee-row">
               <div className="g-icon"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#218C8C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-              <div className="guarantee-text">30-day money back guarantee — if it doesn't change how you search, we'll refund every dollar</div>
+              <div className="guarantee-text">7-day money back guarantee — if it doesn't change how you search, we'll refund every dollar</div>
             </div>
             <div className="app-inc">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="2" stroke="#218C8C" strokeWidth="1" /></svg>
@@ -649,11 +649,11 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
           <div className="proof-item"><div className="proof-num">30 yrs</div><div className="proof-label">hiring &amp; recruitment<br />expertise inside SIGNAL</div></div>
           <div className="proof-item"><div className="proof-num">20,000+</div><div className="proof-label">lines of recruitment<br />intelligence</div></div>
           <div className="proof-item"><div className="proof-num">&lt; 2 min</div><div className="proof-label">to score, position, and<br />plan any role</div></div>
-          <div className="proof-item"><div className="proof-num">$99</div><div className="proof-label">3 months unlimited<br />full recruiting season</div></div>
+          <div className="proof-item"><div className="proof-num">$99</div><div className="proof-label">one-time · no expiration<br />unlimited access</div></div>
         </div>
 
         <div className="coaching-bar">
-          <div className="coaching-text"><strong>One career coaching session costs $150–$300 and lasts an hour.</strong> SIGNAL gives you <span className="hl">30 years of hiring expertise, available 24/7, for every role you consider — for $99 for your entire recruiting season.</span> Plus the iOS app, included at launch.</div>
+          <div className="coaching-text"><strong>One career coaching session costs $150–$300 and lasts an hour.</strong> SIGNAL gives you <span className="hl">30 years of hiring expertise, available 24/7, for every role you consider — for a one-time $99 with no expiration.</span> Plus the iOS app, included at launch.</div>
         </div>
 
         <div className="pricing-section">
@@ -685,7 +685,7 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
               <div className="prc-body">
                 <div className="prc-badge prc-paid">Full Access</div>
                 <div className="prc-amount prc-paid">$99</div>
-                <div className="prc-period">/ 3 months · 30-day money-back guarantee</div>
+                <div className="prc-period">one-time · no expiration · 7-day money-back guarantee</div>
                 <div className="prc-items">
                   <div className="prc-item"><div className="prc-check prc-paid"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#2DD4BF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>Everything in Free</div>
                   <div className="prc-item"><div className="prc-check prc-paid"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#2DD4BF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>Personal fit score + full reasoning</div>
@@ -700,8 +700,8 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
           </div>
           <div className="prc-guarantee">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#218C8C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span style={{color:"#218C8C"}}>30-day money back guarantee</span>
-            &nbsp;·&nbsp; 3 months full access &nbsp;·&nbsp; Cancel anytime
+            <span style={{color:"#218C8C"}}>7-day money back guarantee</span>
+            &nbsp;·&nbsp; One-time payment &nbsp;·&nbsp; No expiration
           </div>
         </div>
 
@@ -716,11 +716,11 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
           {bottomState === "error" && <div className="email-error">{bottomError}</div>}
           {bottomState === "success" && <div className="email-success">Redirecting to checkout...</div>}
           <div className="bottom-price-row">
-            <div className="bottom-price-period">· 3 months unlimited · covers a full recruiting season</div>
+            <div className="bottom-price-period">· One-time $99 · no expiration · unlimited access</div>
           </div>
           <div className="bottom-guarantee">
             <div className="g-icon"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#218C8C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-            <div className="bg-text">30-day money back guarantee — if it doesn't change how you search, we'll refund every dollar</div>
+            <div className="bg-text">7-day money back guarantee — if it doesn't change how you search, we'll refund every dollar</div>
           </div>
           <div className="bottom-app-note">iOS app launching this month — <span>included with your access, no extra charge</span></div>
           <div className="divider-row"><div className="div-line" /><div className="div-text">or continue without an account</div><div className="div-line" /></div>
