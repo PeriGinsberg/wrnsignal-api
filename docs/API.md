@@ -481,17 +481,31 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 
 #### POST /api/checkout/create-session
 **Auth:** Public.
-**Purpose:** Create a Stripe one-time checkout session.
-**Request:** `{ email: string }`
+**Purpose:** Create a Stripe one-time checkout session. Promotion codes are enabled (`allow_promotion_codes: true`) so customers can redeem any Promotion Code defined in the Stripe dashboard. When called from the mobile app with `source: "mobile"`, the session is tagged with `metadata.source = "mobile"` and its `success_url` routes to `/checkout/mobile-success` (which deep-links back into the app via `signalmobile://post-purchase`) instead of the web `/checkout/success` page.
+**Request:** `{ email: string, source?: "mobile" }`
 **Returns:** `{ url: string }` (Stripe-hosted checkout URL)
 **Errors:** 400 missing email, 500 server misconfigured.
 
 #### POST /api/webhooks/stripe
 **Auth:** Stripe signature (`stripe-signature` header verified with `STRIPE_WEBHOOK_SECRET`).
-**Purpose:** Handle `checkout.session.completed` — creates or activates the `client_profiles` row, sets `stripe_customer_id`, and sends a dashboard magic link. Returns 200 immediately to prevent retry storms; processing happens after response.
+**Purpose:** Handles two event types. (1) `checkout.session.completed` — creates or activates the `client_profiles` row; sets `stripe_customer_id`, `purchase_date`, `stripe_payment_intent_id`, `stripe_charge_id`; clears `refunded_at`; and sends an auth email. If `session.metadata.source === "mobile"` the email is an OTP-style email (6-digit code for the mobile app's code-entry screen); otherwise it's a magic link to the web dashboard. (2) `charge.refunded` — safety-net for manual Stripe-dashboard refunds: looks up the profile by `stripe_customer_id` (fallback `stripe_payment_intent_id`), sets `active = false` and `refunded_at = now()`. Returns 200 immediately to prevent retry storms; processing happens after response.
 **Request:** Raw Stripe event payload.
 **Returns:** `{ received: true }` (200).
 **Errors:** 400 missing signature, 400 invalid signature, 500 missing `STRIPE_WEBHOOK_SECRET`.
+
+#### POST /api/stripe/refund
+**Auth:** Authenticated user.
+**Purpose:** Self-service 7-day money-back refund. Looks up the caller's profile (by `user_id`, fallback `email`), enforces the refund window (`now - purchase_date <= 7 days`), issues a full Stripe refund via `stripe.refunds.create` using `stripe_payment_intent_id` (fallback `stripe_charge_id`), and revokes access by setting `active = false` and `refunded_at = now()`. The `charge.refunded` webhook will also fire and perform the same DB update — both are idempotent.
+**Request:** — (no body).
+**Returns:** `{ ok: true, refund_id: string }`. If Stripe succeeded but the DB update failed: `{ ok: true, refund_id: string, warning: string }` (HTTP 200 — the refund went through, support needs to finish the cleanup).
+**Errors:** 401 unauthorized, 404 profile not found, 409 already refunded / no active purchase / no Stripe payment reference on file, 403 outside 7-day window, 502 Stripe refund failed, 500 server error.
+
+#### GET /checkout/mobile-success
+**Auth:** Public (client-rendered page, not a JSON endpoint).
+**Purpose:** Bridge page for mobile Stripe checkout. Immediately redirects the in-app browser to `signalmobile://post-purchase` so that `WebBrowser.openAuthSessionAsync` in the mobile app closes itself and returns the user to the post-purchase code-entry screen. Shows a fallback "Open SIGNAL" button if the scheme redirect hasn't resolved within 2.5 seconds.
+**Request:** `?session_id=<stripe_checkout_session_id>` (informational only; not currently used server-side).
+**Returns:** HTML.
+**Errors:** —
 
 ### Seat Flow (legacy — GHL + seat claim tokens)
 
@@ -555,8 +569,8 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 
 ## Summary Stats
 
-- **Route files inspected:** 63.
-- **Total endpoints documented:** 67 method+path combinations (several files export multiple handlers).
+- **Route files inspected:** 64 (added `app/api/stripe/refund/route.ts`, 2026-04-15).
+- **Total endpoints documented:** 68 method+path combinations, plus the `/checkout/mobile-success` bridge page.
 - **Endpoints with `[NEEDS CLARIFICATION]`:** 8 (mostly Resume Rx response shapes and the dashboard auth model).
 - **Structural surprises:**
   - `/api/jobfit-v4-debug` and `/api/jobfit/debug-review` are public dev tools deployed alongside production code.
