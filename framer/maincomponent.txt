@@ -1578,7 +1578,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 body: JSON.stringify({ url: jobUrl.trim() }),
             })
             const data = await res.json()
-            if (data.code === "LINKEDIN") {
+            if (data.code === "LINKEDIN" || data.code === "INDEED_BLOCKED") {
                 setShowLinkedInHelper(true)
                 window.open(jobUrl.trim(), "_blank")
                 return

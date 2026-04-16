@@ -614,6 +614,21 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       console.error(`[parse-job-url] fetch failed: ${res.status} ${rawUrl}`)
+
+      // Indeed now blocks server-side fetches (401). Give the same
+      // paste-text guidance that LinkedIn gets.
+      if (platform === "indeed") {
+        return withCorsJson(
+          req,
+          {
+            error: "Indeed is blocking automated access. Please paste the job description text directly.",
+            code: "INDEED_BLOCKED",
+            suggestion: "paste_text",
+          },
+          422
+        )
+      }
+
       return withCorsJson(
         req,
         {
