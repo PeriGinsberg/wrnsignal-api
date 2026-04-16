@@ -527,6 +527,12 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, { error: "url is required", code: "INVALID_URL" }, 400)
   }
 
+  // Mobile share sheets (especially Indeed) prepend the job title to the URL,
+  // e.g. "Marketing Specialisthttps://www.indeed.com/viewjob?jk=xxx".
+  // Extract the first http(s) URL and strip surrounding whitespace.
+  const urlMatch = rawUrl.match(/https?:\/\/.+/)
+  rawUrl = urlMatch ? urlMatch[0].trim() : rawUrl
+
   // Auto-prepend https:// if no protocol (common on mobile copy-paste)
   if (!/^https?:\/\//i.test(rawUrl)) {
     rawUrl = `https://${rawUrl}`
