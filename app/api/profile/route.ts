@@ -152,6 +152,22 @@ async function backfillProfileFields(profile: any, supabase: any) {
   return updated || { ...profile, ...updates }
 }
 
+/** Recompute profile_complete from the 5 required fields; silently fix if stale. */
+async function healProfileComplete(profile: any, supabase: any) {
+  if (!profile) return profile
+  const expected = !!(
+    profile.name && profile.resume_text && profile.target_roles &&
+    profile.job_type && profile.target_locations
+  )
+  if (profile.profile_complete === expected) return profile
+  await supabase
+    .from("client_profiles")
+    .update({ profile_complete: expected })
+    .eq("id", profile.id)
+  profile.profile_complete = expected
+  return profile
+}
+
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -171,7 +187,8 @@ export async function GET(req: NextRequest) {
     if (error) throw new Error(`Profile lookup failed: ${error.message}`)
     if (byUserId) {
       const filled = await backfillProfileFields(byUserId, supabase)
-      return withCorsJson(req, { ok: true, profile: filled })
+      const healed = await healProfileComplete(filled, supabase)
+      return withCorsJson(req, { ok: true, profile: healed })
     }
 
     // 2) Fallback: lookup by email and attach user_id
@@ -187,7 +204,8 @@ export async function GET(req: NextRequest) {
       if (byEmail) {
         if (byEmail.user_id === userId) {
           const filled = await backfillProfileFields(byEmail, supabase)
-          return withCorsJson(req, { ok: true, profile: filled })
+          const healed = await healProfileComplete(filled, supabase)
+          return withCorsJson(req, { ok: true, profile: healed })
         }
         // user_id is missing or stale (auth user was recreated) — re-attach
         const { data: attached, error: attachErr } = await supabase
@@ -199,7 +217,8 @@ export async function GET(req: NextRequest) {
 
         if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
         const filled = await backfillProfileFields(attached, supabase)
-        return withCorsJson(req, { ok: true, profile: filled })
+        const healed = await healProfileComplete(filled, supabase)
+        return withCorsJson(req, { ok: true, profile: healed })
       }
     }
 
@@ -264,6 +283,8 @@ export async function PUT(req: NextRequest) {
     // engine gets targeting context (target_roles, job_type, constraints, etc.)
     // alongside the resume. Without this, dashboard-edited profiles have an
     // empty profile_text and the scorer runs blind on targeting info.
+    // Also recompute profile_complete on every save — it must not depend on
+    // which fields the client happened to include in this request.
     if (updated) {
       try {
         const p = updated as any
@@ -286,14 +307,15 @@ export async function PUT(req: NextRequest) {
           p.name && p.resume_text && p.target_roles && p.job_type && p.target_locations
         )
 
-        if (profileText) {
-          await supabase
-            .from("client_profiles")
-            .update({ profile_text: profileText, profile_complete: profileComplete })
-            .eq("id", existing.id)
-          ;(updated as any).profile_text = profileText
-          ;(updated as any).profile_complete = profileComplete
-        }
+        const patch: Record<string, any> = { profile_complete: profileComplete }
+        if (profileText) patch.profile_text = profileText
+
+        await supabase
+          .from("client_profiles")
+          .update(patch)
+          .eq("id", existing.id)
+        if (profileText) (updated as any).profile_text = profileText
+        ;(updated as any).profile_complete = profileComplete
       } catch (rebuildErr: any) {
         console.warn("[profile] profile_text rebuild failed:", rebuildErr.message)
       }
