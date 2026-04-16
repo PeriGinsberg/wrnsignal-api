@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
+import CreateClientModal from "./CreateClientModal"
 import {
   T,
   input,
@@ -81,6 +82,9 @@ export default function CoachPage() {
   const [notesOpen, setNotesOpen] = useState<string | null>(null)
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
   const [removing, setRemoving] = useState(false)
+
+  // Create client modal state
+  const [showCreateClient, setShowCreateClient] = useState(false)
 
   // Invite modal state
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -167,12 +171,24 @@ export default function CoachPage() {
             </span>
           </h1>
         </div>
-        <button
-          onClick={() => { setInviteOpen(true); setInviteResult(null) }}
-          style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900 }}
-        >
-          + Invite Client
-        </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => setShowCreateClient(true)}
+            style={{
+              border: "1px solid #3D1A4A", color: "#3D1A4A", background: "#ffffff",
+              borderRadius: 20, padding: "8px 18px", fontSize: 12,
+              letterSpacing: "0.04em", cursor: "pointer", fontWeight: 700, fontFamily: "inherit",
+            }}
+          >
+            + Create Client Account
+          </button>
+          <button
+            onClick={() => { setInviteOpen(true); setInviteResult(null) }}
+            style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900 }}
+          >
+            + Invite Client
+          </button>
+        </div>
       </div>
 
       {/* Client cards */}
@@ -371,6 +387,15 @@ export default function CoachPage() {
             )}
           </div>
         </div>
+      )}
+      {showCreateClient && (
+        <CreateClientModal
+          onClose={() => setShowCreateClient(false)}
+          onSuccess={() => {
+            setShowCreateClient(false)
+            loadClients()
+          }}
+        />
       )}
     </div>
   )
