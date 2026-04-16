@@ -625,12 +625,12 @@ export async function POST(req: Request) {
       risk_overrides,
     })
 
-    // Set profile_complete = true when all 5 required fields are present
+    // Set profile_complete = true when all 4 required fields are present
+    // (job_type is optional — not all users set it during onboarding)
     const profileComplete = !!(
       name &&
       resume_text &&
       target_roles &&
-      job_type &&
       target_locations
     )
 

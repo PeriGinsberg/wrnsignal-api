@@ -153,7 +153,6 @@ export async function PUT(
           prof?.name &&
           resumeText &&
           prof?.target_roles &&
-          prof?.job_type &&
           prof?.target_locations
         )
 

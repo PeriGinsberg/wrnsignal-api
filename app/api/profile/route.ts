@@ -157,7 +157,7 @@ async function healProfileComplete(profile: any, supabase: any) {
   if (!profile) return profile
   const expected = !!(
     profile.name && profile.resume_text && profile.target_roles &&
-    profile.job_type && profile.target_locations
+    profile.target_locations
   )
   if (profile.profile_complete === expected) return profile
   await supabase
@@ -304,7 +304,7 @@ export async function PUT(req: NextRequest) {
         const profileText = lines.join("\n").trim()
 
         const profileComplete = !!(
-          p.name && p.resume_text && p.target_roles && p.job_type && p.target_locations
+          p.name && p.resume_text && p.target_roles && p.target_locations
         )
 
         const patch: Record<string, any> = { profile_complete: profileComplete }
