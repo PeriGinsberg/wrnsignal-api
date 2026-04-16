@@ -969,6 +969,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     // of extraction garbage like "UBS, we know that it's our people...".
     const [manualCompanyName, setManualCompanyName] = React.useState("")
     const [manualJobTitle, setManualJobTitle] = React.useState("")
+    const [manualPasteStep, setManualPasteStep] = React.useState<"paste" | "confirm">("paste")
+    const [manualPasteText, setManualPasteText] = React.useState("")
+    const [manualExtracting, setManualExtracting] = React.useState(false)
     const [jobInputOpen, setJobInputOpen] = React.useState(true)
     const [jobUrl, setJobUrl] = React.useState("")
     const [urlLoading, setUrlLoading] = React.useState(false)
@@ -1552,6 +1555,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setJob("")
         setManualCompanyName("")
         setManualJobTitle("")
+        setManualPasteStep("paste")
+        setManualPasteText("")
+        setManualExtracting(false)
         setJobFitResult(null)
         setPositioningResult(null)
         setCoverLetterResult(null)
@@ -1635,6 +1641,36 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setUrlError("Extraction failed. Please paste the description manually below.")
         } finally {
             setLinkedInPasteLoading(false)
+        }
+    }
+
+    async function handleManualExtract() {
+        if (!manualPasteText.trim() || manualPasteText.length < 50) {
+            setUrlError("Please paste more content — at least the full job posting.")
+            return
+        }
+        setManualExtracting(true)
+        setUrlError("")
+        try {
+            const res = await fetch(`${API_BASE}/api/parse-job-text`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: manualPasteText.trim() }),
+            })
+            const data = await res.json()
+            if (data.error) {
+                setUrlError(data.error)
+                return
+            }
+            if (data.companyName) setManualCompanyName(data.companyName)
+            if (data.jobTitle) setManualJobTitle(data.jobTitle)
+            if (data.jobDescription) setJob(data.jobDescription)
+            setManualPasteStep("confirm")
+            setUrlError("")
+        } catch {
+            setUrlError("Extraction failed. Please try again.")
+        } finally {
+            setManualExtracting(false)
         }
     }
 
@@ -8572,85 +8608,130 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
                                 </div>
 
-                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: WRN_ORANGE, marginBottom: 8 }}>
-                                    PASTE MANUALLY
-                                </div>
+                                {manualPasteStep === "paste" && (
+                                    <div>
+                                        <div style={{ fontSize: 16, fontWeight: 900, color: TEXT, marginBottom: 6 }}>
+                                            Paste the full job posting
+                                        </div>
+                                        <div style={{ fontSize: 13, color: MUTED, lineHeight: "20px", marginBottom: 14 }}>
+                                            {"Can't grab the URL? No problem. Go to the job posting in your browser, select all the text, copy it, and paste it here — SIGNAL will extract the company, title, and description automatically."}
+                                        </div>
+                                        <div style={{ fontSize: 12, color: DIM, lineHeight: "20px", marginBottom: 14 }}>
+                                            {typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent)
+                                                ? "Tap and hold anywhere on the job page → Select All → Copy → come back and paste below"
+                                                : (<>
+                                                    1. Press <strong style={{ color: TEXT }}>Ctrl+A</strong> to select everything on the job page<br />
+                                                    2. Press <strong style={{ color: TEXT }}>Ctrl+C</strong> to copy<br />
+                                                    3. Click back here and press <strong style={{ color: TEXT }}>Ctrl+V</strong> to paste below
+                                                  </>)
+                                            }
+                                        </div>
+                                        <div style={{ position: "relative" as const }}>
+                                            <textarea
+                                                style={{ ...textarea, minHeight: 200, maxHeight: 400 }}
+                                                value={manualPasteText}
+                                                onChange={(e) => setManualPasteText(e.target.value)}
+                                                placeholder="Paste the entire job posting here..."
+                                            />
+                                            {manualPasteText && (
+                                                <button
+                                                    onClick={() => setManualPasteText("")}
+                                                    style={{
+                                                        position: "absolute" as const,
+                                                        top: 8, right: 8,
+                                                        background: "rgba(255,255,255,0.10)",
+                                                        border: "none",
+                                                        borderRadius: 12,
+                                                        width: 24, height: 24,
+                                                        color: MUTED,
+                                                        fontSize: 14,
+                                                        cursor: "pointer",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
+                                        {urlError && <div style={{ fontSize: 12, color: "#FF3B5C", marginTop: 8 }}>{urlError}</div>}
+                                        <button
+                                            onClick={handleManualExtract}
+                                            disabled={manualExtracting}
+                                            style={{
+                                                width: "100%",
+                                                marginTop: 10,
+                                                padding: "12px 16px",
+                                                background: manualExtracting ? "#333" : WRN_ORANGE,
+                                                border: "none",
+                                                borderRadius: 12,
+                                                color: manualExtracting ? "#999" : "#0B0F1A",
+                                                fontSize: 14,
+                                                fontWeight: 900,
+                                                cursor: manualExtracting ? "not-allowed" : "pointer",
+                                            }}
+                                        >
+                                            {manualExtracting ? "Extracting job details..." : "Extract & Continue →"}
+                                        </button>
+                                    </div>
+                                )}
 
-                                {/* REQUIRED company name + job title inputs.
-                                    The deterministic extractor has ~0%
-                                    accuracy on varied JD formats so we ask
-                                    the user directly. Both fields must be
-                                    non-empty before Run JobFit will submit
-                                    (validated in runJobFit()). The API
-                                    returns 400 if either is missing as a
-                                    defense-in-depth check. */}
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        gap: 8,
-                                        marginBottom: 6,
-                                        alignItems: "baseline",
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            fontSize: 10,
-                                            color: WRN_ORANGE,
-                                            fontWeight: 700,
-                                            letterSpacing: 0.4,
-                                        }}
-                                    >
-                                        Required
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontSize: 10,
-                                            color: MUTED,
-                                        }}
-                                    >
-                                        — copy the exact company and job title
-                                        from the posting
-                                    </span>
-                                </div>
-                                <div
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "1fr 1fr",
-                                        gap: 10,
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    <input
-                                        type="text"
-                                        required
-                                        aria-required="true"
-                                        style={input}
-                                        value={manualCompanyName}
-                                        onChange={(e) =>
-                                            setManualCompanyName(e.target.value)
-                                        }
-                                        placeholder="Company name *"
-                                        maxLength={200}
-                                    />
-                                    <input
-                                        type="text"
-                                        required
-                                        aria-required="true"
-                                        style={input}
-                                        value={manualJobTitle}
-                                        onChange={(e) =>
-                                            setManualJobTitle(e.target.value)
-                                        }
-                                        placeholder="Job title *"
-                                        maxLength={200}
-                                    />
-                                </div>
-                                <textarea
-                                    style={textarea}
-                                    value={job}
-                                    onChange={(e) => setJob(e.target.value)}
-                                    placeholder="Paste the job description here…"
-                                />
+                                {manualPasteStep === "confirm" && (
+                                    <div>
+                                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: WRN_ORANGE, marginBottom: 10 }}>
+                                            CONFIRM DETAILS
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                                            <div>
+                                                <div style={{ fontSize: 11, color: DIM, fontWeight: 700, marginBottom: 4 }}>Company</div>
+                                                <input
+                                                    type="text"
+                                                    style={input}
+                                                    value={manualCompanyName}
+                                                    onChange={(e) => setManualCompanyName(e.target.value)}
+                                                    placeholder="Company name"
+                                                    maxLength={200}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 11, color: DIM, fontWeight: 700, marginBottom: 4 }}>Title</div>
+                                                <input
+                                                    type="text"
+                                                    style={input}
+                                                    value={manualJobTitle}
+                                                    onChange={(e) => setManualJobTitle(e.target.value)}
+                                                    placeholder="Job title"
+                                                    maxLength={200}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: 12, color: DIM, marginBottom: 12 }}>
+                                            Look right? You can edit before continuing.
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setManualPasteStep("paste")
+                                                setManualPasteText("")
+                                                setManualCompanyName("")
+                                                setManualJobTitle("")
+                                                setJob("")
+                                            }}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                color: MUTED,
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                cursor: "pointer",
+                                                padding: 0,
+                                                marginBottom: 4,
+                                            }}
+                                        >
+                                            ← Paste again
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : null}
                     </div>
