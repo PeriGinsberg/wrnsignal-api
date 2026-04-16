@@ -974,6 +974,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [urlLoading, setUrlLoading] = React.useState(false)
     const [urlError, setUrlError] = React.useState("")
     const [showLinkedInHelper, setShowLinkedInHelper] = React.useState(false)
+    const [showBlockedPopup, setShowBlockedPopup] = React.useState(false)
     const [linkedInPasteText, setLinkedInPasteText] = React.useState("")
     const [linkedInPasteLoading, setLinkedInPasteLoading] = React.useState(false)
     // Personas
@@ -1571,6 +1572,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setUrlLoading(true)
         setUrlError("")
         setShowLinkedInHelper(false)
+        setShowBlockedPopup(false)
         try {
             const res = await fetch(`${API_BASE}/api/parse-job-url`, {
                 method: "POST",
@@ -1579,8 +1581,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             })
             const data = await res.json()
             if (data.code === "LINKEDIN" || data.code === "INDEED_BLOCKED") {
+                setShowBlockedPopup(true)
                 setShowLinkedInHelper(true)
-                window.open(jobUrl.trim(), "_blank")
                 return
             }
             if (data.error) {
@@ -1594,6 +1596,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             // so the application dashboard auto-populates the link
             setUrlError("")
             setShowLinkedInHelper(false)
+            setShowBlockedPopup(false)
         } catch {
             setUrlError("Something went wrong. Please paste the job description manually.")
         } finally {
@@ -8444,8 +8447,67 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     </div>
                                     {urlError && <div style={{ fontSize: 12, color: "#FF3B5C", marginTop: 8 }}>{urlError}</div>}
 
-                                    {/* LinkedIn Helper */}
-                                    {showLinkedInHelper && (
+                                    {/* Blocked site popup overlay */}
+                                    {showBlockedPopup && (
+                                        <div style={{
+                                            position: "fixed", inset: 0, zIndex: 9999,
+                                            background: "rgba(0,0,0,0.75)",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                        }}>
+                                            <div style={{
+                                                background: "#0D1F35",
+                                                border: "0.5px solid #1E3A5F",
+                                                borderRadius: 16,
+                                                padding: 36,
+                                                maxWidth: 460,
+                                                width: "90%",
+                                                textAlign: "center" as const,
+                                            }}>
+                                                <div style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", color: "#FFD60A", marginBottom: 14 }}>
+                                                    LinkedIn / Indeed Detected
+                                                </div>
+                                                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: "1.7", marginBottom: 8 }}>
+                                                    This site blocks automated access. No worries — just:
+                                                </div>
+                                                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: "1.8", textAlign: "left" as const, margin: "0 auto", maxWidth: 340, marginBottom: 24 }}>
+                                                    1. Open the job posting (button below)<br />
+                                                    2. Select all text — <strong style={{ color: "#fff" }}>Ctrl+A</strong> (Windows) or <strong style={{ color: "#fff" }}>Cmd+A</strong> (Mac)<br />
+                                                    3. Copy — <strong style={{ color: "#fff" }}>Ctrl+C</strong> / <strong style={{ color: "#fff" }}>Cmd+C</strong><br />
+                                                    4. Come back here and paste it below
+                                                </div>
+                                                <div style={{ display: "flex", gap: 10 }}>
+                                                    <button
+                                                        onClick={() => { window.open(jobUrl.trim(), "_blank"); setShowBlockedPopup(false) }}
+                                                        style={{
+                                                            flex: 1, padding: 14,
+                                                            background: "linear-gradient(90deg, #FF6B00, #FF9A3C)",
+                                                            color: "#fff", fontWeight: 900, fontStyle: "italic",
+                                                            fontSize: 14, borderRadius: 10, border: "none",
+                                                            cursor: "pointer", fontFamily: "inherit",
+                                                        }}
+                                                    >
+                                                        Open Job Posting
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowBlockedPopup(false)}
+                                                        style={{
+                                                            flex: 1, padding: 14,
+                                                            background: "rgba(255,255,255,0.06)",
+                                                            color: "rgba(255,255,255,0.5)", fontWeight: 700,
+                                                            fontSize: 14, borderRadius: 10,
+                                                            border: "1px solid rgba(255,255,255,0.12)",
+                                                            cursor: "pointer", fontFamily: "inherit",
+                                                        }}
+                                                    >
+                                                        Close
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Paste helper (visible after popup closes) */}
+                                    {showLinkedInHelper && !showBlockedPopup && (
                                         <div style={{
                                             background: "rgba(255,214,10,0.04)",
                                             border: "1px solid rgba(255,214,10,0.25)",
@@ -8454,19 +8516,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             marginTop: 10,
                                         }}>
                                             <div style={{ fontSize: 12, fontWeight: 900, color: "#FFD60A", marginBottom: 8 }}>
-                                                ⚡ LINKEDIN DETECTED
-                                            </div>
-                                            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: "18px", marginBottom: 10 }}>
-                                                LinkedIn blocks automated access. Here's the fastest way:<br />
-                                                1. Your job is open in a new tab<br />
-                                                2. Press Cmd+A (Mac) or Ctrl+A (Windows) to select all<br />
-                                                3. Press Cmd+C / Ctrl+C to copy<br />
-                                                4. Paste everything below
+                                                LINKEDIN / INDEED DETECTED
                                             </div>
                                             <textarea
                                                 value={linkedInPasteText}
                                                 onChange={(e) => setLinkedInPasteText(e.target.value)}
-                                                placeholder="Paste the full LinkedIn page here..."
+                                                placeholder="Paste the full job page here..."
                                                 style={{
                                                     width: "100%",
                                                     minHeight: 100,
