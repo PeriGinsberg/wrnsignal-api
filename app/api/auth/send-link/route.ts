@@ -3,8 +3,8 @@
 // Server-side magic link sender with profile gate.
 // Checks client_profiles BEFORE sending OTP:
 //   - No active profile → 403 (no_account)
-//   - profile_complete = false → magic link to /dashboard/onboarding
-//   - profile_complete = true → magic link to /signal/jobfit
+//   - profile_complete = false → magic link to /dashboard
+//   - profile_complete = true → magic link to /dashboard/tracker
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     // Determine redirect based on profile completeness
     const redirectTo = profile.profile_complete
-      ? "https://wrnsignal.workforcereadynow.com/signal/jobfit"
+      ? "https://wrnsignal-api.vercel.app/dashboard/tracker"
       : "https://wrnsignal-api.vercel.app/dashboard"
 
     // Send the magic link via OTP. signInWithOtp handles everything:

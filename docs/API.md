@@ -467,7 +467,7 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 
 #### POST /api/auth/send-link
 **Auth:** Public (email-based gate).
-**Purpose:** Send a magic-link OTP if the email maps to an active `client_profiles` row; the response indicates where the link will redirect.
+**Purpose:** Send a magic-link OTP if the email maps to an active `client_profiles` row. Redirect target depends on profile state: `profile_complete = true` → `/dashboard/tracker`, `profile_complete = false` → `/dashboard`.
 **Request:** `{ email: string }`
 **Returns:** `{ ok: boolean, sent: boolean, redirectTo: string, profileComplete: boolean }`
 **Errors:** 400 missing email, 403 no account (`{ error: "no_account" }`), 500 server error.

@@ -213,12 +213,11 @@ export default function DashboardPage() {
 
   useEffect(() => { loadAll() }, [loadAll])
 
-  // Show welcome modal for first-time users
+  // Show welcome modal only when profile_complete is explicitly false.
+  // profile_complete is the sole gate — no localStorage dependency.
   useEffect(() => {
     if (!profile) return
-    if (profile.profile_complete) return
-    if (typeof window === "undefined") return
-    if (localStorage.getItem("signal_welcomed") === "true") return
+    if (profile.profile_complete !== false) return
     setShowWelcome(true)
   }, [profile])
 
@@ -410,10 +409,7 @@ export default function DashboardPage() {
               SIGNAL does from here runs on this profile.
             </p>
             <button
-              onClick={() => {
-                localStorage.setItem("signal_welcomed", "true")
-                setShowWelcome(false)
-              }}
+              onClick={() => setShowWelcome(false)}
               style={{
                 width: "100%", marginTop: 28, padding: 16,
                 background: "linear-gradient(90deg, #FF6B00, #FF9A3C)",
