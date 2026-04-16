@@ -278,10 +278,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     const { data } = await supabase.auth.getSession()
                     const token = data.session?.access_token
                     const refreshToken = data.session?.refresh_token
-                    const url = new URL(item.href)
-                    if (token) url.searchParams.set("access_token", token)
-                    if (refreshToken) url.searchParams.set("refresh_token", refreshToken)
-                    window.location.replace(url.toString())
+                    const params = new URLSearchParams()
+                    if (token) params.set("access_token", token)
+                    if (refreshToken) params.set("refresh_token", refreshToken)
+                    window.location.replace(item.href + "#" + params.toString())
                   } : undefined}
                   style={{
                     display: "block",

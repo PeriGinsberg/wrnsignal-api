@@ -1,6 +1,6 @@
 // START FILE
 import * as React from "react"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
 
 /**
  * SIGNAL Tabs (Framer Code Component) — FULL REWRITE (DEV)
@@ -1222,12 +1222,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         window.history.replaceState({}, "", url.toString())
                     }
 
-                    // Token handoff from dashboard: when the user clicks
-                    // "Back to SIGNAL" from the Next.js dashboard, the
-                    // session tokens are passed as URL params because
-                    // the Supabase session cookies live on a different domain.
-                    const accessToken = url.searchParams.get("access_token")
-                    const refreshToken = url.searchParams.get("refresh_token")
+                    // Token handoff from dashboard: tokens are passed in the
+                    // URL hash (not query params) to avoid Framer's router
+                    // choking on the long JWT strings. Falls back to query
+                    // params for backwards compatibility.
+                    const hashParams = new URLSearchParams((window.location.hash || "").replace(/^#/, ""))
+                    const accessToken = hashParams.get("access_token") || url.searchParams.get("access_token")
+                    const refreshToken = hashParams.get("refresh_token") || url.searchParams.get("refresh_token")
                     if (accessToken && refreshToken) {
                         await supabase.auth.setSession({
                             access_token: accessToken,
@@ -1235,7 +1236,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         })
                         url.searchParams.delete("access_token")
                         url.searchParams.delete("refresh_token")
-                        window.history.replaceState({}, "", url.toString())
+                        window.history.replaceState({}, "", url.pathname + url.search)
                     }
                 }
 
