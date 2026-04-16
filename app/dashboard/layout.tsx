@@ -152,8 +152,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     init()
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setStatus(session ? "authed" : "unauthed")
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setStatus("authed")
+      } else if (event === "SIGNED_OUT") {
+        setStatus("unauthed")
+      }
+      // Ignore transient refresh failures — Supabase auto-retries
     })
 
     return () => listener.subscription.unsubscribe()

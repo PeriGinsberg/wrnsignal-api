@@ -1211,7 +1211,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 if (!mounted) return
                 setAuthStatus("logged_out")
                 setAccessMode(computeAccessMode(null))
-            }, 1500)
+            }, 10000)
 
             try {
                 if (typeof window !== "undefined") {
@@ -1318,7 +1318,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         initSession()
 
         const { data: sub } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
+            (event, session) => {
                 if (!mounted) return
 
                 if (session?.access_token) {
@@ -1336,7 +1336,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             return
                         }
                     }
-                } else {
+                } else if (event === "SIGNED_OUT") {
+                    // Only log out on explicit sign-out, not on transient
+                    // refresh failures. Supabase auto-retries token refresh;
+                    // a single failed refresh should not kick the user out.
                     setAccessToken(null)
                     setAuthedEmail(null)
                     setAuthStatus("logged_out")
@@ -1369,7 +1372,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         const t = setTimeout(() => {
             setAuthStatus("logged_out")
             setAccessMode(computeAccessMode(null))
-        }, 1500)
+        }, 10000)
         return () => clearTimeout(t)
     }, [authStatus])
 
