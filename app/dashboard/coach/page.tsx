@@ -323,7 +323,7 @@ export default function CoachPage() {
                   <div>
                     <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>ACCESS LEVEL</span>
                     <div style={{ display: "flex", gap: 10 }}>
-                      {["full", "view_only"].map((level) => (
+                      {["full", "view"].map((level) => (
                         <label key={level} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                           <input
                             type="radio"

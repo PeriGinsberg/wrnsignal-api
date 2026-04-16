@@ -18,6 +18,7 @@ function AcceptInviteContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
   const [message, setMessage] = useState("")
   const [coachName, setCoachName] = useState("")
+  const [profileComplete, setProfileComplete] = useState(true)
 
   useEffect(() => {
     if (!token) {
@@ -28,18 +29,31 @@ function AcceptInviteContent() {
 
     async function accept() {
       const authToken = await getToken()
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (authToken) headers.Authorization = `Bearer ${authToken}`
+
       const res = await fetch("/api/coach/accept-invite", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-        },
+        headers,
         body: JSON.stringify({ token }),
       })
       const j = await res.json().catch(() => null)
       if (res.ok) {
         setCoachName(j?.coach_name || "")
         setStatus("success")
+
+        // Check profile completeness to decide where to send the user
+        if (authToken) {
+          try {
+            const profileRes = await fetch("/api/profile", {
+              headers: { Authorization: `Bearer ${authToken}` },
+            })
+            if (profileRes.ok) {
+              const pj = await profileRes.json()
+              setProfileComplete(pj.profile?.profile_complete ?? false)
+            }
+          } catch {}
+        }
       } else {
         setMessage(j?.error || "Failed to accept invite. The link may have expired.")
         setStatus("error")
@@ -95,24 +109,49 @@ function AcceptInviteContent() {
                 : "Your coach can now view your profile and send you job recommendations."
               }
             </p>
-            <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, lineHeight: "20px" }}>
-              Check the <span style={{ color: T.WRN_BLUE, fontWeight: 700 }}>Job Tracker</span> tab in your dashboard for any recommendations from your coach.
-            </p>
-            <a
-              href="/dashboard"
-              style={{
-                display: "block",
-                ...btnPrimary,
-                background: "#FEB06A",
-                color: "#04060F",
-                fontWeight: 900,
-                textDecoration: "none",
-                textAlign: "center",
-                marginTop: 28,
-              }}
-            >
-              Go to My Dashboard
-            </a>
+            {profileComplete ? (
+              <>
+                <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, lineHeight: "20px" }}>
+                  Check the <span style={{ color: T.WRN_BLUE, fontWeight: 700 }}>Job Tracker</span> tab in your dashboard for any recommendations from your coach.
+                </p>
+                <a
+                  href="/dashboard/tracker"
+                  style={{
+                    display: "block",
+                    ...btnPrimary,
+                    background: "#FEB06A",
+                    color: "#04060F",
+                    fontWeight: 900,
+                    textDecoration: "none",
+                    textAlign: "center",
+                    marginTop: 28,
+                  }}
+                >
+                  Go to Job Tracker
+                </a>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: T.WRN_ORANGE, marginTop: 12, lineHeight: "20px", fontWeight: 700 }}>
+                  Complete your profile so your coach can start sending you personalized job recommendations.
+                </p>
+                <a
+                  href="/dashboard"
+                  style={{
+                    display: "block",
+                    ...btnPrimary,
+                    background: "#FEB06A",
+                    color: "#04060F",
+                    fontWeight: 900,
+                    textDecoration: "none",
+                    textAlign: "center",
+                    marginTop: 28,
+                  }}
+                >
+                  Build My Profile
+                </a>
+              </>
+            )}
           </div>
         )}
 
