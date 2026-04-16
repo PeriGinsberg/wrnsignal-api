@@ -87,8 +87,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const supabase = getSupabaseBrowser()
 
     async function init() {
-      // Check for token handoff from Framer
       const url = new URL(window.location.href)
+
+      // Handle Supabase magic-link PKCE code exchange. This MUST happen
+      // before getSession() or the session will not initialize.
+      const code = url.searchParams.get("code")
+      if (code) {
+        const { error: codeErr } = await supabase.auth.exchangeCodeForSession(code)
+        if (codeErr) {
+          console.warn("[dashboard] code exchange failed:", codeErr.message)
+        }
+        url.searchParams.delete("code")
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash)
+        const { data } = await supabase.auth.getSession()
+        setStatus(data.session ? "authed" : "unauthed")
+        return
+      }
+
+      // Check for token handoff from Framer
       const handoffToken = url.searchParams.get("token")
 
       if (handoffToken) {
