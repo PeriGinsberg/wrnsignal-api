@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MISSING = "__MISSING__"
-const COVERLETTER_PROMPT_VERSION = "coverletter_v3_2026_03_v5signals"
+const COVERLETTER_PROMPT_VERSION = "coverletter_v4_2026_04_opener_context"
 const MODEL_ID = "current"
 
 // Supabase (service role)
@@ -441,17 +441,22 @@ STYLE RULES (DEFAULT):
 - Build ONE clear job-specific story. Do not wander.
 
 OPENING RULE (HARD):
-- The first sentence MUST begin with a personal reason, connection, motivation, or point of fit tied to the actual role, company, function, industry, customer, or mission.
-- The first sentence MUST NOT begin with generic application filler.
-- Forbidden opening patterns include:
-  - "I am excited"
+- The first paragraph establishes WHO the person is in relation to THIS role, then connects to WHY this specific company/role matters to them.
+- For students or recent grads: lead with their context (e.g. "As a senior at NYU studying finance with a concentration in real estate...") then connect to the role.
+- For career changers: briefly establish the pivot context before connecting to the role.
+- For experienced professionals applying in their field: lead directly with the connection to the role/company/mission — no self-introduction needed.
+- The role, company, or function MUST appear within the first two sentences. Do not bury what job this is for.
+- The opener should feel like a human explaining why this specific opportunity caught their attention, not a form letter.
+- Forbidden opening patterns (never use these):
+  - "I am excited to apply"
   - "I'm excited"
-  - "I am writing"
+  - "I am writing to express"
   - "I want to express my interest"
   - "Please accept"
-  - "I am interested"
+  - "I am interested in"
   - "I would like to apply"
-- Do not start by announcing that the user is applying. Start with why this role makes sense for this person.
+  - "I am applying for"
+- Do not start with generic enthusiasm. Start with positioning + connection.
 
 VOICE RULE:
 - If a writing sample is provided, match the candidate's general voice characteristics at a high level: directness, sentence length, warmth, restraint, and cadence.
@@ -475,7 +480,7 @@ SIGNAL RULE:
 - Use Positioning and Job Fit to choose the angle, not to invent facts.
 
 STRUCTURE:
-1) Opener: immediate personal connection to the role and why this role/company makes sense.
+1) Opener (2-3 sentences): Position who you are in the context of this role, then state why this specific company/role resonates. The reader should know within the first paragraph: who is writing, what role this is for, and why it's a fit.
 2) Fit proof: 2-3 short paragraphs, each centered on one concrete capability tied to resume evidence.
 3) Close: interest, forward motion, availability, thank you.
 
