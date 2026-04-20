@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MISSING = "__MISSING__"
-const COVERLETTER_PROMPT_VERSION = "coverletter_v4_2026_04_opener_context"
+const COVERLETTER_PROMPT_VERSION = "coverletter_v4b_2026_04_strategy_as_topic"
 const MODEL_ID = "current"
 
 // Supabase (service role)
@@ -322,9 +322,15 @@ function extractCoverLetterStrategy(jobfitResult: any): string {
   ]
 
   if (s.open_with) {
-    parts.push(`OPEN WITH: ${s.open_with}`)
+    parts.push(`OPEN WITH (topic): ${s.open_with}`)
     parts.push(
-      `  → Your opening paragraph MUST lead with this. Do not bury it in paragraph 2.`
+      `  → This is the TOPIC for your opening paragraph, not the literal first sentence.`
+    )
+    parts.push(
+      `  → First: briefly position who the candidate is (student graduating, early-career professional, etc.) and name the role/company. THEN weave in this topic as the connection point.`
+    )
+    parts.push(
+      `  → Do NOT start the letter with a raw experience statement. Start with context, then connect.`
     )
   }
 
