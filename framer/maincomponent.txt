@@ -956,6 +956,14 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [authedEmail, setAuthedEmail] = React.useState<string | null>(null)
 
     const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+    const copyText = (txt: string, key?: string) => {
+        if (typeof navigator === "undefined" || !navigator.clipboard) return
+        navigator.clipboard.writeText(String(txt || ""))
+        const k = key ?? txt.slice(0, 40)
+        setCopiedKey(k)
+        setTimeout(() => setCopiedKey(null), 2000)
+    }
+    const wasCopied = (key: string) => copiedKey === key
 
     // Access mode
     const [accessMode, setAccessMode] = React.useState<AccessMode>("full")
@@ -4147,7 +4155,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     marginBottom: 8,
                                                 }}
                                             >
-                                                After — copy this
+                                                After
                                             </div>
                                             <div
                                                 style={{
@@ -4165,6 +4173,25 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                       )
                                                     : "—"}
                                             </div>
+                                            {b.after && (
+                                                <button
+                                                    onClick={() => copyText(String(b.after), `bullet-${i}`)}
+                                                    type="button"
+                                                    style={{
+                                                        marginTop: 8,
+                                                        padding: "5px 12px",
+                                                        borderRadius: 8,
+                                                        fontSize: 11,
+                                                        fontWeight: 900,
+                                                        cursor: "pointer",
+                                                        border: wasCopied(`bullet-${i}`) ? "1px solid rgba(74,222,128,0.40)" : "1px solid rgba(255,255,255,0.12)",
+                                                        background: wasCopied(`bullet-${i}`) ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.07)",
+                                                        color: wasCopied(`bullet-${i}`) ? "#4ade80" : "rgba(255,255,255,0.50)",
+                                                    }}
+                                                >
+                                                    {wasCopied(`bullet-${i}`) ? "Copied ✓" : "⎘ Copy bullet"}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     {b.why ? (
@@ -4410,7 +4437,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 marginBottom: 8,
                                             }}
                                         >
-                                            Copy this into your resume summary
+                                            Resume Summary
                                         </div>
                                         <div
                                             style={{
@@ -4429,6 +4456,23 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     s.recommendedSummary
                                             )}
                                         </div>
+                                        <button
+                                            onClick={() => copyText(String(s.recommended_summary ?? s.recommendedSummary ?? ""), "pos-summary")}
+                                            type="button"
+                                            style={{
+                                                marginTop: 10,
+                                                padding: "6px 14px",
+                                                borderRadius: 8,
+                                                fontSize: 11,
+                                                fontWeight: 900,
+                                                cursor: "pointer",
+                                                border: wasCopied("pos-summary") ? "1px solid rgba(81,173,229,0.50)" : "1px solid rgba(255,255,255,0.12)",
+                                                background: wasCopied("pos-summary") ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.07)",
+                                                color: wasCopied("pos-summary") ? "#51ADE5" : "rgba(255,255,255,0.50)",
+                                            }}
+                                        >
+                                            {wasCopied("pos-summary") ? "Copied ✓" : "⎘ Copy summary"}
+                                        </button>
                                     </div>
                                 ) : null}
 
@@ -5573,14 +5617,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             ? networkingResult.moves
             : []
 
-        const copyText = (txt: string, key?: string) => {
-            if (typeof navigator === "undefined" || !navigator.clipboard) return
-            navigator.clipboard.writeText(String(txt || ""))
-            const k = key ?? txt.slice(0, 40)
-            setCopiedKey(k)
-            setTimeout(() => setCopiedKey(null), 2000)
-        }
-        const wasCopied = (key: string) => copiedKey === key
+        // copyText and wasCopied are defined at component level
 
         const laneMeta = [
             {
