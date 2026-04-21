@@ -3794,6 +3794,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 .map(toSafeLine)
                 .map((s) => s.trim())
                 .filter(Boolean)
+                .filter((s) => {
+                    const l = s.toLowerCase()
+                    return !(l.startsWith("name:") || l.startsWith("job type") || l.startsWith("target role") || l.startsWith("target location") || l.startsWith("preferred location") || l.startsWith("location:") || l.startsWith("timeline:") || l.startsWith("resume:") || l.includes(": full time") || l.includes(": part time") || l.includes(": internship") || s.length < 15)
+                })
         })()
 
         const editsRaw: any[] = (() => {
