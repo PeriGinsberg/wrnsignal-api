@@ -7049,8 +7049,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="you@example.com"
                                     type="email"
+                                    id="signal-full-access-email"
                                     name="full-access-email"
-                                    autoComplete="section-full email"
+                                    autoComplete="off"
                                     inputMode="email"
                                 />
                                 <div style={{ height: 14 }} />
@@ -7181,8 +7182,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     }
                                     placeholder="you@example.com"
                                     type="email"
+                                    id="signal-trial-email"
                                     name="trial-user-email"
-                                    autoComplete="section-trial email"
+                                    autoComplete="off"
                                     inputMode="email"
                                 />
                                 <div style={{ height: 14 }} />
