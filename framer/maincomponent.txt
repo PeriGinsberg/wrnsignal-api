@@ -4594,7 +4594,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         marginBottom: 3,
                                     }}
                                 >
-                                    Why These Changes Work
+                                    Lead With These in Your Interview & Cover Letter
                                 </div>
                                 <div
                                     style={{
@@ -4603,18 +4603,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         color: "rgba(255,255,255,0.95)",
                                     }}
                                 >
-                                    Your Strongest Signals for This Role
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 12,
-                                        color: "rgba(255,255,255,0.40)",
-                                        marginTop: 3,
-                                    }}
-                                >
-                                    These are the exact reasons you are
-                                    competitive here — mention them in your
-                                    cover letter and interview
+                                    Your strongest competitive signals for this role
                                 </div>
                             </div>
                             <div
