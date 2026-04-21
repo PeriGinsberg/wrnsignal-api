@@ -360,7 +360,7 @@ TASK (do in order):
    - Use "Early-Career Generalist" when experience is broad or mixed.
    - Use "Other" only if none apply, and explain why.
 
-2) Explain why in 1–2 sentences and include supporting resume evidence quotes.
+2) Explain why in 1–2 sentences and include supporting resume evidence quotes in the evidence array. Each evidence item MUST be a verbatim quote from the resume that proves this role angle. Do NOT include metadata like "Job type: Full Time" or "Target Roles: ..." — only actual resume text.
 3) Provide How to Arrange Your Resume:
    - Include the sentence: "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience."
    - Make clear this is reordering existing facts, not rewriting them.
