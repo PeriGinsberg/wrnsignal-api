@@ -1645,6 +1645,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setLinkedInPasteText("")
             // Keep jobUrl — it's the LinkedIn URL that gets sent as job_url
             setUrlError("")
+            // Show the confirm step so user sees extracted results
+            setManualPasteStep("confirm")
         } catch {
             setUrlError("Extraction failed. Please paste the description manually below.")
         } finally {
