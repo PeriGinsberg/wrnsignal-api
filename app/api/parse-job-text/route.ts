@@ -52,20 +52,22 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, { error: "Server configuration error" }, 500)
   }
 
-  const truncatedText = truncate(text, 6000)
+  const truncatedText = truncate(text, 12000)
 
-  const prompt = `Extract job posting data from the following raw text. Return ONLY valid JSON with these fields:
+  const prompt = `Extract job posting data from the following raw text. The text may contain navigation menus, sidebars, ads, and other non-job content from a full page copy. Ignore all of that and focus only on the actual job posting.
+
+Return ONLY valid JSON with these fields:
 {
   "jobTitle": "string — the exact job title",
   "companyName": "string — the hiring company name",
-  "jobDescription": "string — the complete job posting body (responsibilities, requirements, qualifications) cleaned of any HTML, not just a summary",
+  "jobDescription": "string — the complete job posting body (responsibilities, requirements, qualifications) cleaned up. Include the full description, not a summary.",
   "location": "string — job location or 'Remote' if applicable, or null if unknown",
   "jobType": "one of: Full Time, Part Time, Internship, Contract — or null if unknown"
 }
 
-If a field cannot be determined, use null (except jobTitle, companyName, and jobDescription which should be empty strings if unknown). Return only the JSON object, no markdown.
+If a field cannot be determined, use null (except jobTitle, companyName, and jobDescription which should be empty strings if unknown). Return only the JSON object, no markdown fences.
 
-Raw job posting text:
+Raw page text:
 ${truncatedText}`
 
   let parsed: {
@@ -86,7 +88,7 @@ ${truncatedText}`
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1000,
+        max_tokens: 4000,
         system: "You are a job posting parser. Extract structured data from raw job posting text. Return ONLY valid JSON.",
         messages: [{ role: "user", content: prompt }],
       }),
@@ -101,8 +103,26 @@ ${truncatedText}`
     const raw = (json.content ?? [])?.[0]?.text ?? ""
 
     // 3. Strip markdown fences and parse JSON
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()
-    const data = JSON.parse(cleaned)
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim()
+    let data: any
+    try {
+      data = JSON.parse(cleaned)
+    } catch {
+      // Haiku sometimes returns truncated JSON — try to salvage with a lenient parse
+      const titleMatch = cleaned.match(/"jobTitle"\s*:\s*"([^"]*)"/)
+      const companyMatch = cleaned.match(/"companyName"\s*:\s*"([^"]*)"/)
+      if (titleMatch || companyMatch) {
+        data = {
+          jobTitle: titleMatch?.[1] || "",
+          companyName: companyMatch?.[1] || "",
+          jobDescription: "",
+          location: null,
+          jobType: null,
+        }
+      } else {
+        throw new Error("Could not parse extraction result")
+      }
+    }
 
     // 4. Clean all fields
     parsed = {
