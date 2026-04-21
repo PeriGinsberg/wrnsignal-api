@@ -396,6 +396,8 @@ export default function SignalLandingPage(props: {
     >("idle")
     const [heroError, setHeroError] = React.useState("")
     const [bottomError, setBottomError] = React.useState("")
+    const [freeError, setFreeError] = React.useState("")
+    const [freeError2, setFreeError2] = React.useState("")
 
     // Inject styles into <head> — keeps CSS completely outside JSX
     React.useEffect(() => {
@@ -445,12 +447,17 @@ export default function SignalLandingPage(props: {
         }
     }
 
-    function handleFreeAnalysis(ref: React.RefObject<HTMLInputElement | null>) {
+    function handleFreeAnalysis(ref: React.RefObject<HTMLInputElement | null>, setErr: (s: string) => void) {
         const email = ref.current?.value?.trim() || ""
+        setErr("")
+        if (!email || !email.includes("@") || !email.includes(".")) {
+            setErr("Please enter a valid email address.")
+            return
+        }
         const base =
             "https://wrnsignal.workforcereadynow.com/signal/job-analysis"
         window.top!.location.replace(
-            email ? `${base}?email=${encodeURIComponent(email)}` : base
+            `${base}?email=${encodeURIComponent(email)}`
         )
     }
 
@@ -651,11 +658,12 @@ export default function SignalLandingPage(props: {
                             />
                             <button
                                 className="sl-free-email-btn"
-                                onClick={() => handleFreeAnalysis(freeEmailRef)}
+                                onClick={() => handleFreeAnalysis(freeEmailRef, setFreeError)}
                             >
                                 Try job analysis FREE →
                             </button>
                         </div>
+                        {freeError && <div className="sl-email-error">{freeError}</div>}
                         <div className="sl-free-note">
                             No account needed &nbsp;·&nbsp; Paste any job
                             posting — see what SIGNAL does
@@ -1726,11 +1734,12 @@ export default function SignalLandingPage(props: {
                         />
                         <button
                             className="sl-free-email-btn"
-                            onClick={() => handleFreeAnalysis(freeEmailRef2)}
+                            onClick={() => handleFreeAnalysis(freeEmailRef2, setFreeError2)}
                         >
                             Try job analysis FREE →
                         </button>
                     </div>
+                    {freeError2 && <div className="sl-email-error">{freeError2}</div>}
                     <div className="sl-free-note">
                         No account needed &nbsp;·&nbsp; Paste any job posting —
                         see what SIGNAL does
