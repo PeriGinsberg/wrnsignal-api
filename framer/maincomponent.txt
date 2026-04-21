@@ -8745,6 +8745,26 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 />
                                             </div>
                                         </div>
+                                        {/* Extracted job description preview */}
+                                        {job && (
+                                            <div style={{ marginBottom: 12 }}>
+                                                <div style={{ fontSize: 11, color: DIM, fontWeight: 700, marginBottom: 4 }}>Job Description (extracted)</div>
+                                                <div style={{
+                                                    maxHeight: 120,
+                                                    overflowY: "auto" as const,
+                                                    padding: "10px 14px",
+                                                    background: GLASS,
+                                                    borderRadius: 12,
+                                                    border: `1px solid ${BORDER}`,
+                                                    fontSize: 13,
+                                                    lineHeight: "20px",
+                                                    color: MUTED,
+                                                    whiteSpace: "pre-wrap" as const,
+                                                }}>
+                                                    {job.length > 600 ? job.slice(0, 600) + "…" : job}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: 12, color: DIM, marginBottom: 12 }}>
                                             Look right? You can edit before continuing.
                                         </div>
