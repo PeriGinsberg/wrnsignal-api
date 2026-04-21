@@ -48,6 +48,62 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     },
 })
 
+/* ---------- QUOTES ---------- */
+const SIGNAL_QUOTES = [
+  { text: "Most candidates apply to everything. You're learning to apply to the right things.", attribution: null },
+  { text: "The job search is a numbers game until you have better information. Now you do.", attribution: null },
+  { text: "Rejection isn't feedback. A low fit score is feedback. There's a difference.", attribution: null },
+  { text: "The candidates who get hired aren't always the most qualified. They're the most prepared.", attribution: null },
+  { text: "Applying blind is hoping. This is strategy.", attribution: null },
+  { text: "Right now someone else is applying to the same job with no idea whether they're actually competitive. You do.", attribution: null },
+  { text: "Most resumes say the same thing. Yours is about to say something specific.", attribution: null },
+  { text: "The interview starts before the interview. It starts with knowing why you belong in the room.", attribution: null },
+  { text: "Your competition is guessing. You're not.", attribution: null },
+  { text: "Good analysis takes a moment. Bad analysis is instant.", attribution: null },
+  { text: "We're reading every line of that job description so you don't have to guess.", attribution: null },
+  { text: "This is the part where SIGNAL does the work.", attribution: null },
+  { text: "Thirty seconds now saves three hours of applying to the wrong thing.", attribution: null },
+  { text: "The average job search takes 5 months. Strategy shortens that.", attribution: null },
+  { text: "A resume that works for every job works for no job.", attribution: null },
+  { text: "The best time to know your fit score was before you applied. Second best time is right now.", attribution: null },
+  { text: "Most people find out they weren't a fit after the rejection. You're finding out now.", attribution: null },
+  { text: "Every analysis makes the next decision easier.", attribution: null },
+  { text: "You don't need more applications. You need better ones.", attribution: null },
+  { text: "One well-targeted application beats ten blind ones every time.", attribution: null },
+  { text: "Clarity is an advantage. Most candidates never have it.", attribution: null },
+  { text: "The job exists. The question is whether it's the right one for you.", attribution: null },
+  { text: "Not every job deserves your time. This analysis helps you figure out which ones do.", attribution: null },
+  { text: "You're doing the work most candidates skip entirely.", attribution: null },
+  { text: "This is what separating yourself actually looks like.", attribution: null },
+  { text: "The candidates who get hired are appropriately aggressive. They don't wait to be found.", attribution: "— Peri Ginsberg, Workforce Ready Now" },
+  { text: "Don't try to be everything to everyone. Tell one story at a time and tell it well.", attribution: "— Peri Ginsberg, Workforce Ready Now" },
+  { text: "Don't apologize for experience you haven't gained yet.", attribution: "— Peri Ginsberg, Workforce Ready Now" },
+  { text: "Whether you think you can, or you think you can't — you're right.", attribution: "— Henry Ford" },
+]
+
+function useQuoteRotator(isActive: boolean) {
+  const [currentIndex, setCurrentIndex] = React.useState(() => Math.floor(Math.random() * SIGNAL_QUOTES.length))
+  const [opacity, setOpacity] = React.useState(1)
+
+  React.useEffect(() => {
+    if (!isActive) return
+    setCurrentIndex(Math.floor(Math.random() * SIGNAL_QUOTES.length))
+    setOpacity(1)
+
+    const interval = setInterval(() => {
+      setOpacity(0)
+      setTimeout(() => {
+        setCurrentIndex((i) => (i + 1) % SIGNAL_QUOTES.length)
+        setOpacity(1)
+      }, 500)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [isActive])
+
+  return { quote: SIGNAL_QUOTES[currentIndex], opacity }
+}
+
 /* ---------- BRAND ---------- */
 const WRN_BLUE = "#51ADE5"
 const WRN_ORANGE = "#FEB06A"
@@ -1018,6 +1074,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [loadingPositioning, setLoadingPositioning] = React.useState(false)
     const [loadingCoverLetter, setLoadingCoverLetter] = React.useState(false)
     const [loadingNetworking, setLoadingNetworking] = React.useState(false)
+    const anyLoading = loadingJobFit || loadingPositioning || loadingCoverLetter || loadingNetworking
+    const { quote: loadingQuote, opacity: quoteOpacity } = useQuoteRotator(anyLoading)
 
     // Messages
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
@@ -1749,6 +1807,35 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     >
                         This takes 20–40 seconds — we're reading your full
                         profile and the job in detail. Quality takes time.
+                    </div>
+                ) : null}
+                {loading && loadingQuote ? (
+                    <div style={{
+                        marginTop: 28,
+                        borderLeft: "2px solid rgba(255,149,0,0.4)",
+                        paddingLeft: 16,
+                        transition: "opacity 0.5s ease",
+                        opacity: quoteOpacity,
+                    }}>
+                        <p style={{
+                            color: "rgba(255,255,255,0.85)",
+                            fontSize: 14,
+                            fontStyle: "italic" as const,
+                            lineHeight: "22px",
+                            margin: 0,
+                        }}>
+                            {loadingQuote.text}
+                        </p>
+                        {loadingQuote.attribution && (
+                            <p style={{
+                                color: "#FF9500",
+                                fontSize: 11,
+                                margin: "6px 0 0 0",
+                                fontWeight: 500,
+                            }}>
+                                {loadingQuote.attribution}
+                            </p>
+                        )}
                     </div>
                 ) : null}
             </div>
