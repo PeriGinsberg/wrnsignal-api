@@ -209,6 +209,16 @@ export default function TrackerPage() {
     return sessionStorage.getItem("signal_handoff_token")
   }
 
+  async function openInSignal(runId: string) {
+    const supabase = getSupabaseBrowser()
+    const { data } = await supabase.auth.getSession()
+    const params = new URLSearchParams()
+    if (data.session?.access_token) params.set("access_token", data.session.access_token)
+    if (data.session?.refresh_token) params.set("refresh_token", data.session.refresh_token)
+    const url = `https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${runId}#${params.toString()}`
+    window.location.replace(url)
+  }
+
   const loadAll = useCallback(async () => {
     const token = await getToken()
     if (!token) return
@@ -637,13 +647,12 @@ export default function TrackerPage() {
                             </div>
                           )}
                           {a.jobfit_run_id && (
-                            <a
-                              href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{ display: "inline-block", marginTop: 6, fontSize: 9, fontWeight: 900, color: "#4ade80", textDecoration: "none", letterSpacing: 0.5 }}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openInSignal(a.jobfit_run_id!) }}
+                              style={{ display: "inline-block", marginTop: 6, fontSize: 9, fontWeight: 900, color: "#4ade80", textDecoration: "none", letterSpacing: 0.5, background: "none", border: "none", cursor: "pointer", padding: 0 }}
                             >
                               View in SIGNAL →
-                            </a>
+                            </button>
                           )}
                         </div>
                       )
@@ -722,13 +731,12 @@ export default function TrackerPage() {
                           <span style={{ fontSize: 10, fontWeight: 900, color: T.DIM }}>Passed</span>
                         )}
                         {a.jobfit_run_id && (
-                          <a
-                            href={`https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${a.jobfit_run_id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ background: "none", border: `1px solid rgba(74,222,128,0.3)`, color: "#4ade80", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "3px 8px", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" }}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openInSignal(a.jobfit_run_id!) }}
+                            style={{ background: "none", border: `1px solid rgba(74,222,128,0.3)`, color: "#4ade80", fontSize: 10, fontWeight: 900, borderRadius: 6, padding: "3px 8px", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap", fontFamily: "inherit" }}
                           >
                             SIGNAL
-                          </a>
+                          </button>
                         )}
                         <button onClick={(e) => { e.stopPropagation(); expanded ? collapseApp() : expandApp(a) }} style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
                           {expanded ? "Close" : "View"}
