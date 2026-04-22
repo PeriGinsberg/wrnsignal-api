@@ -2,8 +2,10 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
-import { runJobFit } from "../../_lib/jobfitEvaluator"
-import { mapClientProfileToOverrides } from "../../_lib/jobfitProfileAdapter"
+import {
+  assembleProfileForScoring,
+  runJobFitForProfile,
+} from "../../_lib/runJobFitForProfile"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -127,70 +129,48 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "Forbidden: full access required to recommend jobs" }, 403)
     }
 
-    // Load client profile and persona — use CLIENT's data, not coach's
-    const { data: clientProfile, error: cpErr } = await supabase
-      .from("client_profiles")
-      .select("*")
-      .eq("id", clientProfileId)
-      .single()
-    if (cpErr || !clientProfile) throw new Error("Client profile not found")
+    // Persona selection is now explicit: the coach dashboard must pass
+    // persona_id. The previous "auto-pick latest persona" behavior has been
+    // removed to match the client-side path in /api/jobfit, so coach and
+    // client produce identical output for the same (client, persona, job).
+    const personaId = body.persona_id ? String(body.persona_id).trim() : null
 
-    // Determine which persona to use (optional body.persona_id, else active/first)
-    let persona: any = null
-    if (body.persona_id) {
-      const { data: p } = await supabase
-        .from("client_personas")
-        .select("*")
-        .eq("id", body.persona_id)
-        .eq("profile_id", clientProfileId)
-        .single()
-      persona = p || null
-    } else {
-      const { data: personas } = await supabase
-        .from("client_personas")
-        .select("*")
-        .eq("profile_id", clientProfileId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-      persona = personas?.[0] || null
-    }
-
-    const profileText = [
-      clientProfile.profile_text || "",
-      persona?.resume_text || "",
-    ].filter(Boolean).join("\n\n")
-
-    const profileOverrides = mapClientProfileToOverrides({
-      profileText,
-      profileStructured: clientProfile.profile_structured || persona?.structured_data || null,
-      targetRoles: clientProfile.target_roles || null,
-      preferredLocations: clientProfile.preferred_locations || null,
+    // Assembled profile is used for persona metadata (id/name) in the
+    // coach_job_recommendations / signal_applications rows. When we run
+    // fresh scoring below it's passed through as `preassembled` so the
+    // profile is not loaded twice.
+    const assembled = await assembleProfileForScoring({
+      clientProfileId,
+      personaId,
+      supabase,
     })
 
-    // Determine fullAnalysis: use cached if provided, otherwise run JobFit
+    // Determine fullAnalysis: use cached if provided, otherwise run the
+    // full shared JobFit pipeline (identical to /api/jobfit output).
     let fullAnalysis: any
 
     if (!dryRun && body.cached_analysis && body.cached_analysis.decision !== undefined && body.cached_analysis.score !== undefined) {
-      // Use cached analysis from dry run — no re-computation
+      // Use cached analysis from the coach's prior dry_run — no re-computation
       fullAnalysis = body.cached_analysis
     } else {
-      // Run JobFit using client's profile
-      const result = await runJobFit({
-        profileText,
+      const result = await runJobFitForProfile({
+        clientProfileId,
+        personaId,
         jobText: jobDescription,
-        profileOverrides,
-        userJobTitle: jobTitle,
-        userCompanyName: companyName,
+        jobTitle,
+        companyName,
+        jobUrl: body.job_url || null,
+        supabase,
+        preassembled: assembled,
       })
 
-      // Store full analysis result (everything the scoring engine produced)
       fullAnalysis = {
         decision: result.decision,
         score: result.score,
-        icon: (result as any).icon,
-        bullets: (result as any).bullets,
-        risk_flags: (result as any).risk_flags,
-        next_step: (result as any).next_step,
+        icon: result.icon,
+        bullets: result.bullets,
+        risk_flags: result.risk_flags,
+        next_step: result.next_step,
         why_codes: result.why_codes,
         risk_codes: result.risk_codes,
         job_signals: result.job_signals,
@@ -198,12 +178,15 @@ export async function POST(req: NextRequest) {
         gate_triggered: result.gate_triggered,
         score_breakdown: result.score_breakdown,
         location_constraint: result.location_constraint,
-        why: (result as any).why,
-        risk: (result as any).risk,
-        why_structured: (result as any).why_structured,
-        risk_structured: (result as any).risk_structured,
+        why: result.why,
+        risk: result.risk,
+        why_structured: result.why_structured,
+        risk_structured: result.risk_structured,
+        cover_letter_strategy: result.cover_letter_strategy,
       }
     }
+
+    const persona = assembled.persona
 
     // Dry run: return analysis result without creating any DB rows
     if (dryRun) {

@@ -19,11 +19,16 @@ import { type NextRequest } from "next/server"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
-import { mapClientProfileToOverrides } from "../_lib/jobfitProfileAdapter"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 import { RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
 import { extractJobSignals } from "../jobfit/extract"
 import { enforceClientFacingRules } from "./enforceClientFacingRules"
+import {
+  assembleProfileForScoring,
+  computeJobFitFingerprint,
+  runJobFitForProfile,
+  JOBFIT_LOGIC_VERSION,
+} from "../_lib/runJobFitForProfile"
 
 import { TAXONOMY_V4_STAMP } from "../_v4/taxonomy"
 import { TYPES_V4_STAMP } from "../_v4/types"
@@ -43,54 +48,9 @@ function isBypassAllowed(req: NextRequest): boolean {
   return headerKey === JOBFIT_TEST_KEY
 }
 
-/* ----------------------------------
- * Fingerprint helpers (best-effort)
- * ---------------------------------- */
+// Sentinel used in logs when profileId cannot be resolved. JOBFIT_LOGIC_VERSION,
+// normalize, and buildFingerprint now live in ../_lib/runJobFitForProfile.
 const MISSING = "__MISSING__"
-// Cache version tied to the deployment commit SHA so every Vercel deploy
-// automatically invalidates stale jobfit_runs cache entries — no manual
-// DELETE queries or forced reruns needed.
-//
-// Resolution order:
-//   1. JOBFIT_LOGIC_VERSION env var (manual override if someone wants to
-//      pin a version for A/B testing or rollback diagnostics)
-//   2. VERCEL_GIT_COMMIT_SHA (set automatically by Vercel on every deploy;
-//      preview, staging, and production all get distinct SHAs)
-//   3. "local-dev" fallback for `next dev` / unit test runs
-//
-// Old rows in jobfit_runs are preserved as an audit trail but stop being
-// matched once the SHA changes, because the fingerprint_hash changes with
-// every deploy.
-const JOBFIT_LOGIC_VERSION =
-  process.env.JOBFIT_LOGIC_VERSION ||
-  process.env.VERCEL_GIT_COMMIT_SHA ||
-  "local-dev"
-
-function normalize(value: any): any {
-  if (typeof value === "string") {
-    const cleaned = value.trim()
-    if (!cleaned) return MISSING
-    return cleaned.toLowerCase().replace(/\s+/g, " ")
-  }
-  if (Array.isArray(value)) return value.map(normalize).sort()
-  if (value && typeof value === "object") {
-    return Object.keys(value)
-      .sort()
-      .reduce((acc: any, k) => {
-        const v = value[k]
-        if (v !== null && v !== undefined) acc[k] = normalize(v)
-        return acc
-      }, {})
-  }
-  return value
-}
-
-function buildFingerprint(payload: any) {
-  const canonical = JSON.stringify(normalize(payload))
-  const fingerprint_hash = crypto.createHash("sha256").update(canonical).digest("hex")
-  const fingerprint_code = "JF-" + parseInt(fingerprint_hash.slice(0, 10), 16).toString(36).toUpperCase()
-  return { fingerprint_hash, fingerprint_code }
-}
 
 /* ----------------------------------
  * Optional Supabase caching (lazy)
@@ -196,18 +156,11 @@ export async function POST(req: NextRequest) {
      * NORMAL path (requires bearer)
      * ------------------------------ */
     const authed = await getAuthedProfileText(req as any)
-    const profileText = String((authed as any)?.profileText || "").trim()
-    const resumeText = String((authed as any)?.resumeText || "").trim()
-    const profileStructured = (authed as any)?.profileStructured ?? null
-    const targetRoles = (authed as any)?.targetRoles ?? null
-    const preferredLocations = (authed as any)?.targetLocations ?? null
     const profileId = (authed as any)?.profileId || (authed as any)?.profile_id || (authed as any)?.userId || MISSING
 
     // Warn loudly in logs if we can't identify this user — helps catch future contamination
     if (profileId === MISSING) {
       console.warn("[jobfit/route] WARNING: profileId resolved to MISSING — cache disabled for this request. Check getAuthedProfileText return shape.", {
-        hasProfileText: !!profileText,
-        hasResumeText: !!resumeText,
         authedKeys: authed ? Object.keys(authed as any) : [],
       })
     }
@@ -231,75 +184,39 @@ export async function POST(req: NextRequest) {
     // If profileId is MISSING, a cache hit could return a different user's result.
     const hasRealProfileId = profileId && profileId !== MISSING
 
-    // ── Persona support (optional) ──────────────────────────────────
     const personaId = String(body?.persona_id || "").trim() || null
-    let personaResumeText: string | null = null
-    let profileVersionAtRun: number | null = null
-    let personaVersionAtRun: number | null = null
 
-    if (personaId && hasRealProfileId && supabase) {
-      const { data: persona, error: personaErr } = await supabase
-        .from("client_personas")
-        .select("resume_text, persona_version, profile_id")
-        .eq("id", personaId)
-        .maybeSingle()
-
-      if (personaErr) console.warn("[jobfit/route] persona lookup failed:", personaErr.message)
-
-      if (persona && persona.profile_id === profileId) {
-        personaResumeText = String(persona.resume_text || "").trim()
-        personaVersionAtRun = persona.persona_version ?? 1
-      } else if (persona) {
-        return withCorsJson(req, { error: "Persona does not belong to this profile" }, 403)
-      }
-
-      const { data: pv } = await supabase
-        .from("client_profiles")
-        .select("profile_version")
-        .eq("id", profileId)
-        .maybeSingle()
-      profileVersionAtRun = pv?.profile_version ?? 1
-    }
-    // ────────────────────────────────────────────────────────────────
-
-    // Combine profile header (targeting info) with the active resume.
-    // Persona resume overrides default resume when specified.
-    const activeResume = personaResumeText || resumeText
-
-    let effectiveProfileText: string
-    if (profileText && activeResume && !profileText.includes(activeResume.slice(0, 80))) {
-      effectiveProfileText = profileText + "\n\nResume:\n" + activeResume
-    } else {
-      effectiveProfileText = activeResume || profileText
+    if (!hasRealProfileId || !supabase) {
+      return withCorsJson(req, { error: "Unauthorized: missing bearer token" }, 401)
     }
 
-    if (!effectiveProfileText) {
+    // Profile assembly (load client_profiles + optional persona, build
+    // effectiveProfileText and profileOverrides) is delegated to the shared
+    // pipeline helper so coach and client paths stay in sync.
+    const assembled = await assembleProfileForScoring({
+      clientProfileId: profileId,
+      personaId,
+      supabase,
+    })
+
+    // Preserve the legacy escape hatch: if the caller supplies an explicit
+    // profileOverrides blob, use it instead of the derived one. This path is
+    // used by internal regression tooling; normal clients leave it null.
+    const bodyProfileOverrides = (body as any)?.profileOverrides
+    if (bodyProfileOverrides != null) {
+      assembled.profileOverrides = bodyProfileOverrides
+    }
+
+    if (!assembled.effectiveProfileText) {
       return withCorsJson(req, { error: "Unauthorized: missing bearer token or profile text" }, 401)
     }
 
-    let profileOverrides: any = body?.profileOverrides ?? null
-    if (!profileOverrides) {
-      try {
-        const mod = await import("../_lib/jobfitProfileAdapter")
-        if (typeof (mod as any).mapClientProfileToOverrides === "function") {
-          profileOverrides = (mod as any).mapClientProfileToOverrides({
-            profileText: profileText || effectiveProfileText,
-            profileStructured: profileStructured,
-            targetRoles: targetRoles,
-            preferredLocations: preferredLocations,
-          })
-        }
-      } catch {
-        profileOverrides = null
-      }
-    }
-
-    const fpPayload = {
-      job: { text: jobText || MISSING },
-      profile: { id: profileId || MISSING, text: effectiveProfileText || MISSING, overrides: profileOverrides || MISSING },
-      system: { jobfit_logic_version: JOBFIT_LOGIC_VERSION },
-    }
-    const { fingerprint_hash, fingerprint_code } = buildFingerprint(fpPayload)
+    const { fingerprint_hash, fingerprint_code } = computeJobFitFingerprint({
+      jobText,
+      clientProfileId: profileId,
+      effectiveProfileText: assembled.effectiveProfileText,
+      profileOverrides: assembled.profileOverrides,
+    })
 
     console.log("[jobfit/route] PRE-CACHE-CHECK:", { hasSupabase: !!supabase, forceRerun, hasRealProfileId, profileId, fingerprint_hash: fingerprint_hash?.slice(0, 12) })
 
@@ -413,75 +330,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const raw = await runJobFit({
-      profileText: effectiveProfileText,
+    // Full scoring pipeline: runJobFit + V5 AI bullet generator +
+    // enforceClientFacingRules. Shared with /api/coach/recommend-job so
+    // both paths produce byte-identical output given the same inputs.
+    const pipelineResult = await runJobFitForProfile({
+      clientProfileId: profileId,
+      personaId,
       jobText,
-      profileOverrides,
-      // Pass user-provided title/company BEFORE scoring so the engine's
-      // target-role-match logic and any title-based family inference
-      // use the authoritative values, not the extractor's guesses.
-      userJobTitle: userJobTitle || undefined,
-      userCompanyName: userCompanyName || undefined,
-      userId: (authed as any)?.userId,
+      jobTitle: userJobTitle,
+      companyName: userCompanyName,
+      jobUrl: userJobUrl,
       mode,
       debug: debugFlag,
-    } as any)
-
-    // ── V5: replace bullets with AI-generated ones ──────────────────────────
-    let cover_letter_strategy: any = null
-    try {
-      const { generateBulletsV5 } = await import("./bulletGeneratorV5")
-      const v5 = await generateBulletsV5({
-        ...(raw as any),
-        profile_text: effectiveProfileText,
-        job_text: jobText,
-      })
-      ;(raw as any).why = v5.why
-      ;(raw as any).risk = v5.risk
-      ;(raw as any).bullets = v5.why
-      ;(raw as any).risk_bullets = v5.risk
-      ;(raw as any).why_structured = v5.why_structured
-      ;(raw as any).risk_structured = v5.risk_structured
-      ;(raw as any).debug = {
-        ...(raw as any).debug,
-        ...v5.renderer_debug,
-      }
-      cover_letter_strategy = v5.cover_letter_strategy
-      console.log("[V5 bullet generator] success", {
-        why_count: v5.why_structured.length,
-        risk_count: v5.risk_structured.length,
-        latency_ms: v5.renderer_debug.latency_ms,
-      })
-    } catch (err: any) {
-      const v5ErrorMessage = err?.message || String(err)
-      console.error("[V5 bullet generator] failed, falling back to V4:", v5ErrorMessage)
-      // Surface the V5 error in the response debug block so silent
-      // V5 → V4 fallback is visible to the caller. Without this, a
-      // V5 failure produces low-quality template bullets and the only
-      // way to diagnose is to check Vercel runtime logs.
-      ;(raw as any).debug = {
-        ...(raw as any).debug,
-        v5_error: v5ErrorMessage,
-        v5_fell_back_to_v4: true,
-      }
-    }
-    // ────────────────────────────────────────────────────────────────────────
-
-    // ── User-provided job title and company name override ──────────────────
-    // If the caller supplied either field explicitly, replace the extracted
-    // values in job_signals BEFORE the result is serialized into jobfit_runs
-    // and signal_applications. This ensures every downstream reader — the
-    // client display, the auto-application row, later cover letter / cached
-    // result views — sees the user-authoritative value rather than whatever
-    // the deterministic extractor pulled from the JD body.
-    if (userJobTitle || userCompanyName) {
-      const rawAny = raw as any
-      if (!rawAny.job_signals) rawAny.job_signals = {}
-      if (userJobTitle) rawAny.job_signals.jobTitle = userJobTitle
-      if (userCompanyName) rawAny.job_signals.companyName = userCompanyName
-    }
-
-    const result = enforceClientFacingRules(raw as any)
+      userId: (authed as any)?.userId,
+      supabase,
+      preassembled: assembled,
+    })
+    const result: any = pipelineResult
+    const cover_letter_strategy = pipelineResult.cover_letter_strategy ?? null
+    const profileVersionAtRun = pipelineResult.profileVersionAtRun
+    const personaVersionAtRun = pipelineResult.personaVersionAtRun
 
     if (supabase && hasRealProfileId) {
       try {
