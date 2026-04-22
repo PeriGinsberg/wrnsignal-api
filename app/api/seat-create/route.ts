@@ -295,16 +295,19 @@ export async function POST(req: Request) {
     const claim_url = `https://wrnsignal.workforcereadynow.com/start?claim=${rawToken}`
 
   // Track purchase
-    try {
-      await supabaseAdmin.from("jobfit_page_views").insert({
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/seat-create/route.ts:299',
+      would_have_written: {
         session_id: seatId,
         page_path: "/signal/purchase",
         page_name: "signal_purchased",
         utm_source: pick(body, "utm_source") || null,
         utm_medium: pick(body, "utm_medium") || null,
         utm_campaign: pick(body, "utm_campaign") || null,
-      })
-    } catch {}
+      },
+    })
 
     return withCorsJson(
       req,

@@ -48,16 +48,21 @@ export async function POST(req: Request) {
       ? String(body.session_id).slice(0, 200)
       : crypto.randomUUID()
 
-    await supabase.from("jobfit_page_views").insert({
-      session_id: sessionId,
-      page_path: String(body.page_path ?? "/").slice(0, 200),
-      page_name: String(body.page_name ?? "pageview").slice(0, 100),
-      referrer: body.referrer ? String(body.referrer).slice(0, 500) : null,
-      utm_source: body.utm_source ? String(body.utm_source).slice(0, 100) : null,
-      utm_medium: body.utm_medium ? String(body.utm_medium).slice(0, 100) : null,
-      utm_campaign: body.utm_campaign ? String(body.utm_campaign).slice(0, 100) : null,
-      utm_content: body.utm_content ? String(body.utm_content).slice(0, 100) : null,
-      utm_term: body.utm_term ? String(body.utm_term).slice(0, 100) : null,
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/track/route.ts:51',
+      would_have_written: {
+        session_id: sessionId,
+        page_path: String(body.page_path ?? "/").slice(0, 200),
+        page_name: String(body.page_name ?? "pageview").slice(0, 100),
+        referrer: body.referrer ? String(body.referrer).slice(0, 500) : null,
+        utm_source: body.utm_source ? String(body.utm_source).slice(0, 100) : null,
+        utm_medium: body.utm_medium ? String(body.utm_medium).slice(0, 100) : null,
+        utm_campaign: body.utm_campaign ? String(body.utm_campaign).slice(0, 100) : null,
+        utm_content: body.utm_content ? String(body.utm_content).slice(0, 100) : null,
+        utm_term: body.utm_term ? String(body.utm_term).slice(0, 100) : null,
+      },
     })
 
     return withCorsJson(req, { ok: true }, 200)

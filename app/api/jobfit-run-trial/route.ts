@@ -141,16 +141,19 @@ export async function POST(req: Request) {
         if (creditErr) return withCorsJson(req, { ok: false, error: creditErr.message }, 500)
 
      // Track JobFit run
-        try {
-          await supabase.from("jobfit_page_views").insert({
+        // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+        // Previous behavior: INSERT into jobfit_page_views with the payload below
+        console.log('[analytics:deferred]', {
+          call_site: 'app/api/jobfit-run-trial/route.ts:145',
+          would_have_written: {
             session_id: user.id,
             page_path: "/signal/jobfit",
             page_name: "jobfit_run_completed",
             utm_source: String(body.utm_source ?? "").trim() || null,
             utm_medium: String(body.utm_medium ?? "").trim() || null,
             utm_campaign: String(body.utm_campaign ?? "").trim() || null,
-          })
-        } catch {}
+          },
+        })
 
         return withCorsJson(req, { ok: true, credits_remaining: newCredits, result }, 200)
     } catch (err: any) {

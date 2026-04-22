@@ -637,17 +637,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Track successful run — use profileId as session_id for dedup
-    try {
-      const sb = await getSupabaseAdmin()
-      if (sb) {
-        await sb.from("jobfit_page_views").insert({
-          session_id: String(profileId || crypto.randomUUID()),
-          page_name: "jobfit_full_run",
-          page_path: "/api/jobfit",
-          referrer: null,
-        })
-      }
-    } catch {}
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/jobfit/route.ts:643',
+      would_have_written: {
+        session_id: String(profileId || crypto.randomUUID()),
+        page_name: "jobfit_full_run",
+        page_path: "/api/jobfit",
+        referrer: null,
+      },
+    })
 
     return withCorsJson(req, {
       ...(result as any),

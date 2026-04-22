@@ -3,8 +3,9 @@
 -- attribution) with indexes and constraints exactly as specified
 -- in Section 5.
 --
--- The jobfit_page_views archive rename is deferred to Phase 2, to
--- ship together with the code changes that stop writing to it.
+-- The jobfit_page_views archive rename lives in the companion
+-- migration 20260422_analytics_foundation_fixes.sql, applied after
+-- all writer call sites were stubbed.
 
 CREATE TABLE IF NOT EXISTS public.analytics_visitors (
   visitor_id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),

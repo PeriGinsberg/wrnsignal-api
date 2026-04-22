@@ -256,38 +256,17 @@ function dedupeRows(rows) {
 }
 
 async function loadAll() {
-  document.getElementById('last-updated').textContent = 'Refreshing...'
-  try {
-    const since = sinceDate()
-    const timeFilter = since ? \`&created_at=gte.\${since}\` : ''
-
-    // Fetch all page views (paginated to bypass Supabase 1000-row cap)
-    const [rawRows, attrRows] = await Promise.all([
-      query('jobfit_page_views', \`select=*&order=created_at.asc\${timeFilter}\`),
-      query('signal_attribution', \`select=app_session_id,mkt_session_id,ref_source,ref_medium,ref_campaign,clicked_from\`).catch(() => []),
-    ])
-    const rows = dedupeRows(rawRows)
-
-    // Build lookup: session_id -> attribution data
-    const attrBySession = {}
-    attrRows.forEach(a => {
-      if (a.app_session_id) attrBySession[a.app_session_id] = a
-      if (a.mkt_session_id) attrBySession[a.mkt_session_id] = a
-    })
-
-    renderMetrics(rows)
-    renderFunnel(rows)
-    renderSources(rows, attrBySession)
-    renderEngagement(rows)
-    renderActivity(rows)
-    renderJourneys(rows)
-
-    const now = new Date()
-    document.getElementById('last-updated').textContent =
-      \`Updated \${now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}\`
-  } catch(e) {
-    document.getElementById('last-updated').textContent = 'Error: ' + e.message
-  }
+  // TODO(analytics-phase-2): this dashboard read jobfit_page_views (now archived).
+  // Renderers below (renderMetrics/renderFunnel/renderSources/renderEngagement/
+  // renderActivity/renderJourneys) are preserved as reference for the Phase 3
+  // dashboard rebuild per docs/signal-analytics-spec.md.
+  document.getElementById('last-updated').textContent = 'Paused'
+  const banner = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.55);font-size:13px;line-height:1.6;">Analytics dashboard paused during Phase 2 rebuild.<br>New dashboard coming in Phase 3 per <code>docs/signal-analytics-spec.md</code>.</div>'
+  const targets = ['funnel', 'sources', 'engagement', 'activity', 'journeys']
+  targets.forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.innerHTML = banner
+  })
 }
 
 function renderMetrics(rows) {

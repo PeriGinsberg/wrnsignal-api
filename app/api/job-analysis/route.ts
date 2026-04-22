@@ -238,13 +238,18 @@ export async function POST(req: Request) {
       .single()
 
     if (cached) {
-      await supabase.from("jobfit_page_views").insert({
-        page_name: "job_analysis_run",
-        session_id,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        referrer: req.headers.get("referer") || null,
+      // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+      // Previous behavior: INSERT into jobfit_page_views with the payload below
+      console.log('[analytics:deferred]', {
+        call_site: 'app/api/job-analysis/route.ts:241',
+        would_have_written: {
+          page_name: "job_analysis_run",
+          session_id,
+          utm_source,
+          utm_medium,
+          utm_campaign,
+          referrer: req.headers.get("referer") || null,
+        },
       })
       // Apply user overrides to cached result (shallow clone first to
       // avoid mutating any shared reference, even though cached.result
@@ -330,13 +335,18 @@ export async function POST(req: Request) {
     })
 
     // ── Track event ──
-    await supabase.from("jobfit_page_views").insert({
-      page_name: "job_analysis_run",
-      session_id,
-      utm_source,
-      utm_medium,
-      utm_campaign,
-      referrer: req.headers.get("referer") || null,
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/job-analysis/route.ts:333',
+      would_have_written: {
+        page_name: "job_analysis_run",
+        session_id,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        referrer: req.headers.get("referer") || null,
+      },
     })
 
     return withCorsJson(req, applyUserOverrides(analysis), 200)

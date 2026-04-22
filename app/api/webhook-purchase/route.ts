@@ -61,32 +61,26 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // If we don't have a session_id but have an email, try to look one up
-    // from recent page views for that email (best-effort attribution).
     let resolvedSessionId = sessionId
-    if (!resolvedSessionId && email) {
-      // Look back 30 days for any session linked to this email via a prior event.
-      // This is best-effort — GHL ideally passes the session id directly.
-      const { data: recent } = await supabase
-        .from("jobfit_page_views")
-        .select("session_id")
-        .ilike("page_path", `%${email}%`)
-        .order("created_at", { ascending: false })
-        .limit(1)
-      if (recent && recent.length > 0) {
-        resolvedSessionId = recent[0].session_id
-      }
-    }
+    // TODO(analytics-phase-2): previously did an email→session_id lookback against
+    // jobfit_page_views.page_path (a flawed heuristic — emails were rarely actually
+    // stored there). Replace with an analytics_visitors lookup by email once
+    // Phase 2 ships.
 
     // Record the purchase as a page_view event so it flows into the dashboard
-    await supabase.from("jobfit_page_views").insert({
-      session_id: resolvedSessionId || crypto.randomUUID(),
-      page_path: "/purchase",
-      page_name: "signal_purchased",
-      referrer: email || null,
-      utm_source,
-      utm_medium,
-      utm_campaign,
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/webhook-purchase/route.ts:82',
+      would_have_written: {
+        session_id: resolvedSessionId || crypto.randomUUID(),
+        page_path: "/purchase",
+        page_name: "signal_purchased",
+        referrer: email || null,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+      },
     })
 
     console.log("[webhook-purchase] recorded:", {

@@ -562,14 +562,17 @@ Return JSON only. No markdown. No commentary.
     if (upsertErr) console.warn("coverletter_runs upsert failed:", upsertErr.message)
 
     // Track successful run
-    try {
-      await supabaseAdmin.from("jobfit_page_views").insert({
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/coverletter/route.ts:566',
+      would_have_written: {
         session_id: String(profileId || crypto.randomUUID()),
         page_name: "coverletter_run",
         page_path: "/api/coverletter",
         referrer: null,
-      })
-    } catch {}
+      },
+    })
 
     return withCorsJson(
       req,

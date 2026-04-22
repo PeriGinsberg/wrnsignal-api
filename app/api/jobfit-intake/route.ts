@@ -141,13 +141,18 @@ if (!user) {
     }
 
     // Track intake completion
-    await supabase.from("jobfit_page_views").insert({
-      session_id: user.id,
-      page_path: "/signal/jobfittrial/intake",
-      page_name: "jobfit_trial_completed",
-      utm_source: String(body.utm_source ?? "").trim() || null,
-      utm_medium: String(body.utm_medium ?? "").trim() || null,
-      utm_campaign: String(body.utm_campaign ?? "").trim() || null,
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/jobfit-intake/route.ts:144',
+      would_have_written: {
+        session_id: user.id,
+        page_path: "/signal/jobfittrial/intake",
+        page_name: "jobfit_trial_completed",
+        utm_source: String(body.utm_source ?? "").trim() || null,
+        utm_medium: String(body.utm_medium ?? "").trim() || null,
+        utm_campaign: String(body.utm_campaign ?? "").trim() || null,
+      },
     })
 
     return withCorsJson(

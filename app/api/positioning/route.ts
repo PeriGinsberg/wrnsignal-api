@@ -496,14 +496,17 @@ Return JSON only. No markdown. No extra text.
     }
 
     // Track successful run — use profileId as session_id for dedup
-    try {
-      await supabaseAdmin.from("jobfit_page_views").insert({
+    // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
+    // Previous behavior: INSERT into jobfit_page_views with the payload below
+    console.log('[analytics:deferred]', {
+      call_site: 'app/api/positioning/route.ts:500',
+      would_have_written: {
         session_id: String(profileId || crypto.randomUUID()),
         page_name: "positioning_run",
         page_path: "/api/positioning",
         referrer: null,
-      })
-    } catch {}
+      },
+    })
 
     return withCorsJson(
       req,
