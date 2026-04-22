@@ -1,10 +1,10 @@
 -- Phase 1 of signal-analytics-spec.md: Foundation schema.
--- Archives the legacy jobfit_page_views table and creates the four
--- analytics tables (visitors, sessions, events, attribution) with
--- indexes and constraints exactly as specified in Section 5.
-
-ALTER TABLE IF EXISTS public.jobfit_page_views
-  RENAME TO jobfit_page_views_archived_2026_04;
+-- Creates the four analytics tables (visitors, sessions, events,
+-- attribution) with indexes and constraints exactly as specified
+-- in Section 5.
+--
+-- The jobfit_page_views archive rename is deferred to Phase 2, to
+-- ship together with the code changes that stop writing to it.
 
 CREATE TABLE IF NOT EXISTS public.analytics_visitors (
   visitor_id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
