@@ -23,6 +23,37 @@ import { ga4 } from "./ga4"
 
 const PROVIDERS = [meta, tiktok, googleAds, ga4] as const
 
+// Build a PurchaseSignals snapshot from a persisted purchases row. Used
+// on both purchase and refund paths (Stripe webhook + /api/stripe/refund)
+// so the Conversion API fan-out sees identical attribution data regardless
+// of which caller produced the signals. Row type is `any` because Supabase
+// JS does not enforce generated row types in this codebase; fields are
+// coerced to strings (or 0) with defensive fallbacks.
+export function buildSignalsFromRow(r: any): PurchaseSignals {
+  return {
+    purchase_id:        r.id,
+    email:              r.email,
+    payment_intent_id:  r.stripe_payment_intent_id,
+    amount_cents:       r.amount_cents,
+    currency:           r.currency,
+    utm_source:         r.utm_source ?? "",
+    utm_medium:         r.utm_medium ?? "",
+    utm_campaign:       r.utm_campaign ?? "",
+    utm_content:        r.utm_content ?? "",
+    utm_term:           r.utm_term ?? "",
+    landing_page:       r.landing_page ?? "",
+    referrer:           r.referrer ?? "",
+    fbclid:             r.fbclid ?? "",
+    ttclid:             r.ttclid ?? "",
+    gclid:              r.gclid ?? "",
+    fbp:                r.fbp ?? "",
+    fbc:                r.fbc ?? "",
+    ttp:                r.ttp ?? "",
+    client_ip:          r.client_ip ?? "",
+    client_user_agent:  r.client_user_agent ?? "",
+  }
+}
+
 export async function fireConversions(
   signals: PurchaseSignals,
   event_type: EventType

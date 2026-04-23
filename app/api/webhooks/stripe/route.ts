@@ -10,7 +10,7 @@
 import { type NextRequest, NextResponse, after } from "next/server"
 import Stripe from "stripe"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import { fireConversions } from "../../_lib/conversions"
+import { buildSignalsFromRow, fireConversions } from "../../_lib/conversions"
 import type { PurchaseSignals } from "../../_lib/conversions/types"
 
 export const runtime = "nodejs"
@@ -70,34 +70,6 @@ async function insertOrFindPurchase(
 
   console.error("[stripe-webhook] purchases insert failed:", error?.message)
   return null
-}
-
-// Build a PurchaseSignals snapshot from a persisted purchases row. Used on
-// both purchase and refund paths so the Conversion API fan-out sees
-// identical data regardless of which webhook branch produced it.
-function buildSignalsFromRow(r: any): PurchaseSignals {
-  return {
-    purchase_id:        r.id,
-    email:              r.email,
-    payment_intent_id:  r.stripe_payment_intent_id,
-    amount_cents:       r.amount_cents,
-    currency:           r.currency,
-    utm_source:         r.utm_source ?? "",
-    utm_medium:         r.utm_medium ?? "",
-    utm_campaign:       r.utm_campaign ?? "",
-    utm_content:        r.utm_content ?? "",
-    utm_term:           r.utm_term ?? "",
-    landing_page:       r.landing_page ?? "",
-    referrer:           r.referrer ?? "",
-    fbclid:             r.fbclid ?? "",
-    ttclid:             r.ttclid ?? "",
-    gclid:              r.gclid ?? "",
-    fbp:                r.fbp ?? "",
-    fbc:                r.fbc ?? "",
-    ttp:                r.ttp ?? "",
-    client_ip:          r.client_ip ?? "",
-    client_user_agent:  r.client_user_agent ?? "",
-  }
 }
 
 export async function POST(req: NextRequest) {

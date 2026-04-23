@@ -495,10 +495,17 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 
 #### POST /api/stripe/refund
 **Auth:** Authenticated user.
-**Purpose:** Self-service 7-day money-back refund. Looks up the caller's profile (by `user_id`, fallback `email`), enforces the refund window (`now - purchase_date <= 7 days`), issues a full Stripe refund via `stripe.refunds.create` using `stripe_payment_intent_id` (fallback `stripe_charge_id`), and revokes access by setting `active = false` and `refunded_at = now()`. The `charge.refunded` webhook will also fire and perform the same DB update — both are idempotent.
+**Purpose:** Self-service 7-day money-back refund. Looks up the caller's profile (by `user_id`, fallback `email`), enforces the refund window (`now - purchase_date <= 7 days`), issues a full Stripe refund via `stripe.refunds.create` using `stripe_payment_intent_id` (fallback `stripe_charge_id`), revokes access by setting `active = false` and `refunded_at = now()`, updates the matching `purchases` row's `refunded_at`, and schedules refund Conversion API fan-out (Meta custom `Refund`, TikTok `Refund`, Google Ads `uploadConversionAdjustments` with `RETRACT`, GA4 `refund`) via `after()` so it runs post-response. Refunds for purchases that predate the `purchases` table are logged with `user_id`, `payment_intent_id`, and `email` for manual ad-platform reconciliation. The `charge.refunded` webhook will also fire and perform the same DB updates — all writes are idempotent, and duplicate CAPI events from both paths firing are benign because the ad platforms dedup on `(event_id, event_name)`.
 **Request:** — (no body).
 **Returns:** `{ ok: true, refund_id: string }`. If Stripe succeeded but the DB update failed: `{ ok: true, refund_id: string, warning: string }` (HTTP 200 — the refund went through, support needs to finish the cleanup).
 **Errors:** 401 unauthorized, 404 profile not found, 409 already refunded / no active purchase / no Stripe payment reference on file, 403 outside 7-day window, 502 Stripe refund failed, 500 server error.
+
+#### GET /api/checkout/session-summary
+**Auth:** Public — the `session_id` query param is a long opaque token the user already holds from the Stripe redirect URL, so ID opacity is the security boundary. Rate-limited to 10 requests/minute/IP via an in-memory `Map` (best-effort — each warm Vercel instance has its own bucket); 429 responses include a `Retry-After: 60` header. Opportunistic cleanup of expired rate-limit entries runs once the in-memory map grows past 1000 entries.
+**Purpose:** Minimal Stripe checkout session lookup for `/checkout/success` to display the actual paid amount (matters once Promotion Codes are used). Response payload is strictly restricted to `{amount_cents, currency, email}`; `customer_details.address`, `customer_details.phone`, `customer_details.name`, and any other fields Stripe populates on the session are deliberately NOT returned.
+**Request:** `?session_id=<stripe_checkout_session_id>`
+**Returns:** `{ amount_cents: number, currency: string, email: string }`.
+**Errors:** 400 missing `session_id`, 404 session not found (Stripe 404 surfaced as-is), 429 rate-limited, 500 server error.
 
 #### GET /checkout/mobile-success
 **Auth:** Public (client-rendered page, not a JSON endpoint).

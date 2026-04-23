@@ -5,10 +5,11 @@
 // refund and revoke their access (active=false). Outside 7 days or after
 // an existing refund, we return an error.
 
-import { type NextRequest } from "next/server"
+import { type NextRequest, after } from "next/server"
 import Stripe from "stripe"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { buildSignalsFromRow, fireConversions } from "../../_lib/conversions"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -168,6 +169,41 @@ export async function POST(req: NextRequest) {
         },
         200
       )
+    }
+
+    // Mark the matching purchases row refunded (idempotent with the
+    // charge.refunded webhook's same write — whichever fires first wins,
+    // second is a no-op). Then fan out refund events to Meta / TikTok /
+    // Google Ads / GA4 via after() so the response returns before the
+    // network calls complete.
+    if (profile.stripe_payment_intent_id) {
+      await supabase
+        .from("purchases")
+        .update({ refunded_at: nowIso })
+        .eq("stripe_payment_intent_id", profile.stripe_payment_intent_id)
+
+      const { data: purchase } = await supabase
+        .from("purchases")
+        .select("*")
+        .eq("stripe_payment_intent_id", profile.stripe_payment_intent_id)
+        .maybeSingle()
+
+      if (purchase) {
+        after(() => fireConversions(buildSignalsFromRow(purchase), "refund"))
+      } else {
+        // Refund for a purchase that predates the purchases table — no row
+        // to attach refund attribution to and no original Purchase event
+        // was ever sent for it. Skipping CAPI is consistent; log enough
+        // identifiers to reconcile in ad platforms manually if needed.
+        console.warn(
+          "[refund] refund for unknown purchase, skipping CAPI:",
+          {
+            user_id: userId,
+            payment_intent_id: profile.stripe_payment_intent_id,
+            email,
+          }
+        )
+      }
     }
 
     return withCorsJson(req, { ok: true, refund_id: refund.id })
