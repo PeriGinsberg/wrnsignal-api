@@ -16,7 +16,7 @@ Four other auth modes exist:
 
 - **Public** — no token checked (e.g., `/api/ping`, `/api/parse-job-url`, `/api/job-analysis`, `/api/checkout/create-session`).
 - **Stripe signature** — `/api/webhooks/stripe` verifies `stripe-signature` against `STRIPE_WEBHOOK_SECRET`.
-- **GHL webhook shared secret** — `/api/seat-create` and `/api/webhook-purchase` accept a custom header secret.
+- **GHL webhook shared secret** — `/api/seat-create` accepts a custom header secret.
 - **Coach gating** — routes under `/api/coach/*` additionally verify `is_coach = true` on the caller's profile, and `/api/coach/clients/[clientId]/*` routes verify a `coach_clients` relationship with one of three access levels: `view`, `annotate`, `full`.
 - **`x-jobfit-key` / `x-jobfit-test-key` / `x-networking-test-key`** — optional dev/test bypass headers accepted by the trial and jobfit routes.
 
@@ -537,13 +537,6 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 **Returns:** `{ ok: boolean, sent: boolean, intended_user_name: string, redirect: string }`
 **Errors:** Always 200; `sent: false` on invalid or expired seats.
 
-#### POST /api/webhook-purchase
-**Auth:** Optional shared secret (`x-webhook-key`).
-**Purpose:** Generic purchase webhook from GHL — records the event in `jobfit_page_views` for funnel attribution.
-**Request:** `{ email?, session_id?, amount?, currency?, utm_* }` plus any GHL fields.
-**Returns:** `{ ok: boolean, tracked: boolean }`
-**Errors:** 401 unauthorized (bad key), 500 server error.
-
 ### Analytics
 
 #### POST /api/track
@@ -570,18 +563,17 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 3. **Seat-create auth header name.** `/api/seat-create` rejects with 401 when the shared secret is missing, but the exact header name (`x-webhook-secret` per the earlier QA inventory vs. another name) should be verified against `process.env` usage.
 4. **`/api/positioning` and `/api/networking` success shapes** are the persisted `result_json` from their respective tables; the full key set comes from their upstream LLM prompts and wasn't enumerated here.
 5. **`/api/jobfit` request body** accepts many optional structured fields beyond `profile_text` / `job_text` that weren't catalogued individually (the handler is ~700 lines).
-6. **`/api/webhook-purchase`** secret header presence is inconsistent — "optional shared secret" behavior should be confirmed (does it 401 only when the header is present-but-wrong, or also when missing?).
-7. **`/api/reel`** — purpose beyond "serve a static HTML player" is unclear (what video, what audience).
-8. **PATCH /api/coach/my-recommendations** accepts `action: "mark_all_seen"` but the effect on the DB (which column gets flipped and for which rows) was not inspected in detail.
+6. **`/api/reel`** — purpose beyond "serve a static HTML player" is unclear (what video, what audience).
+7. **PATCH /api/coach/my-recommendations** accepts `action: "mark_all_seen"` but the effect on the DB (which column gets flipped and for which rows) was not inspected in detail.
 
 ## Summary Stats
 
 - **Route files inspected:** 64 (added `app/api/stripe/refund/route.ts`, 2026-04-15).
 - **Total endpoints documented:** 68 method+path combinations, plus the `/checkout/mobile-success` bridge page.
-- **Endpoints with `[NEEDS CLARIFICATION]`:** 8 (mostly Resume Rx response shapes and the dashboard auth model).
+- **Endpoints with `[NEEDS CLARIFICATION]`:** 7 (mostly Resume Rx response shapes and the dashboard auth model).
 - **Structural surprises:**
   - `/api/jobfit-v4-debug` and `/api/jobfit/debug-review` are public dev tools deployed alongside production code.
   - `/api/dashboard` serves HTML rather than JSON and includes an inline Supabase REST query layer.
   - Two overlapping recommendation-response endpoints exist: `PATCH /api/coach/recommendations/[id]/respond` (5-state enum) and `PATCH /api/coach/my-recommendations/[id]/respond` (4-state enum). Client-side responders should use the second.
   - `/api/resume-rx/*` is a fully staged workflow — 10 endpoints that mutate the same `resume_rx_sessions` row.
-  - Seat-flow endpoints (`/api/seat-*`, `/api/send-magic-link`, `/api/webhook-purchase`) and Stripe-flow endpoints (`/api/auth/send-link`, `/api/checkout/*`, `/api/webhooks/stripe`) are two parallel payment/auth pipelines; the seat flow is the older GHL path.
+  - Seat-flow endpoints (`/api/seat-*`, `/api/send-magic-link`) and Stripe-flow endpoints (`/api/auth/send-link`, `/api/checkout/*`, `/api/webhooks/stripe`) are two parallel payment/auth pipelines; the seat flow is the older GHL path.
