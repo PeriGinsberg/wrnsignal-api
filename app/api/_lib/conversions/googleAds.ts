@@ -32,7 +32,12 @@ import type {
 import { sha256Lower } from "./hash"
 import { fetchWithTimeout, safeJson } from "./http"
 
-const API_VERSION = "v18"
+// Google Ads API v23 (released 2026-01-28). Active versions as of
+// 2026-04-23: v21, v22, v23, v24. v23 chosen for production stability —
+// 3 months of real-world use, comfortably inside its support window.
+// Bump to the next version when Google Ads announces v23 sunset
+// (typically ~12 months from release).
+const API_VERSION = "v23"
 
 type GoogleAdsEnv = {
   developerToken: string
