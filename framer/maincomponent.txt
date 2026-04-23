@@ -1138,6 +1138,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         const refSource = url.searchParams.get("ref_source")
         const refMedium = url.searchParams.get("ref_medium")
         const refCampaign = url.searchParams.get("ref_campaign")
+        const refContent = url.searchParams.get("ref_content")
+        const refTerm = url.searchParams.get("ref_term")
         const clickedFrom = url.searchParams.get("clicked_from")
 
         if (mktSession) {
@@ -1145,6 +1147,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             localStorage.setItem("signal_ref_source", refSource || "")
             localStorage.setItem("signal_ref_medium", refMedium || "")
             localStorage.setItem("signal_ref_campaign", refCampaign || "")
+            localStorage.setItem("signal_ref_content", refContent || "")
+            localStorage.setItem("signal_ref_term", refTerm || "")
             localStorage.setItem("signal_clicked_from", clickedFrom || "")
 
             // Also save to sessionStorage so /api/track calls on
@@ -1154,6 +1158,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 sessionStorage.setItem("signal_utm_source", refSource || "")
                 sessionStorage.setItem("signal_utm_medium", refMedium || "")
                 sessionStorage.setItem("signal_utm_campaign", refCampaign || "")
+                sessionStorage.setItem("signal_utm_content", refContent || "")
+                sessionStorage.setItem("signal_utm_term", refTerm || "")
             } catch {}
 
             // Write attribution row to Supabase
@@ -1181,10 +1187,18 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 })
         }
 
-        // Also persist URL UTM params to sessionStorage (for non-attribution flows)
+        // Also persist URL UTM params to sessionStorage (for non-attribution flows).
+        // UTMs and click IDs are last-touch (conditional write); landing_page and
+        // referrer are first-touch (write-once) so intra-site navigation can't
+        // overwrite the original landing context.
         const urlUtmSource = url.searchParams.get("utm_source")
         const urlUtmMedium = url.searchParams.get("utm_medium")
         const urlUtmCampaign = url.searchParams.get("utm_campaign")
+        const urlUtmContent = url.searchParams.get("utm_content")
+        const urlUtmTerm = url.searchParams.get("utm_term")
+        const urlFbclid = url.searchParams.get("fbclid")
+        const urlTtclid = url.searchParams.get("ttclid")
+        const urlGclid = url.searchParams.get("gclid")
         try {
             if (urlUtmSource)
                 sessionStorage.setItem("signal_utm_source", urlUtmSource)
@@ -1192,6 +1206,26 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 sessionStorage.setItem("signal_utm_medium", urlUtmMedium)
             if (urlUtmCampaign)
                 sessionStorage.setItem("signal_utm_campaign", urlUtmCampaign)
+            if (urlUtmContent)
+                sessionStorage.setItem("signal_utm_content", urlUtmContent)
+            if (urlUtmTerm)
+                sessionStorage.setItem("signal_utm_term", urlUtmTerm)
+            if (urlFbclid)
+                sessionStorage.setItem("signal_fbclid", urlFbclid)
+            if (urlTtclid)
+                sessionStorage.setItem("signal_ttclid", urlTtclid)
+            if (urlGclid)
+                sessionStorage.setItem("signal_gclid", urlGclid)
+            if (!sessionStorage.getItem("signal_landing_page"))
+                sessionStorage.setItem(
+                    "signal_landing_page",
+                    window.location.pathname || ""
+                )
+            if (!sessionStorage.getItem("signal_referrer"))
+                sessionStorage.setItem(
+                    "signal_referrer",
+                    document.referrer || ""
+                )
         } catch {}
         // ─────────────────────────────────────────────────────────────────
 

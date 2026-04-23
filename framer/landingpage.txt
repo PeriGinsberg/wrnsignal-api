@@ -411,6 +411,45 @@ export default function SignalLandingPage(props: {
         el.textContent = STYLES
     }, [])
 
+    // sessionStorage read with try/catch — private mode + SSR safe. "" on miss.
+    function ss(key: string): string {
+        try {
+            return sessionStorage.getItem(key) || ""
+        } catch {
+            return ""
+        }
+    }
+
+    // Cookie read by name. "" if missing. _fbp/_fbc/_ttp will be "" until
+    // Meta/TikTok pixels are installed; webhook synthesizes fbc from fbclid.
+    function getCookie(name: string): string {
+        if (typeof document === "undefined") return ""
+        const m = document.cookie.match(
+            new RegExp("(?:^|; )" + name.replace(/[-.]/g, "\\$&") + "=([^;]*)")
+        )
+        return m ? decodeURIComponent(m[1]) : ""
+    }
+
+    // All fields default to "" so the POST body is well-formed and the
+    // server can treat missing == empty uniformly.
+    function getAttributionSnapshot() {
+        return {
+            utm_source: ss("signal_utm_source"),
+            utm_medium: ss("signal_utm_medium"),
+            utm_campaign: ss("signal_utm_campaign"),
+            utm_content: ss("signal_utm_content"),
+            utm_term: ss("signal_utm_term"),
+            landing_page: ss("signal_landing_page"),
+            referrer: ss("signal_referrer"),
+            fbclid: ss("signal_fbclid"),
+            ttclid: ss("signal_ttclid"),
+            gclid: ss("signal_gclid"),
+            fbp: getCookie("_fbp"),
+            fbc: getCookie("_fbc"),
+            ttp: getCookie("_ttp"),
+        }
+    }
+
     async function handlePurchase(
         ref: React.RefObject<HTMLInputElement | null>,
         setState: (s: "idle" | "loading" | "success" | "error") => void,
@@ -429,7 +468,7 @@ export default function SignalLandingPage(props: {
             const res = await fetch(`${API_BASE}/api/checkout/create-session`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, ...getAttributionSnapshot() }),
             })
             const data = await res.json()
             if (data.url) {

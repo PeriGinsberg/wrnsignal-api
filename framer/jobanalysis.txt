@@ -128,10 +128,40 @@ export default function SignalJobAnalysis() {
             url.searchParams.get("utm_campaign") ||
             sessionStorage.getItem("signal_utm_campaign") ||
             null
+        const cont =
+            url.searchParams.get("utm_content") ||
+            sessionStorage.getItem("signal_utm_content") ||
+            null
+        const term =
+            url.searchParams.get("utm_term") ||
+            sessionStorage.getItem("signal_utm_term") ||
+            null
+        // Click IDs are last-touch: URL param takes precedence so a user who
+        // re-lands via a different ad gets fresh attribution.
+        const fbclid = url.searchParams.get("fbclid")
+        const ttclid = url.searchParams.get("ttclid")
+        const gclid = url.searchParams.get("gclid")
         try {
             if (src) sessionStorage.setItem("signal_utm_source", src)
             if (med) sessionStorage.setItem("signal_utm_medium", med)
             if (camp) sessionStorage.setItem("signal_utm_campaign", camp)
+            if (cont) sessionStorage.setItem("signal_utm_content", cont)
+            if (term) sessionStorage.setItem("signal_utm_term", term)
+            if (fbclid) sessionStorage.setItem("signal_fbclid", fbclid)
+            if (ttclid) sessionStorage.setItem("signal_ttclid", ttclid)
+            if (gclid) sessionStorage.setItem("signal_gclid", gclid)
+            // First-touch landing_page and referrer — write once so subsequent
+            // intra-site navigations don't overwrite the original landing context.
+            if (!sessionStorage.getItem("signal_landing_page"))
+                sessionStorage.setItem(
+                    "signal_landing_page",
+                    window.location.pathname || ""
+                )
+            if (!sessionStorage.getItem("signal_referrer"))
+                sessionStorage.setItem(
+                    "signal_referrer",
+                    document.referrer || ""
+                )
         } catch {}
 
         fetch(API_BASE + "/api/track", {
@@ -277,6 +307,45 @@ export default function SignalJobAnalysis() {
         } catch {}
     }
 
+    // sessionStorage read with try/catch — private mode + SSR safe. "" on miss.
+    function ss(key: string): string {
+        try {
+            return sessionStorage.getItem(key) || ""
+        } catch {
+            return ""
+        }
+    }
+
+    // Cookie read by name. "" if missing. _fbp/_fbc/_ttp will be "" until
+    // Meta/TikTok pixels are installed; webhook synthesizes fbc from fbclid.
+    function getCookie(name: string): string {
+        if (typeof document === "undefined") return ""
+        const m = document.cookie.match(
+            new RegExp("(?:^|; )" + name.replace(/[-.]/g, "\\$&") + "=([^;]*)")
+        )
+        return m ? decodeURIComponent(m[1]) : ""
+    }
+
+    // All fields default to "" so the POST body is well-formed and the
+    // server can treat missing == empty uniformly.
+    function getAttributionSnapshot() {
+        return {
+            utm_source: ss("signal_utm_source"),
+            utm_medium: ss("signal_utm_medium"),
+            utm_campaign: ss("signal_utm_campaign"),
+            utm_content: ss("signal_utm_content"),
+            utm_term: ss("signal_utm_term"),
+            landing_page: ss("signal_landing_page"),
+            referrer: ss("signal_referrer"),
+            fbclid: ss("signal_fbclid"),
+            ttclid: ss("signal_ttclid"),
+            gclid: ss("signal_gclid"),
+            fbp: getCookie("_fbp"),
+            fbc: getCookie("_fbc"),
+            ttp: getCookie("_ttp"),
+        }
+    }
+
     async function handleUpgrade() {
         if (upgradeLoading) return
         if (!capturedEmail) {
@@ -290,7 +359,10 @@ export default function SignalJobAnalysis() {
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: capturedEmail }),
+                    body: JSON.stringify({
+                        email: capturedEmail,
+                        ...getAttributionSnapshot(),
+                    }),
                 }
             )
             const data = await response.json()

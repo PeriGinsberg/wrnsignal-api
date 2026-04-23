@@ -1,0 +1,127 @@
+// SIGNAL Landing Page Tracking Script
+//
+// Paste this into Framer's custom code section for the landing page
+// (Site Settings → Custom Code → End of <body> tag)
+//
+// This script:
+// 1. Creates or retrieves a persistent session_id from localStorage
+// 2. Sends a signal_landing event to /api/track with that session_id
+// 3. Saves UTM params to sessionStorage for downstream pages
+// 4. Listens for clicks on Free Trial CTAs (any link to /signal/job-analysis
+//    or any element with data-cta="free-trial") and fires free_trial_cta_click
+//    via sendBeacon so the event survives the navigation away from the page.
+
+<script>
+(function() {
+  var API_BASE = "https://wrnsignal-api.vercel.app";
+  var FREE_TRIAL_DEST = "/signal/job-analysis";
+
+  // Get or create a persistent session ID
+  var SESSION_KEY = "jobfit_session_id";
+  var existingId = localStorage.getItem(SESSION_KEY);
+  var sessionId = existingId || crypto.randomUUID();
+  if (!existingId) localStorage.setItem(SESSION_KEY, sessionId);
+
+  // Read UTM params, ad-platform click IDs, and landing context.
+  var url = new URL(window.location.href);
+  var utmSource = url.searchParams.get("utm_source") || "";
+  var utmMedium = url.searchParams.get("utm_medium") || "";
+  var utmCampaign = url.searchParams.get("utm_campaign") || "";
+  var utmContent = url.searchParams.get("utm_content") || "";
+  var utmTerm = url.searchParams.get("utm_term") || "";
+  var fbclid = url.searchParams.get("fbclid") || "";
+  var ttclid = url.searchParams.get("ttclid") || "";
+  var gclid = url.searchParams.get("gclid") || "";
+
+  // Save to sessionStorage so the downstream /api/checkout/create-session
+  // fetch (landingpage.txt handlePurchase) can forward attribution without
+  // relying on URL params still being present. UTMs and click IDs are
+  // last-touch (conditional write); landing_page + referrer are first-touch
+  // (write-once) to preserve the original landing context across intra-site
+  // navigation.
+  if (utmSource) sessionStorage.setItem("signal_utm_source", utmSource);
+  if (utmMedium) sessionStorage.setItem("signal_utm_medium", utmMedium);
+  if (utmCampaign) sessionStorage.setItem("signal_utm_campaign", utmCampaign);
+  if (utmContent) sessionStorage.setItem("signal_utm_content", utmContent);
+  if (utmTerm) sessionStorage.setItem("signal_utm_term", utmTerm);
+  if (fbclid) sessionStorage.setItem("signal_fbclid", fbclid);
+  if (ttclid) sessionStorage.setItem("signal_ttclid", ttclid);
+  if (gclid) sessionStorage.setItem("signal_gclid", gclid);
+  if (!sessionStorage.getItem("signal_landing_page"))
+    sessionStorage.setItem("signal_landing_page", window.location.pathname || "");
+  if (!sessionStorage.getItem("signal_referrer"))
+    sessionStorage.setItem("signal_referrer", document.referrer || "");
+
+  // Track landing page visit
+  fetch(API_BASE + "/api/track", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      page_name: "signal_landing",
+      page_path: window.location.pathname,
+      referrer: document.referrer || null,
+      utm_source: utmSource || null,
+      utm_medium: utmMedium || null,
+      utm_campaign: utmCampaign || null,
+      utm_content: utmContent || null,
+      utm_term: utmTerm || null
+    })
+  }).catch(function() {});
+
+  // ── Free Trial CTA click tracking ───────────────────────────────────
+  // Uses capture phase so it runs BEFORE any other handler (defends
+  // against the old v1 script intercepting the click). Uses sendBeacon
+  // so the event survives the page navigation.
+  function isFreeTrialCTA(el) {
+    // Walk up the tree from the clicked element looking for an anchor
+    // or element that identifies itself as the free trial CTA.
+    var node = el;
+    for (var i = 0; node && i < 6; i++) {
+      if (node.nodeType === 1) {
+        // Explicit opt-in via data attribute
+        if (node.getAttribute && node.getAttribute("data-cta") === "free-trial") {
+          return true;
+        }
+        // Anchor whose href points to the job analysis page
+        if (node.tagName === "A" && node.href) {
+          if (node.href.indexOf(FREE_TRIAL_DEST) !== -1) return true;
+        }
+      }
+      node = node.parentNode;
+    }
+    return false;
+  }
+
+  function fireFreeTrialCtaClick() {
+    var payload = JSON.stringify({
+      session_id: sessionId,
+      page_name: "free_trial_cta_click",
+      page_path: window.location.pathname,
+      referrer: document.referrer || null,
+      utm_source: sessionStorage.getItem("signal_utm_source") || null,
+      utm_medium: sessionStorage.getItem("signal_utm_medium") || null,
+      utm_campaign: sessionStorage.getItem("signal_utm_campaign") || null
+    });
+    try {
+      if (navigator && navigator.sendBeacon) {
+        var blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon(API_BASE + "/api/track", blob);
+      } else {
+        fetch(API_BASE + "/api/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true
+        }).catch(function() {});
+      }
+    } catch (e) {}
+  }
+
+  document.addEventListener("click", function(e) {
+    if (isFreeTrialCTA(e.target)) {
+      fireFreeTrialCtaClick();
+    }
+  }, true); // capture phase
+})();
+</script>
