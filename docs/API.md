@@ -507,6 +507,13 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 **Returns:** `{ amount_cents: number, currency: string, email: string }`.
 **Errors:** 400 missing `session_id`, 404 session not found (Stripe 404 surfaced as-is), 429 rate-limited, 500 server error.
 
+#### DELETE /api/account/delete
+**Auth:** Authenticated user (Bearer token).
+**Purpose:** Apple App Store guideline 5.1.1(v) compliance — permanently deletes the caller's account and all user-owned data. Hard-deletes rows from `signal_applications`, `jobfit_runs`, `positioning_runs`, `coverletter_runs`, `networking_runs`, `client_personas`, `resume_rx_sessions`, and from `coach_clients` / `coach_job_recommendations` / `coach_annotations` where the user appears as either `coach_id` or `client_id`. Anonymizes `purchases` rows by email (replaces `email` with `deleted-<profile_id>@deleted.invalid` and nulls all attribution + request-context columns) to preserve the financial audit trail while stripping PII. Deletes the `client_profiles` row (FK `ON DELETE SET NULL` on `purchases.client_profile_id` is already configured). Finally calls `supabase.auth.admin.deleteUser()` to remove the Supabase auth record (service-role admin client required — the regular Supabase client cannot delete auth users). Each table delete is best-effort per-table with try/catch; non-auth failures are collected into a `warnings` array and returned with `success: true` rather than aborting. If the auth user delete itself fails, returns 500 with the warnings so prior partial deletions can be reconciled.
+**Request:** — (no body).
+**Returns:** `{ success: true }` on clean success. `{ success: true, warnings: [{ step, error }, ...] }` when individual table deletions failed but the auth user was deleted.
+**Errors:** 401 unauthorized (missing or invalid token), 500 server error (including auth user delete failure — prior table deletions may already have committed; body includes `warnings`).
+
 #### GET /checkout/mobile-success
 **Auth:** Public (client-rendered page, not a JSON endpoint).
 **Purpose:** Bridge page for mobile Stripe checkout. Immediately redirects the in-app browser to `signalmobile://post-purchase` so that `WebBrowser.openAuthSessionAsync` in the mobile app closes itself and returns the user to the post-purchase code-entry screen. Shows a fallback "Open SIGNAL" button if the scheme redirect hasn't resolved within 2.5 seconds.
