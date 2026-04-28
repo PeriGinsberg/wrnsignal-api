@@ -1,7 +1,34 @@
-docs/test_cases/out/
+# Build output
+.next
+*.tsbuildinfo
+next-env.d.ts
+
+# Dependencies
+node_modules/
+
+# Environment files
 .env.local
 .env*.local
-.next
-node_modules/
+
+# Vercel
 .vercel
+
+# Mobile
 signal-mobile/
+
+# Test outputs
+docs/test_cases/out/
+tests/**/results/
+outputs/
+
+# Local tooling / scratch
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive — never commit
+Apple/
+**/AuthKey_*.p8
+*.pem
