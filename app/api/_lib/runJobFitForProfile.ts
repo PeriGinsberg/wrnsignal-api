@@ -68,7 +68,6 @@ type PersonaRow = {
   profile_id: string
   resume_text: string | null
   persona_version: number | null
-  structured_data: Record<string, any> | null
   name: string | null
 }
 
@@ -214,7 +213,7 @@ export async function assembleProfileForScoring(params: {
   if (personaId) {
     const { data: personaRaw, error: personaErr } = await supabase
       .from("client_personas")
-      .select("id,profile_id,resume_text,persona_version,structured_data,name")
+      .select("id,profile_id,resume_text,persona_version,name")
       .eq("id", personaId)
       .maybeSingle<PersonaRow>()
 
