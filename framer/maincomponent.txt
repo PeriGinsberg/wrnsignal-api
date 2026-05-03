@@ -124,7 +124,6 @@ const DIM = "rgba(255,255,255,0.35)"
 const ERROR = "rgba(255,120,120,0.95)"
 
 type TabKey = "jobfit" | "positioning" | "coverletter" | "networking"
-type AccessMode = "full" | "jobfit_only"
 
 function safePreview(s: string, max = 1400) {
     const t = (s || "").trim()
@@ -205,20 +204,6 @@ async function postJsonWithDebug(
     }
 
     return data
-}
-
-/* ---------- STORAGE KEYS ---------- */
-const TRIAL_UNLOCK_KEY = "jobfit_unlocked"
-const TRIAL_EMAIL_KEY = "jobfit_email"
-
-function getTrialUnlocked() {
-    if (typeof window === "undefined") return false
-    return localStorage.getItem(TRIAL_UNLOCK_KEY) === "true"
-}
-
-function getTrialEmail() {
-    if (typeof window === "undefined") return ""
-    return localStorage.getItem(TRIAL_EMAIL_KEY) || ""
 }
 
 function openUpgradePage() {
@@ -1021,9 +1006,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
     const wasCopied = (key: string) => copiedKey === key
 
-    // Access mode
-    const [accessMode, setAccessMode] = React.useState<AccessMode>("full")
-
     // Inputs
     const [job, setJob] = React.useState("")
     // Optional user-supplied company name and job title. When set, these
@@ -1079,7 +1061,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
     // Messages
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
-    const [upgradeHint, setUpgradeHint] = React.useState<TabKey | null>(null)
     const [debug, setDebug] = React.useState<any>(null)
 
     // JobFit accordions
@@ -1259,16 +1240,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         })
     }, [])
 
-    const [trialEmail, setTrialEmail] = React.useState("")
-
-    React.useEffect(() => {
-        if (typeof window !== "undefined") {
-            setTrialEmail(localStorage.getItem("jobfit_email") || "")
-        }
-    }, [])
-
-    const displayEmail = authedEmail || trialEmail
-    const isTrialUser = !isLoggedIn && !!trialEmail
     React.useEffect(() => {
         if (hasAnyResult) setJobInputOpen(false)
     }, [hasAnyResult])
@@ -1294,13 +1265,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     function clearErrorAndDebug() {
         setErrorMsg(null)
         setDebug(null)
-        setUpgradeHint(null)
-    }
-
-    function computeAccessMode(sessionToken?: string | null) {
-        if (sessionToken) return "full" as const
-        if (getTrialUnlocked()) return "jobfit_only" as const
-        return "full" as const
     }
 
     // On mount: exchange code if present, then check session, then subscribe
@@ -1313,7 +1277,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 timedOut = true
                 if (!mounted) return
                 setAuthStatus("logged_out")
-                setAccessMode(computeAccessMode(null))
             }, 10000)
 
             try {
@@ -1353,7 +1316,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     setAccessToken(null)
                     setAuthedEmail(null)
                     setAuthStatus("logged_out")
-                    setAccessMode(computeAccessMode(null))
                     return
                 }
 
@@ -1362,7 +1324,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     setAccessToken(session.access_token)
                     setAuthedEmail(session.user?.email || null)
                     setAuthStatus("logged_in")
-                    setAccessMode(computeAccessMode(session.access_token))
                     loadPersonas(session.access_token)
 
                     // ── Deep link: hydrate from ?run=<uuid> ──────────────
@@ -1406,7 +1367,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     setAccessToken(null)
                     setAuthedEmail(null)
                     setAuthStatus("logged_out")
-                    setAccessMode(computeAccessMode(null))
                 }
             } catch {
                 clearTimeout(timer)
@@ -1414,7 +1374,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 setAccessToken(null)
                 setAuthedEmail(null)
                 setAuthStatus("logged_out")
-                setAccessMode(computeAccessMode(null))
             }
         }
 
@@ -1430,7 +1389,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     setAuthStatus("logged_in")
                     // Load personas when user logs in
                     loadPersonas(session.access_token)
-                    setAccessMode("full")
 
                     if (typeof window !== "undefined") {
                         const path = window.location.pathname || ""
@@ -1446,26 +1404,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     setAccessToken(null)
                     setAuthedEmail(null)
                     setAuthStatus("logged_out")
-                    setAccessMode(computeAccessMode(null))
                 }
             }
         )
 
-        function onTrialUnlock() {
-            if (!mounted) return
-            if (!accessTokenRef.current) setAccessMode("jobfit_only")
-        }
-
-        if (typeof window !== "undefined") {
-            window.addEventListener("jobfit_unlocked", onTrialUnlock)
-        }
-
         return () => {
             mounted = false
             sub?.subscription?.unsubscribe?.()
-            if (typeof window !== "undefined") {
-                window.removeEventListener("jobfit_unlocked", onTrialUnlock)
-            }
         }
     }, [])
 
@@ -1474,7 +1419,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         if (authStatus !== "checking") return
         const t = setTimeout(() => {
             setAuthStatus("logged_out")
-            setAccessMode(computeAccessMode(null))
         }, 10000)
         return () => clearTimeout(t)
     }, [authStatus])
@@ -1508,7 +1452,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 setMagicLinkSent(true)
             } else if (res.status === 403 && data.error === "no_account") {
                 setAuthStatus("logged_out")
-                setAccessMode(computeAccessMode(null))
                 setErrorMsg(
                     "No account found for that email. Purchase access or run a free job analysis below."
                 )
@@ -1518,7 +1461,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         } catch (err: any) {
             console.error("MAGIC LINK ERROR", err)
             setAuthStatus("logged_out")
-            setAccessMode(computeAccessMode(null))
             setErrorMsg(
                 "Something went wrong. Please try again or contact support."
             )
@@ -1551,60 +1493,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             console.warn("Failed to load personas", e)
         } finally {
             setPersonasLoading(false)
-        }
-    }
-
-    async function continueTrial() {
-        clearErrorAndDebug()
-
-        const e = trialEmail.trim().toLowerCase()
-        if (!e) {
-            setErrorMsg("Enter your email.")
-            return
-        }
-
-        setAuthStatus("checking")
-
-        try {
-            const data = await postJsonWithDebug(
-                `${API_BASE}/api/jobfit-trial-lookup`,
-                { email: e },
-                setDebug,
-                null
-            )
-
-            if (!data?.ok) {
-                throw new Error(
-                    "We couldn’t find a SIGNAL trial profile for that email. If you haven’t signed up yet, go to workforcereadynow.com/signal to get started."
-                )
-            }
-
-            if (typeof window !== "undefined") {
-                localStorage.setItem("jobfit_unlocked", "true")
-                localStorage.setItem("jobfit_email", e)
-                sessionStorage.setItem("jobfit_email", e)
-                window.dispatchEvent(new Event("jobfit_unlocked"))
-            }
-
-            setTrialEmail(e)
-            setAccessToken(null)
-            setAuthedEmail(null)
-            setAuthStatus("logged_out")
-            setAccessMode("jobfit_only")
-            runNewJob(true)
-
-            if (typeof window !== "undefined") {
-                window.top!.location.replace(
-                    "https://wrnsignal.workforcereadynow.com/signal/jobfit"
-                )
-            }
-        } catch (err: any) {
-            setAuthStatus("logged_out")
-            setAccessMode(computeAccessMode(null))
-            setErrorMsg(
-                err?.message ||
-                    "We couldn’t find a SIGNAL trial profile for that email. If you haven’t signed up yet, go to workforcereadynow.com/signal to get started."
-            )
         }
     }
 
@@ -1644,10 +1532,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setAccessToken(null)
             setAuthedEmail(null)
             setAuthStatus("logged_out")
-            setAccessMode("full") // default for new session
             runNewJob(true)
 
-            // 4️⃣ Clear trial info from localStorage
+            // 4️⃣ Defensive cleanup of legacy jobfit_only localStorage keys
+            // (left over from sunset trial substrate; harmless if absent)
             if (typeof window !== "undefined") {
                 localStorage.removeItem("jobfit_email")
                 localStorage.removeItem("jobfit_unlocked")
@@ -1791,23 +1679,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         }
     }
 
-    function isLockedTab(key: TabKey) {
-        if (accessMode !== "jobfit_only") return false
-        return key !== "jobfit"
-    }
-
-    function showLockedMessage(which: TabKey) {
-        setErrorMsg(null)
-        setUpgradeHint(which)
-    }
-
     function goTo(tabKey: TabKey) {
-        const locked = isLockedTab(tabKey)
-        if (locked) {
-            setTab(tabKey)
-            showLockedMessage(tabKey)
-            return
-        }
         setTab(tabKey)
     }
 
@@ -1884,109 +1756,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         )
     }
 
-    function renderUpgradePanel(variant: "inline" | "after_jobfit") {
-        if (accessMode !== "jobfit_only") return null
-
-        const decisionLower = String(jobFitResult?.decision || "").toLowerCase()
-
-        const title =
-            variant === "after_jobfit"
-                ? decisionLower.includes("pass") ||
-                  decisionLower.includes("do not")
-                    ? "This job is not the move."
-                    : decisionLower.includes("review")
-                      ? "This one needs more caution."
-                      : "This job may be worth pursuing. Now the goal is standing out."
-                : "Want the next steps?"
-
-        const body =
-            variant === "after_jobfit"
-                ? decisionLower.includes("pass") ||
-                  decisionLower.includes("do not")
-                    ? "Full SIGNAL helps you focus on stronger jobs and execute better when a role is actually worth your time."
-                    : decisionLower.includes("review")
-                      ? "Full SIGNAL helps you decide whether to proceed and how to position yourself if you do."
-                      : "Full SIGNAL helps you position, message, and network so you do not blend in after you apply."
-                : "JobFit only tells you the decision. Full SIGNAL shows you how to execute."
-
-        const bullets = [
-            "Positioning: align bullets and keywords to the job fast",
-            "Cover Letter: generate job specific materials when it is worth it",
-            "Networking: simple post apply plan plus copy paste messages",
-        ]
-
-        return (
-            <div style={upgradePanel}>
-                <div style={upgradeTitle}>{title}</div>
-                <div style={upgradeBody}>{body}</div>
-
-                <div style={{ height: 10 }} />
-
-                <div style={upgradeBullets}>
-                    {bullets.map((b, i) => (
-                        <div key={i} style={{ marginBottom: 8 }}>
-                            • {b}
-                        </div>
-                    ))}
-                </div>
-
-                <div style={{ height: 12 }} />
-
-                <button
-                    style={upgradeBtn}
-                    onClick={openUpgradePage}
-                    type="button"
-                >
-                    Unlock Full SIGNAL
-                </button>
-            </div>
-        )
-    }
-
-    function renderLockedPreview(which: TabKey) {
-        if (which === "positioning") {
-            return (
-                <>
-                    <div style={outputText}>
-                        <b>Locked.</b>
-                        <div style={{ height: 10 }} />
-                        Positioning rewrites your bullet angles so your resume
-                        passes recruiter scan and keyword screens.
-                    </div>
-                    <div style={{ height: 14 }} />
-                    {renderUpgradePanel("inline")}
-                </>
-            )
-        }
-
-        if (which === "coverletter") {
-            return (
-                <>
-                    <div style={outputText}>
-                        <b>Locked.</b>
-                        <div style={{ height: 10 }} />
-                        Cover Letter generates clean job aligned materials fast.
-                    </div>
-                    <div style={{ height: 14 }} />
-                    {renderUpgradePanel("inline")}
-                </>
-            )
-        }
-
-        return (
-            <>
-                <div style={outputText}>
-                    <b>Locked.</b>
-                    <div style={{ height: 10 }} />
-                    Networking gives you a post apply plan with exactly who to
-                    target and what to say.
-                </div>
-                <div style={{ height: 14 }} />
-                {renderUpgradePanel("inline")}
-            </>
-        )
-    }
-
     function normalizeJobFitResponseForUI(data: any) {
         if (!data) return null
         if (data && typeof data === "object" && "result" in data && data.result)
@@ -2018,47 +1787,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             }
             if (!manualJobTitle.trim()) {
                 throw new Error("Enter the job title before running JobFit.")
-            }
-
-            if (accessMode === "jobfit_only") {
-                const trialEmail = getTrialEmail().trim().toLowerCase()
-                if (!trialEmail) {
-                    throw new Error(
-                        "Missing email. Complete the Job Fit intake first so we can save your profile."
-                    )
-                }
-
-                const data = await postJsonWithDebug(
-                    `${API_BASE}/api/jobfit-run-trial`,
-                    {
-                        email: trialEmail,
-                        job_description: job.trim(),
-                        // User-provided labels — now always included
-                        // because client-side validation ensures they
-                        // are non-empty before we get here.
-                        company_name: manualCompanyName.trim(),
-                        job_title: manualJobTitle.trim(),
-                    },
-                    setDebug,
-                    null
-                )
-
-                const normalized = normalizeJobFitResponseForUI(data)
-                setJobFitResult(normalized)
-
-                const ctxFromApi = extractJobContextFromJobFit(normalized)
-                const ctxFromText = extractJobContextFromJobText(job)
-
-                setJobContext(() => {
-                    if (ctxFromApi.title || ctxFromApi.company)
-                        return ctxFromApi
-                    if (ctxFromText.title || ctxFromText.company)
-                        return ctxFromText
-                    return { title: "", company: "" }
-                })
-
-                setTab("jobfit")
-                return
             }
 
             if (!accessToken) throw new Error("Please log in again.")
@@ -2099,11 +1827,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
 
     async function runPositioning() {
-        if (accessMode === "jobfit_only") {
-            showLockedMessage("positioning")
-            return
-        }
-
         clearErrorAndDebug()
         setLoadingPositioning(true)
 
@@ -2131,11 +1854,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
 
     async function runCoverLetter() {
-        if (accessMode === "jobfit_only") {
-            showLockedMessage("coverletter")
-            return
-        }
-
         clearErrorAndDebug()
         setLoadingCoverLetter(true)
 
@@ -2160,11 +1878,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
 
     async function runNetworking() {
-        if (accessMode === "jobfit_only") {
-            showLockedMessage("networking")
-            return
-        }
-
         clearErrorAndDebug()
         setLoadingNetworking(true)
 
@@ -2191,12 +1904,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     /* ---------- RENDER: JOBFIT ---------- */
     function renderJobFit() {
         if (!jobFitResult) {
-            return accessMode === "jobfit_only" ? (
-                <>
-                    <div style={{ height: 10 }} />
-                    {renderUpgradePanel("inline")}
-                </>
-            ) : null
+            return null
         }
 
         // ── Data ─────────────────────────────────────────────────
@@ -2948,11 +2656,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         ) : null}
 
                         {/* CTA */}
-                        {accessMode === "jobfit_only" ? (
-                            <div style={{ marginTop: 16 }}>
-                                {renderUpgradePanel("after_jobfit")}
-                            </div>
-                        ) : isPass ? (
+                        {isPass ? (
                             <button
                                 style={jfCtaPass}
                                 onClick={onPrimaryClick}
@@ -3500,11 +3204,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
 
     /* ---------- RENDER: POSITIONING ---------- */
-    /* ---------- RENDER: POSITIONING ---------- */
     function renderPositioning() {
-        if (accessMode === "jobfit_only")
-            return renderLockedPreview("positioning")
-
         const r = positioningResult?.result ?? positioningResult ?? null
 
         if (!r) {
@@ -4830,9 +4530,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
     /* ---------- RENDER: COVER LETTER ---------- */
     function renderCoverLetter() {
-        if (accessMode === "jobfit_only")
-            return renderLockedPreview("coverletter")
-
         if (!coverLetterResult) {
             return (
                 <>
@@ -5403,9 +5100,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
     /* ---------- RENDER: NETWORKING ---------- */
     function renderNetworking() {
-        if (accessMode === "jobfit_only")
-            return renderLockedPreview("networking")
-
         if (!networkingResult) {
             return (
                 <>
@@ -6931,9 +6625,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         )
     }
     /* ---------- AUTH GATE ---------- */
-    const shouldShowAuthGate = !isLoggedIn && accessMode !== "jobfit_only"
+    const shouldShowAuthGate = !isLoggedIn
 
-    if (authStatus === "checking" && accessMode !== "jobfit_only") {
+    if (authStatus === "checking") {
         return (
             <div style={outerFrame}>
                 <div
@@ -7248,96 +6942,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 ) : null}
                             </div>
 
-                            {/* Trial */}
-                            <div
-                                style={{
-                                    borderRadius: 20,
-                                    padding: 24,
-                                    border: `1px solid ${BORDER_SOFT}`,
-                                    background: CARD,
-                                    borderTop: `3px solid ${WRN_BLUE}`,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: 1.8,
-                                        textTransform: "uppercase" as const,
-                                        color: WRN_BLUE,
-                                        marginBottom: 8,
-                                    }}
-                                >
-                                    Free Trial
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 20,
-                                        fontWeight: 900,
-                                        color: TEXT,
-                                        marginBottom: 6,
-                                    }}
-                                >
-                                    Trial user
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 13,
-                                        color: MUTED,
-                                        lineHeight: "20px",
-                                        marginBottom: 20,
-                                        minHeight: 42,
-                                    }}
-                                >
-                                    Use the email tied to your saved trial
-                                    profile. Only for users who already started
-                                    a SIGNAL trial.
-                                </div>
-                                <label
-                                    style={{
-                                        fontSize: 11,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.5,
-                                        color: DIM,
-                                        marginBottom: 6,
-                                        display: "block",
-                                    }}
-                                >
-                                    Trial user email
-                                </label>
-                                <input
-                                    style={input}
-                                    value={trialEmail}
-                                    onChange={(e) =>
-                                        setTrialEmail(e.target.value)
-                                    }
-                                    placeholder="you@example.com"
-                                    type="email"
-                                    id="signal-trial-email"
-                                    name="trial-user-email"
-                                    autoComplete="off"
-                                    inputMode="email"
-                                />
-                                <div style={{ height: 14 }} />
-                                <button
-                                    style={{
-                                        width: "100%",
-                                        padding: "13px",
-                                        borderRadius: 13,
-                                        background:
-                                            "linear-gradient(90deg,#51ADE5,#218C8C)",
-                                        fontWeight: 900,
-                                        fontSize: 14,
-                                        border: "none",
-                                        cursor: "pointer",
-                                        color: "#04060F",
-                                    }}
-                                    onClick={continueTrial}
-                                    type="button"
-                                >
-                                    Continue Trial Access
-                                </button>
-                            </div>
                         </div>
 
                         {/* Trust row */}
@@ -7407,8 +7011,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         return renderNetworking()
     }
 
-    const showJobFitLandingCTA =
-        tab === "jobfit" && !jobFitResult && !isLockedTab("jobfit")
+    const showJobFitLandingCTA = tab === "jobfit" && !jobFitResult
 
     return (
         <div style={{ ...props.style, ...outerFrame }}>
@@ -7431,14 +7034,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             <div style={shell}>
                 <SideNav
                     tab={tab}
-                    accessMode={accessMode}
                     isLoggedIn={isLoggedIn}
                     authedEmail={authedEmail}
-                    trialEmail={trialEmail} // <--- ADD THIS
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
                     onLogout={logout}
-                    onUpgrade={openUpgradePage}
                 />
 
                 <div style={main}>
@@ -7507,11 +7107,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     fontSize: 14,
                                                     fontWeight: 700,
                                                     flexShrink: 0,
-                                                    cursor: isLockedTab(
-                                                        s.key as TabKey
-                                                    )
-                                                        ? "default"
-                                                        : "pointer",
+                                                    cursor: "pointer",
                                                     border: isActive
                                                         ? "1.5px solid #f97316"
                                                         : isDone
@@ -7560,76 +7156,40 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     gap: 10,
                                 }}
                             >
-                                {(accessMode === "jobfit_only"
-                                    ? [
-                                          {
-                                              n: 1,
-                                              key: "jobfit",
-                                              tag: "Free",
-                                              head: "JobFit",
-                                              desc: "Tells you your competitive signal so you stop wasting applications.",
-                                              locked: false,
-                                          },
-                                          {
-                                              n: 2,
-                                              key: "positioning",
-                                              tag: "Upgrade",
-                                              head: "Positioning",
-                                              desc: "One targeted story written to get through ATS and the recruiter's 7-second scan.",
-                                              locked: true,
-                                          },
-                                          {
-                                              n: 3,
-                                              key: "coverletter",
-                                              tag: "Upgrade",
-                                              head: "Cover Letter",
-                                              desc: "Written in your voice, tied to your real background and this specific job.",
-                                              locked: true,
-                                          },
-                                          {
-                                              n: 4,
-                                              key: "networking",
-                                              tag: "Upgrade",
-                                              head: "Networking",
-                                              desc: "Who to contact, what to say, and how to be appropriately aggressive.",
-                                              locked: true,
-                                          },
-                                      ]
-                                    : [
-                                          {
-                                              n: 1,
-                                              key: "jobfit",
-                                              tag: "Decision",
-                                              head: "JobFit",
-                                              desc: "Know your competitive signal before spending hours on the wrong role.",
-                                              locked: false,
-                                          },
-                                          {
-                                              n: 2,
-                                              key: "positioning",
-                                              tag: "Resume",
-                                              head: "Positioning",
-                                              desc: "Restructures your bullets to match the job and pass the ATS scan.",
-                                              locked: false,
-                                          },
-                                          {
-                                              n: 3,
-                                              key: "coverletter",
-                                              tag: "Letter",
-                                              head: "Cover Letter",
-                                              desc: "Generates a letter only when it is actually worth writing one.",
-                                              locked: false,
-                                          },
-                                          {
-                                              n: 4,
-                                              key: "networking",
-                                              tag: "Outreach",
-                                              head: "Networking",
-                                              desc: "Post-apply plan with copy-paste outreach ready to send.",
-                                              locked: false,
-                                          },
-                                      ]
-                                ).map((s) => {
+                                {[
+                                    {
+                                        n: 1,
+                                        key: "jobfit",
+                                        tag: "Decision",
+                                        head: "JobFit",
+                                        desc: "Know your competitive signal before spending hours on the wrong role.",
+                                        locked: false,
+                                    },
+                                    {
+                                        n: 2,
+                                        key: "positioning",
+                                        tag: "Resume",
+                                        head: "Positioning",
+                                        desc: "Restructures your bullets to match the job and pass the ATS scan.",
+                                        locked: false,
+                                    },
+                                    {
+                                        n: 3,
+                                        key: "coverletter",
+                                        tag: "Letter",
+                                        head: "Cover Letter",
+                                        desc: "Generates a letter only when it is actually worth writing one.",
+                                        locked: false,
+                                    },
+                                    {
+                                        n: 4,
+                                        key: "networking",
+                                        tag: "Outreach",
+                                        head: "Networking",
+                                        desc: "Post-apply plan with copy-paste outreach ready to send.",
+                                        locked: false,
+                                    },
+                                ].map((s) => {
                                     const tabIndex = [
                                         "jobfit",
                                         "positioning",
@@ -7721,408 +7281,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 })}
                             </div>
 
-                            {/* Upgrade footer — jobfit_only mode only */}
-                            {accessMode === "jobfit_only" && (
-                                <div
-                                    style={{
-                                        marginTop: 16,
-                                        paddingTop: 16,
-                                        borderTop:
-                                            "1px solid rgba(255,255,255,0.06)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        flexWrap: "wrap" as const,
-                                        gap: 10,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: 12,
-                                            color: "#3d5878",
-                                        }}
-                                    >
-                                        Steps 2-4 require Full SIGNAL access.
-                                    </div>
-                                    <button
-                                        onClick={openUpgradePage}
-                                        type="button"
-                                        style={{
-                                            padding: "8px 16px",
-                                            borderRadius: 10,
-                                            background:
-                                                "linear-gradient(135deg,#FEB06A,#51ADE5)",
-                                            border: "none",
-                                            fontWeight: 900,
-                                            fontSize: 12,
-                                            color: "#0B1020",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Unlock Full SIGNAL →
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     ) : null}
 
                     {/* JobFit landing CTA only, and only below the general step notes */}
 
-                    {/* Trial instruction block */}
-                    {!hasAnyResult && accessMode === "jobfit_only" ? (
-                        // ─────────────────────────────────────────────────────────────────────────────
-                        // JOBFIT LANDING REDESIGN — matches intake form dark style
-                        // There are TWO identical blocks to replace in the component:
-                        //
-                        // BLOCK 1 — Trial/free access version (around line 5910)
-                        //   Find: background: "#FFFFFF", borderRadius: 18, padding: "24px 26px"  (first occurrence)
-                        //   Replace from the opening <div style={{ background: "#FFFFFF" ... to the closing </div>
-                        //   that ends with ) : null} (the trial block conditional close)
-                        //
-                        // BLOCK 2 — Full access version (around line 6150)
-                        //   Find: background: "#FFFFFF", borderRadius: 18, padding: "24px 26px" (second occurrence)
-                        //   Replace from the opening <div style={{ background: "#FFFFFF" ... to its closing </div>
-                        //   that ends with ) : null} (the full access block conditional close)
-                        //
-                        // USE THE SAME JSX BELOW FOR BOTH BLOCKS
-                        // ─────────────────────────────────────────────────────────────────────────────
-
-                        <div
-                            style={{
-                                borderRadius: 18,
-                                border: "1px solid rgba(81,173,229,0.20)",
-                                background: "#0D1829",
-                                overflow: "hidden",
-                                marginBottom: 16,
-                                marginTop: 4,
-                                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                                position: "relative" as const,
-                            }}
-                        >
-                            {/* ambient orbs */}
-                            <div
-                                style={{
-                                    position: "absolute" as const,
-                                    top: -40,
-                                    left: -40,
-                                    width: 220,
-                                    height: 220,
-                                    borderRadius: "50%",
-                                    background: "rgba(81,173,229,0.07)",
-                                    animation:
-                                        "orbFloat1 8s ease-in-out infinite",
-                                    pointerEvents: "none" as const,
-                                }}
-                            />
-                            <div
-                                style={{
-                                    position: "absolute" as const,
-                                    bottom: -20,
-                                    right: -20,
-                                    width: 180,
-                                    height: 180,
-                                    borderRadius: "50%",
-                                    background: "rgba(254,176,106,0.06)",
-                                    animation:
-                                        "orbFloat2 9s ease-in-out infinite",
-                                    pointerEvents: "none" as const,
-                                }}
-                            />
-                            {/* gradient top bar */}
-                            <div
-                                style={{
-                                    height: 3,
-                                    background:
-                                        "linear-gradient(90deg,#FEB06A,#f97316,#51ADE5)",
-                                }}
-                            />
-                            <div
-                                style={{
-                                    padding: "22px 24px 24px",
-                                    position: "relative" as const,
-                                    zIndex: 1,
-                                    textAlign: "center" as const,
-                                }}
-                            >
-                                {/* eyebrow */}
-                                <div
-                                    style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: 2,
-                                        textTransform: "uppercase" as const,
-                                        color: "rgba(254,176,106,0.70)",
-                                        marginBottom: 16,
-                                    }}
-                                >
-                                    How to use Job Fit
-                                </div>
-                                {/* headline */}
-                                <div
-                                    style={{
-                                        fontSize: 38,
-                                        fontWeight: 950,
-                                        color: "rgba(255,255,255,0.97)",
-                                        lineHeight: 1.1,
-                                        letterSpacing: -1.2,
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    Found a job you're thinking
-                                    <br />
-                                    about{" "}
-                                    <span style={{ color: "#FEB06A" }}>
-                                        applying
-                                    </span>{" "}
-                                    to?
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 22,
-                                        fontWeight: 950,
-                                        letterSpacing: -0.5,
-                                        marginBottom: 18,
-                                        lineHeight: 1.2,
-                                    }}
-                                >
-                                    <span style={{ color: "#FEB06A" }}>
-                                        Start here
-                                    </span>
-                                    <span
-                                        style={{
-                                            color: "rgba(255,255,255,0.90)",
-                                        }}
-                                    >
-                                        {" "}
-                                        — before you apply.
-                                    </span>
-                                </div>
-                                {/* subhead */}
-                                <div
-                                    style={{
-                                        fontSize: 14,
-                                        lineHeight: "22px",
-                                        color: "rgba(255,255,255,0.45)",
-                                        marginBottom: 28,
-                                        maxWidth: 500,
-                                        margin: "0 auto 28px",
-                                    }}
-                                >
-                                    Most students apply to jobs that were never
-                                    a real fit. SIGNAL evaluates the match
-                                    between your background and a specific role
-                                    — before you spend hours on an application
-                                    going nowhere.
-                                </div>
-                                {/* steps */}
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 10,
-                                        marginBottom: 22,
-                                        textAlign: "left" as const,
-                                    }}
-                                >
-                                    {[
-                                        {
-                                            n: "1",
-                                            head: "Run JobFit",
-                                            body: "Paste the job description and get a clear verdict — Apply, Review, or Pass — before you spend a minute on an application.",
-                                        },
-                                        {
-                                            n: "2",
-                                            head: "Run Positioning",
-                                            body: "Rewrite your resume bullets to match this specific role. One targeted story, in the language the recruiter is scanning for.",
-                                        },
-                                        {
-                                            n: "3",
-                                            head: "Run Cover Letter",
-                                            body: "Write a letter in your voice that connects your background to this company — not a template, a real case for why you fit.",
-                                        },
-                                        {
-                                            n: "4",
-                                            head: "Run Networking",
-                                            body: "Build your outreach plan. Know who to contact, what to say, and how to follow up so your name is known before the interview.",
-                                        },
-                                    ].map((s, idx) => {
-                                        const isActive = idx === 0
-                                        const isDone = idx < 0
-                                        return (
-                                            <div
-                                                key={s.n}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "flex-start",
-                                                    gap: 14,
-                                                    opacity: isActive
-                                                        ? 1
-                                                        : isDone
-                                                          ? 0.55
-                                                          : 0.3,
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: isActive
-                                                            ? 36
-                                                            : 28,
-                                                        height: isActive
-                                                            ? 36
-                                                            : 28,
-                                                        borderRadius: "50%",
-                                                        background: isActive
-                                                            ? "rgba(254,176,106,0.25)"
-                                                            : isDone
-                                                              ? "rgba(74,222,128,0.15)"
-                                                              : "rgba(255,255,255,0.06)",
-                                                        border: isActive
-                                                            ? "2px solid rgba(254,176,106,0.70)"
-                                                            : isDone
-                                                              ? "2px solid rgba(74,222,128,0.50)"
-                                                              : "2px solid rgba(255,255,255,0.15)",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent:
-                                                            "center",
-                                                        fontSize: isActive
-                                                            ? 15
-                                                            : 12,
-                                                        fontWeight: 900,
-                                                        color: isActive
-                                                            ? "#FEB06A"
-                                                            : isDone
-                                                              ? "#4ade80"
-                                                              : "rgba(255,255,255,0.35)",
-                                                        flexShrink: 0,
-                                                        marginTop: 1,
-                                                    }}
-                                                >
-                                                    {s.n}
-                                                </div>
-                                                <div>
-                                                    <div
-                                                        style={{
-                                                            fontSize: isActive
-                                                                ? 16
-                                                                : 13,
-                                                            fontWeight: isActive
-                                                                ? 900
-                                                                : 700,
-                                                            color: isActive
-                                                                ? "#FEB06A"
-                                                                : isDone
-                                                                  ? "rgba(255,255,255,0.75)"
-                                                                  : "rgba(255,255,255,0.40)",
-                                                            marginBottom: 3,
-                                                        }}
-                                                    >
-                                                        {s.head}
-                                                    </div>
-                                                    <div
-                                                        style={{
-                                                            fontSize: 12,
-                                                            lineHeight: "18px",
-                                                            color: isActive
-                                                                ? "rgba(255,255,255,0.55)"
-                                                                : "rgba(255,255,255,0.22)",
-                                                        }}
-                                                    >
-                                                        {s.body}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                                {/* what you get */}
-                                <div
-                                    style={{
-                                        borderRadius: 14,
-                                        border: "1px solid rgba(74,222,128,0.18)",
-                                        background: "rgba(74,222,128,0.05)",
-                                        padding: "14px 16px",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: 9,
-                                            fontWeight: 900,
-                                            letterSpacing: 2,
-                                            textTransform: "uppercase" as const,
-                                            color: "rgba(74,222,128,0.65)",
-                                            marginBottom: 10,
-                                        }}
-                                    >
-                                        What Job Fit tells you
-                                    </div>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column" as const,
-                                            gap: 8,
-                                        }}
-                                    >
-                                        {[
-                                            "Apply, Review, or Pass — a clear decision on whether this role is worth your time",
-                                            "Your fit score out of 100 based on your actual background",
-                                            "Why you are competitive — the specific signals that work in your favor",
-                                            "Where you are exposed — the gaps a hiring manager will notice",
-                                            "Your exact next move based on the verdict",
-                                        ].map((item, i) => (
-                                            <div
-                                                key={i}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "flex-start",
-                                                    gap: 10,
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: 18,
-                                                        height: 18,
-                                                        borderRadius: "50%",
-                                                        background:
-                                                            "rgba(74,222,128,0.15)",
-                                                        border: "1.5px solid rgba(74,222,128,0.45)",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent:
-                                                            "center",
-                                                        fontSize: 10,
-                                                        fontWeight: 900,
-                                                        color: "#4ade80",
-                                                        flexShrink: 0,
-                                                        marginTop: 1,
-                                                        animation:
-                                                            "whyPulse 2.5s ease-in-out infinite",
-                                                        animationDelay: `${i * 0.25}s`,
-                                                    }}
-                                                >
-                                                    ✓
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 12,
-                                                        lineHeight: "18px",
-                                                        color: "rgba(255,255,255,0.65)",
-                                                    }}
-                                                >
-                                                    {item}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : null}
-
                     {/* Full access instruction block */}
-                    {!hasAnyResult &&
-                    accessMode !== "jobfit_only" &&
-                    isLoggedIn ? (
+                    {!hasAnyResult && isLoggedIn ? (
                         // ─────────────────────────────────────────────────────────────────────────────
                         // JOBFIT LANDING REDESIGN — matches intake form dark style
                         // There are TWO identical blocks to replace in the component:
@@ -8932,184 +8097,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                               loadingJobFit
                           )
                         : null}
-                    {upgradeHint ? (
-                        <div
-                            style={{
-                                margin: "14px 0",
-                                padding: "24px 24px 20px",
-                                borderRadius: 18,
-                                background:
-                                    "linear-gradient(145deg, rgba(254,176,106,0.08), rgba(81,173,229,0.06))",
-                                border: "1px solid rgba(254,176,106,0.25)",
-                            }}
-                        >
-                            {/* Header */}
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 900,
-                                    letterSpacing: 2,
-                                    textTransform: "uppercase" as const,
-                                    color: WRN_ORANGE,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                Full SIGNAL —{" "}
-                                {upgradeHint === "positioning"
-                                    ? "Step 2"
-                                    : upgradeHint === "coverletter"
-                                      ? "Step 3"
-                                      : "Step 4"}
-                            </div>
-
-                            {/* Title */}
-                            <div
-                                style={{
-                                    fontSize: 20,
-                                    fontWeight: 900,
-                                    color: ICE,
-                                    marginBottom: 8,
-                                    letterSpacing: -0.3,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                {upgradeHint === "positioning"
-                                    ? "Fix Your Positioning — Tell One Story, Not Ten"
-                                    : upgradeHint === "coverletter"
-                                      ? "Your Cover Letter, In Your Voice"
-                                      : "Build Your Outreach Plan — Be Appropriately Aggressive"}
-                            </div>
-
-                            {/* Description */}
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    lineHeight: "22px",
-                                    color: MUTED,
-                                    marginBottom: 18,
-                                }}
-                            >
-                                {upgradeHint === "positioning"
-                                    ? "Most students apply like generalists — showing everything they've done and hoping something lands. Positioning shows you how to tell one targeted story for this specific role. It identifies which parts of your background actually matter here, helps you reframe your resume bullets to match what the hiring manager is looking for, and gets you through the ATS screening and the recruiter's 7-second scan."
-                                    : upgradeHint === "coverletter"
-                                      ? "SIGNAL doesn't write a generic cover letter — it helps you find your story and tell it in your own voice. Pulling from your real experience, your real background, and what this specific company is actually hiring for. Not a template. A narrative that sounds like you and speaks directly to this job."
-                                      : "Applying alone has never been a real strategy. You have to make your name known inside the organization before the interview even happens. SIGNAL builds you a complete outreach plan — who to contact, what to say, when to follow up, and how to be appropriately aggressive without being annoying."}
-                            </div>
-
-                            {/* What's included */}
-                            <div
-                                style={{
-                                    padding: "14px 16px",
-                                    borderRadius: 12,
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    marginBottom: 18,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 900,
-                                        letterSpacing: 1.4,
-                                        textTransform: "uppercase" as const,
-                                        color: DIM,
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    Full SIGNAL includes
-                                </div>
-                                {[
-                                    "Job Fit — know if a role is worth your time before you apply",
-                                    "Positioning — one targeted story that gets through ATS and the 7-second scan",
-                                    "Cover Letter — written in your voice, tied to the specific job",
-                                    "Outreach Plan — who to contact and exactly what to say",
-                                ].map((item, i) => (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            gap: 10,
-                                            marginBottom: i < 3 ? 8 : 0,
-                                            fontSize: 13,
-                                            color: MUTED,
-                                            lineHeight: "19px",
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                color: WRN_ORANGE,
-                                                fontWeight: 900,
-                                                flexShrink: 0,
-                                                fontSize: 13,
-                                            }}
-                                        >
-                                            ✓
-                                        </span>
-                                        {item}
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Price + CTA */}
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 14,
-                                    flexWrap: "wrap" as const,
-                                }}
-                            >
-                                <a
-                                    href="https://workforcereadynow.com/signal"
-                                    style={{
-                                        display: "inline-block",
-                                        padding: "13px 28px",
-                                        borderRadius: 14,
-                                        background:
-                                            "linear-gradient(135deg, #FEB06A, #51ADE5)",
-                                        fontWeight: 900,
-                                        fontSize: 15,
-                                        color: "#0B1020",
-                                        textDecoration: "none",
-                                        boxShadow:
-                                            "0 4px 20px rgba(254,176,106,0.28)",
-                                    }}
-                                >
-                                    Unlock Full SIGNAL — $99
-                                </a>
-                                <div
-                                    style={{
-                                        fontSize: 12,
-                                        color: DIM,
-                                        lineHeight: "17px",
-                                    }}
-                                >
-                                    3 months access · 30-day money-back
-                                    guarantee
-                                </div>
-                            </div>
-
-                            {/* Dismiss */}
-                            <button
-                                style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    padding: 0,
-                                    marginTop: 14,
-                                    fontSize: 12,
-                                    color: DIM,
-                                    cursor: "pointer",
-                                    textDecoration: "underline",
-                                    textUnderlineOffset: 3,
-                                }}
-                                onClick={() => setUpgradeHint(null)}
-                                type="button"
-                            >
-                                Dismiss
-                            </button>
-                        </div>
-                    ) : null}
                     {errorMsg ? <div style={errorBox}>{errorMsg}</div> : null}
 
                     {/* Output area */}
@@ -9127,26 +8114,19 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 /* ---------- SIDE NAV ---------- */
 function SideNav({
     tab,
-    accessMode,
     isLoggedIn,
     authedEmail,
-    trialEmail,
     onSelect,
     onRunNewJob,
     onLogout,
-    onUpgrade,
 }: {
     tab: TabKey
-    accessMode: AccessMode
     isLoggedIn: boolean
     authedEmail: string | null
-    trialEmail: string
     onSelect: (t: TabKey) => void
     onRunNewJob: () => void
     onLogout: () => void
-    onUpgrade: () => void
 }) {
-    const locked = (k: TabKey) => accessMode === "jobfit_only" && k !== "jobfit"
 
     return (
         <div style={sideNav}>
@@ -9235,19 +8215,19 @@ function SideNav({
             <SideNavItem
                 label="Positioning"
                 active={tab === "positioning"}
-                locked={locked("positioning")}
+                locked={false}
                 onClick={() => onSelect("positioning")}
             />
             <SideNavItem
                 label="Cover Letter"
                 active={tab === "coverletter"}
-                locked={locked("coverletter")}
+                locked={false}
                 onClick={() => onSelect("coverletter")}
             />
             <SideNavItem
                 label="Networking"
                 active={tab === "networking"}
-                locked={locked("networking")}
+                locked={false}
                 onClick={() => onSelect("networking")}
             />
 
@@ -9273,34 +8253,20 @@ function SideNav({
                 My Dashboard ↗
             </button>
 
-            {accessMode === "jobfit_only" ? (
-                <button
-                    style={sideActionBtnSecondary}
-                    onClick={onUpgrade}
-                    type="button"
-                >
-                    Unlock Full SIGNAL
-                </button>
-            ) : null}
-
             <div style={{ height: 14 }} />
 
             <div style={sideSectionTitle}>ACCOUNT</div>
 
             <div style={sideAccountRow}>
                 <div style={sideAvatar}>
-                    {(authedEmail || trialEmail || "?").charAt(0).toUpperCase()}
+                    {(authedEmail || "?").charAt(0).toUpperCase()}
                 </div>
                 <div style={{ overflow: "hidden" }}>
                     <div style={sideAccountName}>
-                        {isLoggedIn
-                            ? "Signed in"
-                            : trialEmail
-                              ? "Job Fit trial"
-                              : "Guest"}
+                        {isLoggedIn ? "Signed in" : "Guest"}
                     </div>
                     <div style={sideAccountEmail}>
-                        {authedEmail || trialEmail || "Trial mode"}
+                        {authedEmail || ""}
                     </div>
                 </div>
             </div>
