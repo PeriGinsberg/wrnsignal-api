@@ -89,7 +89,7 @@ export async function PUT(
     // Verify persona belongs to this profile
     const { data: existing, error: lookupErr } = await supabase
       .from("client_personas")
-      .select("id, persona_version, profile_id")
+      .select("id, persona_version, profile_id, is_default")
       .eq("id", personaId)
       .eq("profile_id", profileId)
       .maybeSingle()
@@ -136,15 +136,20 @@ export async function PUT(
 
     if (updateErr) throw new Error(`Persona update failed: ${updateErr.message}`)
 
-    // Sync resume_text to client_profiles and re-evaluate profile_complete.
-    // The profile_complete flag checks client_profiles.resume_text, but users
-    // enter their resume on a persona. Sync the default persona's resume back
-    // so profile_complete can flip to true.
-    if (body.resume_text !== undefined) {
+    // Sync the default persona's resume_text back to client_profiles so
+    // profile_complete reflects whether the user has a resume on file. Only
+    // applied when this edit is on the default persona (or is making this
+    // persona the default) — otherwise editing a non-default persona would
+    // overwrite client_profiles.resume_text and corrupt scoring for the
+    // default persona. profile_text is intentionally NOT touched here: it's
+    // intake-only, owned by /api/profile, and must not contain resume body.
+    const isDefaultEdit =
+      existing.is_default === true || body.is_default === true
+    if (body.resume_text !== undefined && isDefaultEdit) {
       try {
         const { data: prof } = await supabase
           .from("client_profiles")
-          .select("name, job_type, target_roles, target_locations, preferred_locations, timeline")
+          .select("name, target_roles, target_locations")
           .eq("id", profileId)
           .single()
 
@@ -156,26 +161,10 @@ export async function PUT(
           prof?.target_locations
         )
 
-        // Rebuild profile_text so the scoring engine gets targeting context
-        const lines: string[] = []
-        const add = (label: string, val: any) => {
-          const v = String(val || "").trim()
-          if (v) lines.push(`${label}: ${v}`)
-        }
-        add("Name", prof?.name)
-        add("Job type", prof?.job_type)
-        add("Target roles", prof?.target_roles)
-        add("Target locations", prof?.target_locations)
-        add("Preferred locations", (prof as any)?.preferred_locations)
-        add("Timeline", (prof as any)?.timeline)
-        if (resumeText) lines.push(`\nResume:\n${resumeText}`)
-        const profileText = lines.join("\n").trim()
-
         await supabase
           .from("client_profiles")
           .update({
             resume_text: resumeText || null,
-            profile_text: profileText || null,
             profile_complete: profileComplete,
             updated_at: new Date().toISOString(),
           })
