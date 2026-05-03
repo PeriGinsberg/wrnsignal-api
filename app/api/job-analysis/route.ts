@@ -1,3 +1,7 @@
+// FROZEN: pending Framer page rewrite to new /api/jobfit-run-trial flow.
+// Do not extend. Delete after framer/jobanalysis.txt is replaced and the
+// new free-trial Framer page is live in production.
+
 import { createClient } from "@supabase/supabase-js"
 import crypto from "crypto"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
