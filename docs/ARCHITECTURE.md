@@ -246,13 +246,73 @@ Authorization: Bearer <supabase\_access\_token>
 
 
 
-Trial (Isolated System)
+Trial (Isolated System) — Free Job Analysis
 
 
-
-POST /api/jobfit-intake
 
 POST /api/jobfit-run-trial
+
+
+
+Single endpoint. Public, no auth. One-shot real JobFit run for free-trial users.
+
+
+
+Request shape:
+
+
+
+{ email, resume\_text, job\_description, session\_id?, utm\_\* }
+
+
+
+Email is captured upstream on the landing page and passed through as a URL param
+
+into the trial UI; the request body carries it explicitly. Resume text and JD body
+
+are pasted by the user.
+
+
+
+Flow:
+
+
+
+validate inputs → check jobfit\_users by email → infer profileOverrides
+
+from the resume via Haiku (inferProfileOverridesFromResume) → run runJobFit()
+
+with the same engine and overrides shape as the paid path → V5 bullets →
+
+cache the result in jobfit\_trial\_runs → decrement credits → return result
+
+with a `locks` block (cover\_letter, networking, resume\_positioning, tracker,
+
+run\_another\_job) plus an `upgrade` block.
+
+
+
+Run-once enforcement:
+
+
+
+New users are inserted with credits\_remaining = 1 specifically by this route
+
+(the table default of 3 is preserved for any non-redesign caller).
+
+Returning users with credits = 0 get the cached result (same JD) plus
+
+`locked: true`, OR `status: "out\_of\_credits"` with `result: null` (different JD).
+
+
+
+Caching:
+
+
+
+jobfit\_trial\_runs(email, jd\_hash, result\_json, created\_at)
+
+with UNIQUE (email, jd\_hash). Indefinite TTL.
 
 
 
@@ -268,11 +328,67 @@ jobfit\_profiles
 
 
 
+jobfit\_trial\_runs
+
+
+
 Trial is NOT connected to client\_profiles.
 
 
 
-Trial users receive 3 credits.
+Frozen / sunset endpoints (return 410 Gone):
+
+
+
+POST /api/jobfit-intake — was the legacy multi-credit trial intake form.
+
+Replaced by the one-shot resume+JD flow above. File frozen, not deleted.
+
+
+
+POST /api/jobfit-trial-lookup — was the existence-check the dashboard used
+
+to flip a user into accessMode === "jobfit\_only". Sunset along with that
+
+access mode. File frozen, not deleted.
+
+
+
+POST /api/job-analysis — pre-redesign market-intelligence-only free tool.
+
+Frozen pending Framer page rewrite. File frozen, not deleted; will be
+
+removed after the new Framer trial page replaces the legacy one.
+
+
+
+Removed concepts (do not recreate):
+
+
+
+accessMode === "jobfit\_only" — removed from the Framer dashboard. Access is
+
+now binary: authed (full) or signed-out. The dashboard no longer has a
+
+trial-tier credit-metered mode.
+
+
+
+Legacy 3-credit free trial with stored intake fields — replaced by the
+
+one-shot resume + JD flow above. Existing rows in jobfit\_users and
+
+jobfit\_profiles from the old flow are intentionally left in place; no UI
+
+path reaches them.
+
+
+
+localStorage keys jobfit\_unlocked and jobfit\_email — no longer set by any
+
+active code. Defensive cleanup in the dashboard's logout() sweeps any
+
+stragglers from returning users' browsers.
 
 
 
@@ -449,6 +565,70 @@ Redirect path after intake:
 
 
 /signal/jobfit
+
+
+
+7\.5\) JobFit Scoring Pipeline
+
+
+
+The JobFit engine is fully deterministic except for one LLM step (V5 bullet rendering).
+
+Same pipeline runs for the paid path and the free-trial path; the only difference is
+
+how profileOverrides are sourced.
+
+
+
+Pipeline:
+
+
+
+extract.ts → scoring.ts → decision.ts → jobfitEvaluator.ts (orchestrator) →
+
+bulletGeneratorV5.ts (V5 LLM bullet renderer; Claude Haiku)
+
+
+
+Inputs into jobfitEvaluator.runJobFit():
+
+
+
+profileText (string), jobText (string), profileOverrides? (Partial structured signals),
+
+userJobTitle?, userCompanyName?
+
+
+
+Where profileOverrides comes from:
+
+
+
+- Paid flow: mapClientProfileToOverrides() in app/api/\_lib/jobfitProfileAdapter.ts —
+
+reads from the user's structured intake form fields stored on client\_profiles.
+
+
+
+- Trial flow: inferProfileOverridesFromResume() in
+
+app/api/\_lib/inferProfileOverridesFromResume.ts — Haiku pre-pass that derives the
+
+same structured signals (target families, role targets, job-type preference,
+
+grad year, location preference, tools) directly from the pasted resume.
+
+Fails open: returns {} on any error so runJobFit falls back to its heuristic
+
+detectors. Trial users do not have an intake form, so this pre-pass exists
+
+specifically to bridge the precision gap.
+
+
+
+Both paths converge on the same engine and the same V5 renderer. Any change to
+
+extract / scoring / decision / V5 affects both.
 
 
 
@@ -652,7 +832,7 @@ unique email
 
 
 
-credits\_remaining
+credits\_remaining (table default = 3; new redesigned-flow inserts use 1)
 
 
 
@@ -664,7 +844,29 @@ unique user\_id
 
 
 
+jobfit\_trial\_runs (added 2026-05-03)
+
+
+
+unique (email, jd\_hash)
+
+
+
+one-shot result cache; lookups by (email, jd\_hash) feed the cached-result
+
+response on a returning user.
+
+
+
 Trial runs NOT written to full-access run tables.
+
+
+
+Legacy jobfit\_users / jobfit\_profiles rows from the pre-redesign flow are
+
+intentionally left in place. They are not migrated, not deleted, and no
+
+active UI path reaches them.
 
 
 
@@ -760,9 +962,21 @@ C:\\Users\\perig\\wrnsignal-api\\app\\api\\networking\\route.ts
 
 
 
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit-run-trial\\route.ts
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\\_lib\\inferProfileOverridesFromResume.ts
+
+
+
+Frozen (return 410):
+
+
+
 C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit-intake\\route.ts
 
-C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit-run-trial\\route.ts
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\jobfit-trial-lookup\\route.ts
+
+C:\\Users\\perig\\wrnsignal-api\\app\\api\\job-analysis\\route.ts
 
 
 

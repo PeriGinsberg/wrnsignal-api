@@ -14,7 +14,7 @@ Most authenticated routes use **Supabase Auth Bearer tokens**:
 
 Four other auth modes exist:
 
-- **Public** — no token checked (e.g., `/api/ping`, `/api/parse-job-url`, `/api/job-analysis`, `/api/checkout/create-session`).
+- **Public** — no token checked (e.g., `/api/ping`, `/api/parse-job-url`, `/api/parse-job-text`, `/api/jobfit-run-trial`, `/api/checkout/create-session`). `/api/job-analysis` is also public but **frozen** pending Framer page rewrite — see its section below.
 - **Stripe signature** — `/api/webhooks/stripe` verifies `stripe-signature` against `STRIPE_WEBHOOK_SECRET`.
 - **GHL webhook shared secret** — `/api/seat-create` accepts a custom header secret.
 - **Coach gating** — routes under `/api/coach/*` additionally verify `is_coach = true` on the caller's profile, and `/api/coach/clients/[clientId]/*` routes verify a `coach_clients` relationship with one of three access levels: `view`, `annotate`, `full`.
@@ -82,9 +82,10 @@ Four other auth modes exist:
 **Returns:** `{ ok: boolean, job_text_length: number, resume_text_length: number, profile: object, profile_v4_stamp: string }`
 **Errors:** 400 bad request, 500 server error.
 
-#### POST /api/job-analysis
+#### POST /api/job-analysis — **FROZEN**
+**Status:** Frozen pending Framer page rewrite. Still callable; do not extend. Will be deleted after `framer/jobanalysis.txt` is replaced by the new free-trial Framer page that calls `/api/jobfit-run-trial` instead.
 **Auth:** Public.
-**Purpose:** Public "free analysis" tool — deep JD analysis with company enrichment, hidden requirements, competitiveness. Caches by JD hash.
+**Purpose:** Public market-intelligence tool — deep JD analysis with company enrichment, hidden requirements, competitiveness. Caches by JD hash. **No personal scoring.** This was the pre-redesign free tool; the new free trial returns a real personal JobFit instead (see `/api/jobfit-run-trial`).
 **Request:** `job_description: string`, `company_name?: string`, `job_title?: string`, `session_id?: string`, `utm_source?`, `utm_medium?`, `utm_campaign?`.
 **Returns:** `{ role_level, function, seniority_signals, core_skills, hidden_requirements, competitiveness, risk_flags, target_candidate_profile, summary, market_reality, company_name?, company_context? }`
 **Errors:** 400 bad request, 500 server error.
@@ -131,28 +132,28 @@ Four other auth modes exist:
 **Returns:** `{ runId, fingerprintCode, fingerprintHash, verdict, score, createdAt, jobDescription, jobTitle, companyName, jobfit, positioning, coverLetter, networking }`
 **Errors:** 401 unauthorized, 403 profile mismatch, 404 not found.
 
-### Trial Flow (isolated — `jobfit_users` / `jobfit_profiles`)
+### Trial Flow (isolated — `jobfit_users` / `jobfit_profiles` / `jobfit_trial_runs`)
 
-#### POST /api/jobfit-intake
-**Auth:** Public (optional `x-jobfit-key` header).
-**Purpose:** Register a trial user and capture their initial profile.
-**Request:** `{ name: string, email: string, job_type: "internship"|"full_time", target_roles: string, resume_text: string, target_locations?: string, timeline?: string, utm_source?, utm_medium?, utm_campaign? }`
-**Returns:** `{ ok: boolean, user_id: string, credits_remaining: number }`
-**Errors:** 400 missing required, 401 unauthorized (bad key), 500 server error.
+The free trial is a **one-shot real JobFit run** — same engine as the paid path, with structured profile signals inferred from the pasted resume via a Haiku pre-pass (`inferProfileOverridesFromResume`). One execution per email, gated by `jobfit_users.credits_remaining`. Returning users with the same JD see the cached result; with a different JD they get an upgrade-only page. Does not require auth — email is captured upstream on the landing page and passed in the request body.
 
 #### POST /api/jobfit-run-trial
-**Auth:** Public (optional `x-jobfit-key` header).
-**Purpose:** Run JobFit for a trial user and decrement credits.
-**Request:** `{ email: string, job: string, company_name?: string, job_title?: string, utm_* }`
-**Returns:** `{ ok: boolean, credits_remaining: number, result: object }`
-**Errors:** 400 bad request, 401 unauthorized, 402 out of credits, 404 profile not found.
+**Auth:** Public (optional `x-jobfit-key` header for dev bypass).
+**Purpose:** Run a real JobFit for a free-trial user. Single new-shape contract: resume + JD + email in the body.
+**Request:** `{ email: string, resume_text: string (≥100 chars), job_description: string (≥100 chars), session_id?: string, utm_source?, utm_medium?, utm_campaign? }`
+**Returns (200, three discriminated branches):**
+- Successful first run: `{ status: "ok", locked: false, lock_reason: "none", result: { decision, score, icon, next_step, location_constraint, bullets, why, risk, why_structured, risk_structured, why_codes, risk_codes, gate_triggered, job_signals, cover_letter_strategy }, locks: { cover_letter, networking, resume_positioning, tracker, run_another_job }, upgrade: { price, term, guarantee, stripe_url } }`
+- Same email + same JD (cached): `{ status: "ok", locked: true, lock_reason: "free_run_used", result: <cached_result>, locks, upgrade }`
+- Same email + different JD (out of credits): `{ status: "out_of_credits", locked: true, lock_reason: "free_run_used", result: null, locks, upgrade }`
+**Errors:** 400 invalid/short input, 401 unauthorized (bad bypass key), 500 on DB / scoring / V5 / cache failures. **Note:** out-of-credits is a 200 with `status: "out_of_credits"` (not the legacy 402).
+**Caching:** results are persisted to `jobfit_trial_runs` keyed by `(email, jd_hash)` with indefinite TTL. Cache insert happens **before** credit decrement (over-cache > under-cache).
 
-#### POST /api/jobfit-trial-lookup
-**Auth:** Public (optional `x-jobfit-key` header).
-**Purpose:** Fetch remaining trial credits for an email.
-**Request:** `{ email: string }`
-**Returns:** `{ ok: boolean, email: string, credits_remaining: number }`
-**Errors:** 400 missing email, 401 unauthorized, 404 user not found, 500 server error.
+#### POST /api/jobfit-intake — **FROZEN (410 Gone)**
+**Status:** Sunset 2026-05-03 with the legacy multi-credit trial flow. File frozen, do not extend, delete after 30 days of confirmed zero traffic.
+**Behavior:** All requests return 410 with `{ error: "endpoint_deprecated", message: "..." }`.
+
+#### POST /api/jobfit-trial-lookup — **FROZEN (410 Gone)**
+**Status:** Sunset 2026-05-03 with the legacy `accessMode === "jobfit_only"` dashboard mode. File frozen, do not extend, delete after 30 days of confirmed zero traffic.
+**Behavior:** All requests return 410 with `{ error: "endpoint_deprecated", message: "..." }`.
 
 ### Profile & Personas
 
@@ -552,7 +553,7 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 - Auth failures from `getAuthedUser` throw messages that start with `Unauthorized:` — the catch block inspects the message and returns HTTP **401**.
 - Input validation returns **400** with a descriptive `error` message.
 - Resource ownership failures return **403**; not-found returns **404**.
-- Special codes used: **402** (`/api/jobfit-run-trial` — out of credits), **409** (`/api/coach/accept-invite` — invite not pending), **422** (`/api/parse-job-url` — blocked or unparseable), **502** (`/api/parse-job-text` — upstream Claude failure).
+- Special codes used: **409** (`/api/coach/accept-invite` — invite not pending), **410** (`/api/jobfit-intake` and `/api/jobfit-trial-lookup` — sunset endpoints), **422** (`/api/parse-job-url` — blocked or unparseable), **502** (`/api/parse-job-text` — upstream Claude failure). Note: `/api/jobfit-run-trial` no longer uses 402 for out-of-credits — it returns a 200 with `status: "out_of_credits"` and `result: null` so the frontend can render an upgrade-only page without error handling.
 - Webhook routes return a 200 body quickly (Stripe) or after GHL acknowledgement to avoid retry storms; side-effect failures are logged but not surfaced to the caller.
 - CORS preflight (`OPTIONS`) is handled by `corsOptionsResponse(origin)` on most authenticated routes.
 

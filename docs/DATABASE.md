@@ -2,7 +2,7 @@
 
 ## Overview
 
-SIGNAL uses **Supabase Postgres** as its primary datastore. The database backs authentication (via Supabase Auth), user profiles and resume personas, deterministic JobFit scoring history, the four cached LLM run families (`jobfit_runs`, `positioning_runs`, `coverletter_runs`, `networking_runs`), a job tracker with interview records, the multi-stage Resume Rx rewrite sessions, a coach/client system, a free-tool trial track (`jobfit_users` + `jobfit_profiles`), internal QA tooling (`qa_*`), and analytics (`jobfit_page_views`, `signal_attribution`). API routes access the database through the Supabase service-role key (admin client), so Row Level Security is defined on a small subset of tables but is bypassed server-side — authorization is enforced in application code. The data-model philosophy is canonical profile text (`client_profiles.profile_text`) as the source of truth for scoring, fingerprint-hashed runs (`UNIQUE(client_profile_id, fingerprint_hash)`) for deterministic caching, and soft links (`ON DELETE SET NULL`) between runs, applications, and personas so historical runs survive upstream edits.
+SIGNAL uses **Supabase Postgres** as its primary datastore. The database backs authentication (via Supabase Auth), user profiles and resume personas, deterministic JobFit scoring history, the four cached LLM run families (`jobfit_runs`, `positioning_runs`, `coverletter_runs`, `networking_runs`), a job tracker with interview records, the multi-stage Resume Rx rewrite sessions, a coach/client system, a free-trial track (`jobfit_users` + `jobfit_profiles` + `jobfit_trial_runs` — the third added 2026-05-03 for one-shot result caching), internal QA tooling (`qa_*`), and analytics (`jobfit_page_views`, `signal_attribution`). API routes access the database through the Supabase service-role key (admin client), so Row Level Security is defined on a small subset of tables but is bypassed server-side — authorization is enforced in application code. The data-model philosophy is canonical profile text (`client_profiles.profile_text`) as the source of truth for scoring, fingerprint-hashed runs (`UNIQUE(client_profile_id, fingerprint_hash)`) for deterministic caching, and soft links (`ON DELETE SET NULL`) between runs, applications, and personas so historical runs survive upstream edits.
 
 All documented columns, constraints, and indexes were verified against the live production schema (project `ejhnokcnahauvrcbcmic`) via `information_schema` / `pg_indexes` / `pg_policies` queries. Schema history in `supabase/migrations/` begins on 2026-04-03; anything predating that (foundational tables) was created before migrations were tracked here.
 
@@ -331,42 +331,63 @@ Older profile table, appears legacy. Has its own RLS policy tying to `auth.uid()
 **Primary key:** `user_id`. **Indexes:** pkey, `user_profiles_email_idx`. [NEEDS CLARIFICATION] on whether this table is live or superseded by `client_profiles`.
 
 ### `jobfit_users` (trial, isolated)
-Trial-flow user records. Used by `/api/jobfit-intake` and `/api/jobfit-run-trial`.
+Trial-flow user records. Used by the redesigned one-shot trial route at `/api/jobfit-run-trial` (sunset 2026-05-03: `/api/jobfit-intake` is now 410 Gone). Identifies trial users by email; holds the one-and-done credit counter.
 
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | `id` | uuid | NO | `gen_random_uuid()` | Primary key. |
 | `email` | text | NO | — | Trial user email. UNIQUE. |
-| `credits_remaining` | int | NO | 3 | Remaining free runs. CHECK `>= 0`. |
-| `name` | text | YES | — | Name. |
-| `job_type` | text | YES | — | Job type. |
+| `credits_remaining` | int | NO | 3 | Remaining free runs. CHECK `>= 0`. **Note:** the table default is 3 (preserved for the legacy paths still on the table). The redesigned `/api/jobfit-run-trial` flow inserts new rows with `credits_remaining = 1` explicitly, since the new free trial is one-shot. |
+| `name` | text | YES | — | Name. (Legacy column from the old intake form; new flow leaves null.) |
+| `job_type` | text | YES | — | Job type. (Legacy column from the old intake form; new flow leaves null.) |
 | `created_at` | timestamptz | NO | `now()` | Creation timestamp. |
 | `updated_at` | timestamptz | NO | `now()` | Last-updated timestamp. |
 
 **Primary key:** `id`. **Unique:** `email`.
 
+**Legacy data note.** Rows created before 2026-05-03 by the old `/api/jobfit-intake` flow still exist with `credits_remaining = 3` and populated `name` / `job_type`. They are **inert** — no UI path reaches them. Intentionally left in place; do not migrate or delete.
+
 ### `jobfit_profiles` (trial, isolated)
-Trial-flow profiles. Not connected to `client_profiles`.
+Trial-flow profiles. Not connected to `client_profiles`. Holds the trial user's resume and a derived `profile_text`.
 
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | `id` | uuid | NO | `gen_random_uuid()` | Primary key. |
 | `user_id` | uuid | NO | — | FK → `jobfit_users(id)` ON DELETE CASCADE. UNIQUE. |
 | `email` | text | NO | — | Trial user email. |
-| `name` | text | YES | — | Name. |
-| `job_type` | text | YES | — | Job type. |
-| `target_roles` | text | YES | — | Target roles. |
-| `target_locations` | text | YES | — | Target locations. |
-| `timeline` | text | YES | — | Timeline. |
-| `resume_text` | text | YES | — | Resume text. |
-| `profile_text` | text | YES | — | Canonical profile text. |
+| `name` | text | YES | — | Name. (Legacy column; new flow leaves null.) |
+| `job_type` | text | YES | — | Job type. (Legacy column; new flow leaves null.) |
+| `target_roles` | text | YES | — | Target roles. (Legacy column; new flow leaves null.) |
+| `target_locations` | text | YES | — | Target locations. (Legacy column; new flow leaves null.) |
+| `timeline` | text | YES | — | Timeline. (Legacy column; new flow leaves null.) |
+| `resume_text` | text | YES | — | Resume text. Required by the new flow. |
+| `profile_text` | text | YES | — | Canonical profile text. New flow writes intake-only (`Email: <email>`); resume body lives only in `resume_text`. Legacy rows may still embed a `Resume:\n…` block; `assembleProfileForScoring` strips it defensively. |
 | `created_at` | timestamptz | NO | `now()` | Creation timestamp. |
 | `updated_at` | timestamptz | NO | `now()` | Last-updated timestamp. |
 
 **Primary key:** `id`. **Unique:** `user_id`.
 
+**Legacy data note.** Rows created before 2026-05-03 have intake fields (`name`, `job_type`, `target_roles`, `target_locations`, `timeline`) populated and a resume body embedded inside `profile_text`. They are **inert** — no UI path reaches them. Intentionally left in place; do not migrate or delete.
+
+### `jobfit_trial_runs` (trial, isolated)
+One-shot result cache for the redesigned free trial. Added 2026-05-03. Holds the full JobFit response as JSON keyed by `(email, jd_hash)` so a returning trial user submitting the same JD sees their original analysis without re-burning Haiku + V5 spend, and a returning user submitting a different JD with `credits_remaining = 0` is recognized and routed to the upgrade-only page.
+
+| Column | Type | Nullable | Default | Description |
+|---|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` | Primary key. |
+| `email` | text | NO | — | Trial user email (matches `jobfit_users.email`; not a FK). |
+| `jd_hash` | text | NO | — | SHA256 of the trimmed `job_description` body. |
+| `result_json` | jsonb | NO | — | The `result` payload returned to the frontend on the original run. |
+| `created_at` | timestamptz | NO | `now()` | Run timestamp. |
+
+**Primary key:** `id`. **Unique:** `(email, jd_hash)` via `jobfit_trial_runs_email_jd_hash_unique`. **Indexes:** pkey, unique pair, `jobfit_trial_runs_email_idx` (btree).
+
+**TTL:** indefinite. The trial flow is one-and-done per email; if the user wants to re-analyze they must upgrade. We don't expire results.
+
+**Write order in `/api/jobfit-run-trial`:** insert into `jobfit_trial_runs` **before** decrementing `jobfit_users.credits_remaining`. If the decrement fails after a successful insert, a returning same-JD request hits the cache and we don't re-burn Haiku + V5; the user may get one extra free run on a different JD, which is acceptable per design ("over-cache > under-cache").
+
 ### `job_analysis_cache`
-Cache for the free `/api/job-analysis` tool.
+Cache for the **frozen** `/api/job-analysis` tool (sunset pending Framer page rewrite).
 
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
@@ -581,6 +602,7 @@ erDiagram
     jobfit_runs ||--o{ coach_job_recommendations : "backs"
 
     jobfit_users ||--o{ jobfit_profiles : "has"
+    jobfit_users ||--o{ jobfit_trial_runs : "cached runs (by email)"
 
     signal_issues ||--o{ signal_issue_notes : "has"
     qa_test_runs ||--o{ qa_assignments : "assigns"
@@ -603,6 +625,7 @@ Only tracked in-repo from 2026-04-03 onward. Pre-existing tables (`client_profil
 | 2026-04-12 | `20260412_resume_rx_sessions.sql` | Created `resume_rx_sessions` with RLS policy. |
 | 2026-04-13 | `20260413_coach_client_system.sql` | Added `is_coach`, `coach_org` to `client_profiles`; created `coach_clients`, `coach_job_recommendations`, `coach_annotations` with RLS; extended `signal_applications.application_status` CHECK to include `coach_recommended`. |
 | 2026-04-13 | `20260413_coach_full_analysis.sql` | Added `full_analysis` JSONB to `coach_job_recommendations`; added `sourced_by_coach_id` FK to `jobfit_runs`. |
+| 2026-05-03 | `20260503_jobfit_trial_runs.sql` | Created `jobfit_trial_runs` (one-shot free-trial result cache) with UNIQUE (email, jd_hash) and an email btree index. |
 
 A root-level `prod_schema.sql` and `supabase/migrations_backup/20260206144423_remote_schema.sql` are both 0 bytes.
 
