@@ -1535,10 +1535,18 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             const data = await res.json()
             const list = Array.isArray(data) ? data : (data.personas ?? [])
             setPersonas(list)
-            // Auto-select default persona
-            const defaultPersona =
-                list.find((p: any) => p.is_default) ?? list[0]
-            if (defaultPersona) setSelectedPersonaId(defaultPersona.id)
+            // Auto-select default ONLY if no persona is currently selected.
+            // loadPersonas runs from both initSession and onAuthStateChange,
+            // so it can fire again after the user has already tapped a
+            // non-default persona (e.g. INITIAL_SESSION echo, TOKEN_REFRESHED).
+            // Use the functional setter to read current state, not a closure
+            // — otherwise the second call clobbers the user's tap.
+            setSelectedPersonaId((prev) => {
+                if (prev) return prev
+                const defaultPersona =
+                    list.find((p: any) => p.is_default) ?? list[0]
+                return defaultPersona ? defaultPersona.id : null
+            })
         } catch (e) {
             console.warn("Failed to load personas", e)
         } finally {
