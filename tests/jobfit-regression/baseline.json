@@ -363,6 +363,20 @@
     "financeSubFamily": null,
     "gateType": "none"
   },
+  "retest-zoe-paralegal": {
+    "id": "retest-zoe-paralegal",
+    "label": "Zoe Siegel vs DiCello Levitt Mass Tort Paralegal",
+    "decision": "Apply",
+    "score": 78,
+    "whyCount": 3,
+    "directWhyCount": 2,
+    "riskCount": 3,
+    "highRiskCount": 2,
+    "jobFamily": "Legal",
+    "salesSubFamily": "other_sales",
+    "financeSubFamily": null,
+    "gateType": "none"
+  },
   "synthetic-0410a": {
     "id": "synthetic-0410a",
     "label": "[synthetic] 0410a — Marcus Thompson / (no title)",

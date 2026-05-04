@@ -3,8 +3,8 @@
 //
 // Unified JobFit regression check. Runs:
 //   - All 21 batch cases in issues/040926ProdIssues.csv
-//   - All 5 one-off retest scripts (retest-013-ryan, retest-012-ryan,
-//     retest-reece-01, retest-026, retest-emma-01)
+//   - All 6 one-off retest scripts (retest-013-ryan, retest-012-ryan,
+//     retest-reece-01, retest-026, retest-emma-01, retest-zoe-paralegal)
 //
 // Compares each case's high-signal snapshot (decision, score, WHY/
 // RISK counts, family, sub-families, gate type) against the committed
@@ -53,8 +53,9 @@ import { CASE as ryan012 } from "./retest-012-ryan"
 import { CASE as reece01 } from "./retest-reece-01"
 import { CASE as case026 } from "./retest-026"
 import { CASE as emma01 } from "./retest-emma-01"
+import { CASE as zoeParalegal } from "./retest-zoe-paralegal"
 
-const RETEST_CASES = [ryan013, ryan012, reece01, case026, emma01]
+const RETEST_CASES = [ryan013, ryan012, reece01, case026, emma01, zoeParalegal]
 const BASELINE_PATH = join(__dirname, "baseline.json")
 const BATCH_CSV_PATH = join(
   __dirname,

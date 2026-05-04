@@ -2309,13 +2309,34 @@ function buildFallbackJobUnits(lines: string[]): {
   }
 }
 
+// Expand written number words to digits before regex matching so phrasings
+// like "four years of experience" or "Minimum of four (4) years" parse.
+// Covers one-ten only — anything higher in a JD's tenure clause is rare and
+// already typically written numerically.
+const WRITTEN_NUMBER_MAP: Record<string, string> = {
+  one: "1", two: "2", three: "3", four: "4", five: "5",
+  six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
+}
+const WRITTEN_NUMBER_RE = /\b(one|two|three|four|five|six|seven|eight|nine|ten)\b/gi
+
+function expandWrittenNumbers(text: string): string {
+  return text.replace(WRITTEN_NUMBER_RE, (m) => WRITTEN_NUMBER_MAP[m.toLowerCase()] || m)
+}
+
 function extractYearsRequired(jobText: string): number | null {
   const patterns: RegExp[] = Array.isArray((POLICY as any)?.extraction?.years?.patterns)
     ? ((POLICY as any).extraction.years.patterns as RegExp[])
     : []
 
+  // Expand written numbers ("four" → "4") so written-form tenure clauses
+  // ("four years of experience") match the digit-anchored regex patterns.
+  // Phrasings with parenthetical digits ("four (4) years") are caught either
+  // way — the parenthetical pattern consumes the parens and reads "(4)", and
+  // the expansion gives the patterns a second shot at the bare "4".
+  const matchText = expandWrittenNumbers(jobText)
+
   for (const r of patterns) {
-    const m = jobText.match(r)
+    const m = matchText.match(r)
     if (m && m[1]) {
       const v = parseInt(String(m[1]), 10)
       // 0 minimum means entry-level — treat as no meaningful requirement
