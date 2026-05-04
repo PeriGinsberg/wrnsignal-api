@@ -134,23 +134,24 @@ async function runOne(c: CaseInput) {
   console.log("\n--- cover_letter_strategy ---")
   console.log(JSON.stringify(v5.cover_letter_strategy, null, 2))
 
+  console.log("\n--- positioning_strategy ---")
+  console.log(JSON.stringify(v5.positioning_strategy, null, 2))
+
   console.log("\n--- networking_strategy ---")
   console.log(JSON.stringify(v5.networking_strategy, null, 2))
 
   console.log("\n--- alignment check ---")
-  if (v5.cover_letter_strategy && v5.networking_strategy) {
+  if (v5.cover_letter_strategy && v5.positioning_strategy && v5.networking_strategy) {
     const cls = v5.cover_letter_strategy.lead_signal
     const topWhy = (result.why_codes || [])[0]
     const topMatchKey = topWhy?.match_key
     console.log(`  cover_letter_strategy.lead_signal: ${cls}`)
     console.log(`  top why_code.match_key:            ${topMatchKey}`)
-    console.log(`  outreach_angle (full):             ${v5.networking_strategy.outreach_angle}`)
-    const sameAnchor =
-      v5.networking_strategy.outreach_angle.toLowerCase().includes(String(cls || "").toLowerCase()) ||
-      v5.networking_strategy.outreach_angle.toLowerCase().includes(String(topMatchKey || "").toLowerCase())
-    console.log(`  outreach_angle references lead_signal/match_key: ${sameAnchor ? "YES" : "NO"}`)
+    console.log(`  positioning_strategy.lead_section: ${v5.positioning_strategy.lead_section}`)
+    console.log(`  positioning_strategy.reframe:      ${v5.positioning_strategy.reframe}`)
+    console.log(`  networking outreach_angle:         ${v5.networking_strategy.outreach_angle}`)
   } else {
-    console.log("  (one or both strategy fields null — alignment not applicable)")
+    console.log("  (one or more strategy fields null — alignment not applicable)")
   }
   console.log("=".repeat(72))
 }

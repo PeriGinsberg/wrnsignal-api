@@ -6,9 +6,10 @@
  * Claude-generated, specific, actionable, personalized bullets.
  *
  * Returns the same shape as V4 ({ why, risk, renderer_debug })
- * PLUS why_structured, risk_structured, cover_letter_strategy, and
- * networking_strategy. The two strategy fields are null on Pass decisions
- * (where application strategy is incoherent — the user shouldn't apply).
+ * PLUS why_structured, risk_structured, cover_letter_strategy,
+ * positioning_strategy, and networking_strategy. All three strategy fields
+ * are null on Pass decisions (where application strategy is incoherent —
+ * the user shouldn't apply).
  */
 
 import type { EvalOutput } from "./signals"
@@ -43,6 +44,13 @@ export interface NetworkingStrategy {
   outreach_angle: string
 }
 
+export interface PositioningStrategy {
+  /** Which specific existing resume section/experience to lead with for this role. One sentence, max 25 words. */
+  lead_section: string
+  /** How to reframe that section's language to mirror the JD's own keywords, anchored on the same lead_signal as cover_letter_strategy. One to two sentences, max 40 words. */
+  reframe: string
+}
+
 export interface V5Output {
   /** Formatted strings — backward-compatible with every V4 consumer */
   why: string[]
@@ -52,6 +60,8 @@ export interface V5Output {
   risk_structured: RiskBullet[]
   /** Null on Pass decisions, or when the model returned a malformed/missing object for a non-Pass decision. */
   cover_letter_strategy: CoverLetterStrategy | null
+  /** Null on Pass decisions, or when the model returned a malformed/missing object for a non-Pass decision. */
+  positioning_strategy: PositioningStrategy | null
   /** Null on Pass decisions, or when the model returned a malformed/missing object for a non-Pass decision. */
   networking_strategy: NetworkingStrategy | null
   renderer_debug: {
@@ -143,12 +153,14 @@ ${out.decision} (score: ${out.score})
 - The connection sentence should feel like an insight, not a label.
 - The action should feel like advice from someone who knows hiring, not a checklist item.
 
-### On cover letter and networking strategy
-- CRITICAL: If the input DECISION is "Pass", you MUST return null for BOTH cover_letter_strategy and networking_strategy. The user should NOT apply, so application strategy is incoherent. Both fields must be the literal JSON null, not empty objects, not placeholder strings.
+### On cover letter, positioning, and networking strategy
+- CRITICAL: If the input DECISION is "Pass", you MUST return null for ALL THREE: cover_letter_strategy, positioning_strategy, and networking_strategy. The user should NOT apply, so application strategy is incoherent. All three fields must be the literal JSON null, not empty objects, not placeholder strings.
+- LEAD SIGNAL ANCHOR: cover_letter_strategy.lead_signal, positioning_strategy.reframe, and networking_strategy.outreach_angle MUST all anchor on the SAME match_key — the top why_code's match_key. The candidate's strongest qualification is the through-line across all three assets (cover letter, resume positioning, networking). Do not pick a different qualification for any of them.
+- positioning_strategy.lead_section: name a SPECIFIC existing resume section or role from the STUDENT PROFILE — name the employer or section title (e.g. "Lead with your Investments Internship at FSU Foundation", "Lead with the Hearts for Healthcare partnership work"). One sentence, max 25 words. Forbid generic phrasing — no "your strongest experience," "your relevant background."
+- positioning_strategy.reframe: a specific reframing instruction that uses the JOB DESCRIPTION's own keywords to relabel the candidate's existing bullets. Anchor on the lead_signal. One to two sentences, max 40 words.
 - networking_strategy.target_contacts must reference seniority, function, or team specific to THIS role. Pull from the JOB DESCRIPTION body and from job_signals (function_tags, isSeniorRole, jobFamily, salesSubFamily). Forbid generic phrasing — no "alumni network," "LinkedIn connections," "people at the company," "industry professionals." Must name a role type and team context (e.g., "engineering managers and recent hires on the platform team," "senior product designers in the consumer org," "directors of investor relations at mid-market PE firms").
-- networking_strategy.outreach_angle MUST anchor on the SAME lead_signal as cover_letter_strategy.lead_signal — the top why_code's match_key. Same anchor, different format. The candidate's strongest qualification is the through-line across all three assets (cover letter, networking, resume positioning). Do not pick a different qualification for the outreach angle.
-- networking_strategy fields: one sentence each, 25 words max per field.
-- IMPORTANT: Adding networking_strategy must NOT cause why_bullets, risk_bullets, or cover_letter_strategy to be shortened. Each section must remain at the length specified above. Do not reduce field counts or word counts in earlier sections to make room.
+- networking_strategy.outreach_angle: one sentence, anchored on the lead_signal. Max 25 words.
+- IMPORTANT: Adding positioning_strategy and networking_strategy must NOT cause why_bullets, risk_bullets, or cover_letter_strategy to be shortened. Each section must remain at the length specified above. Do not reduce field counts or word counts in earlier sections to make room.
 
 ---
 
@@ -157,7 +169,7 @@ Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
 
 CRITICAL: Only generate risk_bullets for risk_codes that are explicitly provided above. If risk_codes is an empty array, you MUST return "risk_bullets": []. Never invent risks.
 
-CRITICAL: If the DECISION is "Pass", you MUST return null for BOTH cover_letter_strategy and networking_strategy (literal JSON null, not empty objects). The user shouldn't apply.
+CRITICAL: If the DECISION is "Pass", you MUST return null for ALL THREE: cover_letter_strategy, positioning_strategy, and networking_strategy (literal JSON null, not empty objects). The user shouldn't apply.
 
 {
   "why_bullets": [
@@ -181,6 +193,10 @@ CRITICAL: If the DECISION is "Pass", you MUST return null for BOTH cover_letter_
     "lead_signal": "The match_key from the top why_code",
     "address_gap": "Specific gap to address and how — or null if no risks",
     "tone": "One short phrase"
+  },
+  "positioning_strategy": {
+    "lead_section": "Which specific existing resume section/experience to lead with for this role (name the employer or section title). One sentence, max 25 words.",
+    "reframe": "How to relabel that section's bullets using the JD's own keywords, anchored on the same lead_signal as cover_letter_strategy. One to two sentences, max 40 words."
   },
   "networking_strategy": {
     "target_contacts": "Specific role type, seniority, and team context (e.g. 'senior product designers in the consumer org'). One sentence, max 25 words.",
@@ -220,6 +236,13 @@ function isValidNetworkingStrategy(s: any): s is NetworkingStrategy {
   if (s == null || typeof s !== "object") return false
   if (typeof s.target_contacts !== "string" || s.target_contacts.length === 0) return false
   if (typeof s.outreach_angle !== "string" || s.outreach_angle.length === 0) return false
+  return true
+}
+
+function isValidPositioningStrategy(s: any): s is PositioningStrategy {
+  if (s == null || typeof s !== "object") return false
+  if (typeof s.lead_section !== "string" || s.lead_section.length === 0) return false
+  if (typeof s.reframe !== "string" || s.reframe.length === 0) return false
   return true
 }
 
@@ -286,6 +309,7 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     why_bullets: WhyBullet[]
     risk_bullets: RiskBullet[]
     cover_letter_strategy: CoverLetterStrategy | null
+    positioning_strategy: PositioningStrategy | null
     networking_strategy: NetworkingStrategy | null
   }
 
@@ -302,10 +326,11 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const riskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
 
   // Strategy field guards. Belt-and-suspenders against model ignoring the
-  // Pass-skip rule: force null for both on Pass regardless of model output.
-  // For non-Pass decisions, validate shape; missing or malformed → null + warn
-  // rather than throwing. The result page handles null gracefully.
+  // Pass-skip rule: force null for all three on Pass regardless of model
+  // output. For non-Pass decisions, validate shape; missing or malformed →
+  // null + warn rather than throwing. The result page handles null gracefully.
   let coverLetterStrategy: CoverLetterStrategy | null = null
+  let positioningStrategy: PositioningStrategy | null = null
   let networkingStrategy: NetworkingStrategy | null = null
 
   if (!isPass) {
@@ -314,6 +339,14 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     } else {
       console.warn(
         "[V5] cover_letter_strategy missing or malformed for non-Pass decision; setting to null. Decision: " +
+          out.decision
+      )
+    }
+    if (isValidPositioningStrategy(parsed.positioning_strategy)) {
+      positioningStrategy = parsed.positioning_strategy
+    } else {
+      console.warn(
+        "[V5] positioning_strategy missing or malformed for non-Pass decision; setting to null. Decision: " +
           out.decision
       )
     }
@@ -326,7 +359,7 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
       )
     }
   }
-  // else: isPass — leave both as null (the initialized value).
+  // else: isPass — leave all three as null (the initialized values).
 
   return {
     why: whyBullets.map(formatWhyBullet),
@@ -334,6 +367,7 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     why_structured: whyBullets,
     risk_structured: riskBullets,
     cover_letter_strategy: coverLetterStrategy,
+    positioning_strategy: positioningStrategy,
     networking_strategy: networkingStrategy,
     renderer_debug: {
       renderer_stamp: RENDERER_V5_STAMP,
