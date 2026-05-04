@@ -3226,10 +3226,54 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   return null
 }
 
+// Defensive JD normalizer. Some clipboard sources (LinkedIn, PDFs, Word
+// docs rendered to plain text, certain rich-text editors) preserve
+// paragraph breaks but collapse inline bullets — turning
+//   "Event Setup: ... On-Site Ops: ... Visitor Experience: ..."
+// into one paragraph. Our line-anchored extraction can't see those as
+// distinct units, so it falls back to stray keyword matches and produces
+// near-empty requirement_units. Confirmed Aiden case 2026-05-04: a
+// LinkedIn paste with run-on bullets produced 1 false-positive
+// requirement_unit and 0 why_codes, scoring Pass/36 instead of the
+// Review/64 the same JD with line breaks produced.
+//
+// All transforms are idempotent on top of existing newlines — running
+// this on a well-formatted JD inserts no extra breaks because every
+// pattern requires mid-line context (preceded by a sentence-end or
+// non-newline whitespace).
+function normalizeJobDescription(jobText: string): string {
+  let t = jobText
+
+  // Insert \n before bullet characters when they appear mid-line.
+  // Covers • · ▪ ◦ ‣ and similar visual bullet markers that LinkedIn /
+  // PDF clipboard text often preserves but inlines.
+  t = t.replace(/([^\n])\s*([•·▪◦‣])\s*/g, "$1\n$2 ")
+
+  // Insert \n before "Title Case Phrase: " patterns that appear after a
+  // sentence-ending character — the structural shape of run-on bullets
+  // ("Event Setup: ... On-Site Ops: ..."). Phrase = 1–5 Title Case words,
+  // optionally joined with "&", "and", or "or". Requires immediate
+  // [.!?] before to avoid breaking legitimate prose mid-sentence.
+  t = t.replace(
+    /(?<=[.!?]\s+)([A-Z][a-zA-Z]+(?:\s+(?:&|and|or)\s+[A-Z][a-zA-Z]+|\s+[A-Z][a-zA-Z]+){0,4}:\s)/g,
+    "\n$1"
+  )
+
+  // Collapse runs of 3+ horizontal whitespace chars into "\n\n". Common
+  // in PDF-extracted text where layout columns produce big space runs.
+  t = t.replace(/[ \t]{3,}/g, "\n\n")
+
+  return t
+}
+
 export function extractJobSignals(
   jobTextRaw: string,
   opts?: { userJobTitle?: string }
 ): StructuredJobSignals {
+  // Pre-normalize before any extraction reads jobTextRaw. All downstream
+  // line-anchored detectors see properly-broken JD text.
+  jobTextRaw = normalizeJobDescription(jobTextRaw)
+
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
   // Prepend the user-provided title (if any) so all the title-based
