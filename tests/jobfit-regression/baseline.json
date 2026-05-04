@@ -366,8 +366,8 @@
   "retest-zoe-paralegal": {
     "id": "retest-zoe-paralegal",
     "label": "Zoe Siegel vs DiCello Levitt Mass Tort Paralegal",
-    "decision": "Apply",
-    "score": 78,
+    "decision": "Review",
+    "score": 74,
     "whyCount": 3,
     "directWhyCount": 2,
     "riskCount": 3,

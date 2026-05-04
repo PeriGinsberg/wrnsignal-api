@@ -92,7 +92,10 @@ export async function runJobFit(args: {
   // Evidence guardrails: cap decision when the underlying evidence is
   // too thin or the risk load is too heavy, regardless of raw score.
   // Prevents "Apply" with zero WHY codes or 4+ high-severity risks.
-  const guardrail = applyEvidenceGuardrails(decisionAfterRisk, scored.whyCodes, scored.riskCodes)
+  const guardrail = applyEvidenceGuardrails(decisionAfterRisk, scored.whyCodes, scored.riskCodes, {
+    yearsRequired: jobSignals.yearsRequired,
+    yearsExperienceApprox: profileSignals.yearsExperienceApprox,
+  })
   const decisionFinal = guardrail.decision
 
   // When a hard gate fires, the raw score is misleading — a candidate who

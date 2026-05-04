@@ -119,10 +119,18 @@ function isQualityDirectWhy(w: WhyCode): boolean {
 //      hasn't actually demonstrated they've done the work.
 //   3. 4+ high-severity risks       → cap at Pass    (too many red flags)
 //   4. 3  high-severity risks       → cap at Review
+//   5. Severe tenure gap            → cap at Review
+//      When the JD demands >=3 years and the candidate is missing nearly
+//      the entire requirement (gap >= yearsRequired - 1), Apply is wrong
+//      regardless of how many keyword matches surface. A single high-
+//      severity RISK_EXPERIENCE alone doesn't drag the decision down
+//      because high-risk caps don't fire until 3+. This rule catches the
+//      "undergrad vs 4-year minimum" shape specifically.
 export function applyEvidenceGuardrails(
   decision: Decision,
   whyCodes: WhyCode[] = [],
-  riskCodes: RiskCode[] = []
+  riskCodes: RiskCode[] = [],
+  opts: { yearsRequired?: number | null; yearsExperienceApprox?: number | null } = {}
 ): { decision: Decision; reason: string | null } {
   const whyCount = whyCodes.length
   const directCount = whyCodes.filter((w) => w.match_strength === "direct").length
@@ -153,6 +161,25 @@ export function applyEvidenceGuardrails(
     const capped = capDecision(decision, "Review")
     if (capped !== decision) {
       const reason = `${highRiskCount} high-severity risks (>= 3)`
+      console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
+      return { decision: capped, reason }
+    }
+  }
+
+  // Rule 5: severe tenure gap. Fires when the JD's minimum is non-trivial
+  // (>= 3 years) AND the candidate is missing at least half the requirement.
+  // A 1-year shortfall on a 2-year posting should NOT cap — that's normal
+  // stretch territory. But missing 50%+ of the required tenure is a
+  // structural mismatch that no amount of keyword overlap can rescue.
+  // Examples that DO cap: 0y vs 3y, 2y vs 4y, 2y vs 5y, 3y vs 6y.
+  // Examples that DON'T cap: 3y vs 4y (one short), 4y vs 6y (two short
+  // but only 33%), any case where one of the numbers is missing.
+  const yReq = typeof opts.yearsRequired === "number" ? opts.yearsRequired : null
+  const yHave = typeof opts.yearsExperienceApprox === "number" ? opts.yearsExperienceApprox : null
+  if (yReq !== null && yHave !== null && yReq >= 3 && yReq - yHave >= yReq / 2) {
+    const capped = capDecision(decision, "Review")
+    if (capped !== decision) {
+      const reason = `severe tenure gap (have ~${yHave}y, need ${yReq}y)`
       console.log(`[decision] Evidence guardrail: ${decision} -> ${capped} (${reason})`)
       return { decision: capped, reason }
     }
