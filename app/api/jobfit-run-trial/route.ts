@@ -41,6 +41,7 @@ import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
+import type { StructuredProfileSignals } from "../jobfit/signals"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 
 export const runtime = "nodejs"
@@ -62,7 +63,7 @@ const UPGRADE_BASE =
 
 const UPGRADE_PRICE = "$99"
 const UPGRADE_TERM = "3 months"
-const UPGRADE_GUARANTEE = "30-day money-back"
+const UPGRADE_GUARANTEE = "7-day money-back"
 
 type LockEntry = { label: string; stripe_url: string }
 type Locks = {
@@ -288,6 +289,85 @@ export async function POST(req: Request) {
     // own heuristic detectors. Don't bail the whole run on a Haiku miss.
     const profileOverrides = await inferProfileOverridesFromResume(resumeText)
 
+    // ── Trial-only neutralization of inferred preferences ───────────
+    //
+    // The deterministic engine (extract.ts heuristics + scoring.ts gates and
+    // penalties) treats every constraint and preference field on the profile
+    // as a STATED user preference. On the paid path that's correct — those
+    // fields come from the intake form, where the user explicitly answered
+    // questions about location, employment type, and target career
+    // direction. Paid users see the engine's full constraint behavior
+    // intact, and that path is unchanged.
+    //
+    // On the trial path there is NO intake form. We only have the resume and
+    // a Haiku pre-pass that infers signals from it. Both are guesses, not
+    // declarations:
+    //   - extract.ts:2827-2850 (defaultConstraintsFromText) defaults each
+    //     constraint by scanning profile body text for phrases like "no
+    //     remote" or "full-time" — surfacing patterns that may appear
+    //     incidentally in a resume as if the user had stated them.
+    //   - inferProfileOverridesFromResume sets prefFullTime=true whenever
+    //     Haiku classifies the resume as "full_time"-targeting, and sets
+    //     locationPreference.constrained=true plus allowedCities to whatever
+    //     city Haiku finds in the resume (often the candidate's address).
+    //   - extract.ts:4227 falls back to targetFamilies=["Sales"] when
+    //     neither tag detection nor Haiku produces any family — turning a
+    //     sparse resume into an asserted Sales target.
+    //
+    // The audit (see prior conversation) showed this triggers false-positive
+    // gates and penalties for trial users: GATE_FLOOR_REVIEW_CONTRACT for
+    // resumes that mention "full-time", GATE_FLOOR_REVIEW_LOCATION for
+    // resumes that list a home city, and GATE_FIELD_MISMATCH (force_pass)
+    // for sparse resumes against hard-tech JDs. None of these reflect a
+    // preference the trial user actually expressed.
+    //
+    // Override strategy:
+    //   - constraints.* : force every field to false. Trial users have not
+    //     stated any hard-no or pref. The engine should treat them as
+    //     "no preference expressed" until the upgrade path captures real
+    //     intake input.
+    //   - locationPreference: force to neutral (mode=unclear, constrained=
+    //     false, allowedCities=[]). "unclear" is the only valid neutral
+    //     LocationMode (not_constrained is a LocationConstraint, not a
+    //     LocationMode — see signals.ts:8 vs :55).
+    //   - targetFamilies: CONDITIONAL — preserve Haiku's inference when it
+    //     succeeded (so the +10 family-match bonus still fires for clearly-
+    //     classified candidates), but force [] when Haiku failed. Empty
+    //     array is the "no opinion" state both for the family-mismatch
+    //     penalty (scoring.ts:802 checks length>0) and the GATE_FIELD_MISMATCH
+    //     gate (constraints.ts:67 checks length>0). This avoids the
+    //     ["Sales"] fallback in extract.ts:4227 while keeping legitimate
+    //     family classification intact.
+    //
+    // statedInterests.targetRoles is intentionally NOT overridden — it
+    // produces only positive effects in scoring.ts (title-match bonus,
+    // family-mismatch suppression) and never penalties.
+    const haikuFamilies = profileOverrides.targetFamilies ?? []
+
+    const trialOverrides: Partial<StructuredProfileSignals> = {
+      ...profileOverrides,
+      constraints: {
+        hardNoSales: false,
+        hardNoGovernment: false,
+        hardNoContract: false,
+        hardNoHourlyPay: false,
+        hardNoFullyRemote: false,
+        preferNotAnalyticsHeavy: false,
+        hardNoContentOnly: false,
+        hardNoPartTime: false,
+        prefFullTime: false,
+      },
+      locationPreference: {
+        mode: "unclear",
+        constrained: false,
+        allowedCities: [],
+      },
+      // Preserve Haiku's family inference when it succeeded; force [] only
+      // when Haiku failed (which would otherwise fall back to ["Sales"] in
+      // extract.ts and trigger GATE_FIELD_MISMATCH on hard-tech JDs).
+      targetFamilies: haikuFamilies.length > 0 ? haikuFamilies : [],
+    }
+
     // ── Build effective profileText (defensive strip) ────────────────
     const profileHeader = stripEmbeddedResume(profileTextForDb)
     const effectiveProfileText =
@@ -299,7 +379,7 @@ export async function POST(req: Request) {
       raw = await runJobFit({
         profileText: effectiveProfileText,
         jobText,
-        profileOverrides,
+        profileOverrides: trialOverrides,
       })
     } catch (err: any) {
       console.error("[jobfit-run-trial] runJobFit failed:", err?.message || String(err))
@@ -322,6 +402,8 @@ export async function POST(req: Request) {
       raw.why_structured = v5.why_structured
       raw.risk_structured = v5.risk_structured
       raw.cover_letter_strategy = v5.cover_letter_strategy
+      raw.positioning_strategy = v5.positioning_strategy
+      raw.networking_strategy = v5.networking_strategy
       raw.debug = { ...(raw.debug || {}), ...v5.renderer_debug }
     } catch (err: any) {
       // V5 failure: fall back to V4-rendered bullets that are already on
@@ -372,6 +454,8 @@ export async function POST(req: Request) {
         gate_triggered: raw.gate_triggered,
         job_signals: raw.job_signals,
         cover_letter_strategy: raw.cover_letter_strategy ?? null,
+        positioning_strategy: raw.positioning_strategy ?? null,
+        networking_strategy: raw.networking_strategy ?? null,
       },
       locks,
       upgrade,
