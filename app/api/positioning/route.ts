@@ -122,9 +122,31 @@ type BulletEdit = {
   evidence: string
 }
 
-function normalizeBulletEdits(arr: any): BulletEdit[] {
+// Canonicalize a string for "is this present in the resume?" comparison.
+// Strips leading bullet markers (•, -, *, ·, –, —), trailing punctuation
+// (.,;:), collapses internal whitespace, lowercases. The LLM frequently
+// trims a leading bullet character or trailing period when copying a
+// resume bullet, so naive substring match would drop legitimate edits.
+// This canonicalization is symmetric — applied to both the resume haystack
+// and each candidate BEFORE before comparison.
+function canonicalizeForMatch(s: string): string {
+  return String(s || "")
+    .replace(/^[\s•·–—\-\*]+/, "")
+    .replace(/[\s.,;:]+$/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+}
+
+function normalizeBulletEdits(
+  arr: any,
+  resumeText: string,
+  ctx: { profileId: string; fingerprintCode: string }
+): BulletEdit[] {
   if (!Array.isArray(arr)) return []
-  return arr
+  // Pre-canonicalize the entire resume once for repeated substring checks.
+  const haystack = canonicalizeForMatch(resumeText)
+  const allEdits = arr
     .map((b: any) => ({
       job_title: asString(b?.job_title, "Unknown role"),
       before: asString(b?.before, ""),
@@ -133,6 +155,31 @@ function normalizeBulletEdits(arr: any): BulletEdit[] {
       evidence: asString(b?.evidence, ""),
     }))
     .filter((b: BulletEdit) => b.before && b.after)
+
+  const accepted: BulletEdit[] = []
+  for (const edit of allEdits) {
+    const canon = canonicalizeForMatch(edit.before)
+    if (canon && haystack.includes(canon)) {
+      accepted.push(edit)
+      continue
+    }
+    // Drop and log. The BEFORE field on this edit is not present in the
+    // resume — most often this means the LLM pulled the BEFORE from the
+    // job description (Ross Goldstein bug, 2026-05-04). Logging the run
+    // identifier + rejected before + short resume excerpt gives ongoing
+    // visibility into how often the LLM still misbehaves after the
+    // prompt tightening.
+    console.log(
+      "[positioning] dropped bullet edit — BEFORE not in resume:",
+      JSON.stringify({
+        profileId: ctx.profileId,
+        fingerprintCode: ctx.fingerprintCode,
+        droppedBefore: edit.before.slice(0, 200),
+        resumeExcerpt: resumeText.slice(0, 240).replace(/\s+/g, " "),
+      })
+    )
+  }
+  return accepted
 }
 
 /**
@@ -367,7 +414,8 @@ TASK (do in order):
    - Output Lead With (1), Support With (1–2), Then Include (0–2), De-emphasize (0–1) if applicable.
 4) Summary Statement: return need_summary YES/NO and explain why. If YES, give one recommended summary and cite evidence.
 5) Resume Bullet Edits:
-   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim).
+   - BEFORE field rule: BEFORE must be a verbatim copy of an existing bullet from the RESUME text above. Do NOT paraphrase or copy from the JOB DESCRIPTION. If no resume bullet is a strong candidate for a missing keyword, omit that edit entirely.
+   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim) in the AFTER field.
    - Only do this if the resume facts already support it. Do not add new facts.
    - Do not use generic substitutes like “execution,” “support,” “cross-team,” or “stakeholder” unless they appear verbatim in the job keywords list.
    - Return 0–6 edits. Do not pad.
@@ -467,7 +515,10 @@ Return JSON only. No markdown. No extra text.
       evidence: asStringArray(summaryRaw?.evidence),
     }
 
-    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
+    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits, profileText, {
+      profileId: profileId || "",
+      fingerprintCode: fingerprint_code,
+    })
 
     const keyword_analysis = {
       coverage_pct: Math.round(keywordCoverage.coverage * 100),
