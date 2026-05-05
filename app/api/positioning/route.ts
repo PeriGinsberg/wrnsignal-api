@@ -32,6 +32,22 @@
 // resume; 2026-05-05: "no summary present" claim about a resume that
 // had a clear SUMMARY header). In both cases a regex would have caught
 // it for free.
+//
+// COLUMN SPLIT — read this before adding any field that touches resume
+// content. client_profiles has TWO columns and they are NOT the same:
+//   - profile_text: the intake-form header — "Name: ...", "Job type: ...",
+//     "Target roles: ...", "Target locations: ...", "Timeline: ...".
+//     Typically 200–400 chars. Does NOT contain bullets, SUMMARY section,
+//     or any resume body content.
+//   - resume_text: the actual resume body. Has SUMMARY / EXPERIENCE /
+//     EDUCATION sections, bullets, dates. Typically 1500–5000 chars.
+// Historically, profile_text contained `Resume:\n<body>` appended; that
+// embedded-resume pattern was stripped when personas landed (so persona
+// switching wouldn't leak the wrong resume through the header). The
+// positioning route was written under the old assumption and used
+// profile_text alone for everything — the source of both Ross bugs above.
+// Any new code reading the resume MUST pass resumeText, not profileText.
+// The LLM prompt sends both, separately labeled (intake header vs resume).
 import crypto from "crypto"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
@@ -278,7 +294,16 @@ export async function OPTIONS(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    const { profileId, profileText } = await getAuthedProfileText(req)
+    // IMPORTANT — column split. profileText is the intake-form header
+    // ("Name: ...\nJob type: ...\nTarget roles: ..." — typically <300 chars).
+    // resumeText is the actual resume body (the part with SUMMARY, EXPERIENCE,
+    // EDUCATION sections). Historical bug fixed 2026-05-05: the route was
+    // using profileText alone for everything (extractResumeBullets,
+    // detectExistingSummary, normalizeBulletEdits, the LLM prompt) which
+    // means deterministic detectors saw 200 chars of intake fields where they
+    // expected the full resume — and the LLM had no real resume bullets to
+    // rewrite, so it fabricated. See top-of-file architectural pattern note.
+    const { profileId, profileText, resumeText } = await getAuthedProfileText(req)
 
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
@@ -287,8 +312,9 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
-    // Deterministic keyword coverage
-    const resumeBulletsRaw = extractResumeBullets(profileText)
+    // Deterministic keyword coverage. Bullets live in the resume body, not
+    // the intake header, so this reads resumeText.
+    const resumeBulletsRaw = extractResumeBullets(resumeText)
     const keywordCoverage = computeKeywordCoverage(jobText, resumeBulletsRaw, {
       max_keywords: 30,
       missing_top_n: 8,
@@ -311,10 +337,17 @@ export async function POST(req: Request) {
       ? missingHighPriorityKeywords.map((k) => `- ${k}`).join("\n")
       : "- None"
 
-    // Fingerprint pins
+    // Fingerprint pins. Includes resumeText so editing the resume busts the
+    // cache — previously fingerprint hashed only the 200-char intake header,
+    // so resume edits produced no fingerprint change and the cache served
+    // stale results.
     const fingerprintPayload = {
       job: { text: jobText || MISSING },
-      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      profile: {
+        id: profileId || MISSING,
+        text: profileText || MISSING,
+        resume: resumeText || MISSING,
+      },
       system: {
         positioning_prompt_version: POSITIONING_PROMPT_VERSION,
         model_id: MODEL_ID,
@@ -474,7 +507,8 @@ Return VALID JSON ONLY with this exact shape:
 }
     `.trim()
 
-    const summaryDetection = detectExistingSummary(profileText)
+    // Detector reads the resume body, not the intake header.
+    const summaryDetection = detectExistingSummary(resumeText)
     const summaryDetectionBlock = summaryDetection.present
       ? `SUMMARY DETECTION (deterministic):
   summary_present: YES
@@ -484,8 +518,11 @@ Return VALID JSON ONLY with this exact shape:
   (the resume does not contain a Summary section, or the section is empty)`
 
     const user = `
-RESUME (verbatim):
+CANDIDATE INTAKE (verbatim — target roles, locations, timeline, etc.):
 ${profileText}
+
+RESUME (verbatim):
+${resumeText}
 
 JOB DESCRIPTION (verbatim):
 ${jobText}
@@ -695,7 +732,7 @@ Return JSON only. No markdown. No extra text.
       evidence: asStringArray(summaryRaw?.evidence),
     }
 
-    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits, profileText, {
+    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits, resumeText, {
       profileId: profileId || "",
       fingerprintCode: fingerprint_code,
     })
