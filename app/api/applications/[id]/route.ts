@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { logStatusChange } from "../../_lib/applicationStatusHistory"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -80,10 +81,10 @@ export async function PUT(
     const { id: appId } = await params
     const supabase = getSupabaseAdmin()
 
-    // Verify ownership
+    // Verify ownership and capture pre-update status for the history log
     const { data: existing, error: lookupErr } = await supabase
       .from("signal_applications")
-      .select("id, profile_id")
+      .select("id, profile_id, application_status")
       .eq("id", appId)
       .maybeSingle()
 
@@ -110,6 +111,16 @@ export async function PUT(
       .single()
 
     if (updateErr) throw new Error(`Application update failed: ${updateErr.message}`)
+
+    // Status history: log only when application_status actually changed.
+    // Helper is a no-op if from_status === to_status.
+    await logStatusChange(
+      supabase,
+      appId,
+      existing.application_status,
+      updated.application_status,
+      profileId
+    )
 
     return withCorsJson(req, { ok: true, application: updated })
   } catch (err: any) {

@@ -3,6 +3,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { logStatusChange } from "../../../../_lib/applicationStatusHistory"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -83,10 +84,18 @@ export async function PATCH(
 
     // If applying, also update the linked application status
     if (clientStatus === "applying" && rec.application_id) {
+      const { data: prev } = await supabase
+        .from("signal_applications")
+        .select("application_status")
+        .eq("id", rec.application_id)
+        .maybeSingle()
       await supabase
         .from("signal_applications")
         .update({ application_status: "applied", updated_at: new Date().toISOString() })
         .eq("id", rec.application_id)
+      if (prev) {
+        await logStatusChange(supabase, rec.application_id, prev.application_status, "applied", profileId)
+      }
     }
 
     return withCorsJson(req, { ok: true, client_status: clientStatus })

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     // Check for active profile BEFORE any auth call
     const { data: profile, error: profileErr } = await supabase
       .from("client_profiles")
-      .select("id, active, profile_complete")
+      .select("id, active, profile_complete, is_coach")
       .eq("email", email)
       .eq("active", true)
       .maybeSingle()
@@ -58,8 +58,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Determine redirect based on profile completeness
-    const redirectTo = profile.profile_complete
+    // Determine redirect:
+    //   coaches  → /dashboard/coach (Sprint 2 — Coach Home / "My Clients" landing)
+    //   complete → /dashboard/tracker (returning client lands on Job Tracker)
+    //   else     → /dashboard (Overview, gentle on first sign-in)
+    const redirectTo = profile.is_coach
+      ? "https://wrnsignal-api.vercel.app/dashboard/coach"
+      : profile.profile_complete
       ? "https://wrnsignal-api.vercel.app/dashboard/tracker"
       : "https://wrnsignal-api.vercel.app/dashboard"
 

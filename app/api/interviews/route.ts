@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { logStatusChange } from "../_lib/applicationStatusHistory"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -160,6 +161,7 @@ export async function POST(req: NextRequest) {
         .from("signal_applications")
         .update({ application_status: "interviewing", updated_at: new Date().toISOString() })
         .eq("id", application_id)
+      await logStatusChange(supabase, application_id, app.application_status, "interviewing", profileId)
     }
 
     return withCorsJson(req, { ok: true, interview: data }, 201)

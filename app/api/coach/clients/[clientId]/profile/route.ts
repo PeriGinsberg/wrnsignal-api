@@ -102,6 +102,19 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "Forbidden: no active coach relationship with view access" }, 403)
     }
 
+    // Bump last_viewed_at on the coach_clients link. Powers the "since
+    // last visit" indicator on My Clients cards + the "no recent coach
+    // activity" predicate in Requires Action heuristics. Any tab open
+    // counts as "I saw recent activity" (decision 2026-05-07). Fire-
+    // and-forget — failure is non-fatal and bumps again on next visit.
+    supabase
+      .from("coach_clients")
+      .update({ last_viewed_at: new Date().toISOString() })
+      .eq("id", access.id)
+      .then(({ error: bumpErr }) => {
+        if (bumpErr) console.warn("[coach profile GET] last_viewed_at bump failed:", bumpErr.message)
+      })
+
     const { data: profile, error: profileErr } = await supabase
       .from("client_profiles")
       .select("*")

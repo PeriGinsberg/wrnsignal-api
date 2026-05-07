@@ -1,20 +1,27 @@
 "use client"
 
+// Coach Home / My Clients landing page.
+// Sprint 2 build (2026-05-07). Pulls from /api/coach/home which combines:
+//   - greeting (coach.firstName + today's date)
+//   - metrics tiles (active clients, prospects placeholder, phases placeholder)
+//   - Requires Action list (heuristic-driven, see /api/coach/home for rules)
+//   - per-client cards with "since last visit" indicator
+
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import CreateClientModal from "./CreateClientModal"
 import {
-  T,
-  input,
-  textarea,
-  btnPrimary,
-  btnSecondary,
-  card,
-  eyebrow,
-  headline,
-  label,
+  T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, headline, label,
 } from "../../../lib/dashboard-theme"
+
+type CoachHome = {
+  ok: boolean
+  coach: { firstName: string; fullName: string | null }
+  metrics: { activeClients: number; activeProspects: number }
+  clients: CoachClient[]
+  requiresAction: ActionItem[]
+}
 
 type CoachClient = {
   id: string
@@ -30,6 +37,23 @@ type CoachClient = {
     interview_rate: number
   }
   last_activity: string | null
+  last_viewed_at: string | null
+  updates_since_visit: number
+}
+
+type ActionItem = {
+  id: string
+  kind:
+    | "no_login"
+    | "rec_pending_review"
+    | "moved_interviewing"
+    | "moved_rejected"
+    | "offer_no_followup"
+    | "poor_fit_no_rec"
+  client_profile_id: string
+  client_name: string
+  message: string
+  days_elapsed: number
 }
 
 const ATTENTION_COLOR: Record<string, string> = {
@@ -74,45 +98,96 @@ function StatusBadge({ status }: { status: string | null }) {
   )
 }
 
-export default function CoachPage() {
+// Mirror tracker stats-bar tile style (from app/dashboard/tracker/page.tsx
+// lines 459-474). Big number + small label, hoverable card frame.
+function MetricTile({
+  value, label, color, subtitle, onClick,
+}: {
+  value: string | number
+  label: string
+  color?: string
+  subtitle?: string
+  onClick?: () => void
+}) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: T.CARD,
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 12,
+        padding: "14px 16px",
+        cursor: onClick ? "pointer" : "default",
+      }}
+    >
+      <div style={{ fontSize: 28, fontWeight: 900, color: color || T.TEXT }}>{value}</div>
+      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.MUTED, marginTop: 4 }}>
+        {label}
+      </div>
+      {subtitle && (
+        <div style={{ fontSize: 10, color: T.DIM, marginTop: 4, fontStyle: "italic" }}>{subtitle}</div>
+      )}
+    </div>
+  )
+}
+
+const RULE_LABEL: Record<ActionItem["kind"], string> = {
+  no_login: "Inactive",
+  rec_pending_review: "Awaiting review",
+  moved_interviewing: "Status change",
+  moved_rejected: "Rejection",
+  offer_no_followup: "Offer",
+  poor_fit_no_rec: "Low-fit app",
+}
+const RULE_COLOR: Record<ActionItem["kind"], string> = {
+  no_login: "#FEB06A",
+  rec_pending_review: "#51ADE5",
+  moved_interviewing: "#a78bfa",
+  moved_rejected: "#E87070",
+  offer_no_followup: "#4ade80",
+  poor_fit_no_rec: "#FBBF24",
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  })
+}
+
+export default function CoachHomePage() {
   const router = useRouter()
-  const [isCoach, setIsCoach] = useState<boolean | null>(null)
-  const [clients, setClients] = useState<CoachClient[]>([])
+  const [data, setData] = useState<CoachHome | null>(null)
   const [loading, setLoading] = useState(true)
-  const [notesOpen, setNotesOpen] = useState<string | null>(null)
-  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
-  const [removing, setRemoving] = useState(false)
+  const [accessForbidden, setAccessForbidden] = useState(false)
 
-  // Create client modal state
+  // Modal / inline state
   const [showCreateClient, setShowCreateClient] = useState(false)
-
-  // Invite modal state
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteAccess, setInviteAccess] = useState("full")
   const [inviteNote, setInviteNote] = useState("")
   const [inviting, setInviting] = useState(false)
   const [inviteResult, setInviteResult] = useState<any>(null)
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [notesOpen, setNotesOpen] = useState<string | null>(null)
 
-  const loadClients = useCallback(async () => {
-    const profileRes = await authFetch("/api/profile")
-    if (!profileRes.ok) { setLoading(false); return }
-    const { profile } = await profileRes.json()
-    if (!profile?.is_coach) {
-      setIsCoach(false)
+  const load = useCallback(async () => {
+    setLoading(true)
+    const res = await authFetch("/api/coach/home")
+    if (res.status === 403) {
+      setAccessForbidden(true)
       setLoading(false)
       return
     }
-    setIsCoach(true)
-    const clientsRes = await authFetch("/api/coach/clients")
-    if (clientsRes.ok) {
-      const j = await clientsRes.json()
-      setClients(j.clients || [])
+    if (res.ok) {
+      const j = (await res.json()) as CoachHome
+      setData(j)
     }
     setLoading(false)
   }, [])
 
-  useEffect(() => { loadClients() }, [loadClients])
+  useEffect(() => { load() }, [load])
 
   async function sendInvite() {
     if (!inviteEmail.trim()) return
@@ -131,8 +206,8 @@ export default function CoachPage() {
     try {
       const res = await authFetch(`/api/coach/clients/${clientProfileId}`, { method: "DELETE" })
       if (res.ok) {
-        setClients(prev => prev.filter(c => c.client_profile_id !== clientProfileId))
         setConfirmRemoveId(null)
+        await load()
       }
     } catch {}
     setRemoving(false)
@@ -140,7 +215,7 @@ export default function CoachPage() {
 
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
 
-  if (isCoach === false) {
+  if (accessForbidden) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
         <div style={{ ...card, padding: 40, textAlign: "center", maxWidth: 400 }}>
@@ -154,22 +229,78 @@ export default function CoachPage() {
     )
   }
 
+  const home = data!
+  const { coach, metrics, clients, requiresAction } = home
+
   return (
     <div>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-        <div>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 6 }}>COACH DASHBOARD</div>
-          <h1 style={{ ...headline, fontSize: 30, letterSpacing: -1, margin: 0 }}>
-            My Clients
+      {/* Greeting strip */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 4 }}>{todayLabel().toUpperCase()}</div>
+        <h1 style={{ ...headline, fontSize: 26, letterSpacing: -0.8, margin: 0, fontWeight: 700 }}>
+          Welcome back, <span style={{ color: T.WRN_ORANGE, fontWeight: 950 }}>{coach.firstName}</span>
+        </h1>
+      </div>
+
+      {/* Metrics bar */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 28 }}>
+        <MetricTile value={metrics.activeClients} label="Active Clients" color={T.WRN_ORANGE} />
+        <MetricTile value="—" label="Active Prospects" subtitle="Coming soon" />
+        <MetricTile value="—" label="Clients per phase" subtitle="Methodology not yet configured" />
+      </div>
+
+      {/* Requires Action */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{ ...eyebrow, color: T.WRN_ORANGE }}>REQUIRES ACTION</div>
+          {requiresAction.length > 0 && (
             <span style={{
-              marginLeft: 12, fontSize: 14, fontWeight: 900, letterSpacing: 0,
-              color: T.WRN_BLUE, background: "rgba(81,173,229,0.12)",
-              padding: "3px 12px", borderRadius: 999, verticalAlign: "middle",
+              fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
+              color: "#04060F", background: T.WRN_ORANGE, padding: "2px 8px", borderRadius: 999,
             }}>
-              {clients.length}
+              {requiresAction.length}
             </span>
-          </h1>
+          )}
+        </div>
+        {requiresAction.length === 0 ? (
+          <div style={{ ...card, padding: 18 }}>
+            <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing requires your attention right now.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {requiresAction.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => router.push(`/dashboard/coach/clients/${item.client_profile_id}`)}
+                style={{
+                  ...card,
+                  padding: "12px 16px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <span style={{
+                  fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+                  color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
+                  padding: "3px 8px", borderRadius: 6, flexShrink: 0,
+                }}>
+                  {RULE_LABEL[item.kind]}
+                </span>
+                <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
+                <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* My Clients header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ ...eyebrow, color: T.WRN_BLUE }}>
+          MY CLIENTS{" "}
+          <span style={{ color: T.DIM, fontWeight: 700 }}>({clients.length})</span>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button
@@ -200,12 +331,11 @@ export default function CoachPage() {
         {clients.map((client) => {
           const accentColor = ATTENTION_COLOR[client.attention_level || "low"] || T.WRN_BLUE
           const isNotesOpen = notesOpen === client.client_profile_id
+          const updates = client.updates_since_visit
           return (
             <div key={client.client_profile_id} style={{ ...card, display: "flex" }}>
-              {/* Left accent bar */}
               <div style={{ width: 4, background: accentColor, flexShrink: 0 }} />
               <div style={{ flex: 1, padding: 24 }}>
-                {/* Name + status */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
                   <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: -0.3, color: T.TEXT }}>
                     {client.name || "Unnamed"}
@@ -215,12 +345,12 @@ export default function CoachPage() {
                 <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 16px" }}>{client.email}</p>
 
                 {/* Stats row */}
-                <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
+                <div style={{ display: "flex", gap: 24, marginBottom: 12 }}>
                   {[
-                    { label: "Applications", value: client.stats?.applications ?? 0 },
-                    { label: "Interviewing", value: client.stats?.interviewing ?? 0 },
-                    { label: "Pending Recs", value: client.stats?.pending_recs ?? 0 },
-                    { label: "Interview Rate", value: `${client.stats?.interview_rate ?? 0}%` },
+                    { label: "Applications", value: client.stats.applications },
+                    { label: "Interviewing", value: client.stats.interviewing },
+                    { label: "Pending Recs", value: client.stats.pending_recs },
+                    { label: "Interview Rate", value: `${client.stats.interview_rate}%` },
                   ].map(({ label: lbl, value }) => (
                     <div key={lbl}>
                       <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 2 }}>{lbl}</div>
@@ -229,12 +359,16 @@ export default function CoachPage() {
                   ))}
                 </div>
 
-                {/* Last activity */}
-                {client.last_activity && (
-                  <p style={{ fontSize: 11, color: T.DIM, marginBottom: 16 }}>
-                    Last activity: {client.last_activity}
-                  </p>
-                )}
+                {/* Since-last-visit indicator (Sprint 2) */}
+                <p style={{
+                  fontSize: 11, color: updates > 0 ? T.WRN_ORANGE : T.DIM,
+                  fontWeight: updates > 0 ? 900 : 400,
+                  marginBottom: 14,
+                }}>
+                  {updates > 0
+                    ? `${updates} update${updates === 1 ? "" : "s"} since your last visit`
+                    : "No changes since your last visit"}
+                </p>
 
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -304,14 +438,13 @@ export default function CoachPage() {
         }}>
           <div style={{ ...card, padding: 36, width: 480, maxWidth: "90vw" }}>
             <div style={{ height: 3, background: T.GRAD_PRIMARY, margin: "-36px -36px 28px", borderRadius: "18px 18px 0 0" }} />
-
             {inviteResult ? (
               <div>
                 <div style={{ ...eyebrow, color: T.SUCCESS, marginBottom: 12 }}>INVITE SENT</div>
                 <p style={{ fontSize: 15, fontWeight: 900, color: T.TEXT }}>Invitation delivered</p>
                 <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, lineHeight: "20px" }}>
                   An invite was sent to <span style={{ color: T.WRN_BLUE }}>{inviteEmail}</span>.
-                  They'll receive a link to accept and connect their account to your coaching dashboard.
+                  They&apos;ll receive a link to accept and connect their account to your coaching dashboard.
                 </p>
                 <button
                   onClick={() => { setInviteOpen(false); setInviteEmail(""); setInviteNote(""); setInviteResult(null) }}
@@ -323,7 +456,6 @@ export default function CoachPage() {
             ) : (
               <div>
                 <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>INVITE A CLIENT</div>
-
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
                     <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>CLIENT EMAIL</span>
@@ -335,7 +467,6 @@ export default function CoachPage() {
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
                   </div>
-
                   <div>
                     <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>ACCESS LEVEL</span>
                     <div style={{ display: "flex", gap: 10 }}>
@@ -356,7 +487,6 @@ export default function CoachPage() {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
                     <textarea
@@ -367,7 +497,6 @@ export default function CoachPage() {
                     />
                   </div>
                 </div>
-
                 <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
                   <button
                     onClick={sendInvite}
@@ -388,12 +517,13 @@ export default function CoachPage() {
           </div>
         </div>
       )}
+
       {showCreateClient && (
         <CreateClientModal
           onClose={() => setShowCreateClient(false)}
           onSuccess={() => {
             setShowCreateClient(false)
-            loadClients()
+            load()
           }}
         />
       )}
