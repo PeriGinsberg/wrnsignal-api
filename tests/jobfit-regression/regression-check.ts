@@ -111,11 +111,14 @@ async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapsh
 async function collectLiveSnapshots(): Promise<Record<string, CaseSnapshot>> {
   const out: Record<string, CaseSnapshot> = {}
 
-  // Batch cases from the production issues CSV.
-  const batch = await runBatch(BATCH_CSV_PATH, { verbose: false })
-  for (const b of batch) {
-    const id = `batch-${b.caseNo}`
-    out[id] = toSnapshot(id, b.label, b.result)
+  // Batch cases from the production issues CSV. Skip silently when the
+  // file is missing — the synthetic CSV + retests still provide coverage.
+  if (existsSync(BATCH_CSV_PATH)) {
+    const batch = await runBatch(BATCH_CSV_PATH, { verbose: false })
+    for (const b of batch) {
+      const id = `batch-${b.caseNo}`
+      out[id] = toSnapshot(id, b.label, b.result)
+    }
   }
 
   // Synthetic cases from the generated CSV.
