@@ -351,12 +351,28 @@ function extractCoverLetterStrategy(jobfitResult: any): string {
 
 export async function POST(req: Request) {
   try {
-    const { profileId, profileText } = await getAuthedProfileText(req)
-    const contact = extractContactFromProfileText(profileText)
-
+    // Read body first so we can pass persona_id to getAuthedProfileText.
+    // Wave 2 personas refactor (2026-05-06): cover letter now reads the
+    // resume via the persona resolution chain. Previously it used only
+    // the 200-char intake header as "RESUME" in the prompt — same column-
+    // split bug as positioning. See app/api/positioning/route.ts top-of-
+    // file comment for the full architectural context.
     const body = await req.json().catch(() => ({}))
     const jobText = String(body?.job || "").trim()
     if (!jobText) return withCorsJson(req, { error: "Missing job" }, 400)
+
+    const personaIdFromBody =
+      typeof body?.persona_id === "string" && body.persona_id.trim().length > 0
+        ? body.persona_id.trim()
+        : null
+
+    const {
+      profileId,
+      profileText,
+      resumeText,
+      activePersonaId,
+    } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
+    const contact = extractContactFromProfileText(profileText)
 
     // Accept jobfit_result from the frontend (sent alongside job)
     const jobfitResult = body?.jobfit_result ?? null
@@ -392,6 +408,10 @@ export async function POST(req: Request) {
       profile: {
         id: profileId || MISSING,
         text: profileText || MISSING,
+        // Wave 2: include resumeText and activePersonaId so persona switches
+        // and resume edits bust the cache (previously cache was persona-blind).
+        resume: resumeText || MISSING,
+        persona_id: activePersonaId || MISSING,
         writing_sample: writingSample || MISSING,
       },
       upstream: {
@@ -496,8 +516,11 @@ Return VALID JSON ONLY:
 `.trim()
 
     const user = `
-RESUME (verbatim):
+CANDIDATE INTAKE (verbatim — target roles, locations, timeline, etc.):
 ${profileText}
+
+RESUME (verbatim):
+${resumeText}
 
 JOB DESCRIPTION (verbatim):
 ${jobText}

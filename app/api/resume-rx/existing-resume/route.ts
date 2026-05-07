@@ -79,15 +79,45 @@ export async function GET(req: NextRequest) {
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
-    // Check default persona first
-    const { data: persona, error: personaErr } = await supabase
-      .from("client_personas")
-      .select("id, name, resume_text, updated_at")
-      .eq("profile_id", profileId)
-      .eq("is_default", true)
-      .maybeSingle()
+    // Wave 2 personas refactor (2026-05-06): respect explicit persona_id
+    // from query param when provided (e.g. /api/resume-rx/existing-resume?persona_id=...).
+    // Falls back to default persona, then to client_profiles.resume_text.
+    const url = new URL(req.url)
+    const explicitPersonaId =
+      (url.searchParams.get("persona_id") || "").trim() || null
 
-    if (personaErr) throw new Error(`Persona lookup failed: ${personaErr.message}`)
+    // Read order: explicit persona_id → default persona → base profile.
+    let persona: { id: string; name: string | null; resume_text: string | null; updated_at: string | null } | null = null
+
+    if (explicitPersonaId) {
+      const { data, error } = await supabase
+        .from("client_personas")
+        .select("id, name, resume_text, updated_at, profile_id")
+        .eq("id", explicitPersonaId)
+        .maybeSingle()
+      if (error) throw new Error(`Persona lookup failed: ${error.message}`)
+      // Authorization check — persona must belong to this profile.
+      if (data && data.profile_id === profileId) {
+        persona = data
+      } else if (data && data.profile_id !== profileId) {
+        console.warn(
+          "[resume-rx/existing-resume] explicit persona_id rejected — does not belong to caller's profile:",
+          JSON.stringify({ profileId, requestedPersonaId: explicitPersonaId })
+        )
+      }
+    }
+
+    // Fallback: default persona
+    if (!persona) {
+      const { data, error } = await supabase
+        .from("client_personas")
+        .select("id, name, resume_text, updated_at")
+        .eq("profile_id", profileId)
+        .eq("is_default", true)
+        .maybeSingle()
+      if (error) throw new Error(`Persona lookup failed: ${error.message}`)
+      if (data) persona = data
+    }
 
     if (persona && typeof persona.resume_text === "string" && persona.resume_text.length > 50) {
       return withCorsJson(req, {

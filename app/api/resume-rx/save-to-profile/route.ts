@@ -105,7 +105,48 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { error: "Session has no final resume text" }, 400)
     }
 
-    // Format date for persona name
+    // Wave 2 personas refactor (2026-05-06): if the request specifies a
+    // target_persona_id and it belongs to this profile, UPDATE that
+    // persona's resume_text. Otherwise (default behavior), CREATE a new
+    // non-default persona named "Resume Rx — DATE" — keeps the original
+    // behavior intact for callers that don't pass target_persona_id, so
+    // nothing breaks for the legacy flow.
+    const targetPersonaId =
+      typeof body?.target_persona_id === "string" && body.target_persona_id.trim().length > 0
+        ? body.target_persona_id.trim()
+        : null
+
+    if (targetPersonaId) {
+      // Verify ownership before update.
+      const { data: existing, error: existErr } = await supabase
+        .from("client_personas")
+        .select("id, name, profile_id, persona_version")
+        .eq("id", targetPersonaId)
+        .maybeSingle()
+      if (existErr) throw new Error(`Persona lookup failed: ${existErr.message}`)
+      if (!existing || existing.profile_id !== profileId) {
+        return withCorsJson(req, { error: "target_persona_id not found for this profile" }, 404)
+      }
+      const { data: updated, error: updErr } = await supabase
+        .from("client_personas")
+        .update({
+          resume_text: session.final_resume_text,
+          persona_version: (existing.persona_version || 1) + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id)
+        .select("id, name")
+        .single()
+      if (updErr) throw new Error(`Persona update failed: ${updErr.message}`)
+      return withCorsJson(
+        req,
+        { ok: true, persona_id: updated.id, persona_name: updated.name, mode: "updated" },
+        200
+      )
+    }
+
+    // Default behavior — create a new non-default persona dated to the
+    // session creation time.
     const date = new Date(session.created_at)
     const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     const persona_name = `Resume Rx — ${dateStr}`
@@ -123,7 +164,11 @@ export async function POST(req: NextRequest) {
 
     if (personaErr) throw new Error(`Persona create failed: ${personaErr.message}`)
 
-    return withCorsJson(req, { ok: true, persona_id: persona.id, persona_name: persona.name }, 201)
+    return withCorsJson(
+      req,
+      { ok: true, persona_id: persona.id, persona_name: persona.name, mode: "created" },
+      201
+    )
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[resume-rx/save-to-profile] error:", msg)

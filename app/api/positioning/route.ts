@@ -33,21 +33,55 @@
 // had a clear SUMMARY header). In both cases a regex would have caught
 // it for free.
 //
-// COLUMN SPLIT — read this before adding any field that touches resume
-// content. client_profiles has TWO columns and they are NOT the same:
-//   - profile_text: the intake-form header — "Name: ...", "Job type: ...",
-//     "Target roles: ...", "Target locations: ...", "Timeline: ...".
-//     Typically 200–400 chars. Does NOT contain bullets, SUMMARY section,
-//     or any resume body content.
-//   - resume_text: the actual resume body. Has SUMMARY / EXPERIENCE /
-//     EDUCATION sections, bullets, dates. Typically 1500–5000 chars.
-// Historically, profile_text contained `Resume:\n<body>` appended; that
-// embedded-resume pattern was stripped when personas landed (so persona
-// switching wouldn't leak the wrong resume through the header). The
-// positioning route was written under the old assumption and used
-// profile_text alone for everything — the source of both Ross bugs above.
-// Any new code reading the resume MUST pass resumeText, not profileText.
-// The LLM prompt sends both, separately labeled (intake header vs resume).
+// COLUMN SPLIT + PERSONAS READ ORDER — read this before adding any field
+// that touches resume content.
+//
+// Storage layout:
+//   - client_profiles.profile_text — the intake-form header ("Name: ...",
+//     "Job type: ...", "Target roles: ...", "Target locations: ...",
+//     "Timeline: ..."). Typically 200–400 chars. Does NOT contain bullets,
+//     SUMMARY section, or any resume body content.
+//   - client_profiles.resume_text — TRANSITIONAL fallback ONLY. Contains
+//     the resume body for legacy zero-persona profiles. Wave 2 of the
+//     personas refactor (2026-05-06) made resume reads go through personas
+//     by default; this column is kept readable for the small remaining
+//     legacy set but no new code should depend on it. WAVE 3 DEFERRED to
+//     Phase 1.5 cleanup will retire writes to this column entirely and
+//     eventually drop it.
+//   - client_personas.resume_text — the canonical resume body, scoped to
+//     a persona. A profile can have multiple personas (e.g., "Marketing"
+//     and "Operations" personas of the same person); is_default=true
+//     marks the persona used when the caller doesn't specify one.
+//
+// Read order (resolveResumeText in app/api/_lib/authProfile.ts):
+//   1. Explicit persona_id passed in request body — that persona's
+//      resume_text. source = "explicit_persona".
+//   2. Default persona (is_default=true) for this profile — that
+//      persona's resume_text. source = "default_persona".
+//   3. client_profiles.resume_text — TRANSITIONAL FALLBACK. Logged
+//      with [authProfile] using base_profile_fallback so we can track
+//      legacy paths.
+//
+// History — three production bugs traced to this column ambiguity:
+//   - Ross Goldstein 2026-05-04: BEFORE bullets pulled from JD instead
+//     of resume; LLM had no resume to rewrite because the route used
+//     the 200-char intake header as "RESUME" in the prompt.
+//   - Ross Goldstein 2026-05-05: "no summary present" claim about a
+//     resume that had a clear SUMMARY header — same root cause.
+//   - Lily Stein 2026-05-06: Job Fit and positioning gave inconsistent
+//     output because Job Fit was persona-aware but positioning was not;
+//     positioning fell back to client_profiles.resume_text which was
+//     stale relative to the active persona's resume.
+//
+// Wave 1 migration (2026-05-06): all 118 active profiles now have at
+// least one default persona. 9 base/default drift cases resolved.
+// Wave 2 (this commit): all resume reads go through personas; positioning,
+// cover letter, and resume-rx routes accept persona_id.
+// Wave 3 (deferred): stop writing to client_profiles.resume_text, drop
+// the column. See Phase 1.5 cleanup list.
+//
+// The LLM prompt sends both intake header (CANDIDATE INTAKE block) and
+// resume body (RESUME block), separately labeled.
 import crypto from "crypto"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
@@ -294,23 +328,31 @@ export async function OPTIONS(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    // IMPORTANT — column split. profileText is the intake-form header
-    // ("Name: ...\nJob type: ...\nTarget roles: ..." — typically <300 chars).
-    // resumeText is the actual resume body (the part with SUMMARY, EXPERIENCE,
-    // EDUCATION sections). Historical bug fixed 2026-05-05: the route was
-    // using profileText alone for everything (extractResumeBullets,
-    // detectExistingSummary, normalizeBulletEdits, the LLM prompt) which
-    // means deterministic detectors saw 200 chars of intake fields where they
-    // expected the full resume — and the LLM had no real resume bullets to
-    // rewrite, so it fabricated. See top-of-file architectural pattern note.
-    const { profileId, profileText, resumeText } = await getAuthedProfileText(req)
-
+    // Read body first so we can pass persona_id to getAuthedProfileText.
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
+    const personaIdFromBody =
+      typeof body?.persona_id === "string" && body.persona_id.trim().length > 0
+        ? body.persona_id.trim()
+        : null
 
     if (!jobText) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
+
+    // IMPORTANT — column split. profileText is the intake-form header
+    // ("Name: ...\nJob type: ...\nTarget roles: ..." — typically <300 chars).
+    // resumeText is the actual resume body, resolved from a persona via
+    // getAuthedProfileText's read order (explicit persona → default persona →
+    // base profile). See top-of-file architectural pattern note for history.
+    const {
+      profileId,
+      profileText,
+      resumeText,
+      activePersonaId,
+    } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
+    // personaSource is logged inside resolveResumeText when it falls back
+    // to base_profile_fallback — no need to log again at the route level.
 
     // Deterministic keyword coverage. Bullets live in the resume body, not
     // the intake header, so this reads resumeText.
@@ -347,6 +389,11 @@ export async function POST(req: Request) {
         id: profileId || MISSING,
         text: profileText || MISSING,
         resume: resumeText || MISSING,
+        // Including activePersonaId in the fingerprint key means switching
+        // persona busts the cache automatically — previously the cache was
+        // persona-blind and a Job Fit run against persona A would hit the
+        // cache for a positioning run against persona B (Lily Stein bug).
+        persona_id: activePersonaId || MISSING,
       },
       system: {
         positioning_prompt_version: POSITIONING_PROMPT_VERSION,
