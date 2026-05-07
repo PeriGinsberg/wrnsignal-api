@@ -1354,14 +1354,10 @@ const TOOL_ALIASES: Record<string, string[]> = {
   kotlin: ["kotlin"],
 }
 
-const NEVER_CORE_KEYS = new Set([
-  "clinical_patient_work",
-  "drafting_documentation",
-  "communications_writing",
-  "consumer_research",
-  "analysis_reporting",
-  "strategy_problem_solving",
-])
+// NEVER_CORE_KEYS was a hard-coded set of requirement keys that got auto-
+// demoted to "supporting" in selectBestJobUnits() regardless of context.
+// Removed 2026-05-07 (Fix B) — see selectBestJobUnits comment for history.
+// Replaced with downstream weighting in scoring.ts (supporting = 0.5 × core).
 
 const FALLBACK_JOB_RULES: Array<{
   key: string
@@ -2870,16 +2866,25 @@ function inferTargetFamiliesFromTags(tags: FunctionTag[]): JobFamily[] {
 }
 
 function selectBestJobUnits(units: JobRequirementUnit[]): JobRequirementUnit[] {
+  // Fix B (2026-05-07): the NEVER_CORE_KEYS blanket demotion was removed
+  // here. It was auto-downgrading analysis_reporting, drafting_documentation,
+  // communications_writing, consumer_research, strategy_problem_solving, and
+  // clinical_patient_work to supporting regardless of context — but for jobs
+  // where these ARE the core function (content writers, marketing analysts,
+  // clinical roles, etc.), the auto-demotion was eating the actual core
+  // requirements. Caused 37% of prod runs to have ALL requirements marked
+  // supporting, which broke coreCoverageCount-gated floor rules in scoring.
+  // Replacement: scoring.ts now weights supporting at 0.5 × core, so a
+  // strength-10 supporting still counts but doesn't dominate a strength-10
+  // core. Net effect: requirements keep the requiredness assigned by
+  // detectRequiredness() at extraction time, with no across-the-board
+  // override at selection time.
   return Array.from(
     new Map(
       units
         .sort((a, b) => b.strength - a.strength)
         .map((u) => [u.key, u] as const)
     ).values()
-  ).map((u) =>
-    NEVER_CORE_KEYS.has(u.key)
-      ? { ...u, requiredness: "supporting" as const }
-      : u
   )
 }
 

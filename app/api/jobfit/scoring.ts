@@ -836,11 +836,22 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
   const adequateCoverageCount = coverage.filter((c) => c.adequate).length
   const coreCoverageCount = coverage.filter((c) => c.adequate && c.jobUnit.requiredness === "core").length
 
+  // Fix B (2026-05-07): weighted core-coverage contribution. Pairs with the
+  // removal of NEVER_CORE_KEYS blanket demotion in extract.ts. Supporting
+  // requirements still earn score (0.5 × core) so a strength-10 supporting
+  // contributes meaningfully but a strength-10 core dominates.
+  // Replaces the prior all-or-nothing inversion where supporting earned
+  // zero coverage points and 37% of prod runs had ALL their requirements
+  // marked supporting (so no coverage-points fired at all).
+  const weightedCoreCoverage = coverage
+    .filter((c) => c.adequate)
+    .reduce((s, c) => s + (c.jobUnit.requiredness === "core" ? 1.0 : 0.5), 0)
+
 base += Math.min(24, directCount * 7)
 base += Math.min(8, adjacentCount * 2)
 base += Math.min(4, toolCount * 2)
 base += Math.min(8, adequateCoverageCount)
-base += Math.min(8, coreCoverageCount)
+base += Math.min(8, weightedCoreCoverage)
 
 // Training program bonus — when the job is a training program (e.g. wealth advisor
 // development program, FINRA-sponsored entry level), the JD typically has few
