@@ -4287,7 +4287,12 @@ export function extractProfileSignals(
   const baseFamilies = inferTargetFamiliesFromTags(built.functionTags)
 
   const base: StructuredProfileSignals = {
-    targetFamilies: baseFamilies.length ? baseFamilies : ["Sales"],
+    // Was ["Sales"] — silent assertion that any sparse-resume candidate
+    // is targeting Sales. Now [] so the family-mismatch penalty
+    // (scoring.ts:802 checks length > 0) and GATE_FIELD_MISMATCH gate
+    // (constraints.ts:67 checks length > 0) treat "no family signal" as
+    // honestly unknown rather than as an asserted Sales preference.
+    targetFamilies: baseFamilies.length ? baseFamilies : [],
     locationPreference: { mode: "unclear", constrained: false, allowedCities: undefined },
     constraints: defaultConstraintsFromText(profileTextRaw, wantsInternship),
     tools: extractedTools,
