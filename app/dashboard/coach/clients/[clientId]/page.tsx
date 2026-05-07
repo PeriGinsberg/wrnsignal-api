@@ -13,24 +13,14 @@ import {
   eyebrow,
   label,
 } from "../../../../../lib/dashboard-theme"
+import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
 
 type Tab = "tracker" | "source" | "history" | "analysis"
 
-type ClientProfile = {
-  id: string
-  name: string | null
-  email: string | null
-  target_roles: string | null
-  job_type: string | null
-  timeline: string | null
-  profile_complete: boolean
-}
-
-type ClientPersona = {
-  id: string
-  name: string
-  is_default: boolean
-}
+// The Profile & Personas tab needs the full editable shape; other tabs
+// only read .name / .email / .id / .is_default — all subsets of these.
+type ClientProfile = ClientProfileFull
+type ClientPersona = ClientPersonaFull
 
 type CoachRec = {
   id: string
@@ -190,10 +180,12 @@ export default function CoachClientPage() {
       setCoachRecs(trackerData.recommendations || [])
       setHistoryRuns(trackerData.history || [])
 
-      // Default to first persona
+      // Default to first ACTIVE persona for the Source-a-Job selector.
+      // Archived personas should never be auto-selected for new analyses.
       const personas = profileData.personas || []
-      if (personas.length > 0 && !selectedPersona) {
-        const def = personas.find((p: ClientPersona) => p.is_default) || personas[0]
+      const activePersonas = personas.filter((p: ClientPersona) => !p.archived_at)
+      if (activePersonas.length > 0 && !selectedPersona) {
+        const def = activePersonas.find((p: ClientPersona) => p.is_default) || activePersonas[0]
         setSelectedPersona(def.id)
       }
     } catch {
@@ -277,7 +269,10 @@ export default function CoachClientPage() {
 
   function clearSourceForm() {
     setSourceUrl(''); setSourceCompany(''); setSourceTitle(''); setSourceJD('')
-    setSelectedPersona(clientPersonas.find(p => p.is_default)?.id || clientPersonas[0]?.id || '')
+    {
+      const active = clientPersonas.filter(p => !p.archived_at)
+      setSelectedPersona(active.find(p => p.is_default)?.id || active[0]?.id || '')
+    }
     setRunResult(null); setShowAnnotation(false); setSendSuccess(false)
     setAnnPriority('this_week'); setAnnAction('apply'); setAnnNote(''); setAnnApplyBy('')
     setRunError('')
@@ -874,11 +869,11 @@ export default function CoachClientPage() {
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
               <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
 
-              {clientPersonas.length > 0 && (
+              {clientPersonas.filter(p => !p.archived_at).length > 0 && (
                 <div style={{ marginBottom: 18 }}>
                   <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 10 }}>CLIENT PERSONA</span>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {clientPersonas.map((p) => (
+                    {clientPersonas.filter(p => !p.archived_at).map((p) => (
                       <label key={p.id} style={{
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "10px 16px", borderRadius: 12, cursor: "pointer",
@@ -1247,59 +1242,14 @@ export default function CoachClientPage() {
       )}
 
       {/* TAB 4 — Profile & Personas */}
-      {tab === "analysis" && (
-        <div>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>CLIENT PROFILE & PERSONAS</div>
-          {clientProfile && (
-            <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ height: 3, background: "linear-gradient(90deg,#51ADE5,#218C8C,#FEB06A)", margin: "-24px -24px 20px", borderRadius: "18px 18px 0 0" }} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                {[
-                  { lbl: "Name", val: clientProfile.name },
-                  { lbl: "Email", val: clientProfile.email },
-                  { lbl: "Target Roles", val: clientProfile.target_roles },
-                  { lbl: "Job Type", val: clientProfile.job_type },
-                  { lbl: "Timeline", val: clientProfile.timeline },
-                  { lbl: "Profile Complete", val: clientProfile.profile_complete ? "Yes" : "No" },
-                ].map(({ lbl, val }) => (
-                  <div key={lbl}>
-                    <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 3 }}>{lbl.toUpperCase()}</div>
-                    <div style={{ fontSize: 13, color: val ? T.TEXT : T.DIM }}>{val || "—"}</div>
-                  </div>
-                ))}
-              </div>
-              <button style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10, marginTop: 20, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                Suggest edit
-              </button>
-            </div>
-          )}
-
-          {clientPersonas.length > 0 && (
-            <div>
-              <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 12 }}>PERSONAS</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {clientPersonas.map((p) => (
-                  <div key={p.id} style={{ ...card, padding: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{p.name}</span>
-                      {p.is_default && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
-                          color: T.WRN_ORANGE, background: T.WARNING_BG, padding: "3px 8px", borderRadius: 6,
-                        }}>
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <button style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", borderRadius: 8, marginTop: 14, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                      Suggest edit
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {tab === "analysis" && clientProfile && (
+        <ProfilePersonasTab
+          clientId={clientId}
+          initialProfile={clientProfile}
+          initialPersonas={clientPersonas}
+          getToken={getToken}
+          onChange={loadAll}
+        />
       )}
     </div>
   )

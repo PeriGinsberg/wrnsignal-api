@@ -135,11 +135,10 @@ export default function DashboardPage() {
   // UI state
   const [profileEditOpen, setProfileEditOpen] = useState(false)
   const [editProfile, setEditProfile] = useState<Profile | null>(null)
-  const [personaEditId, setPersonaEditId] = useState<string | null>(null)
-  const [editPersona, setEditPersona] = useState<Persona | null>(null)
-  const [addPersonaOpen, setAddPersonaOpen] = useState(false)
-  const [newPersonaName, setNewPersonaName] = useState("")
-  const [newPersonaResume, setNewPersonaResume] = useState("")
+  // Persona self-service state was removed for the Cohort 1 pilot
+  // (decision 2026-05-07). Personas display read-only here; coaches
+  // manage them on the coach client view. Restore from git history when
+  // re-enabling client self-service.
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [resumeUploading, setResumeUploading] = useState(false)
@@ -247,78 +246,11 @@ export default function DashboardPage() {
     setSaving(false)
   }
 
-  // --- Persona actions ---
-  function openPersonaEdit(p: Persona) {
-    setEditPersona({ ...p })
-    setPersonaEditId(p.id)
-    setAddPersonaOpen(false)
-  }
-
-  async function savePersona() {
-    if (!editPersona) return
-    setSaving(true)
-    const token = await getToken()
-    if (!token) { setSaving(false); return }
-    const res = await fetch(`/api/personas/${editPersona.id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editPersona.name, resume_text: editPersona.resume_text }),
-    })
-    if (res.ok) {
-      await loadAll()
-      setPersonaEditId(null)
-      setEditPersona(null)
-      setToast("Persona updated")
-    }
-    setSaving(false)
-  }
-
-  async function setDefault(id: string) {
-    const token = await getToken()
-    if (!token) return
-    await fetch(`/api/personas/${id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ is_default: true }),
-    })
-    loadAll()
-  }
-
-  async function deletePersona(id: string) {
-    const token = await getToken()
-    if (!token) return
-    await fetch(`/api/personas/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    setPersonaEditId(null)
-    setEditPersona(null)
-    await loadAll()
-    setToast("Persona deleted")
-  }
-
-  async function createPersona() {
-    if (!newPersonaName.trim()) return
-    setSaving(true)
-    const token = await getToken()
-    if (!token) { setSaving(false); return }
-    const res = await fetch("/api/personas", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newPersonaName.trim(), resume_text: newPersonaResume }),
-    })
-    if (res.ok) {
-      await loadAll()
-      setAddPersonaOpen(false)
-      setNewPersonaName("")
-      setNewPersonaResume("")
-      setToast("Persona created")
-    } else {
-      const j = await res.json().catch(() => null)
-      setError(j?.error || "Create failed")
-    }
-    setSaving(false)
-  }
+  // Persona mutation actions were removed for the Cohort 1 pilot
+  // (decision 2026-05-07). Personas now display read-only on this page;
+  // coaches manage them via /dashboard/coach/clients/[id] (Profile &
+  // Personas tab). Restore from git history when re-enabling client
+  // self-service.
 
   async function requestRefund() {
     if (refunding) return
@@ -375,7 +307,7 @@ export default function DashboardPage() {
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
   if (error && !profile) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
 
-  const atLimit = personas.length >= 2
+  // atLimit removed — pilot disables client-side persona create.
 
   return (
     <div>
@@ -641,184 +573,40 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN — Personas */}
+        {/* RIGHT COLUMN — Personas (read-only during pilot) */}
         <div style={{ flex: 1 }}>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 10 }}>PERSONAS</div>
+          <p style={{ fontSize: 12, color: T.DIM, marginBottom: 14, lineHeight: "18px" }}>
+            Your coach manages your personas during the pilot.
+          </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {personas.map((p) => {
-              const isEditing = personaEditId === p.id
-              return (
-                <div key={p.id} style={card}>
-                  <div style={{ height: 3, background: T.GRAD_PERSONA }} />
-                  <div style={{ padding: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 18, fontWeight: 950, letterSpacing: -0.3, color: T.TEXT }}>{p.name}</span>
-                      {p.is_default && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
-                          color: T.WRN_ORANGE, background: T.WARNING_BG, padding: "3px 8px", borderRadius: 6,
-                        }}>
-                          Default
-                        </span>
-                      )}
-                      <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>Version {p.persona_version}</span>
-                    </div>
-
-                    {!isEditing && (
-                      <>
-                        <p style={{ fontSize: 13, color: T.MUTED, marginTop: 10, lineHeight: "20px" }}>
-                          {p.resume_text
-                            ? p.resume_text.slice(0, 200) + (p.resume_text.length > 200 ? "..." : "")
-                            : "No resume text yet"}
-                        </p>
-                        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                          <button onClick={() => openPersonaEdit(p)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                            Edit
-                          </button>
-                          {!p.is_default && (
-                            <button onClick={() => setDefault(p.id)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10 }}>
-                              Set as Default
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Persona edit form */}
-                  {isEditing && editPersona && (
-                    <div style={{ borderTop: `1px solid ${T.BORDER_SOFT}`, padding: 24 }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        <div>
-                          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONA NAME</span>
-                          <input
-                            type="text"
-                            style={input}
-                            value={editPersona.name}
-                            onChange={(e) => setEditPersona({ ...editPersona, name: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
-                          <button
-                            type="button"
-                            onClick={() => handleResumeUpload((text) => setEditPersona({ ...editPersona!, resume_text: text }))}
-                            disabled={resumeUploading}
-                            style={{
-                              ...btnSecondary,
-                              width: "100%",
-                              marginBottom: 8,
-                              fontSize: 12,
-                              padding: "10px 14px",
-                              borderRadius: 10,
-                              color: T.WRN_BLUE,
-                              borderColor: "rgba(81,173,229,0.3)",
-                              opacity: resumeUploading ? 0.5 : 1,
-                            }}
-                          >
-                            {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
-                          </button>
-                          <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
-                          <textarea
-                            style={{ ...textarea, minHeight: 260 }}
-                            value={editPersona.resume_text}
-                            onChange={(e) => setEditPersona({ ...editPersona, resume_text: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                        <button onClick={savePersona} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.5 : 1 }}>
-                          {saving ? "Saving..." : "Save Changes"}
-                        </button>
-                        <button onClick={() => { setPersonaEditId(null); setEditPersona(null) }} style={{ ...btnSecondary, fontSize: 13 }}>Cancel</button>
-                      </div>
-                      {/* Delete link — hide if this is the only persona and it's default */}
-                      {!(p.is_default && personas.length === 1) && (
-                        <button
-                          onClick={() => deletePersona(p.id)}
-                          style={{ background: "none", border: "none", color: T.ERROR, fontSize: 12, cursor: "pointer", marginTop: 16, padding: 0, opacity: 0.7 }}
-                        >
-                          Delete this persona
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-
-            {personas.length === 0 && !addPersonaOpen && (
-              <p style={{ color: T.MUTED, fontSize: 13 }}>No personas yet. Create one to get started.</p>
-            )}
-
-            {/* Add persona form */}
-            {addPersonaOpen && (
-              <div style={card}>
+            {personas.map((p) => (
+              <div key={p.id} style={card}>
                 <div style={{ height: 3, background: T.GRAD_PERSONA }} />
                 <div style={{ padding: 24 }}>
-                  <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>NEW PERSONA</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div>
-                      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONA NAME</span>
-                      <input
-                        type="text"
-                        style={input}
-                        placeholder="e.g. Sales, Brand Marketing"
-                        value={newPersonaName}
-                        onChange={(e) => setNewPersonaName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
-                      <button
-                        type="button"
-                        onClick={() => handleResumeUpload((text) => setNewPersonaResume(text))}
-                        disabled={resumeUploading}
-                        style={{
-                          ...btnSecondary,
-                          width: "100%",
-                          marginBottom: 8,
-                          fontSize: 12,
-                          padding: "10px 14px",
-                          borderRadius: 10,
-                          color: T.WRN_BLUE,
-                          borderColor: "rgba(81,173,229,0.3)",
-                          opacity: resumeUploading ? 0.5 : 1,
-                        }}
-                      >
-                        {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
-                      </button>
-                      <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
-                      <textarea
-                        style={{ ...textarea, minHeight: 200 }}
-                        placeholder="Paste your resume text here..."
-                        value={newPersonaResume}
-                        onChange={(e) => setNewPersonaResume(e.target.value)}
-                      />
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 18, fontWeight: 950, letterSpacing: -0.3, color: T.TEXT }}>{p.name}</span>
+                    {p.is_default && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
+                        color: T.WRN_ORANGE, background: T.WARNING_BG, padding: "3px 8px", borderRadius: 6,
+                      }}>
+                        Default
+                      </span>
+                    )}
+                    <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>Version {p.persona_version}</span>
                   </div>
-                  <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                    <button onClick={createPersona} disabled={saving || !newPersonaName.trim()} style={{ ...btnPrimary, opacity: saving || !newPersonaName.trim() ? 0.5 : 1 }}>
-                      {saving ? "Creating..." : "Create Persona"}
-                    </button>
-                    <button onClick={() => { setAddPersonaOpen(false); setNewPersonaName(""); setNewPersonaResume("") }} style={{ ...btnSecondary, fontSize: 13 }}>
-                      Cancel
-                    </button>
-                  </div>
+                  <p style={{ fontSize: 13, color: T.MUTED, marginTop: 10, lineHeight: "20px" }}>
+                    {p.resume_text
+                      ? p.resume_text.slice(0, 200) + (p.resume_text.length > 200 ? "..." : "")
+                      : "No resume text yet"}
+                  </p>
                 </div>
               </div>
-            )}
+            ))}
 
-            {/* Add persona button */}
-            {!addPersonaOpen && (
-              <button
-                onClick={() => { setAddPersonaOpen(true); setPersonaEditId(null) }}
-                disabled={atLimit}
-                title={atLimit ? "You've reached the 2 persona limit" : undefined}
-                style={{ ...btnPrimary, opacity: atLimit ? 0.3 : 1, cursor: atLimit ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
-              >
-                Add New Persona
-              </button>
+            {personas.length === 0 && (
+              <p style={{ color: T.MUTED, fontSize: 13 }}>No personas yet — your coach will set one up.</p>
             )}
           </div>
         </div>

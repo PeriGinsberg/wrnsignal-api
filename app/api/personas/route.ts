@@ -103,56 +103,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Client-self-service persona create is DISABLED for the Cohort 1 pilot
+// (decision 2026-05-07). Coaches manage their clients' personas via
+// /api/coach/clients/[clientId]/personas. Re-enable post-Cohort 1 if
+// product decides to give clients direct persona control again.
 export async function POST(req: NextRequest) {
-  try {
-    const { userId, email } = await getAuthedUser(req)
-    const profileId = await getProfileId(userId, email)
-    const supabase = getSupabaseAdmin()
-
-    // Enforce max 2
-    const { count, error: countErr } = await supabase
-      .from("client_personas")
-      .select("id", { count: "exact", head: true })
-      .eq("profile_id", profileId)
-
-    if (countErr) throw new Error(`Persona count failed: ${countErr.message}`)
-    if ((count ?? 0) >= 2) {
-      return withCorsJson(req, { ok: false, error: "Maximum 2 personas allowed" }, 403)
-    }
-
-    const body = await req.json().catch(() => null)
-    if (!body || typeof body !== "object") {
-      return withCorsJson(req, { error: "Invalid JSON body" }, 400)
-    }
-
-    const name = String(body.name || "").trim()
-    if (!name) return withCorsJson(req, { error: "name is required" }, 400)
-
-    const resume_text = String(body.resume_text || "").trim()
-    const isFirst = (count ?? 0) === 0
-    const display_order = isFirst ? 1 : 2
-
-    const { data, error } = await supabase
-      .from("client_personas")
-      .insert({
-        profile_id: profileId,
-        name,
-        resume_text,
-        is_default: isFirst,
-        display_order,
-      })
-      .select(PERSONA_SELECT)
-      .single()
-
-    if (error) throw new Error(`Persona create failed: ${error.message}`)
-
-    return withCorsJson(req, { ok: true, persona: data }, 201)
-  } catch (err: any) {
-    const msg = err?.message || String(err)
-    const lower = msg.toLowerCase()
-    const status = lower.includes("unauthorized") ? 401
-      : lower.includes("not found") ? 404
-      : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
-  }
+  return withCorsJson(req, {
+    ok: false,
+    error: "Persona self-service is disabled during pilot — your coach manages your personas.",
+  }, 410)
 }

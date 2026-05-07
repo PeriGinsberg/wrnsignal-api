@@ -170,6 +170,13 @@ export async function POST(req: NextRequest) {
         profile_text: profileText,
         profile_complete: true,
         active: true,
+        // Migration 20260507_profile_personas_pilot — first-class columns
+        // for the three coaching notes captured here. Previously they were
+        // only embedded inside profile_text, which made them uneditable
+        // from the Profile & Personas tab.
+        coach_notes_avoid: hardConstraints,
+        coach_notes_strengths: strengths,
+        coach_notes_concerns: concerns,
       })
       .select("id")
       .single()
@@ -183,6 +190,27 @@ export async function POST(req: NextRequest) {
     }
 
     createdProfileId = newProfile.id
+
+    // Create the initial persona row from the resume so the new client's
+    // Profile & Personas tab shows it as "Primary" out of the gate. Mirrors
+    // the rule used by scripts/_backfill-personas.ts for existing clients:
+    // skip when resume_text is empty.
+    if (resumeText && resumeText.trim().length > 0) {
+      const personaName = `${firstName}'s Resume`
+      const { error: personaErr } = await supabase
+        .from("client_personas")
+        .insert({
+          profile_id: createdProfileId,
+          name: personaName,
+          resume_text: resumeText,
+          is_default: true,
+          display_order: 1,
+        })
+      if (personaErr) {
+        // Non-fatal: profile is usable; coach can re-add via Profile & Personas tab
+        console.warn("[create-client] Initial persona insert failed:", personaErr.message)
+      }
+    }
 
     // ── STEP 6: Link client to coach ──
     const { error: linkErr } = await supabase
