@@ -1,8 +1,7 @@
 "use client"
 
-// Persona self-edit is hidden during the Cohort 1 pilot (decision
-// 2026-05-07). See app/dashboard/personas/page.tsx for context.
-// Restore from git history when re-enabling client self-service.
+// Standalone persona-edit page superseded by the persona section on
+// /dashboard (My Account). See app/dashboard/personas/page.tsx header.
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"

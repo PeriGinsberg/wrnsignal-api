@@ -1,19 +1,33 @@
 "use client"
 
-// Coach Home / My Clients landing page.
-// Sprint 2 build (2026-05-07). Pulls from /api/coach/home which combines:
-//   - greeting (coach.firstName + today's date)
-//   - metrics tiles (active clients, prospects placeholder, phases placeholder)
-//   - Requires Action list (heuristic-driven, see /api/coach/home for rules)
-//   - per-client cards with "since last visit" indicator
+// Coach Home / My Clients landing page — redesign 2026-05-08.
+// Pulls from /api/coach/home which combines greeting + per-client stats +
+// requiresAction items. Top-level metrics are aggregated client-side from
+// the per-client stats array (no server-side aggregation needed).
+//
+// Sections, top to bottom:
+//   A. Header strip — date eyebrow + "Welcome back, {firstName}"
+//   B. Metrics bar — 8 tiles (4×2 grid). 6 real, 2 placeholders.
+//   C. Today's schedule — card with calendar icon, placeholder body.
+//   D. Requires action — card with bell icon + count, collapsible (5 → all).
+//   E. My clients — card with users icon + count + Create/Invite buttons,
+//                   single-row client layout, collapsible (5 → all).
+//
+// Visual style: dark theme adapted from the locked design. Cards use
+// T.CARD bg + T.BORDER_SOFT; avatars use translucent colored bg + brighter
+// text (palette of 5, deterministic by hash of client name).
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import CreateClientModal from "./CreateClientModal"
 import {
-  T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, headline, label,
+  T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
+
+// ──────────────────────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────────────────────
 
 type CoachHome = {
   ok: boolean
@@ -33,6 +47,8 @@ type CoachClient = {
   stats: {
     applications: number
     interviewing: number
+    offers: number
+    rejected: number
     pending_recs: number
     interview_rate: number
   }
@@ -56,11 +72,42 @@ type ActionItem = {
   days_elapsed: number
 }
 
-const ATTENTION_COLOR: Record<string, string> = {
-  high: "#f87171",
-  medium: "#FEB06A",
-  low: "#4ade80",
+// ──────────────────────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────────────────────
+
+const RULE_LABEL: Record<ActionItem["kind"], string> = {
+  no_login: "Inactive",
+  rec_pending_review: "Awaiting review",
+  moved_interviewing: "Status change",
+  moved_rejected: "Rejection",
+  offer_no_followup: "Offer",
+  poor_fit_no_rec: "Low-fit app",
 }
+const RULE_COLOR: Record<ActionItem["kind"], string> = {
+  no_login: "#FEB06A",
+  rec_pending_review: "#51ADE5",
+  moved_interviewing: "#a78bfa",
+  moved_rejected: "#E87070",
+  offer_no_followup: "#4ade80",
+  poor_fit_no_rec: "#FBBF24",
+}
+
+// Avatar palette — 5 colors, dark-theme adapted (translucent bg + brighter text).
+// Picked by deterministic djb2 hash of client name → mod 5.
+const AVATAR_PALETTE = [
+  { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },  // blue
+  { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },  // amber
+  { bg: "rgba(167,139,250,0.18)", text: "#C8B6F8" },  // purple
+  { bg: "rgba(244,114,182,0.18)", text: "#F4ADC9" },  // pink
+  { bg: "rgba(74,222,128,0.18)",  text: "#9CE7B5" },  // green
+] as const
+
+const COLLAPSED_LIMIT = 5
+
+// ──────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────
 
 async function getToken() {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -80,7 +127,62 @@ async function authFetch(url: string, opts: RequestInit = {}) {
   })
 }
 
-function StatusBadge({ status }: { status: string | null }) {
+function todayLabel() {
+  return new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+}
+
+// djb2-style string hash, lightly tweaked. Used to pick a palette index
+// deterministically for a given client name (so the same name always gets
+// the same color across renders).
+function hashIndex(s: string, mod: number): number {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i)
+  return Math.abs(h) % mod
+}
+
+function initialsOf(name: string | null, fallback: string | null): string {
+  const src = (name && name.trim()) || (fallback && fallback.trim()) || "?"
+  const parts = src.split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return parts[0].slice(0, 2).toUpperCase()
+}
+
+// ──────────────────────────────────────────────────────────────
+// Inline icons (Tabler-style outline, 1.5px stroke, currentColor)
+// ──────────────────────────────────────────────────────────────
+
+const IconBell = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M10 5a2 2 0 1 1 4 0 7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+    <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+  </svg>
+)
+
+const IconUsers = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+    <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
+  </svg>
+)
+
+const IconCalendar = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+    <path d="M16 3v4" />
+    <path d="M8 3v4" />
+    <path d="M4 11h16" />
+    <path d="M11 15h1" />
+    <path d="M12 15v3" />
+  </svg>
+)
+
+// ──────────────────────────────────────────────────────────────
+// Reusable atoms
+// ──────────────────────────────────────────────────────────────
+
+function StatusPill({ status }: { status: string | null }) {
   const s = status || "active"
   const styles: Record<string, { bg: string; color: string }> = {
     active: { bg: "rgba(74,222,128,0.12)", color: "#4ade80" },
@@ -90,69 +192,358 @@ function StatusBadge({ status }: { status: string | null }) {
   const st = styles[s] || styles.active
   return (
     <span style={{
-      fontSize: 10, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-      background: st.bg, color: st.color, padding: "3px 10px", borderRadius: 999,
+      fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+      background: st.bg, color: st.color, padding: "2px 8px", borderRadius: 999,
     }}>
       {s}
     </span>
   )
 }
 
-// Mirror tracker stats-bar tile style (from app/dashboard/tracker/page.tsx
-// lines 459-474). Big number + small label, hoverable card frame.
-function MetricTile({
-  value, label, color, subtitle, onClick,
+function CountPill({ n, color = T.WRN_ORANGE }: { n: number; color?: string }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 900, letterSpacing: 0.4,
+      color: "#04060F", background: color,
+      padding: "2px 8px", borderRadius: 999, marginLeft: 8,
+    }}>
+      {n}
+    </span>
+  )
+}
+
+function Avatar({ name, email }: { name: string | null; email: string | null }) {
+  const seed = (name || email || "?").toLowerCase()
+  const palette = AVATAR_PALETTE[hashIndex(seed, AVATAR_PALETTE.length)]
+  return (
+    <div style={{
+      width: 28, height: 28, borderRadius: "50%",
+      background: palette.bg, color: palette.text,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 11, fontWeight: 900, letterSpacing: 0.3,
+      flexShrink: 0,
+    }}>
+      {initialsOf(name, email)}
+    </div>
+  )
+}
+
+// Section wrapper: card + header (icon + title + optional count + slot for actions).
+function Section({
+  icon, title, count, headerRight, children,
 }: {
-  value: string | number
-  label: string
-  color?: string
-  subtitle?: string
-  onClick?: () => void
+  icon: React.ReactNode
+  title: string
+  count?: number
+  headerRight?: React.ReactNode
+  children: React.ReactNode
 }) {
   return (
-    <div
-      onClick={onClick}
-      style={{
-        background: T.CARD,
-        border: `1px solid ${T.BORDER_SOFT}`,
-        borderRadius: 12,
-        padding: "14px 16px",
-        cursor: onClick ? "pointer" : "default",
-      }}
-    >
-      <div style={{ fontSize: 28, fontWeight: 900, color: color || T.TEXT }}>{value}</div>
-      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", color: T.MUTED, marginTop: 4 }}>
-        {label}
+    <div style={{ ...card, padding: 20, marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <span style={{ display: "inline-flex", color: T.WRN_ORANGE }}>{icon}</span>
+        <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>{title}</span>
+        {typeof count === "number" && count > 0 && <CountPill n={count} />}
+        {headerRight && <span style={{ marginLeft: "auto" }}>{headerRight}</span>}
       </div>
-      {subtitle && (
-        <div style={{ fontSize: 10, color: T.DIM, marginTop: 4, fontStyle: "italic" }}>{subtitle}</div>
+      {children}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// Section A — Header strip
+// ──────────────────────────────────────────────────────────────
+
+function HeaderStrip({ firstName }: { firstName: string }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 4 }}>{todayLabel().toUpperCase()}</div>
+      <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
+        Welcome back, <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{firstName}</span>
+      </h1>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// Section B — Metrics bar (8 tiles, 4×2 grid)
+// ──────────────────────────────────────────────────────────────
+
+type Tile = {
+  label: string
+  value: string | number
+  color?: string
+  subtitle?: string
+  muted?: boolean
+}
+
+function MetricTile({ tile }: { tile: Tile }) {
+  return (
+    <div style={{
+      background: T.CARD,
+      border: `1px solid ${T.BORDER_SOFT}`,
+      borderRadius: 12,
+      padding: "14px 16px",
+      opacity: tile.muted ? 0.55 : 1,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.MUTED }}>
+        {tile.label}
+      </div>
+      <div style={{ fontSize: 24, fontWeight: 500, color: tile.color || T.TEXT, marginTop: 6, lineHeight: 1.2 }}>
+        {tile.value}
+      </div>
+      {tile.subtitle && (
+        <div style={{
+          fontSize: 10, color: T.DIM, marginTop: 4,
+          fontStyle: tile.muted ? "italic" : "normal",
+        }}>
+          {tile.subtitle}
+        </div>
       )}
     </div>
   )
 }
 
-const RULE_LABEL: Record<ActionItem["kind"], string> = {
-  no_login: "Inactive",
-  rec_pending_review: "Awaiting review",
-  moved_interviewing: "Status change",
-  moved_rejected: "Rejection",
-  offer_no_followup: "Offer",
-  poor_fit_no_rec: "Low-fit app",
-}
-const RULE_COLOR: Record<ActionItem["kind"], string> = {
-  no_login: "#FEB06A",
-  rec_pending_review: "#51ADE5",
-  moved_interviewing: "#a78bfa",
-  moved_rejected: "#E87070",
-  offer_no_followup: "#4ade80",
-  poor_fit_no_rec: "#FBBF24",
+function MetricsBar({ tiles }: { tiles: Tile[] }) {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: 10,
+      marginBottom: 24,
+    }}>
+      {tiles.map((t) => <MetricTile key={t.label} tile={t} />)}
+    </div>
+  )
 }
 
-function todayLabel() {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric",
-  })
+// ──────────────────────────────────────────────────────────────
+// Section C — Today's schedule (placeholder)
+// ──────────────────────────────────────────────────────────────
+
+function TodaysScheduleSection() {
+  return (
+    <Section icon={<IconCalendar />} title="Today's schedule">
+      <div style={{
+        padding: 20,
+        background: "rgba(255,255,255,0.03)",
+        border: `1px dashed ${T.BORDER_SOFT}`,
+        borderRadius: 10,
+        textAlign: "center",
+      }}>
+        <p style={{ fontSize: 13, color: T.MUTED, fontStyle: "italic", margin: 0 }}>
+          Calendar integration coming soon
+        </p>
+        <p style={{ fontSize: 12, color: T.DIM, marginTop: 6, marginBottom: 0 }}>
+          Sessions, prep blocks, and mock interviews will appear here
+        </p>
+      </div>
+    </Section>
+  )
 }
+
+// ──────────────────────────────────────────────────────────────
+// Section D — Requires action (collapsible)
+// ──────────────────────────────────────────────────────────────
+
+function ActionRow({ item, onClick }: { item: ActionItem; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "12px 14px",
+        background: "rgba(255,255,255,0.025)",
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 10,
+        cursor: "pointer",
+      }}
+    >
+      <span style={{
+        fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+        color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
+        padding: "3px 8px", borderRadius: 6, flexShrink: 0,
+      }}>
+        {RULE_LABEL[item.kind]}
+      </span>
+      <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
+      <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
+    </div>
+  )
+}
+
+function RequiresActionSection({ items, onItemClick, onShowAll }: {
+  items: ActionItem[]
+  onItemClick: (clientId: string) => void
+  onShowAll: () => void
+}) {
+  const visible = items.slice(0, COLLAPSED_LIMIT)
+  const hasMore = items.length > COLLAPSED_LIMIT
+
+  return (
+    <Section icon={<IconBell />} title="Requires action" count={items.length}>
+      {items.length === 0 ? (
+        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing requires your attention right now.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {visible.map((item) => (
+            <ActionRow key={item.id} item={item} onClick={() => onItemClick(item.client_profile_id)} />
+          ))}
+          {hasMore && (
+            <button
+              onClick={onShowAll}
+              style={{
+                background: "none", border: "none", color: T.WRN_ORANGE,
+                fontSize: 12, fontWeight: 700, cursor: "pointer",
+                padding: "8px 0 0", textAlign: "left", marginTop: 4,
+              }}
+            >
+              Show all {items.length} →
+            </button>
+          )}
+        </div>
+      )}
+    </Section>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// Section E — My clients (collapsible single-row layout)
+// ──────────────────────────────────────────────────────────────
+
+function MiniCell({ label, value, color }: { label: string; value: string | number; color?: string }) {
+  return (
+    <div style={{ minWidth: 48, textAlign: "center" }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: color || T.TEXT, marginTop: 2 }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function ClientRow({ client, onOpen }: { client: CoachClient; onOpen: () => void }) {
+  const updates = client.updates_since_visit
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 14,
+      padding: "12px 14px",
+      background: "rgba(255,255,255,0.025)",
+      border: `1px solid ${T.BORDER_SOFT}`,
+      borderRadius: 10,
+    }}>
+      <Avatar name={client.name} email={client.email} />
+
+      <div style={{ minWidth: 0, flex: "1 1 180px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: T.TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {client.name || "Unnamed"}
+          </span>
+          <StatusPill status={client.status} />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+        <MiniCell label="Apps"  value={client.stats.applications} />
+        <MiniCell label="Intvw" value={client.stats.interviewing} color={client.stats.interviewing > 0 ? T.WRN_BLUE : undefined} />
+        <MiniCell label="Rate"  value={`${client.stats.interview_rate}%`} />
+        <MiniCell label="Rej"   value={client.stats.rejected} />
+        <MiniCell label="Off"   value={client.stats.offers} color={client.stats.offers > 0 ? T.SUCCESS : undefined} />
+      </div>
+
+      <div style={{ flexShrink: 0, minWidth: 110, textAlign: "right" }}>
+        {updates > 0 ? (
+          <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_ORANGE }}>{updates} new</span>
+        ) : (
+          <span style={{ fontSize: 11, color: T.DIM }}>No changes</span>
+        )}
+      </div>
+
+      <button
+        onClick={onOpen}
+        style={{
+          ...btnSecondary,
+          fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,
+          color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)",
+          flexShrink: 0,
+        }}
+      >
+        Open →
+      </button>
+    </div>
+  )
+}
+
+function MyClientsSection({
+  clients, onOpen, onCreate, onInvite, onShowAll,
+}: {
+  clients: CoachClient[]
+  onOpen: (clientId: string) => void
+  onCreate: () => void
+  onInvite: () => void
+  onShowAll: () => void
+}) {
+  const visible = clients.slice(0, COLLAPSED_LIMIT)
+  const hasMore = clients.length > COLLAPSED_LIMIT
+
+  const headerRight = (
+    <div style={{ display: "flex", gap: 8 }}>
+      <button
+        onClick={onCreate}
+        style={{
+          border: `1px solid ${T.BORDER_SOFT}`, color: T.TEXT, background: T.NAV_DEFAULT_BG,
+          borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit",
+        }}
+      >
+        + Create
+      </button>
+      <button
+        onClick={onInvite}
+        style={{
+          background: T.WRN_ORANGE, color: "#04060F",
+          borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 800,
+          cursor: "pointer", border: "none", fontFamily: "inherit",
+        }}
+      >
+        + Invite
+      </button>
+    </div>
+  )
+
+  return (
+    <Section icon={<IconUsers />} title="My clients" count={clients.length} headerRight={headerRight}>
+      {clients.length === 0 ? (
+        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>No clients yet. Use Create or Invite above to add one.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {visible.map((c) => (
+            <ClientRow key={c.client_profile_id} client={c} onOpen={() => onOpen(c.client_profile_id)} />
+          ))}
+          {hasMore && (
+            <button
+              onClick={onShowAll}
+              style={{
+                background: "none", border: "none", color: T.WRN_ORANGE,
+                fontSize: 12, fontWeight: 700, cursor: "pointer",
+                padding: "8px 0 0", textAlign: "left", marginTop: 4,
+              }}
+            >
+              Show all {clients.length} →
+            </button>
+          )}
+        </div>
+      )}
+    </Section>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
+// Page component
+// ──────────────────────────────────────────────────────────────
 
 export default function CoachHomePage() {
   const router = useRouter()
@@ -160,7 +551,7 @@ export default function CoachHomePage() {
   const [loading, setLoading] = useState(true)
   const [accessForbidden, setAccessForbidden] = useState(false)
 
-  // Modal / inline state
+  // Modal state
   const [showCreateClient, setShowCreateClient] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
@@ -168,9 +559,6 @@ export default function CoachHomePage() {
   const [inviteNote, setInviteNote] = useState("")
   const [inviting, setInviting] = useState(false)
   const [inviteResult, setInviteResult] = useState<any>(null)
-  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
-  const [removing, setRemoving] = useState(false)
-  const [notesOpen, setNotesOpen] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -180,10 +568,7 @@ export default function CoachHomePage() {
       setLoading(false)
       return
     }
-    if (res.ok) {
-      const j = (await res.json()) as CoachHome
-      setData(j)
-    }
+    if (res.ok) setData((await res.json()) as CoachHome)
     setLoading(false)
   }, [])
 
@@ -196,22 +581,41 @@ export default function CoachHomePage() {
       method: "POST",
       body: JSON.stringify({ email: inviteEmail.trim(), access_level: inviteAccess, note: inviteNote }),
     })
-    const j = await res.json()
-    setInviteResult(j)
+    setInviteResult(await res.json())
     setInviting(false)
   }
 
-  async function removeClient(clientProfileId: string) {
-    setRemoving(true)
-    try {
-      const res = await authFetch(`/api/coach/clients/${clientProfileId}`, { method: "DELETE" })
-      if (res.ok) {
-        setConfirmRemoveId(null)
-        await load()
-      }
-    } catch {}
-    setRemoving(false)
-  }
+  // Aggregate top-level metrics from per-client stats (client-side only).
+  const tiles: Tile[] = useMemo(() => {
+    if (!data) return []
+    const cs = data.clients
+    const totalApps = cs.reduce((s, c) => s + c.stats.applications, 0)
+    const totalIntvw = cs.reduce((s, c) => s + c.stats.interviewing, 0)
+    const totalOffers = cs.reduce((s, c) => s + c.stats.offers, 0)
+    const totalPending = cs.reduce((s, c) => s + c.stats.pending_recs, 0)
+    // Avg interview rate: mean across clients that have any "applied" denominator
+    // (interview_rate is 0 for clients with no submitted apps; including them
+    // would drag the average down meaninglessly). Only average over clients
+    // that have at least one submitted application.
+    const submitted = cs.filter((c) =>
+      c.stats.applications > 0 && (c.stats.interviewing + c.stats.offers + c.stats.rejected) > 0
+    )
+    const avgRate = submitted.length > 0
+      ? Math.round(submitted.reduce((s, c) => s + c.stats.interview_rate, 0) / submitted.length)
+      : 0
+    return [
+      // Row 1
+      { label: "Active clients",     value: data.metrics.activeClients },
+      { label: "Total applications", value: totalApps },
+      { label: "Interviewing",       value: totalIntvw, color: T.WRN_BLUE },
+      { label: "Offers in flight",   value: totalOffers, color: T.SUCCESS },
+      // Row 2
+      { label: "Avg interview rate", value: `${avgRate}%` },
+      { label: "Pending recs",       value: totalPending, color: T.WRN_ORANGE },
+      { label: "Active prospects",   value: "—", subtitle: "Coming soon", muted: true },
+      { label: "Clients per phase",  value: "—", subtitle: "Methodology not yet configured", muted: true },
+    ]
+  }, [data])
 
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
 
@@ -229,207 +633,29 @@ export default function CoachHomePage() {
     )
   }
 
-  const home = data!
-  const { coach, metrics, clients, requiresAction } = home
+  if (!data) return null
+
+  const goToClient = (id: string) => router.push(`/dashboard/coach/clients/${id}`)
 
   return (
     <div>
-      {/* Greeting strip */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 4 }}>{todayLabel().toUpperCase()}</div>
-        <h1 style={{ ...headline, fontSize: 26, letterSpacing: -0.8, margin: 0, fontWeight: 700 }}>
-          Welcome back, <span style={{ color: T.WRN_ORANGE, fontWeight: 950 }}>{coach.firstName}</span>
-        </h1>
-      </div>
+      <HeaderStrip firstName={data.coach.firstName} />
+      <MetricsBar tiles={tiles} />
+      <TodaysScheduleSection />
+      <RequiresActionSection
+        items={data.requiresAction}
+        onItemClick={goToClient}
+        onShowAll={() => router.push("/dashboard/coach/required-actions")}
+      />
+      <MyClientsSection
+        clients={data.clients}
+        onOpen={goToClient}
+        onCreate={() => setShowCreateClient(true)}
+        onInvite={() => { setInviteOpen(true); setInviteResult(null) }}
+        onShowAll={() => router.push("/dashboard/coach/clients")}
+      />
 
-      {/* Metrics bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 28 }}>
-        <MetricTile value={metrics.activeClients} label="Active Clients" color={T.WRN_ORANGE} />
-        <MetricTile value="—" label="Active Prospects" subtitle="Coming soon" />
-        <MetricTile value="—" label="Clients per phase" subtitle="Methodology not yet configured" />
-      </div>
-
-      {/* Requires Action */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE }}>REQUIRES ACTION</div>
-          {requiresAction.length > 0 && (
-            <span style={{
-              fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
-              color: "#04060F", background: T.WRN_ORANGE, padding: "2px 8px", borderRadius: 999,
-            }}>
-              {requiresAction.length}
-            </span>
-          )}
-        </div>
-        {requiresAction.length === 0 ? (
-          <div style={{ ...card, padding: 18 }}>
-            <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing requires your attention right now.</p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {requiresAction.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => router.push(`/dashboard/coach/clients/${item.client_profile_id}`)}
-                style={{
-                  ...card,
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <span style={{
-                  fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-                  color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
-                  padding: "3px 8px", borderRadius: 6, flexShrink: 0,
-                }}>
-                  {RULE_LABEL[item.kind]}
-                </span>
-                <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
-                <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* My Clients header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ ...eyebrow, color: T.WRN_BLUE }}>
-          MY CLIENTS{" "}
-          <span style={{ color: T.DIM, fontWeight: 700 }}>({clients.length})</span>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={() => setShowCreateClient(true)}
-            style={{
-              border: "1px solid #3D1A4A", color: "#3D1A4A", background: "#ffffff",
-              borderRadius: 20, padding: "8px 18px", fontSize: 12,
-              letterSpacing: "0.04em", cursor: "pointer", fontWeight: 700, fontFamily: "inherit",
-            }}
-          >
-            + Create Client Account
-          </button>
-          <button
-            onClick={() => { setInviteOpen(true); setInviteResult(null) }}
-            style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900 }}
-          >
-            + Invite Client
-          </button>
-        </div>
-      </div>
-
-      {/* Client cards */}
-      {clients.length === 0 && (
-        <p style={{ color: T.MUTED, fontSize: 13 }}>No clients yet. Invite your first client above.</p>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {clients.map((client) => {
-          const accentColor = ATTENTION_COLOR[client.attention_level || "low"] || T.WRN_BLUE
-          const isNotesOpen = notesOpen === client.client_profile_id
-          const updates = client.updates_since_visit
-          return (
-            <div key={client.client_profile_id} style={{ ...card, display: "flex" }}>
-              <div style={{ width: 4, background: accentColor, flexShrink: 0 }} />
-              <div style={{ flex: 1, padding: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
-                  <span style={{ fontSize: 17, fontWeight: 950, letterSpacing: -0.3, color: T.TEXT }}>
-                    {client.name || "Unnamed"}
-                  </span>
-                  <StatusBadge status={client.status} />
-                </div>
-                <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 16px" }}>{client.email}</p>
-
-                {/* Stats row */}
-                <div style={{ display: "flex", gap: 24, marginBottom: 12 }}>
-                  {[
-                    { label: "Applications", value: client.stats.applications },
-                    { label: "Interviewing", value: client.stats.interviewing },
-                    { label: "Pending Recs", value: client.stats.pending_recs },
-                    { label: "Interview Rate", value: `${client.stats.interview_rate}%` },
-                  ].map(({ label: lbl, value }) => (
-                    <div key={lbl}>
-                      <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 2 }}>{lbl}</div>
-                      <div style={{ fontSize: 18, fontWeight: 950, color: T.TEXT }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Since-last-visit indicator (Sprint 2) */}
-                <p style={{
-                  fontSize: 11, color: updates > 0 ? T.WRN_ORANGE : T.DIM,
-                  fontWeight: updates > 0 ? 900 : 400,
-                  marginBottom: 14,
-                }}>
-                  {updates > 0
-                    ? `${updates} update${updates === 1 ? "" : "s"} since your last visit`
-                    : "No changes since your last visit"}
-                </p>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => router.push(`/dashboard/coach/clients/${client.client_profile_id}`)}
-                    style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900, fontSize: 12, padding: "9px 16px", borderRadius: 10 }}
-                  >
-                    Open Dashboard →
-                  </button>
-                  <button
-                    onClick={() => router.push(`/dashboard/coach/clients/${client.client_profile_id}?tab=source`)}
-                    style={{ ...btnSecondary, fontSize: 12, padding: "9px 16px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
-                  >
-                    Add Job +
-                  </button>
-                  <button
-                    onClick={() => setNotesOpen(isNotesOpen ? null : client.client_profile_id)}
-                    style={{ ...btnSecondary, fontSize: 12, padding: "9px 16px", borderRadius: 10 }}
-                  >
-                    Notes {isNotesOpen ? "▲" : "▼"}
-                  </button>
-                  {confirmRemoveId === client.client_profile_id ? (
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <span style={{ fontSize: 11, color: T.DIM }}>Remove this client?</span>
-                      <button
-                        onClick={() => removeClient(client.client_profile_id)}
-                        disabled={removing}
-                        style={{ background: "none", border: "1px solid rgba(248,113,113,0.4)", color: "#f87171", fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "5px 12px", cursor: "pointer", opacity: removing ? 0.5 : 1 }}
-                      >
-                        {removing ? "Removing..." : "Yes, remove"}
-                      </button>
-                      <button
-                        onClick={() => setConfirmRemoveId(null)}
-                        style={{ background: "none", border: "none", color: T.DIM, fontSize: 11, cursor: "pointer", padding: 0 }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmRemoveId(client.client_profile_id)}
-                      style={{ background: "none", border: "none", color: T.DIM, fontSize: 11, cursor: "pointer", padding: "9px 4px" }}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                {isNotesOpen && (
-                  <div style={{ marginTop: 16, padding: 16, background: "rgba(255,255,255,0.03)", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}` }}>
-                    <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 8 }}>COACH NOTES</div>
-                    <p style={{ color: T.MUTED, fontSize: 13 }}>Notes functionality coming soon.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Invite modal */}
+      {/* Invite modal — preserved from previous build */}
       {inviteOpen && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,

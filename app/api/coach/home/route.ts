@@ -163,6 +163,10 @@ export async function GET(req: NextRequest) {
         const stats = {
           applications: apps?.length ?? 0,
           interviewing: (apps || []).filter((a: any) => a.application_status === "interviewing").length,
+          // offers + rejected added 2026-05-08 for the redesigned coach
+          // landing's per-client mini-cells + top-level metrics aggregation.
+          offers: (apps || []).filter((a: any) => a.application_status === "offer").length,
+          rejected: (apps || []).filter((a: any) => a.application_status === "rejected").length,
           pending_recs: 0,
           interview_rate: 0,
         }

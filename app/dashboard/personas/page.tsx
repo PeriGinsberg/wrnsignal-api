@@ -1,10 +1,10 @@
 "use client"
 
-// Personas self-service is hidden during the Cohort 1 pilot
-// (decision 2026-05-07). Coaches manage personas on behalf of clients
-// from the Profile & Personas tab on each client's coach view.
-// Re-enable post-Cohort 1 if product decides to give clients direct
-// persona control again — restore from git history.
+// Standalone personas pages were superseded by the persona section on
+// /dashboard (My Account) — that's where persona self-edit lives now.
+// Redirecting here keeps the old URL working and avoids duplicating the
+// editor surface. Coach-managed personas live at
+// /dashboard/coach/clients/[id] (Profile & Personas tab).
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
