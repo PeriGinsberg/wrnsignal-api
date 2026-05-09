@@ -14,8 +14,10 @@ import {
   label,
 } from "../../../../../lib/dashboard-theme"
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
+import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
+import { AddNotePanel } from "./AddNotePanel"
 
-type Tab = "tracker" | "source" | "history" | "analysis"
+type Tab = "tracker" | "source" | "notes" | "history" | "analysis"
 
 // The Profile & Personas tab needs the full editable shape; other tabs
 // only read .name / .email / .id / .is_default — all subsets of these.
@@ -156,6 +158,12 @@ export default function CoachClientPage() {
   // LinkedIn helper state (source tab)
   const [showLinkedInHelper, setShowLinkedInHelper] = useState(false)
   const [linkedInPasteText, setLinkedInPasteText] = useState("")
+
+  // Notes tab + Add Note slide-in panel state.
+  // notesRefreshKey gets bumped after the slide-in saves a note so the
+  // Notes tab refetches even when the panel was opened from a different tab.
+  const [addNoteOpen, setAddNoteOpen] = useState(false)
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0)
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -346,6 +354,7 @@ export default function CoachClientPage() {
   const TABS: { id: Tab; label: string }[] = [
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
+    { id: "notes", label: "Notes" },
     { id: "history", label: "Analyses History" },
     { id: "analysis", label: "Profile & Personas" },
   ]
@@ -375,12 +384,30 @@ export default function CoachClientPage() {
             <span style={{ fontSize: 12, color: T.DIM, marginLeft: 10 }}>{clientProfile.email}</span>
           )}
         </div>
-        <a
-          href="/dashboard/coach"
-          style={{ fontSize: 12, fontWeight: 900, color: T.WRN_ORANGE, textDecoration: "none" }}
-        >
-          ← Back to My Clients
-        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button
+            onClick={() => setAddNoteOpen(true)}
+            style={{
+              background: "rgba(254,176,106,0.10)",
+              border: "1px solid rgba(254,176,106,0.35)",
+              color: T.WRN_ORANGE,
+              fontSize: 12,
+              fontWeight: 900,
+              borderRadius: 10,
+              padding: "8px 14px",
+              cursor: "pointer",
+              letterSpacing: 0.4,
+            }}
+          >
+            + Add Note
+          </button>
+          <a
+            href="/dashboard/coach"
+            style={{ fontSize: 12, fontWeight: 900, color: T.WRN_ORANGE, textDecoration: "none" }}
+          >
+            ← Back to My Clients
+          </a>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -1211,7 +1238,17 @@ export default function CoachClientPage() {
         </div>
       )}
 
-      {/* TAB 3 — Analyses History */}
+      {/* TAB 3 — Notes (typed notes feed) */}
+      {tab === "notes" && (
+        <NotesTab
+          authFetch={authFetch}
+          clientId={clientId}
+          clientName={clientProfile?.name || null}
+          refreshKey={notesRefreshKey}
+        />
+      )}
+
+      {/* TAB 4 — Analyses History */}
       {tab === "history" && (
         <div>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>ALL ANALYSES FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
@@ -1241,7 +1278,7 @@ export default function CoachClientPage() {
         </div>
       )}
 
-      {/* TAB 4 — Profile & Personas */}
+      {/* TAB 5 — Profile & Personas */}
       {tab === "analysis" && clientProfile && (
         <ProfilePersonasTab
           clientId={clientId}
@@ -1251,6 +1288,28 @@ export default function CoachClientPage() {
           onChange={loadAll}
         />
       )}
+
+      {/* Slide-in Add Note panel — overlays current tab without navigation */}
+      <AddNotePanel
+        open={addNoteOpen}
+        onClose={() => setAddNoteOpen(false)}
+        onSaved={() => setNotesRefreshKey((k) => k + 1)}
+        onSubmit={async ({ type, body, priority }: { type: NoteType; body: string; priority: NotePriority | null }) => {
+          try {
+            const res = await authFetch(`/api/coach/clients/${clientId}/note-feed`, {
+              method: "POST",
+              body: JSON.stringify({ type, body, priority }),
+            })
+            const j = await res.json().catch(() => null)
+            if (!res.ok || !j?.ok) {
+              return { ok: false as const, error: j?.error || "Failed to save note" }
+            }
+            return { ok: true as const }
+          } catch {
+            return { ok: false as const, error: "Network error" }
+          }
+        }}
+      />
     </div>
   )
 }
