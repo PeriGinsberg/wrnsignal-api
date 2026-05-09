@@ -70,7 +70,7 @@ async function verifyCoachAccess(coachProfileId: string, clientProfileId: string
   const levels: Record<string, string[]> = { view: ["view", "annotate", "full"], annotate: ["annotate", "full"], full: ["full"] }
   const { data } = await supabase
     .from("coach_clients")
-    .select("id, access_level, status")
+    .select("id, access_level, status, accepted_at")
     .eq("coach_profile_id", coachProfileId)
     .eq("client_profile_id", clientProfileId)
     .eq("status", "active")
@@ -134,6 +134,10 @@ export async function GET(
       ok: true,
       profile,
       personas: personas || [],
+      // Engagement start = when the coach-client invite was accepted.
+      // The Client Dashboard header uses this for "Client since [date]".
+      // Null when the link has never been formally accepted (legacy data).
+      accepted_at: access.accepted_at ?? null,
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
