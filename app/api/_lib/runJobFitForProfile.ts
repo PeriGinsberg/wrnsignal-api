@@ -231,16 +231,24 @@ export async function assembleProfileForScoring(params: {
     personaVersionAtRun = persona.persona_version ?? 1
   }
 
-  const profileHeader = String(clientProfile.profile_text || "").trim()
+  // Historically, /api/profile and /api/personas/:id PUT endpoints appended
+  // "Resume:\n<resume>" to client_profiles.profile_text. With personas, that
+  // bakes whichever persona was last edited into the profile header — so
+  // selecting a different persona for scoring leaked the wrong resume in
+  // through the header. Strip the embedded Resume block here so profileHeader
+  // is intake-only, and let activeResume be the sole source of resume body.
+  let profileHeader = String(clientProfile.profile_text || "").trim()
+  const resumeMarkerIdx = profileHeader.search(/\n\s*Resume:\s*\n/i)
+  if (resumeMarkerIdx !== -1) {
+    profileHeader = profileHeader.slice(0, resumeMarkerIdx).trim()
+  }
   const baseResume = String(clientProfile.resume_text || "").trim()
   const activeResume = personaResumeText || baseResume
 
-  let effectiveProfileText: string
-  if (profileHeader && activeResume && !profileHeader.includes(activeResume.slice(0, 80))) {
-    effectiveProfileText = profileHeader + "\n\nResume:\n" + activeResume
-  } else {
-    effectiveProfileText = activeResume || profileHeader
-  }
+  const parts: string[] = []
+  if (profileHeader) parts.push(profileHeader)
+  if (activeResume) parts.push("Resume:\n" + activeResume)
+  const effectiveProfileText = parts.join("\n\n")
 
   // profileOverrides inference reads the profile header (intake form text),
   // not the resume body. Matches /api/jobfit's prior behavior exactly: the

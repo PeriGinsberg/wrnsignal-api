@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGNAL — QA Command Center</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#040D1A;--bg2:#0A1828;--bg3:#0D1F35;--bg4:#071220;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.10);--border3:rgba(255,255,255,0.16);
+  --text:rgba(255,255,255,0.92);--muted:rgba(255,255,255,0.45);--dim:rgba(255,255,255,0.22);
+  --teal:#2DD4BF;--teal-bg:rgba(45,212,191,0.08);--teal-border:rgba(45,212,191,0.25);
+  --orange:#FEB06A;--orange-bg:rgba(254,176,106,0.08);--orange-border:rgba(254,176,106,0.25);
+  --coral:#FF4F6D;--coral-bg:rgba(255,79,109,0.08);--coral-border:rgba(255,79,109,0.25);
+  --blue:#51ADE5;--blue-bg:rgba(81,173,229,0.08);--blue-border:rgba(81,173,229,0.25);
+  --purple:#7B5CF6;--purple-bg:rgba(123,92,246,0.08);--purple-border:rgba(123,92,246,0.25);
+  --green:#4ADE80;--green-bg:rgba(74,222,128,0.08);--green-border:rgba(74,222,128,0.25);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.08);--amber-border:rgba(251,191,36,0.25);
+  --pink:#F472B6;--pink-bg:rgba(244,114,182,0.08);--pink-border:rgba(244,114,182,0.25);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;min-height:100vh;}
+
+header{background:var(--bg);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;letter-spacing:1.5px;color:var(--text);display:flex;align-items:center;gap:10px;}
+.logo-dash{width:18px;height:3px;background:linear-gradient(90deg,#FF6B00,#FEB06A);border-radius:2px;}
+.logo-sub{font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:400;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.conn-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+
+.ql-btn{padding:7px 14px;background:var(--coral-bg);border:1px solid var(--coral-border);border-radius:8px;color:var(--coral);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.5px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.ql-btn:hover{background:rgba(255,79,109,0.18);}
+.ql-pulse{width:7px;height:7px;border-radius:50%;background:var(--coral);animation:qlp 1.5s infinite;}
+@keyframes qlp{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.main-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;}
+.main-tab{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:13px 18px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.15s;}
+.main-tab:hover{color:var(--text);}
+.main-tab.active{color:var(--text);border-bottom-color:var(--orange);}
+
+.shell{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 101px);}
+aside{border-right:1px solid var(--border);padding:16px 0 24px;display:flex;flex-direction:column;gap:0;position:sticky;top:101px;height:calc(100vh - 101px);overflow-y:auto;}
+main{padding:24px;overflow-y:auto;}
+
+.sb-label{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);padding:0 16px 6px;}
+.sb-div{height:1px;background:var(--border);margin:10px 0;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:0 16px 14px;}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center;}
+.stat-box .num{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;line-height:1;margin-bottom:2px;}
+.stat-box .lbl{font-size:8px;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);}
+.stat-pass .num{color:var(--green);} .stat-fail .num{color:var(--coral);} .stat-blocked .num{color:var(--orange);}
+.stat-untested .num{color:var(--muted);} .stat-critical .num{color:var(--coral);} .stat-high .num{color:var(--orange);}
+
+/* PLATFORM TOGGLE */
+.platform-toggle{display:flex;gap:6px;padding:0 16px 12px;}
+.plat-btn{flex:1;padding:8px 6px;border-radius:8px;border:none;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;text-align:center;}
+.plat-btn.web{background:var(--blue-bg);border:1px solid var(--blue-border)!important;color:var(--blue);}
+.plat-btn.web.active{background:var(--blue);color:#fff;}
+.plat-btn.mobile{background:var(--teal-bg);border:1px solid var(--teal-border)!important;color:var(--teal);}
+.plat-btn.mobile.active{background:var(--teal);color:#040D1A;}
+.plat-btn.both{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--muted);}
+.plat-btn.both.active{background:var(--orange);border-color:var(--orange)!important;color:#fff;}
+
+.filter-list{display:flex;flex-direction:column;gap:1px;padding:0 8px;}
+.fb{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:12px;cursor:pointer;width:100%;text-align:left;transition:background 0.12s,color 0.12s;}
+.fb:hover{background:var(--bg3);color:var(--text);}
+.fb.active{background:var(--bg3);color:var(--text);}
+.fb .fc{font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;color:var(--muted);}
+.fb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:6px;}
+
+.type-badge{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.8px;padding:2px 6px;border-radius:4px;text-transform:uppercase;white-space:nowrap;}
+.type-ui{background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);}
+.type-api{background:var(--purple-bg);border:1px solid var(--purple-border);color:var(--purple);}
+.type-functional{background:var(--teal-bg);border:1px solid var(--teal-border);color:var(--teal);}
+.type-integration{background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);}
+.type-data{background:var(--pink-bg);border:1px solid var(--pink-border);color:var(--pink);}
+
+.plat-badge{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.8px;padding:2px 6px;border-radius:4px;text-transform:uppercase;white-space:nowrap;}
+.plat-web{background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);}
+.plat-mobile{background:var(--teal-bg);border:1px solid var(--teal-border);color:var(--teal);}
+
+.badge{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.8px;padding:3px 7px;border-radius:4px;text-transform:uppercase;white-space:nowrap;}
+.badge-critical{background:var(--coral-bg);border:1px solid var(--coral-border);color:var(--coral);}
+.badge-high{background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange);}
+.badge-medium{background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);}
+.badge-low{background:var(--bg3);border:1px solid var(--border2);color:var(--muted);}
+.badge-pass{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);}
+.badge-fail{background:var(--coral-bg);border:1px solid var(--coral-border);color:var(--coral);}
+.badge-blocked{background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange);}
+.badge-untested{background:var(--bg3);border:1px solid var(--border2);color:var(--muted);}
+.adhoc-badge{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.8px;padding:2px 6px;border-radius:4px;text-transform:uppercase;background:var(--purple-bg);border:1px solid var(--purple-border);color:var(--purple);}
+.run-badge{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.8px;padding:2px 6px;border-radius:4px;text-transform:uppercase;background:var(--teal-bg);border:1px solid var(--teal-border);color:var(--teal);}
+
+.sb-btn{display:block;width:calc(100% - 32px);margin:0 16px 8px;padding:9px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;text-align:center;border:none;}
+.btn-orange{background:var(--orange-bg);border:1px solid var(--orange-border)!important;color:var(--orange);}
+.btn-orange:hover{background:rgba(254,176,106,0.15);}
+.btn-teal{background:var(--teal-bg);border:1px solid var(--teal-border)!important;color:var(--teal);}
+.btn-teal:hover{background:rgba(45,212,191,0.15);}
+.btn-dim{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--muted);}
+.btn-dim:hover{color:var(--text);}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px;transition:border-color 0.15s;}
+.card:hover{border-color:var(--border2);}
+.card-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;}
+.card-id{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);flex-shrink:0;width:56px;}
+.card-main{flex:1;min-width:0;}
+.card-surface{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:2px;}
+.card-title{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-badges{display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+
+.action-row{display:flex;align-items:center;gap:8px;padding:9px 16px;border-top:1px solid var(--border);background:var(--bg3);}
+.action-row label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);flex-shrink:0;}
+.tester-input{background:var(--bg2);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;width:100px;outline:none;}
+.tester-input:focus{border-color:var(--orange-border);}
+.act-btns{display:flex;gap:4px;margin-left:auto;}
+.act-btn{padding:6px 10px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;border:none;}
+.act-pass{background:var(--green-bg);border:1px solid var(--green-border)!important;color:var(--green);}
+.act-fail{background:var(--coral-bg);border:1px solid var(--coral-border)!important;color:var(--coral);}
+.act-blocked{background:var(--orange-bg);border:1px solid var(--orange-border)!important;color:var(--orange);}
+
+.fail-form{background:rgba(255,79,109,0.04);border-top:1px solid var(--coral-border);padding:14px 16px;display:none;flex-direction:column;gap:8px;}
+.fail-form.open{display:flex;}
+.fail-title{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--coral);}
+.fail-textarea{background:var(--bg4);border:1px solid var(--coral-border);border-radius:6px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:12px;padding:9px 11px;outline:none;resize:vertical;min-height:70px;line-height:1.55;width:100%;}
+.fail-textarea::placeholder{color:var(--dim);}
+.fail-sev-row{display:flex;gap:5px;}
+.sev-btn{flex:1;padding:6px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;text-align:center;border:none;}
+.sev-critical{background:var(--coral-bg);border:1px solid var(--coral-border)!important;color:var(--coral);}
+.sev-high{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--muted);}
+.sev-medium{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--muted);}
+.sev-low{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--muted);}
+.sev-btn.selected.sev-critical{background:rgba(255,79,109,0.2);}
+.sev-btn.selected.sev-high{background:var(--orange-bg);border-color:var(--orange-border)!important;color:var(--orange);}
+.sev-btn.selected.sev-medium{background:var(--blue-bg);border-color:var(--blue-border)!important;color:var(--blue);}
+.sev-btn.selected.sev-low{background:var(--bg3);border-color:var(--border3)!important;color:var(--text);}
+.fail-submit{padding:9px;background:linear-gradient(90deg,#FF4F6D,#FF8C94);border:none;border-radius:7px;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;cursor:pointer;}
+
+.card-detail{border-top:1px solid var(--border);padding:14px 16px;display:none;flex-direction:column;gap:10px;}
+.card-detail.open{display:flex;}
+.detail-row{display:grid;grid-template-columns:90px 1fr;gap:8px;font-size:12px;}
+.detail-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);padding-top:1px;}
+.detail-value{color:var(--muted);line-height:1.55;}
+.step-item{display:flex;gap:8px;font-size:12px;color:var(--muted);line-height:1.55;}
+.step-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);flex-shrink:0;width:16px;padding-top:1px;}
+.expected-box{background:var(--bg4);border-left:2px solid var(--teal);border-radius:0 6px 6px 0;padding:8px 12px;font-size:12px;color:var(--teal);line-height:1.55;}
+
+.run-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;}
+.run-name{font-size:15px;font-weight:600;color:var(--text);}
+.run-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:2px;}
+.run-progress{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:10px 0 8px;}
+.run-prog-fill{height:100%;border-radius:3px;}
+.run-stats{display:flex;gap:12px;flex-wrap:wrap;}
+.run-stat{font-size:11px;}
+.run-actions{display:flex;gap:6px;margin-top:12px;}
+.run-btn{padding:6px 12px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;border:none;}
+.run-btn-primary{background:var(--orange-bg);border:1px solid var(--orange-border)!important;color:var(--orange);}
+.run-btn-secondary{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--muted);}
+
+.issue-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px;}
+.issue-status-row{display:flex;align-items:center;gap:8px;padding:8px 16px;border-top:1px solid var(--border);background:var(--bg3);}
+.issue-status-sel{background:var(--bg2);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;flex:1;}
+.issue-save-btn{padding:5px 10px;background:var(--orange-bg);border:1px solid var(--orange-border);border-radius:5px;color:var(--orange);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;}
+
+.report-stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
+.report-stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.report-num{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;line-height:1;margin-bottom:3px;}
+.report-lbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+
+.platform-section{margin-bottom:24px;}
+.platform-section-header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px 10px 0 0;border:1px solid var(--border2);}
+.platform-section-header.web-header{background:linear-gradient(135deg,#0A1828,#051018);border-color:var(--blue-border);}
+.platform-section-header.mobile-header{background:linear-gradient(135deg,#051A18,#040D1A);border-color:var(--teal-border);}
+.platform-section-title{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;}
+.platform-section-body{border:1px solid var(--border2);border-top:none;border-radius:0 0 10px 10px;padding:12px;background:var(--bg);}
+
+.surf-group{margin-bottom:16px;}
+.surf-group-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;}
+
+.surface-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--bg3);border-radius:8px;margin-bottom:5px;font-size:12px;}
+.surface-bar{width:80px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.surface-bar-fill{height:100%;border-radius:2px;}
+.matrix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;}
+.matrix-cell{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.matrix-cell-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.matrix-cell-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;line-height:1;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.modal-title{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:1px;color:var(--text);}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.form-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;}
+input,textarea,select{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:9px 11px;outline:none;width:100%;transition:border-color 0.15s;}
+input:focus,textarea:focus,select:focus{border-color:var(--orange-border);}
+textarea{resize:vertical;min-height:70px;line-height:1.5;}
+select option{background:var(--bg2);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+.btn-cancel{padding:8px 16px;background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+.btn-cancel:hover{color:var(--text);}
+.btn-save{padding:8px 20px;background:var(--orange-bg);border:1px solid var(--orange-border);border-radius:6px;color:var(--orange);font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;}
+.btn-save:hover{background:rgba(254,176,106,0.15);}
+
+.empty{text-align:center;padding:60px 20px;color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.5px;line-height:2;}
+.tab-view{display:none;} .tab-view.active{display:block;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.section-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.case-checklist{max-height:260px;overflow-y:auto;border:1px solid var(--border2);border-radius:8px;}
+.run-filter-btn{padding:5px 12px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);transition:all 0.12s;}
+.run-filter-btn:hover{color:var(--text);border-color:var(--border3);}
+.run-filter-btn.active.untested{background:var(--bg3);border-color:var(--border3);color:var(--text);}
+.run-filter-btn.active.pass{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.run-filter-btn.active.fail{background:var(--coral-bg);border-color:var(--coral-border);color:var(--coral);}
+.run-filter-btn.active.blocked{background:var(--orange-bg);border-color:var(--orange-border);color:var(--orange);}
+.run-filter-btn.active[id="rf-all"]{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue);}
+.card.status-pass{border-left:3px solid var(--green);}
+.card.status-fail{border-left:3px solid var(--coral);}
+.card.status-blocked{border-left:3px solid var(--orange);}
+.card.status-untested{border-left:3px solid var(--border2);}
+.case-check-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);cursor:pointer;}
+.case-check-item:last-child{border-bottom:none;}
+.case-check-item:hover{background:var(--bg3);}
+.case-check-item input[type=checkbox]{width:auto;padding:0;cursor:pointer;}
+
+/* ===== REDESIGN OVERRIDES — bolder, brighter, more personality ===== */
+:root {
+  --bg:#0B0F1A;--bg2:#131929;--bg3:#1A2235;--bg4:#0D1220;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--border3:rgba(255,255,255,0.22);
+  --text:rgba(255,255,255,0.96);--muted:rgba(255,255,255,0.52);--dim:rgba(255,255,255,0.30);
+  --teal:#00F5D4;--teal-bg:rgba(0,245,212,0.10);--teal-border:rgba(0,245,212,0.32);
+  --orange:#FF9500;--orange-bg:rgba(255,149,0,0.12);--orange-border:rgba(255,149,0,0.38);
+  --coral:#FF3B5C;--coral-bg:rgba(255,59,92,0.12);--coral-border:rgba(255,59,92,0.38);
+  --blue:#4DB8FF;--blue-bg:rgba(77,184,255,0.10);--blue-border:rgba(77,184,255,0.32);
+  --purple:#BF5AF2;--purple-bg:rgba(191,90,242,0.10);--purple-border:rgba(191,90,242,0.32);
+  --green:#30D158;--green-bg:rgba(48,209,88,0.10);--green-border:rgba(48,209,88,0.32);
+  --amber:#FFD60A;--amber-bg:rgba(255,214,10,0.10);--amber-border:rgba(255,214,10,0.32);
+  --pink:#FF6CE5;--pink-bg:rgba(255,108,229,0.10);--pink-border:rgba(255,108,229,0.32);
+}
+header{background:linear-gradient(90deg,#0B0F1A,#131929);border-bottom:1px solid rgba(255,149,0,0.18);}
+.logo{font-weight:700;font-size:15px;letter-spacing:2px;}
+.logo-sub{color:var(--orange);font-weight:700;font-size:9px;letter-spacing:3px;}
+.conn-dot{box-shadow:0 0 7px var(--green);}
+.ql-btn{border-radius:20px;font-weight:700;}
+.ql-btn:hover{background:var(--coral)!important;color:#fff;box-shadow:0 0 14px rgba(255,59,92,0.45);}
+.main-tab{font-weight:700;letter-spacing:1.5px;}
+.main-tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+.sb-label{color:var(--orange);font-weight:700;opacity:0.85;}
+.fb.active{border-left:2px solid var(--orange);}
+/* BIG stat numbers */
+.stat-box .num{font-size:26px;font-weight:700;}
+.stat-pass .num{text-shadow:0 0 10px rgba(48,209,88,0.5);}
+.stat-fail .num{text-shadow:0 0 10px rgba(255,59,92,0.5);}
+.stat-blocked .num{text-shadow:0 0 10px rgba(255,149,0,0.4);}
+.stat-critical .num{text-shadow:0 0 10px rgba(255,59,92,0.5);}
+/* Platform toggle glow on active */
+.plat-btn.web.active{background:var(--blue);color:#0B0F1A;box-shadow:0 0 12px rgba(77,184,255,0.4);}
+.plat-btn.mobile.active{background:var(--teal);color:#0B0F1A;box-shadow:0 0 12px rgba(0,245,212,0.4);}
+.plat-btn.both.active{background:var(--orange);color:#0B0F1A;box-shadow:0 0 12px rgba(255,149,0,0.4);}
+/* Cards slide on hover */
+.card:hover{border-color:var(--border3);transform:translateX(2px);}
+/* Bolder status borders */
+.card.status-pass{border-left:4px solid var(--green);}
+.card.status-pass .card-header{background:rgba(48,209,88,0.04);}
+.card.status-fail{border-left:4px solid var(--coral);}
+.card.status-fail .card-header{background:rgba(255,59,92,0.05);}
+.card.status-blocked{border-left:4px solid var(--orange);}
+.card.status-blocked .card-header{background:rgba(255,149,0,0.04);}
+.card.status-untested{border-left:4px solid rgba(255,255,255,0.12);}
+/* Action buttons with glow on hover */
+.act-pass:hover{background:var(--green)!important;color:#0B0F1A;box-shadow:0 0 12px rgba(48,209,88,0.35);}
+.act-fail:hover{background:var(--coral)!important;color:#fff;box-shadow:0 0 12px rgba(255,59,92,0.35);}
+.act-blocked:hover{background:var(--orange)!important;color:#0B0F1A;box-shadow:0 0 12px rgba(255,149,0,0.35);}
+.act-pass,.act-fail,.act-blocked{font-weight:700;}
+.act-clear{background:var(--bg3);border:1px solid var(--border2)!important;color:var(--dim);font-size:11px;}
+.act-clear:hover{background:var(--bg2);color:var(--muted);border-color:var(--border3)!important;}
+/* Run filter pills — BIGGER and BOLDER */
+.run-filter-btn{padding:8px 18px;font-size:12px;font-weight:700;border-radius:22px;}
+.run-filter-btn.active[id="rf-all"]{background:rgba(77,184,255,0.18);border-color:var(--blue);color:var(--blue);box-shadow:0 0 10px rgba(77,184,255,0.25);}
+.run-filter-btn.active.untested{background:rgba(255,255,255,0.08);border-color:var(--border3);color:var(--text);}
+.run-filter-btn.active.pass{background:rgba(48,209,88,0.18);border-color:var(--green);color:var(--green);box-shadow:0 0 12px rgba(48,209,88,0.3);}
+.run-filter-btn.active.fail{background:rgba(255,59,92,0.18);border-color:var(--coral);color:var(--coral);box-shadow:0 0 12px rgba(255,59,92,0.3);}
+.run-filter-btn.active.blocked{background:rgba(255,149,0,0.18);border-color:var(--orange);color:var(--orange);box-shadow:0 0 12px rgba(255,149,0,0.3);}
+/* Sidebar buttons full fill on hover */
+.btn-orange:hover{background:var(--orange)!important;color:#0B0F1A;box-shadow:0 0 14px rgba(255,149,0,0.35);}
+.btn-teal:hover{background:var(--teal)!important;color:#0B0F1A;box-shadow:0 0 14px rgba(0,245,212,0.35);}
+/* Step numbers orange */
+.step-num{color:var(--orange);font-weight:700;}
+/* Expected box teal */
+.expected-box{border-left-color:var(--teal);color:var(--teal);background:rgba(0,245,212,0.05);}
+/* Section titles orange */
+.section-title{color:var(--orange);font-weight:700;opacity:0.85;}
+/* Form labels orange */
+.form-label{color:var(--orange);opacity:0.85;}
+/* Modal border brighter */
+.modal{border-color:var(--border3);}
+/* Report numbers bigger */
+.report-num{font-size:34px;font-weight:700;}
+/* Run name bigger */
+.run-name{font-size:16px;font-weight:700;}
+</style>
+</head>
+<body>
+
+<header>
+  <div><div class="logo">SIGNAL <div class="logo-dash"></div><span class="logo-sub">QA COMMAND CENTER</span></div></div>
+  <div class="hdr-right">
+    <button class="ql-btn" onclick="openQuickLog()"><div class="ql-pulse"></div>QUICK LOG</button>
+    <div class="conn-dot" id="conn-dot"></div>
+    <div class="conn-lbl" id="conn-lbl">CONNECTING...</div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)" id="hdr-date"></span>
+  </div>
+</header>
+
+<div class="main-tabs">
+  <div class="main-tab active" onclick="showTab('library')">📋 Test Library</div>
+  <div class="main-tab" onclick="showTab('runs')">🏃 Test Runs</div>
+  <div class="main-tab" onclick="showTab('issues')">🐛 Issues</div>
+  <div class="main-tab" onclick="showTab('reports')">📊 Reports</div>
+</div>
+
+<div class="shell">
+<aside>
+  <div style="padding-bottom:4px">
+    <div class="sb-label">Live Stats</div>
+    <div class="stat-grid">
+      <div class="stat-box stat-pass"><div class="num" id="s-pass">0</div><div class="lbl">Pass</div></div>
+      <div class="stat-box stat-fail"><div class="num" id="s-fail">0</div><div class="lbl">Fail</div></div>
+      <div class="stat-box stat-blocked"><div class="num" id="s-blocked">0</div><div class="lbl">Blocked</div></div>
+      <div class="stat-box stat-untested"><div class="num" id="s-untested">0</div><div class="lbl">Untested</div></div>
+      <div class="stat-box stat-critical"><div class="num" id="s-critical">0</div><div class="lbl">Critical</div></div>
+      <div class="stat-box stat-high"><div class="num" id="s-high">0</div><div class="lbl">High</div></div>
+    </div>
+  </div>
+
+  <div class="sb-div"></div>
+  <div class="sb-label">Platform</div>
+  <div class="platform-toggle">
+    <button class="plat-btn both active" id="plat-both" onclick="setPlatform('all',this)">Both</button>
+    <button class="plat-btn web" id="plat-web" onclick="setPlatform('Web',this)">🌐 Web</button>
+    <button class="plat-btn mobile" id="plat-mobile" onclick="setPlatform('Mobile',this)">📱 Mobile</button>
+  </div>
+
+  <div class="sb-div"></div>
+  <div class="sb-label">Surface <span id="surf-platform-label" style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;font-size:9px"></span></div>
+  <div class="filter-list" id="surface-filters"></div>
+
+  <div class="sb-div"></div>
+  <div class="sb-label">Test Type</div>
+  <div class="filter-list">
+    <button class="fb active" id="ft-btn-all" onclick="setTypeFilter('all',this)">All types<span class="fc" id="ft-all">0</span></button>
+    <button class="fb" onclick="setTypeFilter('UI',this)"><span class="type-badge type-ui" style="margin-right:5px">UI</span>UI<span class="fc" id="ft-ui">0</span></button>
+    <button class="fb" onclick="setTypeFilter('API',this)"><span class="type-badge type-api" style="margin-right:5px">API</span>API<span class="fc" id="ft-api">0</span></button>
+    <button class="fb" onclick="setTypeFilter('Functional',this)"><span class="type-badge type-functional" style="margin-right:5px">FN</span>Functional<span class="fc" id="ft-fn">0</span></button>
+    <button class="fb" onclick="setTypeFilter('Integration',this)"><span class="type-badge type-integration" style="margin-right:5px">INT</span>Integration<span class="fc" id="ft-int">0</span></button>
+    <button class="fb" onclick="setTypeFilter('Data',this)"><span class="type-badge type-data" style="margin-right:5px">DATA</span>Data<span class="fc" id="ft-data">0</span></button>
+  </div>
+
+  <div class="sb-div"></div>
+  <div class="sb-label">Priority</div>
+  <div class="filter-list">
+    <button class="fb active" id="fp-btn-all" onclick="setPriorityFilter('all',this)">All priorities<span class="fc" id="fp-all">0</span></button>
+    <button class="fb" onclick="setPriorityFilter('Critical',this)"><span class="badge badge-critical" style="margin-right:4px;font-size:8px">CRIT</span>Critical<span class="fc" id="fp-critical">0</span></button>
+    <button class="fb" onclick="setPriorityFilter('High',this)"><span class="badge badge-high" style="margin-right:4px;font-size:8px">HIGH</span>High<span class="fc" id="fp-high">0</span></button>
+    <button class="fb" onclick="setPriorityFilter('Medium',this)"><span class="badge badge-medium" style="margin-right:4px;font-size:8px">MED</span>Medium<span class="fc" id="fp-medium">0</span></button>
+    <button class="fb" onclick="setPriorityFilter('Low',this)"><span class="badge badge-low" style="margin-right:4px;font-size:8px">LOW</span>Low<span class="fc" id="fp-low">0</span></button>
+  </div>
+
+  <div class="sb-div"></div>
+  <button class="sb-btn btn-orange" onclick="openRunModal()">+ NEW TEST RUN</button>
+  <button class="sb-btn btn-teal" onclick="openCaseModal()">+ ADD TEST CASE</button>
+  <button class="sb-btn btn-dim" onclick="exportCSV()">EXPORT CSV + ISSUES</button>
+</aside>
+
+<main>
+
+<div class="tab-view active" id="tab-library">
+  <div class="section-header">
+    <div class="section-title" id="library-label">ALL TEST CASES</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="active-run-select" style="font-size:11px;padding:5px 8px;width:auto" onchange="setActiveRun(this.value)">
+        <option value="">No active run (view only)</option>
+      </select>
+      <select id="sort-select" style="font-size:11px;padding:5px 8px;width:auto" onchange="renderLibrary()">
+        <option value="platform">Group by platform → surface</option>
+        <option value="surface">Group by surface</option>
+        <option value="type">Group by type</option>
+        <option value="priority">Group by priority</option>
+        <option value="status">Sort by status</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- RUN STATUS BAR — only visible when a run is active -->
+  <div id="run-status-bar" style="display:none;margin-bottom:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;overflow:hidden">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--orange);animation:qlp 1.5s infinite"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;color:var(--text)" id="run-status-name">Active Run</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)" id="run-status-pct"></div>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div style="height:4px;background:var(--bg3)">
+      <div id="run-progress-bar" style="height:100%;background:linear-gradient(90deg,#4ADE80,#2DD4BF);transition:width 0.3s;width:0%"></div>
+    </div>
+    <!-- Status filter pills -->
+    <div style="padding:10px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-right:4px">Show:</span>
+      <button class="run-filter-btn active" id="rf-all" onclick="setRunFilter('all',this)">
+        All <span id="rf-count-all" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;margin-left:3px">0</span>
+      </button>
+      <button class="run-filter-btn untested" id="rf-untested" onclick="setRunFilter('untested',this)">
+        ○ Untested <span id="rf-count-untested" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;margin-left:3px">0</span>
+      </button>
+      <button class="run-filter-btn pass" id="rf-pass" onclick="setRunFilter('pass',this)">
+        ✓ Pass <span id="rf-count-pass" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;margin-left:3px">0</span>
+      </button>
+      <button class="run-filter-btn fail" id="rf-fail" onclick="setRunFilter('fail',this)">
+        ✗ Fail <span id="rf-count-fail" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;margin-left:3px">0</span>
+      </button>
+      <button class="run-filter-btn blocked" id="rf-blocked" onclick="setRunFilter('blocked',this)">
+        ⊘ Blocked <span id="rf-count-blocked" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;margin-left:3px">0</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="library-list"></div>
+</div>
+
+<div class="tab-view" id="tab-runs">
+  <div class="section-header">
+    <div class="section-title">TEST RUNS</div>
+    <button class="run-btn run-btn-primary" onclick="openRunModal()">+ New Run</button>
+  </div>
+  <div id="runs-list"></div>
+</div>
+
+<div class="tab-view" id="tab-issues">
+  <div class="section-header">
+    <div class="section-title">ALL ISSUES</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select id="issue-platform-filter" style="font-size:11px;padding:5px 8px;width:auto" onchange="renderIssues()">
+        <option value="all">All platforms</option>
+        <option value="Web">Web only</option>
+        <option value="Mobile">Mobile only</option>
+      </select>
+      <select id="issue-origin-filter" style="font-size:11px;padding:5px 8px;width:auto" onchange="renderIssues()">
+        <option value="all">All origins</option>
+        <option value="ad_hoc">Ad hoc</option>
+        <option value="test_run">Test runs</option>
+      </select>
+      <select id="issue-filter" style="font-size:11px;padding:5px 8px;width:auto" onchange="renderIssues()">
+        <option value="all">All statuses</option>
+        <option value="open">Open</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+      </select>
+    </div>
+  </div>
+  <div id="issues-list"></div>
+</div>
+
+<div class="tab-view" id="tab-reports">
+  <div class="section-header">
+    <div class="section-title">REPORTS</div>
+    <button class="run-btn run-btn-secondary" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div class="report-stat-row">
+    <div class="report-stat"><div class="report-num" style="color:var(--green)" id="r-pass">0</div><div class="report-lbl">Passed</div></div>
+    <div class="report-stat"><div class="report-num" style="color:var(--coral)" id="r-fail">0</div><div class="report-lbl">Failed</div></div>
+    <div class="report-stat"><div class="report-num" style="color:var(--orange)" id="r-blocked">0</div><div class="report-lbl">Blocked</div></div>
+    <div class="report-stat"><div class="report-num" style="color:var(--muted)" id="r-untested">0</div><div class="report-lbl">Untested</div></div>
+    <div class="report-stat"><div class="report-num" style="color:var(--blue)" id="r-rate">0%</div><div class="report-lbl">Pass Rate</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--blue)">Web</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)" id="web-rate-summary"></div>
+      </div>
+      <div id="report-web-surfaces"></div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--teal)"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--teal)">Mobile</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)" id="mobile-rate-summary"></div>
+      </div>
+      <div id="report-mobile-surfaces"></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim)">By Test Type</div>
+  <div class="matrix-grid" id="report-by-type"></div>
+</div>
+
+</main>
+</div>
+
+<!-- ADD CASE MODAL -->
+<div class="modal-overlay" id="case-modal" onclick="handleMC(event,'case-modal')">
+<div class="modal">
+  <div class="modal-title" id="case-modal-title">ADD TEST CASE</div>
+  <input type="hidden" id="c-id" value="">
+  <div class="form-row-4">
+    <div class="form-group">
+      <label class="form-label">Platform</label>
+      <select id="c-platform" onchange="updateSurfaceOptions()">
+        <option value="Web">Web</option>
+        <option value="Mobile">Mobile</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Surface</label>
+      <select id="c-surface"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select id="c-type">
+        <option value="UI">UI</option>
+        <option value="API">API</option>
+        <option value="Functional">Functional</option>
+        <option value="Integration">Integration</option>
+        <option value="Data">Data</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Priority</label>
+      <select id="c-priority">
+        <option value="Critical">Critical</option>
+        <option value="High" selected>High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Title</label>
+    <input id="c-title" placeholder="e.g. Hero CTA navigates to Stripe checkout" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Description</label>
+    <textarea id="c-desc" placeholder="What this test verifies..." style="min-height:50px"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Steps (one per line)</label>
+    <textarea id="c-steps" placeholder="1. Go to stopapplyingblind.com&#10;2. Enter a valid email&#10;3. Click the CTA button" style="min-height:80px"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Expected Result</label>
+    <textarea id="c-expected" placeholder="Stripe checkout page opens with email pre-filled" style="min-height:50px"></textarea>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="closeModal('case-modal')">Cancel</button>
+    <button class="btn-save" id="case-save-btn" onclick="saveCase()">SAVE CASE</button>
+  </div>
+</div>
+</div>
+
+<!-- NEW RUN MODAL -->
+<div class="modal-overlay" id="run-modal" onclick="handleMC(event,'run-modal')">
+<div class="modal">
+  <div class="modal-title">CREATE TEST RUN</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Run Name</label>
+      <input id="r-name" placeholder="e.g. Pre-launch regression — Apr 12" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Platform Focus</label>
+      <select id="r-platform" onchange="populateRunCaseList()">
+        <option value="all">Both platforms</option>
+        <option value="Web">Web only</option>
+        <option value="Mobile">Mobile only</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Created By</label>
+      <input id="r-creator" placeholder="Your name" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Testers</label>
+      <input id="r-testers" placeholder="e.g. Peri, Jake" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Quick Select Cases</label>
+    <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
+      <button onclick="populateRunCaseList('Critical')" style="padding:4px 8px;background:var(--coral-bg);border:1px solid var(--coral-border);border-radius:5px;color:var(--coral);font-size:10px;cursor:pointer;font-family:'IBM Plex Mono',monospace">Critical only</button>
+      <button onclick="populateRunCaseList('UI')" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'IBM Plex Mono',monospace">UI only</button>
+      <button onclick="selectAllCases(false)" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'IBM Plex Mono',monospace">Clear</button>
+    </div>
+    <div class="case-checklist" id="run-case-list"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="closeModal('run-modal')">Cancel</button>
+    <button class="btn-save" onclick="saveRun()">CREATE RUN</button>
+  </div>
+</div>
+</div>
+
+<!-- QUICK LOG MODAL -->
+<div class="modal-overlay" id="ql-modal" onclick="handleMC(event,'ql-modal')">
+<div class="modal" style="max-width:520px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="ql-pulse"></div>
+    <div class="modal-title">QUICK LOG ISSUE</div>
+  </div>
+  <div style="font-size:12px;color:var(--muted)">Found a bug while using the product? Log it in 30 seconds. No test case or run needed.</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Platform</label>
+      <select id="ql-platform">
+        <option value="Web">Web</option>
+        <option value="Mobile">Mobile — iOS</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Surface</label>
+      <select id="ql-surface">
+        <option>Landing Page</option><option>Free Job Analysis</option><option>Auth Flow</option>
+        <option>Stripe & Checkout</option><option>Dashboard</option><option>JobFit</option>
+        <option>Positioning</option><option>Cover Letter</option><option>Networking</option>
+        <option>Job Tracker</option><option>Job URL Parser</option>
+        <option>Resume Rx — Entry</option><option>Resume Rx — Diagnosis</option>
+        <option>Resume Rx — Education</option><option>Resume Rx — Architecture</option>
+        <option>Resume Rx — Q&A</option><option>Resume Rx — PDF & Delivery</option>
+        <option>Mobile — Landing</option><option>Mobile — Login</option>
+        <option>Mobile — JobFit</option><option>Mobile — Tracker</option><option>Mobile — Profile</option>
+        <option>Mobile — Splash</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Severity</label>
+      <select id="ql-severity">
+        <option value="Critical">Critical — broken</option>
+        <option value="High" selected>High — wrong behavior</option>
+        <option value="Medium">Medium — needs fixing</option>
+        <option value="Low">Low — cosmetic</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL / Screen</label>
+      <input id="ql-url" placeholder="e.g. /signal/job-analysis" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">What did you see? <span style="color:var(--dim);font-size:9px;text-transform:none;letter-spacing:0;font-weight:400">What happened vs what you expected</span></label>
+    <textarea id="ql-desc" placeholder="e.g. The upgrade button on job analysis opens landing page instead of Stripe checkout..." style="min-height:90px"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Logged by</label>
+    <input id="ql-tester" placeholder="Your name" />
+  </div>
+  <div style="background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px">
+    <span class="adhoc-badge">Ad hoc</span>
+    <span style="font-size:11px;color:var(--muted)">Goes straight to Issues tab. No test case or run required.</span>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="closeModal('ql-modal')">Cancel</button>
+    <button class="btn-save" id="ql-save-btn" style="background:var(--coral-bg);border-color:var(--coral-border);color:var(--coral)" onclick="submitQuickLog()">LOG ISSUE</button>
+  </div>
+</div>
+</div>
+
+<script>
+const SB='https://ejhnokcnahauvrcbcmic.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqaG5va2NuYWhhdXZyY2JjbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMzczNzMsImV4cCI6MjA4MzcxMzM3M30.LzTMZDzDrx4UMWGu9y5qeg4AzwxukEWUu06q7Ts9Wb0';
+
+const WEB_SURFACES=['Landing Page','Free Job Analysis','Auth Flow','Stripe & Checkout','Dashboard','JobFit','Positioning','Cover Letter','Networking','Job Tracker','Job URL Parser','Resume Rx — Entry','Resume Rx — Diagnosis','Resume Rx — Education','Resume Rx — Architecture','Resume Rx — Q&A','Resume Rx — PDF & Delivery'];
+const MOBILE_SURFACES=['Mobile — Landing','Mobile — Login','Mobile — JobFit','Mobile — Positioning','Mobile — Cover Letter','Mobile — Networking','Mobile — Tracker','Mobile — Profile','Mobile — Splash / Onboarding'];
+const ALL_SURFACES=[...WEB_SURFACES,...MOBILE_SURFACES];
+const SURF_COLORS={'Landing Page':'#FEB06A','Free Job Analysis':'#2DD4BF','Auth Flow':'#7B5CF6','Stripe & Checkout':'#4ADE80','Dashboard':'#51ADE5','JobFit':'#FF4F6D','Positioning':'#8B7FE8','Cover Letter':'#F472B6','Networking':'#FB923C','Job Tracker':'#34D399','Job URL Parser':'#A78BFA','Resume Rx — Entry':'#FF6CE5','Resume Rx — Diagnosis':'#FF3B5C','Resume Rx — Education':'#4DB8FF','Resume Rx — Architecture':'#FFD60A','Resume Rx — Q&A':'#00F5D4','Resume Rx — PDF & Delivery':'#30D158','Mobile — Landing':'#FEB06A','Mobile — Login':'#7B5CF6','Mobile — JobFit':'#FF4F6D','Mobile — Positioning':'#8B7FE8','Mobile — Cover Letter':'#F472B6','Mobile — Networking':'#FB923C','Mobile — Tracker':'#34D399','Mobile — Profile':'#51ADE5','Mobile — Splash / Onboarding':'#2DD4BF'};
+const TYPES=['UI','API','Functional','Integration','Data'];
+const PRIORITIES=['Critical','High','Medium','Low'];
+
+let cases=[],runs=[],assignments=[],issues=[];
+let platformFilter='all',surfaceFilter='all',typeFilter='all',priorityFilter='all',activeRunId=null;
+let runStatusFilter='all';
+let openDetails=new Set(),caseSeverities={};
+
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+
+async function sb(path,opts={}){
+  const res=await fetch(`${SB}/rest/v1/${path}`,{
+    headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  const t=await res.text();return t?JSON.parse(t):null;
+}
+
+async function loadAll(){
+  setConn('loading');
+  try{
+    [cases,runs,assignments,issues]=await Promise.all([
+      sb('qa_test_cases?select=*&order=platform,surface,priority,id'),
+      sb('qa_test_runs?select=*&order=created_at.desc'),
+      sb('qa_assignments?select=*'),
+      sb('qa_issues?select=*&order=created_at.desc'),
+    ]);
+    setConn('live');
+    renderAll();
+  }catch(e){
+    setConn('error');
+    document.getElementById('library-list').innerHTML=`<div class="empty">Database error.<br>${esc(e.message)}<br><br><button onclick="showSetupSQL()" style="background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange);padding:8px 16px;border-radius:6px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px">SHOW SETUP SQL</button></div>`;
+  }
+}
+
+function setConn(s){
+  const d=document.getElementById('conn-dot'),l=document.getElementById('conn-lbl');
+  if(s==='loading'){d.style.background='var(--orange)';l.textContent='SYNCING...';}
+  else if(s==='live'){d.style.background='var(--green)';l.textContent='LIVE';}
+  else{d.style.background='var(--coral)';l.textContent='ERROR';}
+}
+
+function renderAll(){updateStats();renderSurfaceFilters();renderLibrary();renderRuns();renderIssues();renderReport();updateRunSelect();updateRunStatusBar();}
+
+function getFiltered(){
+  let list=[...cases];
+  if(platformFilter!=='all')list=list.filter(c=>c.platform===platformFilter);
+  if(surfaceFilter!=='all')list=list.filter(c=>c.surface===surfaceFilter);
+  if(typeFilter!=='all')list=list.filter(c=>c.test_type===typeFilter);
+  if(priorityFilter!=='all')list=list.filter(c=>c.priority===priorityFilter);
+  // When a run is active, filter by run membership first
+  if(activeRunId){
+    const runCaseIds=new Set(assignments.filter(a=>a.run_id===activeRunId).map(a=>a.case_id));
+    list=list.filter(c=>runCaseIds.has(c.id));
+    if(runStatusFilter!=='all')list=list.filter(c=>getStatus(c.id)===runStatusFilter);
+  }
+  return list;
+}
+
+function getStatus(caseId){
+  if(!activeRunId)return'untested';
+  const a=assignments.find(x=>x.run_id===activeRunId&&x.case_id===caseId);
+  return a?a.status:'untested';
+}
+
+function renderSurfaceFilters(){
+  const surfs=platformFilter==='Web'?WEB_SURFACES:platformFilter==='Mobile'?MOBILE_SURFACES:ALL_SURFACES;
+  const el=document.getElementById('surface-filters');
+  const label=document.getElementById('surf-platform-label');
+  label.textContent=platformFilter==='all'?'(all)':platformFilter==='Web'?'(web)':'(mobile)';
+  el.innerHTML=`<button class="fb ${surfaceFilter==='all'?'active':''}" onclick="setSurfaceFilter('all',this)">All surfaces<span class="fc">${cases.filter(c=>platformFilter==='all'||c.platform===platformFilter).length}</span></button>`+
+    surfs.map(s=>{
+      const color=SURF_COLORS[s]||'#fff';
+      const count=cases.filter(c=>c.surface===s).length;
+      return`<button class="fb ${surfaceFilter===s?'active':''}" onclick="setSurfaceFilter('${s.replace(/'/g,"\\'")}',this)"><span class="fb-dot" style="background:${color}"></span>${esc(s)}<span class="fc">${count}</span></button>`;
+    }).join('');
+}
+
+function renderLibrary(){
+  const el=document.getElementById('library-list');
+  const list=getFiltered();
+  const run=activeRunId?runs.find(r=>r.id===activeRunId):null;
+  const label=document.getElementById('library-label');
+  if(run){
+    const statusLabel=runStatusFilter==='all'?'ALL CASES':runStatusFilter.toUpperCase();
+    label.textContent=`${run.name.toUpperCase()} — ${statusLabel}`;
+  } else {
+    label.textContent='ALL TEST CASES';
+  }
+  if(!list.length){
+    el.innerHTML=`<div class="empty">${activeRunId?`NO ${runStatusFilter.toUpperCase()} CASES IN THIS RUN`:'NO TEST CASES MATCH THIS FILTER'}</div>`;
+    return;
+  }
+  const sort=document.getElementById('sort-select')?.value||'platform';
+
+  if(sort==='platform'){
+    const webCases=list.filter(c=>c.platform==='Web');
+    const mobileCases=list.filter(c=>c.platform==='Mobile');
+    let html='';
+    if(webCases.length){
+      html+=`<div class="platform-section">
+        <div class="platform-section-header web-header">
+          <span class="plat-badge plat-web">WEB</span>
+          <span class="platform-section-title" style="color:var(--blue)">Web Platform</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-left:auto">${webCases.length} cases</span>
+        </div>
+        <div class="platform-section-body">`;
+      const webGrouped={};
+      webCases.forEach(c=>{if(!webGrouped[c.surface])webGrouped[c.surface]=[];webGrouped[c.surface].push(c);});
+      WEB_SURFACES.filter(s=>webGrouped[s]).forEach(s=>{
+        const color=SURF_COLORS[s]||'#fff';
+        html+=`<div class="surf-group"><div class="surf-group-header"><div style="width:7px;height:7px;border-radius:50%;background:${color}"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${color}">${esc(s)}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">${webGrouped[s].length}</span></div>`;
+        webGrouped[s].forEach(c=>{html+=caseCard(c);});
+        html+='</div>';
+      });
+      html+='</div></div>';
+    }
+    if(mobileCases.length){
+      html+=`<div class="platform-section">
+        <div class="platform-section-header mobile-header">
+          <span class="plat-badge plat-mobile">MOBILE</span>
+          <span class="platform-section-title" style="color:var(--teal)">Mobile — iOS App</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-left:auto">${mobileCases.length} cases</span>
+        </div>
+        <div class="platform-section-body">`;
+      const mobGrouped={};
+      mobileCases.forEach(c=>{if(!mobGrouped[c.surface])mobGrouped[c.surface]=[];mobGrouped[c.surface].push(c);});
+      MOBILE_SURFACES.filter(s=>mobGrouped[s]).forEach(s=>{
+        const color=SURF_COLORS[s]||'#fff';
+        html+=`<div class="surf-group"><div class="surf-group-header"><div style="width:7px;height:7px;border-radius:50%;background:${color}"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${color}">${esc(s)}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">${mobGrouped[s].length}</span></div>`;
+        mobGrouped[s].forEach(c=>{html+=caseCard(c);});
+        html+='</div>';
+      });
+      html+='</div></div>';
+    }
+    el.innerHTML=html;
+  } else {
+    const groupKey=sort==='type'?'test_type':sort==='priority'?'priority':'surface';
+    const grouped={};
+    list.forEach(c=>{const k=c[groupKey]||'Unknown';if(!grouped[k])grouped[k]=[];grouped[k].push(c);});
+    const order=groupKey==='test_type'?TYPES:groupKey==='priority'?PRIORITIES:ALL_SURFACES;
+    const keys=Object.keys(grouped).sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+    let html='';
+    keys.forEach(key=>{
+      const color=SURF_COLORS[key]||typeColor(key)||priorityColor(key)||'#fff';
+      html+=`<div class="surf-group"><div class="surf-group-header"><div style="width:7px;height:7px;border-radius:50%;background:${color}"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${color}">${esc(key)}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">${grouped[key].length}</span></div>`;
+      grouped[key].forEach(c=>{html+=caseCard(c);});
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  }
+  openDetails.forEach(id=>{const e=document.getElementById(`detail-${id}`);if(e)e.classList.add('open');});
+}
+
+function typeColor(t){return{UI:'#51ADE5',API:'#7B5CF6',Functional:'#2DD4BF',Integration:'#fbbf24',Data:'#F472B6'}[t]||'';}
+function priorityColor(p){return{Critical:'#FF4F6D',High:'#FEB06A',Medium:'#51ADE5',Low:'rgba(255,255,255,0.3)'}[p]||'';}
+
+function caseCard(c){
+  const status=getStatus(c.id);
+  const assignment=activeRunId?assignments.find(x=>x.run_id===activeRunId&&x.case_id===c.id):null;
+  const surfColor=SURF_COLORS[c.surface]||'#fff';
+  const steps=(c.steps||'').split('\n').filter(Boolean);
+  const pri=(c.priority||'Medium').toLowerCase();
+  const type=(c.test_type||'UI');
+  const isWeb=c.platform==='Web';
+
+  return`<div class="card status-${status}" id="card-${c.id}">
+    <div class="card-header" onclick="toggleDetail(${c.id})">
+      <div class="card-id">TC-${String(c.id).padStart(3,'0')}</div>
+      <div class="card-main">
+        <div class="card-surface" style="color:${surfColor}">${esc(c.surface)}</div>
+        <div class="card-title">${esc(c.title)}</div>
+      </div>
+      <div class="card-badges">
+        <span class="plat-badge ${isWeb?'plat-web':'plat-mobile'}">${isWeb?'WEB':'iOS'}</span>
+        <span class="type-badge type-${type.toLowerCase()}">${type}</span>
+        <span class="badge badge-${pri}">${c.priority}</span>
+        <span class="badge badge-${status}">${status}</span>
+        ${assignment?.tester?`<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim);background:var(--bg3);padding:2px 5px;border-radius:4px">${esc(assignment.tester)}</span>`:''}
+      </div>
+    </div>
+    ${activeRunId?`
+    <div class="action-row">
+      <label>Tester</label>
+      <input class="tester-input" id="tester-${c.id}" placeholder="Your name" value="${esc(assignment?.tester||'')}">
+      <div class="act-btns">
+        <button class="act-btn act-pass" onclick="markCase(${c.id},'pass',event)">✓ PASS</button>
+        <button class="act-btn act-fail" onclick="markCase(${c.id},'fail',event)">✗ FAIL</button>
+        <button class="act-btn act-blocked" onclick="markCase(${c.id},'blocked',event)">⊘ BLOCKED</button>
+        ${status!=='untested'?`<button class="act-btn act-clear" onclick="clearCase(${c.id},event)" title="Clear result">✕</button>`:''}
+      </div>
+    </div>`:''}
+    <div class="fail-form" id="fail-${c.id}">
+      <div class="fail-title">What went wrong? — creates an issue automatically</div>
+      <textarea class="fail-textarea" id="fail-desc-${c.id}" placeholder="Describe exactly what happened vs what was expected..."></textarea>
+      <div class="fail-sev-row">
+        <button class="sev-btn sev-critical selected" id="sev-critical-${c.id}" onclick="selectSev(${c.id},'Critical')">Critical</button>
+        <button class="sev-btn sev-high" id="sev-high-${c.id}" onclick="selectSev(${c.id},'High')">High</button>
+        <button class="sev-btn sev-medium" id="sev-medium-${c.id}" onclick="selectSev(${c.id},'Medium')">Medium</button>
+        <button class="sev-btn sev-low" id="sev-low-${c.id}" onclick="selectSev(${c.id},'Low')">Low</button>
+      </div>
+      <button class="fail-submit" onclick="submitFail(${c.id})">LOG ISSUE + MARK FAILED</button>
+    </div>
+    <div class="card-detail" id="detail-${c.id}">
+      ${c.description?`<div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${esc(c.description)}</div></div>`:''}
+      ${steps.length?`<div class="detail-row"><div class="detail-label">Steps</div><div style="display:flex;flex-direction:column;gap:4px">${steps.map((s,i)=>`<div class="step-item"><div class="step-num">${i+1}.</div><div>${esc(s.replace(/^\d+\.\s*/,''))}</div></div>`).join('')}</div></div>`:''}
+      ${c.expected_result?`<div class="detail-row"><div class="detail-label">Expected</div><div class="expected-box">${esc(c.expected_result)}</div></div>`:''}
+      ${assignment?.notes?`<div class="detail-row"><div class="detail-label">Result note</div><div style="font-size:12px;color:var(--muted);font-style:italic">${esc(assignment.notes)}</div></div>`:''}
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button onclick="editCase(${c.id})" style="padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer">Edit</button>
+        <button onclick="deleteCase(${c.id})" style="padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer">Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleDetail(id){const el=document.getElementById(`detail-${id}`);el.classList.toggle('open');if(el.classList.contains('open'))openDetails.add(id);else openDetails.delete(id);}
+function selectSev(caseId,sev){caseSeverities[caseId]=sev;['Critical','High','Medium','Low'].forEach(s=>{const b=document.getElementById(`sev-${s.toLowerCase()}-${caseId}`);if(b)b.classList.toggle('selected',s===sev);});}
+
+async function markCase(caseId,status,e){
+  e.stopPropagation();
+  if(!activeRunId){alert('Select a test run first.');return;}
+  if(status==='fail'){const ff=document.getElementById(`fail-${caseId}`);if(ff)ff.classList.toggle('open');return;}
+  const tester=document.getElementById(`tester-${caseId}`)?.value?.trim()||'';
+  await upsertAssignment(caseId,status,tester,'');
+  await loadAll();
+}
+
+async function clearCase(caseId,e){
+  e.stopPropagation();
+  if(!activeRunId)return;
+  const existing=assignments.find(a=>a.run_id===activeRunId&&a.case_id===caseId);
+  if(!existing)return;
+  await sb(`qa_assignments?id=eq.${existing.id}`,{method:'PATCH',body:JSON.stringify({
+    status:'untested',tester:null,notes:null,issue_id:null,tested_at:null
+  })});
+  // Close fail form if open
+  const ff=document.getElementById(`fail-${caseId}`);
+  if(ff)ff.classList.remove('open');
+  await loadAll();
+}
+
+async function submitFail(caseId){
+  if(!activeRunId)return;
+  const desc=document.getElementById(`fail-desc-${caseId}`)?.value?.trim()||'';
+  const sev=caseSeverities[caseId]||'Critical';
+  const tester=document.getElementById(`tester-${caseId}`)?.value?.trim()||'';
+  const tc=cases.find(c=>c.id===caseId);
+  if(!desc){alert('Please describe what went wrong.');return;}
+  try{
+    const issue=await sb('qa_issues',{method:'POST',body:JSON.stringify({
+      test_case_id:caseId,test_run_id:activeRunId,
+      platform:tc?.platform||'Web',surface:tc?.surface||'',
+      title:tc?.title||'',description:desc,
+      severity:sev,status:'open',origin:'test_run',
+      tester:tester||null,created_at:new Date().toISOString()
+    })});
+    await upsertAssignment(caseId,'fail',tester,desc,issue?.[0]?.id);
+    const ff=document.getElementById(`fail-${caseId}`);if(ff)ff.classList.remove('open');
+    await loadAll();showTab('issues');
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+async function upsertAssignment(caseId,status,tester,notes,issueId){
+  const existing=assignments.find(a=>a.run_id===activeRunId&&a.case_id===caseId);
+  if(existing){await sb(`qa_assignments?id=eq.${existing.id}`,{method:'PATCH',body:JSON.stringify({status,tester:tester||null,notes:notes||null,issue_id:issueId||existing.issue_id,tested_at:new Date().toISOString()})});}
+  else{await sb('qa_assignments',{method:'POST',body:JSON.stringify({run_id:activeRunId,case_id:caseId,status,tester:tester||null,notes:notes||null,issue_id:issueId||null,tested_at:new Date().toISOString()})});}
+}
+
+function renderRuns(){
+  const el=document.getElementById('runs-list');
+  if(!runs.length){el.innerHTML='<div class="empty">NO RUNS YET<br>Click "+ NEW TEST RUN" to start</div>';return;}
+  el.innerHTML=runs.map(run=>{
+    const ra=assignments.filter(a=>a.run_id===run.id);
+    const total=ra.length||run.case_count||0;
+    const pass=ra.filter(a=>a.status==='pass').length;
+    const fail=ra.filter(a=>a.status==='fail').length;
+    const blocked=ra.filter(a=>a.status==='blocked').length;
+    const untested=total-pass-fail-blocked;
+    const pct=total?Math.round(pass/total*100):0;
+    return`<div class="run-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div><div class="run-name">${esc(run.name)}</div><div class="run-meta">${new Date(run.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · by ${esc(run.created_by||'?')}${run.testers?' · '+esc(run.testers):''}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${run.platform&&run.platform!=='all'?`<span class="plat-badge ${run.platform==='Web'?'plat-web':'plat-mobile'}">${run.platform}</span>`:''}
+          <span class="badge ${run.status==='complete'?'badge-pass':'badge-untested'}">${run.status||'active'}</span>
+        </div>
+      </div>
+      <div class="run-progress"><div class="run-prog-fill" style="width:${pct}%;background:linear-gradient(90deg,#4ADE80,#2DD4BF)"></div></div>
+      <div class="run-stats">
+        <div class="run-stat" style="color:var(--green)">✓ ${pass} passed</div>
+        <div class="run-stat" style="color:var(--coral)">✗ ${fail} failed</div>
+        <div class="run-stat" style="color:var(--orange)">⊘ ${blocked} blocked</div>
+        <div class="run-stat" style="color:var(--muted)">○ ${untested} untested</div>
+        <div class="run-stat" style="color:var(--blue);margin-left:auto">${pct}% complete</div>
+      </div>
+      <div class="run-actions">
+        <button class="run-btn run-btn-primary" onclick="setActiveRun('${run.id}');showTab('library')">Open in Test View</button>
+        <button class="run-btn run-btn-secondary" onclick="markRunComplete(${run.id})">Mark Complete</button>
+        <button class="run-btn run-btn-secondary" onclick="deleteRun(${run.id})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderIssues(){
+  const el=document.getElementById('issues-list');
+  const pf=document.getElementById('issue-platform-filter')?.value||'all';
+  const of2=document.getElementById('issue-origin-filter')?.value||'all';
+  const sf=document.getElementById('issue-filter')?.value||'all';
+  let list=[...issues];
+  if(pf!=='all')list=list.filter(i=>i.platform===pf);
+  if(of2==='ad_hoc')list=list.filter(i=>i.origin==='ad_hoc');
+  if(of2==='test_run')list=list.filter(i=>i.origin!=='ad_hoc');
+  if(sf!=='all')list=list.filter(i=>i.status===sf);
+  if(!list.length){el.innerHTML='<div class="empty">NO ISSUES<br>Issues appear when tests fail or you use Quick Log</div>';return;}
+  el.innerHTML=list.map(issue=>{
+    const run=runs.find(r=>r.id===issue.test_run_id);
+    const color=SURF_COLORS[issue.surface]||'#fff';
+    const statusOpts=['open','in_progress','resolved'].map(s=>`<option value="${s}" ${issue.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('');
+    const pri=(issue.severity||'High').toLowerCase();
+    const isAdHoc=issue.origin==='ad_hoc';
+    const isMobile=issue.platform==='Mobile';
+    return`<div class="issue-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);width:56px;flex-shrink:0">ISS-${String(issue.id).padStart(3,'0')}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap">
+            <span class="plat-badge ${isMobile?'plat-mobile':'plat-web'}">${isMobile?'iOS':'WEB'}</span>
+            <span style="font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:${color}">${esc(issue.surface)}</span>
+            ${isAdHoc?'<span class="adhoc-badge">Ad hoc</span>':'<span class="run-badge">Test run</span>'}
+            ${run?`<span style="font-size:9px;color:var(--dim)">· ${esc(run.name)}</span>`:''}
+            ${issue.url?`<span style="font-size:9px;color:var(--dim);font-family:'IBM Plex Mono',monospace">${esc(issue.url)}</span>`:''}
+          </div>
+          <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px">${esc(issue.title||issue.description?.slice(0,80)||'Untitled')}</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">${esc(issue.description||'')}</div>
+          ${issue.tester?`<div style="font-size:10px;color:var(--dim);margin-top:3px">Logged by ${esc(issue.tester)} · ${new Date(issue.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`:''}
+        </div>
+        <span class="badge badge-${pri}">${issue.severity||'High'}</span>
+      </div>
+      <div class="issue-status-row">
+        <label style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--dim)">Status</label>
+        <select class="issue-status-sel" id="iss-${issue.id}">${statusOpts}</select>
+        <button class="issue-save-btn" onclick="saveIssueStatus(${issue.id})">SAVE</button>
+        <button onclick="deleteIssue(${issue.id})" style="padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--muted);font-size:10px;cursor:pointer;font-family:'IBM Plex Mono',monospace">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveIssueStatus(id){const sel=document.getElementById(`iss-${id}`);if(!sel)return;await sb(`qa_issues?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({status:sel.value})});await loadAll();}
+async function deleteIssue(id){if(!confirm('Delete?'))return;await sb(`qa_issues?id=eq.${id}`,{method:'DELETE'});await loadAll();}
+
+function renderReport(){
+  const pass=assignments.filter(a=>a.status==='pass').length;
+  const fail=assignments.filter(a=>a.status==='fail').length;
+  const blocked=assignments.filter(a=>a.status==='blocked').length;
+  const untested=Math.max(0,cases.length-pass-fail-blocked);
+  const rate=(pass+fail+blocked)>0?Math.round(pass/(pass+fail+blocked)*100):0;
+  document.getElementById('r-pass').textContent=pass;document.getElementById('r-fail').textContent=fail;
+  document.getElementById('r-blocked').textContent=blocked;document.getElementById('r-untested').textContent=untested;
+  document.getElementById('r-rate').textContent=rate+'%';
+
+  // Web surfaces
+  const webCases=cases.filter(c=>c.platform==='Web');
+  const webPass=webCases.map(c=>assignments.find(a=>a.case_id===c.id)).filter(a=>a?.status==='pass').length;
+  const webRate=webCases.length?Math.round(webPass/webCases.length*100):0;
+  document.getElementById('web-rate-summary').textContent=`${webPass}/${webCases.length} · ${webRate}%`;
+  document.getElementById('report-web-surfaces').innerHTML=WEB_SURFACES.map(s=>surfaceRow(s)).join('');
+
+  // Mobile surfaces
+  const mobCases=cases.filter(c=>c.platform==='Mobile');
+  const mobPass=mobCases.map(c=>assignments.find(a=>a.case_id===c.id)).filter(a=>a?.status==='pass').length;
+  const mobRate=mobCases.length?Math.round(mobPass/mobCases.length*100):0;
+  document.getElementById('mobile-rate-summary').textContent=`${mobPass}/${mobCases.length} · ${mobRate}%`;
+  document.getElementById('report-mobile-surfaces').innerHTML=MOBILE_SURFACES.map(s=>surfaceRow(s)).join('');
+
+  // By type matrix
+  document.getElementById('report-by-type').innerHTML=TYPES.map(type=>{
+    const tc=cases.filter(c=>c.test_type===type);
+    if(!tc.length)return'';
+    const tp=tc.map(c=>assignments.find(a=>a.case_id===c.id)).filter(a=>a?.status==='pass').length;
+    const pct=tc.length?Math.round(tp/tc.length*100):0;
+    return`<div class="matrix-cell"><div class="matrix-cell-label">${type}</div><div class="matrix-cell-num" style="color:${typeColor(type)}">${pct}%</div><div style="font-size:10px;color:var(--muted);margin-top:3px">${tp}/${tc.length}</div></div>`;
+  }).join('');
+}
+
+function surfaceRow(s){
+  const sc=cases.filter(c=>c.surface===s);
+  if(!sc.length)return'';
+  const sp=sc.map(c=>assignments.find(a=>a.case_id===c.id)).filter(a=>a?.status==='pass').length;
+  const sf=sc.map(c=>assignments.find(a=>a.case_id===c.id)).filter(a=>a?.status==='fail').length;
+  const pct=sc.length?Math.round(sp/sc.length*100):0;
+  const color=SURF_COLORS[s]||'#fff';
+  return`<div class="surface-row"><div style="font-weight:600;color:${color};font-size:11px">${s.replace('Mobile — ','')}</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:10px;color:var(--muted)">${sp}/${sc.length}${sf>0?` · <span style="color:var(--coral)">${sf}✗</span>`:''}</div><div class="surface-bar"><div class="surface-bar-fill" style="width:${pct}%;background:${pct===100?'var(--green)':pct>60?'var(--teal)':'var(--coral)'}"></div></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:${pct===100?'var(--green)':'var(--muted)'};width:30px;text-align:right">${pct}%</div></div></div>`;
+}
+
+function updateStats(){
+  const pass=assignments.filter(a=>a.status==='pass').length;
+  const fail=assignments.filter(a=>a.status==='fail').length;
+  const blocked=assignments.filter(a=>a.status==='blocked').length;
+  document.getElementById('s-pass').textContent=pass;document.getElementById('s-fail').textContent=fail;
+  document.getElementById('s-blocked').textContent=blocked;
+  document.getElementById('s-untested').textContent=Math.max(0,cases.length-pass-fail-blocked);
+  document.getElementById('s-critical').textContent=cases.filter(c=>c.priority==='Critical').length;
+  document.getElementById('s-high').textContent=cases.filter(c=>c.priority==='High').length;
+  document.getElementById('ft-all').textContent=cases.length;
+  TYPES.forEach(t=>{const e=document.getElementById(`ft-${t.toLowerCase()}`);if(e)e.textContent=cases.filter(c=>c.test_type===t).length;});
+  document.getElementById('ft-fn').textContent=cases.filter(c=>c.test_type==='Functional').length;
+  document.getElementById('ft-int').textContent=cases.filter(c=>c.test_type==='Integration').length;
+  document.getElementById('fp-all').textContent=cases.length;
+  PRIORITIES.forEach(p=>{const e=document.getElementById(`fp-${p.toLowerCase()}`);if(e)e.textContent=cases.filter(c=>c.priority===p).length;});
+}
+
+function updateRunSelect(){
+  const sel=document.getElementById('active-run-select');
+  sel.innerHTML='<option value="">No active run (view only)</option>'+runs.map(r=>`<option value="${r.id}"${r.id==activeRunId?' selected':''}>${esc(r.name)}</option>`).join('');
+}
+
+function setPlatform(p,btn){
+  platformFilter=p;surfaceFilter='all';
+  document.querySelectorAll('.plat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSurfaceFilters();renderLibrary();updateStats();
+}
+function setSurfaceFilter(f,btn){surfaceFilter=f;renderSurfaceFilters();renderLibrary();}
+function setTypeFilter(f,btn){typeFilter=f;document.querySelectorAll('.filter-list .fb').forEach(b=>{if(b.id&&b.id.startsWith('ft-'))b.classList.remove('active');});btn.classList.add('active');renderLibrary();}
+function setPriorityFilter(f,btn){priorityFilter=f;renderLibrary();}
+function setActiveRun(id){
+  activeRunId=id?parseInt(id):null;
+  runStatusFilter='all';
+  document.getElementById('active-run-select').value=id||'';
+  updateRunStatusBar();
+  renderLibrary();
+}
+
+function setRunFilter(status,btn){
+  runStatusFilter=status;
+  document.querySelectorAll('.run-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLibrary();
+}
+
+function updateRunStatusBar(){
+  const bar=document.getElementById('run-status-bar');
+  if(!activeRunId){bar.style.display='none';return;}
+
+  const run=runs.find(r=>r.id===activeRunId);
+  const ra=assignments.filter(a=>a.run_id===activeRunId);
+  const runCaseIds=new Set(ra.map(a=>a.case_id));
+  const total=runCaseIds.size;
+  const pass=ra.filter(a=>a.status==='pass').length;
+  const fail=ra.filter(a=>a.status==='fail').length;
+  const blocked=ra.filter(a=>a.status==='blocked').length;
+  const untested=ra.filter(a=>a.status==='untested').length;
+  const done=pass+fail+blocked;
+  const pct=total?Math.round(done/total*100):0;
+
+  document.getElementById('run-status-name').textContent=run?.name||'Active Run';
+  document.getElementById('run-status-pct').textContent=`${done} of ${total} tested · ${pct}% complete`;
+  document.getElementById('run-progress-bar').style.width=pct+'%';
+
+  document.getElementById('rf-count-all').textContent=total;
+  document.getElementById('rf-count-untested').textContent=untested;
+  document.getElementById('rf-count-pass').textContent=pass;
+  document.getElementById('rf-count-fail').textContent=fail;
+  document.getElementById('rf-count-blocked').textContent=blocked;
+
+  // Color the fail count red if any failures
+  const failBtn=document.getElementById('rf-fail');
+  failBtn.style.color=fail>0?'var(--coral)':'';
+
+  bar.style.display='block';
+  
+  // Reset pill active state to match current filter
+  document.querySelectorAll('.run-filter-btn').forEach(b=>b.classList.remove('active'));
+  const activeBtn=document.getElementById(`rf-${runStatusFilter}`);
+  if(activeBtn)activeBtn.classList.add('active');
+  else document.getElementById('rf-all').classList.add('active');
+}
+
+function showTab(tab){
+  document.querySelectorAll('.tab-view').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.main-tab')[['library','runs','issues','reports'].indexOf(tab)].classList.add('active');
+}
+
+function updateSurfaceOptions(){
+  const p=document.getElementById('c-platform').value;
+  const surfs=p==='Web'?WEB_SURFACES:MOBILE_SURFACES;
+  document.getElementById('c-surface').innerHTML=surfs.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+
+function openCaseModal(){
+  document.getElementById('c-id').value='';
+  document.getElementById('case-modal-title').textContent='ADD TEST CASE';
+  document.getElementById('case-save-btn').textContent='SAVE CASE';
+  updateSurfaceOptions();
+  document.getElementById('case-modal').classList.add('open');
+}
+
+function openRunModal(){
+  document.getElementById('r-name').value='';
+  document.getElementById('r-creator').value='';
+  document.getElementById('r-testers').value='';
+  document.getElementById('r-platform').value='all';
+  populateRunCaseList();
+  document.getElementById('run-modal').classList.add('open');
+}
+
+function populateRunCaseList(typeFilter){
+  const platform=document.getElementById('r-platform').value;
+  const list=document.getElementById('run-case-list');
+
+  // Filter cases by platform first
+  let visible=cases;
+  if(platform!=='all') visible=cases.filter(c=>c.platform===platform);
+
+  if(!visible.length){
+    list.innerHTML=`<div style="padding:20px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim)">NO ${platform.toUpperCase()} CASES FOUND</div>`;
+    return;
+  }
+
+  list.innerHTML=visible.map(c=>{
+    const color=SURF_COLORS[c.surface]||'#fff';
+    const isMobile=c.platform==='Mobile';
+    // Apply optional type/priority sub-filter — keep checked state
+    const shouldCheck=!typeFilter||(typeFilter==='Critical'?c.priority==='Critical':c.test_type===typeFilter);
+    return`<label class="case-check-item">
+      <input type="checkbox" name="rc" value="${c.id}" ${shouldCheck?'checked':''}>
+      <span class="plat-badge ${isMobile?'plat-mobile':'plat-web'}" style="margin-right:2px">${isMobile?'iOS':'WEB'}</span>
+      <span style="font-size:9px;font-weight:700;text-transform:uppercase;color:${color};width:90px;flex-shrink:0">${esc(c.surface.replace('Mobile — ',''))}</span>
+      <span style="font-size:12px;color:var(--text);flex:1">${esc(c.title)}</span>
+      <span class="badge badge-${(c.priority||'High').toLowerCase()}" style="font-size:8px">${c.priority}</span>
+    </label>`;
+  }).join('');
+}
+
+function filterRunCases(filter){
+  populateRunCaseList(filter);
+}
+function selectAllCases(checked){document.querySelectorAll('input[name="rc"]').forEach(cb=>cb.checked=checked);}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function handleMC(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+async function saveCase(){
+  const id=document.getElementById('c-id').value;
+  const title=document.getElementById('c-title').value.trim();
+  if(!title){alert('Title required.');return;}
+  const data={
+    platform:document.getElementById('c-platform').value,
+    surface:document.getElementById('c-surface').value,
+    test_type:document.getElementById('c-type').value,
+    priority:document.getElementById('c-priority').value,
+    title,description:document.getElementById('c-desc').value.trim(),
+    steps:document.getElementById('c-steps').value.trim(),
+    expected_result:document.getElementById('c-expected').value.trim(),active:true,
+  };
+  try{
+    if(id){await sb(`qa_test_cases?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(data)});}
+    else{await sb('qa_test_cases',{method:'POST',body:JSON.stringify(data)});}
+    closeModal('case-modal');
+    ['c-id','c-title','c-desc','c-steps','c-expected'].forEach(fid=>{const e=document.getElementById(fid);if(e)e.value='';});
+    await loadAll();
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+function editCase(id){
+  const tc=cases.find(c=>c.id===id);if(!tc)return;
+  document.getElementById('c-id').value=id;
+  document.getElementById('c-platform').value=tc.platform||'Web';
+  updateSurfaceOptions();
+  document.getElementById('c-surface').value=tc.surface;
+  document.getElementById('c-type').value=tc.test_type||'UI';
+  document.getElementById('c-priority').value=tc.priority||'High';
+  document.getElementById('c-title').value=tc.title;
+  document.getElementById('c-desc').value=tc.description||'';
+  document.getElementById('c-steps').value=tc.steps||'';
+  document.getElementById('c-expected').value=tc.expected_result||'';
+  document.getElementById('case-modal-title').textContent='EDIT TEST CASE';
+  document.getElementById('case-save-btn').textContent='UPDATE CASE';
+  document.getElementById('case-modal').classList.add('open');
+}
+
+async function deleteCase(id){if(!confirm('Delete?'))return;await sb(`qa_test_cases?id=eq.${id}`,{method:'DELETE'});await loadAll();}
+
+async function saveRun(){
+  const name=document.getElementById('r-name').value.trim();
+  if(!name){alert('Run name required.');return;}
+  const selectedCases=[...document.querySelectorAll('input[name="rc"]:checked')].map(cb=>parseInt(cb.value));
+  if(!selectedCases.length){alert('Select at least one case.');return;}
+  try{
+    const runData=await sb('qa_test_runs',{method:'POST',body:JSON.stringify({
+      name,created_by:document.getElementById('r-creator').value.trim()||null,
+      testers:document.getElementById('r-testers').value.trim()||null,
+      platform:document.getElementById('r-platform').value,
+      status:'active',case_count:selectedCases.length,
+    })});
+    const runId=runData[0].id;
+    await Promise.all(selectedCases.map(caseId=>sb('qa_assignments',{method:'POST',body:JSON.stringify({run_id:runId,case_id:caseId,status:'untested'})})));
+    closeModal('run-modal');activeRunId=runId;
+    await loadAll();showTab('library');
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+async function markRunComplete(id){await sb(`qa_test_runs?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({status:'complete',completed_at:new Date().toISOString()})});await loadAll();}
+async function deleteRun(id){if(!confirm('Delete run and all results?'))return;await sb(`qa_assignments?run_id=eq.${id}`,{method:'DELETE'});await sb(`qa_test_runs?id=eq.${id}`,{method:'DELETE'});if(activeRunId===id)activeRunId=null;await loadAll();}
+
+function openQuickLog(){
+  document.getElementById('ql-desc').value='';
+  document.getElementById('ql-tester').value='';
+  document.getElementById('ql-url').value='';
+  document.getElementById('ql-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('ql-desc').focus(),100);
+}
+
+async function submitQuickLog(){
+  const desc=document.getElementById('ql-desc').value.trim();
+  if(!desc){alert('Please describe what you saw.');return;}
+  const platform=document.getElementById('ql-platform').value;
+  const surface=document.getElementById('ql-surface').value;
+  const severity=document.getElementById('ql-severity').value;
+  const tester=document.getElementById('ql-tester').value.trim()||null;
+  const url=document.getElementById('ql-url').value.trim()||null;
+  const btn=document.getElementById('ql-save-btn');
+  btn.textContent='LOGGING...';btn.disabled=true;
+  try{
+    await sb('qa_issues',{method:'POST',body:JSON.stringify({
+      platform,surface,title:desc.slice(0,120),description:desc,
+      severity,status:'open',origin:'ad_hoc',
+      tester,url,created_at:new Date().toISOString()
+    })});
+    closeModal('ql-modal');await loadAll();showTab('issues');
+  }catch(e){alert('Failed: '+e.message);}
+  finally{btn.textContent='LOG ISSUE';btn.disabled=false;}
+}
+
+function exportCSV(){
+  const caseRows=[['TC-ID','Platform','Surface','Type','Priority','Title','Status','Tester','Run','Notes','Issue-ID']];
+  cases.forEach(c=>{
+    const a=assignments.find(x=>x.case_id===c.id);
+    const run=a?runs.find(r=>r.id===a.run_id):null;
+    caseRows.push([`TC-${String(c.id).padStart(3,'0')}`,c.platform||'Web',c.surface,c.test_type||'UI',c.priority,c.title,a?a.status:'untested',a?.tester||'',run?.name||'',a?.notes||'',a?.issue_id?`ISS-${String(a.issue_id).padStart(3,'0')}`:'']);
+  });
+  const issueRows=[['ISS-ID','Platform','Origin','Surface','Title','Description','Severity','Status','Tester','URL','Logged','Run']];
+  issues.forEach(i=>{
+    const run=runs.find(r=>r.id===i.test_run_id);
+    issueRows.push([`ISS-${String(i.id).padStart(3,'0')}`,i.platform||'Web',i.origin==='ad_hoc'?'Ad hoc':'Test run',i.surface||'',i.title||'',i.description||'',i.severity||'High',i.status||'open',i.tester||'',i.url||'',i.created_at?new Date(i.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'',run?.name||'']);
+  });
+  const toCSV=rows=>rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const combined=['=== TEST CASES ===',toCSV(caseRows),'','=== ALL ISSUES (WEB + MOBILE · TEST RUN + AD HOC) ===',toCSV(issueRows)].join('\n');
+  const blob=new Blob([combined],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`signal_qa_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function showSetupSQL(){
+  prompt('Run in Supabase SQL Editor:',`ALTER TABLE qa_test_cases ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'Web';
+ALTER TABLE qa_issues ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'Web';
+ALTER TABLE qa_issues ADD COLUMN IF NOT EXISTS origin TEXT DEFAULT 'test_run';
+ALTER TABLE qa_issues ADD COLUMN IF NOT EXISTS url TEXT;
+ALTER TABLE qa_test_runs ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'all';`);
+}
+
+async function bootApp(){await loadAll();await migrateAndSeed();}
+setInterval(loadAll,30000);
+</script>
+
+<script>
+// MIGRATION + MOBILE SEED
+async function migrateAndSeed(){
+  if(!cases||cases.length===0)return;
+
+  // 1. Migrate existing cases: add platform=Web, migrate P1/P2/P3, infer test_type
+  function inferType(c){
+    const t=(c.title+' '+(c.description||'')).toLowerCase();
+    if(t.includes('webhook')||t.includes('endpoint')||t.includes('api')||t.includes('session created')||t.includes('supabase row'))return'API';
+    if(t.includes('saves')||t.includes('persists')||t.includes('profile_complete')||t.includes('flips')||t.includes('reload'))return'Data';
+    if(t.includes('flow')||t.includes('redirect')&&t.includes('→')||t.includes('magic link')&&t.includes('dashboard'))return'Integration';
+    if(t.includes('validation')||t.includes('required')||t.includes('verdict')||t.includes('decision')||t.includes('logic')||t.includes('scoring'))return'Functional';
+    return'UI';
+  }
+  function mapPri(p){if(!p)return'High';if(p==='P1')return'Critical';if(p==='P2')return'High';if(p==='P3')return'Medium';return p;}
+
+  for(const c of cases){
+    const updates={};
+    if(!c.platform)updates.platform='Web';
+    if(!c.test_type)updates.test_type=inferType(c);
+    if(c.priority==='P1'||c.priority==='P2'||c.priority==='P3')updates.priority=mapPri(c.priority);
+    if(Object.keys(updates).length>0)await sb(`qa_test_cases?id=eq.${c.id}`,{method:'PATCH',body:JSON.stringify(updates)});
+  }
+
+  // 2. Seed mobile test cases if none exist
+  const mobileExists=cases.some(c=>c.platform==='Mobile');
+  if(mobileExists)return;
+
+  const mobileCases=[
+    // MOBILE LANDING
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Critical',title:'App launch → marketing screen for new users',steps:'1. Delete app data / first install\n2. Launch app',expected_result:'Marketing landing screen shown — not login, not dashboard'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Critical',title:'"Get full access · $99" opens Stripe in Safari',steps:'1. Enter valid email in Get Full Access input\n2. Tap "Get full access · $99 →"',expected_result:'Safari opens to Stripe checkout with email pre-filled. $99 charge shown.'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'API',priority:'Critical',title:'Checkout API called with email before Stripe redirect',steps:'1. Enter email\n2. Tap CTA\n3. Check network request',expected_result:'POST to /api/checkout/create-session fired with { email }. Response URL used to open Safari.'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'High',title:'"Try job analysis free" opens web job analysis with email',steps:'1. Enter email in free analysis input\n2. Tap "Try job analysis free →"',expected_result:'Safari opens to wrnsignal.workforcereadynow.com/signal/job-analysis?email=...'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'High',title:'"Log in →" navigates to login screen',steps:'1. Tap "Log in →" link on landing screen',expected_result:'App navigates to login screen'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Medium',title:'Invalid email shows validation error',steps:'1. Enter invalid email (no @)\n2. Tap Get Full Access',expected_result:'Red error text shown. No API call made. No Safari opened.'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Medium',title:'Loading state shown during checkout creation',steps:'1. Enter valid email\n2. Tap CTA\n3. Observe immediately',expected_result:'"Setting up checkout..." text shown. Button disabled during API call.'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Medium',title:'Gradient headline renders correctly on device',steps:'1. Launch app\n2. View hero headline on physical device',expected_result:'"Apply Smarter. Get Hired." renders with animated/gradient text. No clipping or overflow.'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Medium',title:'Page scrolls through all 6 sections',steps:'1. On landing screen\n2. Scroll from top to bottom',expected_result:'All sections visible: hero, credibility, verdict cards, pillars, founder quote, bottom CTA'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Low',title:'Verdict cards render in 2x2 grid',steps:'1. Scroll to verdict section on landing',expected_result:'4 cards in 2x2 grid. Priority/Apply/Review/Pass with correct colors.'},
+    {platform:'Mobile',surface:'Mobile — Landing',test_type:'UI',priority:'Low',title:'Keyboard avoiding works on email inputs',steps:'1. Tap email input on landing screen\n2. Keyboard appears',expected_result:'Input scrolls above keyboard. Content not hidden behind keyboard.'},
+
+    // MOBILE LOGIN
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'Integration',priority:'Critical',title:'Returning user sees login not landing',steps:'1. Log in once\n2. Log out\n3. Re-launch app',expected_result:'Login screen shown directly — not the marketing landing page'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'API',priority:'Critical',title:'Unknown email shows error message',steps:'1. Enter email not in client_profiles\n2. Tap Send magic link',expected_result:'Error message shown. No magic link sent.'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'API',priority:'Critical',title:'Known email sends magic link',steps:'1. Enter active account email\n2. Tap Send magic link',expected_result:'Confirmation shown. Magic link email arrives.'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'Integration',priority:'Critical',title:'Magic link tap opens app and authenticates',steps:'1. Receive magic link email\n2. Tap the link on device',expected_result:'App opens (or foregrounds). User is authenticated. Navigates to tracker tab.'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'UI',priority:'Medium',title:'"← Back" shows on login for new users',steps:'1. Navigate to login from landing page\n2. Check for back button',expected_result:'"← Back" link visible. Tapping returns to landing screen.'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'UI',priority:'Low',title:'Login screen has no "paid members only" callout',steps:'1. View login screen',expected_result:'No "SIGNAL is for paid members only" text. Clean header with welcome message.'},
+
+    // MOBILE AUTH
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'Integration',priority:'Critical',title:'Post-login routes to tracker tab',steps:'1. Log in successfully\n2. Observe navigation',expected_result:'App navigates to Tracker tab (Applications & Interviews) — not JobFit tab'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'Integration',priority:'High',title:'Session persists across app restarts',steps:'1. Log in\n2. Close app completely\n3. Relaunch',expected_result:'User is still logged in. Goes directly to tracker tab without login.'},
+    {platform:'Mobile',surface:'Mobile — Login',test_type:'Data',priority:'High',title:'has_logged_in flag set after first login',steps:'1. First-ever login\n2. Close app\n3. Relaunch without session',expected_result:'Login screen shown (not landing). Flag persists correctly.'},
+
+    // MOBILE JOBFIT
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'Critical',title:'Run JobFit produces score and verdict',steps:'1. Go to JobFit tab\n2. Select persona\n3. Enter company, title, paste JD\n4. Tap Run JobFit',expected_result:'Score (0-100) and verdict (Priority Apply/Apply/Review/Pass) displayed'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'Critical',title:'Verdict uses correct colors',steps:'1. Run JobFit and get each verdict type',expected_result:'Priority Apply=#2DD4BF, Apply=#51ADE5, Review=#FEB06A, Pass=#FF4F6D'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'Functional',priority:'Critical',title:'Score matches web score for same input',steps:'1. Run same JD + persona on web and mobile\n2. Compare scores',expected_result:'Scores match within ±2 points. Same verdict returned.'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'High',title:'Persona dropdown populated from profile',steps:'1. Have personas created in dashboard\n2. Open JobFit tab\n3. Check persona dropdown',expected_result:'All personas listed. Default persona pre-selected.'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'High',title:'WHY codes section expands on tap',steps:'1. Run JobFit\n2. Tap WHY codes section',expected_result:'Section expands smoothly. Reasoning codes displayed.'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'High',title:'RISK codes section expands on tap',steps:'1. Run JobFit\n2. Tap RISK codes section',expected_result:'Section expands. Risk reasoning displayed.'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'Medium',title:'"That\'s a clarity problem." copy is correct',steps:'1. View JobFit input screen\n2. Check subheading text',expected_result:'Reads "That\'s a clarity problem." — not "intelligence problem"'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'Medium',title:'Run new job clears all tabs',steps:'1. Complete full analysis\n2. Tap Run new job',expected_result:'All 4 tabs cleared. Input form shown with empty fields.'},
+    {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'Medium',title:'Keyboard dismisses when tapping outside input',steps:'1. Tap JD textarea\n2. Tap outside input area',expected_result:'Keyboard dismisses. Content not obscured.'},
+
+    // MOBILE POSITIONING
+    {platform:'Mobile',surface:'Mobile — Positioning',test_type:'UI',priority:'High',title:'Positioning generates after JobFit',steps:'1. Run JobFit\n2. Navigate to Positioning tab',expected_result:'Positioning analysis loads. Resume bullet rewrites displayed.'},
+    {platform:'Mobile',surface:'Mobile — Positioning',test_type:'UI',priority:'High',title:'Copy button copies positioning output',steps:'1. Complete positioning\n2. Tap copy button',expected_result:'Content copied to clipboard. Confirmation shown.'},
+    {platform:'Mobile',surface:'Mobile — Positioning',test_type:'UI',priority:'Medium',title:'Lead/Reframe/Remove labels render correctly',steps:'1. View positioning output',expected_result:'Bullets labeled with correct verdicts and colors. Teal=Lead, Orange=Reframe, Coral=Remove.'},
+
+    // MOBILE COVER LETTER
+    {platform:'Mobile',surface:'Mobile — Cover Letter',test_type:'UI',priority:'High',title:'Cover letter generates from profile',steps:'1. Ensure persona with resume exists\n2. Run JobFit\n3. Go to Cover Letter tab\n4. Enter name, company, hiring manager\n5. Tap Generate',expected_result:'Personalized cover letter displayed. References actual resume background.'},
+    {platform:'Mobile',surface:'Mobile — Cover Letter',test_type:'UI',priority:'High',title:'Copy button copies full letter',steps:'1. Generate cover letter\n2. Tap copy button',expected_result:'Full letter text copied. Confirmation toast shown.'},
+    {platform:'Mobile',surface:'Mobile — Cover Letter',test_type:'UI',priority:'Medium',title:'Letter scrollable when long',steps:'1. Generate a long cover letter\n2. Scroll within the letter',expected_result:'Letter content scrollable. No content cut off.'},
+
+    // MOBILE NETWORKING
+    {platform:'Mobile',surface:'Mobile — Networking',test_type:'UI',priority:'High',title:'Networking plan generates contact cards',steps:'1. Run JobFit\n2. Go to Networking tab',expected_result:'Networking plan with contact cards and message templates displayed.'},
+    {platform:'Mobile',surface:'Mobile — Networking',test_type:'UI',priority:'High',title:'Contact card expands on tap',steps:'1. View networking plan\n2. Tap a contact card',expected_result:'Card expands to show full message template.'},
+    {platform:'Mobile',surface:'Mobile — Networking',test_type:'UI',priority:'Medium',title:'Copy message button works',steps:'1. Expand contact card\n2. Tap copy on message',expected_result:'Message copied to clipboard.'},
+
+    // MOBILE TRACKER
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'Critical',title:'Tracker is default tab after login',steps:'1. Log in\n2. Check which tab is active',expected_result:'Tracker tab (Applications & Interviews) is the first/active tab'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'Critical',title:'Add job saves to tracker',steps:'1. Tap Add Job\n2. Enter company, title, status\n3. Save',expected_result:'Job appears in tracker list. Saved to Supabase.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'Integration',priority:'Critical',title:'SIGNAL button loads cached analysis',steps:'1. Have tracked job with analysis run\n2. Tap SIGNAL button',expected_result:'Navigates to JobFit tab with all 4 tabs pre-populated from cached run.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'High',title:'Application status updates correctly',steps:'1. Open an application\n2. Change status to Interviewing\n3. Save',expected_result:'Status updated in list and Supabase.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'High',title:'Interview tab shows interview cards',steps:'1. Add an interview\n2. Switch to Interviews tab',expected_result:'Interview card shown with correct stage and date.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'High',title:'Star rating saves interest level',steps:'1. Tap 4 stars on an application\n2. Close and reopen app',expected_result:'4-star rating persists after app restart.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'Medium',title:'Analytics/insights tab shows metrics',steps:'1. Have multiple applications\n2. Switch to Insights tab',expected_result:'Interview rate, avg score, and score distribution chart displayed correctly.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'Medium',title:'Delete application removes from list',steps:'1. Swipe or tap delete on application\n2. Confirm',expected_result:'Application removed from list and database.'},
+    {platform:'Mobile',surface:'Mobile — Tracker',test_type:'UI',priority:'Low',title:'Pie chart renders correctly',steps:'1. Have applications in multiple statuses\n2. View tracker analytics',expected_result:'Pie/donut chart shows correct proportions with status colors.'},
+
+    // MOBILE PROFILE
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'High',title:'Profile fields load from database',steps:'1. Go to Profile tab\n2. Check all fields',expected_result:'Name, job type, target roles, locations, timeline all populated from saved profile.'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'Data',priority:'High',title:'Profile save updates Supabase',steps:'1. Edit name field\n2. Tap Save\n3. Reload app',expected_result:'Updated name persists. profile_complete recalculated if all fields filled.'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'High',title:'Job Type dropdown has correct options',steps:'1. Tap Job Type dropdown',expected_result:'Options: Full Time, Internship, Both — nothing else'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'High',title:'Resume upload extracts text',steps:'1. Tap upload resume\n2. Select a PDF',expected_result:'Extracted text populates resume textarea.'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'High',title:'Create persona saves correctly',steps:'1. Enter persona name\n2. Paste resume text\n3. Tap Create',expected_result:'New persona appears in list. Available in JobFit dropdown.'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'Medium',title:'Delete persona removes from list',steps:'1. Tap delete on persona\n2. Confirm',expected_result:'Persona removed. No longer in JobFit dropdown.'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'Medium',title:'Logout clears session and returns to login',steps:'1. Tap Log out',expected_result:'Session cleared. Login screen shown (not landing — hasLoggedInBefore=true).'},
+    {platform:'Mobile',surface:'Mobile — Profile',test_type:'UI',priority:'Low',title:'Timeline field has correct placeholder hint',steps:'1. Tap Timeline input',expected_result:'Placeholder shows "e.g. Immediate, Summer 2026, Fall 2026"'},
+
+    // MOBILE SPLASH
+    {platform:'Mobile',surface:'Mobile — Splash / Onboarding',test_type:'UI',priority:'Medium',title:'Splash screen shows on first launch',steps:'1. Cold launch app',expected_result:'Branded SIGNAL splash screen shows for ~2.4s before transitioning'},
+    {platform:'Mobile',surface:'Mobile — Splash / Onboarding',test_type:'UI',priority:'Medium',title:'Splash transitions to correct screen',steps:'1. Cold launch as new user\n2. Wait for splash\n3. Observe transition',expected_result:'Transitions to marketing landing screen — not login or tabs'},
+    {platform:'Mobile',surface:'Mobile — Splash / Onboarding',test_type:'UI',priority:'Low',title:'Splash animation plays without jank',steps:'1. Launch app on physical device\n2. Observe splash animation',expected_result:'Animation plays smoothly at 60fps. No visible lag or frame drops.'},
+  ];
+
+  // URL Parser web cases — only seed if none exist yet
+  const urlParserExists=cases.some(c=>c.surface==='Job URL Parser');
+  if(!urlParserExists){
+    const urlParserCases=[
+      // INDEED
+      {platform:'Web',surface:'Job URL Parser',test_type:'Integration',priority:'Critical',title:'Indeed URL auto-fills all three fields',steps:'1. Paste a valid Indeed job URL into the URL field\n2. Click Fetch →',expected_result:'Company name, job title, and full job description all pre-filled correctly. Method returns cheerio or jsonld.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'Functional',priority:'Critical',title:'Indeed extracted description is complete (100+ words)',steps:'1. Fetch an Indeed URL\n2. Check the job description field length',expected_result:'Job description contains full posting — responsibilities, requirements, qualifications. Not truncated or partial.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'UI',priority:'High',title:'Fetch button shows loading state during request',steps:'1. Paste any job URL\n2. Click Fetch →\n3. Observe button immediately',expected_result:'Button shows "Fetching..." and is disabled while request is in flight.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'UI',priority:'High',title:'Fields remain editable after auto-fill',steps:'1. Fetch a job URL successfully\n2. Try editing the company name field',expected_result:'All three pre-filled fields (company, title, JD) are fully editable after auto-fill.'},
+      // GREENHOUSE
+      {platform:'Web',surface:'Job URL Parser',test_type:'Integration',priority:'Critical',title:'Greenhouse URL auto-fills all three fields',steps:'1. Paste a valid Greenhouse job URL (greenhouse.io)\n2. Click Fetch →',expected_result:'Company name, job title, and description pre-filled. Company name extracted from title tag "Role at Company".'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'Functional',priority:'High',title:'Greenhouse company name extracted correctly from title tag',steps:'1. Fetch a Greenhouse URL\n2. Check company name field',expected_result:'Company name shows the actual company name — not "Greenhouse" and not the job title.'},
+      // LEVER
+      {platform:'Web',surface:'Job URL Parser',test_type:'Integration',priority:'Critical',title:'Lever URL auto-fills all three fields',steps:'1. Paste a valid Lever job URL (lever.co)\n2. Click Fetch →',expected_result:'Company name, job title, and description pre-filled correctly.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'Functional',priority:'High',title:'Lever description combines all posting sections',steps:'1. Fetch a Lever URL\n2. Check the job description field',expected_result:'Description includes all sections — about the role, requirements, and any additional sections separated by double newline.'},
+      // HANDSHAKE
+      {platform:'Web',surface:'Job URL Parser',test_type:'Integration',priority:'High',title:'Handshake URL auto-fills all three fields',steps:'1. Paste a valid Handshake job URL\n2. Click Fetch →',expected_result:'Company name, job title, and description pre-filled correctly.'},
+      // LINKEDIN
+      {platform:'Web',surface:'Job URL Parser',test_type:'Integration',priority:'Critical',title:'LinkedIn URL triggers JSON-LD extraction attempt',steps:'1. Paste a valid LinkedIn job URL (linkedin.com/jobs/view/...)\n2. Click Fetch →',expected_result:'Either: all fields pre-filled via JSON-LD (method: jsonld) OR LinkedIn helper UI appears with amber border and 3-step instructions.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'UI',priority:'Critical',title:'LinkedIn helper UI opens job in new tab',steps:'1. Paste LinkedIn URL\n2. Click Fetch →\n3. Observe if helper appears',expected_result:'If JSON-LD fails, helper UI shows AND the LinkedIn job opens in a new tab automatically.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'Integration',priority:'Critical',title:'LinkedIn paste helper extracts correct fields',steps:'1. LinkedIn helper UI is showing\n2. Select all text on the LinkedIn job page (Cmd+A)\n3. Paste into the helper textarea\n4. Click Extract from Paste →',expected_result:'Company name, job title, and description all correctly extracted from pasted page text. Helper collapses after success.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'Functional',priority:'High',title:'LinkedIn paste extraction handles messy page text',steps:'1. Paste full LinkedIn page text including nav, footer, sidebar\n2. Click Extract →',expected_result:'Only the job-relevant content extracted — nav/footer/sidebar text stripped out. Clean description returned.'},
+      // ERROR STATES
+      {platform:'Web',surface:'Job URL Parser',test_type:'UI',priority:'High',title:'Invalid URL shows validation error',steps:'1. Type "not a url" in the URL field\n2. Click Fetch →',expected_result:'Error message shown below input. No API call made. No page navigation.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'UI',priority:'High',title:'Blocked URL shows helpful error message',steps:'1. Paste a URL from a site that blocks scraping\n2. Click Fetch →',expected_result:'Error message: "Could not reach this URL. Check it\'s public and try again." Manual paste fields remain available.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'UI',priority:'Medium',title:'Empty URL field — Fetch button does nothing',steps:'1. Leave URL field empty\n2. Click Fetch →',expected_result:'Nothing happens. No error, no API call. Button requires URL to be present.'},
+      {platform:'Web',surface:'Job URL Parser',test_type:'Functional',priority:'Medium',title:'Claude fallback fires when cheerio extraction is incomplete',steps:'1. Use a URL from an unknown job board with unusual page structure\n2. Click Fetch →',expected_result:'Fields still pre-filled via Claude fallback. Method returned as "claude" in response.'},
+      // MOBILE
+      {platform:'Mobile',surface:'Mobile — JobFit',test_type:'Integration',priority:'Critical',title:'Indeed URL fetch works from mobile app',steps:'1. Open JobFit tab on mobile\n2. Paste Indeed URL in URL field\n3. Tap Fetch →',expected_result:'Company, title, and description pre-filled. Keyboard dismisses.'},
+      {platform:'Mobile',surface:'Mobile — JobFit',test_type:'Integration',priority:'Critical',title:'LinkedIn URL shows helper UI on mobile',steps:'1. Paste LinkedIn URL in mobile URL field\n2. Tap Fetch →',expected_result:'LinkedIn helper UI appears with amber styling and opens Safari with the job URL.'},
+      {platform:'Mobile',surface:'Mobile — JobFit',test_type:'Integration',priority:'High',title:'Share sheet sends job URL to SIGNAL',steps:'1. Find a job on Indeed in Safari\n2. Tap Share → SIGNAL\n3. Observe app behavior',expected_result:'App opens to JobFit tab with the URL pre-filled and fetch triggered automatically.'},
+      {platform:'Mobile',surface:'Mobile — JobFit',test_type:'UI',priority:'Medium',title:'URL input uses URL keyboard on mobile',steps:'1. Tap URL input field on mobile',expected_result:'URL-optimized keyboard appears (with .com key). No autocorrect or autocapitalize.'},
+    ];
+    for(const c of urlParserCases){
+      await sb('qa_test_cases',{method:'POST',body:JSON.stringify({...c,active:true})});
+    }
+    console.log('Seeded',urlParserCases.length,'URL parser test cases');
+  }
+
+  // Resume Rx test cases
+  const resumeRxExists=cases.some(c=>c.surface==='Resume Rx — Entry');
+  if(!resumeRxExists){
+    const resumeRxCases=[
+
+      // ─── ENTRY STAGE ───
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Integration',priority:'Critical',
+       title:'Existing resume detected and preview shown on entry',
+       steps:'1. Ensure profile has a default persona with resume_text\n2. Navigate to /dashboard/resume-rx',
+       expected_result:'Card shows "Resume on file" with persona name, last updated date, and first 300 chars preview. Two buttons visible: "Use this resume →" and "Upload a different one".'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Integration',priority:'Critical',
+       title:'"Use this resume" pre-fills and advances to mode selectors',
+       steps:'1. Existing resume detected\n2. Click "Use this resume →"',
+       expected_result:'Resume text set from existing persona. Mode/year/field selectors appear. Upload/paste UI hidden.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'UI',priority:'Critical',
+       title:'"Upload a different one" shows upload and paste UI',
+       steps:'1. Existing resume detected\n2. Click "Upload a different one"',
+       expected_result:'Upload card and paste card appear. Existing resume card remains but deselected.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Integration',priority:'Critical',
+       title:'No existing resume shows upload/paste directly with no detection card',
+       steps:'1. Use account with no resume on file\n2. Navigate to /dashboard/resume-rx',
+       expected_result:'No "resume on file" card shown. Upload and paste UI shown immediately.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Integration',priority:'Critical',
+       title:'PDF upload extracts text and populates resume field',
+       steps:'1. Click upload button\n2. Select a real PDF resume file',
+       expected_result:'File name shown. "Extracting text..." loading state appears. On success resume text field populated with extracted content.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Integration',priority:'Critical',
+       title:'DOCX upload extracts text correctly',
+       steps:'1. Upload a .docx resume file',
+       expected_result:'Text extracted via mammoth. Resume content visible in preview. No error.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'UI',priority:'High',
+       title:'Analyze button disabled until all three selectors filled',
+       steps:'1. Have resume text present\n2. Fill only mode, leave year and field empty\n3. Check button state',
+       expected_result:'"Analyze My Resume →" button is disabled. All three dropdowns must be selected before enabling.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'UI',priority:'High',
+       title:'Analyze button disabled when resume text is empty',
+       steps:'1. Fill all three selectors\n2. Leave resume textarea empty\n3. Check button state',
+       expected_result:'Button remains disabled. Resume text is required.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Functional',priority:'High',
+       title:'All three modes available in mode selector',
+       steps:'1. Click mode dropdown',
+       expected_result:'Three options: "Student Seeking Internship", "Student Seeking First Job", "Early Professional Changing Roles"'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Functional',priority:'High',
+       title:'All year options available',
+       steps:'1. Click year dropdown',
+       expected_result:'Six options: Freshman, Sophomore, Junior, Senior, Graduate Student, Recent Graduate'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'UI',priority:'Medium',
+       title:'Past sessions shown below entry form',
+       steps:'1. Complete at least one Resume Rx session\n2. Navigate back to /dashboard/resume-rx',
+       expected_result:'Previous sessions visible below with verdict badge, target field, date, and Continue/View Results buttons.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'UI',priority:'Medium',
+       title:'"Continue" opens in-progress session at correct stage',
+       steps:'1. Start a session but stop at Education stage\n2. Click Continue on past session card',
+       expected_result:'Session resumes at Education intake stage — not back at entry.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'Functional',priority:'Medium',
+       title:'Resume under 200 characters shows validation error',
+       steps:'1. Paste very short text (under 200 chars) in resume textarea\n2. Click Analyze',
+       expected_result:'Error: "Resume text is too short. Please paste your full resume." No API call made.'},
+
+      {platform:'Web',surface:'Resume Rx — Entry',test_type:'UI',priority:'Low',
+       title:'Loading state shows during analysis with informative message',
+       steps:'1. Submit valid resume with all fields filled\n2. Observe immediately',
+       expected_result:'"Analyzing your resume..." shown with subtext "This takes about 30 seconds". Button disabled.'},
+
+      // ─── DIAGNOSIS STAGE ───
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'Critical',
+       title:'Diagnosis returns all six dimension scores',
+       steps:'1. Submit resume for analysis\n2. View scorecard',
+       expected_result:'Six dimension cards shown: Impact, Specificity, Language, Relevance, Completeness, Honesty. Each has a score 1-5, verdict line, and findings.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'Critical',
+       title:'Overall verdict one of three valid values',
+       steps:'1. Submit resume\n2. Check overall verdict banner',
+       expected_result:'Verdict is exactly one of: "Strong Foundation" (green), "Needs Work" (orange), or "Experience Gap" (coral). No other values possible.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'Critical',
+       title:'Experience Gap verdict shows Peri\'s exact framing',
+       steps:'1. Submit a resume with very thin experience\n2. Verify verdict',
+       expected_result:'If verdict is experience_gap, the exact text appears: "Since you are not showing too much work experience yet (which is OK!) we need to really dive into your academic projects, activities, etc. to identify skills and traits that would be transferable to the workplace."'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'Critical',
+       title:'7-second skim test result displayed with pass/fail',
+       steps:'1. View diagnosis results',
+       expected_result:'Skim test card shown with pass/fail badge. Three sub-items: Role Clarity, Anchor Proof, Reason to Read — each with status and notes.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'High',
+       title:'High school warning shown for Junior+ with HS content',
+       steps:'1. Submit resume containing high school content\n2. Select Junior or higher year\n3. View diagnosis',
+       expected_result:'Amber warning banner shows specific high school items detected and states they will be removed.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'High',
+       title:'No high school warning for Freshman/Sophomore',
+       steps:'1. Submit same resume with HS content\n2. Select Freshman year\n3. View diagnosis',
+       expected_result:'No high school warning shown. HS content acceptable for first two years.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'High',
+       title:'ATS issues flagged when present',
+       steps:'1. Submit a resume with columns, tables, or non-standard headers\n2. View diagnosis',
+       expected_result:'Amber ATS issues card shown listing specific problems found. Not shown if no ATS issues.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Functional',priority:'High',
+       title:'Missing opportunities identified and listed',
+       steps:'1. Submit a resume with light experience\n2. View diagnosis',
+       expected_result:'Orange callout shows "Before we rewrite, consider adding:" with bulleted list of missing content (projects, coursework, activities).'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'UI',priority:'High',
+       title:'Dimension score dots render correctly',
+       steps:'1. View a dimension card with score of 3',
+       expected_result:'Shows exactly 3 filled dots and 2 empty dots (●●●○○). Score 1 = one dot filled, score 5 = all dots filled.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'UI',priority:'High',
+       title:'Dimension card border color matches score',
+       steps:'1. View diagnosis scorecard',
+       expected_result:'Score 4-5 = green border. Score 3 = orange border. Score 1-2 = coral/red border.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'Data',priority:'High',
+       title:'Session saved to database after diagnosis',
+       steps:'1. Complete diagnosis\n2. Check Supabase resume_rx_sessions table',
+       expected_result:'New row exists with status="diagnosis", original_resume_text, mode, year_in_school, target_field, and diagnosis JSONB populated.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'UI',priority:'Medium',
+       title:'Findings expandable on each dimension card',
+       steps:'1. View a dimension card with findings\n2. Click to expand',
+       expected_result:'Specific findings text expands. Up to 4 items shown per dimension.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'UI',priority:'Medium',
+       title:'"Start the Rewrite" advances to Education stage',
+       steps:'1. View diagnosis\n2. Click "Start the Rewrite →"',
+       expected_result:'Page advances to Education intake form. Diagnosis stage no longer shown.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'UI',priority:'Medium',
+       title:'"Download Diagnosis" exports scorecard text',
+       steps:'1. View diagnosis\n2. Click "Download Diagnosis"',
+       expected_result:'Text file downloads containing the diagnosis summary and all dimension scores/findings.'},
+
+      {platform:'Web',surface:'Resume Rx — Diagnosis',test_type:'UI',priority:'Low',
+       title:'"Start Over" clears session and returns to entry',
+       steps:'1. View diagnosis\n2. Click "Start Over"',
+       expected_result:'Confirmation prompt shown. On confirm, session cleared, page returns to entry stage.'},
+
+      // ─── EDUCATION STAGE ───
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'UI',priority:'Critical',
+       title:'All required education fields present',
+       steps:'1. Advance to Education intake stage',
+       expected_result:'Form shows: university, location, college within university, graduation date, majors (multi), minors (multi), GPA, honors/awards, relevant coursework, study abroad toggle, additional notes.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'Critical',
+       title:'GPA >= 3.5 shows green "Will be included" indicator',
+       steps:'1. Enter GPA of 3.7 in education form',
+       expected_result:'Green checkmark with "Will be included" text shown immediately next to GPA field.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'Critical',
+       title:'GPA < 3.3 shows dim "Will not be shown" indicator',
+       steps:'1. Enter GPA of 3.1',
+       expected_result:'Dim note shown: "Below 3.3 — will not be shown". GPA excluded automatically from resume.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'High',
+       title:'GPA 3.3-3.49 shows user toggle',
+       steps:'1. Enter GPA of 3.4',
+       expected_result:'Toggle appears allowing user to decide whether to include or exclude GPA. No automatic decision.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'High',
+       title:'Education section proposal generated after submission',
+       steps:'1. Fill out education form completely\n2. Click "Confirm Education →"',
+       expected_result:'Claude generates education section proposal showing formatted text, coursework recommendations with rationale, and placement recommendation (above/below experience) with reasoning.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'High',
+       title:'Relevant coursework suggestions specific to target field',
+       steps:'1. Enter 5+ courses\n2. Set target field to Marketing\n3. Submit education',
+       expected_result:'Proposed coursework list includes only courses with keyword value for Marketing. Non-relevant courses excluded with explanation.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'High',
+       title:'Study abroad section generated when provided',
+       steps:'1. Toggle study abroad open\n2. Enter location, duration, academic notes\n3. Submit',
+       expected_result:'Education proposal includes formatted study abroad entry with framing appropriate for target field.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'UI',priority:'High',
+       title:'Multiple majors and minors accepted as tags',
+       steps:'1. Add two majors: "Marketing" and "Psychology"\n2. Add one minor: "Data Analytics"',
+       expected_result:'All three appear as removable tags. Education proposal reflects double major correctly.'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Data',priority:'High',
+       title:'Education intake saved to session after confirmation',
+       steps:'1. Submit education form\n2. Check Supabase session row',
+       expected_result:'education_intake JSONB field populated. Status updated to "architecture".'},
+
+      {platform:'Web',surface:'Resume Rx — Education',test_type:'Functional',priority:'Medium',
+       title:'Coaching note on education section shown in Peri\'s voice',
+       steps:'1. Submit education form\n2. View proposal',
+       expected_result:'Coaching note present — warm, direct, specific to this student\'s situation. Not generic.'},
+
+      // ─── ARCHITECTURE STAGE ───
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'Functional',priority:'Critical',
+       title:'Positioning statement generated and shown prominently',
+       steps:'1. Advance to Architecture stage',
+       expected_result:'Card shows "This resume will position you as..." with complete positioning statement based on mode, year, and target field.'},
+
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'Functional',priority:'Critical',
+       title:'Section order shown with rationale per section',
+       steps:'1. View architecture proposal',
+       expected_result:'Ordered list of all resume sections. Each section has emphasis badge (Anchor/Strong/Standard/Compressed/Remove) and one-line rationale.'},
+
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'Functional',priority:'High',
+       title:'Education placement follows diagnosis rule',
+       steps:'1. Submit resume with work experience\n2. View architecture',
+       expected_result:'If student has work/project experience, Education placed below experience. If no experience, Education at top.'},
+
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'Functional',priority:'High',
+       title:'High school sections marked for removal in architecture',
+       steps:'1. Use Junior+ student with HS content\n2. View architecture',
+       expected_result:'High school items appear in section list with emphasis="remove" and strikethrough styling.'},
+
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'Functional',priority:'High',
+       title:'Student adjustment request updates architecture',
+       steps:'1. View architecture\n2. Type adjustment: "I want Education at the top"\n3. Re-submit',
+       expected_result:'Architecture re-generated with requested adjustment applied. Positioning statement updated if needed.'},
+
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'Data',priority:'High',
+       title:'Architecture saved to session on confirmation',
+       steps:'1. Confirm architecture\n2. Check Supabase',
+       expected_result:'architecture JSONB populated. Status updated to "qa".'},
+
+      {platform:'Web',surface:'Resume Rx — Architecture',test_type:'UI',priority:'Medium',
+       title:'What\'s changing callout shown when structure differs from original',
+       steps:'1. Submit resume where education is currently at top but should move\n2. View architecture',
+       expected_result:'"What\'s changing" callout shown listing specific structural changes from original.'},
+
+      // ─── Q&A REWRITE STAGE ───
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'UI',priority:'Critical',
+       title:'Progress bar shows current item and total',
+       steps:'1. Advance to Q&A stage',
+       expected_result:'"Item 1 of X · X remaining" shown with progress bar. Updates after each item completed.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'Critical',
+       title:'Weak bullet shows original and generates 2 rewrite variants',
+       steps:'1. Q&A item is a weak bullet\n2. Answer all questions\n3. Click Generate Rewrite →',
+       expected_result:'Two variant cards shown side by side. Each shows bullet text, reasoning below in dim. Past-tense verb start. Passes 7-second skim.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'Critical',
+       title:'Project Q&A shows all 10 questions in correct order',
+       steps:'1. Q&A item is a project type\n2. View questions',
+       expected_result:'Questions appear in Peri\'s exact order: 1. Describe assignment 2. What class 3. Team or individual 4. How long 5. Your responsibility 6. Tools used 7. Did you present (to whom) 8. Professionals involved 9. Key learnings 10. How did you do'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'Critical',
+       title:'Project generates 3-4 bullet variants',
+       steps:'1. Complete project Q&A\n2. Click Generate Bullets →',
+       expected_result:'3-4 bullet cards shown. Student can select 2-3. Section header suggestion shown. Keywords chips visible.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Integration',priority:'Critical',
+       title:'Syllabus upload improves project bullet specificity',
+       steps:'1. Project Q&A shown\n2. Upload syllabus PDF via source material area\n3. Complete Q&A and generate',
+       expected_result:'Bullets reference specific details from the syllabus — course name, methodology, deliverables. More specific than without source material.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'Critical',
+       title:'All rewritten bullets start with past-tense action verb',
+       steps:'1. Complete any Q&A item and generate rewrites\n2. Check all bullet variants',
+       expected_result:'Every bullet starts with a strong past-tense verb. None start with "Responsible for", "Helped", "Assisted", "Participated in", or "Worked on".'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'Critical',
+       title:'No invented metrics in rewrites',
+       steps:'1. Answer Q&A with vague answers — no specific numbers\n2. Review rewrites',
+       expected_result:'Bullets do not contain fabricated percentages or metrics. Only metrics from student answers appear.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'High',
+       title:'Field-relevant keywords embedded legitimately',
+       steps:'1. Target field: Marketing\n2. Complete project Q&A for a marketing class project\n3. View keywords chips on result',
+       expected_result:'Marketing keywords visible in teal chips (e.g. campaign strategy, content calendar, engagement metrics). All present in the actual bullet text.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'High',
+       title:'Coaching note shown in Peri\'s voice when present',
+       steps:'1. Complete Q&A item\n2. View result card',
+       expected_result:'If coaching_note returned from API, shown in italic orange text with "— Peri" attribution. Not shown if absent.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'High',
+       title:'No hyphens or em dashes in any rewritten bullet',
+       steps:'1. Review all bullet variants across multiple items',
+       expected_result:'Zero hyphens or em dashes in any generated bullet. Hard constraint enforced.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'High',
+       title:'No learning-based language in any rewritten bullet',
+       steps:'1. Review all bullet variants',
+       expected_result:'None contain: "learned", "gained experience in", "was exposed to", "developed skills in". Hard constraint enforced.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'UI',priority:'High',
+       title:'"Use this" button approves bullet and advances to next item',
+       steps:'1. View rewrite variants\n2. Click "Use this" on one variant',
+       expected_result:'Bullet marked as approved. Progress bar updates. Next Q&A item shown.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'UI',priority:'High',
+       title:'"Skip this one" advances without requiring approval',
+       steps:'1. View Q&A item\n2. Click "Skip this one"',
+       expected_result:'Item marked as skipped. Progress advances. No bullet required.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'UI',priority:'High',
+       title:'"Try different answers" clears answers and re-enables form',
+       steps:'1. View rewrite results\n2. Click "Try different answers"',
+       expected_result:'Answer textareas cleared. Generate button re-enabled. Previous results hidden.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Integration',priority:'High',
+       title:'Source material from paper upload feeds into bullet generation',
+       steps:'1. Project Q&A shown\n2. Paste text from a final research paper\n3. Generate bullets',
+       expected_result:'Bullets reference specific findings, methods, or conclusions from the paper. Demonstrably more specific than without source material.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'High',
+       title:'"Presented to whom" question affects bullet framing',
+       steps:'1. Answer presentation question: "Panel of 5 marketing executives"\n2. Generate bullets',
+       expected_result:'Bullet references the external audience specifically — not just "presented findings" but "Presented to panel of X executives" or similar.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Data',priority:'High',
+       title:'Approved bullets saved to session qa_items',
+       steps:'1. Approve 3 bullets across different items\n2. Check Supabase session',
+       expected_result:'qa_items JSONB array contains approved items with answers and rewritten_bullets. approved_bullets array also updated.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'Functional',priority:'Medium',
+       title:'Coursework Q&A generates relevant coursework section',
+       steps:'1. Q&A item is coursework type\n2. Answer with course names\n3. Generate',
+       expected_result:'Formatted "Relevant Coursework" section entry returned. Only field-relevant courses included. Rationale shown.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'UI',priority:'Medium',
+       title:'High priority items shown before medium priority',
+       steps:'1. View Q&A agenda order',
+       expected_result:'All high priority items appear first in the queue. Medium priority items follow.'},
+
+      {platform:'Web',surface:'Resume Rx — Q&A',test_type:'UI',priority:'Medium',
+       title:'Back navigation returns to previous Q&A item',
+       steps:'1. Complete 3 items\n2. Click "← Back"',
+       expected_result:'Returns to previous item with answers and results still visible. Can re-approve or change selection.'},
+
+      // ─── PDF & DELIVERY STAGE ───
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Critical',
+       title:'Coaching summary has all four required sections',
+       steps:'1. Complete all Q&A and reach completion screen\n2. Read coaching summary',
+       expected_result:'Summary contains exactly four sections: "WHAT WE FOUND", "WHAT WE CHANGED", "WHAT TO REVIEW CAREFULLY", "YOUR NEXT STEPS". Each section present with content.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Critical',
+       title:'Coaching summary written in Peri\'s voice',
+       steps:'1. Read coaching summary',
+       expected_result:'Warm, direct, specific. Not generic or robotic. References actual resume content. Reads like a coach ending a session — not an AI output.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Critical',
+       title:'ATS validation passes on final resume',
+       steps:'1. View validation result on completion screen',
+       expected_result:'ats_passes = true. Standard section headers confirmed. No columns or graphics. Keyword alignment with target field confirmed.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Critical',
+       title:'7-second skim test passes on final resume',
+       steps:'1. View validation result',
+       expected_result:'skim_passes = true. Role clarity confirmed. Anchor proof present. Reason to read identified.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Integration',priority:'Critical',
+       title:'PDF download produces valid single-column ATS-safe document',
+       steps:'1. Click "Download PDF →"\n2. Open the downloaded PDF',
+       expected_result:'PDF opens correctly. Single column layout. Black and white. Name at top. Clean section headers. All approved bullets present. No tables, columns, or graphics.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Critical',
+       title:'PDF text is selectable — not image-based',
+       steps:'1. Open PDF\n2. Try to select and copy text',
+       expected_result:'Text is selectable and copyable. Not a scanned/image PDF. ATS can parse it.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Critical',
+       title:'"Save to My Profile" creates new persona with rewritten resume',
+       steps:'1. Click "Save to My Profile →"',
+       expected_result:'New persona created named "Resume Rx — [date]". Appears in persona list on dashboard. resume_text contains the final rewritten content.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Data',priority:'Critical',
+       title:'Session status updated to "complete" after PDF generation',
+       steps:'1. Generate PDF\n2. Check Supabase session row',
+       expected_result:'status = "complete". pdf_url populated. final_resume_text populated. coaching_summary populated. validation_result populated.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'High',
+       title:'Before/after comparison shows original vs rewritten',
+       steps:'1. View completion screen\n2. Click "Before / After" tab',
+       expected_result:'Two panels shown. Original resume on left (dimmed, changed sections highlighted). Rewritten resume on right (approved changes highlighted in green).'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'High',
+       title:'High school content removed from final resume when applicable',
+       steps:'1. Submit Junior+ resume with HS content\n2. View final resume on completion screen',
+       expected_result:'High school items not present in final resume text. Removed as flagged in diagnosis.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'High',
+       title:'Objective statement removed from final resume',
+       steps:'1. Submit resume with an objective statement\n2. View final resume',
+       expected_result:'Objective statement not present. Replaced with professional summary or removed entirely.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'High',
+       title:'Section order in final resume matches confirmed architecture',
+       steps:'1. Note section order from architecture stage\n2. View final resume',
+       expected_result:'Sections appear in exact order confirmed in architecture stage.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'UI',priority:'High',
+       title:'"Save Summary" downloads coaching summary as text file',
+       steps:'1. Click "Save Summary" on coaching summary panel',
+       expected_result:'.txt file downloads containing full coaching summary with all four sections.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'UI',priority:'High',
+       title:'"Copy Resume Text" copies to clipboard',
+       steps:'1. Click "Copy Resume Text"',
+       expected_result:'"Copied!" confirmation shown. Clipboard contains full final resume text.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'High',
+       title:'New persona appears in JobFit persona selector',
+       steps:'1. Save resume to profile\n2. Go to JobFit tab\n3. Check persona dropdown',
+       expected_result:'"Resume Rx — [date]" persona visible in dropdown and selectable for analysis.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Data',priority:'High',
+       title:'Saving to profile rebuilds profile_text for scoring engine',
+       steps:'1. Save to profile\n2. Run a JobFit with the new Resume Rx persona\n3. Check scoring uses updated content',
+       expected_result:'JobFit analysis uses the rewritten resume content. Score reflects the stronger resume, not the original.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'UI',priority:'Medium',
+       title:'Completion screen shows rewrite statistics',
+       steps:'1. View completion screen',
+       expected_result:'Stats shown: X bullets rewritten, X keywords added, original score vs new estimated score.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Functional',priority:'Medium',
+       title:'Resume Rx session visible in dashboard entry card',
+       steps:'1. Complete a Resume Rx session\n2. Go to main dashboard',
+       expected_result:'Dashboard entry card shows most recent session: verdict badge, score, target field, date. "View Results" and "Re-analyze" buttons present.'},
+
+      {platform:'Web',surface:'Resume Rx — PDF & Delivery',test_type:'Integration',priority:'Medium',
+       title:'Re-analyze starts new session with option to use existing',
+       steps:'1. Click "Re-analyze" on dashboard entry card',
+       expected_result:'Resume Rx entry stage shown. "Resume on file" card shows the saved Resume Rx persona. Can use that resume or upload new one.'},
+    ];
+
+    for(const c of resumeRxCases){
+      await sb('qa_test_cases',{method:'POST',body:JSON.stringify({...c,active:true})});
+    }
+    console.log('Seeded',resumeRxCases.length,'Resume Rx test cases');
+  }
+
+  for(const c of mobileCases){
+    await sb('qa_test_cases',{method:'POST',body:JSON.stringify({...c,active:true})});
+  }
+  console.log('Seeded',mobileCases.length,'mobile test cases');
+}
+
+// Auto-seed after initial load
+bootApp();
+</script>
+</body>
+</html>

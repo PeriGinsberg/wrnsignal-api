@@ -3,8 +3,8 @@
 //
 // Unified JobFit regression check. Runs:
 //   - All 21 batch cases in issues/040926ProdIssues.csv
-//   - All 5 one-off retest scripts (retest-013-ryan, retest-012-ryan,
-//     retest-reece-01, retest-026, retest-emma-01)
+//   - All 6 one-off retest scripts (retest-013-ryan, retest-012-ryan,
+//     retest-reece-01, retest-026, retest-emma-01, retest-zoe-paralegal)
 //
 // Compares each case's high-signal snapshot (decision, score, WHY/
 // RISK counts, family, sub-families, gate type) against the committed
@@ -53,8 +53,9 @@ import { CASE as ryan012 } from "./retest-012-ryan"
 import { CASE as reece01 } from "./retest-reece-01"
 import { CASE as case026 } from "./retest-026"
 import { CASE as emma01 } from "./retest-emma-01"
+import { CASE as zoeParalegal } from "./retest-zoe-paralegal"
 
-const RETEST_CASES = [ryan013, ryan012, reece01, case026, emma01]
+const RETEST_CASES = [ryan013, ryan012, reece01, case026, emma01, zoeParalegal]
 const BASELINE_PATH = join(__dirname, "baseline.json")
 const BATCH_CSV_PATH = join(
   __dirname,
@@ -110,11 +111,14 @@ async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapsh
 async function collectLiveSnapshots(): Promise<Record<string, CaseSnapshot>> {
   const out: Record<string, CaseSnapshot> = {}
 
-  // Batch cases from the production issues CSV.
-  const batch = await runBatch(BATCH_CSV_PATH, { verbose: false })
-  for (const b of batch) {
-    const id = `batch-${b.caseNo}`
-    out[id] = toSnapshot(id, b.label, b.result)
+  // Batch cases from the production issues CSV. Skip silently when the
+  // file is missing — the synthetic CSV + retests still provide coverage.
+  if (existsSync(BATCH_CSV_PATH)) {
+    const batch = await runBatch(BATCH_CSV_PATH, { verbose: false })
+    for (const b of batch) {
+      const id = `batch-${b.caseNo}`
+      out[id] = toSnapshot(id, b.label, b.result)
+    }
   }
 
   // Synthetic cases from the generated CSV.

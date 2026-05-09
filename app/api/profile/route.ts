@@ -279,12 +279,15 @@ export async function PUT(req: NextRequest) {
 
     if (updateErr) throw new Error(`Profile update failed: ${updateErr.message}`)
 
-    // Rebuild canonical profile_text from individual fields so the scoring
-    // engine gets targeting context (target_roles, job_type, constraints, etc.)
-    // alongside the resume. Without this, dashboard-edited profiles have an
-    // empty profile_text and the scorer runs blind on targeting info.
-    // Also recompute profile_complete on every save — it must not depend on
-    // which fields the client happened to include in this request.
+    // Rebuild canonical profile_text from intake fields so the scoring engine
+    // gets targeting context (target_roles, job_type, constraints, etc.).
+    // Without this, dashboard-edited profiles have an empty profile_text and
+    // the scorer runs blind on targeting info. Also recompute profile_complete
+    // on every save — it must not depend on which fields the client happened
+    // to include in this request. profile_text is intake-only: the resume body
+    // is owned by client_profiles.resume_text (and per-persona resume_text),
+    // and is composed in by assembleProfileForScoring at scoring time. Mixing
+    // them here causes persona-aware scoring to leak the wrong resume.
     if (updated) {
       try {
         const p = updated as any
@@ -299,8 +302,6 @@ export async function PUT(req: NextRequest) {
         add("Target locations", p.target_locations)
         add("Preferred locations", p.preferred_locations)
         add("Timeline", p.timeline)
-        const resume = String(p.resume_text || "").trim()
-        if (resume) lines.push(`\nResume:\n${resume}`)
         const profileText = lines.join("\n").trim()
 
         const profileComplete = !!(

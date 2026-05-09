@@ -1,4 +1,87 @@
 // app/api/positioning/route.ts
+//
+// ARCHITECTURAL PATTERN — read this before adding new LLM-judged fields.
+//
+// Several fields here (resume_bullet_edits, summary_statement) follow a
+// three-layer pattern. Future contributors should mirror it:
+//
+//   1. Deterministic source-of-truth check
+//      Run a regex / string search against the resume text BEFORE asking
+//      the LLM anything. Capture a fact about presence, evidence, or
+//      structure. Examples: detectExistingSummary() finds whether a
+//      Summary section exists; normalizeBulletEdits() rejects any edit
+//      whose BEFORE isn't a verbatim resume substring.
+//
+//   2. LLM judgment narrowed to what only the LLM can do
+//      Pass the deterministic finding INTO the LLM prompt as a fact
+//      ("summary_present: YES"). Constrain the LLM to judgments that
+//      genuinely require LLM-level reasoning (alignment, tone, fit) —
+//      never to facts a regex could verify.
+//
+//   3. Token-anchored renderer contract
+//      LLM returns short tokens (e.g. "[aligned]", "[misaligned]",
+//      "[missing]") in the why field. The server-side renderer maps
+//      (deterministic_finding, llm_token) → user-facing message via a
+//      lookup table. Free-text LLM output never reaches the user
+//      directly. Any unknown LLM token defaults to the safest cell of
+//      the table.
+//
+// History: this pattern was introduced after two production bugs where
+// the LLM hallucinated answers to questions with deterministic answers
+// (Ross Goldstein 2026-05-04: BEFORE bullets pulled from JD instead of
+// resume; 2026-05-05: "no summary present" claim about a resume that
+// had a clear SUMMARY header). In both cases a regex would have caught
+// it for free.
+//
+// COLUMN SPLIT + PERSONAS READ ORDER — read this before adding any field
+// that touches resume content.
+//
+// Storage layout:
+//   - client_profiles.profile_text — the intake-form header ("Name: ...",
+//     "Job type: ...", "Target roles: ...", "Target locations: ...",
+//     "Timeline: ..."). Typically 200–400 chars. Does NOT contain bullets,
+//     SUMMARY section, or any resume body content.
+//   - client_profiles.resume_text — TRANSITIONAL fallback ONLY. Contains
+//     the resume body for legacy zero-persona profiles. Wave 2 of the
+//     personas refactor (2026-05-06) made resume reads go through personas
+//     by default; this column is kept readable for the small remaining
+//     legacy set but no new code should depend on it. WAVE 3 DEFERRED to
+//     Phase 1.5 cleanup will retire writes to this column entirely and
+//     eventually drop it.
+//   - client_personas.resume_text — the canonical resume body, scoped to
+//     a persona. A profile can have multiple personas (e.g., "Marketing"
+//     and "Operations" personas of the same person); is_default=true
+//     marks the persona used when the caller doesn't specify one.
+//
+// Read order (resolveResumeText in app/api/_lib/authProfile.ts):
+//   1. Explicit persona_id passed in request body — that persona's
+//      resume_text. source = "explicit_persona".
+//   2. Default persona (is_default=true) for this profile — that
+//      persona's resume_text. source = "default_persona".
+//   3. client_profiles.resume_text — TRANSITIONAL FALLBACK. Logged
+//      with [authProfile] using base_profile_fallback so we can track
+//      legacy paths.
+//
+// History — three production bugs traced to this column ambiguity:
+//   - Ross Goldstein 2026-05-04: BEFORE bullets pulled from JD instead
+//     of resume; LLM had no resume to rewrite because the route used
+//     the 200-char intake header as "RESUME" in the prompt.
+//   - Ross Goldstein 2026-05-05: "no summary present" claim about a
+//     resume that had a clear SUMMARY header — same root cause.
+//   - Lily Stein 2026-05-06: Job Fit and positioning gave inconsistent
+//     output because Job Fit was persona-aware but positioning was not;
+//     positioning fell back to client_profiles.resume_text which was
+//     stale relative to the active persona's resume.
+//
+// Wave 1 migration (2026-05-06): all 118 active profiles now have at
+// least one default persona. 9 base/default drift cases resolved.
+// Wave 2 (this commit): all resume reads go through personas; positioning,
+// cover letter, and resume-rx routes accept persona_id.
+// Wave 3 (deferred): stop writing to client_profiles.resume_text, drop
+// the column. See Phase 1.5 cleanup list.
+//
+// The LLM prompt sends both intake header (CANDIDATE INTAKE block) and
+// resume body (RESUME block), separately labeled.
 import crypto from "crypto"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
@@ -122,9 +205,82 @@ type BulletEdit = {
   evidence: string
 }
 
-function normalizeBulletEdits(arr: any): BulletEdit[] {
+// Minimum body length for a "Summary" section to count as actually present.
+// A header with no body (e.g. "SUMMARY\n\nEXPERIENCE") or a tiny placeholder
+// ("Summary: TBD") shouldn't qualify — the widget would falsely tell the
+// user their summary is fine when it's effectively empty. 20 chars is just
+// above one short sentence ("Recruiting leader.") and below any substantive
+// summary we've observed in real client resumes.
+const MIN_SUMMARY_BODY_LENGTH = 20
+
+// Detect whether the resume has a Summary section near the top. Returns
+// presence + the canonical header line + the body paragraph(s) immediately
+// following. Used by the positioning route to gate the LLM's alignment
+// judgment with a deterministic presence answer.
+//
+// Header regex matches the canonical section names (summary, professional
+// summary, profile, about, about me, career summary, executive summary)
+// optionally followed by a colon, on their own line. The `m` flag treats
+// both \n and \r\n line endings correctly, so resumes pasted from Word
+// (which tend to use \r\n) work the same as ones from plain text.
+function detectExistingSummary(resumeText: string): {
+  present: boolean
+  headerLine: string | null
+  body: string | null
+} {
+  const headerRe =
+    /^(summary|professional\s+summary|profile|about\s+me|about|career\s+summary|executive\s+summary)\s*:?\s*$/im
+  const m = resumeText.match(headerRe)
+  if (!m || m.index == null) return { present: false, headerLine: null, body: null }
+
+  // Body = paragraphs immediately after the header, up to the next
+  // ALL-CAPS-section-header (e.g. "EXPERIENCE", "EDUCATION") or the end of
+  // the resume. Normalize \r\n → \n so the line-walk is uniform.
+  const after = resumeText.slice(m.index + m[0].length).replace(/\r\n/g, "\n")
+  const lines = after.split("\n")
+  const bodyLines: string[] = []
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    // Heuristic: an ALL-CAPS line of 3-40 chars (letters, spaces, &, optional
+    // colon) is likely the next section header. Stop body collection there.
+    if (/^[A-Z][A-Z\s&]{2,40}:?$/.test(trimmed) && trimmed === trimmed.toUpperCase()) {
+      break
+    }
+    bodyLines.push(trimmed)
+  }
+  const body = bodyLines.join(" ").trim()
+  if (body.length < MIN_SUMMARY_BODY_LENGTH) {
+    return { present: false, headerLine: m[0], body: null }
+  }
+  return { present: true, headerLine: m[0], body }
+}
+
+// Canonicalize a string for "is this present in the resume?" comparison.
+// Strips leading bullet markers (•, -, *, ·, –, —), trailing punctuation
+// (.,;:), collapses internal whitespace, lowercases. The LLM frequently
+// trims a leading bullet character or trailing period when copying a
+// resume bullet, so naive substring match would drop legitimate edits.
+// This canonicalization is symmetric — applied to both the resume haystack
+// and each candidate BEFORE before comparison.
+function canonicalizeForMatch(s: string): string {
+  return String(s || "")
+    .replace(/^[\s•·–—\-\*]+/, "")
+    .replace(/[\s.,;:]+$/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+}
+
+function normalizeBulletEdits(
+  arr: any,
+  resumeText: string,
+  ctx: { profileId: string; fingerprintCode: string }
+): BulletEdit[] {
   if (!Array.isArray(arr)) return []
-  return arr
+  // Pre-canonicalize the entire resume once for repeated substring checks.
+  const haystack = canonicalizeForMatch(resumeText)
+  const allEdits = arr
     .map((b: any) => ({
       job_title: asString(b?.job_title, "Unknown role"),
       before: asString(b?.before, ""),
@@ -133,6 +289,31 @@ function normalizeBulletEdits(arr: any): BulletEdit[] {
       evidence: asString(b?.evidence, ""),
     }))
     .filter((b: BulletEdit) => b.before && b.after)
+
+  const accepted: BulletEdit[] = []
+  for (const edit of allEdits) {
+    const canon = canonicalizeForMatch(edit.before)
+    if (canon && haystack.includes(canon)) {
+      accepted.push(edit)
+      continue
+    }
+    // Drop and log. The BEFORE field on this edit is not present in the
+    // resume — most often this means the LLM pulled the BEFORE from the
+    // job description (Ross Goldstein bug, 2026-05-04). Logging the run
+    // identifier + rejected before + short resume excerpt gives ongoing
+    // visibility into how often the LLM still misbehaves after the
+    // prompt tightening.
+    console.log(
+      "[positioning] dropped bullet edit — BEFORE not in resume:",
+      JSON.stringify({
+        profileId: ctx.profileId,
+        fingerprintCode: ctx.fingerprintCode,
+        droppedBefore: edit.before.slice(0, 200),
+        resumeExcerpt: resumeText.slice(0, 240).replace(/\s+/g, " "),
+      })
+    )
+  }
+  return accepted
 }
 
 /**
@@ -147,17 +328,35 @@ export async function OPTIONS(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    const { profileId, profileText } = await getAuthedProfileText(req)
-
+    // Read body first so we can pass persona_id to getAuthedProfileText.
     const body = await req.json()
     const jobText = String(body?.job || "").trim()
+    const personaIdFromBody =
+      typeof body?.persona_id === "string" && body.persona_id.trim().length > 0
+        ? body.persona_id.trim()
+        : null
 
     if (!jobText) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
-    // Deterministic keyword coverage
-    const resumeBulletsRaw = extractResumeBullets(profileText)
+    // IMPORTANT — column split. profileText is the intake-form header
+    // ("Name: ...\nJob type: ...\nTarget roles: ..." — typically <300 chars).
+    // resumeText is the actual resume body, resolved from a persona via
+    // getAuthedProfileText's read order (explicit persona → default persona →
+    // base profile). See top-of-file architectural pattern note for history.
+    const {
+      profileId,
+      profileText,
+      resumeText,
+      activePersonaId,
+    } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
+    // personaSource is logged inside resolveResumeText when it falls back
+    // to base_profile_fallback — no need to log again at the route level.
+
+    // Deterministic keyword coverage. Bullets live in the resume body, not
+    // the intake header, so this reads resumeText.
+    const resumeBulletsRaw = extractResumeBullets(resumeText)
     const keywordCoverage = computeKeywordCoverage(jobText, resumeBulletsRaw, {
       max_keywords: 30,
       missing_top_n: 8,
@@ -180,10 +379,22 @@ export async function POST(req: Request) {
       ? missingHighPriorityKeywords.map((k) => `- ${k}`).join("\n")
       : "- None"
 
-    // Fingerprint pins
+    // Fingerprint pins. Includes resumeText so editing the resume busts the
+    // cache — previously fingerprint hashed only the 200-char intake header,
+    // so resume edits produced no fingerprint change and the cache served
+    // stale results.
     const fingerprintPayload = {
       job: { text: jobText || MISSING },
-      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      profile: {
+        id: profileId || MISSING,
+        text: profileText || MISSING,
+        resume: resumeText || MISSING,
+        // Including activePersonaId in the fingerprint key means switching
+        // persona busts the cache automatically — previously the cache was
+        // persona-blind and a Job Fit run against persona A would hit the
+        // cache for a positioning run against persona B (Lily Stein bug).
+        persona_id: activePersonaId || MISSING,
+      },
       system: {
         positioning_prompt_version: POSITIONING_PROMPT_VERSION,
         model_id: MODEL_ID,
@@ -245,13 +456,29 @@ include evidence as exact quotes copied verbatim from the resume text.
 If you cannot quote evidence, do not include the recommendation.
 
 SUMMARY STATEMENT LOGIC:
-- Detect if a summary exists near the top of the resume.
-- Return need_summary as YES/NO.
-- YES when: summary is missing AND overall signal is mixed/weak OR the top of the resume will not pass a 7-second scan.
-- YES also when: summary exists but is misaligned with the job (recommend revising).
-- NO when: summary exists and is aligned, OR overall signal is strong and the top passes a 7-second scan.
-- If NO because summary exists and is aligned, then return sentence saying existing summary is strong.
-If YES, include one recommended summary (factual). If NO, do not write a new summary.
+- A deterministic detector has already decided whether a Summary section is
+  present in the resume. Its result will be stated explicitly in the user
+  message under "SUMMARY DETECTION (deterministic)". DO NOT re-judge presence.
+  If the detector says summary_present: YES, treat that as fact even if you
+  think the section is weak or hard to find.
+- Your job is to judge ONLY whether the existing summary (if present) is
+  aligned to the candidate's target role(s) and the job description.
+- The why field MUST start with one of these exact tokens, including brackets:
+    [missing]    — used only when summary_present: NO. Set need_summary: YES.
+                   recommended_summary: a one-sentence factual draft.
+    [misaligned] — used only when summary_present: YES but the existing
+                   summary doesn't anchor on the target role's keywords or
+                   responsibilities. Set need_summary: YES.
+                   recommended_summary: a one-sentence factual rewrite.
+    [aligned]    — used only when summary_present: YES and the summary
+                   reasonably anchors on the target role. Set need_summary: NO.
+                   recommended_summary: null.
+- After the bracketed token, write one short sentence explaining the choice.
+  This sentence should NOT use the words "missing", "lacks", "no summary"
+  unless the token is [missing]. The bracketed token is the source of truth
+  for renderer logic; the sentence after is for human readers.
+- recommended_summary must be factual (use only resume facts), one sentence,
+  null only when the token is [aligned].
 
 BULLET EDIT RULE (NON-NEGOTIABLE):
 Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
@@ -327,9 +554,22 @@ Return VALID JSON ONLY with this exact shape:
 }
     `.trim()
 
+    // Detector reads the resume body, not the intake header.
+    const summaryDetection = detectExistingSummary(resumeText)
+    const summaryDetectionBlock = summaryDetection.present
+      ? `SUMMARY DETECTION (deterministic):
+  summary_present: YES
+  (the resume contains a Summary section near the top — see RESUME above)`
+      : `SUMMARY DETECTION (deterministic):
+  summary_present: NO
+  (the resume does not contain a Summary section, or the section is empty)`
+
     const user = `
-RESUME (verbatim):
+CANDIDATE INTAKE (verbatim — target roles, locations, timeline, etc.):
 ${profileText}
+
+RESUME (verbatim):
+${resumeText}
 
 JOB DESCRIPTION (verbatim):
 ${jobText}
@@ -337,6 +577,8 @@ ${jobText}
 HIGH-PRIORITY JOB KEYWORDS (SYSTEM-DETERMINED):
 These are important keywords/phrases from the job description that are currently missing or underrepresented in your resume bullets:
 ${missingHighPriorityKeywordsText}
+
+${summaryDetectionBlock}
 
 TASK (do in order):
 1) ROLE ANGLE (DETERMINISTIC):
@@ -365,9 +607,14 @@ TASK (do in order):
    - Include the sentence: "You have about 7 seconds to make an impact with a hiring manager. Lead with your most relevant experience."
    - Make clear this is reordering existing facts, not rewriting them.
    - Output Lead With (1), Support With (1–2), Then Include (0–2), De-emphasize (0–1) if applicable.
-4) Summary Statement: return need_summary YES/NO and explain why. If YES, give one recommended summary and cite evidence.
+4) Summary Statement: follow SUMMARY STATEMENT LOGIC in the system prompt.
+   Use the deterministic summary_present value from above; do not re-judge
+   presence. The why field MUST start with one of [missing], [misaligned],
+   or [aligned] — exact tokens, including brackets. need_summary,
+   recommended_summary, and evidence must be consistent with the chosen token.
 5) Resume Bullet Edits:
-   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim).
+   - BEFORE field rule: BEFORE must be a verbatim copy of an existing bullet from the RESUME text above. Do NOT paraphrase or copy from the JOB DESCRIPTION. If no resume bullet is a strong candidate for a missing keyword, omit that edit entirely.
+   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim) in the AFTER field.
    - Only do this if the resume facts already support it. Do not add new facts.
    - Do not use generic substitutes like “execution,” “support,” “cross-team,” or “stakeholder” unless they appear verbatim in the job keywords list.
    - Return 0–6 edits. Do not pad.
@@ -457,17 +704,85 @@ Return JSON only. No markdown. No extra text.
     const summaryRaw =
       parsed?.summary_statement && typeof parsed.summary_statement === "object" ? parsed.summary_statement : {}
 
-    const need_summary =
-      summaryRaw?.need_summary === "YES" || summaryRaw?.need_summary === "NO" ? summaryRaw.need_summary : "NO"
+    // Token-anchored renderer: parse the LLM's why field for a leading
+    // [missing] / [misaligned] / [aligned] token and combine with the
+    // deterministic summaryDetection.present to drive the user-facing
+    // message. Free-text LLM output never reaches the user — every
+    // outcome maps through the table below.
+    const llmWhy = asString(summaryRaw?.why, "")
+    const llmTokenMatch = llmWhy.match(/^\s*\[(missing|misaligned|aligned)\]/i)
+    let llmToken: "missing" | "misaligned" | "aligned" | null = llmTokenMatch
+      ? (llmTokenMatch[1].toLowerCase() as "missing" | "misaligned" | "aligned")
+      : null
+
+    // Defensive defaulting: when present=NO, anything that isn't [missing]
+    // gets coerced to [missing] (the only sensible cell). When present=YES
+    // and the LLM returned nothing usable, default to [misaligned] (rewrite
+    // suggested) — safer than [aligned] which would suppress the widget on
+    // a likely-imperfect summary.
+    if (!summaryDetection.present) {
+      llmToken = "missing"
+    } else if (llmToken === null || llmToken === "missing") {
+      // LLM said "missing" but regex found a summary section — disagreement.
+      // Log for ongoing visibility, then coerce to [misaligned] so the user
+      // sees a "could be stronger" prompt rather than "lacks a summary".
+      if (llmToken === "missing") {
+        console.log(
+          "[positioning] summary detection mismatch — LLM says missing, regex found one:",
+          JSON.stringify({
+            profileId: profileId || "",
+            fingerprintCode: fingerprint_code,
+            headerLine: summaryDetection.headerLine,
+            bodyLength: (summaryDetection.body || "").length,
+            llmWhy: llmWhy.slice(0, 200),
+          })
+        )
+      }
+      llmToken = "misaligned"
+    }
+
+    // Renderer table: (present, token) → user-facing message + need_summary +
+    // whether to keep the LLM's recommended_summary draft.
+    const RENDERER_TABLE: Record<
+      string,
+      { message: string; need: "YES" | "NO"; keepRecommended: boolean }
+    > = {
+      "true|aligned": {
+        message: "Your existing summary is strong — keep as-is.",
+        need: "NO",
+        keepRecommended: false,
+      },
+      "true|misaligned": {
+        message:
+          "Your summary is present but doesn't anchor on the target role. Rewrite suggested.",
+        need: "YES",
+        keepRecommended: true,
+      },
+      "false|missing": {
+        message:
+          "Add a summary at the top of the resume — recruiters scan this in 7 seconds.",
+        need: "YES",
+        keepRecommended: true,
+      },
+    }
+    const tableKey = `${summaryDetection.present}|${llmToken}`
+    const tableRow =
+      RENDERER_TABLE[tableKey] || RENDERER_TABLE["false|missing"] // defensive
 
     const summary_statement = {
-      need_summary,
-      why: asString(summaryRaw?.why, ""),
-      recommended_summary: isNonEmptyString(summaryRaw?.recommended_summary) ? summaryRaw.recommended_summary : null,
+      need_summary: tableRow.need,
+      why: tableRow.message,
+      recommended_summary:
+        tableRow.keepRecommended && isNonEmptyString(summaryRaw?.recommended_summary)
+          ? summaryRaw.recommended_summary
+          : null,
       evidence: asStringArray(summaryRaw?.evidence),
     }
 
-    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits)
+    const resume_bullet_edits = normalizeBulletEdits(parsed?.resume_bullet_edits, resumeText, {
+      profileId: profileId || "",
+      fingerprintCode: fingerprint_code,
+    })
 
     const keyword_analysis = {
       coverage_pct: Math.round(keywordCoverage.coverage * 100),

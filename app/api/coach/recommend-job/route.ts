@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { logStatusChange } from "../../_lib/applicationStatusHistory"
 import {
   assembleProfileForScoring,
   runJobFitForProfile,
@@ -269,6 +270,10 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (appErr) throw new Error(`Failed to create application: ${appErr.message}`)
+
+    // Status history: log initial 'saved' state. changed_by is the COACH
+    // (the actor that materially created the row), not the client.
+    await logStatusChange(supabase, appRow.id, null, "saved", coachProfileId)
 
     // Link recommendation back to application
     await supabase

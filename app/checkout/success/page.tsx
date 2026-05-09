@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import PurchaseEvent from "./PurchaseEvent"
 
 const BG = "#04060F"
 const TEXT = "#E8E6E1"
@@ -74,6 +75,7 @@ function CheckoutSuccessInner() {
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
+      <PurchaseEvent />
       <div style={{ textAlign: "center", maxWidth: 440, padding: 32 }}>
         {status === "polling" && (
           <>

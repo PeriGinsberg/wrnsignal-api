@@ -19,6 +19,7 @@ import { type NextRequest } from "next/server"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { logStatusChange } from "../_lib/applicationStatusHistory"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 import { RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
 import { extractJobSignals } from "../jobfit/extract"
@@ -297,7 +298,7 @@ export async function POST(req: NextRequest) {
             }
 
             if (!existingCachedApp?.id) {
-              await supabase.from("signal_applications").insert({
+              const { data: newCachedApp } = await supabase.from("signal_applications").insert({
                 profile_id: profileId,
                 company_name: cachedCompany || "(Unknown Company)",
                 job_title: cachedTitle || "(Unknown Role)",
@@ -309,7 +310,10 @@ export async function POST(req: NextRequest) {
                 persona_id: personaId || null,
                 application_status: "saved",
                 interest_level: 1,
-              })
+              }).select("id").single()
+              if (newCachedApp?.id) {
+                await logStatusChange(supabase, newCachedApp.id, null, "saved", profileId)
+              }
               console.log("[jobfit/route] created application from cache hit:", cachedCompany || "(unknown)", cachedTitle || "(unknown)")
             }
           } catch (appErr: any) {
@@ -494,6 +498,7 @@ export async function POST(req: NextRequest) {
               await supabase.from("jobfit_runs").update({
                 application_id: newApp.id,
               }).eq("id", runId)
+              await logStatusChange(supabase, newApp.id, null, "saved", profileId)
             }
           }
         } else {

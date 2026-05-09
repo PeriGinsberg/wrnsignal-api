@@ -1354,14 +1354,10 @@ const TOOL_ALIASES: Record<string, string[]> = {
   kotlin: ["kotlin"],
 }
 
-const NEVER_CORE_KEYS = new Set([
-  "clinical_patient_work",
-  "drafting_documentation",
-  "communications_writing",
-  "consumer_research",
-  "analysis_reporting",
-  "strategy_problem_solving",
-])
+// NEVER_CORE_KEYS was a hard-coded set of requirement keys that got auto-
+// demoted to "supporting" in selectBestJobUnits() regardless of context.
+// Removed 2026-05-07 (Fix B) — see selectBestJobUnits comment for history.
+// Replaced with downstream weighting in scoring.ts (supporting = 0.5 × core).
 
 const FALLBACK_JOB_RULES: Array<{
   key: string
@@ -1560,8 +1556,9 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^(key )?responsibilities$/, kind: "responsibilities" },
   { pattern: /^essential (duties|job functions|responsibilities)( and responsibilities)?$/, kind: "responsibilities" },
   { pattern: /^(your|core|main|primary|position) responsibilities$/, kind: "responsibilities" },
-  { pattern: /^(day.to.day|day to day)( responsibilities| activities)?$/, kind: "responsibilities" },
+  { pattern: /^(the )?(day.to.day|day to day)( responsibilities| activities)?$/, kind: "responsibilities" },
   { pattern: /^what (you'll|you will|you are going to|you would|you can expect to) (do|be doing|work on)$/, kind: "responsibilities" },
+  { pattern: /^how (you('ll| will| would)?|we) (contribute|help|spend (your|the) (day|time|days))$/, kind: "responsibilities" },
   { pattern: /^in this role( you will| you'll)?$/, kind: "responsibilities" },
   { pattern: /^job (duties|responsibilities|functions)$/, kind: "responsibilities" },
   { pattern: /^(role and responsibilities|duties and responsibilities)$/, kind: "responsibilities" },
@@ -1587,6 +1584,19 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^job description summary$/, kind: "overview" },
   { pattern: /^(your (internship|role) experience|internship experience)$/, kind: "overview" },
   { pattern: /^(opportunity|what we do)$/, kind: "overview" },
+
+  // COMPANY — corporate-marketing headers that don't match the canonical
+  // "About Us" / "Our Story" shape. Placed LAST so the specific rules
+  // above (especially "about you" → qualifications, "about (the )?team"
+  // → overview) win first.
+  //
+  // We deliberately do NOT include a generic `about <name>` catch-all here
+  // because it caused too much regression drift on cases where headers like
+  // "About the Brand" or company-specific tokens were previously
+  // unclassified and content was kept under overview. The targeted
+  // "being part of the team" rule below catches the most common offender
+  // without the generic-rule blast radius.
+  { pattern: /^being part of (the )?(team|company|family|crew)$/, kind: "company" },
 ]
 
 function classifyHeader(line: string): SectionKind | null {
@@ -2309,13 +2319,34 @@ function buildFallbackJobUnits(lines: string[]): {
   }
 }
 
+// Expand written number words to digits before regex matching so phrasings
+// like "four years of experience" or "Minimum of four (4) years" parse.
+// Covers one-ten only — anything higher in a JD's tenure clause is rare and
+// already typically written numerically.
+const WRITTEN_NUMBER_MAP: Record<string, string> = {
+  one: "1", two: "2", three: "3", four: "4", five: "5",
+  six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
+}
+const WRITTEN_NUMBER_RE = /\b(one|two|three|four|five|six|seven|eight|nine|ten)\b/gi
+
+function expandWrittenNumbers(text: string): string {
+  return text.replace(WRITTEN_NUMBER_RE, (m) => WRITTEN_NUMBER_MAP[m.toLowerCase()] || m)
+}
+
 function extractYearsRequired(jobText: string): number | null {
   const patterns: RegExp[] = Array.isArray((POLICY as any)?.extraction?.years?.patterns)
     ? ((POLICY as any).extraction.years.patterns as RegExp[])
     : []
 
+  // Expand written numbers ("four" → "4") so written-form tenure clauses
+  // ("four years of experience") match the digit-anchored regex patterns.
+  // Phrasings with parenthetical digits ("four (4) years") are caught either
+  // way — the parenthetical pattern consumes the parens and reads "(4)", and
+  // the expansion gives the patterns a second shot at the bare "4".
+  const matchText = expandWrittenNumbers(jobText)
+
   for (const r of patterns) {
-    const m = jobText.match(r)
+    const m = matchText.match(r)
     if (m && m[1]) {
       const v = parseInt(String(m[1]), 10)
       // 0 minimum means entry-level — treat as no meaningful requirement
@@ -2835,16 +2866,25 @@ function inferTargetFamiliesFromTags(tags: FunctionTag[]): JobFamily[] {
 }
 
 function selectBestJobUnits(units: JobRequirementUnit[]): JobRequirementUnit[] {
+  // Fix B (2026-05-07): the NEVER_CORE_KEYS blanket demotion was removed
+  // here. It was auto-downgrading analysis_reporting, drafting_documentation,
+  // communications_writing, consumer_research, strategy_problem_solving, and
+  // clinical_patient_work to supporting regardless of context — but for jobs
+  // where these ARE the core function (content writers, marketing analysts,
+  // clinical roles, etc.), the auto-demotion was eating the actual core
+  // requirements. Caused 37% of prod runs to have ALL requirements marked
+  // supporting, which broke coreCoverageCount-gated floor rules in scoring.
+  // Replacement: scoring.ts now weights supporting at 0.5 × core, so a
+  // strength-10 supporting still counts but doesn't dominate a strength-10
+  // core. Net effect: requirements keep the requiredness assigned by
+  // detectRequiredness() at extraction time, with no across-the-board
+  // override at selection time.
   return Array.from(
     new Map(
       units
         .sort((a, b) => b.strength - a.strength)
         .map((u) => [u.key, u] as const)
     ).values()
-  ).map((u) =>
-    NEVER_CORE_KEYS.has(u.key)
-      ? { ...u, requiredness: "supporting" as const }
-      : u
   )
 }
 
@@ -3205,10 +3245,54 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   return null
 }
 
+// Defensive JD normalizer. Some clipboard sources (LinkedIn, PDFs, Word
+// docs rendered to plain text, certain rich-text editors) preserve
+// paragraph breaks but collapse inline bullets — turning
+//   "Event Setup: ... On-Site Ops: ... Visitor Experience: ..."
+// into one paragraph. Our line-anchored extraction can't see those as
+// distinct units, so it falls back to stray keyword matches and produces
+// near-empty requirement_units. Confirmed Aiden case 2026-05-04: a
+// LinkedIn paste with run-on bullets produced 1 false-positive
+// requirement_unit and 0 why_codes, scoring Pass/36 instead of the
+// Review/64 the same JD with line breaks produced.
+//
+// All transforms are idempotent on top of existing newlines — running
+// this on a well-formatted JD inserts no extra breaks because every
+// pattern requires mid-line context (preceded by a sentence-end or
+// non-newline whitespace).
+function normalizeJobDescription(jobText: string): string {
+  let t = jobText
+
+  // Insert \n before bullet characters when they appear mid-line.
+  // Covers • · ▪ ◦ ‣ and similar visual bullet markers that LinkedIn /
+  // PDF clipboard text often preserves but inlines.
+  t = t.replace(/([^\n])\s*([•·▪◦‣])\s*/g, "$1\n$2 ")
+
+  // Insert \n before "Title Case Phrase: " patterns that appear after a
+  // sentence-ending character — the structural shape of run-on bullets
+  // ("Event Setup: ... On-Site Ops: ..."). Phrase = 1–5 Title Case words,
+  // optionally joined with "&", "and", or "or". Requires immediate
+  // [.!?] before to avoid breaking legitimate prose mid-sentence.
+  t = t.replace(
+    /(?<=[.!?]\s+)([A-Z][a-zA-Z]+(?:\s+(?:&|and|or)\s+[A-Z][a-zA-Z]+|\s+[A-Z][a-zA-Z]+){0,4}:\s)/g,
+    "\n$1"
+  )
+
+  // Collapse runs of 3+ horizontal whitespace chars into "\n\n". Common
+  // in PDF-extracted text where layout columns produce big space runs.
+  t = t.replace(/[ \t]{3,}/g, "\n\n")
+
+  return t
+}
+
 export function extractJobSignals(
   jobTextRaw: string,
   opts?: { userJobTitle?: string }
 ): StructuredJobSignals {
+  // Pre-normalize before any extraction reads jobTextRaw. All downstream
+  // line-anchored detectors see properly-broken JD text.
+  jobTextRaw = normalizeJobDescription(jobTextRaw)
+
   const normalized = norm(jobTextRaw)
   const rawHash = stableHash(normalized)
   // Prepend the user-provided title (if any) so all the title-based
@@ -4203,7 +4287,12 @@ export function extractProfileSignals(
   const baseFamilies = inferTargetFamiliesFromTags(built.functionTags)
 
   const base: StructuredProfileSignals = {
-    targetFamilies: baseFamilies.length ? baseFamilies : ["Sales"],
+    // Was ["Sales"] — silent assertion that any sparse-resume candidate
+    // is targeting Sales. Now [] so the family-mismatch penalty
+    // (scoring.ts:802 checks length > 0) and GATE_FIELD_MISMATCH gate
+    // (constraints.ts:67 checks length > 0) treat "no family signal" as
+    // honestly unknown rather than as an asserted Sales preference.
+    targetFamilies: baseFamilies.length ? baseFamilies : [],
     locationPreference: { mode: "unclear", constrained: false, allowedCities: undefined },
     constraints: defaultConstraintsFromText(profileTextRaw, wantsInternship),
     tools: extractedTools,

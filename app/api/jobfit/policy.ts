@@ -422,14 +422,22 @@ export const POLICY: JobFitPolicy = {
         // Range pattern — "0-2 years", "1-3 years", "0–2 years" etc.
         // We capture the MINIMUM (first number). If min is 0, extractYearsRequired
         // returns 0 which the caller treats as null (no meaningful minimum).
-        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years|yrs)\s*of\s*(experience|exp)/i,
-        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years|yrs)/i,
-        // Explicit minimum
-        /minimum\s*(\d+)\s*(years|yrs)/i,
+        // `years?|yrs` matches singular "year" too — JDs commonly write
+        // "1 year of X experience" for a minimum-tenure clause.
+        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years?|yrs)\s*of\s*(experience|exp)/i,
+        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years?|yrs)/i,
+        // Parenthetical-digit fallback — catches "four (4) years of experience"
+        // where the JD writes the number as a word but includes the digit in
+        // parens. The plain (\d+)\s*(years?|yrs) patterns fail because `)`
+        // isn't whitespace, so the digit isn't adjacent to "years". This
+        // pattern explicitly consumes the parens.
+        /\(\s*(\d+)\s*\)\s*(years?|yrs)\s*of\s*(experience|exp)/i,
+        // Explicit minimum — supports "minimum N years" and "minimum of N years".
+        /minimum\s*(?:of\s*)?(\d+)\s*(years?|yrs)/i,
         // Standard "N+ years of experience"
-        /(\d+)\+\s*(years|yrs)\s*of\s*(experience|exp)/i,
+        /(\d+)\+\s*(years?|yrs)\s*of\s*(experience|exp)/i,
         // Plain "N years of experience" — only if no range present
-        /(\d+)\s*(years|yrs)\s*of\s*(experience|exp)/i,
+        /(\d+)\s*(years?|yrs)\s*of\s*(experience|exp)/i,
       ],
     },
 

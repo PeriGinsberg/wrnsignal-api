@@ -3,8 +3,13 @@
 // Server-side magic link sender with profile gate.
 // Checks client_profiles BEFORE sending OTP:
 //   - No active profile → 403 (no_account)
-//   - profile_complete = false → magic link to /dashboard
-//   - profile_complete = true → magic link to /dashboard/tracker
+//   - is_coach          → magic link to /dashboard/coach
+//   - profile_complete  → magic link to /dashboard/tracker
+//   - else              → magic link to /dashboard
+//
+// is_coach is checked first regardless of profile_complete — coaches who
+// happen to have profile_complete=true should still land on Coach Home,
+// not the D2C Job Tracker.
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
     // Check for active profile BEFORE any auth call
     const { data: profile, error: profileErr } = await supabase
       .from("client_profiles")
-      .select("id, active, profile_complete")
+      .select("id, active, profile_complete, is_coach")
       .eq("email", email)
       .eq("active", true)
       .maybeSingle()
@@ -58,8 +63,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Determine redirect based on profile completeness
-    const redirectTo = profile.profile_complete
+    // Determine redirect:
+    //   coaches  → /dashboard/coach (Sprint 2 — Coach Home / "My Clients" landing)
+    //   complete → /dashboard/tracker (returning client lands on Job Tracker)
+    //   else     → /dashboard (My Account, gentle on first sign-in)
+    const redirectTo = profile.is_coach
+      ? "https://wrnsignal-api.vercel.app/dashboard/coach"
+      : profile.profile_complete
       ? "https://wrnsignal-api.vercel.app/dashboard/tracker"
       : "https://wrnsignal-api.vercel.app/dashboard"
 

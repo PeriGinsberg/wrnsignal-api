@@ -47,6 +47,18 @@ type ClientProfileRow = {
   timeline: string | null
 }
 
+// Source of the resume_text returned. Used by callers to log when the
+// transitional base-profile fallback is being hit (Wave 2 of the personas
+// refactor — Wave 3 will eventually retire the fallback). Each call site
+// that cares about resume content should log the source so we can track
+// how many production runs are still on the legacy path.
+export type ResumeSource =
+  | "explicit_persona"        // caller passed a personaId, that persona was found
+  | "default_persona"         // no personaId passed; used the is_default=true persona
+  | "base_profile_fallback"   // no personas exist for this profile (legacy path; should
+                              // become rare after Wave 1 migration; eventually impossible
+                              // after Wave 3)
+
 type AuthedProfile = {
   profileId: string
   profileText: string
@@ -56,20 +68,99 @@ type AuthedProfile = {
   targetRoles: string | null
   targetLocations: string | null
    timeline: string | null
+  // Wave 2 additions — present on every return so callers can pass through
+  // to fingerprint / cache keys and log the source of resume content.
+  activePersonaId: string | null
+  personaSource: ResumeSource
 }
 
 const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_structured,job_type,target_roles,target_locations,timeline"
 
-function rowToProfile(row: ClientProfileRow): AuthedProfile {
+// Resolve the resume_text the caller should use, honoring an explicit
+// personaId when provided. Read order:
+//   1. Explicit personaId — if passed and found for this profile → that
+//      persona's resume_text. source = "explicit_persona".
+//      If passed but not found, falls through (logs warning).
+//   2. Default persona (is_default=true) — always preferred over the
+//      base profile column. source = "default_persona".
+//   3. Base profile resume_text — transitional fallback for legacy
+//      zero-persona profiles. After Wave 1 migration this should be
+//      effectively unreachable; logged when hit so we can confirm.
+//      source = "base_profile_fallback".
+async function resolveResumeText(
+  profileId: string,
+  baseResumeText: string,
+  personaId: string | null
+): Promise<{ resumeText: string; activePersonaId: string | null; personaSource: ResumeSource }> {
+  // 1) Explicit personaId
+  if (personaId) {
+    const { data: explicit, error } = await supabaseAdmin
+      .from("client_personas")
+      .select("id, profile_id, resume_text")
+      .eq("id", personaId)
+      .maybeSingle<{ id: string; profile_id: string; resume_text: string | null }>()
+    if (!error && explicit && explicit.profile_id === profileId) {
+      return {
+        resumeText: explicit.resume_text || "",
+        activePersonaId: explicit.id,
+        personaSource: "explicit_persona",
+      }
+    }
+    // Explicit ID didn't resolve. Don't error — fall through to default
+    // persona. Log so we can see how often this happens (likely a stale
+    // selectedPersonaId in client state after a persona was deleted).
+    console.warn(
+      "[authProfile] explicit personaId not resolvable; falling through:",
+      JSON.stringify({ profileId, personaId, hadRow: !!explicit })
+    )
+  }
+
+  // 2) Default persona
+  const { data: def } = await supabaseAdmin
+    .from("client_personas")
+    .select("id, resume_text")
+    .eq("profile_id", profileId)
+    .eq("is_default", true)
+    .maybeSingle<{ id: string; resume_text: string | null }>()
+  if (def?.id) {
+    return {
+      resumeText: def.resume_text || "",
+      activePersonaId: def.id,
+      personaSource: "default_persona",
+    }
+  }
+
+  // 3) Base profile fallback. Log so we can track legacy paths.
+  console.warn(
+    "[authProfile] using base_profile_fallback for resume_text — profile has no default persona:",
+    JSON.stringify({ profileId, hasBaseResume: baseResumeText.length > 0 })
+  )
+  return {
+    resumeText: baseResumeText,
+    activePersonaId: null,
+    personaSource: "base_profile_fallback",
+  }
+}
+
+// Convert a profile row + resolved persona output into the AuthedProfile
+// return shape. Used at every termination point of getAuthedProfileText.
+async function buildAuthedProfile(
+  personaId: string | null,
+  row: ClientProfileRow
+): Promise<AuthedProfile> {
+  const baseResume = row.resume_text || ""
+  const resolved = await resolveResumeText(row.id, baseResume, personaId)
   return {
     profileId: row.id,
     profileText: row.profile_text || "",
-    resumeText: row.resume_text || "",
+    resumeText: resolved.resumeText,
     profileStructured: row.profile_structured || null,
     jobType: row.job_type || null,
     targetRoles: row.target_roles || null,
     targetLocations: row.target_locations || null,
-        timeline: row.timeline || null,
+    timeline: row.timeline || null,
+    activePersonaId: resolved.activePersonaId,
+    personaSource: resolved.personaSource,
   }
 }
 
@@ -84,7 +175,11 @@ function isDuplicateConstraint(err: any, constraintName?: string) {
   return code === "23505" || hitConstraint
 }
 
-export async function getAuthedProfileText(req: Request): Promise<AuthedProfile> {
+export async function getAuthedProfileText(
+  req: Request,
+  opts?: { personaId?: string | null }
+): Promise<AuthedProfile> {
+  const personaId = opts?.personaId ?? null
   const { userId, email } = await getAuthedUser(req)
 
   // 1) Prefer lookup by user_id
@@ -95,7 +190,7 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
     .maybeSingle<ClientProfileRow>()
 
   if (byUserErr) throw new Error(`Profile lookup failed: ${byUserErr.message}`)
-  if (byUserId?.id) return rowToProfile(byUserId)
+  if (byUserId?.id) return await buildAuthedProfile(personaId,byUserId)
 
   // If no email, create a user-owned row
   if (!email) {
@@ -111,7 +206,7 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
       .single<ClientProfileRow>()
 
     if (createErr || !created) throw new Error(`Profile create failed: ${createErr?.message || "unknown"}`)
-    return rowToProfile(created)
+    return await buildAuthedProfile(personaId,created)
   }
 
   // 2) Try lookup by email
@@ -124,7 +219,7 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
   if (byEmailErr) throw new Error(`Profile lookup by email failed: ${byEmailErr.message}`)
 
   if (byEmail?.id) {
-    if (byEmail.user_id === userId) return rowToProfile(byEmail)
+    if (byEmail.user_id === userId) return await buildAuthedProfile(personaId,byEmail)
 
     if (byEmail.user_id && byEmail.user_id !== userId) {
       throw new Error(`Profile email conflict: a profile row for ${email} is attached to a different user_id.`)
@@ -147,12 +242,12 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
           .maybeSingle<ClientProfileRow>()
 
         if (racedErr) throw new Error(`Profile lookup failed: ${racedErr.message}`)
-        if (raced?.id) return rowToProfile(raced)
+        if (raced?.id) return await buildAuthedProfile(personaId,raced)
       }
       throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
     }
 
-    return rowToProfile(attached)
+    return await buildAuthedProfile(personaId,attached)
   }
 
   // 3) Create fresh row
@@ -178,7 +273,7 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
       if (reErr) throw new Error(`Profile lookup by email failed: ${reErr.message}`)
       if (!existingByEmail?.id) throw new Error("Profile create failed: duplicate email, but could not re-fetch.")
 
-      if (existingByEmail.user_id === userId) return rowToProfile(existingByEmail)
+      if (existingByEmail.user_id === userId) return await buildAuthedProfile(personaId,existingByEmail)
 
       if (existingByEmail.user_id && existingByEmail.user_id !== userId) {
         throw new Error(`Profile email conflict: a profile row for ${email} is attached to a different user_id.`)
@@ -192,12 +287,12 @@ export async function getAuthedProfileText(req: Request): Promise<AuthedProfile>
         .single<ClientProfileRow>()
 
       if (attachErr || !attached) throw new Error(`Profile attach failed: ${attachErr?.message || "unknown"}`)
-      return rowToProfile(attached)
+      return await buildAuthedProfile(personaId,attached)
     }
 
     throw new Error(`Profile create failed: ${createErr.message}`)
   }
 
   if (!created) throw new Error("Profile create failed: unknown")
-  return rowToProfile(created)
+  return await buildAuthedProfile(personaId,created)
 }

@@ -5,15 +5,65 @@ import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 
-const BASE_NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/tracker", label: "Job Tracker" },
-  { href: "/dashboard/resume-rx", label: "ResumeRx (Coming Soon)" },
+// Sprint 3 (2026-05-08): conditional nav rendering by is_coach.
+//   • D2C: My Account (renamed from Overview), Job Tracker, ResumeRx
+//   • Coach: Coaches Center group (Dashboard / Required Actions / My
+//     Clients), then My Account, then Back to SIGNAL. Job Tracker +
+//     ResumeRx hidden from coach nav.
+
+type NavItem = {
+  href: string
+  label: string
+  external?: boolean
+  /** When true, also marks active for descendants (e.g. /clients/[id]) */
+  matchPrefix?: boolean
+}
+type NavGroup = { header: string; items: NavItem[] }
+
+const D2C_NAV: NavGroup[] = [
+  {
+    header: "DASHBOARD",
+    items: [
+      { href: "/dashboard", label: "My Account" },
+      { href: "/dashboard/tracker", label: "Job Tracker" },
+      { href: "/dashboard/resume-rx", label: "ResumeRx (Coming Soon)" },
+    ],
+  },
 ]
 
-const COACH_NAV_ITEM = { href: "/dashboard/coach", label: "My Clients" }
+const COACH_NAV: NavGroup[] = [
+  {
+    header: "COACHES CENTER",
+    items: [
+      { href: "/dashboard/coach", label: "Dashboard" },
+      { href: "/dashboard/coach/required-actions", label: "Required Actions" },
+      // matchPrefix so /dashboard/coach/clients/[id] highlights "My Clients"
+      { href: "/dashboard/coach/clients", label: "My Clients", matchPrefix: true },
+    ],
+  },
+  {
+    header: "ACCOUNT",
+    items: [
+      { href: "/dashboard", label: "My Account" },
+    ],
+  },
+]
 
-const EXTERNAL_NAV_ITEM = { href: "https://wrnsignal.workforcereadynow.com/signal/jobfit", label: "Back to SIGNAL →", external: true }
+const EXTERNAL_NAV_ITEM: NavItem = {
+  href: "https://wrnsignal.workforcereadynow.com/signal/jobfit",
+  label: "Back to SIGNAL →",
+  external: true,
+}
+
+function isItemActive(item: NavItem, pathname: string): boolean {
+  if (pathname === item.href) return true
+  if (item.matchPrefix && pathname.startsWith(item.href + "/")) return true
+  return false
+}
+
+function isGroupActive(group: NavGroup, pathname: string): boolean {
+  return group.items.some((it) => isItemActive(it, pathname))
+}
 
 function Logo() {
   return (
@@ -81,6 +131,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sending, setSending] = useState(false)
   const [fromFramer, setFromFramer] = useState(false)
   const [isCoach, setIsCoach] = useState(false)
+  // Dev-only password sign-in. Gated on NEXT_PUBLIC_DEV_AUTH=true (set in
+  // .env.development.local; absent in prod .env.local). Without that env
+  // var, the password field doesn't render and this state is unused.
+  const [password, setPassword] = useState("")
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false)
+  const showDevAuth = process.env.NEXT_PUBLIC_DEV_AUTH === "true"
   const pathname = usePathname()
 
   useEffect(() => {
@@ -206,6 +262,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setSending(false)
   }
 
+  // Dev-only password sign-in. Mirrors the server-side redirect logic in
+  // /api/auth/send-link so coaches land on /dashboard/coach regardless of
+  // profile_complete. Hidden behind NEXT_PUBLIC_DEV_AUTH=true.
+  async function signInWithPassword() {
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed || !password) {
+      setError("Email and password are required.")
+      return
+    }
+    setPasswordSubmitting(true)
+    setError("")
+    try {
+      const supabase = getSupabaseBrowser()
+      const { data, error: authErr } = await supabase.auth.signInWithPassword({
+        email: trimmed,
+        password,
+      })
+      if (authErr || !data.session) {
+        setError(authErr?.message || "Sign-in failed.")
+        return
+      }
+      const token = data.session.access_token
+      // Determine redirect using same logic as the server-side magic-link
+      // sender (is_coach checked BEFORE profile_complete).
+      let target = "/dashboard"
+      try {
+        const profRes = await fetch("/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (profRes.ok) {
+          const { profile } = await profRes.json()
+          if (profile?.is_coach) target = "/dashboard/coach"
+          else if (profile?.profile_complete) target = "/dashboard/tracker"
+        }
+      } catch {
+        // Profile lookup failed — fall through to /dashboard
+      }
+      window.location.replace(target)
+    } catch (e: any) {
+      setError(e?.message || "Sign-in failed.")
+    } finally {
+      setPasswordSubmitting(false)
+    }
+  }
+
   if (status === "loading") {
     return (
       <div style={{ minHeight: "100vh", background: T.BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -249,10 +350,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onChange={(e) => setEmail(e.target.value)}
                 style={{ ...input, marginTop: 8 }}
               />
+              {showDevAuth && (
+                <>
+                  <label style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.5, color: T.WRN_BLUE, marginTop: 16, display: "block" }}>
+                    PASSWORD <span style={{ color: T.DIM, fontWeight: 400 }}>(dev only — leave blank for magic link)</span>
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="dev-test-1234"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ ...input, marginTop: 8 }}
+                  />
+                </>
+              )}
               {error && <p style={{ fontSize: 12, color: T.ERROR, marginTop: 8 }}>{error}</p>}
-              <button type="submit" disabled={sending} style={{ ...btnPrimary, width: "100%", marginTop: 16, opacity: sending ? 0.5 : 1 }}>
+              <button type="submit" disabled={sending || passwordSubmitting} style={{ ...btnPrimary, width: "100%", marginTop: 16, opacity: sending || passwordSubmitting ? 0.5 : 1 }}>
                 {sending ? "Sending..." : "Send magic link"}
               </button>
+              {showDevAuth && (
+                <button
+                  type="button"
+                  onClick={signInWithPassword}
+                  disabled={sending || passwordSubmitting || !email.trim() || !password}
+                  style={{
+                    ...btnPrimary,
+                    width: "100%",
+                    marginTop: 10,
+                    background: "rgba(255,255,255,0.06)",
+                    border: `1px solid ${T.BORDER_SOFT}`,
+                    color: T.TEXT,
+                    opacity: (sending || passwordSubmitting || !email.trim() || !password) ? 0.5 : 1,
+                  }}
+                >
+                  {passwordSubmitting ? "Signing in..." : "Sign in with password"}
+                </button>
+              )}
             </form>
           )}
         </div>
@@ -267,48 +400,74 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav style={{ width: 220, background: T.NAV_BG, borderRight: `1px solid ${T.BORDER_SOFT}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
           <Logo />
           <div style={{ padding: "0 12px" }}>
-            <div style={{ ...eyebrow, fontSize: 11, letterSpacing: 1.2, color: "rgba(255,255,255,0.42)", padding: "0 8px", marginBottom: 8 }}>
-              DASHBOARD
-            </div>
-            {[...BASE_NAV_ITEMS, ...(isCoach ? [COACH_NAV_ITEM] : []), EXTERNAL_NAV_ITEM].map((item) => {
-              const isExternal = (item as any).external === true
-              const active = !isExternal && pathname === item.href
+            {(isCoach ? COACH_NAV : D2C_NAV).map((group, gi) => {
+              const groupHot = isGroupActive(group, pathname)
               return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={isExternal ? async (e) => {
-                    e.preventDefault()
-                    const supabase = getSupabaseBrowser()
-                    const { data } = await supabase.auth.getSession()
-                    const token = data.session?.access_token
-                    const refreshToken = data.session?.refresh_token
-                    const params = new URLSearchParams()
-                    if (token) params.set("access_token", token)
-                    if (refreshToken) params.set("refresh_token", refreshToken)
-                    window.location.replace(item.href + "#" + params.toString())
-                  } : undefined}
-                  style={{
-                    display: "block",
-                    padding: "10px 12px",
-                    marginBottom: 4,
-                    borderRadius: 10,
-                    fontSize: 13,
-                    fontWeight: 900,
-                    textDecoration: "none",
-                    border: isExternal
-                      ? `1px solid rgba(74,222,128,0.3)`
-                      : active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
-                    background: isExternal
-                      ? "rgba(74,222,128,0.06)"
-                      : active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
-                    color: isExternal ? "#4ade80" : active ? T.WRN_ORANGE : T.TEXT,
-                  }}
-                >
-                  {item.label}
-                </a>
+                <div key={group.header} style={{ marginBottom: gi === (isCoach ? COACH_NAV.length - 1 : D2C_NAV.length - 1) ? 12 : 16 }}>
+                  <div style={{
+                    ...eyebrow, fontSize: 11, letterSpacing: 1.2,
+                    color: groupHot ? T.WRN_ORANGE : "rgba(255,255,255,0.42)",
+                    padding: "0 8px", marginBottom: 8,
+                  }}>
+                    {group.header}
+                  </div>
+                  {group.items.map((item) => {
+                    const active = isItemActive(item, pathname)
+                    return (
+                      <a
+                        key={item.href}
+                        href={item.href}
+                        style={{
+                          display: "block",
+                          padding: "10px 12px",
+                          marginBottom: 4,
+                          borderRadius: 10,
+                          fontSize: 13,
+                          fontWeight: 900,
+                          textDecoration: "none",
+                          border: active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
+                          background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
+                          color: active ? T.WRN_ORANGE : T.TEXT,
+                        }}
+                      >
+                        {item.label}
+                      </a>
+                    )
+                  })}
+                </div>
               )
             })}
+
+            {/* Back to SIGNAL — external context switch, both contexts */}
+            <a
+              key={EXTERNAL_NAV_ITEM.href}
+              href={EXTERNAL_NAV_ITEM.href}
+              onClick={async (e) => {
+                e.preventDefault()
+                const supabase = getSupabaseBrowser()
+                const { data } = await supabase.auth.getSession()
+                const token = data.session?.access_token
+                const refreshToken = data.session?.refresh_token
+                const params = new URLSearchParams()
+                if (token) params.set("access_token", token)
+                if (refreshToken) params.set("refresh_token", refreshToken)
+                window.location.replace(EXTERNAL_NAV_ITEM.href + "#" + params.toString())
+              }}
+              style={{
+                display: "block",
+                padding: "10px 12px",
+                marginBottom: 4,
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 900,
+                textDecoration: "none",
+                border: "1px solid rgba(74,222,128,0.3)",
+                background: "rgba(74,222,128,0.06)",
+                color: "#4ade80",
+              }}
+            >
+              {EXTERNAL_NAV_ITEM.label}
+            </a>
           </div>
         </nav>
         <main style={{ flex: 1, padding: "32px 40px 60px 36px", overflowY: "auto" }}>

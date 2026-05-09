@@ -102,6 +102,19 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "Forbidden: no active coach relationship with view access" }, 403)
     }
 
+    // Bump last_viewed_at on the coach_clients link. Powers the "since
+    // last visit" indicator on My Clients cards + the "no recent coach
+    // activity" predicate in Requires Action heuristics. Any tab open
+    // counts as "I saw recent activity" (decision 2026-05-07). Fire-
+    // and-forget — failure is non-fatal and bumps again on next visit.
+    supabase
+      .from("coach_clients")
+      .update({ last_viewed_at: new Date().toISOString() })
+      .eq("id", access.id)
+      .then(({ error: bumpErr }) => {
+        if (bumpErr) console.warn("[coach profile GET] last_viewed_at bump failed:", bumpErr.message)
+      })
+
     const { data: profile, error: profileErr } = await supabase
       .from("client_profiles")
       .select("*")
@@ -122,6 +135,76 @@ export async function GET(
       profile,
       personas: personas || [],
     })
+  } catch (err: any) {
+    const msg = err?.message || String(err)
+    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    return withCorsJson(req, { ok: false, error: msg }, status)
+  }
+}
+
+// Editable fields on client_profiles when a coach patches the row from
+// the Profile & Personas tab. Anything outside this allowlist is ignored.
+// `name`, `email`, `resume_text`, and `profile_text` are intentionally
+// excluded — those flow through other paths (auth, persona sync, intake).
+const COACH_EDITABLE_PROFILE_FIELDS = new Set([
+  "job_type",
+  "target_roles",
+  "target_locations",
+  "timeline",
+  "coach_notes_avoid",
+  "coach_notes_strengths",
+  "coach_notes_concerns",
+])
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  try {
+    const { clientId: clientProfileId } = await params
+    const { userId, email } = await getAuthedUser(req)
+    const profileId = await getProfileId(userId, email)
+    const supabase = getSupabaseAdmin()
+
+    if (!clientProfileId) return withCorsJson(req, { ok: false, error: "clientId is required" }, 400)
+
+    // Pilot decision (2026-05-07): profile edits require access_level = 'full'.
+    // Annotate-only coaches see the page but can't write.
+    const access = await verifyCoachAccess(profileId, clientProfileId, "full", supabase)
+    if (!access) {
+      return withCorsJson(req, { ok: false, error: "Forbidden: full access required" }, 403)
+    }
+
+    const body = await req.json().catch(() => null)
+    if (!body || typeof body !== "object") {
+      return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
+    }
+
+    const updates: Record<string, any> = {}
+    for (const [k, v] of Object.entries(body)) {
+      if (!COACH_EDITABLE_PROFILE_FIELDS.has(k)) continue
+      if (v === undefined) continue
+      // Empty string → null (so coach can clear a field by blanking it)
+      const str = v === null ? null : String(v)
+      updates[k] = str !== null && str.trim().length === 0 ? null : str
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return withCorsJson(req, { ok: false, error: "No editable fields supplied" }, 400)
+    }
+
+    updates.updated_at = new Date().toISOString()
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("client_profiles")
+      .update(updates)
+      .eq("id", clientProfileId)
+      .select("*")
+      .single()
+
+    if (updateErr) throw new Error(`Profile update failed: ${updateErr.message}`)
+
+    return withCorsJson(req, { ok: true, profile: updated })
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500

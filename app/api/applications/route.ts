@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { logStatusChange } from "../_lib/applicationStatusHistory"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -140,6 +141,10 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) throw new Error(`Application create failed: ${error.message}`)
+
+    // Status history: log initial state (from null → initial status).
+    // Helper is no-op if to_status equals from_status.
+    await logStatusChange(supabase, data.id, null, data.application_status, profileId)
 
     return withCorsJson(req, { ok: true, application: data }, 201)
   } catch (err: any) {

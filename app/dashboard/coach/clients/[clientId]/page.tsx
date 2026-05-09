@@ -13,24 +13,16 @@ import {
   eyebrow,
   label,
 } from "../../../../../lib/dashboard-theme"
+import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
+import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
+import { AddNotePanel } from "./AddNotePanel"
 
-type Tab = "tracker" | "source" | "history" | "analysis"
+type Tab = "tracker" | "source" | "notes" | "history" | "analysis"
 
-type ClientProfile = {
-  id: string
-  name: string | null
-  email: string | null
-  target_roles: string | null
-  job_type: string | null
-  timeline: string | null
-  profile_complete: boolean
-}
-
-type ClientPersona = {
-  id: string
-  name: string
-  is_default: boolean
-}
+// The Profile & Personas tab needs the full editable shape; other tabs
+// only read .name / .email / .id / .is_default — all subsets of these.
+type ClientProfile = ClientProfileFull
+type ClientPersona = ClientPersonaFull
 
 type CoachRec = {
   id: string
@@ -167,6 +159,12 @@ export default function CoachClientPage() {
   const [showLinkedInHelper, setShowLinkedInHelper] = useState(false)
   const [linkedInPasteText, setLinkedInPasteText] = useState("")
 
+  // Notes tab + Add Note slide-in panel state.
+  // notesRefreshKey gets bumped after the slide-in saves a note so the
+  // Notes tab refetches even when the panel was opened from a different tab.
+  const [addNoteOpen, setAddNoteOpen] = useState(false)
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0)
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
@@ -190,10 +188,12 @@ export default function CoachClientPage() {
       setCoachRecs(trackerData.recommendations || [])
       setHistoryRuns(trackerData.history || [])
 
-      // Default to first persona
+      // Default to first ACTIVE persona for the Source-a-Job selector.
+      // Archived personas should never be auto-selected for new analyses.
       const personas = profileData.personas || []
-      if (personas.length > 0 && !selectedPersona) {
-        const def = personas.find((p: ClientPersona) => p.is_default) || personas[0]
+      const activePersonas = personas.filter((p: ClientPersona) => !p.archived_at)
+      if (activePersonas.length > 0 && !selectedPersona) {
+        const def = activePersonas.find((p: ClientPersona) => p.is_default) || activePersonas[0]
         setSelectedPersona(def.id)
       }
     } catch {
@@ -277,7 +277,10 @@ export default function CoachClientPage() {
 
   function clearSourceForm() {
     setSourceUrl(''); setSourceCompany(''); setSourceTitle(''); setSourceJD('')
-    setSelectedPersona(clientPersonas.find(p => p.is_default)?.id || clientPersonas[0]?.id || '')
+    {
+      const active = clientPersonas.filter(p => !p.archived_at)
+      setSelectedPersona(active.find(p => p.is_default)?.id || active[0]?.id || '')
+    }
     setRunResult(null); setShowAnnotation(false); setSendSuccess(false)
     setAnnPriority('this_week'); setAnnAction('apply'); setAnnNote(''); setAnnApplyBy('')
     setRunError('')
@@ -351,6 +354,7 @@ export default function CoachClientPage() {
   const TABS: { id: Tab; label: string }[] = [
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
+    { id: "notes", label: "Notes" },
     { id: "history", label: "Analyses History" },
     { id: "analysis", label: "Profile & Personas" },
   ]
@@ -380,12 +384,30 @@ export default function CoachClientPage() {
             <span style={{ fontSize: 12, color: T.DIM, marginLeft: 10 }}>{clientProfile.email}</span>
           )}
         </div>
-        <a
-          href="/dashboard/coach"
-          style={{ fontSize: 12, fontWeight: 900, color: T.WRN_ORANGE, textDecoration: "none" }}
-        >
-          ← Back to My Clients
-        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button
+            onClick={() => setAddNoteOpen(true)}
+            style={{
+              background: "rgba(254,176,106,0.10)",
+              border: "1px solid rgba(254,176,106,0.35)",
+              color: T.WRN_ORANGE,
+              fontSize: 12,
+              fontWeight: 900,
+              borderRadius: 10,
+              padding: "8px 14px",
+              cursor: "pointer",
+              letterSpacing: 0.4,
+            }}
+          >
+            + Add Note
+          </button>
+          <a
+            href="/dashboard/coach"
+            style={{ fontSize: 12, fontWeight: 900, color: T.WRN_ORANGE, textDecoration: "none" }}
+          >
+            ← Back to My Clients
+          </a>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -874,11 +896,11 @@ export default function CoachClientPage() {
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
               <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
 
-              {clientPersonas.length > 0 && (
+              {clientPersonas.filter(p => !p.archived_at).length > 0 && (
                 <div style={{ marginBottom: 18 }}>
                   <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 10 }}>CLIENT PERSONA</span>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {clientPersonas.map((p) => (
+                    {clientPersonas.filter(p => !p.archived_at).map((p) => (
                       <label key={p.id} style={{
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "10px 16px", borderRadius: 12, cursor: "pointer",
@@ -1216,7 +1238,17 @@ export default function CoachClientPage() {
         </div>
       )}
 
-      {/* TAB 3 — Analyses History */}
+      {/* TAB 3 — Notes (typed notes feed) */}
+      {tab === "notes" && (
+        <NotesTab
+          authFetch={authFetch}
+          clientId={clientId}
+          clientName={clientProfile?.name || null}
+          refreshKey={notesRefreshKey}
+        />
+      )}
+
+      {/* TAB 4 — Analyses History */}
       {tab === "history" && (
         <div>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>ALL ANALYSES FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
@@ -1246,61 +1278,38 @@ export default function CoachClientPage() {
         </div>
       )}
 
-      {/* TAB 4 — Profile & Personas */}
-      {tab === "analysis" && (
-        <div>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>CLIENT PROFILE & PERSONAS</div>
-          {clientProfile && (
-            <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ height: 3, background: "linear-gradient(90deg,#51ADE5,#218C8C,#FEB06A)", margin: "-24px -24px 20px", borderRadius: "18px 18px 0 0" }} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                {[
-                  { lbl: "Name", val: clientProfile.name },
-                  { lbl: "Email", val: clientProfile.email },
-                  { lbl: "Target Roles", val: clientProfile.target_roles },
-                  { lbl: "Job Type", val: clientProfile.job_type },
-                  { lbl: "Timeline", val: clientProfile.timeline },
-                  { lbl: "Profile Complete", val: clientProfile.profile_complete ? "Yes" : "No" },
-                ].map(({ lbl, val }) => (
-                  <div key={lbl}>
-                    <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 3 }}>{lbl.toUpperCase()}</div>
-                    <div style={{ fontSize: 13, color: val ? T.TEXT : T.DIM }}>{val || "—"}</div>
-                  </div>
-                ))}
-              </div>
-              <button style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10, marginTop: 20, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                Suggest edit
-              </button>
-            </div>
-          )}
-
-          {clientPersonas.length > 0 && (
-            <div>
-              <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 12 }}>PERSONAS</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {clientPersonas.map((p) => (
-                  <div key={p.id} style={{ ...card, padding: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{p.name}</span>
-                      {p.is_default && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
-                          color: T.WRN_ORANGE, background: T.WARNING_BG, padding: "3px 8px", borderRadius: 6,
-                        }}>
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <button style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", borderRadius: 8, marginTop: 14, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                      Suggest edit
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* TAB 5 — Profile & Personas */}
+      {tab === "analysis" && clientProfile && (
+        <ProfilePersonasTab
+          clientId={clientId}
+          initialProfile={clientProfile}
+          initialPersonas={clientPersonas}
+          getToken={getToken}
+          onChange={loadAll}
+        />
       )}
+
+      {/* Slide-in Add Note panel — overlays current tab without navigation */}
+      <AddNotePanel
+        open={addNoteOpen}
+        onClose={() => setAddNoteOpen(false)}
+        onSaved={() => setNotesRefreshKey((k) => k + 1)}
+        onSubmit={async ({ type, body, priority }: { type: NoteType; body: string; priority: NotePriority | null }) => {
+          try {
+            const res = await authFetch(`/api/coach/clients/${clientId}/note-feed`, {
+              method: "POST",
+              body: JSON.stringify({ type, body, priority }),
+            })
+            const j = await res.json().catch(() => null)
+            if (!res.ok || !j?.ok) {
+              return { ok: false as const, error: j?.error || "Failed to save note" }
+            }
+            return { ok: true as const }
+          } catch {
+            return { ok: false as const, error: "Network error" }
+          }
+        }}
+      />
     </div>
   )
 }

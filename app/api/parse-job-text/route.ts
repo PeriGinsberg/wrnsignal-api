@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, { error: "Server configuration error" }, 500)
   }
 
-  const truncatedText = truncate(text, 12000)
+  const truncatedText = truncate(text, 30000)
 
   const prompt = `Extract job posting data from the following raw text. The text may contain navigation menus, sidebars, ads, and other non-job content from a full page copy. Ignore all of that and focus only on the actual job posting.
 
@@ -89,6 +89,7 @@ ${truncatedText}`
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 4000,
+        temperature: 0,
         system: "You are a job posting parser. Extract structured data from raw job posting text. Return ONLY valid JSON.",
         messages: [{ role: "user", content: prompt }],
       }),
@@ -128,7 +129,7 @@ ${truncatedText}`
     parsed = {
       jobTitle: cleanText(String(data.jobTitle || "")),
       companyName: cleanText(String(data.companyName || "")),
-      jobDescription: truncate(cleanText(String(data.jobDescription || "")), 4000),
+      jobDescription: truncate(cleanText(String(data.jobDescription || "")), 8000),
       location: data.location ? cleanText(String(data.location)) || null : null,
       jobType: data.jobType ? cleanText(String(data.jobType)) || null : null,
     }

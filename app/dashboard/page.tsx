@@ -42,6 +42,7 @@ type Profile = {
   active: boolean | null
   purchase_date: string | null
   refunded_at: string | null
+  is_coach: boolean | null
 }
 
 const REFUND_WINDOW_DAYS = 7
@@ -135,6 +136,9 @@ export default function DashboardPage() {
   // UI state
   const [profileEditOpen, setProfileEditOpen] = useState(false)
   const [editProfile, setEditProfile] = useState<Profile | null>(null)
+  // Sprint 3 correction (2026-05-08): persona self-service is open to
+  // any authenticated user editing their OWN personas. /api/personas/*
+  // gates by profile_id ownership, not role.
   const [personaEditId, setPersonaEditId] = useState<string | null>(null)
   const [editPersona, setEditPersona] = useState<Persona | null>(null)
   const [addPersonaOpen, setAddPersonaOpen] = useState(false)
@@ -247,7 +251,9 @@ export default function DashboardPage() {
     setSaving(false)
   }
 
-  // --- Persona actions ---
+  // Sprint 3 (2026-05-08): persona mutation handlers — calls
+  // /api/personas/* which is open for self-edit by any authenticated
+  // user on their own data.
   function openPersonaEdit(p: Persona) {
     setEditPersona({ ...p })
     setPersonaEditId(p.id)
@@ -273,7 +279,7 @@ export default function DashboardPage() {
     setSaving(false)
   }
 
-  async function setDefault(id: string) {
+  async function setDefaultPersona(id: string) {
     const token = await getToken()
     if (!token) return
     await fetch(`/api/personas/${id}`, {
@@ -281,7 +287,7 @@ export default function DashboardPage() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ is_default: true }),
     })
-    loadAll()
+    await loadAll()
   }
 
   async function deletePersona(id: string) {
@@ -375,7 +381,7 @@ export default function DashboardPage() {
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
   if (error && !profile) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
 
-  const atLimit = personas.length >= 2
+  // atLimit removed — pilot disables client-side persona create.
 
   return (
     <div>
@@ -641,7 +647,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN — Personas */}
+        {/* RIGHT COLUMN — Personas (self-edit, any user on own data) */}
         <div style={{ flex: 1 }}>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 10 }}>PERSONAS</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -676,79 +682,75 @@ export default function DashboardPage() {
                             Edit
                           </button>
                           {!p.is_default && (
-                            <button onClick={() => setDefault(p.id)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10 }}>
+                            <button onClick={() => setDefaultPersona(p.id)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10 }}>
                               Set as Default
                             </button>
                           )}
                         </div>
                       </>
                     )}
-                  </div>
 
-                  {/* Persona edit form */}
-                  {isEditing && editPersona && (
-                    <div style={{ borderTop: `1px solid ${T.BORDER_SOFT}`, padding: 24 }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        <div>
-                          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONA NAME</span>
-                          <input
-                            type="text"
-                            style={input}
-                            value={editPersona.name}
-                            onChange={(e) => setEditPersona({ ...editPersona, name: e.target.value })}
-                          />
+                    {isEditing && editPersona && (
+                      <div style={{ borderTop: `1px solid ${T.BORDER_SOFT}`, marginTop: 14, paddingTop: 18 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                          <div>
+                            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONA NAME</span>
+                            <input
+                              type="text"
+                              style={input}
+                              value={editPersona.name}
+                              onChange={(e) => setEditPersona({ ...editPersona, name: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
+                            <button
+                              type="button"
+                              onClick={() => handleResumeUpload((text) => setEditPersona({ ...editPersona!, resume_text: text }))}
+                              disabled={resumeUploading}
+                              style={{
+                                ...btnSecondary, width: "100%", marginBottom: 8,
+                                fontSize: 12, padding: "10px 14px", borderRadius: 10,
+                                color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)",
+                                opacity: resumeUploading ? 0.5 : 1,
+                              }}
+                            >
+                              {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
+                            </button>
+                            <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
+                            <textarea
+                              style={{ ...textarea, minHeight: 220 }}
+                              value={editPersona.resume_text}
+                              onChange={(e) => setEditPersona({ ...editPersona, resume_text: e.target.value })}
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
-                          <button
-                            type="button"
-                            onClick={() => handleResumeUpload((text) => setEditPersona({ ...editPersona!, resume_text: text }))}
-                            disabled={resumeUploading}
-                            style={{
-                              ...btnSecondary,
-                              width: "100%",
-                              marginBottom: 8,
-                              fontSize: 12,
-                              padding: "10px 14px",
-                              borderRadius: 10,
-                              color: T.WRN_BLUE,
-                              borderColor: "rgba(81,173,229,0.3)",
-                              opacity: resumeUploading ? 0.5 : 1,
-                            }}
-                          >
-                            {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
+                        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+                          <button onClick={savePersona} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.5 : 1 }}>
+                            {saving ? "Saving..." : "Save Changes"}
                           </button>
-                          <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
-                          <textarea
-                            style={{ ...textarea, minHeight: 260 }}
-                            value={editPersona.resume_text}
-                            onChange={(e) => setEditPersona({ ...editPersona, resume_text: e.target.value })}
-                          />
+                          <button onClick={() => { setPersonaEditId(null); setEditPersona(null) }} style={{ ...btnSecondary, fontSize: 13 }}>Cancel</button>
                         </div>
+                        {/* Delete — hide when this is the only persona to avoid leaving the user with none */}
+                        {personas.length > 1 && (
+                          <button
+                            onClick={() => deletePersona(p.id)}
+                            style={{ background: "none", border: "none", color: T.ERROR, fontSize: 12, cursor: "pointer", marginTop: 14, padding: 0, opacity: 0.7 }}
+                          >
+                            Delete this persona
+                          </button>
+                        )}
                       </div>
-                      <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                        <button onClick={savePersona} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.5 : 1 }}>
-                          {saving ? "Saving..." : "Save Changes"}
-                        </button>
-                        <button onClick={() => { setPersonaEditId(null); setEditPersona(null) }} style={{ ...btnSecondary, fontSize: 13 }}>Cancel</button>
-                      </div>
-                      {/* Delete link — hide if this is the only persona and it's default */}
-                      {!(p.is_default && personas.length === 1) && (
-                        <button
-                          onClick={() => deletePersona(p.id)}
-                          style={{ background: "none", border: "none", color: T.ERROR, fontSize: 12, cursor: "pointer", marginTop: 16, padding: 0, opacity: 0.7 }}
-                        >
-                          Delete this persona
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )
             })}
 
             {personas.length === 0 && !addPersonaOpen && (
-              <p style={{ color: T.MUTED, fontSize: 13 }}>No personas yet. Create one to get started.</p>
+              <p style={{ color: T.MUTED, fontSize: 13 }}>
+                No personas yet. Click Add Persona to create one.
+              </p>
             )}
 
             {/* Add persona form */}
@@ -763,7 +765,7 @@ export default function DashboardPage() {
                       <input
                         type="text"
                         style={input}
-                        placeholder="e.g. Sales, Brand Marketing"
+                        placeholder="e.g. Coaching Resume"
                         value={newPersonaName}
                         onChange={(e) => setNewPersonaName(e.target.value)}
                       />
@@ -775,14 +777,9 @@ export default function DashboardPage() {
                         onClick={() => handleResumeUpload((text) => setNewPersonaResume(text))}
                         disabled={resumeUploading}
                         style={{
-                          ...btnSecondary,
-                          width: "100%",
-                          marginBottom: 8,
-                          fontSize: 12,
-                          padding: "10px 14px",
-                          borderRadius: 10,
-                          color: T.WRN_BLUE,
-                          borderColor: "rgba(81,173,229,0.3)",
+                          ...btnSecondary, width: "100%", marginBottom: 8,
+                          fontSize: 12, padding: "10px 14px", borderRadius: 10,
+                          color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)",
                           opacity: resumeUploading ? 0.5 : 1,
                         }}
                       >
@@ -790,7 +787,7 @@ export default function DashboardPage() {
                       </button>
                       <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
                       <textarea
-                        style={{ ...textarea, minHeight: 200 }}
+                        style={{ ...textarea, minHeight: 180 }}
                         placeholder="Paste your resume text here..."
                         value={newPersonaResume}
                         onChange={(e) => setNewPersonaResume(e.target.value)}
@@ -809,15 +806,12 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Add persona button */}
             {!addPersonaOpen && (
               <button
                 onClick={() => { setAddPersonaOpen(true); setPersonaEditId(null) }}
-                disabled={atLimit}
-                title={atLimit ? "You've reached the 2 persona limit" : undefined}
-                style={{ ...btnPrimary, opacity: atLimit ? 0.3 : 1, cursor: atLimit ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
+                style={{ ...btnPrimary, alignSelf: "flex-start" }}
               >
-                Add New Persona
+                Add Persona
               </button>
             )}
           </div>
