@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from "react"
-import { useParams, useSearchParams } from "next/navigation"
+import React, { useEffect, useMemo, useState, useCallback } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import {
   T,
@@ -16,8 +16,15 @@ import {
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
 import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
 import { AddNotePanel } from "./AddNotePanel"
+import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
+import { DashboardView } from "./dashboard/DashboardView"
 
-type Tab = "tracker" | "source" | "notes" | "history" | "analysis"
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "history" | "analysis"
+
+// Status filter buckets exposed to Job Tracker tab via URL ?status= param
+// or in-app tile click. "all" = no filter.
+type StatusFilter = "all" | "interviewing" | "offer" | "rejected"
+const STATUS_FILTERS: StatusFilter[] = ["all", "interviewing", "offer", "rejected"]
 
 // The Profile & Personas tab needs the full editable shape; other tabs
 // only read .name / .email / .id / .is_default — all subsets of these.
@@ -103,14 +110,26 @@ function Badge({ text, style: s }: { text: string; style: { bg: string; color: s
 
 export default function CoachClientPage() {
   const params = useParams()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const clientId = params.clientId as string
 
-  const initialTab = (searchParams.get("tab") as Tab) || "tracker"
+  // Default tab is dashboard. Initial URL param respected if present so
+  // deep-links into a tab still work; navigating away and back resets to
+  // dashboard because the URL has no ?tab on entry from My Clients.
+  const initialTab = (searchParams.get("tab") as Tab) || "dashboard"
   const [tab, setTab] = useState<Tab>(initialTab)
+
+  // Job Tracker status filter. Set by metrics-tile click on dashboard or
+  // by ?status= URL param on entry.
+  const initialStatus = searchParams.get("status") as StatusFilter | null
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    initialStatus && STATUS_FILTERS.includes(initialStatus) ? initialStatus : "all"
+  )
 
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null)
   const [clientPersonas, setClientPersonas] = useState<ClientPersona[]>([])
+  const [acceptedAt, setAcceptedAt] = useState<string | null>(null)
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
   const [clientApps, setClientApps] = useState<ClientApplication[]>([])
   const [historyRuns, setHistoryRuns] = useState<HistoryRun[]>([])
@@ -162,8 +181,12 @@ export default function CoachClientPage() {
   // Notes tab + Add Note slide-in panel state.
   // notesRefreshKey gets bumped after the slide-in saves a note so the
   // Notes tab refetches even when the panel was opened from a different tab.
+  // needsAttentionRefreshKey similarly drives the dashboard's
+  // Needs-Attention section.
   const [addNoteOpen, setAddNoteOpen] = useState(false)
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
+  const [needsAttentionRefreshKey, setNeedsAttentionRefreshKey] = useState(0)
+  const [removingClient, setRemovingClient] = useState(false)
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -184,6 +207,7 @@ export default function CoachClientPage() {
 
       setClientProfile(profileData.profile || null)
       setClientPersonas(profileData.personas || [])
+      setAcceptedAt(profileData.accepted_at ?? null)
       setClientApps(trackerData.applications || [])
       setCoachRecs(trackerData.recommendations || [])
       setHistoryRuns(trackerData.history || [])
@@ -352,6 +376,7 @@ export default function CoachClientPage() {
   }
 
   const TABS: { id: Tab; label: string }[] = [
+    { id: "dashboard", label: "Dashboard" },
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
     { id: "notes", label: "Notes" },
@@ -359,56 +384,91 @@ export default function CoachClientPage() {
     { id: "analysis", label: "Profile & Personas" },
   ]
 
+  // Apps shape for MetricsTiles + Job Tracker filter
+  const metricsApps = useMemo(
+    () =>
+      clientApps.map((a) => ({
+        id: a.id,
+        application_status: a.application_status,
+        created_at: a.created_at,
+      })),
+    [clientApps]
+  )
+
+  const filteredApps = useMemo(() => {
+    if (statusFilter === "all") return clientApps
+    return clientApps.filter((a) => a.application_status === statusFilter)
+  }, [clientApps, statusFilter])
+
+  function handleTileClick(filterStatus: StatusFilter) {
+    setStatusFilter(filterStatus)
+    setTab("tracker")
+  }
+
+  async function handleRemoveClient() {
+    if (!confirm(`Remove ${clientProfile?.name || clientProfile?.email || "this client"} from your roster? This cannot be undone.`)) {
+      return
+    }
+    setRemovingClient(true)
+    try {
+      const res = await authFetch(`/api/coach/clients/${clientId}`, { method: "DELETE" })
+      if (res.ok) {
+        router.push("/dashboard/coach")
+      } else {
+        const j = await res.json().catch(() => ({}))
+        alert(j?.error || "Failed to remove client.")
+      }
+    } catch {
+      alert("Network error removing client.")
+    } finally {
+      setRemovingClient(false)
+    }
+  }
+
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
   if (error) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
 
   return (
     <div>
-      {/* Context banner */}
-      <div style={{
-        background: "rgba(254,176,106,0.07)",
-        border: "1px solid rgba(254,176,106,0.18)",
-        borderRadius: 14,
-        padding: "14px 20px",
-        marginBottom: 28,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}>
-        <div>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 4 }}>COACHING SESSION</div>
-          <span style={{ fontSize: 16, fontWeight: 950, color: T.TEXT, letterSpacing: -0.3 }}>
-            {clientProfile?.name || clientProfile?.email || "Client"}
-          </span>
-          {clientProfile?.email && clientProfile.name && (
-            <span style={{ fontSize: 12, color: T.DIM, marginLeft: 10 }}>{clientProfile.email}</span>
-          )}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button
-            onClick={() => setAddNoteOpen(true)}
-            style={{
-              background: "rgba(254,176,106,0.10)",
-              border: "1px solid rgba(254,176,106,0.35)",
-              color: T.WRN_ORANGE,
-              fontSize: 12,
-              fontWeight: 900,
-              borderRadius: 10,
-              padding: "8px 14px",
-              cursor: "pointer",
-              letterSpacing: 0.4,
-            }}
-          >
-            + Add Note
-          </button>
-          <a
-            href="/dashboard/coach"
-            style={{ fontSize: 12, fontWeight: 900, color: T.WRN_ORANGE, textDecoration: "none" }}
-          >
-            ← Back to My Clients
-          </a>
-        </div>
-      </div>
+      {/* Back link sits above the persistent header strip so it doesn't
+          eat one of the four action button slots in the strip. */}
+      <a
+        href="/dashboard/coach"
+        style={{
+          fontSize: 12,
+          fontWeight: 900,
+          color: T.WRN_ORANGE,
+          textDecoration: "none",
+          display: "inline-block",
+          marginBottom: 14,
+        }}
+      >
+        ← Back to My Clients
+      </a>
+
+      {/* Persistent header strip — visible on every tab including dashboard. */}
+      {clientProfile && (
+        <ClientHeaderStrip
+          profile={{
+            id: clientProfile.id,
+            name: clientProfile.name,
+            email: clientProfile.email,
+            job_type: (clientProfile as any).job_type ?? null,
+            target_roles: (clientProfile as any).target_roles ?? null,
+            target_locations: (clientProfile as any).target_locations ?? null,
+            timeline: (clientProfile as any).timeline ?? null,
+            // accepted_at = when the coach-client invite was accepted.
+            // Falls back to client_profiles.created_at only as a last
+            // resort for legacy links that pre-date the invite flow.
+            engagement_started_at: acceptedAt ?? (clientProfile as any).created_at ?? null,
+          }}
+          onAddNote={() => setAddNoteOpen(true)}
+          onSourceJob={() => setTab("source")}
+          onRemoveClient={() => {
+            if (!removingClient) handleRemoveClient()
+          }}
+        />
+      )}
 
       {/* Tab bar */}
       <div style={{ display: "flex", gap: 6, marginBottom: 28, borderBottom: `1px solid ${T.BORDER_SOFT}`, paddingBottom: 12 }}>
@@ -427,6 +487,19 @@ export default function CoachClientPage() {
           </button>
         ))}
       </div>
+
+      {/* TAB 0 — Dashboard (default landing) */}
+      {tab === "dashboard" && (
+        <DashboardView
+          authFetch={authFetch}
+          clientId={clientId}
+          apps={metricsApps}
+          notesRefreshKey={notesRefreshKey}
+          needsAttentionRefreshKey={needsAttentionRefreshKey}
+          onTileClick={handleTileClick}
+          onNavigateToNotesTab={() => setTab("notes")}
+        />
+      )}
 
       {/* TAB 1 — Job Tracker */}
       {tab === "tracker" && (
@@ -598,12 +671,52 @@ export default function CoachClientPage() {
 
           {/* Section B: Their Applications */}
           <div>
-            <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 12 }}>THEIR APPLICATIONS</div>
-            {clientApps.length === 0 ? (
-              <p style={{ color: T.MUTED, fontSize: 13 }}>No applications tracked yet.</p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+              <div style={{ ...eyebrow, color: T.WRN_BLUE }}>THEIR APPLICATIONS</div>
+              {statusFilter !== "all" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
+                  <span style={{ color: T.DIM }}>Filtered:</span>
+                  <span
+                    style={{
+                      background: "rgba(254,176,106,0.10)",
+                      border: "1px solid rgba(254,176,106,0.35)",
+                      color: T.WRN_ORANGE,
+                      fontWeight: 900,
+                      letterSpacing: 0.6,
+                      textTransform: "uppercase",
+                      padding: "3px 10px",
+                      borderRadius: 999,
+                    }}
+                  >
+                    {statusFilter.replace(/_/g, " ")}
+                  </span>
+                  <button
+                    onClick={() => setStatusFilter("all")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: T.WRN_ORANGE,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      padding: 0,
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
+            {filteredApps.length === 0 ? (
+              <p style={{ color: T.MUTED, fontSize: 13 }}>
+                {statusFilter === "all"
+                  ? "No applications tracked yet."
+                  : `No ${statusFilter.replace(/_/g, " ")} applications.`}
+              </p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {clientApps.map((app) => {
+                {filteredApps.map((app) => {
                   const isOpen = openAppIds.has(app.id)
                   const isAnnotating = annotatingAppId === app.id
                   return (
@@ -1293,7 +1406,10 @@ export default function CoachClientPage() {
       <AddNotePanel
         open={addNoteOpen}
         onClose={() => setAddNoteOpen(false)}
-        onSaved={() => setNotesRefreshKey((k) => k + 1)}
+        onSaved={() => {
+          setNotesRefreshKey((k) => k + 1)
+          setNeedsAttentionRefreshKey((k) => k + 1)
+        }}
         onSubmit={async ({ type, body, priority }: { type: NoteType; body: string; priority: NotePriority | null }) => {
           try {
             const res = await authFetch(`/api/coach/clients/${clientId}/note-feed`, {
