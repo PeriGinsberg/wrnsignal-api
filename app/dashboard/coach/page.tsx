@@ -24,6 +24,7 @@ import CreateClientModal from "./CreateClientModal"
 import {
   T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
+import { CrossClientActionItemsList } from "./_action-items/CrossClientActionItemsList"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -178,6 +179,14 @@ const IconCalendar = () => (
   </svg>
 )
 
+const IconClipboardCheck = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 5H7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2V7a2 2 0 0 0 -2 -2h-2" />
+    <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+    <path d="M9 14l2 2l4 -4" />
+  </svg>
+)
+
 // ──────────────────────────────────────────────────────────────
 // Reusable atoms
 // ──────────────────────────────────────────────────────────────
@@ -229,21 +238,51 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
 }
 
 // Section wrapper: card + header (icon + title + optional count + slot for actions).
+// `accentColor` controls the icon color and a 2px top-edge accent strip
+// — used by the Action Items / Engagement Signals pair on Coach Home to
+// reinforce the column distinction. Other sections (Today's Schedule,
+// My Clients) omit the prop and render with the default orange icon and
+// no top strip.
 function Section({
-  icon, title, count, headerRight, children,
+  icon, title, count, headerRight, children, accentColor, noBottomMargin,
 }: {
   icon: React.ReactNode
   title: string
   count?: number
   headerRight?: React.ReactNode
   children: React.ReactNode
+  accentColor?: string
+  noBottomMargin?: boolean
 }) {
+  const iconColor = accentColor ?? T.WRN_ORANGE
   return (
-    <div style={{ ...card, padding: 20, marginBottom: 20 }}>
+    <div
+      style={{
+        ...card,
+        padding: 20,
+        marginBottom: noBottomMargin ? 0 : 20,
+        position: "relative",
+      }}
+    >
+      {accentColor && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            background: accentColor,
+            borderTopLeftRadius: 18,
+            borderTopRightRadius: 18,
+          }}
+        />
+      )}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <span style={{ display: "inline-flex", color: T.WRN_ORANGE }}>{icon}</span>
+        <span style={{ display: "inline-flex", color: iconColor }}>{icon}</span>
         <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>{title}</span>
-        {typeof count === "number" && count > 0 && <CountPill n={count} />}
+        {typeof count === "number" && count > 0 && <CountPill n={count} color={iconColor} />}
         {headerRight && <span style={{ marginLeft: "auto" }}>{headerRight}</span>}
       </div>
       {children}
@@ -373,18 +412,25 @@ function ActionRow({ item, onClick }: { item: ActionItem; onClick: () => void })
   )
 }
 
-function RequiresActionSection({ items, onItemClick, onShowAll }: {
+function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargin }: {
   items: ActionItem[]
   onItemClick: (clientId: string) => void
   onShowAll: () => void
+  noBottomMargin?: boolean
 }) {
   const visible = items.slice(0, COLLAPSED_LIMIT)
   const hasMore = items.length > COLLAPSED_LIMIT
 
   return (
-    <Section icon={<IconBell />} title="Requires action" count={items.length}>
+    <Section
+      icon={<IconBell />}
+      title="Engagement Signals"
+      count={items.length}
+      accentColor={T.WRN_BLUE}
+      noBottomMargin={noBottomMargin}
+    >
       {items.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing requires your attention right now.</p>
+        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing flagged from activity right now.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {visible.map((item) => (
@@ -641,12 +687,51 @@ export default function CoachHomePage() {
     <div>
       <HeaderStrip firstName={data.coach.firstName} />
       <MetricsBar tiles={tiles} />
+
+      {/* Action Items + Engagement Signals — paired side-by-side. Each
+          column is its own section with its own accent color (orange =
+          coach-authored work, blue = system signal). Equal width at
+          desktop via repeat(auto-fit, minmax(360px, 1fr)); collapses to
+          a single stacked column when the viewport can't fit two 360px
+          columns. align-items: start keeps column heights independent
+          (taller column extends below shorter without padding the short
+          one). noBottomMargin on the inner sections so the grid's gap
+          handles spacing instead of compounding with the section's own
+          marginBottom. */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+          gap: 20,
+          alignItems: "start",
+          marginBottom: 20,
+        }}
+      >
+        <Section
+          icon={<IconClipboardCheck />}
+          title="Action Items"
+          accentColor={T.WRN_ORANGE}
+          noBottomMargin
+        >
+          <CrossClientActionItemsList
+            authFetch={authFetch}
+            priorities="urgent,this_week"
+            cap={5}
+            moreHref="/dashboard/coach/required-actions"
+            emptyText="No urgent items"
+            bodyLineClamp={2}
+          />
+        </Section>
+
+        <EngagementSignalsSection
+          items={data.requiresAction}
+          onItemClick={goToClient}
+          onShowAll={() => router.push("/dashboard/coach/required-actions")}
+          noBottomMargin
+        />
+      </div>
+
       <TodaysScheduleSection />
-      <RequiresActionSection
-        items={data.requiresAction}
-        onItemClick={goToClient}
-        onShowAll={() => router.push("/dashboard/coach/required-actions")}
-      />
       <MyClientsSection
         clients={data.clients}
         onOpen={goToClient}
