@@ -356,6 +356,11 @@ export async function POST(req: NextRequest) {
     const profileVersionAtRun = pipelineResult.profileVersionAtRun
     const personaVersionAtRun = pipelineResult.personaVersionAtRun
 
+    // Hoisted from inside the try block below so the fresh-run response
+    // at the end of this function can reference it. Stays null if the
+    // jobfit_runs insert fails (rare; v2/start surfaces as 400).
+    let runId: string | null = null
+
     if (supabase && hasRealProfileId) {
       try {
         const { data: runRow, error: runInsertErr } = await supabase.from("jobfit_runs").insert({
@@ -381,7 +386,7 @@ export async function POST(req: NextRequest) {
         const jobLocation = String((result as any)?.job_signals?.location?.city || "").trim()
         let companyName = String(rawCompanyName || "").trim()
         let jobTitle = String(rawJobTitle || "").trim()
-        const runId = runRow?.id || null
+        runId = runRow?.id || null
 
         // User-provided values win unconditionally. If the caller supplied
         // job_title / company_name explicitly, trust them and skip the
