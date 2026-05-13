@@ -21,6 +21,15 @@ docs/test_cases/out/
 tests/**/results/
 outputs/
 
+# Migration / inference results (may contain anonymized-but-recognizable prod data)
+scripts/migrate-candidate-targeting/results/
+
+# Operational pg_dump / pg_restore artifacts — ad-hoc, not source of truth
+prod_schema.sql
+prod_public_schema.sql
+prod-schema-snapshot.sql
+restore_log.txt
+
 # Local tooling / scratch
 .claude/
 
