@@ -1,0 +1,1928 @@
+import * as React from "react"
+
+const API_BASE = "https://wrnsignal-api-staging.vercel.app"
+
+// ─── All CSS lives here — completely outside JSX so the parser never touches it
+const STYLES = [
+    "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');",
+    "* { box-sizing: border-box; margin: 0; padding: 0; }",
+    "html, body { width: 100%; overflow-x: hidden; }",
+
+    // Page
+    ".sl-page { background: #070F1E; font-family: 'Inter', sans-serif; color: #fff; width: 100%; max-width: 1440px; margin: 0 auto; overflow-x: hidden; }",
+
+    // Animations
+    "@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }",
+    "@keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }",
+
+    // Nav
+    ".sl-nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; border-bottom: 0.5px solid #1E3A5F; }",
+    ".sl-logo-wrap { display: flex; flex-direction: column; gap: 2px; }",
+    ".sl-logo-name { font-size: 20px; font-weight: 900; font-style: italic; color: #fff; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }",
+    ".sl-logo-dash { width: 16px; height: 3px; background: #FEB06A; border-radius: 2px; }",
+    ".sl-logo-by { font-size: 9px; font-weight: 600; letter-spacing: 2px; color: #51ADE5; text-transform: uppercase; }",
+    ".sl-nav-right { display: flex; align-items: center; gap: 10px; }",
+    ".sl-nav-free { font-size: 12px; font-weight: 700; color: #218C8C; border: 0.5px solid #218C8C55; border-radius: 6px; padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; text-decoration: none; }",
+    ".sl-nav-free-dot { width: 5px; height: 5px; border-radius: 50%; background: #218C8C; }",
+    ".sl-nav-divider { width: 0.5px; height: 16px; background: #1E3A5F; }",
+    ".sl-nav-login { font-size: 12px; color: #51ADE5; border: 0.5px solid #51ADE544; border-radius: 6px; padding: 7px 14px; cursor: pointer; text-decoration: none; }",
+
+    // Hero
+    ".sl-hero { padding: 72px 40px 48px; text-align: center; max-width: 860px; margin: 0 auto; width: 100%; }",
+    ".sl-hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #FEB06A; margin-bottom: 20px; }",
+    ".sl-hero-headline { font-size: 36px; font-weight: 900; font-style: italic; color: #fff; line-height: 1.15; margin-bottom: 20px; letter-spacing: -0.5px; }",
+    ".sl-grad { display: inline-block; background: linear-gradient(90deg, #FEB06A, #FFB347 30%, #51ADE5 70%, #FEB06A); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradientShift 4s ease-in-out infinite; padding-bottom: 4px; }",
+    ".sl-hero-sub { font-size: 16px; color: #7A99BA; line-height: 1.75; margin-bottom: 12px; }",
+    ".sl-hero-sub strong { color: #C8D8E8; font-weight: 700; }",
+    ".sl-hero-kicker { font-size: 15px; color: #FEB06A; font-weight: 700; font-style: italic; margin-bottom: 44px; }",
+
+    // Email forms
+    ".sl-email-form { max-width: 480px; margin: 0 auto; width: 100%; }",
+    ".sl-email-input-wrap { display: flex; margin-bottom: 10px; border-radius: 12px; overflow: hidden; border: 1px solid #FEB06A66; box-shadow: 0 0 20px rgba(254,176,106,0.08); transition: box-shadow 0.3s ease, border-color 0.3s ease; }",
+    ".sl-email-input-wrap:focus-within { border-color: #FEB06A99; box-shadow: 0 0 24px rgba(254,176,106,0.15); }",
+    ".sl-email-input { flex: 1; padding: 16px 20px; background: #0D1F35; border: none; color: #fff; font-size: 15px; outline: none; font-family: inherit; min-width: 0; }",
+    ".sl-email-input::placeholder { color: #3A5A7A; }",
+    ".sl-email-submit { padding: 16px 20px; background: linear-gradient(90deg, #FF6B00, #FEB06A); border: none; color: #fff; font-size: 14px; font-weight: 900; font-style: italic; cursor: pointer; white-space: nowrap; font-family: inherit; flex-shrink: 0; }",
+    ".sl-email-error { font-size: 12px; color: #ff6b6b; text-align: center; margin-bottom: 6px; }",
+    ".sl-email-success { font-size: 13px; color: #218C8C; text-align: center; margin-bottom: 6px; }",
+    ".sl-loading-msg { font-size: 13px; color: #FEB06A; text-align: center; padding: 8px 0; }",
+    ".sl-price-tag { text-align: center; font-size: 13px; color: #4A6A8A; padding: 4px 0 2px; }",
+    ".sl-price-tag strong { color: #fff; font-size: 15px; }",
+    ".sl-guarantee-row { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 0; }",
+    ".sl-g-icon { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #218C8C; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }",
+    ".sl-guarantee-text { font-size: 12px; color: #218C8C; }",
+    ".sl-app-inc { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 0 10px; font-size: 11px; color: #1A5A5A; }",
+    ".sl-app-inc span { color: #218C8C; font-weight: 600; }",
+    ".sl-free-email-wrap { display: flex; border-radius: 12px; overflow: hidden; border: 1px solid #2DD4BF66; transition: box-shadow 0.3s ease; margin: 10px auto 0; max-width: 480px; width: 100%; }",
+    ".sl-free-email-wrap:focus-within { border-color: #2DD4BF99; box-shadow: 0 0 24px rgba(45,212,191,0.15); }",
+    ".sl-free-email-input { flex: 1; padding: 15px 20px; background: #0D1F35; border: none; color: #fff; font-size: 14px; outline: none; font-family: inherit; min-width: 0; }",
+    ".sl-free-email-input::placeholder { color: #3A5A7A; }",
+    ".sl-free-email-btn { padding: 15px 18px; background: linear-gradient(90deg, #218C8C, #2DD4BF); border: none; color: #fff; font-size: 13px; font-weight: 900; font-style: italic; cursor: pointer; white-space: nowrap; font-family: inherit; flex-shrink: 0; }",
+    ".sl-free-note { text-align: center; font-size: 11px; color: #1A5A5A; padding-top: 6px; padding-bottom: 8px; }",
+    ".sl-login-row { text-align: center; padding-top: 8px; font-size: 12px; color: #2A4A6A; }",
+    ".sl-login-row a { color: #51ADE5; text-decoration: none; }",
+
+    // Cred bar
+    ".sl-cred-bar { background: #0A1828; border-top: 0.5px solid #1E3A5F; border-bottom: 0.5px solid #1E3A5F; padding: 16px 40px; text-align: center; margin-top: 48px; }",
+    ".sl-cred-text { font-size: 12px; color: #4A6A8A; line-height: 1.7; }",
+    ".sl-cred-text span { color: #7A99BA; font-weight: 600; }",
+
+    // Video
+    ".sl-video-section { padding: 48px 40px 24px; max-width: 860px; margin: 0 auto; width: 100%; }",
+    ".sl-video-label { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #51ADE5; margin-bottom: 12px; }",
+    ".sl-video-container { border-radius: 16px; overflow: hidden; border: 0.5px solid #1E3A5F; background: #000; position: relative; aspect-ratio: 16/9; }",
+    ".sl-video-container iframe { width: 100%; height: 100%; border: none; display: block; }",
+
+    // Free banner
+    ".sl-free-banner { max-width: 860px; margin: 0 auto; padding: 20px 40px 48px; width: 100%; }",
+    ".sl-free-banner-inner { background: #0A1A1A; border: 1px solid #218C8C33; border-radius: 12px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }",
+    ".sl-fbl { display: flex; align-items: center; gap: 14px; }",
+    ".sl-fb-icon { width: 34px; height: 34px; border-radius: 8px; background: #0D2020; border: 0.5px solid #218C8C33; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }",
+    ".sl-fb-title { font-size: 13px; font-weight: 700; color: #C8D8E8; margin-bottom: 2px; }",
+    ".sl-fb-sub { font-size: 11px; color: #1A5A5A; }",
+    ".sl-fb-btn { font-size: 13px; font-weight: 700; color: #218C8C; border: 0.5px solid #218C8C44; border-radius: 8px; padding: 9px 18px; cursor: pointer; white-space: nowrap; background: transparent; flex-shrink: 0; text-decoration: none; }",
+
+    ".sl-section-divider { height: 0.5px; background: #1E3A5F; margin: 0 40px; }",
+
+    // Pillars
+    ".sl-pillars { padding: 64px 40px; max-width: 860px; margin: 0 auto; width: 100%; }",
+    ".sl-pillars-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #FEB06A; text-align: center; margin-bottom: 12px; }",
+    ".sl-pillars-headline { font-size: 24px; font-weight: 900; font-style: italic; color: #fff; text-align: center; margin-bottom: 48px; line-height: 1.3; }",
+    ".sl-pillar { display: grid; grid-template-columns: 48px 1fr; gap: 20px; margin-bottom: 40px; padding-bottom: 40px; border-bottom: 0.5px solid #1A3050; }",
+    ".sl-pillar:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }",
+    ".sl-pillar-num { font-size: 11px; font-weight: 900; font-style: italic; color: #FEB06A; letter-spacing: 1px; padding-top: 4px; }",
+    ".sl-pillar-pain { font-size: 13px; font-weight: 700; color: #4A6A8A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }",
+    ".sl-pillar-headline { font-size: 20px; font-weight: 900; font-style: italic; color: #fff; margin-bottom: 10px; line-height: 1.25; }",
+    ".sl-pillar-copy { font-size: 14px; color: #6A8AAA; line-height: 1.75; margin-bottom: 14px; }",
+    ".sl-pillar-signal { font-size: 13px; color: #C8D8E8; line-height: 1.7; background: #0D1F35; border-left: 2px solid #FEB06A; border-radius: 0 8px 8px 0; padding: 12px 16px; }",
+    ".sl-pillar-signal strong { color: #FEB06A; }",
+
+    // Diff section
+    ".sl-diff-section { background: #0A1828; border-top: 0.5px solid #1E3A5F; border-bottom: 0.5px solid #1E3A5F; padding: 56px 40px; }",
+    ".sl-diff-inner { max-width: 680px; margin: 0 auto; text-align: center; }",
+    ".sl-diff-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #51ADE5; margin-bottom: 16px; }",
+    ".sl-diff-headline { font-size: 22px; font-weight: 900; font-style: italic; color: #fff; margin-bottom: 20px; line-height: 1.3; }",
+    ".sl-diff-copy { font-size: 14px; color: #6A8AAA; line-height: 1.8; }",
+    ".sl-diff-copy span { color: #C8D8E8; font-weight: 600; }",
+
+    // Verdict section
+    ".sl-verdict-section { padding: 64px 40px; background: #040D1A; }",
+    ".sl-verdict-headline { font-size: 24px; font-weight: 900; font-style: italic; color: #fff; text-align: center; margin-bottom: 8px; line-height: 1.2; }",
+    ".sl-verdict-sub { font-size: 14px; color: #4A6A8A; text-align: center; margin-bottom: 40px; line-height: 1.7; max-width: 560px; margin-left: auto; margin-right: auto; }",
+    ".sl-verdict-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 1000px; margin: 0 auto; }",
+    ".sl-vcard { border-radius: 14px; overflow: hidden; }",
+    ".sl-vcard-vpa { background: #0A2020; border: 0.5px solid #2DD4BF33; }",
+    ".sl-vcard-vap { background: #0A1828; border: 0.5px solid #51ADE533; }",
+    ".sl-vcard-vrv { background: #1A1205; border: 0.5px solid #FEB06A33; }",
+    ".sl-vcard-vps { background: #1A0808; border: 0.5px solid #FF4F6D33; }",
+    ".sl-vcard-top { height: 3px; }",
+    ".sl-vcard-top-vpa { background: linear-gradient(90deg, #218C8C, #2DD4BF); }",
+    ".sl-vcard-top-vap { background: linear-gradient(90deg, #51ADE5, #8B7FE8); }",
+    ".sl-vcard-top-vrv { background: linear-gradient(90deg, #FF6B00, #FEB06A); }",
+    ".sl-vcard-top-vps { background: linear-gradient(90deg, #FF4F6D, #FF8C94); }",
+    ".sl-vcard-body { padding: 16px; }",
+    ".sl-vcard-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }",
+    ".sl-vcard-label-vpa { color: #2DD4BF; }",
+    ".sl-vcard-label-vap { color: #51ADE5; }",
+    ".sl-vcard-label-vrv { color: #FEB06A; }",
+    ".sl-vcard-label-vps { color: #FF4F6D; }",
+    ".sl-vcard-verdict { font-size: 22px; font-weight: 900; font-style: italic; margin-bottom: 12px; }",
+    ".sl-vcard-verdict-vpa { color: #2DD4BF; }",
+    ".sl-vcard-verdict-vap { color: #51ADE5; }",
+    ".sl-vcard-verdict-vrv { color: #FEB06A; }",
+    ".sl-vcard-verdict-vps { color: #FF4F6D; }",
+    ".sl-vcard-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }",
+    ".sl-vi { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: #6A8AAA; line-height: 1.5; }",
+    ".sl-vi-icon { width: 12px; height: 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }",
+    ".sl-vi-icon-vpa { background: #2DD4BF22; border: 0.5px solid #2DD4BF55; }",
+    ".sl-vi-icon-vap { background: #51ADE522; border: 0.5px solid #51ADE555; }",
+    ".sl-vi-icon-vrv { background: #FEB06A22; border: 0.5px solid #FEB06A55; }",
+    ".sl-vi-icon-vps { background: #FF4F6D22; border: 0.5px solid #FF4F6D55; }",
+    ".sl-vcard-bottom { padding: 8px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }",
+    ".sl-vcard-bottom-vpa { background: #2DD4BF22; color: #2DD4BF; border: 0.5px solid #2DD4BF44; }",
+    ".sl-vcard-bottom-vap { background: #51ADE522; color: #51ADE5; border: 0.5px solid #51ADE544; }",
+    ".sl-vcard-bottom-vrv { background: #FEB06A22; color: #FEB06A; border: 0.5px solid #FEB06A44; }",
+    ".sl-vcard-bottom-vps { background: #FF4F6D22; color: #FF4F6D; border: 0.5px solid #FF4F6D44; }",
+    ".sl-vcard-bottom-sub { font-size: 9px; font-weight: 400; opacity: 0.7; margin-top: 1px; }",
+
+    // Product strip
+    ".sl-product-strip { padding: 64px 40px; background: #0A1828; border-top: 0.5px solid #1E3A5F; border-bottom: 0.5px solid #1E3A5F; }",
+    ".sl-product-headline { font-size: 24px; font-weight: 900; font-style: italic; color: #fff; text-align: center; margin-bottom: 8px; line-height: 1.2; }",
+    ".sl-product-sub { font-size: 14px; color: #4A6A8A; text-align: center; margin-bottom: 32px; line-height: 1.7; max-width: 560px; margin-left: auto; margin-right: auto; }",
+    ".sl-product-timeline { display: flex; align-items: center; max-width: 900px; margin: 0 auto 28px; }",
+    ".sl-tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }",
+    ".sl-tl-line { flex: 1; height: 2px; }",
+    ".sl-product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 1000px; margin: 0 auto; }",
+    ".sl-pucard { background: #071220; border-radius: 14px; overflow: hidden; border: 0.5px solid #1E3A5F; }",
+    ".sl-pucard-top { padding: 10px 14px; border-bottom: 0.5px solid #1E3A5F; display: flex; align-items: center; justify-content: space-between; }",
+    ".sl-pucard-sig { font-size: 10px; font-weight: 900; font-style: italic; color: #fff; }",
+    ".sl-pucard-tag { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; }",
+    ".sl-pucard-tag-jf { background: #2DD4BF22; color: #2DD4BF; border: 0.5px solid #2DD4BF44; }",
+    ".sl-pucard-tag-pos { background: #51ADE522; color: #51ADE5; border: 0.5px solid #51ADE544; }",
+    ".sl-pucard-tag-cl { background: #7B5CF622; color: #7B5CF6; border: 0.5px solid #7B5CF644; }",
+    ".sl-pucard-tag-net { background: #FEB06A22; color: #FEB06A; border: 0.5px solid #FEB06A44; }",
+    ".sl-pucard-body { padding: 14px; }",
+    ".sl-pucard-item { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; font-size: 11px; color: #5A7A9A; line-height: 1.4; }",
+    ".sl-pucard-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }",
+    ".sl-pucard-metric { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }",
+    ".sl-pucard-bar { height: 3px; background: #1E3A5F; border-radius: 2px; overflow: hidden; margin-bottom: 8px; }",
+    ".sl-pucard-bar-fill { height: 100%; border-radius: 2px; }",
+    ".sl-pucard-letter { font-size: 11px; color: #8AAAC0; font-style: italic; line-height: 1.6; margin-bottom: 8px; }",
+    ".sl-pucard-copy { width: 100%; padding: 7px; background: #7B5CF622; border: 0.5px solid #7B5CF644; border-radius: 6px; font-size: 10px; font-weight: 700; color: #7B5CF6; text-align: center; cursor: pointer; }",
+    ".sl-pucard-contact { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }",
+    ".sl-pucard-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }",
+    ".sl-pucard-contact-name { font-size: 11px; font-weight: 700; color: #C8D8E8; }",
+    ".sl-pucard-contact-role { font-size: 9px; color: #3A5A7A; }",
+    ".sl-pucard-send { font-size: 10px; font-weight: 700; color: #FEB06A; background: #FEB06A22; border: 0.5px solid #FEB06A44; border-radius: 5px; padding: 3px 8px; }",
+
+    // App section
+    ".sl-app-section { padding: 64px 40px; max-width: 860px; margin: 0 auto; width: 100%; }",
+    ".sl-app-card { background: #0D2020; border: 1px solid #218C8C33; border-radius: 16px; padding: 36px 32px; display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: center; }",
+    ".sl-app-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #218C8C; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }",
+    ".sl-app-dot { width: 6px; height: 6px; border-radius: 50%; background: #218C8C; animation: pulse 2s infinite; }",
+    ".sl-app-headline { font-size: 22px; font-weight: 900; font-style: italic; color: #fff; margin-bottom: 12px; line-height: 1.3; }",
+    ".sl-app-copy { font-size: 13px; color: #2A6A6A; line-height: 1.75; margin-bottom: 20px; }",
+    ".sl-app-copy strong { color: #4AACAC; }",
+    ".sl-app-badge { display: inline-flex; align-items: center; gap: 8px; background: #0A1A1A; border: 0.5px solid #218C8C44; border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #218C8C; font-weight: 600; }",
+    ".sl-app-phone { width: 80px; background: #0D1F35; border: 0.5px solid #1E3A5F; border-radius: 14px; padding: 10px 8px; display: flex; flex-direction: column; gap: 5px; align-items: center; flex-shrink: 0; }",
+    ".sl-phone-notch { width: 24px; height: 4px; background: #1E3A5F; border-radius: 2px; margin-bottom: 4px; }",
+    ".sl-phone-line { height: 3px; background: #1E3A5F; border-radius: 1px; width: 100%; }",
+    ".sl-phone-line-s { height: 3px; background: #1E3A5F; border-radius: 1px; width: 60%; }",
+    ".sl-phone-score { background: #FEB06A22; border: 0.5px solid #FEB06A44; border-radius: 4px; padding: 4px 6px; width: 100%; text-align: center; }",
+    ".sl-phone-score-num { font-size: 14px; font-weight: 900; font-style: italic; color: #FEB06A; }",
+    ".sl-phone-score-lbl { font-size: 7px; color: #FEB06A88; letter-spacing: 0.5px; }",
+    ".sl-phone-btn { width: 100%; background: linear-gradient(90deg, #FF6B00, #FEB06A); border-radius: 4px; padding: 5px; text-align: center; font-size: 8px; font-weight: 700; color: #fff; margin-top: 2px; }",
+
+    // Parent section
+    ".sl-parent-section { padding: 0 40px 64px; max-width: 860px; margin: 0 auto; width: 100%; }",
+    ".sl-parent-card { background: #0D1F35; border: 0.5px solid #1E4A7A; border-radius: 16px; padding: 36px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }",
+    ".sl-parent-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #51ADE5; margin-bottom: 12px; }",
+    ".sl-parent-headline { font-size: 22px; font-weight: 900; font-style: italic; color: #fff; margin-bottom: 14px; line-height: 1.3; }",
+    ".sl-parent-copy { font-size: 13px; color: #5A7A9A; line-height: 1.75; margin-bottom: 20px; }",
+    ".sl-parent-cta { display: inline-block; font-size: 13px; font-weight: 700; color: #51ADE5; border: 0.5px solid #51ADE544; border-radius: 8px; padding: 10px 20px; cursor: pointer; text-decoration: none; }",
+    ".sl-pf { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }",
+    ".sl-pf-dot { width: 6px; height: 6px; border-radius: 50%; background: #FEB06A; margin-top: 6px; flex-shrink: 0; }",
+    ".sl-pf-text { font-size: 13px; color: #6A8AAA; line-height: 1.6; }",
+    ".sl-pf-text strong { color: #C8D8E8; font-weight: 600; }",
+
+    // Proof strip
+    ".sl-proof-strip { border-top: 0.5px solid #1E3A5F; border-bottom: 0.5px solid #1E3A5F; padding: 32px 40px; display: flex; justify-content: center; background: #070F1E; }",
+    ".sl-proof-item { text-align: center; flex: 1; border-right: 0.5px solid #1E3A5F; padding: 0 20px; }",
+    ".sl-proof-item:last-child { border-right: none; }",
+    ".sl-proof-num { font-size: 24px; font-weight: 900; font-style: italic; color: #FEB06A; }",
+    ".sl-proof-label { font-size: 11px; color: #3A5A7A; margin-top: 4px; line-height: 1.5; }",
+
+    // Coaching bar
+    ".sl-coaching-bar { background: #0A1828; border-top: 0.5px solid #1E3A5F; border-bottom: 0.5px solid #1E3A5F; padding: 24px 40px; text-align: center; }",
+    ".sl-coaching-text { font-size: 13px; color: #4A6A8A; line-height: 1.7; max-width: 680px; margin: 0 auto; }",
+    ".sl-coaching-text strong { color: #8AAAC0; }",
+    ".sl-coaching-hl { color: #FEB06A; font-weight: 700; }",
+
+    // Founder
+    ".sl-founder-section { padding: 64px 40px; background: #040D1A; }",
+    ".sl-founder-inner { max-width: 860px; margin: 0 auto; display: grid; grid-template-columns: auto 1fr; gap: 48px; align-items: center; }",
+    ".sl-founder-photo { width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0A1828); border: 2px solid #FEB06A44; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }",
+    ".sl-founder-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #FEB06A; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }",
+    ".sl-founder-quote { font-size: 17px; color: #C8D8E8; line-height: 1.8; font-style: italic; margin-bottom: 20px; }",
+    ".sl-founder-name { font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 3px; }",
+    ".sl-founder-title { font-size: 12px; color: #3A5A7A; margin-bottom: 12px; }",
+    ".sl-founder-creds { display: flex; gap: 6px; flex-wrap: wrap; }",
+    ".sl-founder-cred { font-size: 10px; color: #2A4A6A; background: #071220; border: 0.5px solid #1E3A5F; border-radius: 99px; padding: 3px 10px; }",
+
+    // Pricing
+    ".sl-pricing-section { padding: 64px 40px; background: #0A1828; border-top: 0.5px solid #1E3A5F; }",
+    ".sl-pricing-headline { font-size: 24px; font-weight: 900; font-style: italic; color: #fff; text-align: center; margin-bottom: 8px; line-height: 1.2; }",
+    ".sl-pricing-sub { font-size: 14px; color: #4A6A8A; text-align: center; margin-bottom: 40px; line-height: 1.7; max-width: 560px; margin-left: auto; margin-right: auto; }",
+    ".sl-pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 680px; margin: 0 auto 24px; }",
+    ".sl-prc-card { border-radius: 16px; overflow: hidden; }",
+    ".sl-prc-free { background: #071220; border: 0.5px solid #1E3A5F; }",
+    ".sl-prc-paid { background: linear-gradient(135deg,#0D1F35,#0A1828); border: 1px solid #FEB06A44; }",
+    ".sl-prc-top { height: 3px; }",
+    ".sl-prc-top-free { background: #1E3A5F; }",
+    ".sl-prc-top-paid { background: linear-gradient(90deg,#FF6B00,#FEB06A); }",
+    ".sl-prc-body { padding: 24px; }",
+    ".sl-prc-badge { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; display: inline-block; margin-bottom: 14px; }",
+    ".sl-prc-badge-free { background: #1E3A5F; color: #51ADE5; border: 0.5px solid #51ADE533; }",
+    ".sl-prc-badge-paid { background: #FEB06A22; color: #FEB06A; border: 0.5px solid #FEB06A55; }",
+    ".sl-prc-amount { font-size: 44px; font-weight: 900; font-style: italic; line-height: 1; margin-bottom: 4px; }",
+    ".sl-prc-amount-free { color: #fff; }",
+    ".sl-prc-amount-paid { color: #FEB06A; }",
+    ".sl-prc-period { font-size: 12px; color: #3A5A7A; margin-bottom: 20px; }",
+    ".sl-prc-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }",
+    ".sl-prc-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #6A8AAA; line-height: 1.4; }",
+    ".sl-prc-check { width: 14px; height: 14px; border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }",
+    ".sl-prc-check-free { background: #51ADE522; border: 0.5px solid #51ADE544; }",
+    ".sl-prc-check-paid { background: #2DD4BF22; border: 0.5px solid #2DD4BF44; }",
+    ".sl-prc-btn { display: block; width: 100%; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 900; font-style: italic; text-align: center; cursor: pointer; text-decoration: none; border: none; font-family: inherit; }",
+    ".sl-prc-btn-free { background: #071220; color: #51ADE5; border: 0.5px solid #51ADE544; }",
+    ".sl-prc-btn-paid { background: linear-gradient(90deg,#FF6B00,#FEB06A); color: #fff; }",
+    ".sl-prc-guarantee { text-align: center; font-size: 12px; color: #1A4A4A; display: flex; align-items: center; justify-content: center; gap: 6px; }",
+
+    // Bottom CTA
+    ".sl-bottom-cta { padding: 64px 40px; text-align: center; max-width: 560px; margin: 0 auto; width: 100%; }",
+    ".sl-bottom-headline { font-size: 26px; font-weight: 900; font-style: italic; color: #fff; margin-bottom: 10px; line-height: 1.3; }",
+    ".sl-bottom-sub { font-size: 14px; color: #5A7A9A; margin-bottom: 32px; line-height: 1.7; }",
+    ".sl-bottom-email-wrap { display: flex; margin-bottom: 10px; border-radius: 12px; overflow: hidden; border: 1px solid #FEB06A66; box-shadow: 0 0 20px rgba(254,176,106,0.08); transition: box-shadow 0.3s ease; }",
+    ".sl-bottom-email-wrap:focus-within { border-color: #FEB06A99; box-shadow: 0 0 24px rgba(254,176,106,0.15); }",
+    ".sl-bottom-email-input { flex: 1; padding: 16px 20px; background: #0D1F35; border: none; color: #fff; font-size: 15px; outline: none; font-family: inherit; min-width: 0; }",
+    ".sl-bottom-email-input::placeholder { color: #3A5A7A; }",
+    ".sl-bottom-submit { padding: 16px 20px; background: linear-gradient(90deg, #FF6B00, #FEB06A); border: none; color: #fff; font-size: 14px; font-weight: 900; font-style: italic; cursor: pointer; white-space: nowrap; font-family: inherit; flex-shrink: 0; }",
+    ".sl-bottom-price-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #4A6A8A; }",
+    ".sl-bottom-guarantee { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; font-size: 12px; color: #218C8C; }",
+    ".sl-bottom-app-note { font-size: 11px; color: #1A4A4A; margin-bottom: 28px; }",
+    ".sl-bottom-app-note span { color: #218C8C; font-weight: 600; }",
+    ".sl-divider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }",
+    ".sl-div-line { flex: 1; height: 0.5px; background: #1E3A5F; }",
+    ".sl-div-text { font-size: 11px; color: #2A4A6A; white-space: nowrap; }",
+    ".sl-sec-login { padding: 13px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: block; max-width: 480px; margin: 0 auto; background: #0D1F35; color: #51ADE5; border: 0.5px solid #51ADE544; }",
+    ".sl-sec-sublabel { font-size: 10px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 3px; opacity: 0.6; }",
+
+    // Footer
+    ".sl-footer { border-top: 0.5px solid #1E3A5F; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }",
+    ".sl-footer-copy { font-size: 11px; color: #2A4A6A; }",
+    ".sl-footer-links { display: flex; gap: 20px; }",
+    ".sl-footer-link { font-size: 11px; color: #2A4A6A; cursor: pointer; text-decoration: none; }",
+
+    // Utility pill
+    ".sl-pill { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #3A5A7A; background: #071220; border: 0.5px solid #1E3A5F; border-radius: 99px; padding: 4px 14px; margin-bottom: 10px; }",
+
+    // ─── RESPONSIVE ──────────────────────────────────────────────────────────────
+
+    // Tablet (768–1024px): loosen padding, keep most layouts
+    "@media (min-width: 769px) and (max-width: 1023px) {",
+    "  .sl-hero { padding: 56px 32px 40px; }",
+    "  .sl-video-section { padding: 40px 32px 20px; }",
+    "  .sl-free-banner { padding: 16px 32px 40px; }",
+    "  .sl-pillars { padding: 56px 32px; }",
+    "  .sl-app-section { padding: 56px 32px; }",
+    "  .sl-parent-section { padding: 0 32px 56px; }",
+    "  .sl-verdict-grid { grid-template-columns: repeat(2, 1fr); }",
+    "  .sl-product-grid { grid-template-columns: repeat(2, 1fr); }",
+    "  .sl-section-divider { margin: 0 32px; }",
+    "}",
+
+    // Mobile (max 768px)
+    "@media (max-width: 768px) {",
+    "  .sl-nav { padding: 12px 16px; }",
+    "  .sl-logo-name { font-size: 16px; }",
+    "  .sl-nav-free { font-size: 11px; padding: 6px 10px; }",
+    "  .sl-nav-login { font-size: 11px; padding: 6px 10px; }",
+    "  .sl-hero { padding: 40px 16px 32px; }",
+    "  .sl-hero-headline { font-size: 26px; }",
+    "  .sl-hero-kicker { margin-bottom: 28px; }",
+    "  .sl-email-input-wrap { flex-direction: column; }",
+    "  .sl-email-input { border-radius: 12px 12px 0 0; padding: 14px 16px; }",
+    "  .sl-email-submit { border-radius: 0 0 12px 12px; padding: 14px 16px; text-align: center; }",
+    "  .sl-free-email-wrap { flex-direction: column; }",
+    "  .sl-free-email-input { padding: 14px 16px; }",
+    "  .sl-free-email-btn { padding: 14px 16px; text-align: center; }",
+    "  .sl-cred-bar { padding: 14px 16px; margin-top: 32px; }",
+    "  .sl-video-section { padding: 32px 16px 16px; }",
+    "  .sl-free-banner { padding: 0 16px 32px; }",
+    "  .sl-free-banner-inner { flex-direction: column; gap: 14px; }",
+    "  .sl-fb-btn { width: 100%; text-align: center; padding: 12px; }",
+    "  .sl-section-divider { margin: 0 16px; }",
+    "  .sl-pillars { padding: 40px 16px; }",
+    "  .sl-pillars-headline { font-size: 20px; }",
+    "  .sl-pillar { grid-template-columns: 32px 1fr; gap: 12px; }",
+    "  .sl-pillar-headline { font-size: 17px; }",
+    "  .sl-diff-section { padding: 36px 16px; }",
+    "  .sl-diff-headline { font-size: 19px; }",
+    "  .sl-verdict-section { padding: 40px 16px; }",
+    "  .sl-verdict-headline { font-size: 20px; }",
+    "  .sl-verdict-grid { grid-template-columns: 1fr 1fr; gap: 10px; }",
+    "  .sl-product-strip { padding: 40px 16px; }",
+    "  .sl-product-headline { font-size: 20px; }",
+    "  .sl-product-grid { grid-template-columns: 1fr 1fr; gap: 10px; }",
+    "  .sl-app-section { padding: 40px 16px; }",
+    "  .sl-app-card { grid-template-columns: 1fr; gap: 24px; }",
+    "  .sl-app-phone { width: 100%; max-width: 100px; margin: 0 auto; }",
+    "  .sl-app-headline { font-size: 20px; }",
+    "  .sl-parent-section { padding: 0 16px 40px; }",
+    "  .sl-parent-card { grid-template-columns: 1fr; gap: 24px; padding: 24px 20px; }",
+    "  .sl-parent-headline { font-size: 20px; }",
+    "  .sl-proof-strip { display: grid; grid-template-columns: 1fr 1fr; padding: 0; }",
+    "  .sl-proof-item { border-right: none; border-bottom: 0.5px solid #1E3A5F; padding: 20px 12px; }",
+    "  .sl-proof-item:nth-child(odd) { border-right: 0.5px solid #1E3A5F; }",
+    "  .sl-proof-item:nth-child(3), .sl-proof-item:nth-child(4) { border-bottom: none; }",
+    "  .sl-coaching-bar { padding: 20px 16px; }",
+    "  .sl-founder-section { padding: 40px 16px; }",
+    "  .sl-founder-inner { grid-template-columns: 1fr; gap: 24px; text-align: center; }",
+    "  .sl-founder-photo { margin: 0 auto; }",
+    "  .sl-founder-eyebrow { justify-content: center; }",
+    "  .sl-founder-creds { justify-content: center; }",
+    "  .sl-founder-quote { font-size: 15px; }",
+    "  .sl-pricing-section { padding: 40px 16px; }",
+    "  .sl-pricing-headline { font-size: 20px; }",
+    "  .sl-pricing-grid { grid-template-columns: 1fr; }",
+    "  .sl-bottom-cta { padding: 40px 16px; }",
+    "  .sl-bottom-headline { font-size: 22px; }",
+    "  .sl-bottom-email-wrap { flex-direction: column; }",
+    "  .sl-bottom-email-input { padding: 14px 16px; }",
+    "  .sl-bottom-submit { padding: 14px 16px; text-align: center; }",
+    "  .sl-footer { padding: 16px; flex-direction: column; gap: 12px; text-align: center; }",
+    "}",
+
+    // Very small (iPhone SE etc)
+    "@media (max-width: 390px) {",
+    "  .sl-verdict-grid { grid-template-columns: 1fr; }",
+    "  .sl-product-grid { grid-template-columns: 1fr; }",
+    "  .sl-hero-headline { font-size: 22px; }",
+    "}",
+].join("\n")
+
+// ─────────────────────────────────────────────────────────────────────────
+// Global UI overlays — App Store badge (every page) + DEV banner (dev only)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// DEV_MODE controls whether the dev banner can appear and whether the App
+// Store badge is offset for the banner's height. Set true in dev/* file
+// copies, false in prod/* copies. The hostname check in DevBanner is a
+// belt-and-suspenders fallback — if dev code is somehow pasted into the
+// prod Framer project, the hostname check still hides the banner.
+const DEV_MODE = true
+
+const APP_STORE_URL = "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
+function DevBanner() {
+    const [hostname, setHostname] = React.useState("")
+    const [shouldShow, setShouldShow] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const h = window.location.hostname
+        setHostname(h)
+        // Production hostname allowlist. Banner shows on anything NOT in
+        // this list. Fail-safe: false-positive (banner in dev) is harmless;
+        // false-negative (banner hidden in prod) is the bug we're avoiding.
+        const PROD_HOSTS = [
+            "wrnsignal.workforcereadynow.com",
+            "www.workforcereadynow.com",
+        ]
+        setShouldShow(DEV_MODE && !PROD_HOSTS.includes(h))
+    }, [])
+    if (!shouldShow) return null
+    return (
+        <div
+            style={{
+                position: "fixed" as const,
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 40,
+                background: "#FFD60A",
+                color: "#000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                zIndex: 10000,
+                fontFamily: "'Inter', system-ui, sans-serif",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+        >
+            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: 4, textTransform: "uppercase" as const }}>
+                DEV
+            </span>
+            <span style={{ fontWeight: 600, fontSize: 12, letterSpacing: 1, opacity: 0.7 }}>
+                · {hostname || "…"}
+            </span>
+        </div>
+    )
+}
+
+function AppStoreBadge() {
+    const [isMobile, setIsMobile] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
+    // Badge sits below the dev banner. Prod has no banner, so offset is 0.
+    const bannerOffset = DEV_MODE ? 40 : 0
+    return (
+        <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Download SIGNAL on the App Store"
+            style={{
+                position: "fixed" as const,
+                top: (isMobile ? 16 : 24) + bannerOffset,
+                right: isMobile ? 16 : 32,
+                zIndex: 9999,
+                display: "block",
+                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
+            }}
+        >
+            <img
+                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
+                alt="Download on the App Store"
+                width={isMobile ? 108 : 135}
+                height={isMobile ? 32 : 40}
+                style={{ display: "block" }}
+            />
+        </a>
+    )
+}
+
+// PageShell renders the global overlays (DevBanner + AppStoreBadge — both
+// position:fixed) plus a 40px in-flow spacer when DEV_MODE is true so the
+// banner doesn't cover the page's natural top content. Place as the FIRST
+// child inside the page's outermost JSX container.
+function PageShell() {
+    return (
+        <>
+            <DevBanner />
+            <AppStoreBadge />
+            {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
+        </>
+    )
+}
+
+export default function SignalLandingPage(props: {
+    style?: React.CSSProperties
+}) {
+    const heroEmailRef = React.useRef<HTMLInputElement>(null)
+    const bottomEmailRef = React.useRef<HTMLInputElement>(null)
+    const freeEmailRef = React.useRef<HTMLInputElement>(null)
+    const freeEmailRef2 = React.useRef<HTMLInputElement>(null)
+
+    const [heroState, setHeroState] = React.useState<
+        "idle" | "loading" | "success" | "error"
+    >("idle")
+    const [bottomState, setBottomState] = React.useState<
+        "idle" | "loading" | "success" | "error"
+    >("idle")
+    const [heroError, setHeroError] = React.useState("")
+    const [bottomError, setBottomError] = React.useState("")
+    const [freeError, setFreeError] = React.useState("")
+    const [freeError2, setFreeError2] = React.useState("")
+
+    // Inject styles into <head> — keeps CSS completely outside JSX
+    React.useEffect(() => {
+        const id = "sl-styles"
+        let el = document.getElementById(id) as HTMLStyleElement | null
+        if (!el) {
+            el = document.createElement("style")
+            el.id = id
+            document.head.appendChild(el)
+        }
+        el.textContent = STYLES
+    }, [])
+
+    // sessionStorage read with try/catch — private mode + SSR safe. "" on miss.
+    function ss(key: string): string {
+        try {
+            return sessionStorage.getItem(key) || ""
+        } catch {
+            return ""
+        }
+    }
+
+    // Cookie read by name. "" if missing. _fbp/_fbc/_ttp will be "" until
+    // Meta/TikTok pixels are installed; webhook synthesizes fbc from fbclid.
+    function getCookie(name: string): string {
+        if (typeof document === "undefined") return ""
+        const m = document.cookie.match(
+            new RegExp("(?:^|; )" + name.replace(/[-.]/g, "\\$&") + "=([^;]*)")
+        )
+        return m ? decodeURIComponent(m[1]) : ""
+    }
+
+    // All fields default to "" so the POST body is well-formed and the
+    // server can treat missing == empty uniformly.
+    function getAttributionSnapshot() {
+        return {
+            utm_source: ss("signal_utm_source"),
+            utm_medium: ss("signal_utm_medium"),
+            utm_campaign: ss("signal_utm_campaign"),
+            utm_content: ss("signal_utm_content"),
+            utm_term: ss("signal_utm_term"),
+            landing_page: ss("signal_landing_page"),
+            referrer: ss("signal_referrer"),
+            fbclid: ss("signal_fbclid"),
+            ttclid: ss("signal_ttclid"),
+            gclid: ss("signal_gclid"),
+            fbp: getCookie("_fbp"),
+            fbc: getCookie("_fbc"),
+            ttp: getCookie("_ttp"),
+        }
+    }
+
+    async function handlePurchase(
+        ref: React.RefObject<HTMLInputElement | null>,
+        setState: (s: "idle" | "loading" | "success" | "error") => void,
+        setError: (s: string) => void
+    ) {
+        const email = ref.current?.value?.trim() || ""
+        setState("idle")
+        setError("")
+        if (!email || !email.includes("@") || !email.includes(".")) {
+            setError("Please enter a valid email address.")
+            setState("error")
+            return
+        }
+        setState("loading")
+        try {
+            const res = await fetch(`${API_BASE}/api/checkout/create-session`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, ...getAttributionSnapshot() }),
+            })
+            const data = await res.json()
+            if (data.url) {
+                // Fire Meta InitiateCheckout
+                if (typeof window !== "undefined" && (window as any).fbq) {
+                    (window as any).fbq("track", "InitiateCheckout", {
+                        value: 99,
+                        currency: "USD",
+                        content_name: "SIGNAL 90-day access",
+                    })
+                }
+                // Fire Google Begin Checkout
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "conversion", {
+                        send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
+                        value: 99.0,
+                        currency: "USD",
+                    })
+                }
+                setState("success")
+                setTimeout(() => {
+                    window.top!.location.href = data.url
+                }, 500)
+            } else {
+                setError("Something went wrong. Please try again.")
+                setState("error")
+            }
+        } catch {
+            setError("Something went wrong. Please try again.")
+            setState("error")
+        }
+    }
+
+    function handleFreeAnalysis(ref: React.RefObject<HTMLInputElement | null>, setErr: (s: string) => void) {
+        const email = ref.current?.value?.trim() || ""
+        setErr("")
+        if (!email || !email.includes("@") || !email.includes(".")) {
+            setErr("Please enter a valid email address.")
+            return
+        }
+        const base =
+            "https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+        window.top!.location.replace(
+            `${base}?email=${encodeURIComponent(email)}`
+        )
+    }
+
+    function navTo(url: string) {
+        window.top!.location.replace(url)
+    }
+
+    const checkSvg = (color: string) => (
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+            <path
+                d="M1 4l2 2 4-4"
+                stroke={color}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    )
+
+    const warnSvg = (color: string) => (
+        <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
+            <path
+                d="M3.5 1v2.5M3.5 5v.3"
+                stroke={color}
+                strokeWidth="1.4"
+                strokeLinecap="round"
+            />
+        </svg>
+    )
+
+    const crossSvg = (color: string) => (
+        <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
+            <path
+                d="M1.5 1.5l4 4M5.5 1.5l-4 4"
+                stroke={color}
+                strokeWidth="1.4"
+                strokeLinecap="round"
+            />
+        </svg>
+    )
+
+    return (
+        <div style={{ width: "100%", ...props.style }}>
+            <PageShell />
+            <div className="sl-page">
+                {/* Nav */}
+                <nav className="sl-nav">
+                    <div className="sl-logo-wrap">
+                        <div className="sl-logo-name">
+                            SIGNAL <div className="sl-logo-dash" />
+                        </div>
+                        <div className="sl-logo-by">by Workforce Ready Now</div>
+                    </div>
+                    <div className="sl-nav-right">
+                        <a
+                            className="sl-nav-free"
+                            href="https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                navTo(
+                                    "https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+                                )
+                            }}
+                        >
+                            <div className="sl-nav-free-dot" />
+                            Try FREE Job Analysis
+                        </a>
+                        <div className="sl-nav-divider" />
+                        <a
+                            className="sl-nav-login"
+                            href="https://genuine-times-909123.framer.app/signal/jobfit"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                navTo(
+                                    "https://genuine-times-909123.framer.app/signal/jobfit"
+                                )
+                            }}
+                        >
+                            Log in
+                        </a>
+                    </div>
+                </nav>
+
+                {/* Hero */}
+                <div className="sl-hero">
+                    <div className="sl-hero-eyebrow">
+                        For students &amp; early career professionals
+                    </div>
+                    <div className="sl-hero-headline">
+                        You're not losing because
+                        <br />
+                        you're unqualified.
+                        <br />
+                        <span className="sl-grad">
+                            You're losing because you have no strategy.
+                        </span>
+                    </div>
+                    <div className="sl-hero-sub">
+                        Most students apply broadly, tell a generic story, skip
+                        networking because they don't know where to start — and
+                        find out they were never competitive only{" "}
+                        <strong>after the rejection email.</strong>
+                    </div>
+                    <div className="sl-hero-sub" style={{ marginBottom: 12 }}>
+                        That's not a skills problem.{" "}
+                        <strong>That's a clarity problem.</strong>
+                    </div>
+                    <div className="sl-hero-kicker">
+                        SIGNAL fixes that — before you apply.
+                    </div>
+
+                    <div className="sl-email-form">
+                        <div className="sl-email-input-wrap">
+                            <input
+                                className="sl-email-input"
+                                ref={heroEmailRef}
+                                type="email"
+                                placeholder="Enter your email to get started"
+                                name="signal-hero-purchase"
+                                autoComplete="new-password"
+                            />
+                            <button
+                                className="sl-email-submit"
+                                onClick={() =>
+                                    handlePurchase(
+                                        heroEmailRef,
+                                        setHeroState,
+                                        setHeroError
+                                    )
+                                }
+                            >
+                                Get full access · $99 →
+                            </button>
+                        </div>
+                        {heroState === "loading" && (
+                            <div className="sl-loading-msg">
+                                Setting up your checkout...
+                            </div>
+                        )}
+                        {heroState === "error" && (
+                            <div className="sl-email-error">{heroError}</div>
+                        )}
+                        {heroState === "success" && (
+                            <div className="sl-email-success">
+                                Redirecting to checkout...
+                            </div>
+                        )}
+                        <div className="sl-price-tag">
+                            One-time $99 · no expiration · unlimited access
+                        </div>
+                        <div className="sl-guarantee-row">
+                            <div className="sl-g-icon">
+                                {checkSvg("#218C8C")}
+                            </div>
+                            <div className="sl-guarantee-text">
+                                7-day money back guarantee — if it doesn't
+                                change how you search, we'll refund every dollar
+                            </div>
+                        </div>
+                        <div className="sl-app-inc">
+                            <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                            >
+                                <rect
+                                    x="1"
+                                    y="1"
+                                    width="8"
+                                    height="8"
+                                    rx="2"
+                                    stroke="#218C8C"
+                                    strokeWidth="1"
+                                />
+                            </svg>
+                            iOS app launching this month —{" "}
+                            <span>included with your access</span>
+                        </div>
+
+                        <div className="sl-free-email-wrap">
+                            <input
+                                className="sl-free-email-input"
+                                ref={freeEmailRef}
+                                type="email"
+                                placeholder="Enter your email to try FREE"
+                                name="signal-hero-trial"
+                                autoComplete="new-password"
+                            />
+                            <button
+                                className="sl-free-email-btn"
+                                onClick={() => handleFreeAnalysis(freeEmailRef, setFreeError)}
+                            >
+                                Try job analysis FREE →
+                            </button>
+                        </div>
+                        {freeError && <div className="sl-email-error">{freeError}</div>}
+                        <div className="sl-free-note">
+                            No account needed &nbsp;·&nbsp; Paste any job
+                            posting — see what SIGNAL does
+                        </div>
+                        <div className="sl-login-row">
+                            Already a member?{" "}
+                            <a
+                                href="https://genuine-times-909123.framer.app/signal/jobfit"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    navTo(
+                                        "https://genuine-times-909123.framer.app/signal/jobfit"
+                                    )
+                                }}
+                            >
+                                Log in to your dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Cred bar */}
+                <div className="sl-cred-bar">
+                    <div className="sl-cred-text">
+                        Built from <span>30 years of hiring experience</span> ·
+                        Conversations with{" "}
+                        <span>thousands of hiring managers</span> ·{" "}
+                        <span>20,000+ lines of recruitment intelligence</span>{" "}
+                        that no general AI tool can replicate
+                    </div>
+                </div>
+
+                {/* Video */}
+                <div className="sl-video-section">
+                    <div className="sl-video-label">
+                        See SIGNAL in 45 seconds
+                    </div>
+                    <div className="sl-video-container">
+                        <iframe
+                            src="https://www.youtube.com/embed/uB6pQjSgd04?rel=0&modestbranding=1&color=white"
+                            allowFullScreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                    </div>
+                </div>
+
+                {/* Free banner */}
+                <div className="sl-free-banner">
+                    <div className="sl-free-banner-inner">
+                        <div className="sl-fbl">
+                            <div className="sl-fb-icon">
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M8 2L9.8 6.2L14 7L11 9.8L11.8 14L8 11.8L4.2 14L5 9.8L2 7L6.2 6.2L8 2Z"
+                                        stroke="#218C8C"
+                                        strokeWidth="1.2"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <div className="sl-fb-title">
+                                    Not sure yet? Try it FREE on any job
+                                    posting.
+                                </div>
+                                <div className="sl-fb-sub">
+                                    No account. No credit card. Real SIGNAL
+                                    intel in under 2 minutes.
+                                </div>
+                            </div>
+                        </div>
+                        <a
+                            className="sl-fb-btn"
+                            href="https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                navTo(
+                                    "https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+                                )
+                            }}
+                        >
+                            Run FREE Analysis
+                        </a>
+                    </div>
+                </div>
+
+                <div className="sl-section-divider" />
+
+                {/* Pillars */}
+                <div className="sl-pillars">
+                    <div className="sl-pillars-eyebrow">
+                        Four problems. One platform.
+                    </div>
+                    <div className="sl-pillars-headline">
+                        Every reason your job search isn't working —<br />
+                        and exactly what SIGNAL does about it.
+                    </div>
+
+                    {[
+                        {
+                            num: "01",
+                            headline: '"Am I even competitive for this role?"',
+                            copy: "You spend hours on an application — and weeks later get a form rejection. You'll never know why. Most students are applying to the wrong roles and finding out at the worst possible moment.",
+                            signal: (
+                                <>
+                                    <strong>
+                                        SIGNAL scores your real fit before you
+                                        apply.
+                                    </strong>{" "}
+                                    Experience, constraints, target role
+                                    alignment — a scored verdict with clear
+                                    reasoning. Know exactly where you stand
+                                    before you commit a single hour.
+                                </>
+                            ),
+                        },
+                        {
+                            num: "02",
+                            headline:
+                                '"How do I stand out when everyone has the same resume?"',
+                            copy: "Every role needs a different version of your story. Most students send the same resume and cover letter to every job — or ask a general AI to write something that sounds like everyone else. Hiring managers can tell immediately.",
+                            signal: (
+                                <>
+                                    <strong>
+                                        SIGNAL identifies the exact story this
+                                        role needs, rewrites your positioning,
+                                        and writes your cover letter.
+                                    </strong>{" "}
+                                    Built from your actual background against
+                                    the actual job description. Not a template.
+                                    Not generic AI output.{" "}
+                                    <strong>
+                                        Your story — told precisely, for this
+                                        role.
+                                    </strong>
+                                </>
+                            ),
+                        },
+                        {
+                            num: "03",
+                            headline:
+                                '"I applied. Now how do I actually get someone to see it?"',
+                            copy: "An application alone rarely gets you in the room. You know you should network but you don't know who to contact, what to say, or how to say it. So most students do nothing — and hope the application system works.",
+                            signal: (
+                                <>
+                                    <strong>
+                                        SIGNAL builds your complete networking
+                                        campaign — every message already
+                                        written.
+                                    </strong>{" "}
+                                    Who to contact, why each person matters, a
+                                    follow-up sequence, questions to ask when
+                                    they reply. The full outreach plan, specific
+                                    to this job and your profile — ready to
+                                    execute today.
+                                </>
+                            ),
+                        },
+                        {
+                            num: "04",
+                            headline:
+                                "\"I'm applying everywhere. I have no idea what's working.\"",
+                            copy: "Spreadsheets break down. You forget where you applied, what you said, what stage you're in. No visibility into whether your effort is actually translating.",
+                            signal: (
+                                <>
+                                    <strong>
+                                        SIGNAL's job tracker puts your entire
+                                        search in one place.
+                                    </strong>{" "}
+                                    Every application, status, and strategy
+                                    cached and ready. Hit the SIGNAL button on
+                                    any role and your complete analysis comes
+                                    back instantly. Real metrics. Links to every
+                                    application.{" "}
+                                    <strong>No more spreadsheets.</strong>
+                                </>
+                            ),
+                        },
+                    ].map((p) => (
+                        <div className="sl-pillar" key={p.num}>
+                            <div className="sl-pillar-num">{p.num}</div>
+                            <div>
+                                <div className="sl-pillar-pain">The pain</div>
+                                <div className="sl-pillar-headline">
+                                    {p.headline}
+                                </div>
+                                <div className="sl-pillar-copy">{p.copy}</div>
+                                <div className="sl-pillar-signal">
+                                    {p.signal}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Verdict Section */}
+                <div className="sl-verdict-section">
+                    <div style={{ textAlign: "center", marginBottom: 10 }}>
+                        <span className="sl-pill">Decision engine</span>
+                    </div>
+                    <div className="sl-verdict-headline">
+                        Know exactly where you stand
+                        <br />
+                        before you spend a single hour.
+                    </div>
+                    <div className="sl-verdict-sub">
+                        SIGNAL scores every role and gives you a clear verdict —
+                        so you invest your time in roles you can actually win.
+                    </div>
+                    <div className="sl-verdict-grid">
+                        {[
+                            {
+                                v: "vpa",
+                                label: "Priority Apply",
+                                verdict: "PRIORITY",
+                                items: [
+                                    {
+                                        icon: checkSvg("#2DD4BF"),
+                                        text: "Aligns with role's key needs",
+                                    },
+                                    {
+                                        icon: checkSvg("#2DD4BF"),
+                                        text: "Strong evidence in core requirements",
+                                    },
+                                    {
+                                        icon: checkSvg("#2DD4BF"),
+                                        text: "This role deserves immediate action",
+                                    },
+                                ],
+                                bottom: "High Probability",
+                                sub: "Move Fast",
+                            },
+                            {
+                                v: "vap",
+                                label: "Apply",
+                                verdict: "APPLY",
+                                items: [
+                                    {
+                                        icon: checkSvg("#51ADE5"),
+                                        text: "Aligns with several core requirements",
+                                    },
+                                    {
+                                        icon: checkSvg("#51ADE5"),
+                                        text: "Similar background and relevant skills",
+                                    },
+                                    {
+                                        icon: warnSvg("#FEB06A"),
+                                        text: "Some gaps — strengthen positioning",
+                                    },
+                                ],
+                                bottom: "Competitive",
+                                sub: "Apply with Strong Positioning",
+                            },
+                            {
+                                v: "vrv",
+                                label: "Review",
+                                verdict: "REVIEW",
+                                items: [
+                                    {
+                                        icon: warnSvg("#FEB06A"),
+                                        text: "Background partially aligns",
+                                    },
+                                    {
+                                        icon: warnSvg("#FEB06A"),
+                                        text: "Some requirements not fully met",
+                                    },
+                                    {
+                                        icon: warnSvg("#FEB06A"),
+                                        text: "Worth considering with caution",
+                                    },
+                                ],
+                                bottom: "Proceed Carefully",
+                                sub: "Improve Gaps First",
+                            },
+                            {
+                                v: "vps",
+                                label: "Pass",
+                                verdict: "PASS",
+                                items: [
+                                    {
+                                        icon: crossSvg("#FF4F6D"),
+                                        text: "No evidence of direct experience",
+                                    },
+                                    {
+                                        icon: crossSvg("#FF4F6D"),
+                                        text: "Core requirements not met",
+                                    },
+                                    {
+                                        icon: crossSvg("#FF4F6D"),
+                                        text: "Better opportunities elsewhere",
+                                    },
+                                ],
+                                bottom: "Low Fit",
+                                sub: "Focus Your Time Elsewhere",
+                            },
+                        ].map((card) => (
+                            <div
+                                key={card.v}
+                                className={`sl-vcard sl-vcard-${card.v}`}
+                            >
+                                <div
+                                    className={`sl-vcard-top sl-vcard-top-${card.v}`}
+                                />
+                                <div className="sl-vcard-body">
+                                    <div
+                                        className={`sl-vcard-label sl-vcard-label-${card.v}`}
+                                    >
+                                        {card.label}
+                                    </div>
+                                    <div
+                                        className={`sl-vcard-verdict sl-vcard-verdict-${card.v}`}
+                                    >
+                                        {card.verdict}
+                                    </div>
+                                    <div className="sl-vcard-items">
+                                        {card.items.map((item, i) => (
+                                            <div key={i} className="sl-vi">
+                                                <div
+                                                    className={`sl-vi-icon sl-vi-icon-${card.v}`}
+                                                >
+                                                    {item.icon}
+                                                </div>
+                                                {item.text}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div
+                                        className={`sl-vcard-bottom sl-vcard-bottom-${card.v}`}
+                                    >
+                                        {card.bottom}
+                                        <div className="sl-vcard-bottom-sub">
+                                            {card.sub}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Product strip */}
+                <div className="sl-product-strip">
+                    <div style={{ textAlign: "center", marginBottom: 10 }}>
+                        <span className="sl-pill">
+                            Full product walkthrough
+                        </span>
+                    </div>
+                    <div className="sl-product-headline">
+                        See How <span style={{ color: "#FEB06A" }}>SIGNAL</span>{" "}
+                        Gets You Hired
+                    </div>
+                    <div className="sl-product-sub">
+                        SIGNAL doesn't just tell you if a job fits — it gives
+                        you the full playbook to position yourself, apply
+                        convincingly, and build visibility with the right
+                        people.
+                    </div>
+                    <div className="sl-product-timeline">
+                        {[
+                            ["#2DD4BF", "#51ADE5"],
+                            ["#51ADE5", "#7B5CF6"],
+                            ["#7B5CF6", "#FEB06A"],
+                        ].map(([a, b], i) => (
+                            <React.Fragment key={i}>
+                                <div
+                                    className="sl-tl-dot"
+                                    style={{ background: a }}
+                                />
+                                <div
+                                    className="sl-tl-line"
+                                    style={{
+                                        background: `linear-gradient(90deg,${a},${b})`,
+                                    }}
+                                />
+                            </React.Fragment>
+                        ))}
+                        <div
+                            className="sl-tl-dot"
+                            style={{ background: "#FEB06A" }}
+                        />
+                    </div>
+                    <div className="sl-product-grid">
+                        {/* JobFit */}
+                        <div className="sl-pucard">
+                            <div className="sl-pucard-top">
+                                <div className="sl-pucard-sig">SIGNAL</div>
+                                <div className="sl-pucard-tag sl-pucard-tag-jf">
+                                    Job Fit
+                                </div>
+                            </div>
+                            <div className="sl-pucard-body">
+                                <div
+                                    style={{
+                                        fontSize: 20,
+                                        fontWeight: 900,
+                                        fontStyle: "italic",
+                                        color: "#2DD4BF",
+                                        marginBottom: 10,
+                                    }}
+                                >
+                                    APPLY
+                                </div>
+                                {[
+                                    [
+                                        "#2DD4BF",
+                                        "Aligns with core requirements",
+                                    ],
+                                    [
+                                        "#2DD4BF",
+                                        "Similar background and relevant skills",
+                                    ],
+                                    [
+                                        "#FEB06A",
+                                        "Some gaps — strengthen positioning",
+                                    ],
+                                ].map(([c, t], i) => (
+                                    <div key={i} className="sl-pucard-item">
+                                        <div
+                                            className="sl-pucard-dot"
+                                            style={{ background: c }}
+                                        />
+                                        {t}
+                                    </div>
+                                ))}
+                                <div
+                                    style={{
+                                        marginTop: 10,
+                                        padding: "6px 8px",
+                                        background: "#2DD4BF22",
+                                        border: "0.5px solid #2DD4BF44",
+                                        borderRadius: 6,
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        color: "#2DD4BF",
+                                    }}
+                                >
+                                    Competitive — Strong Positioning
+                                </div>
+                            </div>
+                        </div>
+                        {/* Positioning */}
+                        <div className="sl-pucard">
+                            <div className="sl-pucard-top">
+                                <div className="sl-pucard-sig">SIGNAL</div>
+                                <div className="sl-pucard-tag sl-pucard-tag-pos">
+                                    Positioning
+                                </div>
+                            </div>
+                            <div className="sl-pucard-body">
+                                <div
+                                    style={{
+                                        fontSize: 13,
+                                        fontWeight: 900,
+                                        fontStyle: "italic",
+                                        color: "#fff",
+                                        marginBottom: 10,
+                                    }}
+                                >
+                                    Performance Impact Summary
+                                </div>
+                                {[
+                                    ["Analysis", "80%", "#2DD4BF"],
+                                    ["Campaign Strategy", "75%", "#51ADE5"],
+                                    ["Client Coordination", "70%", "#FEB06A"],
+                                ].map(([label, val, color], i) => (
+                                    <React.Fragment key={i}>
+                                        <div className="sl-pucard-metric">
+                                            <span
+                                                style={{
+                                                    fontSize: 11,
+                                                    color: "#5A7A9A",
+                                                }}
+                                            >
+                                                {label}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color,
+                                                }}
+                                            >
+                                                {val}
+                                            </span>
+                                        </div>
+                                        <div className="sl-pucard-bar">
+                                            <div
+                                                className="sl-pucard-bar-fill"
+                                                style={{
+                                                    width: val,
+                                                    background: color,
+                                                }}
+                                            />
+                                        </div>
+                                    </React.Fragment>
+                                ))}
+                                <div
+                                    style={{
+                                        marginTop: 6,
+                                        display: "inline-block",
+                                        padding: "4px 8px",
+                                        background: "#FEB06A22",
+                                        color: "#FEB06A",
+                                        border: "0.5px solid #FEB06A44",
+                                        borderRadius: 5,
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    HIGH — Positioning Strength
+                                </div>
+                            </div>
+                        </div>
+                        {/* Cover Letter */}
+                        <div className="sl-pucard">
+                            <div className="sl-pucard-top">
+                                <div className="sl-pucard-sig">SIGNAL</div>
+                                <div className="sl-pucard-tag sl-pucard-tag-cl">
+                                    Cover Letter
+                                </div>
+                            </div>
+                            <div className="sl-pucard-body">
+                                <div
+                                    style={{
+                                        fontSize: 13,
+                                        fontWeight: 900,
+                                        fontStyle: "italic",
+                                        color: "#7B5CF6",
+                                        marginBottom: 10,
+                                    }}
+                                >
+                                    Personalized.
+                                    <br />
+                                    Job-Specific.
+                                </div>
+                                <div className="sl-pucard-letter">
+                                    Dear Hiring Manager,
+                                    <br />
+                                    <br />
+                                    Your background in campaign strategy
+                                    directly positions you to contribute from
+                                    day one...
+                                </div>
+                                <div className="sl-pucard-copy">
+                                    Copy · Send via LinkedIn
+                                </div>
+                            </div>
+                        </div>
+                        {/* Networking */}
+                        <div className="sl-pucard">
+                            <div className="sl-pucard-top">
+                                <div className="sl-pucard-sig">SIGNAL</div>
+                                <div className="sl-pucard-tag sl-pucard-tag-net">
+                                    Networking
+                                </div>
+                            </div>
+                            <div className="sl-pucard-body">
+                                <div
+                                    style={{
+                                        fontSize: 13,
+                                        fontWeight: 900,
+                                        fontStyle: "italic",
+                                        color: "#FEB06A",
+                                        marginBottom: 10,
+                                    }}
+                                >
+                                    Outreach Playbook
+                                </div>
+                                {[
+                                    [
+                                        "ER",
+                                        "Eric Reyes",
+                                        "Campaign Strategist",
+                                        "#FEB06A22",
+                                        "#FEB06A",
+                                    ],
+                                    [
+                                        "LB",
+                                        "Lucia Barrett",
+                                        "Growth Analyst",
+                                        "#8B7FE822",
+                                        "#8B7FE8",
+                                    ],
+                                    [
+                                        "TC",
+                                        "Thomas Chen",
+                                        "Client Strategy",
+                                        "#51ADE522",
+                                        "#51ADE5",
+                                    ],
+                                ].map(([init, name, role, bg, color]) => (
+                                    <div
+                                        key={name}
+                                        className="sl-pucard-contact"
+                                    >
+                                        <div
+                                            className="sl-pucard-avatar"
+                                            style={{ background: bg, color }}
+                                        >
+                                            {init}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div className="sl-pucard-contact-name">
+                                                {name}
+                                            </div>
+                                            <div className="sl-pucard-contact-role">
+                                                {role}
+                                            </div>
+                                        </div>
+                                        <div className="sl-pucard-send">
+                                            Send
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Diff section */}
+                <div className="sl-diff-section">
+                    <div className="sl-diff-inner">
+                        <div className="sl-diff-eyebrow">
+                            Why SIGNAL is different
+                        </div>
+                        <div className="sl-diff-headline">
+                            "This isn't AI assistance.
+                            <br />
+                            This is hiring intelligence."
+                        </div>
+                        <div className="sl-diff-copy">
+                            General AI tools are powerful — but they know
+                            nothing about you, nothing about your constraints,
+                            and nothing about what hiring managers at this
+                            specific company are actually looking for.{" "}
+                            <span>SIGNAL was built differently.</span> Every
+                            scoring model, every constraint flag, every
+                            networking strategy comes from 30 years of sitting
+                            on the other side of the table — watching what
+                            actually gets people hired. That depth of expertise
+                            is what no chat tool can replicate, no matter how
+                            you prompt it.
+                        </div>
+                    </div>
+                </div>
+
+                {/* Founder */}
+                <div className="sl-founder-section">
+                    <div className="sl-founder-inner">
+                        <div className="sl-founder-photo">
+                            <img
+                                src="https://wrnsignal-api-staging.vercel.app/peri-headshot.jpg"
+                                alt="Peri Ginsberg"
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    borderRadius: "50%",
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <div className="sl-founder-eyebrow">
+                                <div
+                                    style={{
+                                        width: 20,
+                                        height: 2,
+                                        background: "#FEB06A",
+                                        borderRadius: 1,
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                Why SIGNAL exists
+                            </div>
+                            <div className="sl-founder-quote">
+                                "I spent 30 years on the hiring side. I've made
+                                hundreds of offers and passed on thousands more.
+                                The students who got the offer weren't the most
+                                qualified — they were the most targeted. I built
+                                SIGNAL because I got tired of watching students
+                                waste months applying to jobs they were never
+                                going to get."
+                            </div>
+                            <div className="sl-founder-name">Peri Ginsberg</div>
+                            <div className="sl-founder-title">
+                                Founder, Workforce Ready Now
+                            </div>
+                            <div className="sl-founder-creds">
+                                {[
+                                    "Corporate Executive",
+                                    "Entrepreneur",
+                                    "Executive Recruiter",
+                                    "30 years hiring expertise",
+                                ].map((c) => (
+                                    <div key={c} className="sl-founder-cred">
+                                        {c}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* App section */}
+                <div className="sl-app-section">
+                    <div className="sl-app-card">
+                        <div>
+                            <div className="sl-app-eyebrow">
+                                <div className="sl-app-dot" />
+                                iOS app — launching this month
+                            </div>
+                            <div className="sl-app-headline">
+                                Your entire job strategy.
+                                <br />
+                                Now in your pocket.
+                            </div>
+                            <div className="sl-app-copy">
+                                See a role on LinkedIn at 11pm. Score it,
+                                position your story, and have your networking
+                                plan ready before you close the app.{" "}
+                                <strong>SIGNAL by Workforce Ready Now</strong>{" "}
+                                brings the full platform to iOS — your search
+                                never has to wait for a laptop.
+                            </div>
+                            <div className="sl-app-badge">
+                                <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 12 12"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M2 6l3 3 5-5"
+                                        stroke="#218C8C"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                                Included with full access · No extra charge
+                            </div>
+                        </div>
+                        <div className="sl-app-phone">
+                            <div className="sl-phone-notch" />
+                            <div className="sl-phone-score">
+                                <div className="sl-phone-score-num">74</div>
+                                <div className="sl-phone-score-lbl">
+                                    FIT SCORE
+                                </div>
+                            </div>
+                            <div style={{ height: 6 }} />
+                            <div className="sl-phone-line" />
+                            <div style={{ height: 3 }} />
+                            <div className="sl-phone-line-s" />
+                            <div style={{ height: 3 }} />
+                            <div className="sl-phone-line" />
+                            <div style={{ height: 3 }} />
+                            <div className="sl-phone-line-s" />
+                            <div style={{ height: 6 }} />
+                            <div className="sl-phone-btn">SIGNAL</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Parent section */}
+                <div className="sl-parent-section">
+                    <div className="sl-parent-card">
+                        <div>
+                            <div className="sl-parent-eyebrow">
+                                A note for parents
+                            </div>
+                            <div className="sl-parent-headline">
+                                You want to help.
+                                <br />
+                                You just don't know how.
+                            </div>
+                            <div className="sl-parent-copy">
+                                You've watched your student apply to dozens of
+                                roles and hear nothing back. The job search has
+                                changed completely since you did it. SIGNAL
+                                gives your student the professional guidance you
+                                can't provide — and the strategic edge most
+                                career centers don't have time to give.
+                            </div>
+                            <a className="sl-parent-cta" href="#bottom-cta">
+                                Get SIGNAL for your student
+                            </a>
+                        </div>
+                        <div>
+                            {[
+                                [
+                                    "They'll know before they apply",
+                                    " — no more investing weeks in applications that were never going anywhere",
+                                ],
+                                [
+                                    "Their story will be sharp",
+                                    " — every application positioned specifically for that role, resume angle and cover letter included",
+                                ],
+                                [
+                                    "They'll actually network",
+                                    " — complete plan and every message already written",
+                                ],
+                                [
+                                    "You'll see real progress",
+                                    " — dashboard with metrics on every step of their search",
+                                ],
+                                [
+                                    "Built by a recruiter",
+                                    " — 30 years of hiring expertise, not a general AI prompt",
+                                ],
+                            ].map(([bold, rest]) => (
+                                <div key={bold} className="sl-pf">
+                                    <div className="sl-pf-dot" />
+                                    <div className="sl-pf-text">
+                                        <strong>{bold}</strong>
+                                        {rest}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Proof strip */}
+                <div className="sl-proof-strip">
+                    {[
+                        [
+                            "30 yrs",
+                            "hiring & recruitment\nexpertise inside SIGNAL",
+                        ],
+                        ["20,000+", "lines of recruitment\nintelligence"],
+                        ["< 2 min", "to score, position, and\nplan any role"],
+                        ["$99", "one-time · no expiration\nunlimited access"],
+                    ].map(([num, label]) => (
+                        <div key={num} className="sl-proof-item">
+                            <div className="sl-proof-num">{num}</div>
+                            <div className="sl-proof-label">{label}</div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Coaching bar */}
+                <div className="sl-coaching-bar">
+                    <div className="sl-coaching-text">
+                        <strong>
+                            One career coaching session costs $150–$300 and
+                            lasts an hour.
+                        </strong>{" "}
+                        SIGNAL gives you{" "}
+                        <span className="sl-coaching-hl">
+                            30 years of hiring expertise, available 24/7, for
+                            every role you consider — for a one-time $99 with no
+                            expiration.
+                        </span>{" "}
+                        Plus the iOS app, included at launch.
+                    </div>
+                </div>
+
+                {/* Pricing */}
+                <div className="sl-pricing-section">
+                    <div style={{ textAlign: "center", marginBottom: 10 }}>
+                        <span className="sl-pill">Get started</span>
+                    </div>
+                    <div className="sl-pricing-headline">
+                        Try{" "}
+                        <span
+                            style={{
+                                color: "#FEB06A",
+                                fontSize: 28,
+                                fontWeight: 900,
+                            }}
+                        >
+                            FREE.
+                        </span>{" "}
+                        Upgrade When{" "}
+                        <span style={{ color: "#51ADE5" }}>You're Ready.</span>
+                    </div>
+                    <div className="sl-pricing-sub">
+                        Start with a FREE job analysis — no account, no
+                        commitment.
+                        <br />
+                        When you're ready for the full playbook, unlock
+                        everything for $99.
+                    </div>
+                    <div className="sl-pricing-grid">
+                        {/* Free card */}
+                        <div className="sl-prc-card sl-prc-free">
+                            <div className="sl-prc-top sl-prc-top-free" />
+                            <div className="sl-prc-body">
+                                <div className="sl-prc-badge sl-prc-badge-free">
+                                    FREE TRIAL
+                                </div>
+                                <div className="sl-prc-amount sl-prc-amount-free">
+                                    $0
+                                </div>
+                                <div className="sl-prc-period">
+                                    No credit card required
+                                </div>
+                                <div className="sl-prc-items">
+                                    {[
+                                        "Company & job intelligence",
+                                        "Hidden reality & risk flags",
+                                        "Market reality stats",
+                                        "Strong candidate profile",
+                                    ].map((item) => (
+                                        <div key={item} className="sl-prc-item">
+                                            <div className="sl-prc-check sl-prc-check-free">
+                                                {checkSvg("#51ADE5")}
+                                            </div>
+                                            {item}
+                                        </div>
+                                    ))}
+                                </div>
+                                <a
+                                    className="sl-prc-btn sl-prc-btn-free"
+                                    href="https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        navTo(
+                                            "https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+                                        )
+                                    }}
+                                >
+                                    Analyze Any Job FREE →
+                                </a>
+                            </div>
+                        </div>
+                        {/* Paid card */}
+                        <div className="sl-prc-card sl-prc-paid">
+                            <div className="sl-prc-top sl-prc-top-paid" />
+                            <div className="sl-prc-body">
+                                <div className="sl-prc-badge sl-prc-badge-paid">
+                                    Full Access
+                                </div>
+                                <div className="sl-prc-amount sl-prc-amount-paid">
+                                    $99
+                                </div>
+                                <div className="sl-prc-period">
+                                    one-time · no expiration · 7-day money-back
+                                    guarantee
+                                </div>
+                                <div className="sl-prc-items">
+                                    {[
+                                        "Everything in Free",
+                                        "Personal fit score + full reasoning",
+                                        "Resume positioning + exact rewrites",
+                                        "Personalized cover letter",
+                                        "Full networking campaign + messages",
+                                        "Job tracker dashboard · Unlimited roles",
+                                    ].map((item) => (
+                                        <div key={item} className="sl-prc-item">
+                                            <div className="sl-prc-check sl-prc-check-paid">
+                                                {checkSvg("#2DD4BF")}
+                                            </div>
+                                            {item}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    className="sl-prc-btn sl-prc-btn-paid"
+                                    onClick={() =>
+                                        handlePurchase(
+                                            heroEmailRef,
+                                            setHeroState,
+                                            setHeroError
+                                        )
+                                    }
+                                >
+                                    Get Full SIGNAL Access · $99 →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="sl-prc-guarantee">
+                        {checkSvg("#218C8C")}
+                        <span style={{ color: "#218C8C" }}>
+                            7-day money back guarantee
+                        </span>
+                        &nbsp;·&nbsp; One-time payment &nbsp;·&nbsp; No
+                        expiration
+                    </div>
+                </div>
+
+                {/* Bottom CTA */}
+                <div className="sl-bottom-cta" id="bottom-cta">
+                    <div className="sl-bottom-headline">
+                        Your search starts here.
+                        <br />
+                        <span className="sl-grad">
+                            Your strategy starts now.
+                        </span>
+                    </div>
+                    <div className="sl-bottom-sub">
+                        Stop applying blind. Get the intelligence, the story,
+                        the network plan, and the tracking — everything you need
+                        to compete.
+                    </div>
+                    <div className="sl-bottom-email-wrap">
+                        <input
+                            className="sl-bottom-email-input"
+                            ref={bottomEmailRef}
+                            type="email"
+                            placeholder="Enter your email to get started"
+                            name="signal-bottom-purchase"
+                            autoComplete="new-password"
+                        />
+                        <button
+                            className="sl-bottom-submit"
+                            onClick={() =>
+                                handlePurchase(
+                                    bottomEmailRef,
+                                    setBottomState,
+                                    setBottomError
+                                )
+                            }
+                        >
+                            Get full access · $99 →
+                        </button>
+                    </div>
+                    {bottomState === "loading" && (
+                        <div className="sl-loading-msg">
+                            Setting up your checkout...
+                        </div>
+                    )}
+                    {bottomState === "error" && (
+                        <div className="sl-email-error">{bottomError}</div>
+                    )}
+                    {bottomState === "success" && (
+                        <div className="sl-email-success">
+                            Redirecting to checkout...
+                        </div>
+                    )}
+                    <div className="sl-bottom-price-row">
+                        · One-time $99 · no expiration · unlimited access
+                    </div>
+                    <div className="sl-bottom-guarantee">
+                        <div className="sl-g-icon">{checkSvg("#218C8C")}</div>
+                        7-day money back guarantee — if it doesn't change how
+                        you search, we'll refund every dollar
+                    </div>
+                    <div className="sl-bottom-app-note">
+                        iOS app launching this month —{" "}
+                        <span>included with your access, no extra charge</span>
+                    </div>
+                    <div className="sl-divider-row">
+                        <div className="sl-div-line" />
+                        <div className="sl-div-text">
+                            or continue without an account
+                        </div>
+                        <div className="sl-div-line" />
+                    </div>
+                    <div
+                        className="sl-free-email-wrap"
+                        style={{ marginBottom: 10, margin: "0 auto 10px" }}
+                    >
+                        <input
+                            className="sl-free-email-input"
+                            ref={freeEmailRef2}
+                            type="email"
+                            placeholder="Enter your email to try FREE"
+                            name="signal-bottom-trial"
+                            autoComplete="new-password"
+                        />
+                        <button
+                            className="sl-free-email-btn"
+                            onClick={() => handleFreeAnalysis(freeEmailRef2, setFreeError2)}
+                        >
+                            Try job analysis FREE →
+                        </button>
+                    </div>
+                    {freeError2 && <div className="sl-email-error">{freeError2}</div>}
+                    <div className="sl-free-note">
+                        No account needed &nbsp;·&nbsp; Paste any job posting —
+                        see what SIGNAL does
+                    </div>
+                    <a
+                        className="sl-sec-login"
+                        href="https://genuine-times-909123.framer.app/signal/jobfit"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            navTo(
+                                "https://genuine-times-909123.framer.app/signal/jobfit"
+                            )
+                        }}
+                    >
+                        <div className="sl-sec-sublabel">Paid users</div>
+                        Log in to dashboard
+                    </a>
+                </div>
+
+                {/* Footer */}
+                <div className="sl-footer">
+                    <div className="sl-footer-copy">
+                        © 2026 Workforce Ready Now
+                    </div>
+                    <div className="sl-footer-links">
+                        <a className="sl-footer-link" href="#">
+                            Privacy
+                        </a>
+                        <a className="sl-footer-link" href="#">
+                            Terms
+                        </a>
+                        <a className="sl-footer-link" href="#">
+                            Contact
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

@@ -1,0 +1,3604 @@
+import * as React from "react"
+
+/**
+ * SIGNAL Job Analysis Engine — Framer Code Component
+ *
+ * Two states: INPUT (paste JD) and RESULTS (full analysis).
+ * Glass card aesthetic with orb glows, monospace data labels.
+ * CTA links to GHL payment flow.
+ */
+
+/**
+ * @framerSupportedLayoutWidth any
+ * @framerSupportedLayoutHeight any
+ */
+
+// ---------- PROD CONFIG ----------
+const API_BASE = "https://wrnsignal-api-staging.vercel.app"
+const GHL_URL = "https://workforcereadynow.com/signal-user-info"
+
+// ---------- COLORS ----------
+const C = {
+    bg: "#0b1929",
+    orange: "#FEB06A",
+    blue: "#51ADE5",
+    green: "#4ADE80",
+    purple: "#c084fc",
+    red: "#f87171",
+    teal: "#2dd4bf",
+    muted: "#7a9bbf",
+    body: "#b0c8df",
+    finding: "#ccdde8",
+    white: "#fff",
+    glass: "rgba(255,255,255,0.04)",
+    glassBorder: "rgba(255,255,255,0.09)",
+    glassBorderHover: "rgba(255,255,255,0.18)",
+}
+
+const MONO = "'Inter',system-ui,sans-serif"
+const SANS = "'Inter',system-ui,sans-serif"
+
+// ---------- Types ----------
+type CompanyContext = {
+    what_they_do?: string | null
+    company_stage?: string | null
+    clients?: string | null
+    marketing_context?: string | null
+    recent_news?: string | null
+    application_insight?: string | null
+}
+
+type MarketReality = {
+    stats?: { value: string; label: string }[]
+    competitive_dynamic?: string
+    // backward compat with old cached responses
+    estimated_applicants?: string
+    applicant_pool_description?: string
+}
+
+type AnalysisResult = {
+    role_level: string
+    function: string
+    seniority_signals: string[]
+    core_skills: string[]
+    hidden_requirements: string[]
+    competitiveness: string
+    risk_flags: string[]
+    target_candidate_profile: string[]
+    summary: string
+    company_name?: string
+    company_context?: CompanyContext
+    market_reality?: MarketReality
+}
+
+const LOADING_MSGS = [
+    "Reading the job description...",
+    "Identifying hidden requirements...",
+    "Assessing the applicant pool...",
+    "Checking what they're not telling you...",
+    "Building your intelligence report...",
+]
+
+// ---------- MAIN COMPONENT ----------
+// ─────────────────────────────────────────────────────────────────────────
+// Global UI overlays — App Store badge (every page) + DEV banner (dev only)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// DEV_MODE controls whether the dev banner can appear and whether the App
+// Store badge is offset for the banner's height. Set true in dev/* file
+// copies, false in prod/* copies. The hostname check in DevBanner is a
+// belt-and-suspenders fallback — if dev code is somehow pasted into the
+// prod Framer project, the hostname check still hides the banner.
+const DEV_MODE = true
+
+const APP_STORE_URL = "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
+function DevBanner() {
+    const [hostname, setHostname] = React.useState("")
+    const [shouldShow, setShouldShow] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const h = window.location.hostname
+        setHostname(h)
+        // Production hostname allowlist. Banner shows on anything NOT in
+        // this list. Fail-safe: false-positive (banner in dev) is harmless;
+        // false-negative (banner hidden in prod) is the bug we're avoiding.
+        const PROD_HOSTS = [
+            "wrnsignal.workforcereadynow.com",
+            "www.workforcereadynow.com",
+        ]
+        setShouldShow(DEV_MODE && !PROD_HOSTS.includes(h))
+    }, [])
+    if (!shouldShow) return null
+    return (
+        <div
+            style={{
+                position: "fixed" as const,
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 40,
+                background: "#FFD60A",
+                color: "#000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                zIndex: 10000,
+                fontFamily: "'Inter', system-ui, sans-serif",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+        >
+            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: 4, textTransform: "uppercase" as const }}>
+                DEV
+            </span>
+            <span style={{ fontWeight: 600, fontSize: 12, letterSpacing: 1, opacity: 0.7 }}>
+                · {hostname || "…"}
+            </span>
+        </div>
+    )
+}
+
+function AppStoreBadge() {
+    const [isMobile, setIsMobile] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
+    // Badge sits below the dev banner. Prod has no banner, so offset is 0.
+    const bannerOffset = DEV_MODE ? 40 : 0
+    return (
+        <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Download SIGNAL on the App Store"
+            style={{
+                position: "fixed" as const,
+                top: (isMobile ? 16 : 24) + bannerOffset,
+                right: isMobile ? 16 : 32,
+                zIndex: 9999,
+                display: "block",
+                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
+            }}
+        >
+            <img
+                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
+                alt="Download on the App Store"
+                width={isMobile ? 108 : 135}
+                height={isMobile ? 32 : 40}
+                style={{ display: "block" }}
+            />
+        </a>
+    )
+}
+
+// PageShell renders the global overlays (DevBanner + AppStoreBadge — both
+// position:fixed) plus a 40px in-flow spacer when DEV_MODE is true so the
+// banner doesn't cover the page's natural top content. Place as the FIRST
+// child inside the page's outermost JSX container.
+function PageShell() {
+    return (
+        <>
+            <DevBanner />
+            <AppStoreBadge />
+            {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
+        </>
+    )
+}
+
+export default function SignalJobAnalysis() {
+    const [jd, setJd] = React.useState("")
+    // Optional user-supplied company name and job title. If the JD body is
+    // messy or sparse, the user can type them here and the API will honor
+    // these values over any enrichment-based guess. Displayed in the
+    // results header so the candidate always sees the correct labels.
+    const [companyName, setCompanyName] = React.useState("")
+    const [jobTitle, setJobTitle] = React.useState("")
+    const [loading, setLoading] = React.useState(false)
+    const [loadingMsg, setLoadingMsg] = React.useState(LOADING_MSGS[0])
+    const [error, setError] = React.useState("")
+    const [result, setResult] = React.useState<AnalysisResult | null>(null)
+    const [capturedEmail, setCapturedEmail] = React.useState("")
+    const [upgradeLoading, setUpgradeLoading] = React.useState(false)
+
+    // Read email param from URL on mount (passed from landing page free CTA)
+    React.useEffect(() => {
+        try {
+            const params = new URLSearchParams(window.location.search)
+            const emailParam = params.get("email")
+            if (emailParam) {
+                setCapturedEmail(decodeURIComponent(emailParam))
+            }
+        } catch {
+            // silently fail
+        }
+    }, [])
+
+    // Track page view on mount
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const existing = localStorage.getItem("jobfit_session_id")
+        const sessionId = existing || crypto.randomUUID()
+        if (!existing) localStorage.setItem("jobfit_session_id", sessionId)
+
+        const url = new URL(window.location.href)
+        const src =
+            url.searchParams.get("utm_source") ||
+            sessionStorage.getItem("signal_utm_source") ||
+            null
+        const med =
+            url.searchParams.get("utm_medium") ||
+            sessionStorage.getItem("signal_utm_medium") ||
+            null
+        const camp =
+            url.searchParams.get("utm_campaign") ||
+            sessionStorage.getItem("signal_utm_campaign") ||
+            null
+        const cont =
+            url.searchParams.get("utm_content") ||
+            sessionStorage.getItem("signal_utm_content") ||
+            null
+        const term =
+            url.searchParams.get("utm_term") ||
+            sessionStorage.getItem("signal_utm_term") ||
+            null
+        // Click IDs are last-touch: URL param takes precedence so a user who
+        // re-lands via a different ad gets fresh attribution.
+        const fbclid = url.searchParams.get("fbclid")
+        const ttclid = url.searchParams.get("ttclid")
+        const gclid = url.searchParams.get("gclid")
+        try {
+            if (src) sessionStorage.setItem("signal_utm_source", src)
+            if (med) sessionStorage.setItem("signal_utm_medium", med)
+            if (camp) sessionStorage.setItem("signal_utm_campaign", camp)
+            if (cont) sessionStorage.setItem("signal_utm_content", cont)
+            if (term) sessionStorage.setItem("signal_utm_term", term)
+            if (fbclid) sessionStorage.setItem("signal_fbclid", fbclid)
+            if (ttclid) sessionStorage.setItem("signal_ttclid", ttclid)
+            if (gclid) sessionStorage.setItem("signal_gclid", gclid)
+            // First-touch landing_page and referrer — write once so subsequent
+            // intra-site navigations don't overwrite the original landing context.
+            if (!sessionStorage.getItem("signal_landing_page"))
+                sessionStorage.setItem(
+                    "signal_landing_page",
+                    window.location.pathname || ""
+                )
+            if (!sessionStorage.getItem("signal_referrer"))
+                sessionStorage.setItem(
+                    "signal_referrer",
+                    document.referrer || ""
+                )
+        } catch {}
+
+        fetch(API_BASE + "/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                session_id: sessionId,
+                page_path: window.location.pathname || "/analyze",
+                page_name: "job_analysis_page",
+                referrer: document.referrer || null,
+                utm_source: src,
+                utm_medium: med,
+                utm_campaign: camp,
+            }),
+        }).catch(() => {})
+    }, [])
+
+    // Rotate loading messages
+    React.useEffect(() => {
+        if (!loading) return
+        let idx = 0
+        const iv = setInterval(() => {
+            idx = (idx + 1) % LOADING_MSGS.length
+            setLoadingMsg(LOADING_MSGS[idx])
+        }, 2500)
+        return () => clearInterval(iv)
+    }, [loading])
+
+    async function handleAnalyze() {
+        setError("")
+        const trimmed = jd.trim()
+        if (trimmed.length < 100) {
+            setError(
+                "Paste the full job description. It needs to be at least 100 characters."
+            )
+            return
+        }
+        // Company name and job title are now required — the deterministic
+        // extractor has ~0% accuracy on varied JD formats so we rely on
+        // the user to provide the labels we display at the top of the
+        // results page.
+        if (!companyName.trim()) {
+            setError("Enter the company name before analyzing.")
+            return
+        }
+        if (!jobTitle.trim()) {
+            setError("Enter the job title before analyzing.")
+            return
+        }
+        setLoading(true)
+        setLoadingMsg(LOADING_MSGS[0])
+        try {
+            const sessionId =
+                localStorage.getItem("jobfit_session_id") || undefined
+            const src = sessionStorage.getItem("signal_utm_source") || undefined
+            const med = sessionStorage.getItem("signal_utm_medium") || undefined
+            const camp =
+                sessionStorage.getItem("signal_utm_campaign") || undefined
+
+            const res = await fetch(API_BASE + "/api/job-analysis", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    job_description: trimmed,
+                    // User-provided labels are required — validation above
+                    // ensures both are non-empty before we hit this point.
+                    company_name: companyName.trim(),
+                    job_title: jobTitle.trim(),
+                    session_id: sessionId,
+                    utm_source: src,
+                    utm_medium: med,
+                    utm_campaign: camp,
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok)
+                throw new Error(data?.error || "Analysis failed. Try again.")
+            setResult(data as AnalysisResult)
+        } catch (err: any) {
+            setError(err?.message || "Something went wrong. Try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    function handleCTA() {
+        try {
+            sessionStorage.setItem(
+                "signal_jd",
+                JSON.stringify({
+                    job_description: jd.trim(),
+                    analysis: result,
+                    company_name: result?.company_name,
+                    timestamp: Date.now(),
+                })
+            )
+        } catch {}
+
+        // Track upgrade CTA click (analyzer results -> GHL purchase).
+        // Uses sendBeacon so the event survives the redirect. We send as
+        // text/plain (not application/json) because application/json triggers
+        // a CORS preflight that sendBeacon cannot wait for during page unload,
+        // so Chrome silently drops the beacon. The server parses the body via
+        // req.json() which ignores Content-Type, so this is safe.
+        const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+        const src = sessionStorage.getItem("signal_utm_source") || undefined
+        const payload = JSON.stringify({
+            page_name: "upgrade_cta_click",
+            session_id: sessionId,
+            page_path: window.location.pathname,
+            utm_source: src,
+        })
+        try {
+            if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+                const blob = new Blob([payload], { type: "text/plain" })
+                navigator.sendBeacon(API_BASE + "/api/track", blob)
+            } else {
+                fetch(API_BASE + "/api/track", {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: payload,
+                    keepalive: true,
+                }).catch(() => {})
+            }
+        } catch {}
+
+        // Small delay lets the beacon queue before navigation. sendBeacon is
+        // supposed to survive unload, but in practice ~50ms makes delivery
+        // much more reliable across browsers.
+        setTimeout(() => {
+            window.top!.location.replace("https://genuine-times-909123.framer.app/signal/jobfit")
+        }, 50)
+    }
+
+    function handleStartOver() {
+        setResult(null)
+        setJd("")
+        setCompanyName("")
+        setJobTitle("")
+        setError("")
+        try {
+            window.scrollTo({ top: 0, behavior: "smooth" })
+        } catch {}
+    }
+
+    // sessionStorage read with try/catch — private mode + SSR safe. "" on miss.
+    function ss(key: string): string {
+        try {
+            return sessionStorage.getItem(key) || ""
+        } catch {
+            return ""
+        }
+    }
+
+    // Cookie read by name. "" if missing. _fbp/_fbc/_ttp will be "" until
+    // Meta/TikTok pixels are installed; webhook synthesizes fbc from fbclid.
+    function getCookie(name: string): string {
+        if (typeof document === "undefined") return ""
+        const m = document.cookie.match(
+            new RegExp("(?:^|; )" + name.replace(/[-.]/g, "\\$&") + "=([^;]*)")
+        )
+        return m ? decodeURIComponent(m[1]) : ""
+    }
+
+    // All fields default to "" so the POST body is well-formed and the
+    // server can treat missing == empty uniformly.
+    function getAttributionSnapshot() {
+        return {
+            utm_source: ss("signal_utm_source"),
+            utm_medium: ss("signal_utm_medium"),
+            utm_campaign: ss("signal_utm_campaign"),
+            utm_content: ss("signal_utm_content"),
+            utm_term: ss("signal_utm_term"),
+            landing_page: ss("signal_landing_page"),
+            referrer: ss("signal_referrer"),
+            fbclid: ss("signal_fbclid"),
+            ttclid: ss("signal_ttclid"),
+            gclid: ss("signal_gclid"),
+            fbp: getCookie("_fbp"),
+            fbc: getCookie("_fbc"),
+            ttp: getCookie("_ttp"),
+        }
+    }
+
+    async function handleUpgrade() {
+        if (upgradeLoading) return
+        if (!capturedEmail) {
+            window.top!.location.replace("https://genuine-times-909123.framer.app/signal/jobfit")
+            return
+        }
+        setUpgradeLoading(true)
+        try {
+            const response = await fetch(
+                "https://wrnsignal-api-staging.vercel.app/api/checkout/create-session",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: capturedEmail,
+                        ...getAttributionSnapshot(),
+                    }),
+                }
+            )
+            const data = await response.json()
+            if (data.url) {
+                // Fire Meta InitiateCheckout
+                if (typeof window !== "undefined" && (window as any).fbq) {
+                    (window as any).fbq("track", "InitiateCheckout", {
+                        value: 99,
+                        currency: "USD",
+                        content_name: "SIGNAL 90-day access",
+                    })
+                }
+                // Fire Google Begin Checkout
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "conversion", {
+                        send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
+                        value: 99.0,
+                        currency: "USD",
+                    })
+                }
+                window.open(data.url, "_blank")
+            } else {
+                window.top!.location.replace("https://genuine-times-909123.framer.app/signal/jobfit")
+            }
+        } catch {
+            window.top!.location.replace("https://genuine-times-909123.framer.app/signal/jobfit")
+        } finally {
+            setUpgradeLoading(false)
+        }
+    }
+
+    function charHint(): { text: string; ready: boolean } {
+        const n = jd.length
+        if (n < 300)
+            return {
+                text: "Paste the full posting for best results",
+                ready: false,
+            }
+        if (n < 800)
+            return {
+                text:
+                    n +
+                    " characters \u2014 good, paste the full posting if you have it",
+                ready: false,
+            }
+        return { text: n + " characters \u2014 ready to analyze", ready: true }
+    }
+
+    return (
+        <div style={pageStyle}>
+            <PageShell />
+            {/* Injected keyframes */}
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
+                @keyframes ctaGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(254,176,106,0.4), 0 0 40px rgba(254,176,106,0.15); }
+                    50% { box-shadow: 0 0 28px rgba(81,173,229,0.5), 0 0 56px rgba(81,173,229,0.2); }
+                }
+                .signal-cta-btn {
+                    animation: ctaGlow 3s ease-in-out infinite;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+                .signal-cta-btn:hover {
+                    transform: scale(1.03);
+                    box-shadow: 0 0 32px rgba(254,176,106,0.6), 0 0 64px rgba(81,173,229,0.3) !important;
+                }
+            `,
+                }}
+            />
+            {/* Orbs */}
+            <div
+                style={{
+                    ...orbBase,
+                    width: 500,
+                    height: 500,
+                    background: "rgba(81,173,229,0.1)",
+                    top: -150,
+                    right: -100,
+                }}
+            />
+            <div
+                style={{
+                    ...orbBase,
+                    width: 400,
+                    height: 400,
+                    background: "rgba(254,176,106,0.07)",
+                    top: 300,
+                    left: -120,
+                }}
+            />
+            <div
+                style={{
+                    ...orbBase,
+                    width: 300,
+                    height: 300,
+                    background: "rgba(192,132,252,0.07)",
+                    bottom: 100,
+                    right: -60,
+                }}
+            />
+            {result ? (
+                <div
+                    style={{
+                        ...orbBase,
+                        width: 280,
+                        height: 280,
+                        background: "rgba(74,222,128,0.06)",
+                        top: 900,
+                        left: -40,
+                    }}
+                />
+            ) : null}
+
+            <div style={{ position: "relative" as const, zIndex: 1 }}>
+                {/* Topbar */}
+                <div style={topbar}>
+                    <div>
+                        <div
+                            style={{
+                                fontSize: 17,
+                                fontWeight: 900,
+                                letterSpacing: "-.02em",
+                            }}
+                        >
+                            SIGNAL
+                            <span style={{ color: C.orange }}>{"\u2014"}</span>
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 9,
+                                color: C.blue,
+                                letterSpacing: ".1em",
+                                fontWeight: 600,
+                                marginTop: 1,
+                                fontFamily: MONO,
+                            }}
+                        >
+                            BY WORKFORCE READY NOW
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 11,
+                            color: result ? "#4a6a85" : C.green,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                        }}
+                    >
+                        {result ? (
+                            <>
+                                {extractRoleTitle(result)}{" "}
+                                {result.company_name
+                                    ? " \u00B7 " + result.company_name
+                                    : ""}
+                                {" \u00B7 "}
+                                <span
+                                    style={{ color: C.blue, cursor: "pointer" }}
+                                    onClick={handleStartOver}
+                                >
+                                    Run another {"\u2192"}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span
+                                    style={{
+                                        width: 6,
+                                        height: 6,
+                                        borderRadius: "50%",
+                                        background: C.green,
+                                        display: "inline-block",
+                                    }}
+                                />
+                                Free job intelligence {"\u00B7"} No account
+                                required
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {!result ? (
+                    <InputState
+                        jd={jd}
+                        setJd={setJd}
+                        companyName={companyName}
+                        setCompanyName={setCompanyName}
+                        jobTitle={jobTitle}
+                        setJobTitle={setJobTitle}
+                        loading={loading}
+                        loadingMsg={loadingMsg}
+                        error={error}
+                        charHint={charHint()}
+                        onAnalyze={handleAnalyze}
+                        onUpgrade={handleUpgrade}
+                        upgradeLoading={upgradeLoading}
+                    />
+                ) : (
+                    <ResultsState
+                        result={result}
+                        jobTitle={jobTitle}
+                        companyName={companyName}
+                        onStartOver={handleStartOver}
+                        onUpgrade={handleUpgrade}
+                        upgradeLoading={upgradeLoading}
+                    />
+                )}
+            </div>
+        </div>
+    )
+}
+
+function extractRoleTitle(r: AnalysisResult): string {
+    const fn = r.function || ""
+    const paren = fn.indexOf("(")
+    return paren > 0 ? fn.slice(0, paren).trim() : fn
+}
+
+// ===================== INPUT STATE =====================
+
+function InputState({
+    jd,
+    setJd,
+    companyName,
+    setCompanyName,
+    jobTitle,
+    setJobTitle,
+    loading,
+    loadingMsg,
+    error,
+    charHint,
+    onAnalyze,
+    onUpgrade,
+    upgradeLoading,
+}: {
+    jd: string
+    setJd: (v: string) => void
+    companyName: string
+    setCompanyName: (v: string) => void
+    jobTitle: string
+    setJobTitle: (v: string) => void
+    loading: boolean
+    loadingMsg: string
+    error: string
+    charHint: { text: string; ready: boolean }
+    onAnalyze: () => void
+    onUpgrade: () => void
+    upgradeLoading: boolean
+}) {
+    return (
+        <>
+            {/* Hero */}
+            <div
+                style={{
+                    padding: "36px 24px 20px",
+                    textAlign: "center" as const,
+                }}
+            >
+                <div style={eyebrowPill}>
+                    <span
+                        style={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: "50%",
+                            background: C.orange,
+                            display: "inline-block",
+                        }}
+                    />
+                    FREE JOB INTELLIGENCE
+                </div>
+
+                <div
+                    style={{
+                        fontSize: 36,
+                        fontWeight: 900,
+                        lineHeight: 1.15,
+                        letterSpacing: "-.02em",
+                        marginBottom: 10,
+                    }}
+                >
+                    <div style={{ color: C.white }}>Find out what a job</div>
+                    <div>
+                        <span style={{ color: C.orange }}>actually</span>{" "}
+                        <span style={{ color: C.white }}>requires</span>{" "}
+                        <span style={{ color: C.blue }}>to get hired.</span>
+                    </div>
+                </div>
+
+                <div
+                    style={{
+                        fontSize: 14,
+                        lineHeight: 1.7,
+                        color: C.muted,
+                        maxWidth: 480,
+                        margin: "0 auto 28px",
+                    }}
+                >
+                    Paste any job description. SIGNAL breaks down what the role
+                    really demands, how competitive the pool is, and what hiring
+                    managers expect {"\u2014"} but don't say.
+                </div>
+
+                {/* Intel banner */}
+                <div style={intelBanner}>
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        style={{ flexShrink: 0, marginTop: 1 }}
+                    >
+                        <circle
+                            cx="8"
+                            cy="8"
+                            r="7"
+                            stroke={C.blue}
+                            strokeWidth="1.2"
+                        />
+                        <line
+                            x1="8"
+                            y1="7"
+                            x2="8"
+                            y2="11"
+                            stroke={C.blue}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                        />
+                        <circle cx="8" cy="5" r=".6" fill={C.blue} />
+                    </svg>
+                    <div
+                        style={{ fontSize: 12, color: C.body, lineHeight: 1.6 }}
+                    >
+                        <strong style={{ color: C.blue, fontWeight: 600 }}>
+                            This is market intelligence, not a personal score.
+                        </strong>{" "}
+                        The analysis is based on the job and company {"\u2014"}{" "}
+                        not your specific background. To find out how YOU
+                        compare to this role, you'll need full SIGNAL access.
+                    </div>
+                </div>
+
+                {/* Stats row */}
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 10,
+                        marginBottom: 32,
+                        flexWrap: "wrap" as const,
+                    }}
+                >
+                    <StatGlass
+                        num="73%"
+                        color={C.orange}
+                        label="of applications never get a response"
+                    />
+                    <StatGlass
+                        num="4 hrs"
+                        color={C.blue}
+                        label="average time wasted per bad application"
+                    />
+                    <StatGlass
+                        num="1 in 8"
+                        color={C.green}
+                        label="students reviewed job fit entirely"
+                    />
+                </div>
+            </div>
+
+            {/* Form area */}
+            <div style={{ padding: "0 24px 32px" }}>
+                {/* What you get grid */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 10,
+                        marginBottom: 16,
+                    }}
+                >
+                    <WygCard
+                        icon="star"
+                        color={C.orange}
+                        title="Competitiveness rating"
+                        desc="How hard is this pool, really"
+                    />
+                    <WygCard
+                        icon="check"
+                        color={C.blue}
+                        title="Hidden requirements"
+                        desc="What the JD doesn't say"
+                    />
+                    <WygCard
+                        icon="doc"
+                        color={C.purple}
+                        title="Risk flags"
+                        desc="Honest warnings before you apply"
+                    />
+                    <WygCard
+                        icon="tick"
+                        color={C.green}
+                        title="Target candidate profile"
+                        desc="What a strong applicant looks like"
+                    />
+                </div>
+
+                {/* Input card */}
+                <div style={glassCard}>
+                    <div
+                        style={{
+                            ...monoLabel,
+                            color: C.orange,
+                            marginBottom: 6,
+                        }}
+                    >
+                        STEP 1 OF 1
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 16,
+                            fontWeight: 800,
+                            color: C.white,
+                            marginBottom: 4,
+                        }}
+                    >
+                        Paste the job description
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 12,
+                            color: C.muted,
+                            marginBottom: 16,
+                        }}
+                    >
+                        The more complete the posting, the sharper the
+                        intelligence.
+                    </div>
+
+                    {error ? <div style={errorBox}>{error}</div> : null}
+
+                    {/* REQUIRED company and job title inputs. The
+                        deterministic extractor has ~0% accuracy on
+                        varied JD formats so the API now requires these
+                        to be filled. Client-side validation blocks
+                        submission with a friendly message. */}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 8,
+                            marginBottom: 6,
+                            alignItems: "baseline",
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: 10,
+                                color: C.orange,
+                                fontWeight: 700,
+                                letterSpacing: 0.4,
+                            }}
+                        >
+                            Required
+                        </span>
+                        <span style={{ fontSize: 10, color: C.muted }}>
+                            — copy the company and job title from the
+                            posting
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 10,
+                            marginBottom: 10,
+                        }}
+                    >
+                        <input
+                            type="text"
+                            required
+                            aria-required="true"
+                            value={companyName}
+                            onChange={(e) =>
+                                setCompanyName(e.target.value)
+                            }
+                            placeholder="Company name *"
+                            maxLength={200}
+                            style={labelInputStyle}
+                        />
+                        <input
+                            type="text"
+                            required
+                            aria-required="true"
+                            value={jobTitle}
+                            onChange={(e) => setJobTitle(e.target.value)}
+                            placeholder="Job title *"
+                            maxLength={200}
+                            style={labelInputStyle}
+                        />
+                    </div>
+
+                    <textarea
+                        value={jd}
+                        onChange={(e) => setJd(e.target.value)}
+                        placeholder="Paste the full job posting here \u2014 title, responsibilities, requirements, company info. The more you include, the better the analysis."
+                        style={textareaStyle}
+                    />
+                    <div
+                        style={{
+                            fontSize: 11,
+                            color: charHint.ready ? C.green : C.muted,
+                            marginTop: 6,
+                            fontFamily: MONO,
+                            textAlign: "right" as const,
+                        }}
+                    >
+                        {charHint.text}
+                    </div>
+
+                    {loading ? (
+                        <div style={{ marginTop: 14 }}>
+                            <div
+                                style={{
+                                    height: 6,
+                                    borderRadius: 3,
+                                    background: "rgba(255,255,255,0.08)",
+                                    overflow: "hidden",
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        height: "100%",
+                                        borderRadius: 3,
+                                        background: C.orange,
+                                        animation:
+                                            "loadbar 2.5s ease-in-out infinite",
+                                        width: "60%",
+                                    }}
+                                />
+                            </div>
+                            <div
+                                style={{
+                                    textAlign: "center" as const,
+                                    fontSize: 13,
+                                    color: C.muted,
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {loadingMsg}
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={onAnalyze}
+                            style={submitBtn}
+                        >
+                            Analyze This Role {"\u2192"}
+                        </button>
+                    )}
+                    <div
+                        style={{
+                            textAlign: "center" as const,
+                            fontSize: 13,
+                            fontWeight: 800,
+                            marginTop: 10,
+                            letterSpacing: ".06em",
+                            background:
+                                "linear-gradient(90deg, #FEB06A, #51ADE5)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                        }}
+                    >
+                        FREE {"\u00B7"} NO ACCOUNT {"\u00B7"} RESULTS IN ~15
+                        SECONDS
+                    </div>
+                </div>
+
+                {/* Personal teaser */}
+                <div style={personalTeaser}>
+                    <div style={{ flex: 1 }}>
+                        <div
+                            style={{
+                                ...monoLabel,
+                                color: C.orange,
+                                marginBottom: 4,
+                                fontSize: 9,
+                            }}
+                        >
+                            WANT YOUR PERSONAL SCORE?
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: C.white,
+                                marginBottom: 2,
+                            }}
+                        >
+                            Skip ahead {"\u2014"} get full SIGNAL access
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 11,
+                                color: C.muted,
+                                lineHeight: 1.4,
+                            }}
+                        >
+                            See exactly how your background scores against any
+                            role.
+                        </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: "#4ADE80", background: "#4ADE8018", border: "1px solid #4ADE8044", borderRadius: 6, padding: "4px 12px", letterSpacing: ".05em" }}>FREE</span>
+                        <span style={{ fontSize: 11, color: "#2A4A6A" }}>30-day money-back guarantee</span>
+                    </div>
+                    <button
+                        onClick={onUpgrade}
+                        disabled={upgradeLoading}
+                        style={{
+                            display: "block",
+                            width: "100%",
+                            padding: "14px 22px",
+                            background: upgradeLoading ? "#3A3A3A" : "linear-gradient(90deg, #FF6B00, #FEB06A)",
+                            borderRadius: 10,
+                            color: "#fff",
+                            fontSize: 15,
+                            fontWeight: 900,
+                            fontStyle: "italic" as const,
+                            cursor: upgradeLoading ? "not-allowed" : "pointer",
+                            textDecoration: "none",
+                            textAlign: "center" as const,
+                            fontFamily: "inherit",
+                            border: "none",
+                            boxSizing: "border-box" as const,
+                        }}
+                    >
+                        {upgradeLoading ? "Setting up checkout..." : "Unlock full SIGNAL \u2192"}
+                    </button>
+                </div>
+            </div>
+        </>
+    )
+}
+
+// ===================== RESULTS STATE =====================
+
+function ResultsState({
+    result,
+    jobTitle,
+    companyName,
+    onStartOver,
+    onUpgrade,
+    upgradeLoading,
+}: {
+    result: AnalysisResult
+    jobTitle: string
+    companyName: string
+    onStartOver: () => void
+    onUpgrade: () => void
+    upgradeLoading: boolean
+}) {
+    const co = result.company_name || companyName || ""
+    const cc = result.company_context
+    const mr = result.market_reality
+
+    const compColor =
+        result.competitiveness === "Low"
+            ? "#2DD4BF"
+            : result.competitiveness === "Medium"
+              ? "#FEB06A"
+              : "#FF4F6D"
+
+    // ── Card header helper ──
+    function CardHeader({
+        dot,
+        label,
+        badge,
+        badgeBg,
+        badgeColor,
+    }: {
+        dot: string
+        label: string
+        badge?: string
+        badgeBg?: string
+        badgeColor?: string
+    }) {
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: 11,
+                    borderBottom: "0.5px solid #071220",
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: dot,
+                            flexShrink: 0,
+                        }}
+                    />
+                    <span
+                        style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase" as const,
+                            color: dot,
+                        }}
+                    >
+                        {label}
+                    </span>
+                </div>
+                {badge ? (
+                    <span
+                        style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: ".1em",
+                            padding: "3px 8px",
+                            borderRadius: 4,
+                            background: badgeBg,
+                            color: badgeColor,
+                        }}
+                    >
+                        {badge}
+                    </span>
+                ) : null}
+            </div>
+        )
+    }
+
+    return (
+        <>
+            {/* ══════════════════════════════════════════
+                ZONE 1 — JOB HEADER
+            ══════════════════════════════════════════ */}
+            <div
+                style={{
+                    background: "#040D1A",
+                    padding: "0 0 32px",
+                }}
+            >
+                {/* Top bar removed — logo renders in parent component topbar */}
+
+                <div style={{ padding: "28px 48px 0" }}>
+                    {/* Breadcrumb */}
+                    <div
+                        style={{
+                            fontSize: 10,
+                            letterSpacing: ".1em",
+                            textTransform: "uppercase" as const,
+                            color: "#2A4A6A",
+                            marginBottom: 10,
+                        }}
+                    >
+                        {result.role_level}
+                        {" · "}
+                        {result.function}
+                        {co ? " · " + co : ""}
+                    </div>
+
+                    {/* Job title */}
+                    <div
+                        style={{
+                            fontSize: 32,
+                            fontWeight: 900,
+                            fontStyle: "italic",
+                            color: "#ffffff",
+                            letterSpacing: "-.02em",
+                            lineHeight: 1.1,
+                            marginBottom: 8,
+                        }}
+                    >
+                        {jobTitle}
+                    </div>
+
+                    {/* Company line */}
+                    {co ? (
+                        <div
+                            style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "#51ADE5",
+                                marginBottom: 12,
+                            }}
+                        >
+                            {co}
+                        </div>
+                    ) : null}
+
+                    {/* Summary */}
+                    <div
+                        style={{
+                            fontSize: 13,
+                            color: "#4A6A8A",
+                            lineHeight: 1.75,
+                            maxWidth: 720,
+                            marginBottom: 20,
+                        }}
+                    >
+                        {result.summary}
+                    </div>
+
+                    {/* Stat pills */}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap" as const,
+                        }}
+                    >
+                        {/* Applicants */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>APPLICANTS</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: "#FEB06A",
+                                }}
+                            >
+                                {mr?.stats?.[0]?.value ||
+                                    mr?.estimated_applicants ||
+                                    "—"}
+                            </div>
+                        </div>
+                        {/* Competition */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>COMPETITION</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: compColor,
+                                }}
+                            >
+                                {result.competitiveness}
+                            </div>
+                        </div>
+                        {/* Hard skills */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>HARD SKILLS</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: "#51ADE5",
+                                }}
+                            >
+                                {result.core_skills.length} required
+                            </div>
+                        </div>
+                        {/* Role level */}
+                        <div style={statPill}>
+                            <div style={statPillLabel}>ROLE LEVEL</div>
+                            <div
+                                style={{
+                                    ...statPillValue,
+                                    color: "#8B7FE8",
+                                }}
+                            >
+                                {result.role_level}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ══════════════════════════════════════════
+                ZONE 2 — INTELLIGENCE GRID
+            ══════════════════════════════════════════ */}
+            <div
+                style={{
+                    background: "#040D1A",
+                    padding: "40px 48px",
+                    display: "flex",
+                    flexDirection: "column" as const,
+                    gap: 14,
+                }}
+            >
+                {/* Layout: left col (Company Intel) + right col (Hard Skills + Strong Candidate) */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 14,
+                    }}
+                >
+                    {/* ── Card 1: Company Intelligence ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #7B5CF633",
+                        }}
+                    >
+                        <CardHeader
+                            dot="#7B5CF6"
+                            label="Company Intelligence"
+                            badge="CLASSIFIED"
+                            badgeBg="#7B5CF622"
+                            badgeColor="#7B5CF6"
+                        />
+                        <div style={{ padding: "14px 14px 10px" }}>
+                            <div
+                                style={{
+                                    fontSize: 16,
+                                    fontWeight: 900,
+                                    fontStyle: "italic",
+                                    color: "#ffffff",
+                                    marginBottom: 14,
+                                    lineHeight: 1.3,
+                                }}
+                            >
+                                What you need to know about {co || "this company"}
+                            </div>
+
+                            {cc ? (
+                                <>
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 1fr",
+                                            gap: 10,
+                                            marginBottom: cc.recent_news ? 10 : 0,
+                                        }}
+                                    >
+                                        {cc.what_they_do ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>WHAT THEY ACTUALLY DO</div>
+                                                <div style={intelItemText}>{cc.what_they_do}</div>
+                                            </div>
+                                        ) : null}
+                                        {cc.company_stage ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>COMPANY STAGE</div>
+                                                <div style={intelItemText}>{cc.company_stage}</div>
+                                            </div>
+                                        ) : null}
+                                        {cc.clients ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>WHO THEIR CLIENTS ARE</div>
+                                                <div style={intelItemText}>{cc.clients}</div>
+                                            </div>
+                                        ) : null}
+                                        {cc.marketing_context ? (
+                                            <div style={intelItem}>
+                                                <div style={intelItemLabel}>MARKETING CONTEXT</div>
+                                                <div style={intelItemText}>{cc.marketing_context}</div>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                    {cc.recent_news ? (
+                                        <div
+                                            style={{
+                                                ...intelItem,
+                                                marginBottom: 10,
+                                            }}
+                                        >
+                                            <div style={intelItemLabel}>RECENT NEWS</div>
+                                            <div style={intelItemText}>{cc.recent_news}</div>
+                                        </div>
+                                    ) : null}
+                                    {cc.application_insight ? (
+                                        <div
+                                            style={{
+                                                background: "#071220",
+                                                borderLeft: "2px solid #7B5CF6",
+                                                borderRadius: "0 8px 8px 0",
+                                                padding: "9px 12px",
+                                                marginTop: 10,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    fontSize: 9,
+                                                    fontWeight: 700,
+                                                    letterSpacing: ".1em",
+                                                    textTransform: "uppercase" as const,
+                                                    color: "#7B5CF6",
+                                                    marginBottom: 4,
+                                                }}
+                                            >
+                                                WHY THIS MATTERS
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: 11,
+                                                    color: "#8AAAC0",
+                                                    lineHeight: 1.6,
+                                                }}
+                                            >
+                                                {cc.application_insight}
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                </>
+                            ) : (
+                                <div
+                                    style={{
+                                        fontSize: 12,
+                                        color: "#2A4A6A",
+                                        fontStyle: "italic",
+                                    }}
+                                >
+                                    No company intelligence available for this role.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right column: Hard Skills + Strong Candidate */}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column" as const,
+                            gap: 14,
+                        }}
+                    >
+                        {/* ── Card 2: Hard Skills ── */}
+                        <div
+                            style={{
+                                background: "#0A1828",
+                                borderRadius: 14,
+                                border: "0.5px solid #FEB06A33",
+                            }}
+                        >
+                            <CardHeader dot="#FEB06A" label="Hard Skills Required" />
+                            <div
+                                style={{
+                                    padding: "12px 14px 14px",
+                                    display: "flex",
+                                    flexWrap: "wrap" as const,
+                                    gap: 6,
+                                }}
+                            >
+                                {(result.core_skills ?? []).map((s, i) => (
+                                    <span
+                                        key={i}
+                                        style={{
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            padding: "4px 9px",
+                                            borderRadius: 6,
+                                            background: "#51ADE522",
+                                            color: "#51ADE5",
+                                            border: "0.5px solid #51ADE544",
+                                        }}
+                                    >
+                                        {s}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ── Card 3: Strong Candidate ── */}
+                        <div
+                            style={{
+                                background: "#0A1828",
+                                borderRadius: 14,
+                                border: "0.5px solid #2DD4BF33",
+                                flex: 1,
+                            }}
+                        >
+                            <CardHeader dot="#2DD4BF" label="Strong Candidate Looks Like" />
+                            <div
+                                style={{
+                                    padding: "12px 14px 14px",
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                }}
+                            >
+                                {(result.target_candidate_profile ?? []).map((item, i) => (
+                                    <div
+                                        key={i}
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: 6,
+                                        }}
+                                    >
+                                        <svg
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 12 12"
+                                            fill="none"
+                                            style={{ flexShrink: 0, marginTop: 1 }}
+                                        >
+                                            <path
+                                                d="M2 6l2.5 2.5L10 4"
+                                                stroke="#2DD4BF"
+                                                strokeWidth="1.4"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                        <span
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#6A8AAA",
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
+                                            {item}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Card 4: Hidden Reality (full width) ── */}
+                <div
+                    style={{
+                        background: "#0A1828",
+                        borderRadius: 14,
+                        border: "0.5px solid #7B5CF633",
+                    }}
+                >
+                    <CardHeader
+                        dot="#7B5CF6"
+                        label="Hidden Reality"
+                        badge="WHAT THE JD DOESN’T SAY"
+                        badgeBg="#7B5CF622"
+                        badgeColor="#7B5CF6"
+                    />
+                    <div style={{ padding: "14px 14px 6px" }}>
+                        <div
+                            style={{
+                                fontSize: 15,
+                                fontWeight: 900,
+                                fontStyle: "italic",
+                                color: "#ffffff",
+                                marginBottom: 14,
+                                lineHeight: 1.3,
+                            }}
+                        >
+                            What every hiring manager expects{" "}
+                            {"—"} but no one writes down
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column" as const,
+                            }}
+                        >
+                            {(result.hidden_requirements ?? []).map((item, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "26px 1fr",
+                                        gap: 10,
+                                        padding: "9px 0",
+                                        borderBottom:
+                                            i < result.hidden_requirements.length - 1
+                                                ? "0.5px solid #071220"
+                                                : "none",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            fontStyle: "italic",
+                                            color: "#7B5CF6",
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
+                                        {String(i + 1).padStart(2, "0")}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 12,
+                                            color: "#7A99BA",
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
+                                        {item}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Card 5: Risk Flags (full width) ── */}
+                <div
+                    style={{
+                        background: "#0A1828",
+                        borderRadius: 14,
+                        border: "0.5px solid #FF4F6D33",
+                    }}
+                >
+                    <CardHeader
+                        dot="#FF4F6D"
+                        label="Risk Flags"
+                        badge="READ BEFORE YOU APPLY"
+                        badgeBg="#FF4F6D22"
+                        badgeColor="#FF4F6D"
+                    />
+                    <div
+                        style={{
+                            padding: "12px 14px 14px",
+                            display: "flex",
+                            flexDirection: "column" as const,
+                            gap: 8,
+                        }}
+                    >
+                        {(result.risk_flags ?? []).map((flag, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "9px 12px",
+                                    borderLeft: "2px solid #FF4F6D",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 9,
+                                }}
+                            >
+                                <svg
+                                    width="13"
+                                    height="13"
+                                    viewBox="0 0 14 14"
+                                    fill="none"
+                                    style={{ flexShrink: 0, marginTop: 1 }}
+                                >
+                                    <path
+                                        d="M7 1L13.5 13H.5L7 1Z"
+                                        stroke="#FF4F6D"
+                                        strokeWidth="1.2"
+                                    />
+                                    <line
+                                        x1="7"
+                                        y1="5"
+                                        x2="7"
+                                        y2="9"
+                                        stroke="#FF4F6D"
+                                        strokeWidth="1.2"
+                                        strokeLinecap="round"
+                                    />
+                                    <circle cx="7" cy="11" r=".6" fill="#FF4F6D" />
+                                </svg>
+                                <div
+                                    style={{
+                                        fontSize: 12,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    {flag}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ══════════════════════════════════════════
+                ZONE D — DASHBOARD SHOWCASE
+            ══════════════════════════════════════════ */}
+            <div
+                style={{
+                    background:
+                        "linear-gradient(180deg, #040D1A 0%, #071220 100%)",
+                    padding: "40px 48px",
+                }}
+            >
+                {/* Eyebrow */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                        marginBottom: 12,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "#2DD4BF",
+                            animation: "pulse 2s ease-in-out infinite",
+                        }}
+                    />
+                    <span
+                        style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase" as const,
+                            color: "#2DD4BF",
+                        }}
+                    >
+                        YOUR COMMAND CENTER
+                    </span>
+                </div>
+
+                {/* Headline */}
+                <div
+                    style={{
+                        fontSize: 28,
+                        fontWeight: 900,
+                        fontStyle: "italic",
+                        color: "#ffffff",
+                        letterSpacing: "-.02em",
+                        lineHeight: 1.15,
+                        marginBottom: 10,
+                    }}
+                >
+                    Every application. Every score. Every move{" "}
+                    {"—"} in one place.
+                </div>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: "#2A4A6A",
+                        maxWidth: 580,
+                        marginBottom: 28,
+                        lineHeight: 1.6,
+                    }}
+                >
+                    Full SIGNAL access puts every role you analyze, score, and
+                    track into a single dashboard. See your interview rate, spot
+                    patterns, and know which applications are actually worth your
+                    time.
+                </div>
+
+                {/* Dashboard mockup frame */}
+                <div
+                    style={{
+                        background: "#0D1829",
+                        border: "1px solid #1E3A5F",
+                        borderRadius: 14,
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* Frame top bar */}
+                    <div
+                        style={{
+                            background: "#071220",
+                            borderBottom: "0.5px solid #1E3A5F",
+                            padding: "8px 16px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <span style={{ fontSize: 11, color: "#218C8C" }}>
+                            {"←"} Back to SIGNAL
+                        </span>
+                        <span style={{ fontSize: 11, color: "#2A4A6A" }}>
+                            {"You're in your SIGNAL Dashboard"}
+                        </span>
+                    </div>
+
+                    {/* Frame body: sidebar + main */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "140px 1fr",
+                        }}
+                    >
+                        {/* Sidebar */}
+                        <div
+                            style={{
+                                background: "#071220",
+                                borderRight: "0.5px solid #1E3A5F",
+                                padding: "16px 12px",
+                                display: "flex",
+                                flexDirection: "column" as const,
+                                gap: 8,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontSize: 12,
+                                    fontWeight: 900,
+                                    fontStyle: "italic",
+                                    color: "#ffffff",
+                                    marginBottom: 12,
+                                    letterSpacing: "-.01em",
+                                }}
+                            >
+                                SIGNAL
+                            </div>
+                            {["Overview", "Job Tracker", "Back to SIGNAL"].map(
+                                (item) => (
+                                    <div
+                                        key={item}
+                                        style={{
+                                            fontSize: 11,
+                                            color:
+                                                item === "Job Tracker"
+                                                    ? "#ffffff"
+                                                    : item === "Back to SIGNAL"
+                                                      ? "#2DD4BF"
+                                                      : "#2A4A6A",
+                                            padding: "5px 8px",
+                                            borderRadius: 6,
+                                            background:
+                                                item === "Job Tracker"
+                                                    ? "#1E3A5F"
+                                                    : "transparent",
+                                        }}
+                                    >
+                                        {item}
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        {/* Main content */}
+                        <div style={{ padding: "16px 20px" }}>
+                            <div
+                                style={{
+                                    fontSize: 9,
+                                    letterSpacing: ".14em",
+                                    color: "#2A4A6A",
+                                    marginBottom: 4,
+                                }}
+                            >
+                                JOB TRACKER
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 18,
+                                    fontWeight: 900,
+                                    color: "#ffffff",
+                                    marginBottom: 14,
+                                    letterSpacing: "-.01em",
+                                }}
+                            >
+                                Applications &amp; Interviews
+                            </div>
+
+                            {/* 7 stat boxes */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 6,
+                                    flexWrap: "wrap" as const,
+                                    marginBottom: 16,
+                                }}
+                            >
+                                {[
+                                    { val: "24", lbl: "TOTAL", col: "#ffffff" },
+                                    { val: "23", lbl: "ANALYZED", col: "#51ADE5" },
+                                    { val: "2", lbl: "APPLIED", col: "#2DD4BF" },
+                                    { val: "3", lbl: "INTERVIEWING", col: "#8B7FE8" },
+                                    { val: "1", lbl: "REJECTED", col: "#FF4F6D" },
+                                    { val: "0", lbl: "OFFERS", col: "#4ADE80" },
+                                    { val: "50%", lbl: "INT. RATE", col: "#FEB06A" },
+                                ].map((s) => (
+                                    <div
+                                        key={s.lbl}
+                                        style={{
+                                            background: "#0A1828",
+                                            border: "0.5px solid #1E3A5F",
+                                            borderRadius: 8,
+                                            padding: "7px 10px",
+                                            minWidth: 56,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 16,
+                                                fontWeight: 900,
+                                                color: s.col,
+                                                lineHeight: 1,
+                                                marginBottom: 3,
+                                            }}
+                                        >
+                                            {s.val}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 8,
+                                                letterSpacing: ".1em",
+                                                color: "#2A4A6A",
+                                            }}
+                                        >
+                                            {s.lbl}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Tabs */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 0,
+                                    borderBottom: "0.5px solid #1E3A5F",
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {["Applications", "Interviews", "Insights"].map(
+                                    (tab) => (
+                                        <div
+                                            key={tab}
+                                            style={{
+                                                fontSize: 11,
+                                                fontWeight: tab === "Insights" ? 700 : 500,
+                                                color: tab === "Insights" ? "#FEB06A" : "#2A4A6A",
+                                                padding: "6px 14px",
+                                                borderBottom:
+                                                    tab === "Insights"
+                                                        ? "2px solid #FEB06A"
+                                                        : "none",
+                                                cursor: "default",
+                                            }}
+                                        >
+                                            {tab}
+                                        </div>
+                                    )
+                                )}
+                            </div>
+
+                            {/* 4 insight cards */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {[
+                                    { val: "50%", lbl: "INTERVIEW RATE", col: "#8B7FE8" },
+                                    { val: "80", lbl: "AVG SIGNAL SCORE", col: "#2DD4BF" },
+                                    { val: "13", lbl: "HIGH SCORE UNAPPLIED", col: "#FEB06A" },
+                                    { val: "Marketing", lbl: "TOP CATEGORY", col: "#51ADE5" },
+                                ].map((ic) => (
+                                    <div
+                                        key={ic.lbl}
+                                        style={{
+                                            background: "#0A1828",
+                                            border: "0.5px solid #1E3A5F",
+                                            borderRadius: 8,
+                                            padding: "10px 12px",
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 18,
+                                                fontWeight: 900,
+                                                color: ic.col,
+                                                lineHeight: 1,
+                                                marginBottom: 5,
+                                            }}
+                                        >
+                                            {ic.val}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 8,
+                                                letterSpacing: ".1em",
+                                                color: "#2A4A6A",
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            {ic.lbl}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Charts row: donut + status bars */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {/* Donut chart mock */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 14,
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            position: "relative" as const,
+                                            width: 56,
+                                            height: 56,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <svg width="56" height="56" viewBox="0 0 56 56">
+                                            <circle
+                                                cx="28"
+                                                cy="28"
+                                                r="22"
+                                                fill="none"
+                                                stroke="#1E3A5F"
+                                                strokeWidth="6"
+                                            />
+                                            <circle
+                                                cx="28"
+                                                cy="28"
+                                                r="22"
+                                                fill="none"
+                                                stroke="url(#donutGrad)"
+                                                strokeWidth="6"
+                                                strokeDasharray="69 69"
+                                                strokeDashoffset="17"
+                                                strokeLinecap="round"
+                                                transform="rotate(-90 28 28)"
+                                            />
+                                            <defs>
+                                                <linearGradient
+                                                    id="donutGrad"
+                                                    x1="0"
+                                                    y1="0"
+                                                    x2="1"
+                                                    y2="0"
+                                                >
+                                                    <stop offset="0%" stopColor="#7B5CF6" />
+                                                    <stop offset="100%" stopColor="#8B7FE8" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                        <div
+                                            style={{
+                                                position: "absolute" as const,
+                                                inset: 0,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: 12,
+                                                fontWeight: 900,
+                                                color: "#8B7FE8",
+                                            }}
+                                        >
+                                            50%
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div
+                                            style={{
+                                                fontSize: 9,
+                                                color: "#2A4A6A",
+                                                letterSpacing: ".1em",
+                                                marginBottom: 3,
+                                            }}
+                                        >
+                                            INTERVIEW RATE
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#6A8AAA",
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            3 of 6 applications reached interview
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Status bars */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            color: "#2A4A6A",
+                                            letterSpacing: ".1em",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        STATUS BREAKDOWN
+                                    </div>
+                                    {[
+                                        { lbl: "Applied", pct: 33, col: "#2DD4BF" },
+                                        { lbl: "Interviewing", pct: 50, col: "#8B7FE8" },
+                                        { lbl: "Saved", pct: 17, col: "#51ADE5" },
+                                    ].map((b) => (
+                                        <div key={b.lbl} style={{ marginBottom: 6 }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    fontSize: 9,
+                                                    color: "#4A6A8A",
+                                                    marginBottom: 3,
+                                                }}
+                                            >
+                                                <span>{b.lbl}</span>
+                                                <span>{b.pct}%</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    height: 4,
+                                                    borderRadius: 2,
+                                                    background: "#1E3A5F",
+                                                    overflow: "hidden",
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        height: "100%",
+                                                        width: b.pct + "%",
+                                                        borderRadius: 2,
+                                                        background: b.col,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Score distribution + SIGNAL decisions row */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                            >
+                                {/* Score distribution */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            color: "#2A4A6A",
+                                            letterSpacing: ".1em",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        SCORE DISTRIBUTION
+                                    </div>
+                                    {[
+                                        { range: "90–100", n: 2, col: "#4ADE80" },
+                                        { range: "70–89", n: 8, col: "#2DD4BF" },
+                                        { range: "50–69", n: 9, col: "#FEB06A" },
+                                        { range: "Below 50", n: 4, col: "#FF4F6D" },
+                                    ].map((b) => (
+                                        <div key={b.range} style={{ marginBottom: 5 }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    fontSize: 9,
+                                                    color: "#4A6A8A",
+                                                    marginBottom: 3,
+                                                }}
+                                            >
+                                                <span>{b.range}</span>
+                                                <span>{b.n}</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    height: 4,
+                                                    borderRadius: 2,
+                                                    background: "#1E3A5F",
+                                                    overflow: "hidden",
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        height: "100%",
+                                                        width: (b.n / 23) * 100 + "%",
+                                                        borderRadius: 2,
+                                                        background: b.col,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* SIGNAL decisions */}
+                                <div
+                                    style={{
+                                        background: "#0A1828",
+                                        border: "0.5px solid #1E3A5F",
+                                        borderRadius: 8,
+                                        padding: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 9,
+                                            color: "#2A4A6A",
+                                            letterSpacing: ".1em",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        SIGNAL DECISIONS
+                                    </div>
+                                    {[
+                                        { lbl: "Priority Apply", n: 5, col: "#4ADE80" },
+                                        { lbl: "Apply", n: 7, col: "#2DD4BF" },
+                                        { lbl: "Review", n: 8, col: "#FEB06A" },
+                                        { lbl: "Pass", n: 3, col: "#FF4F6D" },
+                                    ].map((d) => (
+                                        <div
+                                            key={d.lbl}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                marginBottom: 6,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: 5,
+                                                        height: 5,
+                                                        borderRadius: "50%",
+                                                        background: d.col,
+                                                        flexShrink: 0,
+                                                    }}
+                                                />
+                                                <span
+                                                    style={{
+                                                        fontSize: 10,
+                                                        color: "#6A8AAA",
+                                                    }}
+                                                >
+                                                    {d.lbl}
+                                                </span>
+                                            </div>
+                                            <span
+                                                style={{
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color: d.col,
+                                                }}
+                                            >
+                                                {d.n}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 4 feature callout cards */}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: 8,
+                                }}
+                            >
+                                {[
+                                    {
+                                        title: "Role-specific fit scores",
+                                        desc: "Every analyzed role gets a score vs your profile",
+                                        col: "#7B5CF6",
+                                    },
+                                    {
+                                        title: "Cover letter per role",
+                                        desc: "Written from your background + hidden requirements",
+                                        col: "#FEB06A",
+                                    },
+                                    {
+                                        title: "Networking contacts",
+                                        desc: "Outreach strategy + copy-paste messages",
+                                        col: "#2DD4BF",
+                                    },
+                                    {
+                                        title: "Resume positioning",
+                                        desc: "Bullets rewritten to match what they filter on",
+                                        col: "#51ADE5",
+                                    },
+                                ].map((fc) => (
+                                    <div
+                                        key={fc.title}
+                                        style={{
+                                            background: "#071220",
+                                            border: "0.5px solid #1E3A5F",
+                                            borderRadius: 8,
+                                            padding: "10px 12px",
+                                            borderLeft: "2px solid " + fc.col,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                color: "#ffffff",
+                                                marginBottom: 3,
+                                            }}
+                                        >
+                                            {fc.title}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: 10,
+                                                color: "#4A6A8A",
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            {fc.desc}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ══════════════════════════════════════════
+                ZONE 3 — LOCKED PREVIEW + UPGRADE
+            ══════════════════════════════════════════ */}
+            <div
+                style={{
+                    background:
+                        "linear-gradient(180deg, #040D1A 0%, #071220 100%)",
+                    padding: "40px 48px 56px",
+                }}
+            >
+                {/* Eyebrow */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                        marginBottom: 12,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "#FEB06A",
+                            animation: "pulse 2s ease-in-out infinite",
+                        }}
+                    />
+                    <span
+                        style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase" as const,
+                            color: "#FEB06A",
+                        }}
+                    >
+                        FULL SIGNAL ACCESS
+                    </span>
+                </div>
+
+                {/* Headline */}
+                <div
+                    style={{
+                        fontSize: 30,
+                        fontWeight: 900,
+                        fontStyle: "italic",
+                        color: "#ffffff",
+                        letterSpacing: "-.02em",
+                        lineHeight: 1.15,
+                        marginBottom: 10,
+                    }}
+                >
+                    See how competitive{" "}
+                    <span style={{ color: "#FEB06A" }}>YOU</span> actually are.
+                </div>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: "#4A6A8A",
+                        maxWidth: 600,
+                        marginBottom: 28,
+                        lineHeight: 1.65,
+                    }}
+                >
+                    The analysis above is based on the job and company. Full
+                    SIGNAL reads your specific background and tells you exactly
+                    where you stand against the real competition{" "}
+                    {"—"} then gives you everything you need to win.
+                </div>
+
+                {/* 4 locked preview cards (2x2) */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 11,
+                        marginBottom: 28,
+                    }}
+                >
+                    {/* ── Card A: Fit Score ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #FEB06A33",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#FEB06A"
+                            label="Fit Score"
+                            badge="LOCKED"
+                            badgeBg="#FEB06A22"
+                            badgeColor="#FEB06A"
+                        />
+                        <div style={{ padding: "14px 14px 0" }}>
+                            {/* Blurred score */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "baseline",
+                                    gap: 6,
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 48,
+                                        fontWeight: 900,
+                                        fontStyle: "italic",
+                                        color: "#FEB06A",
+                                        filter: "blur(7px)",
+                                        lineHeight: 1,
+                                        userSelect: "none" as const,
+                                    }}
+                                >
+                                    74
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 14,
+                                        color: "#2A4A6A",
+                                        filter: "blur(5px)",
+                                    }}
+                                >
+                                    /100
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: "#FEB06A",
+                                        filter: "blur(4px)",
+                                        letterSpacing: ".06em",
+                                    }}
+                                >
+                                    STRONG MATCH
+                                </div>
+                            </div>
+                            {/* Score bar */}
+                            <div
+                                style={{
+                                    height: 6,
+                                    borderRadius: 3,
+                                    background: "#1E3A5F",
+                                    marginBottom: 12,
+                                    overflow: "hidden",
+                                    filter: "blur(2px)",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        height: "100%",
+                                        width: "74%",
+                                        borderRadius: 3,
+                                        background:
+                                            "linear-gradient(90deg, #FEB06A, #FFD085)",
+                                    }}
+                                />
+                            </div>
+                            {/* Recruiter note box */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderLeft: "2px solid #FEB06A",
+                                    borderRadius: "0 8px 8px 0",
+                                    padding: "8px 10px",
+                                    marginBottom: 10,
+                                    filter: "blur(3px)",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 8,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#FEB06A",
+                                        marginBottom: 3,
+                                    }}
+                                >
+                                    {"RECRUITER'S PRIVATE READ"}
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#6A8AAA",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    Strong background for this level. Marketing
+                                    ops experience directly maps to the role
+                                    requirements.
+                                </div>
+                            </div>
+                            {/* Pass rows */}
+                            {[
+                                "4+ years marketing experience",
+                                "B2B SaaS background",
+                            ].map((row) => (
+                                <div
+                                    key={row}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 7,
+                                        marginBottom: 7,
+                                    }}
+                                >
+                                    <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M2 6l2.5 2.5L10 4"
+                                            stroke="#2DD4BF"
+                                            strokeWidth="1.4"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                    <span
+                                        style={{
+                                            fontSize: 11,
+                                            color: "#6A8AAA",
+                                        }}
+                                    >
+                                        {row}
+                                    </span>
+                                </div>
+                            ))}
+                            {/* Blurred fail rows */}
+                            {[
+                                "Martech stack fluency",
+                                "Enterprise sales cycle exposure",
+                            ].map((row) => (
+                                <div
+                                    key={row}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 7,
+                                        marginBottom: 7,
+                                        filter: "blur(4px)",
+                                        userSelect: "none" as const,
+                                    }}
+                                >
+                                    <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M3 3l6 6M9 3l-6 6"
+                                            stroke="#FF4F6D"
+                                            strokeWidth="1.4"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                    <span
+                                        style={{
+                                            fontSize: 11,
+                                            color: "#6A8AAA",
+                                        }}
+                                    >
+                                        {row}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 60,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+
+                    {/* ── Card B: Cover Letter ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #7B5CF633",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#7B5CF6"
+                            label="Cover Letter"
+                            badge="WRITTEN FROM YOUR ACTUAL BACKGROUND"
+                            badgeBg="#7B5CF622"
+                            badgeColor="#7B5CF6"
+                        />
+                        <div style={{ padding: "14px 14px 40px" }}>
+                            <div
+                                style={{
+                                    fontSize: 11,
+                                    color: "#8AAAC0",
+                                    lineHeight: 1.65,
+                                    marginBottom: 10,
+                                }}
+                            >
+                                {"I'm applying for this role because my background"}
+                                {" in marketing operations and B2B campaign execution"}
+                                {" maps directly to what you're building. Over the"}
+                                {" last four years I've owned end-to-end demand gen"}
+                                {" programs that have driven pipeline at companies at"}
+                                {" similar growth stages."}
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 11,
+                                    color: "#6A8AAA",
+                                    lineHeight: 1.65,
+                                    marginBottom: 8,
+                                    filter: "blur(2px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                What sets me apart is my ability to translate
+                                product positioning into campaigns that actually
+                                convert {"—"} not just awareness plays...
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 11,
+                                    color: "#4A6A8A",
+                                    lineHeight: 1.65,
+                                    filter: "blur(5px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                Lorem ipsum dolor sit amet consectetur
+                                adipiscing elit sed do eiusmod tempor incididunt
+                                ut labore et dolore magna aliqua ut enim ad
+                                minim veniam quis nostrud exercitation ullamco.
+                            </div>
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 80,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+
+                    {/* ── Card C: Networking Campaign ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #2DD4BF33",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#2DD4BF"
+                            label="Networking Campaign"
+                            badge="LOCKED"
+                            badgeBg="#2DD4BF22"
+                            badgeColor="#2DD4BF"
+                        />
+                        <div style={{ padding: "14px 14px 40px" }}>
+                            {/* Contact 1: visible */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    marginBottom: 8,
+                                    borderLeft: "2px solid #2DD4BF",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: "#ffffff",
+                                        marginBottom: 2,
+                                    }}
+                                >
+                                    Head of Marketing {"·"} {co || "Company"}
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#4A6A8A",
+                                        marginBottom: 6,
+                                    }}
+                                >
+                                    LinkedIn {"·"} 2nd connection
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#6A8AAA",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    {"\u201cHi [Name], I came across your team\u2019s recent campaign on...\u201d"}
+                                </div>
+                            </div>
+                            {/* Contact 2: blurred */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    borderLeft: "2px solid #2DD4BF",
+                                    filter: "blur(5px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: "#ffffff",
+                                        marginBottom: 2,
+                                    }}
+                                >
+                                    Senior Marketing Manager
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#4A6A8A",
+                                        marginBottom: 6,
+                                    }}
+                                >
+                                    LinkedIn {"·"} 3rd connection
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#6A8AAA",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    {"\u201cI noticed you\u2019ve been scaling the demand gen team...\u201d"}
+                                </div>
+                            </div>
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 60,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+
+                    {/* ── Card D: Resume Positioning ── */}
+                    <div
+                        style={{
+                            background: "#0A1828",
+                            borderRadius: 14,
+                            border: "0.5px solid #51ADE533",
+                            overflow: "hidden",
+                            position: "relative" as const,
+                        }}
+                    >
+                        <CardHeader
+                            dot="#51ADE5"
+                            label="Resume Positioning"
+                            badge="LOCKED"
+                            badgeBg="#51ADE522"
+                            badgeColor="#51ADE5"
+                        />
+                        <div style={{ padding: "14px 14px 40px" }}>
+                            {/* Section 1: visible */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    marginBottom: 8,
+                                    borderLeft: "2px solid #51ADE5",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#51ADE5",
+                                        marginBottom: 5,
+                                    }}
+                                >
+                                    LEAD WITH THIS
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.55,
+                                    }}
+                                >
+                                    Your demand gen experience should appear in
+                                    the first bullet of every relevant role.
+                                    Lead with pipeline numbers.
+                                </div>
+                            </div>
+                            {/* Section 2: label visible, content blurred */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    marginBottom: 8,
+                                    borderLeft: "2px solid #FEB06A",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#FEB06A",
+                                        marginBottom: 5,
+                                    }}
+                                >
+                                    REFRAME THIS
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.55,
+                                        filter: "blur(4px)",
+                                        userSelect: "none" as const,
+                                    }}
+                                >
+                                    Your content marketing section needs to be
+                                    repositioned around performance metrics
+                                    rather than output volume...
+                                </div>
+                            </div>
+                            {/* Section 3: fully blurred */}
+                            <div
+                                style={{
+                                    background: "#071220",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    borderLeft: "2px solid #FF4F6D",
+                                    filter: "blur(5px)",
+                                    userSelect: "none" as const,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        letterSpacing: ".1em",
+                                        color: "#FF4F6D",
+                                        marginBottom: 5,
+                                    }}
+                                >
+                                    REMOVE IMMEDIATELY
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#8AAAC0",
+                                        lineHeight: 1.55,
+                                    }}
+                                >
+                                    Three items on your resume will actively
+                                    hurt your chances for this role...
+                                </div>
+                            </div>
+                        </div>
+                        {/* Fade overlay */}
+                        <div
+                            style={{
+                                position: "absolute" as const,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: 60,
+                                background:
+                                    "linear-gradient(0deg, #0A1828 0%, transparent 100%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* ── UPGRADE BOX ── */}
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "row" as const,
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 32,
+                        padding: "28px 32px",
+                        background: "linear-gradient(135deg, #0D1828, #0A1F35)",
+                        border: "1px solid #FEB06A33",
+                        borderRadius: 16,
+                        position: "relative" as const,
+                        overflow: "hidden" as const,
+                        width: "100%",
+                        boxSizing: "border-box" as const,
+                    }}
+                >
+                    {/* Left */}
+                    <div style={{ flex: "1 1 auto", minWidth: 0, maxWidth: "calc(100% - 232px)" }}>
+                        <div
+                            style={{
+                                fontSize: 20,
+                                fontWeight: 900,
+                                fontStyle: "italic",
+                                color: "#ffffff",
+                                letterSpacing: "-.02em",
+                                marginBottom: 8,
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            Unlock your complete{" "}
+                            <span style={{ color: "#FEB06A" }}>
+                                SIGNAL analysis
+                            </span>
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 13,
+                                color: "#2A4A6A",
+                                lineHeight: 1.65,
+                                marginBottom: 14,
+                                maxWidth: 420,
+                            }}
+                        >
+                            Get your personal fit score, a cover letter written
+                            from your actual background, a networking campaign
+                            with copy-paste messages, and resume bullets
+                            rewritten to match what this company filters on.
+                        </div>
+                        {/* Feature chips */}
+                        <div
+                            style={{
+                                display: "flex",
+                                flexWrap: "wrap" as const,
+                                gap: 6,
+                            }}
+                        >
+                            {[
+                                { lbl: "Fit Score", col: "#FEB06A" },
+                                { lbl: "Cover Letter", col: "#7B5CF6" },
+                                { lbl: "Networking", col: "#2DD4BF" },
+                                { lbl: "Resume Bullets", col: "#51ADE5" },
+                                { lbl: "Job Tracker", col: "#4ADE80" },
+                            ].map((chip) => (
+                                <span
+                                    key={chip.lbl}
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        padding: "3px 9px",
+                                        borderRadius: 20,
+                                        background: chip.col + "18",
+                                        color: chip.col,
+                                        border: "0.5px solid " + chip.col + "44",
+                                    }}
+                                >
+                                    {chip.lbl}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right */}
+                    <div
+                        style={{
+                            flex: "0 0 200px",
+                            width: 200,
+                            minWidth: 200,
+                            textAlign: "center" as const,
+                            display: "flex",
+                            flexDirection: "column" as const,
+                            alignItems: "center",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "baseline",
+                                gap: 6,
+                            }}
+                        >
+                            <span
+                                style={{
+                                    fontSize: 38,
+                                    fontWeight: 900,
+                                    fontStyle: "italic",
+                                    color: "#FEB06A",
+                                    lineHeight: 1,
+                                }}
+                            >
+                                $99
+                            </span>
+                            <span
+                                style={{
+                                    fontSize: 11,
+                                    color: "#4A6A8A",
+                                }}
+                            >
+                                3 months {"·"} unlimited roles
+                            </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 16, fontWeight: 900, color: "#4ADE80", background: "#4ADE8018", border: "1px solid #4ADE8044", borderRadius: 6, padding: "4px 12px", letterSpacing: ".05em" }}>FREE</span>
+                        </div>
+                        <button
+                            onClick={onUpgrade}
+                            disabled={upgradeLoading}
+                            className="signal-cta-btn"
+                            style={{
+                                display: "block",
+                                width: "100%",
+                                padding: "14px 22px",
+                                background: upgradeLoading ? "#3A3A3A" : "linear-gradient(90deg, #FF6B00, #FEB06A)",
+                                borderRadius: 10,
+                                color: "#fff",
+                                fontSize: 15,
+                                fontWeight: 900,
+                                fontStyle: "italic" as const,
+                                cursor: upgradeLoading ? "not-allowed" as const : "pointer" as const,
+                                border: "none",
+                                boxSizing: "border-box" as const,
+                                fontFamily: "inherit",
+                                whiteSpace: "nowrap" as const,
+                            }}
+                        >
+                            {upgradeLoading ? "Setting up checkout..." : "Unlock full SIGNAL →"}
+                        </button>
+                        {/* Guarantee */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 5,
+                                fontSize: 11,
+                                color: "#2A4A6A",
+                            }}
+                        >
+                            <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                            >
+                                <path
+                                    d="M2 6l2.5 2.5L10 4"
+                                    stroke="#2DD4BF"
+                                    strokeWidth="1.4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                            No subscription trap {"·"} Full access for 3 months
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
+// ===================== SMALL COMPONENTS =====================
+
+function StatGlass({
+    num,
+    color,
+    label,
+}: {
+    num: string
+    color: string
+    label: string
+}) {
+    return (
+        <div
+            style={{
+                ...glassCard,
+                padding: "12px 18px",
+                textAlign: "center" as const,
+                minWidth: 110,
+            }}
+        >
+            <div
+                style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    fontFamily: MONO,
+                    lineHeight: 1,
+                    color,
+                }}
+            >
+                {num}
+            </div>
+            <div
+                style={{
+                    fontSize: 10,
+                    color: C.muted,
+                    marginTop: 4,
+                    lineHeight: 1.3,
+                }}
+            >
+                {label}
+            </div>
+        </div>
+    )
+}
+
+function WygCard({
+    icon,
+    color,
+    title,
+    desc,
+}: {
+    icon: string
+    color: string
+    title: string
+    desc: string
+}) {
+    const iconBg =
+        color === C.orange
+            ? "rgba(254,176,106,0.15)"
+            : color === C.blue
+              ? "rgba(81,173,229,0.12)"
+              : color === C.purple
+                ? "rgba(192,132,252,0.12)"
+                : "rgba(74,222,128,0.1)"
+    const iconBorder =
+        color === C.orange
+            ? "rgba(254,176,106,0.2)"
+            : color === C.blue
+              ? "rgba(81,173,229,0.2)"
+              : color === C.purple
+                ? "rgba(192,132,252,0.2)"
+                : "rgba(74,222,128,0.2)"
+
+    return (
+        <div
+            style={{
+                background: "rgba(255,255,255,0.03)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12,
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+            }}
+        >
+            <div
+                style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: iconBg,
+                    border: "1px solid " + iconBorder,
+                }}
+            >
+                {icon === "star" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                            d="M8 2L10 6H14L11 9L12 13L8 11L4 13L5 9L2 6H6L8 2Z"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                )}
+                {icon === "check" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle
+                            cx="8"
+                            cy="8"
+                            r="6"
+                            stroke={color}
+                            strokeWidth="1.2"
+                        />
+                        <path
+                            d="M5 8l2 2 4-4"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                )}
+                {icon === "doc" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect
+                            x="2"
+                            y="4"
+                            width="12"
+                            height="8"
+                            rx="2"
+                            stroke={color}
+                            strokeWidth="1.2"
+                        />
+                        <path
+                            d="M5 7h6M5 9.5h4"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                )}
+                {icon === "tick" && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                            d="M3 8l3.5 3.5L13 5"
+                            stroke={color}
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                )}
+            </div>
+            <div>
+                <div
+                    style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.white,
+                        marginBottom: 2,
+                    }}
+                >
+                    {title}
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.45 }}>
+                    {desc}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ===================== STYLES =====================
+
+// Root container for the full Job Analysis page. Fixes:
+//  - width 100vw so the page fills the browser window regardless of
+//    how Framer sizes its parent frame (was relying on parent width)
+//  - minHeight 100dvh (dynamic viewport height) instead of 100vh so the
+//    mobile Safari collapsible toolbar doesn't push the submit button
+//    below the visible viewport on first paint
+//  - overflowX hidden / overflowY visible so long results content can
+//    actually scroll (was clipped by the blanket overflow: hidden)
+//  - borderRadius removed because the component is full-window now,
+//    not a card that needs rounding
+const pageStyle: React.CSSProperties = {
+    background: C.bg,
+    fontFamily: SANS,
+    color: C.white,
+    position: "relative",
+    width: "100%",
+    maxWidth: 1440,
+    margin: "0 auto",
+    minHeight: "100dvh",
+    overflowX: "hidden",
+    boxSizing: "border-box",
+}
+
+const orbBase: React.CSSProperties = {
+    position: "absolute",
+    borderRadius: "50%",
+    filter: "blur(90px)",
+    pointerEvents: "none",
+    zIndex: 0,
+}
+
+const topbar: React.CSSProperties = {
+    background: "#071220",
+    padding: "12px 32px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+}
+
+const eyebrowPill: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 10,
+    letterSpacing: ".14em",
+    color: C.orange,
+    border: "1px solid rgba(254,176,106,0.3)",
+    padding: "5px 12px",
+    borderRadius: 20,
+    fontFamily: MONO,
+    marginBottom: 20,
+    background: "rgba(254,176,106,0.06)",
+    backdropFilter: "blur(8px)",
+}
+
+const intelBanner: React.CSSProperties = {
+    background: "rgba(81,173,229,0.08)",
+    border: "1px solid rgba(81,173,229,0.2)",
+    borderRadius: 10,
+    padding: "12px 16px",
+    maxWidth: 520,
+    margin: "0 auto 28px",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+    backdropFilter: "blur(8px)",
+}
+
+const glassCard: React.CSSProperties = {
+    background: C.glass,
+    backdropFilter: "blur(16px)",
+    border: "1px solid " + C.glassBorder,
+    borderRadius: 14,
+    padding: 18,
+}
+
+const monoLabel: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: ".14em",
+    fontFamily: MONO,
+    fontWeight: 600,
+}
+
+const cardLabel: React.CSSProperties = {
+    ...monoLabel,
+    marginBottom: 10,
+}
+
+const textareaStyle: React.CSSProperties = {
+    width: "100%",
+    background: C.glass,
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    padding: "14px 16px",
+    color: C.white,
+    fontSize: 13,
+    fontFamily: SANS,
+    lineHeight: 1.65,
+    resize: "vertical",
+    minHeight: 180,
+    outline: "none",
+}
+
+const labelInputStyle: React.CSSProperties = {
+    width: "100%",
+    background: C.glass,
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    padding: "12px 14px",
+    color: C.white,
+    fontSize: 13,
+    fontFamily: SANS,
+    lineHeight: 1.4,
+    outline: "none",
+    boxSizing: "border-box" as const,
+}
+
+const submitBtn: React.CSSProperties = {
+    width: "100%",
+    background: C.orange,
+    color: C.bg,
+    fontSize: 15,
+    fontWeight: 900,
+    padding: 16,
+    borderRadius: 10,
+    border: "none",
+    cursor: "pointer",
+    letterSpacing: ".02em",
+    marginTop: 14,
+    fontFamily: SANS,
+}
+
+const errorBox: React.CSSProperties = {
+    color: C.red,
+    fontWeight: 800,
+    marginBottom: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "rgba(248,113,113,0.08)",
+    border: "1px solid rgba(248,113,113,0.20)",
+    fontSize: 13,
+    lineHeight: "18px",
+}
+
+const personalTeaser: React.CSSProperties = {
+    background: "rgba(254,176,106,0.06)",
+    border: "1px solid rgba(254,176,106,0.2)",
+    borderRadius: 12,
+    padding: "16px 18px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    backdropFilter: "blur(8px)",
+    marginTop: 16,
+}
+
+// Results-specific styles
+const statPill: React.CSSProperties = {
+    background: "#071220",
+    border: "0.5px solid #1E3A5F",
+    borderRadius: 8,
+    padding: "8px 14px",
+}
+
+const statPillLabel: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: ".1em",
+    textTransform: "uppercase" as const,
+    color: "#2A4A6A",
+    marginBottom: 3,
+    fontFamily: MONO,
+}
+
+const statPillValue: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 900,
+    fontStyle: "italic",
+    lineHeight: 1,
+}
+
+const intelItem: React.CSSProperties = {
+    background: "#071220",
+    borderRadius: 8,
+    padding: "10px 12px",
+}
+
+const intelItemLabel: React.CSSProperties = {
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: ".1em",
+    textTransform: "uppercase" as const,
+    color: "#2A4A6A",
+    marginBottom: 5,
+    fontFamily: MONO,
+}
+
+const intelItemText: React.CSSProperties = {
+    fontSize: 11,
+    color: "#6A8AAA",
+    lineHeight: 1.6,
+}

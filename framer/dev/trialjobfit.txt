@@ -1,0 +1,2481 @@
+import * as React from "react"
+
+/**
+ * SIGNAL Free Trial JobFit — Framer Code Component
+ *
+ * One-shot real JobFit run for free-trial users.
+ *   Inputs: email (from URL ?email=...), pasted resume, pasted JD
+ *   Backend: POST /api/jobfit-run-trial
+ *   Output: real personal JobFit decision + score + WHY/RISK bullets,
+ *           plus locked teasers for cover letter, networking, resume
+ *           positioning, tracker, and "analyze another job".
+ *
+ * Three discriminated response branches handled:
+ *   - { status: "ok", locked: false } — successful first run
+ *   - { status: "ok", locked: true, lock_reason: "free_run_used" }
+ *     — returning user, same JD, cached result
+ *   - { status: "out_of_credits", result: null }
+ *     — returning user, different JD, upgrade-only page
+ *
+ * @framerSupportedLayoutWidth any
+ * @framerSupportedLayoutHeight any
+ */
+
+// ============================================================================
+// CONFIG
+// ============================================================================
+
+const API_BASE = "https://wrnsignal-api-staging.vercel.app"
+
+// Public landing destination for users who arrive without an email param.
+// This page expects the email to come pre-filled from the landing page CTA;
+// when it doesn't, we route them back so they enter their email there.
+const LANDING_FALLBACK = "https://genuine-times-909123.framer.app/signal"
+
+// Minimum content lengths enforced server-side. Mirror them client-side so
+// the user gets a friendly message before we send a doomed request.
+const MIN_RESUME_CHARS = 100
+const MIN_JD_CHARS = 100
+
+// ============================================================================
+// COLORS / TYPOGRAPHY
+// ============================================================================
+
+const C = {
+    bg: "#0b1929",
+    deeper: "#040D1A",
+    card: "#0A1828",
+    cardAlt: "#0D1F35",
+    border: "rgba(255,255,255,0.10)",
+    borderSoft: "rgba(255,255,255,0.06)",
+    glass: "rgba(255,255,255,0.04)",
+    glassBorder: "rgba(255,255,255,0.09)",
+    orange: "#FEB06A",
+    orangeDeep: "#FF6B00",
+    blue: "#51ADE5",
+    teal: "#2DD4BF",
+    green: "#4ADE80",
+    purple: "#7B5CF6",
+    pink: "#EC4899",
+    red: "#FF4F6D",
+    yellow: "#FFD60A",
+    text: "#ffffff",
+    body: "rgba(255,255,255,0.82)",
+    muted: "rgba(255,255,255,0.55)",
+    dim: "rgba(255,255,255,0.30)",
+    deepDim: "#2A4A6A",
+}
+
+const FONT = "'Inter',system-ui,sans-serif"
+
+// ─────────────────────────────────────────────────────────────────────────
+// Global UI overlays — App Store badge (every page) + DEV banner (dev only)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// DEV_MODE controls whether the dev banner can appear and whether the App
+// Store badge is offset for the banner's height. Set true in dev/* file
+// copies, false in prod/* copies. The hostname check in DevBanner is a
+// belt-and-suspenders fallback — if dev code is somehow pasted into the
+// prod Framer project, the hostname check still hides the banner.
+const DEV_MODE = true
+
+const APP_STORE_URL = "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
+function DevBanner() {
+    const [hostname, setHostname] = React.useState("")
+    const [shouldShow, setShouldShow] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const h = window.location.hostname
+        setHostname(h)
+        // Production hostname allowlist. Banner shows on anything NOT in
+        // this list. Fail-safe: false-positive (banner in dev) is harmless;
+        // false-negative (banner hidden in prod) is the bug we're avoiding.
+        const PROD_HOSTS = [
+            "wrnsignal.workforcereadynow.com",
+            "www.workforcereadynow.com",
+        ]
+        setShouldShow(DEV_MODE && !PROD_HOSTS.includes(h))
+    }, [])
+    if (!shouldShow) return null
+    return (
+        <div
+            style={{
+                position: "fixed" as const,
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 40,
+                background: "#FFD60A",
+                color: "#000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                zIndex: 10000,
+                fontFamily: "'Inter', system-ui, sans-serif",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+        >
+            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: 4, textTransform: "uppercase" as const }}>
+                DEV
+            </span>
+            <span style={{ fontWeight: 600, fontSize: 12, letterSpacing: 1, opacity: 0.7 }}>
+                · {hostname || "…"}
+            </span>
+        </div>
+    )
+}
+
+function AppStoreBadge() {
+    const [isMobile, setIsMobile] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
+    // Badge sits below the dev banner. Prod has no banner, so offset is 0.
+    const bannerOffset = DEV_MODE ? 40 : 0
+    return (
+        <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Download SIGNAL on the App Store"
+            style={{
+                position: "fixed" as const,
+                top: (isMobile ? 16 : 24) + bannerOffset,
+                right: isMobile ? 16 : 32,
+                zIndex: 9999,
+                display: "block",
+                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
+            }}
+        >
+            <img
+                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
+                alt="Download on the App Store"
+                width={isMobile ? 108 : 135}
+                height={isMobile ? 32 : 40}
+                style={{ display: "block" }}
+            />
+        </a>
+    )
+}
+
+// PageShell renders the global overlays (DevBanner + AppStoreBadge — both
+// position:fixed) plus a 40px in-flow spacer when DEV_MODE is true so the
+// banner doesn't cover the page's natural top content. Place as the FIRST
+// child inside the page's outermost JSX container.
+function PageShell() {
+    return (
+        <>
+            <DevBanner />
+            <AppStoreBadge />
+            {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
+        </>
+    )
+}
+
+// ============================================================================
+// TYPES (mirror /api/jobfit-run-trial response)
+// ============================================================================
+
+type WhyBullet = {
+    keyword: string
+    lead: string
+    connection: string
+    action: string
+}
+
+type RiskBullet = {
+    keyword: string
+    gap: string
+    reframe: string
+    severity: "low" | "medium" | "high"
+}
+
+type CoverLetterStrategy = {
+    open_with: string
+    lead_signal: string
+    address_gap: string | null
+    tone: string
+}
+
+type NetworkingStrategy = {
+    target_contacts: string
+    outreach_angle: string
+}
+
+type TrialResult = {
+    decision: string
+    score: number
+    icon?: string
+    next_step?: string
+    why_structured?: WhyBullet[]
+    risk_structured?: RiskBullet[]
+    cover_letter_strategy?: CoverLetterStrategy | null
+    networking_strategy?: NetworkingStrategy | null
+}
+
+type LockEntry = { label: string; stripe_url: string }
+type Locks = {
+    cover_letter: LockEntry
+    networking: LockEntry
+    resume_positioning: LockEntry
+    tracker: LockEntry
+    run_another_job: LockEntry
+}
+type UpgradeBlock = {
+    price: string
+    term: string
+    guarantee: string
+    stripe_url: string
+}
+
+type TrialResponse =
+    | {
+          status: "ok"
+          locked: boolean
+          lock_reason: "none" | "free_run_used"
+          result: TrialResult
+          locks: Locks
+          upgrade: UpgradeBlock
+      }
+    | {
+          status: "out_of_credits"
+          locked: true
+          lock_reason: "free_run_used"
+          result: null
+          locks: Locks
+          upgrade: UpgradeBlock
+      }
+    | { ok: false; error: string; detail?: string } // 4xx/5xx error envelope
+
+// ============================================================================
+// MAIN
+// ============================================================================
+
+export default function SignalTrialJobFit() {
+    // ── Inputs ──────────────────────────────────────────────────────
+    const [email, setEmail] = React.useState("")
+    const [resume, setResume] = React.useState("")
+    const [jd, setJd] = React.useState("")
+
+    // ── State ───────────────────────────────────────────────────────
+    const [loading, setLoading] = React.useState(false)
+    const [error, setError] = React.useState("")
+    const [response, setResponse] = React.useState<TrialResponse | null>(null)
+    const [upgradeLoading, setUpgradeLoading] = React.useState(false)
+
+    // ── Mount: read email from URL, capture attribution, track view ─
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+
+        try {
+            const params = new URLSearchParams(window.location.search)
+            const e = params.get("email")
+            if (e) setEmail(decodeURIComponent(e).trim().toLowerCase())
+        } catch {}
+
+        // Persistent session id for analytics
+        const existing = localStorage.getItem("jobfit_session_id")
+        const sessionId = existing || crypto.randomUUID()
+        if (!existing) localStorage.setItem("jobfit_session_id", sessionId)
+
+        // Capture attribution params (UTM + click IDs). Last-touch wins for
+        // click IDs; first-touch wins for landing_page and referrer.
+        captureAttribution()
+
+        // Page view
+        fetch(API_BASE + "/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                session_id: sessionId,
+                page_path: window.location.pathname || "/jobfit-trial",
+                page_name: "trial_jobfit_page",
+                referrer: document.referrer || null,
+                utm_source: ss("signal_utm_source") || null,
+                utm_medium: ss("signal_utm_medium") || null,
+                utm_campaign: ss("signal_utm_campaign") || null,
+            }),
+        }).catch(() => {})
+    }, [])
+
+    // ── Submit ──────────────────────────────────────────────────────
+    async function handleAnalyze() {
+        setError("")
+
+        const e = email.trim().toLowerCase()
+        const r = resume.trim()
+        const j = jd.trim()
+
+        if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+            setError("Enter your email so we can save your analysis.")
+            return
+        }
+        if (r.length < MIN_RESUME_CHARS) {
+            setError(
+                `Paste your full resume — at least ${MIN_RESUME_CHARS} characters.`
+            )
+            return
+        }
+        if (j.length < MIN_JD_CHARS) {
+            setError(
+                `Paste the full job description — at least ${MIN_JD_CHARS} characters.`
+            )
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+            const res = await fetch(API_BASE + "/api/jobfit-run-trial", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: e,
+                    resume_text: r,
+                    job_description: j,
+                    session_id: sessionId,
+                    utm_source: ss("signal_utm_source") || undefined,
+                    utm_medium: ss("signal_utm_medium") || undefined,
+                    utm_campaign: ss("signal_utm_campaign") || undefined,
+                }),
+            })
+            const data = (await res.json()) as TrialResponse
+
+            if (!res.ok || ("ok" in data && data.ok === false)) {
+                const msg =
+                    ("ok" in data && (data.detail || data.error)) ||
+                    "Something went wrong. Please try again."
+                setError(String(msg))
+                return
+            }
+
+            setResponse(data)
+            // Scroll to top so the result hero is the first thing visible
+            try {
+                window.scrollTo({ top: 0, behavior: "smooth" })
+            } catch {}
+        } catch (err: any) {
+            setError(err?.message || "Network error. Please try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // ── Upgrade (handled by existing /api/checkout/create-session) ──
+    async function handleUpgrade(source: string) {
+        if (upgradeLoading) return
+        const e = email.trim().toLowerCase()
+        if (!e) {
+            window.top!.location.replace(LANDING_FALLBACK)
+            return
+        }
+        setUpgradeLoading(true)
+        try {
+            const r = await fetch(API_BASE + "/api/checkout/create-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: e,
+                    source,
+                    ...getAttributionSnapshot(),
+                }),
+            })
+            const j = await r.json()
+            if (j.url) {
+                // Fire Meta InitiateCheckout
+                if (typeof window !== "undefined" && (window as any).fbq) {
+                    (window as any).fbq("track", "InitiateCheckout", {
+                        value: 99,
+                        currency: "USD",
+                        content_name: "SIGNAL 90-day access",
+                    })
+                }
+                // Fire Google Begin Checkout
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "conversion", {
+                        send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
+                        value: 99.0,
+                        currency: "USD",
+                    })
+                }
+                window.open(j.url, "_blank")
+            } else {
+                window.top!.location.replace(LANDING_FALLBACK)
+            }
+        } catch {
+            window.top!.location.replace(LANDING_FALLBACK)
+        } finally {
+            setUpgradeLoading(false)
+        }
+    }
+
+    function handleStartOver() {
+        setResponse(null)
+        setError("")
+        setResume("")
+        setJd("")
+        try {
+            window.scrollTo({ top: 0, behavior: "smooth" })
+        } catch {}
+    }
+
+    // ── Render switch ───────────────────────────────────────────────
+    return (
+        <div style={page}>
+            <PageShell />
+            <style>{`
+                @keyframes trialDotPulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50%      { opacity: 0.55; transform: scale(1.35); }
+                }
+                @keyframes trialSpin {
+                    from { transform: rotate(0deg); }
+                    to   { transform: rotate(360deg); }
+                }
+            `}</style>
+            <Orbs hasResult={!!response} />
+            <div style={{ position: "relative" as const, zIndex: 1 }}>
+                <Topbar
+                    response={response}
+                    email={email}
+                    onStartOver={handleStartOver}
+                />
+
+                {loading ? (
+                    <>
+                        <ThreeStageLoader />
+                        <LoadingValueContent />
+                    </>
+                ) : !response ? (
+                    <InputView
+                        email={email}
+                        resume={resume}
+                        setResume={setResume}
+                        jd={jd}
+                        setJd={setJd}
+                        error={error}
+                        onAnalyze={handleAnalyze}
+                    />
+                ) : (
+                    <ResultsView
+                        response={response}
+                        onUpgrade={handleUpgrade}
+                        upgradeLoading={upgradeLoading}
+                        onStartOver={handleStartOver}
+                    />
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ============================================================================
+// INPUT VIEW
+// ============================================================================
+
+function InputView(props: {
+    email: string
+    resume: string
+    setResume: (s: string) => void
+    jd: string
+    setJd: (s: string) => void
+    error: string
+    onAnalyze: () => void
+}) {
+    const { email, resume, setResume, jd, setJd, error, onAnalyze } = props
+
+    const resumeReady = resume.trim().length >= MIN_RESUME_CHARS
+    const jdReady = jd.trim().length >= MIN_JD_CHARS
+    const submitDisabled = !resumeReady || !jdReady || !email
+
+    return (
+        <>
+            {/* HERO */}
+            <div style={{ padding: "44px 24px 12px", textAlign: "center" as const }}>
+                <div style={eyebrow}>
+                    <span style={dot(C.orange)} />
+                    FREE SIGNAL ANALYSIS · ONE JOB · NO CARD
+                </div>
+                <div style={heroTitle}>
+                    <div style={{ color: C.text }}>See if a job is worth</div>
+                    <div>
+                        <span style={{ color: C.orange }}>your</span>{" "}
+                        <span style={{ color: C.text }}>time —</span>{" "}
+                        <span style={{ color: C.blue }}>before you apply.</span>
+                    </div>
+                </div>
+                <div style={heroSub}>
+                    Paste your resume and a job description. SIGNAL scores your
+                    actual fit, names what's working, and flags what isn't —
+                    grounded in your real background, not a template.
+                </div>
+
+                {/* Three metric boxes (replaces the old four-card "What you get" grid). */}
+                <div style={metricGrid}>
+                    <MetricBox
+                        color={C.orange}
+                        number="87%"
+                        label="Most rejections aren't about you — they're about fit"
+                    />
+                    <MetricBox
+                        color={C.green}
+                        number="6x"
+                        label="Strong fit dramatically improves response rates"
+                    />
+                    <MetricBox
+                        color={C.pink}
+                        number="1 in 4"
+                        label="Most jobs aren't right; the ones that are matter"
+                    />
+                </div>
+            </div>
+
+            {/* FORM CARD */}
+            <div style={{ padding: "0 24px 32px", maxWidth: 720, margin: "0 auto" }}>
+                <div style={glassCard}>
+                    <div style={stepLabel}>STEP 1 OF 1</div>
+                    <div style={cardTitle}>
+                        Stop Applying Blind: Get Your JobFit Score Now
+                    </div>
+                    {email ? (
+                        <div style={cardSub}>
+                            {email} · One free JobFit per user.
+                        </div>
+                    ) : null}
+
+                    {error ? <div style={errBox}>{error}</div> : null}
+
+                    {/* Missing-email warning (no email field — email arrives via
+                        ?email= URL param from the landing page). Don't add an
+                        inline email field as a fallback; that re-introduces v1
+                        friction. Send the user back to start cleanly. */}
+                    {!email ? (
+                        <div style={missingEmailBox}>
+                            Missing email. Start from{" "}
+                            <a
+                                href={LANDING_FALLBACK}
+                                style={{
+                                    color: C.orange,
+                                    textDecoration: "underline",
+                                    fontWeight: 800,
+                                }}
+                            >
+                                the landing page
+                            </a>{" "}
+                            so we can save your free analysis.
+                        </div>
+                    ) : null}
+
+                    {/* Resume */}
+                    <FieldLabel>
+                        Resume{" "}
+                        <span style={{ color: C.dim, fontWeight: 500 }}>
+                            (paste full text)
+                        </span>
+                    </FieldLabel>
+                    <textarea
+                        value={resume}
+                        onChange={(e) => setResume(e.target.value)}
+                        placeholder="Name, education, work experience, skills — everything on your resume."
+                        style={{ ...textarea, minHeight: 220 }}
+                    />
+                    <CharHint
+                        count={resume.length}
+                        min={MIN_RESUME_CHARS}
+                        ready={resumeReady}
+                    />
+
+                    {/* JD */}
+                    <FieldLabel>
+                        Job description{" "}
+                        <span style={{ color: C.dim, fontWeight: 500 }}>
+                            (paste full posting)
+                        </span>
+                    </FieldLabel>
+                    <textarea
+                        value={jd}
+                        onChange={(e) => setJd(e.target.value)}
+                        placeholder="Paste the full job description."
+                        style={{ ...textarea, minHeight: 260 }}
+                    />
+                    <CharHint
+                        count={jd.length}
+                        min={MIN_JD_CHARS}
+                        ready={jdReady}
+                    />
+
+                    <button
+                        type="button"
+                        onClick={onAnalyze}
+                        disabled={submitDisabled}
+                        style={{
+                            ...primaryBtn,
+                            opacity: submitDisabled ? 0.4 : 1,
+                            cursor: submitDisabled
+                                ? ("not-allowed" as const)
+                                : ("pointer" as const),
+                        }}
+                    >
+                        Run SIGNAL →
+                    </button>
+
+                    <div style={runHint}>
+                        FREE · NO CARD · RESULTS IN ~30 SECONDS
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
+// ============================================================================
+// RESULTS VIEW
+// ============================================================================
+
+function ResultsView(props: {
+    response: TrialResponse
+    onUpgrade: (source: string) => void
+    upgradeLoading: boolean
+    onStartOver: () => void
+}) {
+    const { response, onUpgrade, upgradeLoading, onStartOver } = props
+
+    if ("ok" in response && response.ok === false) return null // typed exhaustiveness
+
+    if (response.status === "out_of_credits") {
+        return (
+            <OutOfCreditsView
+                upgrade={response.upgrade}
+                locks={response.locks}
+                onUpgrade={onUpgrade}
+                upgradeLoading={upgradeLoading}
+            />
+        )
+    }
+
+    // status === "ok" — fresh run OR cached repeat
+    return (
+        <SuccessView
+            result={response.result}
+            locked={response.locked}
+            lockReason={response.lock_reason}
+            locks={response.locks}
+            upgrade={response.upgrade}
+            onUpgrade={onUpgrade}
+            upgradeLoading={upgradeLoading}
+            onStartOver={onStartOver}
+        />
+    )
+}
+
+// ── Successful result (locked OR not) ───────────────────────────────────────
+
+function SuccessView(props: {
+    result: TrialResult
+    locked: boolean
+    lockReason: string
+    locks: Locks
+    upgrade: UpgradeBlock
+    onUpgrade: (source: string) => void
+    upgradeLoading: boolean
+    onStartOver: () => void
+}) {
+    const {
+        result,
+        locked,
+        locks,
+        upgrade,
+        onUpgrade,
+        upgradeLoading,
+        onStartOver,
+    } = props
+
+    const decision = String(result.decision || "Review").trim()
+    const lower = decision.toLowerCase()
+    const isPass = lower.includes("pass") || lower.includes("do not")
+    const isReview = lower.includes("review")
+    const isPriority = lower.includes("priority")
+    const decisionColor = isPass
+        ? C.red
+        : isReview
+          ? C.orange
+          : isPriority
+            ? C.green
+            : C.teal
+
+    const score =
+        typeof result.score === "number"
+            ? result.score
+            : Number(result.score || 0)
+
+    const why = result.why_structured ?? []
+    const risk = result.risk_structured ?? []
+    const cls = result.cover_letter_strategy
+    const ns = result.networking_strategy
+
+    return (
+        <div style={{ padding: "24px 24px 56px", maxWidth: 1100, margin: "0 auto" }}>
+            {/* Cached-repeat notice */}
+            {locked ? (
+                <div style={cachedBanner}>
+                    <div style={dotPulse(C.yellow)} />
+                    <div>
+                        <div style={cachedTitle}>
+                            Your free SIGNAL analysis on this job
+                        </div>
+                        <div style={cachedSub}>
+                            You've already used your one free trial run on
+                            this exact job — this is the original result. Run
+                            another job, or unlock everything below.
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* DECISION HERO */}
+            <div style={heroCard}>
+                <div
+                    style={{
+                        height: 3,
+                        background:
+                            "linear-gradient(90deg," +
+                            decisionColor +
+                            ",rgba(255,255,255,0.05))",
+                    }}
+                />
+                <div style={{ padding: "26px 28px" }}>
+                    <div style={eyebrowSm}>SIGNAL DECISION</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 28, flexWrap: "wrap" as const }}>
+                        <div
+                            style={{
+                                fontSize: 52,
+                                fontWeight: 950,
+                                fontStyle: "italic" as const,
+                                color: decisionColor,
+                                letterSpacing: -1.5,
+                                lineHeight: 1,
+                            }}
+                        >
+                            {decision}
+                        </div>
+                        {score > 0 ? (
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                                <div
+                                    style={{
+                                        fontSize: 38,
+                                        fontWeight: 900,
+                                        color: decisionColor,
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    {score}
+                                </div>
+                                <div style={{ fontSize: 14, color: C.dim, fontWeight: 700 }}>
+                                    /100
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                    {result.next_step ? (
+                        <div
+                            style={{
+                                marginTop: 18,
+                                padding: "12px 14px",
+                                borderRadius: 10,
+                                background: "rgba(255,255,255,0.04)",
+                                borderLeft: "3px solid " + decisionColor,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontSize: 9,
+                                    fontWeight: 900,
+                                    letterSpacing: 1.5,
+                                    textTransform: "uppercase" as const,
+                                    color: decisionColor,
+                                    marginBottom: 5,
+                                }}
+                            >
+                                Your move
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 14,
+                                    color: C.text,
+                                    fontWeight: 600,
+                                    lineHeight: 1.55,
+                                }}
+                            >
+                                {result.next_step}
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+
+            {/* WHY + RISK */}
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: risk.length > 0 ? "1fr 1fr" : "1fr",
+                    gap: 14,
+                    marginTop: 14,
+                }}
+            >
+                {why.length > 0 ? (
+                    <SectionCard
+                        accent={C.green}
+                        eyebrow={isPass ? "STRENGTHS" : "WHY YOU'RE COMPETITIVE"}
+                    >
+                        {why.map((w, i) => (
+                            <BulletRow
+                                key={i}
+                                accent={C.green}
+                                keyword={w.keyword}
+                                primary={w.lead + " " + w.connection}
+                                action={w.action}
+                                actionLabel="Your move"
+                            />
+                        ))}
+                    </SectionCard>
+                ) : null}
+
+                {risk.length > 0 ? (
+                    <SectionCard accent={C.red} eyebrow="RISKS BEFORE YOU APPLY">
+                        {risk.map((r, i) => (
+                            <BulletRow
+                                key={i}
+                                accent={C.red}
+                                keyword={r.keyword}
+                                primary={r.gap}
+                                secondary={r.reframe}
+                            />
+                        ))}
+                    </SectionCard>
+                ) : null}
+            </div>
+
+            {/* LOCKED TEASERS */}
+            <div style={{ marginTop: 32 }}>
+                <div style={lockedSectionHeader}>
+                    <div style={dotPulse(C.orange)} />
+                    <span
+                        style={{
+                            fontSize: 11,
+                            fontWeight: 900,
+                            letterSpacing: 2,
+                            color: C.orange,
+                            textTransform: "uppercase" as const,
+                        }}
+                    >
+                        FULL SIGNAL — UNLOCK PER ROLE
+                    </span>
+                </div>
+                <div style={lockedHeadline}>
+                    The decision is the start. Full SIGNAL gives you the{" "}
+                    <span style={{ color: C.orange }}>plays</span>.
+                </div>
+            </div>
+
+            <div style={lockGrid}>
+                {/* Cover Letter — populated teaser if cls present */}
+                <LockCard
+                    accent={C.purple}
+                    label={locks.cover_letter.label}
+                    eyebrow="LOCKED · COVER LETTER"
+                    onClick={() => onUpgrade("trial_lock_cover_letter")}
+                    loading={upgradeLoading}
+                >
+                    {cls ? (
+                        <CoverLetterTeaser cls={cls} />
+                    ) : (
+                        <GenericLockText>
+                            A cover letter written from your real background —
+                            not a template — keyed to the strongest evidence
+                            match in your profile.
+                        </GenericLockText>
+                    )}
+                </LockCard>
+
+                {/* Networking — populated teaser if ns present */}
+                <LockCard
+                    accent={C.teal}
+                    label={locks.networking.label}
+                    eyebrow="LOCKED · NETWORKING"
+                    onClick={() => onUpgrade("trial_lock_networking")}
+                    loading={upgradeLoading}
+                >
+                    {ns ? (
+                        <NetworkingTeaser ns={ns} />
+                    ) : (
+                        <GenericLockText>
+                            Who to reach inside this company, what to lead
+                            with, and copy-paste outreach messages that don't
+                            sound like a template.
+                        </GenericLockText>
+                    )}
+                </LockCard>
+
+                {/* Resume Positioning — generic */}
+                <LockCard
+                    accent={C.blue}
+                    label={locks.resume_positioning.label}
+                    eyebrow="LOCKED · RESUME POSITIONING"
+                    onClick={() => onUpgrade("trial_lock_resume_positioning")}
+                    loading={upgradeLoading}
+                >
+                    <GenericLockText>
+                        Bullet-by-bullet rewrites that mirror the job's own
+                        language, lead with your strongest evidence, and pass
+                        the recruiter's 7-second scan.
+                    </GenericLockText>
+                </LockCard>
+
+                {/* Tracker — generic */}
+                <LockCard
+                    accent={C.green}
+                    label={locks.tracker.label}
+                    eyebrow="LOCKED · APPLICATION TRACKER"
+                    onClick={() => onUpgrade("trial_lock_tracker")}
+                    loading={upgradeLoading}
+                >
+                    <GenericLockText>
+                        Every role you analyze, score, and apply to — in one
+                        dashboard. Interview rate, score distribution,
+                        SIGNAL decision breakdown, and pattern insights.
+                    </GenericLockText>
+                </LockCard>
+
+                {/* Run Another Job — generic */}
+                <LockCard
+                    accent={C.orange}
+                    label={locks.run_another_job.label}
+                    eyebrow="LOCKED · UNLIMITED RUNS"
+                    onClick={() => onUpgrade("trial_lock_run_another")}
+                    loading={upgradeLoading}
+                    fullWidth
+                >
+                    <GenericLockText>
+                        Your free trial is one run. Full SIGNAL unlocks
+                        unlimited JobFit analyses for 3 months — every job
+                        you're considering, on demand.
+                    </GenericLockText>
+                </LockCard>
+            </div>
+
+            {/* UPGRADE BOX */}
+            <UpgradeBox
+                upgrade={upgrade}
+                onUpgrade={onUpgrade}
+                upgradeLoading={upgradeLoading}
+            />
+
+            {/* Tertiary — start over (only meaningful when not locked) */}
+            {!locked ? (
+                <div style={{ textAlign: "center" as const, marginTop: 28 }}>
+                    <button
+                        type="button"
+                        onClick={onStartOver}
+                        style={ghostBtn}
+                    >
+                        ← Start over
+                    </button>
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
+// ── out_of_credits view (returning user, different JD) ──────────────────────
+
+function OutOfCreditsView(props: {
+    upgrade: UpgradeBlock
+    locks: Locks
+    onUpgrade: (source: string) => void
+    upgradeLoading: boolean
+}) {
+    const { upgrade, locks, onUpgrade, upgradeLoading } = props
+    return (
+        <div style={{ padding: "44px 24px 56px", maxWidth: 920, margin: "0 auto" }}>
+            <div style={{ textAlign: "center" as const, marginBottom: 28 }}>
+                <div style={eyebrow}>
+                    <span style={dot(C.yellow)} />
+                    FREE TRIAL ALREADY USED
+                </div>
+                <div style={heroTitle}>
+                    <div style={{ color: C.text }}>One free analysis per email.</div>
+                    <div>
+                        <span style={{ color: C.orange }}>Unlock</span>{" "}
+                        <span style={{ color: C.text }}>full SIGNAL to keep going.</span>
+                    </div>
+                </div>
+                <div style={heroSub}>
+                    You've already used your free SIGNAL analysis on a
+                    different job. To run this one — and every job after —
+                    upgrade to full SIGNAL.
+                </div>
+            </div>
+
+            <div style={lockGrid}>
+                <LockCard
+                    accent={C.purple}
+                    label={locks.cover_letter.label}
+                    eyebrow="LOCKED"
+                    onClick={() => onUpgrade("trial_oof_cover_letter")}
+                    loading={upgradeLoading}
+                >
+                    <GenericLockText>
+                        Cover letters written from your real background, keyed
+                        to the strongest evidence match per role.
+                    </GenericLockText>
+                </LockCard>
+                <LockCard
+                    accent={C.teal}
+                    label={locks.networking.label}
+                    eyebrow="LOCKED"
+                    onClick={() => onUpgrade("trial_oof_networking")}
+                    loading={upgradeLoading}
+                >
+                    <GenericLockText>
+                        Targeted contacts inside the company plus copy-paste
+                        outreach messages.
+                    </GenericLockText>
+                </LockCard>
+                <LockCard
+                    accent={C.blue}
+                    label={locks.resume_positioning.label}
+                    eyebrow="LOCKED"
+                    onClick={() => onUpgrade("trial_oof_resume_positioning")}
+                    loading={upgradeLoading}
+                >
+                    <GenericLockText>
+                        Resume rewrites that lead with your strongest evidence
+                        and pass the 7-second scan.
+                    </GenericLockText>
+                </LockCard>
+                <LockCard
+                    accent={C.green}
+                    label={locks.tracker.label}
+                    eyebrow="LOCKED"
+                    onClick={() => onUpgrade("trial_oof_tracker")}
+                    loading={upgradeLoading}
+                >
+                    <GenericLockText>
+                        Every role, score, and decision in one dashboard.
+                    </GenericLockText>
+                </LockCard>
+                <LockCard
+                    accent={C.orange}
+                    label={locks.run_another_job.label}
+                    eyebrow="LOCKED"
+                    onClick={() => onUpgrade("trial_oof_run_another")}
+                    loading={upgradeLoading}
+                    fullWidth
+                >
+                    <GenericLockText>
+                        Unlimited JobFit analyses for 3 months — every job
+                        you're considering, on demand.
+                    </GenericLockText>
+                </LockCard>
+            </div>
+
+            <UpgradeBox
+                upgrade={upgrade}
+                onUpgrade={onUpgrade}
+                upgradeLoading={upgradeLoading}
+            />
+        </div>
+    )
+}
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+function Topbar(props: {
+    response: TrialResponse | null
+    email: string
+    onStartOver: () => void
+}) {
+    const { response, email, onStartOver } = props
+    const hasResult =
+        !!response && "status" in response && response.status === "ok"
+    return (
+        <div style={topbar}>
+            <div>
+                <div style={brand}>
+                    SIGNAL<span style={{ color: C.orange }}>—</span>
+                </div>
+                <div style={brandSub}>BY WORKFORCE READY NOW</div>
+            </div>
+            <div
+                style={{
+                    fontSize: 11,
+                    color: C.dim,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                }}
+            >
+                {email ? (
+                    <span style={{ color: C.muted }}>{email}</span>
+                ) : null}
+                {hasResult ? (
+                    <span
+                        style={{ color: C.blue, cursor: "pointer" }}
+                        onClick={onStartOver}
+                    >
+                        Run another →
+                    </span>
+                ) : null}
+            </div>
+        </div>
+    )
+}
+
+function SectionCard(props: {
+    accent: string
+    eyebrow: string
+    children: React.ReactNode
+}) {
+    return (
+        <div
+            style={{
+                background: C.card,
+                borderRadius: 14,
+                border: "0.5px solid " + props.accent + "44",
+            }}
+        >
+            <div
+                style={{
+                    padding: "12px 14px",
+                    borderBottom: "0.5px solid " + C.borderSoft,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                }}
+            >
+                <span style={dot(props.accent)} />
+                <span
+                    style={{
+                        fontSize: 10,
+                        fontWeight: 900,
+                        letterSpacing: 1.4,
+                        textTransform: "uppercase" as const,
+                        color: props.accent,
+                    }}
+                >
+                    {props.eyebrow}
+                </span>
+            </div>
+            <div style={{ padding: "10px 14px 14px" }}>{props.children}</div>
+        </div>
+    )
+}
+
+function BulletRow(props: {
+    accent: string
+    keyword: string
+    primary: string
+    secondary?: string
+    action?: string
+    actionLabel?: string
+}) {
+    return (
+        <div style={{ padding: "10px 0", borderBottom: "0.5px solid " + C.borderSoft }}>
+            <div
+                style={{
+                    fontSize: 9,
+                    fontWeight: 900,
+                    letterSpacing: 1.4,
+                    color: props.accent,
+                    textTransform: "uppercase" as const,
+                    marginBottom: 6,
+                }}
+            >
+                {props.keyword}
+            </div>
+            <div
+                style={{
+                    fontSize: 13,
+                    color: C.body,
+                    lineHeight: 1.55,
+                    marginBottom: props.secondary || props.action ? 6 : 0,
+                }}
+            >
+                {props.primary}
+            </div>
+            {props.secondary ? (
+                <div
+                    style={{
+                        fontSize: 12,
+                        color: C.muted,
+                        lineHeight: 1.6,
+                        marginTop: 4,
+                    }}
+                >
+                    {props.secondary}
+                </div>
+            ) : null}
+            {props.action ? (
+                <div
+                    style={{
+                        marginTop: 8,
+                        paddingLeft: 10,
+                        borderLeft: "2px solid " + props.accent + "55",
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: 9,
+                            fontWeight: 900,
+                            letterSpacing: 1.4,
+                            color: props.accent,
+                            marginBottom: 2,
+                            textTransform: "uppercase" as const,
+                        }}
+                    >
+                        {props.actionLabel || "Action"}
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 12,
+                            color: C.muted,
+                            fontStyle: "italic" as const,
+                            lineHeight: 1.55,
+                        }}
+                    >
+                        {props.action}
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
+function LockCard(props: {
+    accent: string
+    label: string
+    eyebrow: string
+    onClick: () => void
+    loading: boolean
+    fullWidth?: boolean
+    children: React.ReactNode
+}) {
+    return (
+        <button
+            type="button"
+            onClick={props.onClick}
+            disabled={props.loading}
+            style={{
+                gridColumn: props.fullWidth ? "1 / -1" : "auto",
+                background: C.card,
+                borderRadius: 14,
+                border: "0.5px solid " + props.accent + "33",
+                padding: 0,
+                textAlign: "left" as const,
+                cursor: props.loading ? "wait" : "pointer",
+                color: "inherit",
+                fontFamily: "inherit",
+                position: "relative" as const,
+                overflow: "hidden" as const,
+            }}
+        >
+            <div
+                style={{
+                    padding: "11px 14px",
+                    borderBottom: "0.5px solid " + C.borderSoft,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={dot(props.accent)} />
+                    <span
+                        style={{
+                            fontSize: 10,
+                            fontWeight: 900,
+                            letterSpacing: 1.4,
+                            color: props.accent,
+                            textTransform: "uppercase" as const,
+                        }}
+                    >
+                        {props.eyebrow}
+                    </span>
+                </div>
+                <span
+                    style={{
+                        fontSize: 9,
+                        fontWeight: 900,
+                        letterSpacing: 1.2,
+                        padding: "3px 8px",
+                        borderRadius: 4,
+                        background: props.accent + "22",
+                        color: props.accent,
+                    }}
+                >
+                    UNLOCK
+                </span>
+            </div>
+            <div style={{ padding: "12px 14px 14px" }}>
+                <div
+                    style={{
+                        fontSize: 15,
+                        fontWeight: 900,
+                        fontStyle: "italic" as const,
+                        color: C.text,
+                        marginBottom: 8,
+                    }}
+                >
+                    {props.label}
+                </div>
+                {props.children}
+            </div>
+        </button>
+    )
+}
+
+function CoverLetterTeaser(props: { cls: CoverLetterStrategy }) {
+    return (
+        <div>
+            <TeaserField label="OPEN WITH">{props.cls.open_with}</TeaserField>
+            <TeaserField label="LEAD ON" mono>
+                {props.cls.lead_signal}
+            </TeaserField>
+            {props.cls.address_gap ? (
+                <TeaserField label="ADDRESS GAP">
+                    {props.cls.address_gap}
+                </TeaserField>
+            ) : null}
+            <TeaserField label="TONE" mono>
+                {props.cls.tone}
+            </TeaserField>
+            <BlurredFooter>
+                Full draft, paragraph-by-paragraph, in your real voice.
+            </BlurredFooter>
+        </div>
+    )
+}
+
+function NetworkingTeaser(props: { ns: NetworkingStrategy }) {
+    return (
+        <div>
+            <TeaserField label="WHO TO REACH">
+                {props.ns.target_contacts}
+            </TeaserField>
+            <TeaserField label="WHAT TO LEAD WITH">
+                {props.ns.outreach_angle}
+            </TeaserField>
+            <BlurredFooter>
+                Specific names, LinkedIn URLs, and copy-paste opening messages
+                tailored to each contact.
+            </BlurredFooter>
+        </div>
+    )
+}
+
+function TeaserField(props: {
+    label: string
+    mono?: boolean
+    children: React.ReactNode
+}) {
+    return (
+        <div style={{ marginBottom: 8 }}>
+            <div
+                style={{
+                    fontSize: 9,
+                    fontWeight: 900,
+                    letterSpacing: 1.4,
+                    color: C.dim,
+                    textTransform: "uppercase" as const,
+                    marginBottom: 3,
+                }}
+            >
+                {props.label}
+            </div>
+            <div
+                style={{
+                    fontSize: props.mono ? 12 : 13,
+                    color: C.body,
+                    lineHeight: 1.5,
+                    fontFamily: props.mono ? FONT : FONT,
+                    fontStyle: props.mono ? "normal" : ("normal" as const),
+                }}
+            >
+                {props.children}
+            </div>
+        </div>
+    )
+}
+
+function BlurredFooter(props: { children: React.ReactNode }) {
+    return (
+        <div
+            style={{
+                marginTop: 10,
+                paddingTop: 10,
+                borderTop: "0.5px dashed " + C.borderSoft,
+                fontSize: 12,
+                color: C.muted,
+                fontStyle: "italic" as const,
+                filter: "blur(0.5px)",
+                opacity: 0.7,
+            }}
+        >
+            {props.children}
+        </div>
+    )
+}
+
+function GenericLockText(props: { children: React.ReactNode }) {
+    return (
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
+            {props.children}
+        </div>
+    )
+}
+
+function UpgradeBox(props: {
+    upgrade: UpgradeBlock
+    onUpgrade: (source: string) => void
+    upgradeLoading: boolean
+}) {
+    const { upgrade, onUpgrade, upgradeLoading } = props
+    return (
+        <div style={upgradeBox}>
+            <div style={{ flex: "1 1 auto", minWidth: 240 }}>
+                <div
+                    style={{
+                        fontSize: 22,
+                        fontWeight: 950,
+                        fontStyle: "italic" as const,
+                        color: C.text,
+                        marginBottom: 8,
+                        letterSpacing: -0.4,
+                        lineHeight: 1.2,
+                    }}
+                >
+                    Unlock full{" "}
+                    <span style={{ color: C.orange }}>SIGNAL</span>
+                </div>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: C.muted,
+                        lineHeight: 1.6,
+                        marginBottom: 14,
+                        maxWidth: 460,
+                    }}
+                >
+                    Every role you analyze, scored against your real
+                    background. Cover letters in your voice. Networking plays
+                    with copy-paste messages. Resume rewrites that match what
+                    each company filters on. All in one tracker.
+                </div>
+                <div
+                    style={{
+                        display: "flex",
+                        flexWrap: "wrap" as const,
+                        gap: 6,
+                    }}
+                >
+                    {[
+                        ["Fit Score", C.orange],
+                        ["Cover Letter", C.purple],
+                        ["Networking", C.teal],
+                        ["Resume Bullets", C.blue],
+                        ["Job Tracker", C.green],
+                    ].map(([lbl, col]) => (
+                        <span
+                            key={lbl as string}
+                            style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "3px 9px",
+                                borderRadius: 20,
+                                background: (col as string) + "18",
+                                color: col as string,
+                                border:
+                                    "0.5px solid " + (col as string) + "44",
+                            }}
+                        >
+                            {lbl}
+                        </span>
+                    ))}
+                </div>
+            </div>
+            <div
+                style={{
+                    flex: "0 0 240px",
+                    display: "flex",
+                    flexDirection: "column" as const,
+                    alignItems: "stretch" as const,
+                    gap: 10,
+                }}
+            >
+                <div style={{ textAlign: "center" as const }}>
+                    <span
+                        style={{
+                            fontSize: 38,
+                            fontWeight: 950,
+                            fontStyle: "italic" as const,
+                            color: C.orange,
+                            lineHeight: 1,
+                        }}
+                    >
+                        {upgrade.price}
+                    </span>
+                    <div
+                        style={{
+                            fontSize: 11,
+                            color: C.muted,
+                            marginTop: 6,
+                            letterSpacing: 0.2,
+                        }}
+                    >
+                        one time fee / unlimited jobs
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => onUpgrade("trial_upgrade_cta")}
+                    disabled={upgradeLoading}
+                    style={{
+                        ...primaryBtn,
+                        background: upgradeLoading
+                            ? "#3A3A3A"
+                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
+                    }}
+                >
+                    {upgradeLoading
+                        ? "Setting up checkout..."
+                        : "Unlock full SIGNAL →"}
+                </button>
+                <div
+                    style={{
+                        fontSize: 11,
+                        color: C.dim,
+                        textAlign: "center" as const,
+                    }}
+                >
+                    7-day money-back
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── Bits ────────────────────────────────────────────────────────────────────
+
+function FieldLabel(props: { children: React.ReactNode }) {
+    return (
+        <div
+            style={{
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: 1.5,
+                color: C.muted,
+                textTransform: "uppercase" as const,
+                marginTop: 16,
+                marginBottom: 6,
+            }}
+        >
+            {props.children}
+        </div>
+    )
+}
+
+function CharHint(props: { count: number; min: number; ready: boolean }) {
+    return (
+        <div
+            style={{
+                fontSize: 10,
+                color: props.ready ? C.green : C.dim,
+                marginTop: 5,
+                textAlign: "right" as const,
+                fontWeight: 700,
+                letterSpacing: 0.5,
+            }}
+        >
+            {props.count} chars{" "}
+            {props.ready
+                ? "· ready"
+                : `· need ${props.min - props.count} more`}
+        </div>
+    )
+}
+
+// ── ThreeStageLoader ────────────────────────────────────────────────────────
+// Replaces LoadingBar. Three timed stages with checkmark advancement:
+//   - Reading your resume (active 0–3s)
+//   - Analyzing the job (active 3–7s)
+//   - Generating your SIGNAL report (active 7s+, stays active until parent
+//     unmounts us when the API response arrives)
+// Self-managed timer; no marketing copy. After 20s elapsed, shows a subtle
+// "still working…" hint. Failures are surfaced through the parent's error
+// state, which falls back to the input view with the error message.
+
+type StageStatus = "pending" | "active" | "complete"
+
+function ThreeStageLoader() {
+    const [elapsed, setElapsed] = React.useState(0)
+
+    React.useEffect(() => {
+        const startedAt = Date.now()
+        const iv = setInterval(() => {
+            setElapsed(Date.now() - startedAt)
+        }, 200)
+        return () => clearInterval(iv)
+    }, [])
+
+    function statusFor(idx: number): StageStatus {
+        // [stage1End, stage2End, stage3End=Infinity]
+        const ends = [3000, 7000, Number.POSITIVE_INFINITY]
+        const starts = [0, 3000, 7000]
+        if (elapsed >= ends[idx]) return "complete"
+        if (elapsed >= starts[idx]) return "active"
+        return "pending"
+    }
+
+    const showStillWorking = elapsed >= 20000
+
+    return (
+        <div style={loaderContainer}>
+            <LoaderStage
+                label="Reading your resume"
+                status={statusFor(0)}
+            />
+            <LoaderStage
+                label="Analyzing the job"
+                status={statusFor(1)}
+            />
+            <LoaderStage
+                label="Generating your SIGNAL report"
+                status={statusFor(2)}
+            />
+            {showStillWorking ? (
+                <div style={stillWorkingHint}>still working…</div>
+            ) : null}
+        </div>
+    )
+}
+
+function LoaderStage(props: { label: string; status: StageStatus }) {
+    const { label, status } = props
+    const color =
+        status === "complete"
+            ? C.green
+            : status === "active"
+              ? C.orange
+              : C.dim
+    return (
+        <div style={stageRow}>
+            <div
+                style={{
+                    width: 22,
+                    height: 22,
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                {status === "complete" ? (
+                    <svg width="22" height="22" viewBox="0 0 22 22">
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="10"
+                            fill={C.green}
+                            opacity="0.18"
+                        />
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="10"
+                            stroke={C.green}
+                            strokeWidth="1.5"
+                            fill="none"
+                        />
+                        <path
+                            d="M 6 11 L 10 15 L 16 8"
+                            stroke={C.green}
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                ) : status === "active" ? (
+                    <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 22 22"
+                        style={{
+                            animation: "trialSpin 0.9s linear infinite",
+                        }}
+                    >
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="10"
+                            stroke="rgba(255,255,255,0.10)"
+                            strokeWidth="1.5"
+                            fill="none"
+                        />
+                        <path
+                            d="M 11 1 A 10 10 0 0 1 21 11"
+                            stroke={C.orange}
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                ) : (
+                    <svg width="22" height="22" viewBox="0 0 22 22">
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="10"
+                            stroke="rgba(255,255,255,0.10)"
+                            strokeWidth="1.5"
+                            fill="none"
+                        />
+                    </svg>
+                )}
+            </div>
+            <div
+                style={{
+                    fontSize: 14,
+                    fontWeight: status === "active" ? 700 : 600,
+                    color,
+                    letterSpacing: 0.1,
+                }}
+            >
+                {label}
+            </div>
+        </div>
+    )
+}
+
+// ── LoadingValueContent ─────────────────────────────────────────────────────
+// Renders below the ThreeStageLoader to use the otherwise-blank loading
+// screen for value priming: explains the report structure (Decision / WHY /
+// RISK), gives 3 reading tips, and ends with social proof. Static — no
+// state, no timers, doesn't react to loader stage. Educational + anticipatory.
+function LoadingValueContent() {
+    return (
+        <div style={loadingContentWrap}>
+            <div style={{ ...eyebrow, justifyContent: "center" as const, marginBottom: 12 }}>
+                <span style={dot(C.orange)} />
+                WHILE WE WORK
+            </div>
+            <div style={loadingHeading}>
+                Here's what your SIGNAL report will tell you
+            </div>
+
+            <div style={loadingCardGrid}>
+                <ExplainerCard
+                    accent={C.orange}
+                    eyebrow="DECISION"
+                    title="Apply, Review, or Pass"
+                    body="Your top-line read on the job. Scored against the actual posting — not just your title or company."
+                />
+                <ExplainerCard
+                    accent={C.green}
+                    eyebrow="EVIDENCE"
+                    title="What you have"
+                    body="Direct proof from your resume that lines up with what the role wants. Use these to lead your cover letter."
+                />
+                <ExplainerCard
+                    accent={C.yellow}
+                    eyebrow="GAPS"
+                    title="What to address"
+                    body="Mismatches and missing experience the JD calls for. Preempt them in your application or interview."
+                />
+            </div>
+
+            <div style={tipsSection}>
+                <div style={tipsLabel}>HOW TO READ IT</div>
+                <div style={tipsList}>
+                    <div style={tipItem}>
+                        <span style={tipBullet}>→</span>
+                        <span>
+                            Read your <strong style={{ color: C.green }}>WHY codes</strong> before
+                            you write your cover letter — they're your strongest opening lines.
+                        </span>
+                    </div>
+                    <div style={tipItem}>
+                        <span style={tipBullet}>→</span>
+                        <span>
+                            Read your <strong style={{ color: C.yellow }}>RISK codes</strong> before
+                            the interview — these are the objections to preempt.
+                        </span>
+                    </div>
+                    <div style={tipItem}>
+                        <span style={tipBullet}>→</span>
+                        <span>
+                            The <strong style={{ color: C.orange }}>score</strong> reflects this
+                            specific job, not your career. Different postings will score
+                            differently — that's the point.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* TODO: replace with real testimonials when available. Keep the
+                two-card structure — looks balanced beside the tips block above. */}
+            <div style={socialProofRow}>
+                <div style={quoteCard}>
+                    <div style={quoteText}>
+                        "Stopped wasting hours on roles SIGNAL flagged Pass. Best application
+                        filter I've used."
+                    </div>
+                    <div style={quoteAttr}>— Beta tester</div>
+                </div>
+                <div style={quoteCard}>
+                    <div style={quoteText}>
+                        "Addressed every RISK code in my interview prep. Got the offer."
+                    </div>
+                    <div style={quoteAttr}>— Beta tester</div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function ExplainerCard(props: {
+    accent: string
+    eyebrow: string
+    title: string
+    body: string
+}) {
+    return (
+        <div
+            style={{
+                background: C.glass,
+                border: "1px solid " + C.glassBorder,
+                borderTop: `2px solid ${props.accent}`,
+                borderRadius: 14,
+                padding: "20px 22px",
+            }}
+        >
+            <div
+                style={{
+                    fontSize: 9,
+                    letterSpacing: 1.6,
+                    fontWeight: 900,
+                    color: props.accent,
+                    marginBottom: 8,
+                }}
+            >
+                {props.eyebrow}
+            </div>
+            <div
+                style={{
+                    fontSize: 16,
+                    fontWeight: 900,
+                    color: C.text,
+                    marginBottom: 8,
+                    lineHeight: 1.3,
+                }}
+            >
+                {props.title}
+            </div>
+            <div
+                style={{
+                    fontSize: 13,
+                    color: C.body,
+                    lineHeight: 1.5,
+                }}
+            >
+                {props.body}
+            </div>
+        </div>
+    )
+}
+
+function MetricBox(props: { color: string; number: string; label: string }) {
+    return (
+        <div
+            style={{
+                background: C.glass,
+                border: "0.5px solid " + C.glassBorder,
+                borderRadius: 12,
+                padding: "22px 20px",
+                textAlign: "left" as const,
+                backdropFilter: "blur(8px)",
+            }}
+        >
+            <div
+                style={{
+                    width: 32,
+                    height: 3,
+                    background: props.color,
+                    borderRadius: 2,
+                    marginBottom: 16,
+                }}
+            />
+            <div
+                style={{
+                    fontSize: 38,
+                    fontWeight: 950,
+                    color: props.color,
+                    lineHeight: 1,
+                    letterSpacing: -1.2,
+                    marginBottom: 10,
+                }}
+            >
+                {props.number}
+            </div>
+            <div
+                style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}
+            >
+                {props.label}
+            </div>
+        </div>
+    )
+}
+
+function Orbs(props: { hasResult: boolean }) {
+    return (
+        <>
+            <Orb size={500} top={-150} right={-100} color="rgba(81,173,229,0.10)" />
+            <Orb size={400} top={300} left={-120} color="rgba(254,176,106,0.07)" />
+            <Orb
+                size={300}
+                bottom={100}
+                right={-60}
+                color="rgba(192,132,252,0.07)"
+            />
+            {props.hasResult ? (
+                <Orb
+                    size={280}
+                    top={900}
+                    left={-40}
+                    color="rgba(74,222,128,0.06)"
+                />
+            ) : null}
+        </>
+    )
+}
+
+function Orb(props: {
+    size: number
+    top?: number
+    bottom?: number
+    left?: number
+    right?: number
+    color: string
+}) {
+    return (
+        <div
+            style={{
+                position: "absolute" as const,
+                width: props.size,
+                height: props.size,
+                top: props.top,
+                bottom: props.bottom,
+                left: props.left,
+                right: props.right,
+                background: props.color,
+                borderRadius: "50%",
+                filter: "blur(90px)",
+                pointerEvents: "none" as const,
+                zIndex: 0,
+            }}
+        />
+    )
+}
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+// sessionStorage read with try/catch — private mode + SSR safe.
+function ss(key: string): string {
+    try {
+        return sessionStorage.getItem(key) || ""
+    } catch {
+        return ""
+    }
+}
+
+function getCookie(name: string): string {
+    if (typeof document === "undefined") return ""
+    const m = document.cookie.match(
+        new RegExp("(?:^|; )" + name.replace(/[-.]/g, "\\$&") + "=([^;]*)")
+    )
+    return m ? decodeURIComponent(m[1]) : ""
+}
+
+// First-touch landing/referrer; last-touch UTMs and click IDs.
+function captureAttribution() {
+    if (typeof window === "undefined") return
+    try {
+        const url = new URL(window.location.href)
+        const lastTouch = (k: string) => url.searchParams.get(k)
+        const writeIfPresent = (key: string, value: string | null) => {
+            if (value) sessionStorage.setItem(key, value)
+        }
+        writeIfPresent("signal_utm_source", lastTouch("utm_source"))
+        writeIfPresent("signal_utm_medium", lastTouch("utm_medium"))
+        writeIfPresent("signal_utm_campaign", lastTouch("utm_campaign"))
+        writeIfPresent("signal_utm_content", lastTouch("utm_content"))
+        writeIfPresent("signal_utm_term", lastTouch("utm_term"))
+        writeIfPresent("signal_fbclid", lastTouch("fbclid"))
+        writeIfPresent("signal_ttclid", lastTouch("ttclid"))
+        writeIfPresent("signal_gclid", lastTouch("gclid"))
+        if (!sessionStorage.getItem("signal_landing_page")) {
+            sessionStorage.setItem(
+                "signal_landing_page",
+                window.location.pathname || ""
+            )
+        }
+        if (!sessionStorage.getItem("signal_referrer")) {
+            sessionStorage.setItem("signal_referrer", document.referrer || "")
+        }
+    } catch {}
+}
+
+function getAttributionSnapshot() {
+    return {
+        utm_source: ss("signal_utm_source"),
+        utm_medium: ss("signal_utm_medium"),
+        utm_campaign: ss("signal_utm_campaign"),
+        utm_content: ss("signal_utm_content"),
+        utm_term: ss("signal_utm_term"),
+        landing_page: ss("signal_landing_page"),
+        referrer: ss("signal_referrer"),
+        fbclid: ss("signal_fbclid"),
+        ttclid: ss("signal_ttclid"),
+        gclid: ss("signal_gclid"),
+        fbp: getCookie("_fbp"),
+        fbc: getCookie("_fbc"),
+        ttp: getCookie("_ttp"),
+    }
+}
+
+// ============================================================================
+// STYLES
+// ============================================================================
+
+const page: React.CSSProperties = {
+    background: C.bg,
+    fontFamily: FONT,
+    color: C.text,
+    position: "relative",
+    width: "100%",
+    maxWidth: 1440,
+    margin: "0 auto",
+    minHeight: "100dvh",
+    overflowX: "hidden",
+    boxSizing: "border-box",
+}
+
+const topbar: React.CSSProperties = {
+    background: "#071220",
+    padding: "12px 28px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+}
+
+const brand: React.CSSProperties = {
+    fontSize: 17,
+    fontWeight: 900,
+    letterSpacing: -0.4,
+}
+
+const brandSub: React.CSSProperties = {
+    fontSize: 9,
+    color: C.blue,
+    letterSpacing: 1.2,
+    fontWeight: 700,
+    marginTop: 1,
+}
+
+const eyebrow: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    color: C.orange,
+    border: "1px solid rgba(254,176,106,0.30)",
+    padding: "5px 12px",
+    borderRadius: 20,
+    fontWeight: 800,
+    marginBottom: 18,
+    background: "rgba(254,176,106,0.06)",
+    backdropFilter: "blur(8px)",
+}
+
+const eyebrowSm: React.CSSProperties = {
+    fontSize: 10,
+    fontWeight: 900,
+    letterSpacing: 1.5,
+    color: C.dim,
+    textTransform: "uppercase" as const,
+    marginBottom: 8,
+}
+
+const heroTitle: React.CSSProperties = {
+    fontSize: 38,
+    fontWeight: 950,
+    lineHeight: 1.1,
+    letterSpacing: -1.2,
+    marginBottom: 12,
+}
+
+const heroSub: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: 1.65,
+    color: C.muted,
+    maxWidth: 520,
+    margin: "0 auto 28px",
+}
+
+const metricGrid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 12,
+    maxWidth: 760,
+    margin: "0 auto",
+}
+
+// ── ThreeStageLoader styles ─────────────────────────────────────────────────
+// The loader is the focal point of the loading screen — three rows of stage
+// progress — but the rest of the body region is filled by LoadingValueContent
+// (report-structure preview + tips + social proof). 60px top margin sits the
+// loader below the topbar without being lost in the fold; 32px bottom margin
+// is the visual handoff into the value-content panel below.
+const loaderContainer: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "flex-start",
+    gap: 18,
+    maxWidth: 360,
+    margin: "60px auto 32px",
+    padding: "0 24px",
+}
+
+const stageRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+}
+
+const stillWorkingHint: React.CSSProperties = {
+    fontSize: 11,
+    color: C.muted,
+    fontStyle: "italic" as const,
+    marginTop: 16,
+    marginLeft: 36, // align with the labels (22 indicator + 14 gap)
+}
+
+// ── LoadingValueContent styles ──────────────────────────────────────────────
+// Sits below the loader. Centered, 760px max-width to match the input view's
+// metric grid so the loading screen visually aligns with the form they just
+// submitted. Top margin is small (24px) — the loader's own bottom margin (80px)
+// plus this gives ~104px of breathing room without pushing content too far.
+const loadingContentWrap: React.CSSProperties = {
+    maxWidth: 760,
+    margin: "24px auto 80px",
+    padding: "0 24px",
+    textAlign: "center" as const,
+}
+
+const loadingHeading: React.CSSProperties = {
+    fontSize: 22,
+    fontWeight: 900,
+    color: C.text,
+    margin: "0 0 28px",
+    lineHeight: 1.25,
+    letterSpacing: -0.3,
+}
+
+const loadingCardGrid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 12,
+    marginBottom: 28,
+    textAlign: "left" as const,
+}
+
+const tipsSection: React.CSSProperties = {
+    background: C.glass,
+    border: "1px solid " + C.glassBorder,
+    borderRadius: 14,
+    padding: "20px 22px",
+    marginBottom: 24,
+    textAlign: "left" as const,
+}
+
+const tipsLabel: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: 1.6,
+    fontWeight: 900,
+    color: C.orange,
+    marginBottom: 14,
+}
+
+const tipsList: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 12,
+}
+
+const tipItem: React.CSSProperties = {
+    display: "flex",
+    gap: 10,
+    color: C.body,
+    fontSize: 13.5,
+    lineHeight: 1.55,
+}
+
+const tipBullet: React.CSSProperties = {
+    color: C.orange,
+    fontWeight: 900,
+    flexShrink: 0,
+}
+
+const socialProofRow: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: 12,
+    textAlign: "left" as const,
+}
+
+const quoteCard: React.CSSProperties = {
+    background: C.glass,
+    border: "1px solid " + C.glassBorder,
+    borderRadius: 14,
+    padding: "16px 20px",
+}
+
+const quoteText: React.CSSProperties = {
+    fontSize: 13,
+    color: C.body,
+    lineHeight: 1.5,
+    fontStyle: "italic" as const,
+    marginBottom: 8,
+}
+
+const quoteAttr: React.CSSProperties = {
+    fontSize: 11,
+    color: C.muted,
+    fontWeight: 600,
+}
+
+// Soft warning box for the missing-email state on the input view. Distinct
+// from errBox (which is red); this is yellow because it's instructional —
+// "go back to the landing page," not "you broke something."
+const missingEmailBox: React.CSSProperties = {
+    color: C.yellow,
+    fontWeight: 700,
+    marginBottom: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "rgba(255,214,10,0.08)",
+    border: "1px solid rgba(255,214,10,0.25)",
+    fontSize: 13,
+    lineHeight: 1.5,
+}
+
+const glassCard: React.CSSProperties = {
+    background: C.glass,
+    backdropFilter: "blur(16px)",
+    border: "1px solid " + C.glassBorder,
+    borderRadius: 14,
+    padding: 22,
+}
+
+const stepLabel: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: 1.6,
+    fontWeight: 900,
+    color: C.orange,
+    marginBottom: 6,
+}
+
+const cardTitle: React.CSSProperties = {
+    fontSize: 18,
+    fontWeight: 900,
+    color: C.text,
+    marginBottom: 4,
+}
+
+const cardSub: React.CSSProperties = {
+    fontSize: 12,
+    color: C.muted,
+    marginBottom: 14,
+}
+
+const input: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 10,
+    padding: "12px 14px",
+    color: C.text,
+    fontSize: 13,
+    fontFamily: FONT,
+    outline: "none",
+    boxSizing: "border-box",
+}
+
+const textarea: React.CSSProperties = {
+    ...input,
+    minHeight: 160,
+    resize: "vertical",
+    lineHeight: 1.6,
+}
+
+const primaryBtn: React.CSSProperties = {
+    width: "100%",
+    background: C.orange,
+    color: "#04060F",
+    fontSize: 15,
+    fontWeight: 950,
+    padding: 16,
+    borderRadius: 10,
+    border: "none",
+    cursor: "pointer",
+    letterSpacing: 0.3,
+    marginTop: 16,
+    fontFamily: FONT,
+}
+
+const ghostBtn: React.CSSProperties = {
+    background: "transparent",
+    border: "1px solid " + C.borderSoft,
+    color: C.muted,
+    fontSize: 12,
+    fontWeight: 700,
+    padding: "8px 18px",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontFamily: FONT,
+}
+
+const runHint: React.CSSProperties = {
+    textAlign: "center" as const,
+    fontSize: 11,
+    fontWeight: 900,
+    marginTop: 12,
+    letterSpacing: 1.4,
+    background: "linear-gradient(90deg,#FEB06A,#51ADE5)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+}
+
+const errBox: React.CSSProperties = {
+    color: C.red,
+    fontWeight: 700,
+    marginBottom: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "rgba(255,79,109,0.08)",
+    border: "1px solid rgba(255,79,109,0.25)",
+    fontSize: 13,
+}
+
+const heroCard: React.CSSProperties = {
+    background: C.card,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.10)",
+    overflow: "hidden" as const,
+    marginBottom: 6,
+}
+
+const cachedBanner: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+    padding: "12px 16px",
+    background: "rgba(255,214,10,0.06)",
+    border: "1px solid rgba(255,214,10,0.25)",
+    borderRadius: 12,
+    marginBottom: 16,
+}
+
+const cachedTitle: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 900,
+    color: C.yellow,
+    marginBottom: 3,
+}
+
+const cachedSub: React.CSSProperties = {
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 1.55,
+}
+
+const lockedSectionHeader: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+}
+
+const lockedHeadline: React.CSSProperties = {
+    fontSize: 22,
+    fontWeight: 950,
+    fontStyle: "italic" as const,
+    color: C.text,
+    letterSpacing: -0.4,
+    lineHeight: 1.25,
+    marginBottom: 14,
+}
+
+const lockGrid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+    marginBottom: 24,
+}
+
+const upgradeBox: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 28,
+    padding: "26px 28px",
+    background: "linear-gradient(135deg, #0D1828, #0A1F35)",
+    border: "1px solid " + C.orange + "33",
+    borderRadius: 16,
+    flexWrap: "wrap" as const,
+    boxSizing: "border-box" as const,
+}
+
+// ── Tiny helpers used inline above ─────────────────────────────────────────
+
+function dot(color: string): React.CSSProperties {
+    return {
+        width: 6,
+        height: 6,
+        borderRadius: "50%",
+        background: color,
+        display: "inline-block",
+    }
+}
+
+function dotPulse(color: string): React.CSSProperties {
+    return {
+        ...dot(color),
+        width: 7,
+        height: 7,
+        animation: "trialDotPulse 2s ease-in-out infinite",
+    }
+}
