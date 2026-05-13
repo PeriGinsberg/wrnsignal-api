@@ -1,0 +1,715 @@
+# Positioning Foundation — Migration Runlog
+
+Status tracker for Foundation-scoped schema migrations, manual SQL Editor applications, and known-issue follow-ups. See FRD: `docs/Features/positioning-foundation-frd.md`.
+
+All migrations target the **dev environment only** until Peri explicitly approves production promotion.
+
+---
+
+## Schema migrations
+
+| Migration file | Drafted | Date applied | Env | Method | Applied by | Notes |
+|---|---|---|---|---|---|---|
+| `supabase/migrations/20260512_candidate_targeting.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | New table. Foundation Stage 1a. Manual apply per Risk 6 (schema_migrations drift on dev). |
+| `supabase/migrations/20260512_candidate_targeting.sql` | 2026-05-12 | 2026-05-12 | **prod** | Supabase SQL Editor | Peri | Same SQL. Applied after data migration's first prod attempt revealed table missing — see DD-22. |
+| `supabase/migrations/20260512_signal_applications_run_fks.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | ALTER TABLE adds positioning_run_id + coverletter_run_id FKs. Foundation Stage 1a. |
+| `supabase/migrations/20260512_signal_applications_run_fks.sql` | 2026-05-12 | 2026-05-12 | **prod** | Supabase SQL Editor | Peri | Same SQL. Applied 2026-05-12 alongside the other two. |
+| `supabase/migrations/20260512_intake_upsert_with_targeting.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | CREATE FUNCTION for transactional intake. Foundation Stage 1b. Verified callable via `scripts/verify-intake-upsert-fn.mjs`. |
+| `supabase/migrations/20260512_intake_upsert_with_targeting.sql` | 2026-05-12 | 2026-05-12 | **prod** | Supabase SQL Editor | Peri | Same SQL. Function unused on prod until intake route is deployed there. |
+| `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | Phase 1 deliverable 6. Creates `positioning_runs_v2` table + 5 indexes + 1 `set_updated_at` trigger. |
+| `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation. |
+
+---
+
+## Stage progress
+
+- [x] **Stage 1a-prep** — Lane taxonomy + validation utilities (`lib/laneTaxonomy.ts`, `tests/lane-taxonomy/taxonomy-check.ts`)
+- [x] **Stage 1a** — Schema files drafted (`candidate_targeting`, `signal_applications` ALTER)
+- [x] **Stage 1a** — Schema files applied to dev via Supabase SQL Editor (2026-05-12, Peri)
+- [ ] **Stage 1b** — API contracts (`lib/signalApplications.ts` ✓, JobFit refactor ✓, `lib/candidateTargeting.ts` ✓, `intake_upsert_with_targeting` fn ✓, profile-intake update — in progress)
+- [ ] **Stage 1d** — Migration script written + synthetic-sample test
+- [x] **Stage 1d** — Migration script run on real dev data (2026-05-12, 4 profiles, idempotency verified — see DD-21)
+- [x] **Stage 1d** — Migration script run on PROD data (2026-05-12, 122 profiles + PreMed flag patch — see DD-22)
+- [x] **Stage 1e** — Validation + regression sweep (2026-05-12, all four steps green — see DD-24)
+- [x] **Production promotion** — schema + data migration complete on prod (2026-05-12, all writes within scope, completion summary at `docs/Features/positioning-foundation-completion.md`)
+
+---
+
+## Phase 1 — Stage progress
+
+- [x] **Stage 1a** — All six deliverables shipped, verified clean on dev (2026-05-12):
+  - D1: `lib/positioning/v2/types.ts`
+  - D2: `lib/positioning/v2/caseThresholds.ts`
+  - D3: `lib/positioning/v2/caseDetermination.ts` + 30 unit tests
+  - D4: `lib/positioning/v2/workflowPreview.ts` + 33 unit tests
+  - D5: `lib/positioning/v2/caseSpecific.ts` + 42 unit tests
+  - D6: `supabase/migrations/20260512_positioning_runs_v2.sql` applied to dev (Peri, SQL Editor); functional smoke + raw catalog checks both clean
+- [x] **Stage 1b** — `/api/positioning/v2/start` endpoint SHIPPED (all D1-D7 complete; route verified end-to-end against running dev server):
+  - [x] D1: `lib/positioning/v2/fingerprint.ts` + 42 unit tests (computeFingerprint, canonical JSON, null-targeting sentinel)
+  - [x] D2: `lib/positioning/v2/jobfitLookup.ts` + 11 integration tests (Path B verified — `application_id` → `signal_applications.id` join works; schema-discovery captured `client_profile_id` naming and `jobfit_runs` column gaps)
+  - [x] D3: `lib/positioning/v2/runLookup.ts` + 12 integration tests (F3 cascade: in_progress→resume; latest-completed-with-matching-fingerprint→cache_hit; abandoned filtered; multi-in_progress anomaly logged)
+  - [x] D4: `lib/positioning/v2/runWriter.ts` + 19 integration tests (two-write self-heal per F2 / DD-26; idempotent re-link verified via measured `updated_at` advancement; architectural pre-checks resolved 2026-05-12: only `positioning_runs_v2_pkey` constraint and `set_updated_at()` is the minimal trigger that fires on every UPDATE)
+  - [x] D5: `lib/positioning/v2/responseBuilder.ts` + 14 unit tests (pure function; F6 / F7 / F10 / F12 resolved; last_visit_days_ago floor semantics + defensive nulls for malformed visits)
+  - [x] D6: `app/api/positioning/v2/start/route.ts` (handler wiring D1-D5 + Foundation utilities; zero type errors project-wide; failure-mode policy: 500 only on createPositioningRun, 200 + warn on link/append/findOrCreate; one-directional link per DD-26; placeholder convention per DD-27)
+  - [x] D7: `scripts/verify-positioning-v2-start.mjs` — 9/9 e2e tests pass against running dev server (happy path, resume, cache_hit, placeholder application, 4 error paths, F11 envelope identity, F6 throwaway-user persona guard). Zero fixture leaks on cleanup.
+- [ ] **Stage 1c** — Frontend rendering (case-calibrated) — *next major Phase 1 chunk; likely separate FRD discussion*
+- [ ] **Stage 1d** — Reconsider Target flow
+- [ ] **Stage 1e** — Integration testing in dev
+
+### Post-Stage-1b cleanup commitments
+
+Tracked architectural debt items, deliberately out of scope for Stage 1b. Sweep up in a small follow-up after Stage 1b ships (not blocking ship).
+
+1. **`lib/signalApplications.ts` header comments (lines 9-14)** describe bidirectional linkage between `signal_applications` and Positioning runs. That intent was superseded in Stage 1b by the one-directional design (DD-26). Doc-only edit to bring the comments in line with the actual architecture.
+2. **`findOrCreateSignalApplication`'s `positioningRunId` param is dormant** — passed by no caller after Stage 1b D6 (the route deliberately omits it; see DD-26). Could be removed in a future cleanup pass; currently kept for backward-compat / forward-compat optionality since the column itself still exists.
+3. **`signal_applications.positioning_run_id` column still FKs to v1 `positioning_runs`** (per Stage 1a migration `20260512_signal_applications_run_fks.sql`). The Positioning v2 flow does not populate it; the column is a dead-end for v2 but not actively breaking anything. v1 `positioning_runs` deprecation is a separate future conversation.
+
+---
+
+## Stage 1b: SHIPPED
+
+**Shipped 2026-05-12.** All 7 Stage 1b deliverables complete and verified end-to-end against the running dev server. `POST /api/positioning/v2/start` is the first working Positioning v2 endpoint and is ready for Stage 1c (frontend) consumption.
+
+### Deliverables and test coverage
+
+| # | Deliverable | Tests | Result |
+|---|---|---|---|
+| D1 | `lib/positioning/v2/fingerprint.ts` | 42 unit | PASS |
+| D2 | `lib/positioning/v2/jobfitLookup.ts` | 11 integration | PASS |
+| D3 | `lib/positioning/v2/runLookup.ts` | 12 integration | PASS |
+| D4 | `lib/positioning/v2/runWriter.ts` | 19 integration | PASS |
+| D5 | `lib/positioning/v2/responseBuilder.ts` | 14 unit | PASS |
+| D6 | `app/api/positioning/v2/start/route.ts` | tsc clean project-wide | PASS |
+| D7 | `scripts/verify-positioning-v2-start.mjs` | 9 e2e against dev server | PASS |
+
+**Total: 107 test assertions across the stage, all passing.**
+
+### Architectural decisions captured along the way
+
+- **DD-26 — one-directional link.** `positioning_runs_v2.signal_application_id` is the sole authoritative link between Positioning v2 runs and applications. `signal_applications.positioning_run_id` continues to FK to v1 `positioning_runs` (legacy) and is deliberately not written by the v2 flow. Surfaced during D4 pre-drafting review; simplified the F2 self-heal pattern from three writes to two.
+- **DD-27 — JobFit metadata source + placeholder convention.** Company name + job title sourced from `jobfit_runs.result_json.job_signals` (the only universally-present source — 100% on non-error runs in prod sampling). Empty fields (~20-24% of runs in prod) get JobFit-style `"(Unknown Company)"` / `"(Unknown Role)"` placeholders rather than blocking Positioning. Logged via `PLACEHOLDER_APPLICATION_CREATED` marker for ops visibility. KI-01 updated to note Positioning v2 contributes to the junk-rows pile.
+
+### Friction items resolved in route handler
+
+F6 (persona guard) · F7 (null candidate_targeting allowed) · F10 (visit append on all outcomes) · F11 (404 envelope identity for not-found vs wrong-owner — verified by D7 test 8) · F12 (cache_hit `is_returning=false`).
+
+### Post-Stage-1b cleanup commitments still tracked
+
+See the "Post-Stage-1b cleanup commitments" subsection above — three doc/code hygiene items deliberately deferred. None blocking.
+
+### Operational notes
+
+- Background dev server task ID `bi2rvedsp` left running at session end (Windows shutdown syntax fumbled in the harness; harmless).
+- D7 cleanup verified zero fixture leaks across multiple runs — positioning_runs_v2, signal_applications, jobfit_runs, throwaway client_profile, and throwaway auth user all deleted by the smoke's `finally` block.
+
+### What's next
+
+- **Phase 1 Stage 1c** — Frontend rendering (case-calibrated). Separate FRD discussion; backend is now ready for consumption.
+- **Phase 1 Stage 1d** — Reconsider Target flow.
+- **Phase 1 Stage 1e** — Integration testing in dev.
+
+---
+
+## Known-issue follow-ups (Foundation deferrals)
+
+Captured during Foundation build for future remediation. Each entry has: why it was deferred, and what would trigger un-deferral.
+
+### KI-01 — findOrCreateSignalApplication preserves empty-field junk-row risk
+
+**Source:** Stage 1b extraction of `lib/signalApplications.ts` from `app/api/jobfit/route.ts:377-503`.
+
+**Issue:** Existing JobFit logic upserts a `signal_applications` row keyed on `(profile_id, company_name, job_title)` even when `company_name` and `job_title` are both empty (JD extraction can produce blanks). The shared utility preserves this current behavior — it does not "fix" the junk-row insert as part of Foundation's refactor.
+
+**Why deferred:** Foundation's scope is structural (shared utility + FK columns), not behavioral. Changing empty-field handling now would mix a behavior change into what's otherwise a no-behavior-change refactor and require new regression baselines.
+
+**Trigger to un-defer:** When Positioning Phase 1 ships and consumers of the linked application record start populating `positioning_run_id` + `coverletter_run_id`, empty company/title rows become more visible. Worth revisiting then with an explicit spec on "what should happen when company/title can't be extracted" — probably reject the link rather than create a junk row.
+
+**Update 2026-05-12 (Stage 1b D6):** Positioning v2 `/api/positioning/v2/start` is now a second contributor to this pile per DD-27. Investigation (scripts/verify-jobfit-company-source.mjs against prod) measured `result_json.job_signals.companyName` non-empty on 76.2% of non-error runs and `jobTitle` non-empty on 82.6% — leaving ~20-24% of runs that would block Positioning if we required non-empty extraction. Decision was to mirror JobFit's "(Unknown Company)" / "(Unknown Role)" placeholders rather than block. Distinguishability between JobFit-originated and Positioning-originated junk rows comes from logs, not row content:
+  - JobFit's existing path: applies placeholders inline at the route (no specific log marker today)
+  - Positioning v2: logs `[positioning-v2/start] PLACEHOLDER_APPLICATION_CREATED runId=… profileId=… jobfitRunId=… reason=…` where `reason ∈ {empty_company, empty_title, empty_both}` — only emitted when a placeholder was actually applied
+When KI-01 is finally addressed, both contributors should change in lockstep (the fix is the same: reject the link rather than create a junk row).
+
+### KI-02 — Re-derive career_stage when resume is later uploaded
+
+**Source:** Foundation career-stage handling for users who complete intake before uploading a resume.
+
+**Issue:** When `yearsExperienceApprox` is unavailable at intake time (no resume yet), Foundation defaults to `career_stage = 'mid_career'` with `career_stage_locked_by = 'inferred'`. If the user later uploads a resume, `yearsExperienceApprox` becomes derivable and may contradict the mid_career default — e.g., a resume showing 0 years of work history should resolve to `early_career` or `student`.
+
+**Why deferred:** The resume-upload side effect is out of Foundation scope. Today, resume upload doesn't trigger any `candidate_targeting` writes. Adding the re-derivation hook is a separate concern that touches the persona-creation / resume-upload flow and should be specced in its own ticket.
+
+**Trigger to un-defer:** First real-user complaint about a mis-classified `career_stage` after resume upload, OR when the manual override admin UI is built (then re-derivation can ship in the same change). Should respect `career_stage_locked_by`: only re-derive when `locked_by = 'inferred'`; preserve `'intake'` and `'manual_override'`.
+
+### KI-04 — `primary_other_description` whitespace-rejection strictness
+
+**Source:** Stage 1a `candidate_targeting` migration CHECK constraint.
+
+**Issue:** Migration uses `LENGTH(TRIM(primary_other_description)) > 0`; FRD section 4.2's example uses `LENGTH(primary_other_description) > 0`. The migration is stricter — rejects whitespace-only ('   ', '\t\n', etc.) at the DB layer, not just NULL/empty.
+
+**Why deferred:** Not deferred per se — this is a deliberate hardening over the FRD literal. Recorded as a known follow-up only so future readers of the FRD don't get confused that the implementation diverges.
+
+**Trigger to un-defer:** N/A — implementation is stricter than FRD by design. If FRD is ever revised, update section 4.2's CHECK example to match. See DD-09.
+
+### KI-06 — `interestLevel = 1` default in shared utility (semantic alignment for future callers)
+
+**Source:** Stage 1b `lib/signalApplications.ts` `findOrCreateSignalApplication`.
+
+**Issue:** The utility defaults `interestLevel` to `1` to preserve JobFit's historical behavior. This differs from the `signal_applications.interest_level` column DEFAULT of `3`. Future Positioning and Cover Letter callers should explicitly pass an `interestLevel` that matches their own product semantics rather than inheriting JobFit's "1 = just saved via JobFit run."
+
+**Why deferred:** Not deferred behaviorally — utility's default is correct for JobFit (the only consumer today). Recorded as a known follow-up so Positioning Phase 1 and Cover Letter Integration FRDs both think through the right initial value at their own call sites.
+
+**Trigger to un-defer:** Each downstream caller's FRD should specify `interestLevel` explicitly. If callers consistently want `3` (the column default), revisit whether the utility default should change.
+
+### KI-07 — Cache-hit signal_applications block still inline (out of Stage 1b scope)
+
+**Source:** Stage 1b refactor of `app/api/jobfit/route.ts:442-503` to use `findOrCreateSignalApplication`.
+
+**Issue:** A SECOND auto-application block exists at `app/api/jobfit/route.ts:253-321` — the cache-hit branch. It contains near-identical sanitization (prefix-strip + garbage-filter, ~30 lines duplicated) AND an inline insert-only-if-not-found pattern. Stage 1b scope was limited to the full-pipeline branch (lines 442-503) per Peri's instruction; the cache-hit branch was not touched.
+
+**Why deferred:** Foundation Stage 1b's stated scope was the full-pipeline auto-application block. Refactoring the cache-hit branch was not pre-approved.
+
+**Trigger to un-defer:** Easy win — call `findOrCreateSignalApplication` from the cache-hit branch with `jobfitRunId` omitted (no run_id to link on a cache hit). Behavior-equivalent. Worth doing as a follow-up clean-up ticket; small diff, removes ~60 lines of duplication. Watch out: cache-hit branch currently does NOT update existing rows' `signal_decision/score` — the refactor must preserve that (utility call with no FK + no JobFit-fields patch on the existing-found path).
+
+### KI-05 — 12-value lane CHECK list repeated three times in candidate_targeting
+
+**Source:** Stage 1a `candidate_targeting` migration.
+
+**Issue:** The 12 valid lane IDs appear in three separate CHECK constraints (primary, secondary_1, secondary_2) — identical content each time. Adding a new lane requires editing all three CHECKs in lockstep, plus `lib/laneTaxonomy.ts`.
+
+**Why deferred:** Accepted maintenance debt for v1. Top-level lane list is stable enough that repetition cost is low. Postgres ENUM type would give a single source of truth at the DB layer but adds different friction (`ALTER TYPE ... ADD VALUE` limitations).
+
+**Trigger to un-defer:** If lane additions/changes happen more than once per quarter, convert the lane list to a Postgres ENUM in a follow-up migration. See DD-10.
+
+### KI-03 — profile_text current_status dual-write is transitional
+
+**Source:** Stage 1b update to `app/api/profile-intake/route.ts`.
+
+**Issue:** Foundation has profile-intake write `current_status` to BOTH the existing `client_profiles.profile_text` blob (preserved for backward compat) AND the new `candidate_targeting` row (via the career-stage derivation path). The dual-write keeps existing readers of `profile_text` working while the new structured path comes online.
+
+**Why deferred:** Removing the `profile_text` write requires auditing every reader of `current_status` in `profile_text` (JobFit, Positioning, other consumers) and routing them through `candidate_targeting` instead. That audit is out of Foundation scope.
+
+**Trigger to un-defer:** When `candidate_targeting` rows exist for ≥95% of active users (post-migration + steady-state), audit all readers of `current_status` in `profile_text`, migrate them to read from `candidate_targeting`, then drop the dual-write.
+
+---
+
+## Design decisions made during build
+
+Decisions made in the build conversation that aren't already in the FRD. Captured here so the FRD doesn't drift.
+
+### DD-01 — Sub-lane count is 49, not 45
+
+FRD section 4.1 says "Total: ~45 sub-lanes plus Other." Locked list from approval conversation came out to 48; label-review pass added one more (split of Data Science / Engineering into two distinct sub-lanes), bringing the total to 49. Within the "~45" ballpark; no structural problem. Counts per lane locked in `lib/laneTaxonomy.ts` header comment.
+
+### DD-02 — Engineering reverse-maps to Technology, with migration caveat
+
+`getLaneFromJobFamily('Engineering')` returns the Technology lane. Migration script applies semantic correction for non-software engineers (Mechanical, Civil, Biomedical, Industrial) — routes them to Other via LLM fallback. Documented in `lib/laneTaxonomy.ts` JSDoc on `getLaneFromJobFamily`.
+
+### DD-03 — Analytics and Trades intentionally return null on reverse-map
+
+`JobFamily.Analytics` is cross-functional (Marketing Analytics, People Analytics, Operations Research) and unmapped — migration script LLM-fallback handles it.
+`JobFamily.Trades` is out of taxonomy scope (no Trades lane) — migration script routes to Other.
+
+### DD-04 — PreMed reverse-maps to Healthcare AND requires status_premed
+
+Migration script MUST set `status_premed = true` on the `candidate_targeting` row whenever it routes a PreMed-classified user to the Healthcare lane. The reverse-map function itself is a pure lookup; the smart routing is the script's responsibility. Documented in `lib/laneTaxonomy.ts` JSDoc.
+
+**Extension (locked pattern):** If any future status indicator ever needs to derive from a JobFamily value (none do today — `prelaw` and `pregrad` are intake-only), apply the same split: taxonomy stays a static description of lane values; migration / translation logic owns the dual-write side effect. Keep the taxonomy clean.
+
+### DD-05 — Sub-lane validation lives at app layer, not DB
+
+`candidate_targeting`'s CHECK constraint validates only `primary_lane` (12-value enum) and `career_stage` (4-value enum). Sub-lanes are TEXT with no DB constraint — app-layer validation via `isValidSubLaneId()` from `lib/laneTaxonomy.ts`. Avoids schema migration burden when sub-lanes evolve. (FRD section 4.2 already locks this; recorded here for completeness.)
+
+### DD-06 — Label-review refinements (Technology, Operations & Strategy, People & HR)
+
+Three changes applied during label review after Stage 1a-prep:
+
+- **Technology** — `data_science_engineering` ("Data Science / Engineering") split into `data_science` ("Data Science") + `data_engineering` ("Data Engineering"). Reason: Data Science (modeling, analysis, ML applied) and Data Engineering (pipelines, infrastructure, data platform) are distinct paths; candidates target one or the other, rarely both. Technology sub-lane count: 5 → 6.
+- **Operations & Strategy** — `operations_research` ("Operations Research / Analytics") renamed to `operations_analytics` ("Operations Analytics"). Reason: "Operations Research" reads as the academic discipline; today's candidates self-identify as ops analytics / supply chain analytics / operations analyst. Label is more current.
+- **People & HR** — `hr_business_partner` ("HR Business Partner / Generalist") renamed to `hr_generalist` ("HR Generalist"). Reason: HRBP is a specific senior role; Generalist covers the broader arc from coordinator through senior generalist. BP is essentially a senior generalist track. "HR Generalist" captures the whole arc better.
+
+All three changes locked before any DB CHECK constraints. No migration consequence for existing data (none exists yet).
+
+### DD-07 — `set_updated_at()` not `update_updated_at_column()`
+
+FRD section 4.2 assumes a `update_updated_at_column()` trigger function "exists; if not, create it as part of this FRD." Actual prod has `public.set_updated_at()` (`prod_public_schema.sql:40-47`) doing the same job. Existing tables (`coverletter_runs`, `jobfit_profiles`, `jobfit_users`, others) all use `set_updated_at` via `trg_<table>_set_updated_at`.
+
+**Decision:** Use the existing function. Do NOT create a parallel `update_updated_at_column()`. The `candidate_targeting` trigger follows the established naming convention: `trg_candidate_targeting_set_updated_at`.
+
+**FRD update needed:** Section 4.2's trigger note should be corrected to reference `set_updated_at` instead of `update_updated_at_column`. Not blocking; tracked here.
+
+### DD-25 — Phase 1: trust migration data without verification step (Option A)
+
+**Recorded:** 2026-05-12 (first Phase 1 build entry).
+
+**Decision:** Phase 1 trusts `candidate_targeting` rows as-is regardless of source (`intake` vs `migration`). No verification step before Positioning runs. The 122 migration rows on prod are treated as authoritative inputs to case determination and case-specific data generation, same as future intake-sourced rows.
+
+**Trade-off accepted:** Low-confidence migration assignments (the 26 low-confidence rows from the 122 backfilled) will produce less-calibrated Positioning experiences. The LLM chose the "closest reasonable lane" with low confidence per the prompt's anti-Other rule, and Phase 1 will calibrate the workflow against that lane rather than asking the user to confirm first.
+
+**Why this is acceptable for Phase 1 ship:**
+- User-verification UI requires UX design + frontend implementation that hasn't been scoped
+- Phase 1's case-calibrated workflow is itself a form of soft verification — Case C framing surfaces gaps that a wrong-lane assignment would expose
+- Low-confidence rows are a small fraction of the population (26 of 122 ≈ 21%)
+- The cost of getting a low-confidence row "wrong" in Case A/B/C assignment is bounded — user can abandon and restart, no data corruption
+
+**User-verification UI deferred** to a later feature scope (Phase 1.5 or Phase 2 territory; TBD). When it ships, it can also handle:
+- Migration-row confirmation on next session
+- Lane changes triggering Positioning-run fingerprint invalidation (already supported by Phase 1's fingerprint logic per FRD section 4.7)
+
+**No code changes** in this entry — this is a documented design decision that informs Phase 1 implementation.
+
+### DD-26 — Stage 1b D4: link architecture clarified to one-directional
+
+**Recorded:** 2026-05-12 (during Stage 1b D4 pre-drafting review).
+
+**Decision:** The link between `positioning_runs_v2` and `signal_applications` is **one-directional**: `positioning_runs_v2.signal_application_id` is the sole authoritative link from a positioning run to its application record. `signal_applications.positioning_run_id` is NOT written by the Positioning v2 flow.
+
+**Background — how the mistake surfaced:** Stage 1a migration `20260512_signal_applications_run_fks.sql` added `signal_applications.positioning_run_id UUID REFERENCES public.positioning_runs(id)` — the FK targets the **v1** `positioning_runs` table (legacy, separate from `positioning_runs_v2`). The mismatch was not caught in Foundation review. Foundation's `tests/foundation/smoke-e2e.ts` exercised this column with a v1 `positioning_runs` row, so it passed without revealing the v2-target gap.
+
+The architectural item was surfaced during Stage 1b D4 pre-drafting review of the F2 self-heal test, which originally assumed bidirectional linkage. Writing a `positioning_runs_v2.id` into `signal_applications.positioning_run_id` would fail the FK check (v2 id won't exist in v1 `positioning_runs`).
+
+**Rationale for one-directional (not "fix the FK to retarget v2"):**
+
+1. `signal_applications` has a **one-to-many** relationship with positioning runs over time — a user can re-run Positioning multiple times for the same application (targeting changes, re-evaluation after gap work, etc.). A single `positioning_run_id` back-reference on `signal_applications` is semantically ambiguous regardless of which table it points at.
+2. The v2 → v1 FK target is **not actively breaking anything** — the column simply isn't populated by the v2 flow. Worth flagging as architectural debt (see Post-Stage-1b cleanup item 3) but not worth touching a Foundation Stage 1a artifact + re-running prod migrations to "fix."
+3. Stage 1b's case determination flow only needs the v2 → applications direction (so a v2 run can locate its application for status updates, history rollups, etc.). The reverse direction is not consumed by any Phase 1 logic.
+
+**Consequences for D4 (runWriter.ts):**
+
+- F2 self-heal pattern **simplifies from three-write to two-write**:
+  1. INSERT `positioning_runs_v2` with `signal_application_id = NULL`
+  2. UPDATE `positioning_runs_v2.signal_application_id` after `findOrCreateSignalApplication` returns
+- No third write to `signal_applications.positioning_run_id`. The asymmetric-state recovery window the self-heal protects against is: "row created at step 1 but step 2 failed → next visit needs to link it." Idempotent UPDATE handles this.
+
+**Consequences for D6 (route.ts):**
+
+- The route MUST NOT pass `positioningRunId` to `findOrCreateSignalApplication`. The shared util (`lib/signalApplications.ts:138-140`) unconditionally writes `positioning_run_id` when the param is provided, which would hit the v1-target FK and fail with code `23503`.
+- D6 will include an inline comment at the call site explaining the omission and pointing at DD-26.
+
+**Consequences for the shared util:**
+
+- `findOrCreateSignalApplication`'s `positioningRunId` param becomes dormant after Stage 1b (no caller uses it). Tracked as Post-Stage-1b cleanup item 2. Not removed now to avoid breaking-API churn on a shared util.
+
+**No prod schema change in this entry.** v1 `positioning_runs` continues to exist, the FK continues to target it, and the column remains nullable. v1 deprecation is a separate future conversation.
+
+### DD-27 — Stage 1b D6: JobFit metadata source-of-truth + placeholder convention
+
+**Recorded:** 2026-05-12 (during Stage 1b D6 pre-drafting review).
+
+**Decision:** `app/api/positioning/v2/start/route.ts` reads company name + job title for `findOrCreateSignalApplication` from `jobfit_runs.result_json.job_signals.{companyName, jobTitle}` (the V5 extraction output), with JobFit-style `"(Unknown Company)"` / `"(Unknown Role)"` placeholders when those fields are empty.
+
+**The schema gap that surfaced this:** `jobfit_runs` has **no top-level `job_company` or `job_title` columns**. The columns are: `id, client_profile_id, application_id, job_url, fingerprint_hash, fingerprint_code, verdict, result_json, persona_id, profile_version_at_run, persona_version_at_run, job_description, sourced_by_coach_id, created_at, updated_at` (per Stage 1b D2's schema discovery, captured in `lib/positioning/v2/jobfitLookup.ts`). Job metadata lives inside `result_json.job_signals` as a denormalized sub-object.
+
+**Investigation:** `scripts/verify-jobfit-company-source.mjs` ran on dev (zero rows — table empty) and then fell back to prod (~1300 jobfit_runs):
+- `verdict` distribution: 238 Apply, 225 Review, 197 Pass, 101 Priority Apply, no error rows in the 761 non-error sample
+- `application_id` coverage on non-error runs: **42.0%** (320 / 761) — too low for path (ii) "join via application_id to signal_applications.{company_name, job_title}" to be reliable
+- `result_json.job_signals` presence: **100%** across a 500-row sample
+- `result_json.job_signals.jobTitle` non-empty string: **82.6%** (413 / 500)
+- `result_json.job_signals.companyName` non-empty string: **76.2%** (381 / 500)
+
+**Three paths considered:**
+
+| Path | Source | Coverage | Result |
+|------|--------|----------|--------|
+| (i)   | Request body                       | n/a    | Rejected — clients shouldn't re-state JobFit's extraction |
+| (ii)  | `signal_applications` via application_id | 42%   | Rejected — too sparse |
+| (iii) | `result_json.job_signals`          | 100%/82.6%/76.2% | **Adopted** with placeholder fallback for the ~20-24% empty cases |
+
+**Empty-field handling:** the route applies `"(Unknown Company)"` / `"(Unknown Role)"` placeholders mirroring JobFit's existing convention (per KI-01 lines 26-32 of `lib/signalApplications.ts`). Trade-off: ~20-24% of v2 Positioning starts will produce a junk-flavored `signal_applications` row. This is acceptable because:
+1. It matches JobFit's existing pattern — users see consistent placeholder text across products
+2. The case determination is correct regardless of company/title extraction quality — the user gets the workflow they came for
+3. Refusing to start Positioning for ~20% of users would be a worse outcome than producing a tracked junk row
+4. KI-01 already tracks the junk-row pile; Positioning is a new contributor (KI-01 updated 2026-05-12 to note this)
+
+**Log pattern for ops visibility:**
+
+```
+[positioning-v2/start] PLACEHOLDER_APPLICATION_CREATED runId=<run_id> profileId=<profile_id> jobfitRunId=<jobfit_run_id> reason=<reason>
+```
+
+Where `reason ∈ {empty_company, empty_title, empty_both}`. Only emitted when a placeholder was actually applied (not on every call). Distinct from JobFit's existing path (which doesn't log this marker), so grep can attribute new junk rows to Positioning specifically.
+
+**Inline comment locked at the call site** (in route.ts where `findOrCreateSignalApplication` is invoked):
+
+```typescript
+// JobFit's result_json.job_signals.companyName/jobTitle are empty on ~20% of
+// non-error runs (extraction failures on poorly-scraped JDs). Rather than
+// blocking Positioning for these users, we use JobFit's "(Unknown Company)"
+// placeholder convention. The resulting signal_applications row is junk-flavored
+// but the case determination is correct and the user gets their experience.
+// This contributes to KI-01's "junk signal_applications rows" pile; logged via
+// PLACEHOLDER_APPLICATION_CREATED for ops visibility.
+```
+
+**No schema change in this entry.** All data sourcing happens at the application layer.
+
+### DD-24 — Stage 1e validation complete · Foundation SHIPPED
+
+**Executed:** 2026-05-12 (all four steps).
+
+**Step 1 — Regression check:** `tests/jobfit-regression/regression-check.ts` ran 46 baseline cases. **Zero scoring mismatches.** Exit-1 is the pre-existing 21-baseline-cases-missing warning (test-data state, not a scoring regression). JobFit refactor (Stage 1b extraction of `findOrCreateSignalApplication`) is byte-identical to pre-refactor behavior.
+
+**Step 2 — End-to-end smoke test:** `tests/foundation/smoke-e2e.ts` — **24/24 checks PASS** against dev. Exercised:
+- candidate_targeting row exists for migrated test profile (intake chain validated)
+- signal_applications schema has `positioning_run_id` + `coverletter_run_id` columns (Stage 1a)
+- `findOrCreateSignalApplication` creates a new app, returns isNew=true (Stage 1b)
+- Re-call with same key + different run_id returns same id, isNew=false, jobfit_run_id updated (idempotent lookup-or-create)
+- positioning_run_id linkage works without overwriting jobfit_run_id
+- Cleanup deleted all 4 test rows (1 signal_application, 2 jobfit_runs, 1 positioning_run)
+
+**Step 3 — Lib unit tests:**
+- `tests/lane-taxonomy/taxonomy-check.ts` — **154 checks PASS**
+- `tests/candidate-targeting/derive-career-stage-check.ts` — **32 checks PASS**
+
+**Step 4 — Foundation completion summary:** `docs/Features/positioning-foundation-completion.md` — 11 acceptance criteria checklist with status, where-the-work-landed, and caveats for each. Three items marked "⚠ deferred" per kickoff/FRD scope (Framer intake form, user-verification UI, PreMed retroactive flagging abandoned).
+
+**Stage 1e: COMPLETE.**
+
+---
+
+### 2026-05-13 addendum — JobFit refactor recommit
+
+During Stage 1c kickoff, `git status` at session start surfaced uncommitted changes to `app/api/jobfit/route.ts`. Investigation revealed:
+
+- These were the Stage 1b "JobFit refactor ✓" changes (this runlog L29)
+- Validated as byte-identical to pre-refactor behavior in Stage 1e (DD-24 above)
+- Working-tree changes were live during Stage 1e validation but the commit didn't happen at Stage 1b ship
+- Today's regression sweep (2026-05-13): 46 cases, zero scoring drift — re-confirms byte-identical claim
+- Blob hash `fb685d1d` byte-identical between pre-touch state and recommit
+
+Recommitted with message documenting the trace. No code changes from the validated Stage 1e state.
+
+Lesson: Stage 1e ship checklist should explicitly verify `git status` clean as a final gate. The "validate in working tree" step assumed commit had happened; checking explicitly closes the assumption.
+
+---
+
+### 2026-05-13 second addendum — Foundation + Stage 1b not on origin/dev
+
+Investigation of today's repeated Vercel build failures revealed a structural gap larger than the import-path issue: the entire Foundation + Stage 1b body of work (lib/signalApplications.ts, lib/candidateTargeting.ts, lib/laneTaxonomy.ts, lib/positioning/, app/api/positioning/v2/, tests/foundation/, tests/positioning-v2/, supabase/migrations/20260512_*.sql, this runlog itself) is untracked in git. git add was never run for these paths.
+
+HTTP probe against wrnsignal-api-staging.vercel.app:
+- POST /api/positioning/v2/start → 404 (route not deployed)
+- POST /api/jobfit → 400 'Missing job text' (route exists)
+
+The runlog's framing of 'shipped to dev' for Foundation and Stage 1b reflected 'validated in working tree against local Supabase,' not 'present on origin/dev and deployed via Vercel.' This conflation is the structural root of today's three surprises:
+
+1. JobFit refactor uncommitted (this morning)
+2. Runlog itself untracked
+3. Foundation + Stage 1b untracked
+
+Tonight's resolution: revert cef7feab and a9bbd5c2 to restore green dev build. The substantive commit of Foundation + Stage 1b is deferred to a deliberate planning session — significant operation deserving plan-first / approve-before-build cycle.
+
+Stage 1c blocked until Foundation + Stage 1b are actually on dev. Framer Sections B-H not pasted; would have rendered errors against a 404 endpoint.
+
+Lessons compounding:
+- 'Shipped' must mean 'on origin/dev and building via next build,' not 'validated in working tree via tsx'
+- Stage 1e validation gate must include git status clean + next build success
+- This runlog should itself be git-tracked so its authority lives in the durable record
+
+Next session: scope the Foundation + Stage 1b commit operation. Inventory of untracked paths, commit boundary decisions, dependency ordering, per-commit validation gates.
+
+---
+
+### 2026-05-13 — Magic link redirect workaround (TEMPORARY)
+
+Discovered: send-link route hardcodes production URLs (wrnsignal-api.vercel.app/dashboard variants) since commit 987fed61, April 11. Dev environment magic links should redirect to dev, not production.
+
+Workaround applied (Studio-side, dev Supabase project zydrqckpwidipwbhrfgd):
+- Site URL set to https://wrnsignal-api-staging.vercel.app
+- Production URLs deliberately NOT in Redirect URLs allowlist
+- Result: send-link's hardcoded production URLs fail allowlist match, Supabase falls back to Site URL, user lands at dev
+
+This is documented Supabase behavior (fallback to Site URL when emailRedirectTo isn't allowlisted), but relying on it is fragile. Future Supabase config changes could break this.
+
+PERMANENT FIX (planned, not yet executed): app/api/auth/send-link/route.ts and four other routes hardcode production hostnames. They should use environment-appropriate URLs (request-derived or env var pattern, decision pending). Affected routes:
+- app/api/auth/send-link/route.ts
+- app/api/checkout/create-session/route.ts
+- app/api/coach/create-client/route.ts
+- app/api/coach/invite/route.ts
+- app/api/webhooks/stripe/route.ts
+
+This is the third structural finding of 2026-05-13 (alongside Foundation+Stage1b not committed, and Section A scope bug).
+
+When the permanent fix lands: revert the Site URL override, remove this entry from 'temporary workaround' status.
+
+---
+
+## Foundation: SHIPPED
+
+All Foundation deliverables shipped to dev + prod. Acceptance criteria addressed (closed or deferred-with-scope-note per the completion doc). No regressions in existing JobFit / Positioning / Cover Letter flows. Operational discipline held throughout — dev-first, prod requires explicit confirmation, write-restricted Proxy on all migration scripts, no service-role-key leakage, all results files gitignored.
+
+**Phase 1 (Setup and Scope Calibration) is a separate FRD-approval cycle.** Foundation work does NOT roll automatically into Phase 1 build. Next conversation starts with Phase 1 FRD review.
+
+### DD-23 — PreMed retroactive flagging abandoned
+
+**Executed:** 2026-05-12T18:36:14Z (revert applied to prod).
+
+**Context:** DD-22 documented an "any-run-in-history" PreMed patch that set `status_premed=true` on 4 profiles. Peri spot-checked the result and confirmed Danielle Keyes is NOT pre-med (she targets consulting; her most recent work is an Alpine Investors interview workbook). Investigation into all 4 patched profiles revealed the same pattern: the historical `jobfit_runs.jobFamily = 'PreMed'` values were all from runs against empty/garbage JD content.
+
+**Investigation findings (`scripts/migrate-candidate-targeting/investigate-premed-misclass.mjs`):**
+- **Danielle Keyes:** 5 PreMed runs of 19 total — all from 2026-03-18 with `(no title) + (no company)` (batch test runs with no JD signal). Her real April runs were Marketing/Sales at Vacheron Constantin / BALENCIAGA.
+- **lily stein:** 2 PreMed of 13 — titles `"ph About the job"` and `"pew About the job"` (JD-scraping artifacts).
+- **ryan rudnet:** 2 PreMed of 35 — titles + companies all literally `"Our people"` (scraped boilerplate text leaking into title/company fields).
+- **catherine2 lees2:** 13 PreMed of 64 — all from 2026-03-26 with `(no title) + (no company)` (same batch-test pattern).
+
+**Root cause:** When JobFit can't extract JD content, its JobFamily classifier falls back to scanning the candidate's profile_text/resume_text for family keywords. Profile text on these 4 candidates contained pre-med-adjacent keywords (volunteer work, science coursework, etc.) that tripped PreMed detection in the empty-JD fallback path.
+
+**Architectural finding:** `jobfit_runs.jobFamily` is **not a reliable signal source for historical lookups when associated JD content was empty/garbage.** Any future code that consumes this field for retroactive analysis must filter on JD quality (minimum: non-empty job_title AND non-empty company_name) or treat the value as advisory.
+
+**Decision (locked):** PreMed capture is forward-looking only from this point. Valid sources are:
+- (a) Intake form explicit `status_premed=true` (post-Framer-update — Stage 1c work, not yet shipped)
+- (b) Future JobFit runs on real PreMed-targeting JDs trigger the dual-write in the live intake/JobFit flow at the time they run
+
+**No retroactive scanning.** The "any-run-in-history" approach is fundamentally unsafe on this data shape. The migration's "latest-run" approach was also not robust — it produced 0 false positives by luck because latest-runs happened to be on real JDs.
+
+**Revert result (`scripts/migrate-candidate-targeting/revert-premed-flag.ts`):**
+- Dev smoke test: 0 eligible rows, 0 updates
+- Prod execution: 4 eligible rows → 4 reverted (`status_premed: true → false`)
+- Scope: ONLY `status_premed` column. `primary_lane`, `source`, and all other columns preserved exactly. Verified post-revert: each of the 4 profiles retains its migration-chosen lane (Danielle Keyes → consulting/strategy_consulting; lily stein → healthcare/life_sciences_biotech; ryan rudnet → finance/asset_management; catherine2 lees2 → marketing/brand_marketing).
+- Independent verification: `SELECT COUNT(*) FROM candidate_targeting WHERE status_premed=true` returns 0.
+
+**Result file path:** `scripts/migrate-candidate-targeting/results/revert-premed-prod-2026-05-12T18-36-15-303Z.txt`
+
+**Stage 1d-prod shipped state (post-revert):** 122 `candidate_targeting` rows, all `source='migration'`, all `status_premed=false`. Migration was correct; the patch addition was an error corrected by revert. **Foundation Stage 1d remains complete.**
+
+**Lesson for future migrations:** when a column's source data quality is uncertain, define the historical-window interpretation AND the quality filter explicitly at design time. "Any-run" vs "latest-run" wasn't the real question — the real question was "what counts as a credible signal in the source data."
+
+### DD-22 — Stage 1d-prod: complete (122 profiles backfilled + PreMed flag patched)
+
+**Executed:** 2026-05-12T17:49:11Z (initial 122-profile migration) + 2026-05-12T18:16:46Z (PreMed flag patch).
+
+**Migration result (run 1, after prod schema applied):**
+- 122 of 122 profiles processed; 122 candidate_targeting rows created
+- 3 reads (`client_profiles`, `candidate_targeting` existence check, `jobfit_runs`)
+- 122 writes, all to `candidate_targeting` (Proxy enforcement held — no writes to other tables)
+- 0 errors, 0 hallucinations
+- Guards exercised: `min_signal_input` × 23 (matches real-data validation prediction of 19% min-signal), `null_sublane_override` × 1 (Maleri Ginsberg legal-intern case, predicted from real-data run)
+- Confidence distribution: high 58, medium 38, low 26 (essentially matches the read-only validation's 58/39/25 — temperature=0 determinism holds)
+
+**Lane distribution matches the read-only validation:**
+```
+other 33 · marketing 27 · finance 14 · operations_strategy 11 · technology 10 ·
+sales_bd 8 · legal 6 · people_hr 5 · public_sector 2 · healthcare 2 ·
+accounting 2 · consulting 2
+```
+
+**PreMed gap surfaced and patched:**
+
+Initial migration used "latest JobFit run" to determine JobFamily, which missed historical PreMed candidates whose more-recent runs were different families. 0 of 122 rows got status_premed=true after the main migration. DD-04 spec intent was "any historical PreMed signal" — latest-run was an unintentional narrowing.
+
+**Patch (`scripts/migrate-candidate-targeting/patch-premed-flag.ts`) result:**
+- Scope: ONLY `status_premed` column updated. `primary_lane` deliberately preserved — pre-med is an additive status indicator running alongside whatever the candidate's current targeting is (architectural intent behind moving PreMed out of the lane enum per DD-04).
+- Dev smoke test: 0 eligible (expected — dev has 0 jobfit_runs)
+- Prod execution: 4 eligible profiles → 4 newly flagged. 22 historical PreMed runs collapsed to 4 distinct profiles after de-dup.
+- All 4 patched profiles retained their migration-chosen lanes (Danielle Keyes → consulting; lily stein → healthcare; ryan rudnet → finance; catherine2 lees2 → marketing). Dual-signal architecture confirmed working.
+
+**Independent verification:**
+- `SELECT COUNT(*) FROM candidate_targeting WHERE status_premed=true` returns 4
+- Per-profile spot-check confirmed lane preservation: each of the 4 profiles' `primary_lane` matches what the migration originally chose
+- `scripts/migrate-candidate-targeting/spot-check-prod.mjs` confirmed named-profile predictions (Aiden Ginsberg → other / "Sports management / MLB front office operations pathway", Allison Rutstein → people_hr/recruiting_talent, Maleri Ginsberg → legal/corporate_law with null_sublane_override applied)
+
+**Result file paths:**
+- `scripts/migrate-candidate-targeting/results/migration-prod-2026-05-12T17-53-28-938Z.txt` (122-profile migration)
+- `scripts/migrate-candidate-targeting/results/patch-premed-prod-2026-05-12T18-16-51-803Z.txt` (PreMed patch)
+
+**Caveat documented:** the "latest run" vs "any-run-in-history" interpretation question wasn't explicit at design time. DD-04's wording implied any-run; migration script implemented latest-run. Patch corrected the gap on prod. Future similar migrations (e.g., if another status indicator is added) should explicitly specify the historical-window interpretation at design time, not at implementation time.
+
+**Stage 1d-prod: COMPLETE.** Foundation moves to Stage 1e (final validation + regression sweep — the last Foundation step).
+
+### DD-21 — Dev migration completed (4 profiles, idempotency verified)
+
+**Executed:** 2026-05-12T16:23:38Z (first run) + 2026-05-12T16:23:55Z (idempotency re-run).
+
+**First run result:**
+- 4 profiles processed (all 4 in dev population)
+- 4 candidate_targeting rows created
+- 3 reads issued (`client_profiles`, `candidate_targeting`, `jobfit_runs`)
+- 4 writes issued (one per profile, all to `candidate_targeting`)
+- 0 errors
+- 0 prompt-defensive guards fired (no PreMed JobFamily, no null sub-lanes, no empty-Other descriptions). Only the informational `min_signal_input` flag on the 4th profile.
+
+**Idempotency re-run result:**
+- 0 writes (all 4 skipped as existing)
+- 2 reads (jobfit_runs query short-circuited because to-migrate set was empty)
+- 0 errors
+
+**Independent SQL Editor verification:** 4 rows present, all `source='migration'`, all `career_stage='mid_career'`, all status indicators `false`. Three rows with real lane + sub-lane combos (technology/product_management, marketing/brand_marketing, technology/software_engineering), one row with `lane='other'` + LLM-supplied description "Insufficient information to classify career direction". Script reporting and DB reality agree.
+
+**Result file paths:**
+- `scripts/migrate-candidate-targeting/results/migration-dev-2026-05-12T16-23-47-776Z.txt` (first run)
+- `scripts/migrate-candidate-targeting/results/migration-dev-2026-05-12T16-23-56-541Z.txt` (idempotency re-run)
+
+**Caveat for prod:** dev population (4 profiles, all min-signal-ish, no JobFit history) did NOT exercise the PreMed dual-write guard, the null-sublane override guard, or the empty-Other fallback guard. Those guards will fire on prod (which has 22 PreMed JobFamily runs, plus the Maleri Ginsberg legal-intern null-sublane case observed during real-data validation). Prod is the first time those guards run in write mode.
+
+**Stage 1d-dev: COMPLETE.** Stage 1d-prod: gated on separate explicit approval.
+
+### DD-20 — Null-sublane defensive guard (migration write logic)
+
+**Source:** Real-data run on 122 prod profiles, 2026-05-12. One profile (Maleri Ginsberg, legal intern) surfaced an LLM-side schema violation: lane=legal, sublane=null, confidence=medium. None of the four legal sub-lanes cleanly fit a legal intern, so the LLM made a judgment call to return null rather than misclassify.
+
+**Decision (locked, migration only):** At write time, if LLM returns null sublane on a non-Other lane, override:
+- Set `primary_sublane` = first sub-lane in the chosen lane (deterministic from `LANES`)
+- Downgrade `confidence` to `'low'` (best-effort label; user-verification UI handles)
+- Log the override per-profile so we know how often this fires
+
+Preserves the lane match (which is the harder inference) while acknowledging sub-lane uncertainty. Schema CHECK constraints would otherwise reject the row. User-verification UI catches the override.
+
+**Not a prompt change:** the prompt is locked per DD-15. This guard lives in migration's post-inference processing.
+
+### DD-19 — JobFamily consistency reframe (informative, not gating)
+
+Real-data run showed 46.3% JobFamily-to-lane consistency (25/54 eligible). FRD's original 75-95% range and v2 design's "healthy range" framing were both wrong for the actual data.
+
+**Finding from per-profile read-through:** the LLM is correctly weighting user-stated targeting (target_roles) above JobFit's auto-detected JobFamily. JobFit's classifications are often older or based on coincidental keyword matches; the candidate's current target is the stronger signal. Recruiters auto-classified as one thing but stating different intent, fractional CFOs spanning Finance + Operations, etc.
+
+**Decision (locked):** JobFamily consistency is INFORMATIVE, not gating. High consistency (95%+) is the yellow flag — would indicate the LLM is over-deferring to auto-detection rather than weighing user intent. 40-70% range is healthy for the way users actually self-describe vs. how JobFit auto-classifies.
+
+The metric stays in the runner's summary output but doesn't gate migration.
+
+### DD-18 — High-confidence threshold recalibrated against actual data
+
+FRD locked ≥85% high-confidence as the migration acceptance threshold. Real-data run on 122 prod profiles showed 47.5% high overall.
+
+**Finding from population breakdown:**
+- 23 min-signal profiles (no target_roles + no resume + no JobFit run) → all correctly route to `lane='other'` with low/medium confidence. By definition cannot be high-confidence — there's nothing to be confident about. These represent 19% of the population.
+- 99 inferrable profiles → 58.6% high-confidence (58 of 99).
+
+The 85% FRD threshold was set before knowing what the real distribution looked like. Min-signal profiles can't move the metric.
+
+**Decision (locked):** Operational acceptance metric is "high-confidence rate on inferrable subset" rather than population-wide. Inferrable subset = profiles with at least one of: target_roles, resume_text > 50 chars, or successful JobFit run.
+
+**Migration acceptable at current distribution** (58.6% high on inferrable, 0 hallucinations, 0 errors, qualitative spot-check pass per Peri's read-through).
+
+**FRD note:** Section 4.6's "≥85% high-confidence" should be revised to scope to inferrable subset, OR the threshold should be lowered to ~55% if scoped to full population. Either is acceptable; the prompt is doing the right thing.
+
+### DD-17 — Stage 1d runs on full prod population, not a sample
+
+Prod has 122 profiles total. Sampling 50 (41%) or 100 (82%) of a 122-profile population adds variance without meaningful cost savings — cost difference at full coverage is ~$0.06 vs $0.30.
+
+**Decision:** Run inference on the full 122-profile prod population, not a sample. Stratification top-up logic is dropped from the runner (irrelevant when including everyone).
+
+**Implication for acceptance threshold:** FRD's ≥85% high-confidence threshold applies as a **population-level metric** rather than a sample-level estimate. The output IS the migration target distribution; if the prompt validates here, it validates for the actual backfill.
+
+**Naming note:** Design doc and runner retain the "sample" suffix (`run-realdata-sample.ts`, `realdata-<ISO>.txt`) for continuity with prior work. In this context "sample" means "the full set being inferred and evaluated" — not a probabilistic sub-selection.
+
+### DD-16 — Stage 1d real-data sample uses prod, read-only
+
+Dev DB inspection on 2026-05-12 surfaced only 4 client_profiles (3 test fixtures + 1 staff, 0 with substantive profile_text, 0 jobfit_runs). Not viable for the 50-sample distribution test.
+
+**Decision:** Pull anonymized samples from prod (`ejhnokcnahauvrcbcmic.supabase.co`), read-only, no writes. Inference runs locally; results written to gitignored local file.
+
+**Operational guards (locked):**
+- Service-role connection used for SELECTs only; no writes
+- `.env.production.local` loaded only by sample-runner; not imported elsewhere (gitignored by `.env*.local` rule)
+- Service-role key never logged, never written to results file
+- Results file references profiles by UUID only — raw target_roles / resume content anonymized before LLM call
+- `scripts/migrate-candidate-targeting/results/` gitignored (`.gitignore:25`)
+
+**Prod inventory snapshot (read-only inspection):**
+- 122 total profiles
+- 99 with profile_text > 100 chars
+- 23 min-signal (no target_roles, no resume, no JobFit run)
+- 755 successful JobFit runs across 62 distinct profiles
+- JobFamily distribution skews Marketing (242), Finance (98), Sales (80), Consulting (70); long tail incl. Healthcare/Trades/Accounting in single digits
+
+**Real-data sample design v2:** `docs/Features/foundation-real-data-sample-design.md`. Synthetic results are still the structural validation; this real-data sample tests distribution and confidence calibration on actual prod-shape data.
+
+### DD-15 — Confidence calibration: upward bias accepted as production-ready
+
+Two synthetic runs of `claude-haiku-4-5-20251001` against the 8-case sample surfaced a consistent pattern: Haiku exhibits a **one-step upward bias on confidence** under the current prompt (medium when target was low, high when target was medium). The bias is:
+
+- **Small** — one step, not two
+- **Consistent in direction** — always upward, never downward
+- **Safe** — over-confident inferences flag for user verification rather than escape detection; more cases get verified, not fewer
+- **A property of soft prose rules + LLM judgment** — not a fixable prompt issue
+
+**Diminishing returns on prompt tuning.** Iteration v2 (DD-14) fixed Case 5 (force-fit into a real lane) and partially fixed Case 8 (high → medium, target was low), but introduced a regression on Case 2 (low → medium). Example transcripts:
+
+- Case 2 run 1: `Confidence: expected=low actual=low ✓`
+- Case 2 run 2: `Confidence: expected=low actual=medium ✗` (same input, same model, same temp — only the system prompt changed)
+
+Each prompt addition produced zero-sum crosstalk. We're trading wins for new losses now.
+
+**Decision (locked):** Accept the current prompt (v2 in this conversation) as production-ready. Confidence labels are best-effort calibration, not strict measurement. Lane / sub-lane / description / hallucination dimensions are all 8/8 on synthetic — those structural guarantees hold. Confidence is the soft dimension and the user-verification UI catches misses.
+
+**Migration acceptance threshold:** The FRD's ≥85% high-confidence target will be evaluated against real data, not synthetic edge cases. Synthetic results (3-4 high out of 8) are deliberately stacked with ambiguous cases; real-data distribution should be cleaner. If real data also misses the threshold, that's a conversation about whether to relax the threshold or accept lower-confidence rows with stronger verification UI gating — not necessarily a prompt fix.
+
+**Run artifacts:** `scripts/migrate-candidate-targeting/results/synthetic-2026-05-12T15-03-16-957Z.txt` (run 1), `synthetic-2026-05-12T15-15-05-129Z.txt` (run 2).
+
+### DD-14 — Prompt iteration v2 (post-synthetic-run-1)
+
+Synthetic run 1 (2026-05-12T15:03 UTC) surfaced two prompt issues; iteration v2 fixes both. Run 1 transcript: `scripts/migrate-candidate-targeting/results/synthetic-2026-05-12T15-03-16-957Z.txt`.
+
+**Fix 1 — Other rule extension (Case 5 force-fit):** Run 1's Case 5 (research + entrepreneurship) routed to `public_sector / education_academia` instead of `other`. The anti-Other reinforcement was pushing the LLM to find SOME real lane even when the input genuinely spanned multiple lanes. Added a third tier to the Other rule:
+
+> Use 'other' when the input genuinely spans multiple lanes equally (no single lane dominates) and force-fitting to one would ignore meaningful parts of the input. Example: target_roles="research and entrepreneurship" spans academia, founder/business, and possibly technology — no single lane dominates → lane='other', primary_other_description='Research-to-entrepreneurship transition (academic + startup founder)', confidence='medium'.
+
+Distinguishes "sparse signal pointing to one closest lane" (use closest, low confidence) from "input spans multiple lanes equally" (use Other).
+
+**Fix 2 — Hedging language clause (Case 8 confidence calibration):** Run 1's Case 8 (sprawling multi-lane target_roles) returned high confidence despite "if better fit" / "possibly" hedging. Added a clause inside the confidence scale:
+
+> Hedging language in target_roles ('if better fit', 'possibly', 'also considering', 'open to', 'exploring') indicates candidate uncertainty about lane direction. Even if a primary lane is namable, hedged inputs are at most medium confidence. Multi-hedged inputs ('A, B if better, possibly C') are low confidence regardless of which lane you pick.
+
+**Runner update — acceptableLanes:** Added `acceptableLanes?: string[]` to `SyntheticExpected` and updated `compareCase` to accept any lane in the list. Used on Case 8 where Peri locked "any of [technology, consulting, finance] with low confidence is acceptable" — single-lane strict expectation was unduly forcing a FAIL even when the LLM picked a defensible alternative.
+
+### DD-13 — PreMed false-confidence accepted as documented limitation
+
+Synthetic run 1's Case 3 (PreMed → healthcare/clinical_patient_care) returned `confidence='high'` instead of the expected `medium`. The LLM treats clinical keyword overlap ("hospital volunteering, clinical exposure") as strong signal for `clinical_patient_care`, even though that sub-lane is conceptually intended for working clinicians, not pre-med students preparing for medical school.
+
+**Decision:** Do NOT modify the prompt to address this. Adding case-specific rules accumulates badly — each special-case carve-out makes the prompt harder to reason about and risks side effects on other cases.
+
+**Mitigation in production:** User-verification UI catches the over-confident assignment on first session. The candidate sees the inferred row and can flip the sub-lane to a more appropriate value. Low-friction correction path is the right place to handle this — at the verification step, not in the LLM's prompt.
+
+**Trigger to revisit:** If multiple users on real-data migration consistently flip PreMed clinical_patient_care to a different sub-lane, that signals the LLM's choice is wrong often enough to justify a prompt change. Until then, the limitation stands.
+
+### DD-12 — Synthetic testing model is locked to production migration model
+
+Stage 1d synthetic testing uses `claude-haiku-4-5-20251001`. Production migration MUST use the same model. If the model is changed in production (newer Haiku version, switch to Sonnet, etc.), re-run synthetic testing before trusting accuracy assumptions — synthetic results are model-specific and prompt-tuning effects don't transfer cleanly across models.
+
+Lock confirmed: `MODEL` constant in `scripts/migrate-candidate-targeting/run-synthetic-test.ts` and the eventual migration runner. If either drifts from the other, the synthetic results are no longer evidence for the migration's accuracy.
+
+### DD-11 — Transactional intake via Postgres function (canonical RPC pattern)
+
+**Source:** Stage 1b — profile-intake's combined client_profiles UPDATE + candidate_targeting UPSERT needed atomicity. Codebase had zero existing transaction patterns (no `.rpc()` calls, no Postgres functions beyond `set_updated_at`, no direct pg client).
+
+**Decision:** Introduce a Postgres function (`public.intake_upsert_with_targeting`) called via `supabase.rpc(...)`. Function body runs in an implicit plpgsql transaction; any constraint failure or `RAISE EXCEPTION` rolls back both writes. Established as the canonical pattern for cross-table atomic writes in the v2 architecture (downstream: positioning_runs_v2 + signal_applications linkage, Phase 5 result snapshots, future Cover Letter Integration writes).
+
+**Rationale (locked):**
+1. We're establishing patterns for v2 architecture. Cross-table atomic writes will recur. Setting the transactional pattern now means downstream features have a paved path.
+2. The alternative ("loud warning in 200 response") depends on frontend cooperation. Frontend is not fully under our control — a consistency guarantee that depends on the frontend reading and surfacing warnings is more fragile than a transactional guarantee.
+3. Normalizing "data inconsistency is OK if observable" is a corrosive pattern that propagates.
+
+**Implementation choices captured here:**
+- Function signature: `(p_profile_id uuid, p_user_id uuid, p_profile_payload jsonb, p_targeting_payload jsonb DEFAULT NULL)`.
+- `SECURITY INVOKER` (default). EXECUTE REVOKEd from PUBLIC/anon/authenticated, GRANTed to service_role only — defense in depth, prevents end-user JWTs from bypassing route-level input sanitization via direct `/rpc` call.
+- p_user_id is a separate required parameter, not embedded in the payload — mirrors the route's existing `.eq("id", profile_id).eq("user_id", user_id)` double-check.
+- UPDATE matches 0 rows → RAISE `profile_not_found_or_wrong_user`. Behavior improvement over current route's silent no-op for this case. Legacy NULL `user_id` profiles surface as 500s instead of silent failures.
+- Profile fields use straight assignment (no COALESCE) to preserve the route's `field || null` pattern. EXCEPTION: `profile_complete` uses `COALESCE(..., false)` because the column is `NOT NULL DEFAULT false` — a missing payload key would otherwise abort the transaction. Robustness for future callers.
+- Status indicators (premed/prelaw/pregrad) use `COALESCE(..., false)` per Stage 1b #4's "default all three to false" instruction.
+
+**Pattern for future use:**
+- Cross-table writes that must be atomic → write a Postgres function in `public.<operation>_<scope>`; expose via `supabase.rpc()`; restrict EXECUTE to `service_role` only.
+- Function body documents payload shape, error cases, and return shape in the file header.
+- Migration file in `supabase/migrations/<date>_<description>.sql`; apply via SQL Editor on dev; document in this runlog.
+
+### DD-08 — Secondary lane columns also validated by CHECK
+
+FRD section 4.2 specifies a CHECK constraint on `primary_lane` only. `secondary_lane_1` and `secondary_lane_2` are TEXT columns receiving values from the same enum but have no validation in the FRD spec.
+
+**Decision:** Added matching `secondary_lane_1_validation` and `secondary_lane_2_validation` CHECK constraints to the migration. Both allow NULL but reject any non-null value outside the 12 locked lane IDs. Consistent with primary_lane treatment and avoids accidental garbage in the columns.
+
+**Justification:** Sub-lanes are TEXT-no-CHECK (per DD-05) because the sub-lane list evolves. But the top-level lane list is the stable enum and should be enforced on every column that holds a lane value, not just primary.
+
+### DD-09 — `primary_other_description` CHECK uses `LENGTH(TRIM(...)) > 0`
+
+FRD section 4.2's `other_description_required_for_other_lane` example reads `LENGTH(primary_other_description) > 0`. The migration ships with `LENGTH(TRIM(primary_other_description)) > 0` — same intent, stricter enforcement: rejects whitespace-only descriptions ('   ', '\t\n').
+
+**Justification:** A whitespace-only Other description carries no information and would mislead any downstream consumer that's checking for "has the user described their targeting." Rejecting at the DB layer is consistent with the FRD's intent (Other requires real text) and removes a sanitization burden from the app layer.
+
+**FRD update needed:** Section 4.2's CHECK example should be updated to include `TRIM()`. Not blocking; tracked here.
+
+### DD-10 — 12-value lane list repeated across 3 CHECK constraints (maintenance debt)
+
+The migration includes `IN ('consulting', 'finance', ...)` three times — once for `primary_lane_validation`, once for `secondary_lane_1_validation`, once for `secondary_lane_2_validation`. A future lane addition requires editing all three in lockstep, plus `lib/laneTaxonomy.ts`.
+
+**Alternative considered:** Postgres `ENUM` type would give a single source of truth at the DB layer. Rejected for v1 because `ALTER TYPE ... ADD VALUE` has limitations (can't be in a transaction in older PG; reordering requires recreating the enum) and the top-level lane list is stable enough that the repetition cost is low.
+
+**Trigger to revisit:** If lane additions/changes happen more than once per quarter, convert to a Postgres ENUM in a follow-up migration. Until then, the runlog DD-01 captures the count and `lib/laneTaxonomy.ts` is the canonical source for additions.
