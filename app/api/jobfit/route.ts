@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
       try {
         const { data: existingRun } = await supabase
           .from("jobfit_runs")
-          .select("result_json, verdict, fingerprint_hash, created_at")
+          .select("id, result_json, verdict, fingerprint_hash, created_at")
           .eq("client_profile_id", profileId)
           .eq("fingerprint_hash", fingerprint_hash)
           .maybeSingle()
@@ -322,6 +322,7 @@ export async function POST(req: NextRequest) {
 
           return withCorsJson(req, {
             ...(cleaned as any),
+            jobfit_run_id: (existingRun as any).id,  // FRD F1 — needed by /api/positioning/v2/start
             fingerprint_code,
             fingerprint_hash,
             jobfit_logic_version: JOBFIT_LOGIC_VERSION,
@@ -524,6 +525,7 @@ export async function POST(req: NextRequest) {
 
     return withCorsJson(req, {
       ...(result as any),
+      jobfit_run_id: runId,  // FRD F1 — null if jobfit_runs insert failed (rare; v2/start surfaces as 400)
       fingerprint_code,
       fingerprint_hash,
       jobfit_logic_version: JOBFIT_LOGIC_VERSION,
