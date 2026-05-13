@@ -430,6 +430,20 @@ This is the third structural finding of 2026-05-13 (alongside Foundation+Stage1b
 
 When the permanent fix lands: revert the Site URL override, remove this entry from 'temporary workaround' status.
 
+### 2026-05-13 — Framer prod modifications deferred from today's commit operation
+
+While staging Commit 8c (Framer dev mirror), surfaced 6 modified + 1 new framer/prod/* files with content changes 7-9 days old (mtimes 2026-05-04 / 2026-05-06). The most recent commit touching these files was ab14785e (2026-05-04) — a zero-byte rename moving them into framer/prod/. No content commits since.
+
+Five distinct themes identified, all unauthorized this session (same shape as the JobFit refactor surprise earlier today):
+
+1. App Store badge integration — needs App Store launch + campaign param verification
+2. Conversion pixels (Meta InitiateCheckout + Google AW-11125129027/AMw8CMHs...) — needs token-intent verification in Google Ads
+3. Path slug /signal/job-analysis → /signal/jobfit-run-trial — needs Framer Studio routing verification
+4. Coming-soon banner removal — cosmetic, paired with Theme 1
+5. Trial card sunset (jobfit_only) + persona_id wiring — both established in tracked code
+
+Deferred to a separate session for per-theme review + appropriate verification gates.
+
 ---
 
 ## Foundation: SHIPPED
