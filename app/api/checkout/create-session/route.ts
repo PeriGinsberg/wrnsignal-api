@@ -6,6 +6,7 @@
 import { type NextRequest } from "next/server"
 import Stripe from "stripe"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -68,9 +69,10 @@ export async function POST(req: NextRequest) {
     // app via the signalmobile:// scheme. The webhook also reads
     // metadata.source to pick the OTP-style email template for mobile users.
     const isMobile = source === "mobile"
+    const appUrl = getAppUrl(req)
     const successUrl = isMobile
-      ? `https://wrnsignal-api.vercel.app/checkout/mobile-success?session_id={CHECKOUT_SESSION_ID}`
-      : `https://wrnsignal-api.vercel.app/checkout/success?session_id={CHECKOUT_SESSION_ID}`
+      ? `${appUrl}/checkout/mobile-success?session_id={CHECKOUT_SESSION_ID}`
+      : `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`
 
     // Attribution + match-quality signals forwarded by the Framer site's
     // getAttributionSnapshot() helper (framer/landingpage.txt,

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
+import { FRAMER_URL } from "../../lib/urls"
 
 // Sprint 3 (2026-05-08): conditional nav rendering by is_coach.
 //   • D2C: My Account (renamed from Overview), Job Tracker, ResumeRx
@@ -50,7 +51,7 @@ const COACH_NAV: NavGroup[] = [
 ]
 
 const EXTERNAL_NAV_ITEM: NavItem = {
-  href: "https://wrnsignal.workforcereadynow.com/signal/jobfit",
+  href: `${FRAMER_URL}/signal/jobfit`,
   label: "Back to SIGNAL →",
   external: true,
 }

@@ -2,6 +2,7 @@
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { FRAMER_URL } from "@/lib/urls"
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -243,7 +244,7 @@ export async function POST(req: Request) {
 
     // Legacy-only mode: stop here (keeps your old intake route alive)
     if (modeAllowsLegacyOnlyShortCircuit()) {
-      const claim_url = `https://wrnsignal.workforcereadynow.com/start?claim=${rawToken}`
+      const claim_url = `${FRAMER_URL}/start?claim=${rawToken}`
       return withCorsJson(
         req,
         {
@@ -292,7 +293,7 @@ export async function POST(req: Request) {
     }
 
     // claim_url is just a dev helper / fallback
-    const claim_url = `https://wrnsignal.workforcereadynow.com/start?claim=${rawToken}`
+    const claim_url = `${FRAMER_URL}/start?claim=${rawToken}`
 
   // Track purchase
     // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md

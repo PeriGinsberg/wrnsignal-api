@@ -2,6 +2,7 @@
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { FRAMER_URL } from "@/lib/urls"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -9,7 +10,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 // ✅ DEV redirect (where the link should land after auth)
 const INTAKE_REDIRECT_URL =
   process.env.INTAKE_REDIRECT_URL ||
-  "https://genuine-times-909123.framer.app/signal/intake"
+  `${FRAMER_URL}/signal/intake`
 
 const VERSION = "email-magiclink-v1"
 

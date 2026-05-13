@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, card, eyebrow, headline, input, textarea, btnPrimary, btnSecondary, label } from "../../../lib/dashboard-theme"
+import { FRAMER_URL } from "../../../lib/urls"
 
 // ── Status + Decision color maps ────────────────────────────
 
@@ -215,7 +216,7 @@ export default function TrackerPage() {
     const params = new URLSearchParams()
     if (data.session?.access_token) params.set("access_token", data.session.access_token)
     if (data.session?.refresh_token) params.set("refresh_token", data.session.refresh_token)
-    const url = `https://wrnsignal.workforcereadynow.com/signal/jobfit?run=${runId}#${params.toString()}`
+    const url = `${FRAMER_URL}/signal/jobfit?run=${runId}#${params.toString()}`
     window.location.replace(url)
   }
 

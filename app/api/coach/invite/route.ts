@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send magic link to the client
-    const redirectUrl = `https://wrnsignal-api.vercel.app/dashboard/accept-invite?token=${inviteToken}`
+    const redirectUrl = `${getAppUrl(req)}/dashboard/accept-invite?token=${inviteToken}`
 
     const { error: otpErr } = await supabase.auth.signInWithOtp({
       email: clientEmail,

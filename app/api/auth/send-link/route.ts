@@ -14,6 +14,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -67,11 +68,12 @@ export async function POST(req: NextRequest) {
     //   coaches  → /dashboard/coach (Sprint 2 — Coach Home / "My Clients" landing)
     //   complete → /dashboard/tracker (returning client lands on Job Tracker)
     //   else     → /dashboard (My Account, gentle on first sign-in)
+    const appUrl = getAppUrl(req)
     const redirectTo = profile.is_coach
-      ? "https://wrnsignal-api.vercel.app/dashboard/coach"
+      ? `${appUrl}/dashboard/coach`
       : profile.profile_complete
-      ? "https://wrnsignal-api.vercel.app/dashboard/tracker"
-      : "https://wrnsignal-api.vercel.app/dashboard"
+      ? `${appUrl}/dashboard/tracker`
+      : `${appUrl}/dashboard`
 
     // Send the magic link via OTP. signInWithOtp handles everything:
     // creates the Supabase Auth user if it doesn't exist yet, and sends

@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { sendClientInvite } from "../../../../lib/email/sendClientInvite"
+import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -234,7 +235,7 @@ export async function POST(req: NextRequest) {
       type: "magiclink",
       email,
       options: {
-        redirectTo: "https://wrnsignal-api.vercel.app/dashboard",
+        redirectTo: `${getAppUrl(req)}/dashboard`,
       },
     })
 

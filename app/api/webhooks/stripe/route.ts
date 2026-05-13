@@ -12,6 +12,7 @@ import Stripe from "stripe"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { buildSignalsFromRow, fireConversions } from "../../_lib/conversions"
 import type { PurchaseSignals } from "../../_lib/conversions/types"
+import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -214,7 +215,7 @@ async function handleCheckoutCompleted(
   const isMobile = session.metadata?.source === "mobile"
   const otpOptions = isMobile
     ? undefined
-    : { emailRedirectTo: "https://wrnsignal-api.vercel.app/dashboard" }
+    : { emailRedirectTo: `${getAppUrl()}/dashboard` }
 
   const { error: otpErr } = await supabase.auth.signInWithOtp({
     email,
