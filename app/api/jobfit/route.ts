@@ -20,7 +20,6 @@ import { runJobFit } from "../_lib/jobfitEvaluator"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { logStatusChange } from "../_lib/applicationStatusHistory"
-import { findOrCreateSignalApplication } from "../../../lib/signalApplications"
 import { extractProfileV4, PROFILE_V4_STAMP } from "../_v4/extractProfileV4"
 import { RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
 import { extractJobSignals } from "../jobfit/extract"
@@ -442,60 +441,65 @@ export async function POST(req: NextRequest) {
         })
 
         if (runId) {
-          // Lookup-or-create signal_applications row + link jobfit_run_id.
-          // KI-01 preservation: apply "(Unknown Company)" / "(Unknown Role)"
-          // placeholders BEFORE the utility call. The utility refuses to
-          // insert an empty companyName, so an empty-input JobFit run must
-          // default explicitly to preserve the prior junk-row insert
-          // behavior. (Small documented side-effect: empty-input runs now
-          // ILIKE-match existing "(Unknown Company)" rows and update them
-          // instead of always inserting a new junk row. Real fix is the
-          // eventual KI-01 product decision.)
-          const appResult = await findOrCreateSignalApplication({
-            supabase,
-            profileId,
-            companyName: companyName || "(Unknown Company)",
-            jobTitle: jobTitle || "(Unknown Role)",
-            jobUrl: userJobUrl,
-            location: jobLocation || "",
-            personaId: personaId || null,
-            jobfitRunId: runId,
-            // applicationStatus + interestLevel use the utility's defaults
-            // ('saved' / 1), matching JobFit's prior explicit values.
-          })
+          let existingApp: any = null
+          if (companyName) {
+            const { data, error: lookupErr } = await supabase
+              .from("signal_applications")
+              .select("id")
+              .eq("profile_id", profileId)
+              .ilike("company_name", companyName)
+              .ilike("job_title", jobTitle || "")
+              .maybeSingle()
 
-          if (appResult.error) {
-            console.warn("[jobfit/route] application lookup-or-create failed:", appResult.error)
+            if (lookupErr) {
+              console.warn("[jobfit/route] application lookup failed:", lookupErr.message)
+            }
+            existingApp = data
           }
 
-          const appId = appResult.id
-          if (appId) {
-            // JobFit-specific UPDATE fields — owned by this route, not the
-            // shared utility (locked decision: minimal extraction; see
-            // lib/signalApplications.ts and Foundation FRD section 4.3).
-            const { error: patchErr } = await supabase
-              .from("signal_applications")
-              .update({
-                signal_decision: String((result as any)?.decision || ""),
-                signal_score: (result as any)?.score ?? null,
-                signal_run_at: new Date().toISOString(),
-              })
-              .eq("id", appId)
-            if (patchErr) {
-              console.warn("[jobfit/route] JobFit-fields patch failed:", patchErr.message)
+          if (existingApp?.id) {
+            const { error: updateErr } = await supabase.from("signal_applications").update({
+              signal_decision: String((result as any)?.decision || ""),
+              signal_score: (result as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: runId,
+              updated_at: new Date().toISOString(),
+            }).eq("id", existingApp.id)
+
+            if (updateErr) console.warn("[jobfit/route] application update failed:", updateErr.message)
+
+            await supabase.from("jobfit_runs").update({
+              application_id: existingApp.id,
+            }).eq("id", runId)
+
+            console.log("[jobfit/route] updated existing application:", existingApp.id)
+          } else {
+            const { data: newApp, error: createErr } = await supabase.from("signal_applications").insert({
+              profile_id: profileId,
+              company_name: companyName || "(Unknown Company)",
+              job_title: jobTitle || "(Unknown Role)",
+              location: jobLocation || "",
+              job_url: userJobUrl,
+              signal_decision: String((result as any)?.decision || ""),
+              signal_score: (result as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: runId,
+              persona_id: personaId || null,
+              application_status: "saved",
+              interest_level: 1,
+            }).select("id").single()
+
+            if (createErr) {
+              console.error("[jobfit/route] application create FAILED:", createErr.message, createErr.details, createErr.hint)
+            } else {
+              console.log("[jobfit/route] created new application:", newApp?.id)
             }
 
-            // Reverse linkage on jobfit_runs.application_id.
-            await supabase
-              .from("jobfit_runs")
-              .update({ application_id: appId })
-              .eq("id", runId)
-
-            if (appResult.isNew) {
-              console.log("[jobfit/route] created new application:", appId)
-              await logStatusChange(supabase, appId, null, "saved", profileId)
-            } else {
-              console.log("[jobfit/route] updated existing application:", appId)
+            if (newApp?.id) {
+              await supabase.from("jobfit_runs").update({
+                application_id: newApp.id,
+              }).eq("id", runId)
+              await logStatusChange(supabase, newApp.id, null, "saved", profileId)
             }
           }
         } else {
