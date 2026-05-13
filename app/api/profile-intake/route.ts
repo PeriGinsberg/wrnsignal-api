@@ -2,6 +2,8 @@
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getAuthedProfileText } from "../_lib/authProfile"
+import { isValidLaneId, isValidSubLaneId } from "../../../lib/laneTaxonomy"
+import { deriveCareerStage } from "../../../lib/candidateTargeting"
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -48,6 +50,141 @@ type IntakeBody = {
   extra_context?: string | null
 
   risk_overrides?: Record<string, any> | null
+
+  // Foundation Stage 1b: optional structured targeting.
+  // Legacy intakes (pre-Framer-update) omit this field — they continue to
+  // work and simply don't write a candidate_targeting row. New intakes that
+  // include this field trigger an atomic intake_upsert_with_targeting RPC
+  // that writes both client_profiles and candidate_targeting in one tx.
+  //
+  // Status indicators (status_premed/_prelaw/_pregrad) are accepted in
+  // payload but written as false until Stage 1c+ wires them up. Silent
+  // ignore preserves Framer iteration flexibility.
+  targeting?: {
+    primary_lane?: string | null
+    primary_sublane?: string | null
+    primary_other_description?: string | null
+    secondary_lanes?: Array<{ lane?: string | null; sublane?: string | null }> | null
+    status_premed?: boolean | null
+    status_prelaw?: boolean | null
+    status_pregrad?: boolean | null
+  } | null
+}
+
+// ---------- Targeting validation ----------
+type NormalizedTargeting = {
+  primary_lane: string
+  primary_sublane: string | null
+  primary_other_description: string | null
+  secondary_lane_1: string | null
+  secondary_sublane_1: string | null
+  secondary_lane_2: string | null
+  secondary_sublane_2: string | null
+}
+
+type TargetingValidationResult =
+  | { ok: true; normalized: NormalizedTargeting }
+  | { ok: false; error: string; field?: string | null }
+
+/**
+ * Validate the optional `targeting` field on the intake payload against
+ * the canonical lane taxonomy (lib/laneTaxonomy.ts). Returns a normalized
+ * shape (with secondary_lanes flattened into the four flat columns) or a
+ * structured error.
+ *
+ * Behavior locked by Stage 1b #4:
+ *   - secondary_lanes > 2 entries: silently truncate (first 2 win)
+ *   - status_premed/_prelaw/_pregrad in payload: silently ignored here;
+ *     RPC payload always writes false
+ *   - Other lane: primary_other_description is required (non-empty after
+ *     trim); primary_sublane is ignored (Other has no sub-lanes)
+ *   - Non-Other lane: primary_sublane is required and must match the
+ *     parent lane in the taxonomy
+ *   - Secondary Other: lane='other' accepted; no description column for
+ *     secondary, so any sub-lane / description is ignored
+ */
+function validateAndNormalizeTargeting(
+  input: unknown,
+): TargetingValidationResult {
+  if (!input || typeof input !== "object") {
+    return { ok: false, error: "targeting_must_be_object" }
+  }
+  const t = input as IntakeBody["targeting"]
+  if (!t) return { ok: false, error: "targeting_must_be_object" }
+
+  // Primary lane
+  const primaryLane = (t.primary_lane ?? "").trim()
+  if (!primaryLane || !isValidLaneId(primaryLane)) {
+    return { ok: false, error: "invalid_primary_lane", field: primaryLane || null }
+  }
+
+  let primarySublane: string | null = null
+  let primaryOtherDescription: string | null = null
+
+  if (primaryLane === "other") {
+    const desc = (t.primary_other_description ?? "").trim()
+    if (!desc) {
+      return { ok: false, error: "missing_primary_other_description" }
+    }
+    primaryOtherDescription = desc
+  } else {
+    const subLane = (t.primary_sublane ?? "").trim()
+    if (!subLane || !isValidSubLaneId(primaryLane, subLane)) {
+      return {
+        ok: false,
+        error: "invalid_primary_sublane",
+        field: subLane || null,
+      }
+    }
+    primarySublane = subLane
+  }
+
+  // Secondary lanes — up to 2; silently truncate any extras
+  const rawSecondaries = Array.isArray(t.secondary_lanes)
+    ? t.secondary_lanes.slice(0, 2)
+    : []
+
+  const normSec: Array<{ lane: string | null; sublane: string | null }> = [
+    { lane: null, sublane: null },
+    { lane: null, sublane: null },
+  ]
+
+  for (let i = 0; i < rawSecondaries.length; i++) {
+    const sec = rawSecondaries[i]
+    if (!sec || typeof sec !== "object") continue
+    const lane = (sec.lane ?? "").trim()
+    if (!lane) continue
+    if (!isValidLaneId(lane)) {
+      return { ok: false, error: "invalid_secondary_lane", field: lane }
+    }
+    if (lane === "other") {
+      // No description column for secondary; accept lane only.
+      normSec[i] = { lane, sublane: null }
+    } else {
+      const subLane = (sec.sublane ?? "").trim()
+      if (subLane && !isValidSubLaneId(lane, subLane)) {
+        return {
+          ok: false,
+          error: "invalid_secondary_sublane",
+          field: `${lane}/${subLane}`,
+        }
+      }
+      normSec[i] = { lane, sublane: subLane || null }
+    }
+  }
+
+  return {
+    ok: true,
+    normalized: {
+      primary_lane: primaryLane,
+      primary_sublane: primarySublane,
+      primary_other_description: primaryOtherDescription,
+      secondary_lane_1: normSec[0].lane,
+      secondary_sublane_1: normSec[0].sublane,
+      secondary_lane_2: normSec[1].lane,
+      secondary_sublane_2: normSec[1].sublane,
+    },
+  }
 }
 
 // ---------- Helpers ----------
@@ -551,6 +688,26 @@ export async function POST(req: Request) {
       )
     }
 
+    // Validate optional structured targeting BEFORE any DB writes. If the
+    // payload is malformed, we return 400 here so no partial state lands
+    // (Stage 1b #4 ordering — validation first, then atomic write).
+    let normalizedTargeting: NormalizedTargeting | null = null
+    if (body.targeting !== undefined && body.targeting !== null) {
+      const result = validateAndNormalizeTargeting(body.targeting)
+      if (!result.ok) {
+        return withCorsJson(
+          req,
+          {
+            ok: false,
+            error: result.error,
+            field: result.field ?? null,
+          },
+          400
+        )
+      }
+      normalizedTargeting = result.normalized
+    }
+
     const name = clampText(body.name, 200)
     const current_status = clampText(body.current_status, 200)
     const university = clampText(body.university, 300)
@@ -634,27 +791,74 @@ export async function POST(req: Request) {
       target_locations
     )
 
-    const { error: upErr } = await supabaseAdmin
-      .from("client_profiles")
-      .update({
-        name: name || null,
-        job_type: job_type || null,
-        target_roles: target_roles || null,
-        target_locations: target_locations || null,
-        preferred_locations: preferred_locations || null,
-        timeline: timeline || null,
-        profile_text: canonicalProfileText,
-        resume_text: resume_text || null,
-        risk_overrides,
-        profile_structured,
-        profile_complete: profileComplete,
-        updated_at: new Date().toISOString(),
+    // Build the targeting payload for the RPC (or null when the intake
+    // omitted the field — legacy path; existing intakes continue working).
+    // career_stage is DERIVED from current_status + yearsExperienceApprox
+    // (already computed inside profile_structured at line 389). Per FRD
+    // 4.5: career_stage_locked_by = 'inferred' because intake doesn't
+    // capture career stage explicitly. source = 'intake'.
+    let targetingPayload: Record<string, unknown> | null = null
+    if (normalizedTargeting) {
+      const careerStage = deriveCareerStage({
+        currentStatus: current_status,
+        yearsExperienceApprox: (profile_structured as any)
+          ?.yearsExperienceApprox ?? null,
       })
-      .eq("id", client_profile_id)
-      .eq("user_id", user_id)
+      targetingPayload = {
+        ...normalizedTargeting,
+        career_stage: careerStage,
+        career_stage_locked_by: "inferred",
+        // Status indicators always false in Foundation (Stage 1b #4); Framer
+        // hookup comes later. Silent-ignore of payload values is in
+        // validateAndNormalizeTargeting.
+        status_premed: false,
+        status_prelaw: false,
+        status_pregrad: false,
+        source: "intake",
+      }
+    }
 
-    if (upErr) {
-      return withCorsJson(req, { ok: false, error: upErr.message }, 400)
+    // Transactional write: client_profiles UPDATE + candidate_targeting
+    // UPSERT inside a single Postgres function (intake_upsert_with_targeting).
+    // Either both writes land or both roll back. See runlog DD-11 for the
+    // pattern and migration 20260512_intake_upsert_with_targeting.sql for
+    // the function body.
+    const { data: rpcData, error: rpcErr } = await supabaseAdmin.rpc(
+      "intake_upsert_with_targeting",
+      {
+        p_profile_id: client_profile_id,
+        p_user_id: user_id,
+        p_profile_payload: {
+          name: name || null,
+          job_type: job_type || null,
+          target_roles: target_roles || null,
+          target_locations: target_locations || null,
+          preferred_locations: preferred_locations || null,
+          timeline: timeline || null,
+          profile_text: canonicalProfileText,
+          resume_text: resume_text || null,
+          risk_overrides,
+          profile_structured,
+          profile_complete: profileComplete,
+        },
+        p_targeting_payload: targetingPayload,
+      },
+    )
+
+    if (rpcErr) {
+      // Function RAISEd (profile_not_found_or_wrong_user, CHECK violation,
+      // NOT NULL violation, etc.) → both writes rolled back. Return 500
+      // with retry guidance — no partial state to clean up.
+      return withCorsJson(
+        req,
+        {
+          ok: false,
+          error: "intake_did_not_complete",
+          detail: rpcErr.message,
+          hint: "Please retry. If the error persists, contact support.",
+        },
+        500
+      )
     }
 
     // Auto-create a default persona if none exists yet
@@ -702,6 +906,14 @@ export async function POST(req: Request) {
           tools_count: Array.isArray(profile_structured.tools)
             ? profile_structured.tools.length
             : 0,
+          // Foundation Stage 1b: surface whether candidate_targeting was
+          // written so frontend can show appropriate confirmation. Legacy
+          // intakes (no targeting field) return targeting_written=false.
+          targeting_written:
+            ((rpcData as any)?.targeting_written as boolean | undefined) ??
+            false,
+          targeting_id:
+            ((rpcData as any)?.targeting_id as string | undefined) ?? null,
         },
       },
       200
