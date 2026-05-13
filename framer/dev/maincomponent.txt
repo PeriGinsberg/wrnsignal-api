@@ -1181,6 +1181,15 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [posBulletsOpen, setPosBulletsOpen] = React.useState(false)
     const [posSummaryOpen, setPosSummaryOpen] = React.useState(false)
 
+    // ── Positioning v2 — Stage 1c (Phase 1 frontend) ──
+    // F11 — six state fields powering the v2 lifecycle.
+    const [positioningV2Result, setPositioningV2Result] = React.useState<any>(null)
+    const [positioningV2Loading, setPositioningV2Loading] = React.useState(false)
+    const [positioningV2Error, setPositioningV2Error] = React.useState<string | null>(null)
+    const [positioningRunId, setPositioningRunId] = React.useState<string | null>(null)
+    const [signalApplicationId, setSignalApplicationId] = React.useState<string | null>(null)
+    const [reconsiderModalOpen, setReconsiderModalOpen] = React.useState(false)
+
     // Networking open set
     // Hydration guard — state declared here with all other hooks
     const [mounted, setMounted] = React.useState(false)
@@ -1655,6 +1664,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         }
     }
 
+    // F6 — Stage 1c: special-case no_persona_configured by sending the user
+    // to /dashboard so they can configure a persona, then return. All other
+    // v2 errors render the generic banner inline.
+    function goToDashboard() {
+        if (typeof window === "undefined") return
+        const url = accessToken
+            ? `${API_BASE}/dashboard?token=${accessToken}`
+            : `${API_BASE}/dashboard`
+        window.top!.location.replace(url)
+    }
+
     function runNewJob(isSilent = false) {
         if (!isSilent) clearErrorAndDebug()
         setJob("")
@@ -1674,6 +1694,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setPositioningResult(null)
         setCoverLetterResult(null)
         setNetworkingResult(null)
+        setPositioningV2Result(null)
+        setPositioningV2Error(null)
+        setPositioningRunId(null)
+        setSignalApplicationId(null)
+        setReconsiderModalOpen(false)
         setTab("jobfit")
         setJobInputOpen(true)
         setJobfitWhyOpen(false)
@@ -1967,6 +1992,139 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setLoadingPositioning(false)
         }
     }
+
+    // Stage 1c — Phase 1 (Positioning v2) entry call. Auto-triggered by the
+    // useEffect in Section E when the user enters the Positioning tab with
+    // a completed JobFit run.
+    //
+    // F6 — no_persona_configured short-circuits to /dashboard via
+    //      goToDashboard(). All other errors render inline via
+    //      positioningV2Error.
+    // F14 — treat returning_user signals (is_returning + last_visit_days_ago
+    //       from the response) as source of truth; ignore cache-vs-fresh.
+    //
+    // Uses a custom fetch (not postJsonWithDebug) because postJsonWithDebug
+    // collapses error envelopes to a human-readable string (detail || error),
+    // which loses the machine-readable code needed for the F6 branch. We
+    // preserve detail || error precedence for the human-readable banner,
+    // but inspect data.error directly first for the F6 special case.
+    // setDebug payloads match postJsonWithDebug shape verbatim so the debug
+    // panel renders v2/start consistently with other route calls.
+    async function runPositioningV2(jobfitRunId: string) {
+        setPositioningV2Error(null)
+        setPositioningV2Loading(true)
+        const url = `${API_BASE}/api/positioning/v2/start`
+        const startedAt = Date.now()
+        try {
+            if (!accessToken) throw new Error("Please log in again.")
+
+            let res: Response
+            try {
+                res = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({
+                        jobfit_run_id: jobfitRunId,
+                        ...(selectedPersonaId
+                            ? { persona_id: selectedPersonaId }
+                            : {}),
+                    }),
+                })
+            } catch (err: any) {
+                setDebug({
+                    stage: "fetch_throw",
+                    url,
+                    ms: Date.now() - startedAt,
+                    errorName: err?.name,
+                    errorMessage: err?.message,
+                    errorStackPreview: safePreview(err?.stack || "", 900),
+                })
+                throw new Error("Request failed. Please try again.")
+            }
+
+            const ms = Date.now() - startedAt
+            const contentType = res.headers.get("content-type") || ""
+            const raw = await res.text()
+
+            setDebug({
+                stage: "fetch_response",
+                url,
+                ms,
+                status: res.status,
+                ok: res.ok,
+                contentType,
+                responsePreview: safePreview(raw),
+            })
+
+            if (looksLikeHtml(raw) || contentType.includes("text/html")) {
+                throw new Error("Unexpected response. Please try again.")
+            }
+
+            let data: any = null
+            try {
+                data = JSON.parse(raw)
+            } catch {
+                throw new Error("Unexpected response. Please try again.")
+            }
+
+            if (!res.ok) {
+                // F6 — machine-readable detection on data.error (not the
+                // detail string, which is human-readable display copy).
+                if (data?.error === "no_persona_configured") {
+                    goToDashboard()
+                    return
+                }
+                throw new Error(
+                    data?.detail ||
+                        data?.error ||
+                        `Request failed (HTTP ${res.status}).`
+                )
+            }
+
+            setPositioningV2Result(data)
+            setPositioningRunId(data?.run_id ?? null)
+            setSignalApplicationId(data?.signal_application_id ?? null)
+        } catch (e: any) {
+            setPositioningV2Error(e?.message || String(e))
+        } finally {
+            setPositioningV2Loading(false)
+        }
+    }
+
+    // F2 — auto-trigger v2/start on Positioning tab entry when JobFit is
+    // complete. The renderer (Section G) handles the three intermediate
+    // states (no JobFit run / JobFit currently loading / v2 in flight).
+    //
+    // Dependencies are intentional and small: tab change re-evaluates,
+    // loadingJobFit transition (true → false) re-evaluates, and a NEW
+    // jobfit_run_id (from re-running JobFit) re-evaluates. The guard
+    // clauses inside the body prevent re-firing while a v2 request is
+    // already in flight or after a result has already landed.
+    React.useEffect(() => {
+        if (tab !== "positioning") return
+        if (loadingJobFit) return
+        const jrid = (jobFitResult as any)?.jobfit_run_id
+        if (!jrid) return
+        if (positioningV2Loading) return
+        if (positioningV2Result) return
+        runPositioningV2(jrid)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab, loadingJobFit, (jobFitResult as any)?.jobfit_run_id])
+
+    // Invalidate v2 state when JobFit's jobfit_run_id changes (user re-ran
+    // JobFit). This clears the prior v2 result so the next Positioning tab
+    // entry triggers a fresh /start call against the new jobfit_run_id.
+    // Initial mount also fires this (jrid is undefined → no-op safe reset).
+    React.useEffect(() => {
+        setPositioningV2Result(null)
+        setPositioningV2Error(null)
+        setPositioningRunId(null)
+        setSignalApplicationId(null)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [(jobFitResult as any)?.jobfit_run_id])
 
     async function runCoverLetter() {
         clearErrorAndDebug()
@@ -4649,6 +4807,345 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         )
     }
 
+    /* ---------- RENDER: POSITIONING V2 (Stage 1c — Phase 1 frontend) ---------- */
+    //
+    // F7  — skeleton/loading states for the v2 lifecycle (per F2 cascade).
+    // F8  — returning-user banner with formatLastVisit copy slots.
+    // F9  — single renderPositioningV2() with internal renderCaseA/B/C helpers
+    //       (D1 stubs; D2-D4 expand each).
+    // F13 — copy storage in V2_COPY constants block.
+
+    const V2_COPY = {
+        emptyJobFit: "Run JobFit first to see positioning insights for this role.",
+        waitingJobFit: "Waiting for JobFit to complete…",
+        loadingV2: "Building your positioning…",
+        // F8 — returning-user copy (TODO Peri: refine before D2-D4 polish pass)
+        returningBanner: (lastVisitLabel: string) =>
+            `Welcome back — you last looked at this ${lastVisitLabel}.`,
+        // F3 — Phase 2 not built yet; CTAs disabled with shared copy.
+        phase2ComingSoon: "Phase 2 coming soon",
+        // F5 — reconsider modal placeholder (FRD-specified reflection copy
+        //      lives here when Stage 1d wires the actions).
+        reconsiderTitle: "Reconsider the target",
+        reconsiderBody:
+            "Reflect on whether this target still fits where you want to land. The next stage will offer concrete options to broaden, narrow, or pivot.",
+        reconsiderActionsSoon: "Actions coming soon (Stage 1d)",
+        saveForLater: "Save for later",
+    }
+
+    function formatLastVisit(days: number | null | undefined): string {
+        if (days == null) return "recently"
+        if (days < 1) return "today"
+        if (days === 1) return "yesterday"
+        return `${days} days ago`
+    }
+
+    function renderV2EmptyState(message: string) {
+        return (
+            <div
+                style={{
+                    padding: "32px 20px",
+                    textAlign: "center" as const,
+                    color: "rgba(255,255,255,0.65)",
+                    fontSize: 14,
+                    lineHeight: "22px",
+                }}
+            >
+                {message}
+            </div>
+        )
+    }
+
+    function renderV2ErrorBanner(message: string) {
+        return (
+            <div
+                style={{
+                    padding: "14px 18px",
+                    background: "rgba(248,113,113,0.08)",
+                    border: "1px solid rgba(248,113,113,0.25)",
+                    borderRadius: 8,
+                    color: "#f87171",
+                    fontSize: 13,
+                    lineHeight: "20px",
+                }}
+            >
+                {message}
+            </div>
+        )
+    }
+
+    function renderV2Skeleton() {
+        // F7 — pragmatic loading indicator. Real skeleton card lattice
+        // lands in D2-D4 polish if desired; spinner-style is acceptable
+        // per F7 fallback clause.
+        return (
+            <div
+                style={{
+                    padding: "32px 20px",
+                    textAlign: "center" as const,
+                    color: "rgba(255,255,255,0.55)",
+                    fontSize: 13,
+                }}
+            >
+                {V2_COPY.loadingV2}
+            </div>
+        )
+    }
+
+    // F3 — disabled CTA primitive (Phase 2 not built; visual consistency
+    // across Case A/B/C). The Case A "I'm ready to apply" CTA is also
+    // stubbed disabled in D1 — D4 will wire PUT /api/applications/[id].
+    function renderV2DisabledCta(label: string) {
+        return (
+            <button
+                type="button"
+                disabled
+                style={{
+                    width: "100%",
+                    padding: "12px 18px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "rgba(255,255,255,0.45)",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "not-allowed",
+                }}
+            >
+                {label} — {V2_COPY.phase2ComingSoon}
+            </button>
+        )
+    }
+
+    function renderV2WorkflowSummary(result: any) {
+        const wp = result?.workflow_preview ?? {}
+        const gapCount = typeof wp.gap_count === "number" ? wp.gap_count : 0
+        const estMin =
+            typeof wp.estimated_minutes === "number" ? wp.estimated_minutes : 0
+        return (
+            <div
+                style={{
+                    padding: "10px 14px",
+                    background: "rgba(255,255,255,0.04)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.65)",
+                    display: "flex",
+                    gap: 16,
+                }}
+            >
+                <span>Gaps: <strong style={{ color: "rgba(255,255,255,0.9)" }}>{gapCount}</strong></span>
+                <span>Est. time: <strong style={{ color: "rgba(255,255,255,0.9)" }}>{estMin} min</strong></span>
+            </div>
+        )
+    }
+
+    // D1 stubs — D2 will expand renderCaseA, D3 renderCaseB, D4 renderCaseC.
+    function renderCaseA(result: any) {
+        const refinements = Array.isArray(result?.case_specific?.small_refinements)
+            ? result.case_specific.small_refinements
+            : []
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
+                    <strong style={{ color: "rgba(255,255,255,0.95)" }}>Case A</strong>{" "}
+                    — {result?.case_reasoning ?? ""}
+                </div>
+                {renderV2WorkflowSummary(result)}
+                {/* F3 — "I'm ready to apply" stubbed disabled in D1; D4 wires
+                     PUT /api/applications/{signalApplicationId}. */}
+                {renderV2DisabledCta("I'm ready to apply")}
+                {/* F3 — "Review small refinements": never renders in v2
+                     because small_refinements is always empty per Stage 1a.
+                     Conditional kept here for spec completeness. */}
+                {refinements.length > 0
+                    ? renderV2DisabledCta("Review small refinements")
+                    : null}
+            </div>
+        )
+    }
+
+    function renderCaseB(result: any) {
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
+                    <strong style={{ color: "rgba(255,255,255,0.95)" }}>Case B</strong>{" "}
+                    — {result?.case_reasoning ?? ""}
+                </div>
+                {renderV2WorkflowSummary(result)}
+                {renderV2DisabledCta("Let's start")}
+            </div>
+        )
+    }
+
+    function renderCaseC(result: any) {
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
+                    <strong style={{ color: "rgba(255,255,255,0.95)" }}>Case C</strong>{" "}
+                    — {result?.case_reasoning ?? ""}
+                </div>
+                {renderV2WorkflowSummary(result)}
+                {renderV2DisabledCta("Yes, let's work on this")}
+            </div>
+        )
+    }
+
+    function renderReconsiderModal() {
+        if (!reconsiderModalOpen) return null
+        return (
+            <div
+                onClick={() => setReconsiderModalOpen(false)}
+                style={{
+                    position: "fixed" as const,
+                    inset: 0,
+                    background: "rgba(0,0,0,0.6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1000,
+                    padding: 24,
+                }}
+            >
+                <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                        maxWidth: 480,
+                        width: "100%",
+                        padding: 24,
+                        borderRadius: 12,
+                        background: "#0D2020",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        color: "rgba(255,255,255,0.9)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                    }}
+                >
+                    <div style={{ fontSize: 16, fontWeight: 700 }}>
+                        {V2_COPY.reconsiderTitle}
+                    </div>
+                    <div style={{ fontSize: 13, lineHeight: "20px", color: "rgba(255,255,255,0.75)" }}>
+                        {V2_COPY.reconsiderBody}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
+                        {V2_COPY.reconsiderActionsSoon}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setReconsiderModalOpen(false)}
+                        style={{
+                            alignSelf: "flex-end",
+                            marginTop: 8,
+                            padding: "8px 14px",
+                            borderRadius: 6,
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: "transparent",
+                            color: "rgba(255,255,255,0.8)",
+                            fontSize: 12,
+                            cursor: "pointer",
+                        }}
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    function renderPositioningV2() {
+        // F2 — cascade: no JobFit → JobFit loading → v2 loading → result.
+        if (!jobFitResult) {
+            return renderV2EmptyState(V2_COPY.emptyJobFit)
+        }
+        if (loadingJobFit) {
+            return renderV2EmptyState(V2_COPY.waitingJobFit)
+        }
+        if (positioningV2Loading) {
+            return renderV2Skeleton()
+        }
+        if (positioningV2Error) {
+            return renderV2ErrorBanner(positioningV2Error)
+        }
+        if (!positioningV2Result) {
+            // Brief window between JobFit-done and auto-trigger; show skeleton.
+            return renderV2Skeleton()
+        }
+
+        const result = positioningV2Result
+        const caseLetter = result?.case
+        const caseRender =
+            caseLetter === "A"
+                ? renderCaseA(result)
+                : caseLetter === "C"
+                ? renderCaseC(result)
+                : renderCaseB(result)
+
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                {/* F8 — returning-user banner (top-level result.is_returning) */}
+                {result.is_returning ? (
+                    <div
+                        style={{
+                            padding: "10px 14px",
+                            background: "rgba(74,222,128,0.06)",
+                            border: "1px solid rgba(74,222,128,0.22)",
+                            borderRadius: 8,
+                            fontSize: 12,
+                            color: "#86efac",
+                        }}
+                    >
+                        {V2_COPY.returningBanner(
+                            formatLastVisit(result.last_visit_days_ago)
+                        )}
+                    </div>
+                ) : null}
+
+                {caseRender}
+
+                {/* F5 — Reconsider the target entry (placeholder modal) */}
+                <button
+                    type="button"
+                    onClick={() => setReconsiderModalOpen(true)}
+                    style={{
+                        alignSelf: "flex-start",
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "transparent",
+                        color: "rgba(255,255,255,0.7)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                    }}
+                >
+                    Reconsider the target
+                </button>
+
+                {/* F4 — Save for later: switch tab back to JobFit. Server-side
+                     row stays in_progress; next Positioning entry resumes via
+                     cache cascade. */}
+                <button
+                    type="button"
+                    onClick={() => setTab("jobfit")}
+                    style={{
+                        alignSelf: "flex-start",
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px dashed rgba(255,255,255,0.12)",
+                        background: "transparent",
+                        color: "rgba(255,255,255,0.55)",
+                        fontSize: 11,
+                        cursor: "pointer",
+                    }}
+                >
+                    {V2_COPY.saveForLater}
+                </button>
+
+                {renderReconsiderModal()}
+            </div>
+        )
+    }
+
     /* ---------- RENDER: COVER LETTER ---------- */
     function renderCoverLetter() {
         if (!coverLetterResult) {
@@ -7130,7 +7627,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
     const renderMainOutput = () => {
         if (tab === "jobfit") return renderJobFit()
-        if (tab === "positioning") return renderPositioning()
+        if (tab === "positioning") return renderPositioningV2()
         if (tab === "coverletter") return renderCoverLetter()
         return renderNetworking()
     }
