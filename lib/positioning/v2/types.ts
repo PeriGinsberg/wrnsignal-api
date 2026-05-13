@@ -387,9 +387,19 @@ export type StartResponseContext = {
  *     the row
  *   - `cached`: true ONLY for outcome='cache_hit'
  *   - `context`: cross-reference data (persona, targeting, JD, jobfit_run_id)
+ *   - `signal_application_id`: linked signal_applications row id. Null when
+ *     the link write failed (rare; self-heals on next visit). Frontend uses
+ *     this for application-targeted actions like "I'm ready to apply" CTA →
+ *     PUT /api/applications/{id}.
  */
 export type StartResponse = {
   run_id: string
+  /**
+   * Linked signal_applications row id. Null when linkSignalApplicationToRun
+   * failed (the row will self-heal on the next visit per F2 / DD-26).
+   * Frontend uses this to drive application-targeted actions.
+   */
+  signal_application_id: string | null
   /**
    * Mirrors runLookup's FindExistingOutcome — kept as a literal union
    * here to avoid a runtime import from runLookup.ts into types.ts.

@@ -102,6 +102,7 @@ export function buildStartResponse(
 
   return {
     run_id: run.id,
+    signal_application_id: run.signal_application_id,
     outcome,
 
     case: caseAssignment.case,

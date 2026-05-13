@@ -547,6 +547,49 @@ console.log("\n=== Passthroughs ===")
   else pass("14: phase_data + current_phase passed through verbatim")
 }
 
+// Test 15: signal_application_id passes through (populated + null variants)
+{
+  const runWithApp = makeRun({ signal_application_id: "sa-test-789" })
+  const respWithApp = buildStartResponse({
+    outcome: "new",
+    run: runWithApp,
+    caseAssignment: { case: "B", reasoning: "default" },
+    workflowPreview: makeWorkflowPreview(),
+    caseSpecific: null,
+    targeting: defaultTargeting(),
+    persona: defaultPersona(),
+    jobfitRunId: "jr1",
+  })
+  if (respWithApp.signal_application_id !== "sa-test-789") {
+    fail(
+      "15: signal_application_id (populated) passthrough",
+      String(respWithApp.signal_application_id),
+    )
+  } else {
+    const runWithoutApp = makeRun({ signal_application_id: null })
+    const respWithoutApp = buildStartResponse({
+      outcome: "new",
+      run: runWithoutApp,
+      caseAssignment: { case: "B", reasoning: "default" },
+      workflowPreview: makeWorkflowPreview(),
+      caseSpecific: null,
+      targeting: defaultTargeting(),
+      persona: defaultPersona(),
+      jobfitRunId: "jr1",
+    })
+    if (respWithoutApp.signal_application_id !== null) {
+      fail(
+        "15: signal_application_id (null) passthrough",
+        String(respWithoutApp.signal_application_id),
+      )
+    } else {
+      pass(
+        "15: signal_application_id passthrough — populated and null variants",
+      )
+    }
+  }
+}
+
 console.log(`\n=== RESULT: ${failures.length === 0 ? "PASS" : "FAIL"} ===`)
 if (failures.length) {
   console.log("Failures:")

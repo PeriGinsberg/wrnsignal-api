@@ -382,8 +382,10 @@ async function runTests() {
         fail("1: positioning_runs_v2.signal_application_id should be populated after link", JSON.stringify(row))
       } else if (row.status !== "in_progress") {
         fail("1: row.status should be in_progress", row.status)
+      } else if (r.body.signal_application_id !== row.signal_application_id) {
+        fail("1: response signal_application_id should match DB", `body=${r.body.signal_application_id} db=${row.signal_application_id}`)
       } else {
-        pass(`1: 200, outcome=new, run created, signal_application_id linked, visit recorded (run=${test1RunId.slice(0, 8)}…)`)
+        pass(`1: 200, outcome=new, run created, signal_application_id linked (on wire + DB), visit recorded (run=${test1RunId.slice(0, 8)}…)`)
       }
     }
   }
