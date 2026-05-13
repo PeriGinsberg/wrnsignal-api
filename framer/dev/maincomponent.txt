@@ -1541,6 +1541,38 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         return () => clearTimeout(t)
     }, [authStatus])
 
+    // F2 — auto-trigger v2/start on Positioning tab entry when JobFit is
+    // complete. The renderer (Section G) handles the three intermediate
+    // states (no JobFit run / JobFit currently loading / v2 in flight).
+    //
+    // Dependencies are intentional and small: tab change re-evaluates,
+    // loadingJobFit transition (true → false) re-evaluates, and a NEW
+    // jobfit_run_id (from re-running JobFit) re-evaluates. The guard
+    // clauses inside the body prevent re-firing while a v2 request is
+    // already in flight or after a result has already landed.
+    React.useEffect(() => {
+        if (tab !== "positioning") return
+        if (loadingJobFit) return
+        const jrid = (jobFitResult as any)?.jobfit_run_id
+        if (!jrid) return
+        if (positioningV2Loading) return
+        if (positioningV2Result) return
+        runPositioningV2(jrid)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab, loadingJobFit, (jobFitResult as any)?.jobfit_run_id])
+
+    // Invalidate v2 state when JobFit's jobfit_run_id changes (user re-ran
+    // JobFit). This clears the prior v2 result so the next Positioning tab
+    // entry triggers a fresh /start call against the new jobfit_run_id.
+    // Initial mount also fires this (jrid is undefined → no-op safe reset).
+    React.useEffect(() => {
+        setPositioningV2Result(null)
+        setPositioningV2Error(null)
+        setPositioningRunId(null)
+        setSignalApplicationId(null)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [(jobFitResult as any)?.jobfit_run_id])
+
     // Hydration guard — effect and early return placed after ALL hooks
     // so hook call order is identical on every render.
     React.useEffect(() => { setMounted(true) }, [])
@@ -2093,38 +2125,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setPositioningV2Loading(false)
         }
     }
-
-    // F2 — auto-trigger v2/start on Positioning tab entry when JobFit is
-    // complete. The renderer (Section G) handles the three intermediate
-    // states (no JobFit run / JobFit currently loading / v2 in flight).
-    //
-    // Dependencies are intentional and small: tab change re-evaluates,
-    // loadingJobFit transition (true → false) re-evaluates, and a NEW
-    // jobfit_run_id (from re-running JobFit) re-evaluates. The guard
-    // clauses inside the body prevent re-firing while a v2 request is
-    // already in flight or after a result has already landed.
-    React.useEffect(() => {
-        if (tab !== "positioning") return
-        if (loadingJobFit) return
-        const jrid = (jobFitResult as any)?.jobfit_run_id
-        if (!jrid) return
-        if (positioningV2Loading) return
-        if (positioningV2Result) return
-        runPositioningV2(jrid)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tab, loadingJobFit, (jobFitResult as any)?.jobfit_run_id])
-
-    // Invalidate v2 state when JobFit's jobfit_run_id changes (user re-ran
-    // JobFit). This clears the prior v2 result so the next Positioning tab
-    // entry triggers a fresh /start call against the new jobfit_run_id.
-    // Initial mount also fires this (jrid is undefined → no-op safe reset).
-    React.useEffect(() => {
-        setPositioningV2Result(null)
-        setPositioningV2Error(null)
-        setPositioningRunId(null)
-        setSignalApplicationId(null)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [(jobFitResult as any)?.jobfit_run_id])
 
     async function runCoverLetter() {
         clearErrorAndDebug()
