@@ -701,6 +701,17 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
                 })
             }
         } catch {}
+        // Google Ads "Submit Lead Form" conversion action. Separate
+        // gtag call so the Conversion Action ID-keyed fire isn't tied
+        // to the GA4-style event-name fire above; either could be
+        // renamed or retired without disturbing the other.
+        try {
+            if (typeof window !== "undefined" && (window as any).gtag) {
+                (window as any).gtag("event", "conversion", {
+                    send_to: "AW-11125129027/ars1CL7sraUcEMP-77gp",
+                })
+            }
+        } catch {}
 
         fireFreeTrialCtaClick()
         // Use top-level navigation so this works inside Framer's iframe preview.
