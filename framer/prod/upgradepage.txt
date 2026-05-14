@@ -1,0 +1,1218 @@
+import * as React from "react"
+
+/**
+ * SIGNAL Upgrade Page — verdict-driven, personalized
+ *
+ *   - Reads signal_upgrade_handoff from sessionStorage on mount
+ *     (single-use; cleared on read; 10-minute max age).
+ *   - Renders one of three variants based on result.decision:
+ *       APPLY / PRIORITY APPLY → APPLY variant
+ *       REVIEW                → REVIEW variant
+ *       PASS                  → PASS variant
+ *   - Personalizes meta header from result.job_signals + result.score +
+ *     result.next_step (with fallbacks).
+ *   - Two checkout forms (inline under YOUR MOVE, full card at bottom)
+ *     both POST email + attribution to /api/checkout/create-session and
+ *     route to Stripe with the email pre-filled. Meta InitiateCheckout +
+ *     Google Ads conversion fire before redirect.
+ *   - Falls back to a generic APPLY-variant view (no personalized meta)
+ *     when no handoff exists (deep link, stale tab).
+ *
+ * @framerSupportedLayoutWidth any
+ * @framerSupportedLayoutHeight any
+ */
+
+const API_BASE = "https://wrnsignal-api.vercel.app"
+
+const TRIAL_RESULT_URL =
+    "https://wrnsignal.workforcereadynow.com/signal/jobfit-run-trial"
+
+const LANDING_URL = "https://wrnsignal.workforcereadynow.com/signal"
+
+const HANDOFF_KEY = "signal_upgrade_handoff"
+const HANDOFF_MAX_AGE_MS = 10 * 60 * 1000
+
+const STYLES = [
+    "* { box-sizing: border-box; }",
+    "html, body { margin: 0; width: 100%; overflow-x: hidden; }",
+    "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');",
+
+    ".up-page { background: #0A1628; color: #E5E9F0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; width: 100%; }",
+    ".up-page a { color: inherit; }",
+    ".up-page button { font-family: inherit; cursor: pointer; }",
+
+    // Header
+    ".up-site-header { background: #0A1628; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); }",
+    ".up-brand { display: flex; flex-direction: column; }",
+    ".up-brand-mark { color: #fff; font-size: 15px; font-weight: 600; font-style: italic; letter-spacing: 0.5px; }",
+    ".up-brand-mark .dash { color: rgba(255,255,255,0.5); font-weight: 400; }",
+    ".up-brand-tag { color: #2CA58D; font-size: 9px; font-weight: 500; letter-spacing: 1.5px; margin-top: 2px; }",
+    ".up-return-link { color: rgba(255,255,255,0.5); font-size: 12px; text-decoration: none; padding: 7px 14px; }",
+    ".up-return-link:hover { color: rgba(255,255,255,0.8); }",
+
+    // Verdict header
+    ".up-verdict-header { background: linear-gradient(180deg, #0A1628 0%, #060F1C 100%); padding: 56px 24px 32px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06); }",
+    ".up-verdict-header-inner { max-width: 720px; margin: 0 auto; }",
+    ".up-verdict-context { font-size: 11px; letter-spacing: 2px; font-weight: 700; margin-bottom: 14px; }",
+    ".up-verdict-context.apply { color: #2CA58D; }",
+    ".up-verdict-context.review { color: #F4A261; }",
+    ".up-verdict-context.pass { color: #F87171; }",
+    ".up-verdict-headline { font-size: 38px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 12px; line-height: 1.15; letter-spacing: -0.4px; }",
+    ".up-verdict-headline .punch { background: linear-gradient(90deg, #F4A261 0%, #F4A261 60%, #2CA58D 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }",
+
+    ".up-verdict-meta { display: inline-flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 18px; margin-top: 8px; }",
+    ".up-verdict-meta-decision { font-size: 14px; font-weight: 700; font-style: italic; letter-spacing: 0.5px; }",
+    ".up-verdict-meta-decision.apply { color: #2CA58D; }",
+    ".up-verdict-meta-decision.review { color: #F4A261; }",
+    ".up-verdict-meta-decision.pass { color: #F87171; }",
+    ".up-verdict-meta-divider { width: 1px; height: 16px; background: rgba(255,255,255,0.15); }",
+    ".up-verdict-meta-score { font-size: 14px; color: rgba(255,255,255,0.7); font-weight: 500; }",
+    ".up-verdict-meta-score strong { color: #fff; font-weight: 700; font-style: italic; }",
+
+    ".up-verdict-move { margin: 22px auto 0; font-size: 13px; color: rgba(255,255,255,0.55); font-style: italic; line-height: 1.55; max-width: 520px; }",
+    ".up-verdict-move .move-label { color: #2CA58D; font-style: normal; font-weight: 600; letter-spacing: 0.5px; }",
+
+    // Inline capture
+    ".up-inline-capture { display: flex; gap: 8px; max-width: 440px; margin: 24px auto 8px; }",
+    ".up-inline-capture-input { flex: 1; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); border-radius: 6px; padding: 11px 14px; font-size: 13px; color: #fff; font-family: inherit; }",
+    ".up-inline-capture-input::placeholder { color: rgba(255,255,255,0.4); }",
+    ".up-inline-capture-input:focus { outline: none; border-color: rgba(44,165,141,0.4); background: rgba(255,255,255,0.06); }",
+    ".up-inline-capture-btn { background: linear-gradient(90deg, #F4A261 0%, #E8915A 100%); color: #2C1810; border: none; border-radius: 6px; padding: 11px 18px; font-size: 13px; font-weight: 700; font-style: italic; letter-spacing: 0.3px; white-space: nowrap; }",
+    ".up-inline-capture-btn:disabled { opacity: 0.6; cursor: wait; }",
+    ".up-inline-capture-trust { font-size: 11px; color: rgba(255,255,255,0.4); margin: 0; letter-spacing: 0.3px; }",
+    ".up-form-error { font-size: 12px; color: #F87171; margin: 8px 0 0; text-align: center; }",
+
+    // Bridge
+    ".up-bridge { padding: 40px 24px 28px; max-width: 720px; margin: 0 auto; text-align: center; }",
+    ".up-bridge-eyebrow { color: #F4A261; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin-bottom: 14px; }",
+    ".up-bridge-headline { font-size: 26px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 16px; line-height: 1.3; letter-spacing: -0.2px; }",
+    ".up-bridge-body { font-size: 15px; color: rgba(255,255,255,0.7); line-height: 1.65; margin: 0; }",
+    ".up-bridge-body strong { color: #fff; font-weight: 600; }",
+
+    // Moments
+    ".up-moments { padding: 24px 24px 48px; max-width: 820px; margin: 0 auto; }",
+    ".up-moment { background: #0F1F3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 24px 26px; margin-bottom: 12px; display: flex; gap: 20px; align-items: flex-start; }",
+    ".up-moment-icon-wrap { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }",
+    ".up-moment-icon-positioning { background: rgba(44,165,141,0.15); border: 1px solid rgba(44,165,141,0.3); }",
+    ".up-moment-icon-coverletter { background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.25); }",
+    ".up-moment-icon-networking { background: rgba(244,162,97,0.15); border: 1px solid rgba(244,162,97,0.3); }",
+    ".up-moment-icon-jobfit { background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.25); }",
+    ".up-moment-icon-tracker { background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.25); }",
+    ".up-moment-body { flex: 1; }",
+    ".up-moment-eyebrow { font-size: 10px; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }",
+    ".up-moment-eyebrow.positioning { color: #2CA58D; }",
+    ".up-moment-eyebrow.coverletter { color: #C4B5FD; }",
+    ".up-moment-eyebrow.networking { color: #F4A261; }",
+    ".up-moment-eyebrow.jobfit { color: #93C5FD; }",
+    ".up-moment-eyebrow.tracker { color: #86EFAC; }",
+    ".up-moment-title { font-size: 18px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 8px; line-height: 1.3; letter-spacing: -0.1px; }",
+    ".up-moment-text { font-size: 14px; color: rgba(255,255,255,0.75); margin: 0; line-height: 1.6; }",
+    ".up-moment-text strong { color: #fff; font-weight: 600; }",
+    ".up-moment-text em { color: #F4A261; font-style: normal; font-weight: 500; }",
+
+    // Math callout
+    ".up-math-section { padding: 8px 24px 48px; max-width: 720px; margin: 0 auto; }",
+    ".up-math-callout { background: linear-gradient(135deg, rgba(244,162,97,0.08) 0%, rgba(44,165,141,0.08) 100%); border: 1px solid rgba(244,162,97,0.2); border-radius: 10px; padding: 28px 30px; text-align: center; }",
+    ".up-math-eyebrow { font-size: 11px; color: #F4A261; font-weight: 700; letter-spacing: 2px; margin: 0 0 12px; }",
+    ".up-math-headline { font-size: 22px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 10px; line-height: 1.4; letter-spacing: -0.1px; }",
+    ".up-math-body { font-size: 14px; color: rgba(255,255,255,0.7); margin: 0; line-height: 1.6; }",
+    ".up-math-body .punch { color: #F4A261; font-weight: 600; }",
+
+    // Proof
+    ".up-proof-section { background: #060F1C; padding: 48px 24px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }",
+    ".up-proof-inner { max-width: 820px; margin: 0 auto; }",
+    ".up-proof-eyebrow { text-align: center; font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 600; letter-spacing: 2px; margin-bottom: 24px; }",
+    ".up-proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }",
+    ".up-proof-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 22px 24px; }",
+    ".up-proof-quote { font-size: 15px; color: #fff; font-style: italic; margin: 0 0 14px; line-height: 1.55; font-weight: 500; }",
+    ".up-proof-attr { font-size: 12px; color: rgba(255,255,255,0.45); }",
+
+    // Checkout
+    ".up-checkout-section { padding: 56px 24px 32px; max-width: 540px; margin: 0 auto; text-align: center; }",
+    ".up-checkout-headline { font-size: 28px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 8px; line-height: 1.25; }",
+    ".up-checkout-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin: 0 0 28px; line-height: 1.55; }",
+    ".up-price-display { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-bottom: 6px; }",
+    ".up-price-amount { font-size: 52px; font-weight: 800; font-style: italic; color: #fff; line-height: 1; letter-spacing: -1px; }",
+    ".up-price-currency { font-size: 24px; color: rgba(255,255,255,0.6); font-weight: 600; }",
+    ".up-price-terms { font-size: 12px; color: rgba(255,255,255,0.55); margin: 0 0 24px; letter-spacing: 0.3px; }",
+    ".up-price-terms strong { color: #fff; font-weight: 600; }",
+    ".up-checkout-form { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 22px; text-align: left; }",
+    ".up-email-label { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }",
+    ".up-email-input { width: 100%; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); border-radius: 6px; padding: 13px 14px; font-size: 14px; color: #fff; margin-bottom: 14px; box-sizing: border-box; font-family: inherit; }",
+    ".up-email-input::placeholder { color: rgba(255,255,255,0.4); }",
+    ".up-email-input:focus { outline: none; border-color: rgba(44,165,141,0.4); background: rgba(255,255,255,0.06); }",
+    ".up-checkout-btn { width: 100%; background: linear-gradient(90deg, #F4A261 0%, #E8915A 100%); color: #2C1810; border: none; border-radius: 6px; padding: 16px; font-size: 15px; font-weight: 700; font-style: italic; letter-spacing: 0.3px; }",
+    ".up-checkout-btn:disabled { opacity: 0.6; cursor: wait; }",
+    ".up-guarantee-line { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; font-size: 11px; color: rgba(255,255,255,0.55); line-height: 1.5; }",
+    ".up-guarantee-check { color: #2CA58D; }",
+    ".up-privacy-line { font-size: 11px; color: rgba(255,255,255,0.4); margin: 10px 0 0; text-align: center; }",
+    ".up-privacy-line a { color: rgba(255,255,255,0.6); text-decoration: underline; text-decoration-color: rgba(255,255,255,0.2); }",
+
+    // FAQ
+    ".up-faq-section { padding: 32px 24px; max-width: 720px; margin: 0 auto; }",
+    ".up-faq-header { text-align: center; margin-bottom: 24px; }",
+    ".up-faq-eyebrow { color: rgba(255,255,255,0.45); font-size: 11px; font-weight: 600; letter-spacing: 2px; }",
+    ".up-faq-item { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }",
+    ".up-faq-item:last-child { border-bottom: none; }",
+    ".up-faq-question { font-size: 15px; color: #fff; font-weight: 600; margin: 0 0 8px; line-height: 1.45; }",
+    ".up-faq-answer { font-size: 13px; color: rgba(255,255,255,0.65); margin: 0; line-height: 1.65; }",
+
+    // Escape
+    ".up-escape-section { padding: 24px 24px 48px; text-align: center; }",
+    ".up-escape-link { color: rgba(255,255,255,0.4); font-size: 12px; text-decoration: none; }",
+    ".up-escape-link:hover { color: rgba(255,255,255,0.7); }",
+
+    // Footer
+    ".up-footer { background: #060F1C; padding: 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); }",
+    ".up-footer-text { font-size: 11px; color: rgba(255,255,255,0.3); margin: 0; }",
+    ".up-footer-text a { color: rgba(255,255,255,0.4); text-decoration: none; }",
+
+    // Responsive
+    "@media (max-width: 768px) {",
+    "  .up-verdict-headline { font-size: 28px; }",
+    "  .up-bridge-headline, .up-checkout-headline { font-size: 22px; }",
+    "  .up-moment { flex-direction: column; gap: 14px; padding: 20px; }",
+    "  .up-moment-icon-wrap { width: 40px; height: 40px; font-size: 18px; }",
+    "  .up-proof-grid { grid-template-columns: 1fr; }",
+    "  .up-price-amount { font-size: 44px; }",
+    "  .up-site-header { padding: 14px 18px; }",
+    "}",
+    "@media (max-width: 480px) {",
+    "  .up-verdict-header { padding: 40px 18px 28px; }",
+    "  .up-verdict-headline { font-size: 24px; }",
+    "  .up-verdict-meta { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }",
+    "  .up-moments { padding: 16px 18px 36px; }",
+    "  .up-checkout-section { padding: 40px 18px 24px; }",
+    "  .up-inline-capture { flex-direction: column; gap: 8px; max-width: 320px; }",
+    "  .up-inline-capture-btn { padding: 12px 18px; }",
+    "}",
+].join("\n")
+
+// ─────────────────────────────────────────────────────────────────────────
+// Dev banner + App Store badge (mirror trialjobfit.txt / landingpage.txt)
+// ─────────────────────────────────────────────────────────────────────────
+const DEV_MODE = false
+
+const APP_STORE_URL =
+    "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
+
+function DevBanner() {
+    const [hostname, setHostname] = React.useState("")
+    const [shouldShow, setShouldShow] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const h = window.location.hostname
+        setHostname(h)
+        const PROD_HOSTS = [
+            "wrnsignal.workforcereadynow.com",
+            "www.workforcereadynow.com",
+            "stopapplyingblind.com",
+            "www.stopapplyingblind.com",
+        ]
+        setShouldShow(DEV_MODE && !PROD_HOSTS.includes(h))
+    }, [])
+    if (!shouldShow) return null
+    return (
+        <div
+            style={{
+                position: "fixed" as const,
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 40,
+                background: "#FFD60A",
+                color: "#000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                zIndex: 10000,
+                fontFamily: "'Inter', system-ui, sans-serif",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+        >
+            <span
+                style={{
+                    fontWeight: 900,
+                    fontSize: 16,
+                    letterSpacing: 4,
+                    textTransform: "uppercase" as const,
+                }}
+            >
+                DEV
+            </span>
+            <span style={{ fontWeight: 600, fontSize: 12, letterSpacing: 1, opacity: 0.7 }}>
+                · {hostname || "…"}
+            </span>
+        </div>
+    )
+}
+
+function AppStoreBadge() {
+    const [isMobile, setIsMobile] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
+    const bannerOffset = DEV_MODE ? 40 : 0
+    return (
+        <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Download SIGNAL on the App Store"
+            style={{
+                position: "fixed" as const,
+                top: (isMobile ? 16 : 24) + bannerOffset,
+                right: isMobile ? 16 : 32,
+                zIndex: 9999,
+                display: "block",
+                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
+            }}
+        >
+            <img
+                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
+                alt="Download on the App Store"
+                width={isMobile ? 108 : 135}
+                height={isMobile ? 32 : 40}
+                style={{ display: "block" }}
+            />
+        </a>
+    )
+}
+
+function PageShell() {
+    return (
+        <>
+            <DevBanner />
+            <AppStoreBadge />
+            {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
+        </>
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────
+function ss(key: string): string {
+    try {
+        return sessionStorage.getItem(key) || ""
+    } catch {
+        return ""
+    }
+}
+
+function getCookie(name: string): string {
+    if (typeof document === "undefined") return ""
+    const m = document.cookie.match(
+        new RegExp("(?:^|; )" + name.replace(/[-.]/g, "\\$&") + "=([^;]*)")
+    )
+    return m ? decodeURIComponent(m[1]) : ""
+}
+
+function getAttributionSnapshot() {
+    return {
+        utm_source: ss("signal_utm_source"),
+        utm_medium: ss("signal_utm_medium"),
+        utm_campaign: ss("signal_utm_campaign"),
+        utm_content: ss("signal_utm_content"),
+        utm_term: ss("signal_utm_term"),
+        landing_page: ss("signal_landing_page"),
+        referrer: ss("signal_referrer"),
+        fbclid: ss("signal_fbclid"),
+        ttclid: ss("signal_ttclid"),
+        gclid: ss("signal_gclid"),
+        fbp: getCookie("_fbp"),
+        fbc: getCookie("_fbc"),
+        ttp: getCookie("_ttp"),
+    }
+}
+
+// Subset of attribution attached as custom params on client-side Meta /
+// gtag events. UTMs only; fbp/fbc/ttp ride the Stripe metadata path for
+// CAPI server-side dedup, no need to duplicate here.
+function getEventUtmParams() {
+    return {
+        utm_source: ss("signal_utm_source") || undefined,
+        utm_medium: ss("signal_utm_medium") || undefined,
+        utm_campaign: ss("signal_utm_campaign") || undefined,
+        utm_content: ss("signal_utm_content") || undefined,
+        utm_term: ss("signal_utm_term") || undefined,
+    }
+}
+
+// Server-side mirror of the browser pixel. Same event_id rides both
+// fbq's eventID and the server CAPI call so Meta dedups the pair inside
+// its 7-day (event_name, event_id) window.
+type FunnelEventName = "Lead" | "ViewContent" | "AddToCart" | "InitiateCheckout"
+type FunnelCustomData = {
+    value?: number
+    currency?: string
+    verdict?: string
+    score?: number | null
+    cta_source?: string
+    content_name?: string
+    content_category?: string
+}
+
+function genEventId(): string {
+    try {
+        if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+            return crypto.randomUUID()
+        }
+    } catch {}
+    return (
+        Date.now().toString(36) +
+        "-" +
+        Math.random().toString(36).slice(2, 10)
+    )
+}
+
+function sendServerEvent(args: {
+    event_name: FunnelEventName
+    event_id: string
+    email?: string
+    custom_data?: FunnelCustomData
+}) {
+    try {
+        const sessionId =
+            (typeof localStorage !== "undefined" &&
+                localStorage.getItem("jobfit_session_id")) ||
+            ""
+        const attribution = getAttributionSnapshot()
+        const body = {
+            event_name: args.event_name,
+            event_id: args.event_id,
+            event_time_sec: Math.floor(Date.now() / 1000),
+            email: args.email || undefined,
+            session_id: sessionId,
+            ...attribution,
+            custom_data: args.custom_data || {},
+        }
+        const url = API_BASE + "/api/conversions/event"
+        const payload = JSON.stringify(body)
+        if (
+            typeof navigator !== "undefined" &&
+            navigator.sendBeacon &&
+            typeof Blob !== "undefined"
+        ) {
+            const blob = new Blob([payload], { type: "application/json" })
+            navigator.sendBeacon(url, blob)
+            return
+        }
+        fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+        }).catch(() => {})
+    } catch {}
+}
+
+function isValidEmail(s: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim())
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Variant copy — lifted verbatim from signal_upgrade_page.html
+// ─────────────────────────────────────────────────────────────────────────
+type MomentType = "positioning" | "coverletter" | "networking" | "jobfit" | "tracker"
+type Moment = {
+    type: MomentType
+    icon: string
+    label: string
+    title: string
+    text: React.ReactNode
+}
+
+type VariantKey = "apply" | "review" | "pass"
+
+type Variant = {
+    context: string
+    contextClass: VariantKey
+    headlineLead: string
+    headlinePunch: string
+    defaultMove: string
+    bridgeEyebrow: string
+    bridgeHeadline: string
+    bridgeBody: React.ReactNode
+    mathEyebrow: string
+    mathHeadline: string
+    mathBody: React.ReactNode
+    moments: Moment[]
+}
+
+const VARIANTS: Record<VariantKey, Variant> = {
+    apply: {
+        context: "YOU'RE COMPETITIVE ON THIS ONE",
+        contextClass: "apply",
+        headlineLead: "Now ",
+        headlinePunch: "don't fumble it.",
+        defaultMove:
+            "Apply this week — and not blind. Sharpen your resume to this job. Write a cover letter that closes. Get to the right people inside.",
+        bridgeEyebrow: "THE VERDICT IS THE START",
+        bridgeHeadline: "You have what it takes. Here's what SIGNAL does next.",
+        bridgeBody: (
+            <>
+                The Job Fit score told you whether to apply.{" "}
+                <strong>Full SIGNAL tells you how to win.</strong> Cover letters drafted
+                from your real background. Resume rewrites that mirror the language each
+                job actually uses. Networking plays with the right people and the right
+                messages. One system, for the next 10 jobs you'll scan.
+            </>
+        ),
+        mathEyebrow: "THE MATH",
+        mathHeadline: "32 applications. 2 callbacks. That's the average.",
+        mathBody: (
+            <>
+                The students using SIGNAL send fewer. They get more.{" "}
+                <span className="punch">
+                    Full SIGNAL is $99 for the entire system — unlimited scans, the rewrites,
+                    the cover letters, the networking plays, the tracker.
+                </span>{" "}
+                Everything you need to win the search, not just analyze it.
+            </>
+        ),
+        moments: [
+            {
+                type: "coverletter",
+                icon: "✉",
+                label: "COVER LETTER",
+                title: "A cover letter written from your real background — not a template.",
+                text: (
+                    <>
+                        We'll draft your cover letter using{" "}
+                        <strong>your actual experience</strong>, not generic AI fill. It
+                        addresses <em>the specific risk we flagged on this scan</em> head-on —
+                        recruiters can tell when you've ignored their requirements.
+                    </>
+                ),
+            },
+            {
+                type: "positioning",
+                icon: "📐",
+                label: "POSITIONING",
+                title: "Resume rewrites that mirror this job's language.",
+                text: (
+                    <>
+                        Bullet-by-bullet rewrites of your strongest experience, framed in the
+                        words this posting actually uses. Pass the recruiter's 7-second scan.{" "}
+                        <strong>Same resume, totally different read.</strong>
+                    </>
+                ),
+            },
+            {
+                type: "networking",
+                icon: "🤝",
+                label: "NETWORKING",
+                title: "Who to look for inside the company — and how to reach them.",
+                text: (
+                    <>
+                        We'll tell you which roles inside this company to target, what to lead
+                        with in your outreach, and copy-paste messages that don't sound like a
+                        template. <em>Refuse to be ignored</em> — most applicants never do this
+                        work.
+                    </>
+                ),
+            },
+            {
+                type: "tracker",
+                icon: "📊",
+                label: "JOB TRACKER",
+                title: "Every job you scan, in one dashboard.",
+                text: (
+                    <>
+                        Score, decision, follow-up date, interview rate. Stop losing track of
+                        which application is where.
+                    </>
+                ),
+            },
+        ],
+    },
+    review: {
+        context: "YOU'RE ON THE BUBBLE",
+        contextClass: "review",
+        headlineLead: "Closeable — ",
+        headlinePunch: "not automatic.",
+        defaultMove: "Tailor hard. Address the gaps. Then apply with confidence.",
+        bridgeEyebrow: "THE GAP IS BRIDGEABLE",
+        bridgeHeadline: "Not far. But not by default.",
+        bridgeBody: (
+            <>
+                A 62 with the right framing reads as a 75 to a recruiter. A 62 submitted
+                blind reads as a 55.{" "}
+                <strong>
+                    The difference is everything we just flagged — and the work to address
+                    it.
+                </strong>{" "}
+                Full SIGNAL gives you the rewrites, the cover letter angle, and the
+                networking plays to close the gap on this job and the next 30.
+            </>
+        ),
+        mathEyebrow: "THE MATH",
+        mathHeadline: "32 applications. 2 callbacks. That's the average.",
+        mathBody: (
+            <>
+                The students using SIGNAL send fewer. They get more.{" "}
+                <span className="punch">
+                    Full SIGNAL is $99 for the entire system — unlimited scans, the rewrites,
+                    the cover letters, the networking plays, the tracker.
+                </span>{" "}
+                Everything you need to win the search, not just analyze it.
+            </>
+        ),
+        moments: [
+            {
+                type: "positioning",
+                icon: "📐",
+                label: "POSITIONING",
+                title: "Resume rewrites to close the specific gaps we flagged.",
+                text: (
+                    <>
+                        Bullet-by-bullet rewrites that mirror this job's language and surface
+                        evidence already in your background.{" "}
+                        <em>Make the system see what's already there.</em> Same resume —
+                        different score.
+                    </>
+                ),
+            },
+            {
+                type: "coverletter",
+                icon: "✉",
+                label: "COVER LETTER",
+                title: "A cover letter that addresses what's missing — directly.",
+                text: (
+                    <>
+                        Stretch applicants win by acknowledging gaps and reframing them. We'll
+                        draft a cover letter that names the risk we flagged and turns it into a
+                        strength. <strong>Don't pretend it isn't there. Address it.</strong>
+                    </>
+                ),
+            },
+            {
+                type: "networking",
+                icon: "🤝",
+                label: "NETWORKING",
+                title: "Get a champion inside — before the resume hits the pile.",
+                text: (
+                    <>
+                        Stretch resumes need a champion. We'll tell you which roles inside the
+                        company are worth reaching, what to say to each one, and how to ask for
+                        a referral without sounding like every other applicant. Referrals turn
+                        62s into interviews.
+                    </>
+                ),
+            },
+            {
+                type: "tracker",
+                icon: "📊",
+                label: "JOB TRACKER",
+                title: "Track every REVIEW. They add up.",
+                text: (
+                    <>
+                        Tracking matters most on the bubble — knowing which ones are still warm,
+                        when to follow up, what's converted. Don't lose the ones that were
+                        close.
+                    </>
+                ),
+            },
+        ],
+    },
+    pass: {
+        context: "NOT THE RIGHT ONE",
+        contextClass: "pass",
+        headlineLead: "Save the Saturday. ",
+        headlinePunch: "Find the right ones.",
+        defaultMove:
+            "Don't apply to this one. Use the time to find ones you're competitive on.",
+        bridgeEyebrow: "THE PASS IS USEFUL",
+        bridgeHeadline: "This one wasn't a fit. The next ten might be.",
+        bridgeBody: (
+            <>
+                A PASS isn't bad news — it's the four hours you didn't waste on the wrong
+                job.{" "}
+                <strong>
+                    The students winning the search aren't applying to more. They're applying
+                    to the right ones.
+                </strong>{" "}
+                Full SIGNAL lets you scan unlimited jobs before you apply — and gives you
+                the system to win the ones that score.
+            </>
+        ),
+        mathEyebrow: "THE MATH",
+        mathHeadline: "32 applications. 2 callbacks. That's the average.",
+        mathBody: (
+            <>
+                The students using SIGNAL send fewer. They get more.{" "}
+                <span className="punch">
+                    Full SIGNAL is $99 for the entire system — unlimited scans, the rewrites,
+                    the cover letters, the networking plays, the tracker.
+                </span>{" "}
+                Everything you need to win the search, not just analyze it.
+            </>
+        ),
+        moments: [
+            {
+                type: "jobfit",
+                icon: "🎯",
+                label: "UNLIMITED JOB FIT",
+                title: "Scan every job before you apply.",
+                text: (
+                    <>
+                        The first scan is one job. SIGNAL gives you unlimited.{" "}
+                        <strong>
+                            Run the next 20 jobs you're considering and know your real score on
+                            each one
+                        </strong>{" "}
+                        — before you spend Saturday on the application.
+                    </>
+                ),
+            },
+            {
+                type: "tracker",
+                icon: "📊",
+                label: "JOB TRACKER",
+                title: "Track only the ones worth your time.",
+                text: (
+                    <>
+                        Score, decision, follow-up. Stop losing track of which applications were
+                        strong fits and which were spray-and-pray.{" "}
+                        <em>Apply to fewer. Win more.</em>
+                    </>
+                ),
+            },
+            {
+                type: "positioning",
+                icon: "📐",
+                label: "POSITIONING",
+                title: "Sharper resume = higher scores on the next 10.",
+                text: (
+                    <>
+                        When you do find the right jobs, your resume needs to land. Bullet
+                        rewrites that mirror each job's language. Make the system see what's
+                        already there.
+                    </>
+                ),
+            },
+            {
+                type: "coverletter",
+                icon: "✉",
+                label: "COVER LETTER",
+                title: "For the jobs that pass — write the letter that closes.",
+                text: (
+                    <>
+                        When the score comes back APPLY or REVIEW, you'll need a cover letter
+                        that converts. We'll draft it from your real background, anchored in the
+                        strengths SIGNAL identified.
+                    </>
+                ),
+            },
+        ],
+    },
+}
+
+function decisionToVariantKey(decision: string | undefined | null): VariantKey {
+    const d = String(decision || "").trim().toUpperCase()
+    if (d === "REVIEW") return "review"
+    if (d === "PASS") return "pass"
+    return "apply"
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Types — mirror the trial endpoint's result shape
+// ─────────────────────────────────────────────────────────────────────────
+type JobSignals = {
+    jobTitle?: string | null
+    companyName?: string | null
+    jobFamily?: string
+}
+
+type HandoffResult = {
+    decision?: string
+    score?: number
+    next_step?: string
+    job_signals?: JobSignals
+}
+
+type HandoffPayload = {
+    result?: HandoffResult
+    cta_source?: string
+    ts?: number
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────────────────────────────────
+export default function SignalUpgradePage(props: { style?: React.CSSProperties }) {
+    const [hydrated, setHydrated] = React.useState(false)
+    const [result, setResult] = React.useState<HandoffResult | null>(null)
+    const [ctaSource, setCtaSource] = React.useState<string>("")
+
+    const [inlineEmail, setInlineEmail] = React.useState("")
+    const [bottomEmail, setBottomEmail] = React.useState("")
+    const [inlineError, setInlineError] = React.useState("")
+    const [bottomError, setBottomError] = React.useState("")
+    const [submittingInline, setSubmittingInline] = React.useState(false)
+    const [submittingBottom, setSubmittingBottom] = React.useState(false)
+
+    React.useEffect(() => {
+        const id = "up-upgrade-styles"
+        let el = document.getElementById(id) as HTMLStyleElement | null
+        if (!el) {
+            el = document.createElement("style")
+            el.id = id
+            document.head.appendChild(el)
+        }
+        el.textContent = STYLES
+    }, [])
+
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        try {
+            const raw = sessionStorage.getItem(HANDOFF_KEY)
+            if (!raw) {
+                setHydrated(true)
+                return
+            }
+            sessionStorage.removeItem(HANDOFF_KEY)
+            const parsed = JSON.parse(raw) as HandoffPayload
+            const ts = typeof parsed.ts === "number" ? parsed.ts : 0
+            const fresh = ts && Date.now() - ts < HANDOFF_MAX_AGE_MS
+            if (fresh && parsed.result) {
+                setResult(parsed.result)
+                if (parsed.cta_source) setCtaSource(parsed.cta_source)
+            }
+        } catch {}
+        setHydrated(true)
+
+        const sessionId = localStorage.getItem("jobfit_session_id") || crypto.randomUUID()
+        if (!localStorage.getItem("jobfit_session_id")) {
+            localStorage.setItem("jobfit_session_id", sessionId)
+        }
+        fetch(API_BASE + "/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                session_id: sessionId,
+                page_path: window.location.pathname || "/signal/upgrade",
+                page_name: "upgrade_page",
+                referrer: document.referrer || null,
+                utm_source: ss("signal_utm_source") || null,
+                utm_medium: ss("signal_utm_medium") || null,
+                utm_campaign: ss("signal_utm_campaign") || null,
+            }),
+        }).catch(() => {})
+    }, [])
+
+    // Fire GA4 upgrade_page_viewed once after handoff hydration. Meta
+    // PageView is auto-fired by the Framer base pixel script. Includes
+    // verdict + score + cta_source so the funnel can be sliced by which
+    // result the user is upgrading from. Fires once per mount regardless
+    // of whether result hydrated successfully.
+    const viewFiredRef = React.useRef(false)
+    React.useEffect(() => {
+        if (!hydrated || viewFiredRef.current) return
+        viewFiredRef.current = true
+        const verdict = result ? String(result.decision || "").toUpperCase() : null
+        const score =
+            result && typeof result.score === "number" ? result.score : null
+        const utm = getEventUtmParams()
+        try {
+            if (typeof window !== "undefined" && (window as any).gtag) {
+                (window as any).gtag("event", "upgrade_page_viewed", {
+                    event_category: "funnel",
+                    verdict,
+                    score,
+                    cta_source: ctaSource || null,
+                    has_handoff: !!result,
+                    ...utm,
+                })
+            }
+        } catch {}
+    }, [hydrated, result, ctaSource])
+
+    const variantKey = decisionToVariantKey(result?.decision)
+    const variant = VARIANTS[variantKey]
+
+    const displayDecision = String(result?.decision || "").trim().toUpperCase() || "APPLY"
+    const displayScore = typeof result?.score === "number" ? result.score : null
+    const displayJobTitle = result?.job_signals?.jobTitle || "this role"
+    const displayCompany = result?.job_signals?.companyName || "the company"
+    const displayMove = (result?.next_step && result.next_step.trim()) || variant.defaultMove
+
+    async function submitCheckout(
+        email: string,
+        source: string,
+        setError: (s: string) => void,
+        setSubmitting: (b: boolean) => void
+    ) {
+        const trimmed = email.trim().toLowerCase()
+        setError("")
+        if (!isValidEmail(trimmed)) {
+            setError("Please enter a valid email address.")
+            return
+        }
+        setSubmitting(true)
+        try {
+            const res = await fetch(`${API_BASE}/api/checkout/create-session`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: trimmed,
+                    source,
+                    ...getAttributionSnapshot(),
+                }),
+            })
+            const data = await res.json()
+            if (!data?.url) {
+                throw new Error(data?.error || "Checkout failed. Please try again.")
+            }
+            const verdict = result
+                ? String(result.decision || "").toUpperCase()
+                : null
+            const score =
+                result && typeof result.score === "number" ? result.score : null
+            const utm = getEventUtmParams()
+
+            const initEventId = genEventId()
+            try {
+                if (typeof window !== "undefined" && (window as any).fbq) {
+                    (window as any).fbq(
+                        "track",
+                        "InitiateCheckout",
+                        {
+                            value: 99,
+                            currency: "USD",
+                            content_name: "SIGNAL 90-day access",
+                            verdict,
+                            score,
+                            ...utm,
+                        },
+                        { eventID: initEventId }
+                    )
+                }
+            } catch {}
+            sendServerEvent({
+                event_name: "InitiateCheckout",
+                event_id: initEventId,
+                email: trimmed || undefined,
+                custom_data: {
+                    value: 99,
+                    currency: "USD",
+                    content_name: "SIGNAL 90-day access",
+                    verdict: verdict || undefined,
+                    score,
+                },
+            })
+            try {
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "checkout_initiated", {
+                        event_category: "funnel",
+                        verdict,
+                        score,
+                        ...utm,
+                    })
+                }
+            } catch {}
+            try {
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "conversion", {
+                        send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
+                        value: 99.0,
+                        currency: "USD",
+                    })
+                }
+            } catch {}
+
+            window.open(data.url, "_blank")
+            setSubmitting(false)
+        } catch (err: any) {
+            setError(err?.message || "Something went wrong. Please try again.")
+            setSubmitting(false)
+        }
+    }
+
+    function handleInlineSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
+        const source = ctaSource ? `${ctaSource}__inline` : "upgrade_inline"
+        void submitCheckout(inlineEmail, source, setInlineError, setSubmittingInline)
+    }
+
+    function handleBottomSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
+        const source = ctaSource ? `${ctaSource}__checkout` : "upgrade_checkout"
+        void submitCheckout(bottomEmail, source, setBottomError, setSubmittingBottom)
+    }
+
+    function handleReturn(e: React.MouseEvent<HTMLAnchorElement>) {
+        e.preventDefault()
+        if (typeof window !== "undefined" && window.top) {
+            window.top.location.replace(TRIAL_RESULT_URL)
+        } else {
+            window.location.replace(TRIAL_RESULT_URL)
+        }
+    }
+
+    if (!hydrated) {
+        return (
+            <div style={{ width: "100%", minHeight: "100vh", background: "#0A1628", ...props.style }}>
+                <PageShell />
+            </div>
+        )
+    }
+
+    return (
+        <div style={{ width: "100%", ...props.style }}>
+            <PageShell />
+            <div className="up-page">
+                <header className="up-site-header">
+                    <div className="up-brand">
+                        <div className="up-brand-mark">
+                            SIGNAL <span className="dash">—</span>
+                        </div>
+                        <div className="up-brand-tag">BY WORKFORCE READY NOW</div>
+                    </div>
+                    <a
+                        href={TRIAL_RESULT_URL}
+                        className="up-return-link"
+                        onClick={handleReturn}
+                    >
+                        ← Back to my results
+                    </a>
+                </header>
+
+                <section className="up-verdict-header">
+                    <div className="up-verdict-header-inner">
+                        <div className={"up-verdict-context " + variant.contextClass}>
+                            {variant.context}
+                        </div>
+                        <h1 className="up-verdict-headline">
+                            {variant.headlineLead}
+                            <span className="punch">{variant.headlinePunch}</span>
+                        </h1>
+                        <div className="up-verdict-meta">
+                            <div
+                                className={"up-verdict-meta-decision " + variant.contextClass}
+                            >
+                                {displayDecision}
+                            </div>
+                            <div className="up-verdict-meta-divider" />
+                            <div className="up-verdict-meta-score">
+                                Fit Score{" "}
+                                <strong>
+                                    {displayScore !== null ? displayScore : "—"}
+                                </strong>
+                                /100
+                            </div>
+                            {result?.job_signals ? (
+                                <>
+                                    <div className="up-verdict-meta-divider" />
+                                    <div className="up-verdict-meta-score">
+                                        <strong>{displayJobTitle}</strong> at{" "}
+                                        <strong>{displayCompany}</strong>
+                                    </div>
+                                </>
+                            ) : null}
+                        </div>
+                        <p className="up-verdict-move">
+                            <span className="move-label">YOUR MOVE:</span> {displayMove}
+                        </p>
+
+                        <form
+                            className="up-inline-capture"
+                            onSubmit={handleInlineSubmit}
+                        >
+                            <input
+                                type="email"
+                                className="up-inline-capture-input"
+                                placeholder="your@email.com"
+                                value={inlineEmail}
+                                onChange={(e) => setInlineEmail(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="submit"
+                                className="up-inline-capture-btn"
+                                disabled={submittingInline}
+                            >
+                                {submittingInline
+                                    ? "Starting…"
+                                    : "Unlock SIGNAL · $99 →"}
+                            </button>
+                        </form>
+                        {inlineError ? (
+                            <div className="up-form-error">{inlineError}</div>
+                        ) : null}
+                        <p className="up-inline-capture-trust">
+                            One-time fee · 7-day money-back guarantee
+                        </p>
+                    </div>
+                </section>
+
+                <section className="up-bridge">
+                    <div className="up-bridge-eyebrow">{variant.bridgeEyebrow}</div>
+                    <h2 className="up-bridge-headline">{variant.bridgeHeadline}</h2>
+                    <p className="up-bridge-body">{variant.bridgeBody}</p>
+                </section>
+
+                <section className="up-moments">
+                    {variant.moments.map((m, i) => (
+                        <div className="up-moment" key={i}>
+                            <div className={"up-moment-icon-wrap up-moment-icon-" + m.type}>
+                                {m.icon}
+                            </div>
+                            <div className="up-moment-body">
+                                <div className={"up-moment-eyebrow " + m.type}>{m.label}</div>
+                                <h3 className="up-moment-title">{m.title}</h3>
+                                <p className="up-moment-text">{m.text}</p>
+                            </div>
+                        </div>
+                    ))}
+                </section>
+
+                <section className="up-math-section">
+                    <div className="up-math-callout">
+                        <p className="up-math-eyebrow">{variant.mathEyebrow}</p>
+                        <p className="up-math-headline">{variant.mathHeadline}</p>
+                        <p className="up-math-body">{variant.mathBody}</p>
+                    </div>
+                </section>
+
+                <section className="up-proof-section">
+                    <div className="up-proof-inner">
+                        <div className="up-proof-eyebrow">WHAT SIGNAL USERS ARE SAYING</div>
+                        <div className="up-proof-grid">
+                            <div className="up-proof-card">
+                                <p className="up-proof-quote">
+                                    "Stopped wasting hours on roles SIGNAL flagged Pass. Best
+                                    application filter I've used."
+                                </p>
+                                <p className="up-proof-attr">— Ellie G., Cornell '25</p>
+                            </div>
+                            <div className="up-proof-card">
+                                <p className="up-proof-quote">
+                                    "Addressed every RISK code in my interview prep. Got the
+                                    offer."
+                                </p>
+                                <p className="up-proof-attr">— Ryan R., FSU '26</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="up-checkout-section">
+                    <h2 className="up-checkout-headline">Unlock full SIGNAL</h2>
+                    <p className="up-checkout-sub">
+                        Job Fit. Positioning. Cover Letter. Networking. Job Tracker. Web and
+                        mobile.
+                    </p>
+                    <div className="up-price-display">
+                        <span className="up-price-currency">$</span>
+                        <span className="up-price-amount">99</span>
+                    </div>
+                    <p className="up-price-terms">
+                        <strong>One-time fee.</strong> Unlimited jobs. No subscription.
+                    </p>
+                    <form className="up-checkout-form" onSubmit={handleBottomSubmit}>
+                        <div className="up-email-label">YOUR EMAIL</div>
+                        <input
+                            type="email"
+                            className="up-email-input"
+                            placeholder="you@example.com"
+                            value={bottomEmail}
+                            onChange={(e) => setBottomEmail(e.target.value)}
+                            required
+                        />
+                        <button
+                            type="submit"
+                            className="up-checkout-btn"
+                            disabled={submittingBottom}
+                        >
+                            {submittingBottom ? "STARTING…" : "CONTINUE TO CHECKOUT →"}
+                        </button>
+                    </form>
+                    {bottomError ? (
+                        <div className="up-form-error">{bottomError}</div>
+                    ) : null}
+                    <div className="up-guarantee-line">
+                        <span className="up-guarantee-check">✓</span>
+                        <span>
+                            7-day money-back guarantee — if SIGNAL doesn't change how you
+                            search, we'll refund every dollar.
+                        </span>
+                    </div>
+                    <p className="up-privacy-line">
+                        Your email is used for your SIGNAL account. We never sell or share
+                        your data. <a href="/privacy">Privacy</a>
+                    </p>
+                </section>
+
+                <section className="up-faq-section">
+                    <div className="up-faq-header">
+                        <div className="up-faq-eyebrow">QUESTIONS</div>
+                    </div>
+                    <div className="up-faq-item">
+                        <p className="up-faq-question">What if SIGNAL doesn't help me?</p>
+                        <p className="up-faq-answer">
+                            You're covered by our 7-day money-back guarantee. If SIGNAL doesn't
+                            change how you search — for any reason — email us and we'll refund
+                            every dollar. No questions, no friction.
+                        </p>
+                    </div>
+                    <div className="up-faq-item">
+                        <p className="up-faq-question">How is this different from ChatGPT?</p>
+                        <p className="up-faq-answer">
+                            ChatGPT writes generic resumes from a template. SIGNAL is built
+                            from 30 years of hiring-side experience, 20,000+ lines of
+                            recruitment intelligence, and conversations with thousands of
+                            hiring managers. It knows what recruiters actually filter on — and
+                            what they ignore.
+                        </p>
+                    </div>
+                    <div className="up-faq-item">
+                        <p className="up-faq-question">
+                            Do I need to upload my resume again for every job?
+                        </p>
+                        <p className="up-faq-answer">
+                            No. SIGNAL remembers your resume. Every new job you scan compares
+                            against your existing profile in seconds. You can update your
+                            resume any time — and SIGNAL re-scores everything automatically.
+                        </p>
+                    </div>
+                    <div className="up-faq-item">
+                        <p className="up-faq-question">
+                            What does "unlimited" actually mean?
+                        </p>
+                        <p className="up-faq-answer">
+                            Unlimited Job Fit scans. Unlimited cover letters. Unlimited resume
+                            rewrites. Unlimited networking plays. No per-scan fees, no monthly
+                            limit, no surprise charges. One $99 fee — for as long as you're
+                            job searching.
+                        </p>
+                    </div>
+                </section>
+
+                <section className="up-escape-section">
+                    <a
+                        href={TRIAL_RESULT_URL}
+                        className="up-escape-link"
+                        onClick={handleReturn}
+                    >
+                        ← Not now, return to my results
+                    </a>
+                </section>
+
+                <footer className="up-footer">
+                    <p className="up-footer-text">
+                        © 2026 Workforce Ready Now ·{" "}
+                        <a href="/privacy">Privacy</a> ·{" "}
+                        <a href="/terms">Terms</a>
+                    </p>
+                </footer>
+            </div>
+        </div>
+    )
+}
