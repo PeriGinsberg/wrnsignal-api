@@ -393,21 +393,16 @@ function sendServerEvent(args: {
             custom_data: args.custom_data || {},
         }
         const url = API_BASE + "/api/conversions/event"
-        const payload = JSON.stringify(body)
-        if (
-            typeof navigator !== "undefined" &&
-            navigator.sendBeacon &&
-            typeof Blob !== "undefined"
-        ) {
-            const blob = new Blob([payload], { type: "application/json" })
-            navigator.sendBeacon(url, blob)
-            return
-        }
+        // fetch with keepalive:true + credentials:"omit". sendBeacon would
+        // be simpler but forces credentials:"include" which requires the
+        // API to enable Access-Control-Allow-Credentials globally — not
+        // wanted on a bearer-token-auth API.
         fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: payload,
+            body: JSON.stringify(body),
             keepalive: true,
+            credentials: "omit",
         }).catch(() => {})
     } catch {}
 }
