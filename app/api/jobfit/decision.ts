@@ -188,7 +188,16 @@ export function applyEvidenceGuardrails(
   // Rule 2: no QUALITY direct evidence means only weak, boilerplate, or
   // adjacent/inferred matches — not strong enough to recommend applying.
   // Quality = direct + weight >= 75 + profile_fact isn't skills-list boilerplate.
-  if (qualityDirectCount === 0 && whyCount > 0) {
+  //
+  // EXCEPTION: when zero risks fired, the engine couldn't find a real gap
+  // to surface. Capping to Review then produces incoherent UX — Review
+  // means "real but addressable gaps" and the user sees no gaps to address.
+  // Trust the score in pure-positive cases (no risks, even if no quality
+  // direct WHYs by the strict 75-weight definition). The guardrail's
+  // purpose is to defend against "weak evidence + real risks" combos
+  // where the score over-credits a poor match; without any risks, that
+  // failure mode doesn't apply.
+  if (qualityDirectCount === 0 && whyCount > 0 && riskCodes.length > 0) {
     const capped = capDecision(decision, "Review")
     if (capped !== decision) {
       const reason = directCount === 0
