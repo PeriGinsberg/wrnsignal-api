@@ -86,7 +86,39 @@ export async function runJobFit(args: {
   const gate = evaluateGates(jobSignals, profileSignals)
   const scored = scoreJobFit(jobSignals, profileSignals)
 
-  const decisionInitial = decisionFromScore(scored.score)
+  // High-confidence positive-match boost. The raw score undercredits the
+  // "many matches, no gaps" shape: when a JD lists 10 requirements and a
+  // candidate clearly matches 2-3 with direct evidence AND the engine
+  // fires zero risks, the score lands in the 70-74 "almost-Apply" range
+  // and the user sees Review with an empty risk list — an incoherent UX
+  // ("address top risks" when there are no risks shown).
+  //
+  // Scope deliberately narrow: only fires when (a) score is already in
+  // the 70-74 band (one threshold tick from Apply), (b) at least 2 direct
+  // WHY matches surfaced, (c) zero risk codes, (d) penalty sum is
+  // negligible. Bumps to 75 — the Apply threshold floor, no more — so the
+  // boost is the minimum needed to flip the decision band, not a generous
+  // re-rank. Doesn't fire for force_pass (handled separately below).
+  const directWhyCount = scored.whyCodes.filter(
+    (w) => w.match_strength === "direct"
+  ).length
+  const isHighConfidencePositive =
+    directWhyCount >= 2 &&
+    scored.riskCodes.length === 0 &&
+    scored.penaltySum < 5
+  const scoreAfterBoost =
+    isHighConfidencePositive && scored.score >= 70 && scored.score < 75
+      ? 75
+      : scored.score
+  if (scoreAfterBoost !== scored.score) {
+    console.log(
+      `[scoring] High-confidence positive boost: ${scored.score} -> ${scoreAfterBoost} ` +
+        `(${directWhyCount} direct WHYs, ${scored.riskCodes.length} risks, ` +
+        `penaltySum=${scored.penaltySum})`
+    )
+  }
+
+  const decisionInitial = decisionFromScore(scoreAfterBoost)
   const decisionAfterGate = applyGateOverrides(decisionInitial, gate)
   const decisionAfterRisk = applyRiskDowngrades(decisionAfterGate, scored.penaltySum, scored.riskCodes)
   // Evidence guardrails: cap decision when the underlying evidence is
@@ -103,7 +135,7 @@ export async function runJobFit(args: {
   // at 25 so the number clearly matches the Pass decision.
   const gateScore = gate.type === "force_pass"
     ? Math.min(scored.score, 25)
-    : capScoreForDecision(scored.score, decisionFinal)
+    : capScoreForDecision(scoreAfterBoost, decisionFinal)
 
   const baseOut: EvalOutput = {
     decision: decisionFinal,
