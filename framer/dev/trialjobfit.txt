@@ -69,6 +69,12 @@ const RESULT_CACHE_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour
 // pre-fills the upload box — user only needs to paste a new JD.
 const LANDING_RESUME_CARRYOVER_KEY = "signal_landing_resume_carryover"
 
+// The v2 landing page lives at the root of the marketing domain.
+// LANDING_FALLBACK above still points at the legacy /signal route for
+// gated-flow upgrade-failure fallbacks; the Start Over flow goes to the
+// new landing instead.
+const NEW_LANDING_URL = "https://genuine-times-909123.framer.app/"
+
 // ============================================================================
 // COLORS / TYPOGRAPHY
 // ============================================================================
@@ -751,12 +757,12 @@ export default function SignalTrialJobFit() {
         try {
             sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
         } catch {}
-        // Navigate to the landing page. State clearing here is
+        // Navigate to the v2 landing page. State clearing here is
         // unnecessary — the page unmounts on navigation.
         if (typeof window !== "undefined" && window.top) {
-            window.top.location.replace(LANDING_FALLBACK)
+            window.top.location.replace(NEW_LANDING_URL)
         } else if (typeof window !== "undefined") {
-            window.location.replace(LANDING_FALLBACK)
+            window.location.replace(NEW_LANDING_URL)
         }
     }
 
