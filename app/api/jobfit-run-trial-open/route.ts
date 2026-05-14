@@ -195,13 +195,21 @@ export async function POST(req: NextRequest) {
     const profileOverrides = await inferProfileOverridesFromResume(resumeText)
 
     // ── Trial-neutral overrides ──────────────────────────────────────
-    // Exactly the same policy as jobfit-run-trial: there is no intake
-    // form on this funnel either, so every constraint/preference field is
-    // forced to "no preference expressed". See jobfit-run-trial/route.ts
-    // for the long-form rationale (resume-derived signals are guesses,
-    // not declarations, and the engine treats every constraint as a stated
-    // user preference).
-    const haikuFamilies = profileOverrides.targetFamilies ?? []
+    // Same baseline as jobfit-run-trial — no intake form on this funnel,
+    // so every constraint/preference is forced to "no preference
+    // expressed". See jobfit-run-trial/route.ts for the long-form
+    // rationale (resume-derived signals are guesses, not declarations).
+    //
+    // targetFamilies is forced to [] on the open path — STRICTER than
+    // jobfit-run-trial, which preserves Haiku's family inference when
+    // confident. The reason: V5 risk bullets phrase family-mismatch as
+    // "your stated target is X" — but open-flow users have stated NOTHING.
+    // A Haiku guess showing up as a "stated target" mismatch was reported
+    // in prod (a high-school student's resume tagged as "Sales target"
+    // against an entertainment role). Forcing [] suppresses both the
+    // family-mismatch Risk AND the family-match Bonus. For trial users
+    // with no stated career intent, that's the right trade — score the
+    // scan on actual evidence, not on inferred career trajectory.
     const trialOverrides: Partial<StructuredProfileSignals> = {
       ...profileOverrides,
       constraints: {
@@ -220,7 +228,7 @@ export async function POST(req: NextRequest) {
         constrained: false,
         allowedCities: [],
       },
-      targetFamilies: haikuFamilies.length > 0 ? haikuFamilies : [],
+      targetFamilies: [],
     }
 
     // ── Effective profileText (no intake header on this funnel) ──────
