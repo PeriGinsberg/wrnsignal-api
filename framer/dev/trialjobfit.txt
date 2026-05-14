@@ -2183,13 +2183,13 @@ function LoadingValueContent() {
                         "Stopped wasting hours on roles SIGNAL flagged Pass. Best application
                         filter I've used."
                     </div>
-                    <div style={quoteAttr}>— Beta tester</div>
+                    <div style={quoteAttr}>— Ellie G., Cornell '25</div>
                 </div>
                 <div style={quoteCard}>
                     <div style={quoteText}>
                         "Addressed every RISK code in my interview prep. Got the offer."
                     </div>
-                    <div style={quoteAttr}>— Beta tester</div>
+                    <div style={quoteAttr}>— Ryan R., FSU '26</div>
                 </div>
             </div>
         </div>
