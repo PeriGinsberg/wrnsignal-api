@@ -27,6 +27,7 @@
 import type {
   ConversionProvider,
   ConversionResult,
+  FunnelEventSignals,
   PurchaseSignals,
 } from "./types"
 import { sha256Lower } from "./hash"
@@ -226,8 +227,18 @@ async function sendRefund(s: PurchaseSignals): Promise<ConversionResult> {
   }
 }
 
+// Phase 4 will implement this once new Google Ads Conversion actions are
+// created in the UI (Lead, AddToCart, InitiateCheckout — each needs its
+// own GOOGLE_ADS_CONVERSION_ACTION_ID_*).
+async function sendFunnelEvent(
+  _s: FunnelEventSignals
+): Promise<ConversionResult> {
+  return { status: "skipped", reason: "phase-1-meta-only" }
+}
+
 export const googleAds: ConversionProvider = {
   name: "google_ads",
   sendPurchase,
   sendRefund,
+  sendFunnelEvent,
 }

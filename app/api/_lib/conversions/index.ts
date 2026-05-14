@@ -13,9 +13,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import type {
   ConversionResult,
   EventType,
+  FunnelEventSignals,
   Platform,
   PurchaseSignals,
 } from "./types"
+import { funnelNameToEventType } from "./types"
 import { meta } from "./meta"
 import { tiktok } from "./tiktok"
 import { googleAds } from "./googleAds"
@@ -56,7 +58,7 @@ export function buildSignalsFromRow(r: any): PurchaseSignals {
 
 export async function fireConversions(
   signals: PurchaseSignals,
-  event_type: EventType
+  event_type: "purchase" | "refund"
 ): Promise<void> {
   await Promise.allSettled(
     PROVIDERS.map(async (p) => {
@@ -80,6 +82,75 @@ export async function fireConversions(
       })
     })
   )
+}
+
+// Upper-funnel event orchestrator. Same parallel fan-out + per-provider
+// isolation as fireConversions, but the signals shape lacks a purchase_id
+// (no payment yet) and event_type is derived from event_name. One
+// conversion_log row per (event_id, platform) attempt.
+export async function fireFunnelEvent(
+  signals: FunnelEventSignals
+): Promise<void> {
+  await Promise.allSettled(
+    PROVIDERS.map(async (p) => {
+      let result: ConversionResult
+      try {
+        result = await p.sendFunnelEvent(signals)
+      } catch (err: any) {
+        result = {
+          status: "error",
+          error: err?.message ?? String(err),
+        }
+      }
+      await logFunnelEvent({
+        signals,
+        platform: p.name,
+        result,
+      })
+    })
+  )
+}
+
+async function logFunnelEvent(args: {
+  signals: FunnelEventSignals
+  platform: Platform
+  result: ConversionResult
+}): Promise<void> {
+  const { signals, platform, result } = args
+  try {
+    const supabase = getSupabaseAdmin()
+    const row = {
+      purchase_id: null,
+      event_id: signals.event_id,
+      event_type: funnelNameToEventType(signals.event_name),
+      session_id: signals.session_id || null,
+      platform,
+      status: result.status,
+      http_status:
+        "http_status" in result && typeof result.http_status === "number"
+          ? result.http_status
+          : null,
+      response_payload:
+        "response" in result && result.response !== undefined
+          ? (result.response as object)
+          : null,
+      error_message:
+        result.status === "error"
+          ? result.error
+          : result.status === "skipped"
+          ? result.reason
+          : null,
+    }
+    const { error } = await supabase.from("conversion_log").insert(row)
+    if (error) {
+      console.error("[conversion_log] funnel insert failed:", error.message)
+    }
+  } catch (err: any) {
+    console.error(
+      "[conversion_log] funnel unexpected failure:",
+      err?.message ?? String(err)
+    )
+  }
 }
 
 export async function logConversion(args: {

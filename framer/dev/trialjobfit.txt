@@ -48,6 +48,21 @@ const OPEN_FLOW_HANDOFF_KEY = "signal_open_trial_handoff"
 // (stale tab, user navigated back hours later) and show the input view.
 const OPEN_FLOW_HANDOFF_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes
 
+// Destination for upgrade CTAs when isOpenFlow=true. The new upgrade page
+// reads the handoff key below to render a verdict-driven personalized view.
+// Gated-flow users continue to use the existing direct-to-Stripe path
+// inside handleUpgrade.
+const UPGRADE_PAGE_URL =
+    "https://genuine-times-909123.framer.app/signal/upgrade"
+const UPGRADE_HANDOFF_KEY = "signal_upgrade_handoff"
+
+// Result-cache lets "Back to my results" from the upgrade page restore the
+// rendered scan without re-running anything. Written when the engine
+// returns a result; read on mount (before checking the open-flow handoff).
+// Single page session window: max age 1 hour.
+const RESULT_CACHE_KEY = "signal_trial_result_cache"
+const RESULT_CACHE_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour
+
 // ============================================================================
 // COLORS / TYPOGRAPHY
 // ============================================================================
@@ -349,6 +364,71 @@ export default function SignalTrialJobFit() {
             }
 
             setResponse(data)
+            // Cache the response so "Back to my results" from the upgrade
+            // page can restore this view without re-running the engine.
+            // Single-session, 1-hour ttl — cleared on handleStartOver.
+            try {
+                sessionStorage.setItem(
+                    RESULT_CACHE_KEY,
+                    JSON.stringify({
+                        response: data,
+                        isOpenFlow: useOpenEndpoint,
+                        email: e || null,
+                        ts: Date.now(),
+                    })
+                )
+            } catch {}
+
+            // Fire scan_result_viewed pixel events. Fires only on real run
+            // completions, not on cache restore (which doesn't reach here).
+            // Verdict + score included so we can segment funnel by outcome.
+            const sr =
+                data && "result" in data && data.result
+                    ? data.result
+                    : null
+            if (sr) {
+                const verdict = String(sr.decision || "").toUpperCase()
+                const score = typeof sr.score === "number" ? sr.score : null
+                const utm = getEventUtmParams()
+                const viewEventId = genEventId()
+                try {
+                    if (typeof window !== "undefined" && (window as any).fbq) {
+                        (window as any).fbq(
+                            "track",
+                            "ViewContent",
+                            {
+                                content_name: "SIGNAL scan result",
+                                content_category: "scan_result",
+                                verdict,
+                                score,
+                                ...utm,
+                            },
+                            { eventID: viewEventId }
+                        )
+                    }
+                } catch {}
+                sendServerEvent({
+                    event_name: "ViewContent",
+                    event_id: viewEventId,
+                    email: e || undefined,
+                    custom_data: {
+                        verdict,
+                        score,
+                        content_name: "SIGNAL scan result",
+                        content_category: "scan_result",
+                    },
+                })
+                try {
+                    if (typeof window !== "undefined" && (window as any).gtag) {
+                        (window as any).gtag("event", "scan_result_viewed", {
+                            event_category: "funnel",
+                            verdict,
+                            score,
+                            ...utm,
+                        })
+                    }
+                } catch {}
+            }
             try {
                 window.scrollTo({ top: 0, behavior: "smooth" })
             } catch {}
@@ -393,6 +473,32 @@ export default function SignalTrialJobFit() {
                 utm_campaign: ss("signal_utm_campaign") || null,
             }),
         }).catch(() => {})
+
+        // ── Cached result restore (back-nav from /signal/upgrade) ──
+        // Checked BEFORE the open-flow handoff so users returning from the
+        // upgrade page see their result instead of either an input view or
+        // a fresh auto-run (which would over-charge Haiku).
+        try {
+            const cachedRaw = sessionStorage.getItem(RESULT_CACHE_KEY)
+            if (cachedRaw) {
+                const cached = JSON.parse(cachedRaw) as {
+                    response?: TrialResponse
+                    isOpenFlow?: boolean
+                    email?: string | null
+                    ts?: number
+                }
+                const cts = typeof cached.ts === "number" ? cached.ts : 0
+                const cFresh = cts && Date.now() - cts < RESULT_CACHE_MAX_AGE_MS
+                if (cFresh && cached.response) {
+                    setResponse(cached.response)
+                    if (cached.isOpenFlow) setIsOpenFlow(true)
+                    if (cached.email) setEmail(cached.email)
+                    return
+                }
+                // Stale: drop it so it doesn't linger past TTL.
+                sessionStorage.removeItem(RESULT_CACHE_KEY)
+            }
+        } catch {}
 
         // ── v2 landing handoff: hydrate + auto-run open-endpoint flow ──
         try {
@@ -441,9 +547,147 @@ export default function SignalTrialJobFit() {
         })
     }
 
-    // ── Upgrade (handled by existing /api/checkout/create-session) ──
+    // ── Upgrade ─────────────────────────────────────────────────────
+    //
+    // Open-flow users (came in via the v2 landing handoff, no email): every
+    // CTA writes a handoff payload to sessionStorage and navigates to the
+    // new /signal/upgrade page, which owns email capture and Stripe
+    // redirect. Gated-flow users (entered with ?email= in the URL) keep
+    // the existing direct-to-Stripe path unchanged.
+    //
+    // Funnel events:
+    //   - Both paths fire AddToCart + upgrade_clicked here (upgrade
+    //     intent). cta_source identifies which button was clicked.
+    //   - Gated-flow ALSO fires InitiateCheckout + checkout_initiated
+    //     here because their next step IS Stripe (they skip the upgrade
+    //     page). Open-flow's InitiateCheckout fires on the upgrade page
+    //     when they actually submit email.
     async function handleUpgrade(source: string) {
         if (upgradeLoading) return
+
+        const sr = response?.result
+        const verdict = sr ? String(sr.decision || "").toUpperCase() : null
+        const score = sr && typeof sr.score === "number" ? sr.score : null
+        const utm = getEventUtmParams()
+
+        const addToCartEventId = genEventId()
+        try {
+            if (typeof window !== "undefined" && (window as any).fbq) {
+                (window as any).fbq(
+                    "track",
+                    "AddToCart",
+                    {
+                        value: 99,
+                        currency: "USD",
+                        content_name: "SIGNAL 90-day access",
+                        cta_source: source,
+                        verdict,
+                        score,
+                        ...utm,
+                    },
+                    { eventID: addToCartEventId }
+                )
+            }
+        } catch {}
+        sendServerEvent({
+            event_name: "AddToCart",
+            event_id: addToCartEventId,
+            email: email.trim().toLowerCase() || undefined,
+            custom_data: {
+                value: 99,
+                currency: "USD",
+                content_name: "SIGNAL 90-day access",
+                cta_source: source,
+                verdict: verdict || undefined,
+                score,
+            },
+        })
+        try {
+            if (typeof window !== "undefined" && (window as any).gtag) {
+                (window as any).gtag("event", "upgrade_clicked", {
+                    event_category: "funnel",
+                    cta_source: source,
+                    verdict,
+                    score,
+                    ...utm,
+                })
+            }
+        } catch {}
+
+        if (!isOpenFlow) {
+            // Gated path goes direct to Stripe — fire InitiateCheckout +
+            // checkout_initiated here since there's no upgrade-page step.
+            const initEventId = genEventId()
+            try {
+                if (typeof window !== "undefined" && (window as any).fbq) {
+                    (window as any).fbq(
+                        "track",
+                        "InitiateCheckout",
+                        {
+                            value: 99,
+                            currency: "USD",
+                            content_name: "SIGNAL 90-day access",
+                            verdict,
+                            score,
+                            ...utm,
+                        },
+                        { eventID: initEventId }
+                    )
+                }
+            } catch {}
+            sendServerEvent({
+                event_name: "InitiateCheckout",
+                event_id: initEventId,
+                email: email.trim().toLowerCase() || undefined,
+                custom_data: {
+                    value: 99,
+                    currency: "USD",
+                    content_name: "SIGNAL 90-day access",
+                    verdict: verdict || undefined,
+                    score,
+                },
+            })
+            try {
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "checkout_initiated", {
+                        event_category: "funnel",
+                        verdict,
+                        score,
+                        ...utm,
+                    })
+                }
+            } catch {}
+            try {
+                if (typeof window !== "undefined" && (window as any).gtag) {
+                    (window as any).gtag("event", "conversion", {
+                        send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
+                        value: 99.0,
+                        currency: "USD",
+                    })
+                }
+            } catch {}
+        }
+
+        if (isOpenFlow) {
+            try {
+                if (response) {
+                    sessionStorage.setItem(
+                        UPGRADE_HANDOFF_KEY,
+                        JSON.stringify({
+                            result: response.result,
+                            locks: response.locks,
+                            upgrade: response.upgrade,
+                            cta_source: source,
+                            ts: Date.now(),
+                        })
+                    )
+                }
+            } catch {}
+            window.top!.location.replace(UPGRADE_PAGE_URL)
+            return
+        }
+
+        // Gated path (email present, existing flow) ─────────────────────
         const e = email.trim().toLowerCase()
         if (!e) {
             window.top!.location.replace(LANDING_FALLBACK)
@@ -462,22 +706,6 @@ export default function SignalTrialJobFit() {
             })
             const j = await r.json()
             if (j.url) {
-                // Fire Meta InitiateCheckout
-                if (typeof window !== "undefined" && (window as any).fbq) {
-                    (window as any).fbq("track", "InitiateCheckout", {
-                        value: 99,
-                        currency: "USD",
-                        content_name: "SIGNAL 90-day access",
-                    })
-                }
-                // Fire Google Begin Checkout
-                if (typeof window !== "undefined" && (window as any).gtag) {
-                    (window as any).gtag("event", "conversion", {
-                        send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
-                        value: 99.0,
-                        currency: "USD",
-                    })
-                }
                 window.open(j.url, "_blank")
             } else {
                 window.top!.location.replace(LANDING_FALLBACK)
@@ -497,6 +725,9 @@ export default function SignalTrialJobFit() {
         // Drop open-flow mode so a manual restart uses the normal input
         // view and the gated endpoint (with email).
         setIsOpenFlow(false)
+        try {
+            sessionStorage.removeItem(RESULT_CACHE_KEY)
+        } catch {}
         try {
             window.scrollTo({ top: 0, behavior: "smooth" })
         } catch {}
@@ -2142,6 +2373,88 @@ function getAttributionSnapshot() {
         fbc: getCookie("_fbc"),
         ttp: getCookie("_ttp"),
     }
+}
+
+// Subset of attribution attached as custom params on client-side Meta /
+// gtag events. UTMs only; click IDs and fbp/fbc/ttp ride the Stripe
+// metadata path for CAPI server-side dedup, no need to duplicate here.
+function getEventUtmParams() {
+    return {
+        utm_source: ss("signal_utm_source") || undefined,
+        utm_medium: ss("signal_utm_medium") || undefined,
+        utm_campaign: ss("signal_utm_campaign") || undefined,
+        utm_content: ss("signal_utm_content") || undefined,
+        utm_term: ss("signal_utm_term") || undefined,
+    }
+}
+
+// Server-side mirror of the browser pixel. Same event_id rides both
+// fbq's eventID and the server CAPI call so Meta dedups the pair inside
+// its 7-day (event_name, event_id) window. Fire-and-forget — browser
+// pixel has fired before this network call resolves.
+type FunnelEventName = "Lead" | "ViewContent" | "AddToCart" | "InitiateCheckout"
+type FunnelCustomData = {
+    value?: number
+    currency?: string
+    verdict?: string
+    score?: number | null
+    cta_source?: string
+    content_name?: string
+    content_category?: string
+}
+
+function genEventId(): string {
+    try {
+        if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+            return crypto.randomUUID()
+        }
+    } catch {}
+    return (
+        Date.now().toString(36) +
+        "-" +
+        Math.random().toString(36).slice(2, 10)
+    )
+}
+
+function sendServerEvent(args: {
+    event_name: FunnelEventName
+    event_id: string
+    email?: string
+    custom_data?: FunnelCustomData
+}) {
+    try {
+        const sessionId =
+            (typeof localStorage !== "undefined" &&
+                localStorage.getItem("jobfit_session_id")) ||
+            ""
+        const attribution = getAttributionSnapshot()
+        const body = {
+            event_name: args.event_name,
+            event_id: args.event_id,
+            event_time_sec: Math.floor(Date.now() / 1000),
+            email: args.email || undefined,
+            session_id: sessionId,
+            ...attribution,
+            custom_data: args.custom_data || {},
+        }
+        const url = API_BASE + "/api/conversions/event"
+        const payload = JSON.stringify(body)
+        if (
+            typeof navigator !== "undefined" &&
+            navigator.sendBeacon &&
+            typeof Blob !== "undefined"
+        ) {
+            const blob = new Blob([payload], { type: "application/json" })
+            navigator.sendBeacon(url, blob)
+            return
+        }
+        fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+        }).catch(() => {})
+    } catch {}
 }
 
 // ============================================================================

@@ -11,6 +11,7 @@
 import type {
   ConversionProvider,
   ConversionResult,
+  FunnelEventSignals,
   PurchaseSignals,
 } from "./types"
 import { sha256Lower } from "./hash"
@@ -101,8 +102,16 @@ async function send(
   }
 }
 
+// Phase 2 will implement this. Phase 1 ships Meta only.
+async function sendFunnelEvent(
+  _s: FunnelEventSignals
+): Promise<ConversionResult> {
+  return { status: "skipped", reason: "phase-1-meta-only" }
+}
+
 export const tiktok: ConversionProvider = {
   name: "tiktok",
   sendPurchase: (s) => send(s, "CompletePayment"),
   sendRefund: (s) => send(s, "Refund"),
+  sendFunnelEvent,
 }

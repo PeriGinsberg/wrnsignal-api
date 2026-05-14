@@ -58,10 +58,10 @@ const STYLES = [
     ".v2-header-btn-white { color: #fff; border: 1px solid rgba(255,255,255,0.2); }",
 
     // Hero
-    ".v2-hero { padding: 56px 24px 40px; max-width: 760px; margin: 0 auto; text-align: center; }",
+    ".v2-hero { padding: 56px 24px 24px; max-width: 760px; margin: 0 auto; text-align: center; }",
     ".v2-eyebrow { color: #F4A261; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin-bottom: 28px; }",
     ".v2-hero-headline { font-size: 48px; font-weight: 700; font-style: italic; line-height: 1.05; margin: 0 0 4px; color: #fff; letter-spacing: -0.5px; }",
-    ".v2-hero-headline-grad { font-size: 48px; font-weight: 700; font-style: italic; line-height: 1.05; margin: 0 0 24px; letter-spacing: -0.5px; background: linear-gradient(90deg, #F4A261 0%, #F4A261 40%, #2CA58D 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #F4A261; }",
+    ".v2-hero-headline-grad { font-size: 48px; font-weight: 700; font-style: italic; line-height: 1.15; margin: 0 0 24px; padding-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(90deg, #F4A261 0%, #F4A261 40%, #2CA58D 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #F4A261; }",
     ".v2-hero-diagnosis { font-size: 18px; color: rgba(255,255,255,0.85); line-height: 1.5; margin: 0 0 8px; font-weight: 500; }",
     ".v2-hero-diagnosis .accent { color: #F4A261; font-weight: 600; }",
     ".v2-hero-body { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; margin: 0 auto 36px; max-width: 540px; }",
@@ -100,16 +100,23 @@ const STYLES = [
     ".v2-trust-strip { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; flex-wrap: wrap; }",
     ".v2-trust-item { font-size: 11px; color: rgba(255,255,255,0.45); }",
     ".v2-trust-dot { width: 3px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 50%; }",
-    ".v2-login-link { font-size: 12px; color: rgba(255,255,255,0.4); margin: 22px 0 0; text-align: center; }",
+    ".v2-login-link { font-size: 12px; color: rgba(255,255,255,0.4); margin: 14px 0 0; text-align: center; }",
     ".v2-login-link a { color: #2CA58D; text-decoration: none; }",
 
     // Authority strip
-    ".v2-authority { padding: 24px; max-width: 760px; margin: 0 auto; }",
+    ".v2-authority { padding: 16px 24px 8px; max-width: 760px; margin: 0 auto; }",
     ".v2-authority-text { font-size: 12px; color: rgba(255,255,255,0.5); text-align: center; margin: 0; line-height: 1.7; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); }",
     ".v2-authority-text strong { color: #fff; font-weight: 600; }",
 
+    // Testimonials strip
+    ".v2-testimonials-strip { padding: 16px 24px 28px; max-width: 760px; margin: 0 auto; }",
+    ".v2-testimonials-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }",
+    ".v2-testimonial-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px 18px; }",
+    ".v2-testimonial-quote { font-size: 13px; color: #fff; font-style: italic; margin: 0 0 10px; line-height: 1.55; font-weight: 500; }",
+    ".v2-testimonial-attr { font-size: 11px; color: rgba(255,255,255,0.45); }",
+
     // Demo section
-    ".v2-demo-section { background: #060F1C; padding: 64px 24px; border-top: 1px solid rgba(255,255,255,0.06); }",
+    ".v2-demo-section { background: #060F1C; padding: 64px 24px 32px; border-top: 1px solid rgba(255,255,255,0.06); }",
     ".v2-demo-inner { max-width: 880px; margin: 0 auto; }",
     ".v2-demo-header { text-align: center; margin-bottom: 36px; }",
     ".v2-demo-title { font-size: 28px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 10px; line-height: 1.25; }",
@@ -188,7 +195,7 @@ const STYLES = [
     ".v2-demo-link-duration { color: #2CA58D; font-weight: 500; }",
 
     // Peri bio
-    ".v2-peri-section { background: #060F1C; padding: 48px 24px; border-top: 1px solid rgba(255,255,255,0.06); }",
+    ".v2-peri-section { background: #060F1C; padding: 28px 24px 40px; border-top: 1px solid rgba(255,255,255,0.06); }",
     ".v2-peri-inner { max-width: 540px; margin: 0 auto; display: flex; align-items: center; gap: 18px; }",
     ".v2-peri-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #F4A261 0%, #E8915A 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: #2C1810; flex-shrink: 0; }",
     ".v2-peri-eyebrow { font-size: 11px; color: #2CA58D; font-weight: 600; letter-spacing: 1.5px; margin: 0 0 4px; }",
@@ -231,12 +238,13 @@ const STYLES = [
     "  .v2-demo-title, .v2-final-cta-title { font-size: 22px; }",
     "  .v2-site-header { padding: 14px 18px; }",
     "  .v2-header-btn { font-size: 11px; padding: 6px 10px; }",
+    "  .v2-testimonials-grid { grid-template-columns: 1fr; }",
     "}",
 
     "@media (max-width: 480px) {",
     "  .v2-hero { padding: 40px 18px 32px; }",
     "  .v2-hero-headline, .v2-hero-headline-grad { font-size: 28px; }",
-    "  .v2-demo-section { padding: 48px 18px; }",
+    "  .v2-demo-section { padding: 48px 18px 24px; }",
     "  .v2-pillars-grid { grid-template-columns: 1fr 1fr; }",
     "  .v2-header-btn-teal { display: none; }",
     "  .v2-jd-textarea { min-height: 130px; }",
@@ -386,6 +394,91 @@ function getAttributionSnapshot() {
         fbc: getCookie("_fbc"),
         ttp: getCookie("_ttp"),
     }
+}
+
+// Subset of attribution included as custom params on client-side Meta /
+// gtag events. UTM-only — fbp/fbc/ttp + click IDs are already on the
+// Stripe metadata path for CAPI server-side; no need to duplicate them
+// onto the client-side event payload.
+function getEventUtmParams() {
+    return {
+        utm_source: ss("signal_utm_source") || undefined,
+        utm_medium: ss("signal_utm_medium") || undefined,
+        utm_campaign: ss("signal_utm_campaign") || undefined,
+        utm_content: ss("signal_utm_content") || undefined,
+        utm_term: ss("signal_utm_term") || undefined,
+    }
+}
+
+// Server-side mirror of the browser pixel. Fires /api/conversions/event
+// with the same event_id used as fbq's eventID, so Meta dedups the pair
+// inside its 7-day (event_name, event_id) window. Fire-and-forget — the
+// browser pixel has already fired before this network call resolves.
+type FunnelEventName = "Lead" | "ViewContent" | "AddToCart" | "InitiateCheckout"
+type FunnelCustomData = {
+    value?: number
+    currency?: string
+    verdict?: string
+    score?: number | null
+    cta_source?: string
+    content_name?: string
+    content_category?: string
+}
+
+function genEventId(): string {
+    try {
+        if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+            return crypto.randomUUID()
+        }
+    } catch {}
+    return (
+        Date.now().toString(36) +
+        "-" +
+        Math.random().toString(36).slice(2, 10)
+    )
+}
+
+function sendServerEvent(args: {
+    event_name: FunnelEventName
+    event_id: string
+    email?: string
+    custom_data?: FunnelCustomData
+}) {
+    try {
+        const sessionId =
+            (typeof localStorage !== "undefined" &&
+                localStorage.getItem("jobfit_session_id")) ||
+            ""
+        const attribution = getAttributionSnapshot()
+        const body = {
+            event_name: args.event_name,
+            event_id: args.event_id,
+            event_time_sec: Math.floor(Date.now() / 1000),
+            email: args.email || undefined,
+            session_id: sessionId,
+            ...attribution,
+            custom_data: args.custom_data || {},
+        }
+        const url = API_BASE + "/api/conversions/event"
+        // Prefer sendBeacon so an in-flight POST survives the page
+        // navigation that almost always follows funnel events.
+        const payload = JSON.stringify(body)
+        if (
+            typeof navigator !== "undefined" &&
+            navigator.sendBeacon &&
+            typeof Blob !== "undefined"
+        ) {
+            const blob = new Blob([payload], { type: "application/json" })
+            navigator.sendBeacon(url, blob)
+            return
+        }
+        fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+        }).catch(() => {})
+    } catch {}
 }
 
 function fileSizeLabel(bytes: number): string {
@@ -575,6 +668,45 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
             // through and try the navigation anyway. The result page will
             // detect the missing handoff and route the user back here.
         }
+
+        // Fire conversion pixel events. Meta Lead + GA4 free_scan_submitted.
+        // eventID is generated once and shared by the browser pixel and the
+        // server-side CAPI mirror so Meta deduplicates inside its 7-day
+        // (event_name, event_id) window — only the higher-quality CAPI fire
+        // survives in reporting.
+        const utm = getEventUtmParams()
+        const leadEventId = genEventId()
+        try {
+            if (typeof window !== "undefined" && (window as any).fbq) {
+                (window as any).fbq(
+                    "track",
+                    "Lead",
+                    {
+                        content_name: "SIGNAL free scan",
+                        content_category: "free_trial",
+                        ...utm,
+                    },
+                    { eventID: leadEventId }
+                )
+            }
+        } catch {}
+        sendServerEvent({
+            event_name: "Lead",
+            event_id: leadEventId,
+            custom_data: {
+                content_name: "SIGNAL free scan",
+                content_category: "free_trial",
+            },
+        })
+        try {
+            if (typeof window !== "undefined" && (window as any).gtag) {
+                (window as any).gtag("event", "free_scan_submitted", {
+                    event_category: "funnel",
+                    ...utm,
+                })
+            }
+        } catch {}
+
         fireFreeTrialCtaClick()
         // Use top-level navigation so this works inside Framer's iframe preview.
         if (typeof window !== "undefined" && window.top) {
@@ -722,6 +854,25 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
                     </p>
                 </section>
 
+                {/* ===== TESTIMONIALS ===== */}
+                <section className="v2-testimonials-strip">
+                    <div className="v2-testimonials-grid">
+                        <div className="v2-testimonial-card">
+                            <p className="v2-testimonial-quote">
+                                "Stopped wasting hours on roles SIGNAL flagged Pass. Best
+                                application filter I've used."
+                            </p>
+                            <p className="v2-testimonial-attr">— Ellie G., Cornell '25</p>
+                        </div>
+                        <div className="v2-testimonial-card">
+                            <p className="v2-testimonial-quote">
+                                "Addressed every RISK code in my interview prep. Got the offer."
+                            </p>
+                            <p className="v2-testimonial-attr">— Ryan R., FSU '26</p>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ===== JOB FIT DEMO SECTION ===== */}
                 <section className="v2-demo-section">
                     <div className="v2-demo-inner">
@@ -761,7 +912,7 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
                             <div className="v2-your-move">
                                 <div className="v2-your-move-label">YOUR MOVE</div>
                                 <p className="v2-your-move-action">
-                                    Apply this week. Send 2 networking messages within 24 hours.
+                                    Apply this week — and not blind. Sharpen your resume to this job. Write a cover letter that closes. Get to the right people inside.
                                 </p>
                                 <p className="v2-your-move-principle">
                                     Applying and waiting is not a strategy.{" "}

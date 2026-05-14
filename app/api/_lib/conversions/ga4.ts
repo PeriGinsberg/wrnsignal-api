@@ -13,6 +13,7 @@
 import type {
   ConversionProvider,
   ConversionResult,
+  FunnelEventSignals,
   PurchaseSignals,
 } from "./types"
 import { sha256Lower } from "./hash"
@@ -93,8 +94,16 @@ async function send(
   }
 }
 
+// Phase 3 will implement this. Phase 1 ships Meta only.
+async function sendFunnelEvent(
+  _s: FunnelEventSignals
+): Promise<ConversionResult> {
+  return { status: "skipped", reason: "phase-1-meta-only" }
+}
+
 export const ga4: ConversionProvider = {
   name: "ga4",
   sendPurchase: (s) => send(s, "purchase"),
   sendRefund: (s) => send(s, "refund"),
+  sendFunnelEvent,
 }
