@@ -63,6 +63,12 @@ const UPGRADE_HANDOFF_KEY = "signal_upgrade_handoff"
 const RESULT_CACHE_KEY = "signal_trial_result_cache"
 const RESULT_CACHE_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour
 
+// Resume carryover for Start Over flow. When the user clicks Start Over
+// from a result view, we stash their resume text under this key and
+// navigate back to the landing page. Landing reads it on mount and
+// pre-fills the upload box — user only needs to paste a new JD.
+const LANDING_RESUME_CARRYOVER_KEY = "signal_landing_resume_carryover"
+
 // ============================================================================
 // COLORS / TYPOGRAPHY
 // ============================================================================
@@ -367,11 +373,15 @@ export default function SignalTrialJobFit() {
             // Cache the response so "Back to my results" from the upgrade
             // page can restore this view without re-running the engine.
             // Single-session, 1-hour ttl — cleared on handleStartOver.
+            // resume_text is included so the cache-restore path can re-
+            // populate `resume` state, which Start Over then carries
+            // back to the landing page.
             try {
                 sessionStorage.setItem(
                     RESULT_CACHE_KEY,
                     JSON.stringify({
                         response: data,
+                        resume_text: r,
                         isOpenFlow: useOpenEndpoint,
                         email: e || null,
                         ts: Date.now(),
@@ -483,6 +493,7 @@ export default function SignalTrialJobFit() {
             if (cachedRaw) {
                 const cached = JSON.parse(cachedRaw) as {
                     response?: TrialResponse
+                    resume_text?: string
                     isOpenFlow?: boolean
                     email?: string | null
                     ts?: number
@@ -491,6 +502,7 @@ export default function SignalTrialJobFit() {
                 const cFresh = cts && Date.now() - cts < RESULT_CACHE_MAX_AGE_MS
                 if (cFresh && cached.response) {
                     setResponse(cached.response)
+                    if (cached.resume_text) setResume(cached.resume_text)
                     if (cached.isOpenFlow) setIsOpenFlow(true)
                     if (cached.email) setEmail(cached.email)
                     return
@@ -718,19 +730,34 @@ export default function SignalTrialJobFit() {
     }
 
     function handleStartOver() {
-        setResponse(null)
-        setError("")
-        setResume("")
-        setJd("")
-        // Drop open-flow mode so a manual restart uses the normal input
-        // view and the gated endpoint (with email).
-        setIsOpenFlow(false)
+        // Stash the resume text so the landing page can pre-fill the
+        // upload box on mount — Start Over should send the user back to
+        // the landing form with their resume already attached so they
+        // only need to paste a new JD.
+        try {
+            const cur = (resume || "").trim()
+            if (cur.length >= MIN_RESUME_CHARS) {
+                sessionStorage.setItem(
+                    LANDING_RESUME_CARRYOVER_KEY,
+                    JSON.stringify({ resume_text: cur, ts: Date.now() })
+                )
+            }
+        } catch {}
+        // Clear in-page caches so the trial page doesn't auto-restore
+        // the old scan if the user navigates back later.
         try {
             sessionStorage.removeItem(RESULT_CACHE_KEY)
         } catch {}
         try {
-            window.scrollTo({ top: 0, behavior: "smooth" })
+            sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
         } catch {}
+        // Navigate to the landing page. State clearing here is
+        // unnecessary — the page unmounts on navigation.
+        if (typeof window !== "undefined" && window.top) {
+            window.top.location.replace(LANDING_FALLBACK)
+        } else if (typeof window !== "undefined") {
+            window.location.replace(LANDING_FALLBACK)
+        }
     }
 
     // ── Render switch ───────────────────────────────────────────────

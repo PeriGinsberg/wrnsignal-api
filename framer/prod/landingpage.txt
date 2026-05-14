@@ -31,6 +31,13 @@ const LOGIN_URL = "https://wrnsignal.workforcereadynow.com/signal/jobfit"
 // sessionStorage handoff key consumed by trialjobfit.txt on mount.
 const HANDOFF_KEY = "signal_open_trial_handoff"
 
+// Resume carryover key — written by trialjobfit.txt's handleStartOver
+// when the user clicks Start Over from a result view. On mount we read
+// it and pre-fill the upload box so the user only needs to paste a new
+// JD instead of re-uploading the same resume.
+const RESUME_CARRYOVER_KEY = "signal_landing_resume_carryover"
+const RESUME_CARRYOVER_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour
+
 // Track tag for the existing landing_tracking_script — fires when the
 // real conversion happens (form submit), since the new flow no longer
 // routes through the /signal/jobfit-run-trial anchor href the global
@@ -598,9 +605,44 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
         el.textContent = STYLES
     }, [])
 
+    // Resume carryover — hydrated when the user clicked Start Over on
+    // the trial result page. Pre-fills resumeText state and updates the
+    // upload box copy so the user knows their resume is already attached
+    // and only the JD needs re-entry. Clicking the upload box still opens
+    // the file picker for a different resume (handleFileChange takes over
+    // and clears the carryover on successful upload).
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        try {
+            const raw = sessionStorage.getItem(RESUME_CARRYOVER_KEY)
+            if (!raw) return
+            const parsed = JSON.parse(raw) as {
+                resume_text?: string
+                ts?: number
+            }
+            const ts = typeof parsed.ts === "number" ? parsed.ts : 0
+            const fresh = ts && Date.now() - ts < RESUME_CARRYOVER_MAX_AGE_MS
+            const text = String(parsed.resume_text || "").trim()
+            if (!fresh || text.length < 100) {
+                sessionStorage.removeItem(RESUME_CARRYOVER_KEY)
+                return
+            }
+            setResumeText(text)
+            setResumeLabel("Using your previous resume")
+            setResumeSub("Click to upload a different file")
+        } catch {}
+    }, [])
+
     async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0]
         if (!file) return
+        // Capture prior state so we can restore on upload failure — this
+        // preserves the carryover resume when the user picks a new file
+        // that fails to upload, rather than dumping them into an empty
+        // upload-from-scratch state.
+        const prevText = resumeText
+        const prevLabel = resumeLabel
+        const prevSub = resumeSub
         setResumeError("")
         setResumeUploading(true)
         setResumeLabel(file.name)
@@ -618,10 +660,17 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
             }
             setResumeText(data.text)
             setResumeSub(fileSizeLabel(file.size))
+            // New file uploaded successfully — drop any stale carryover
+            // so a future Start Over writes the NEW resume, not the old.
+            try {
+                sessionStorage.removeItem(RESUME_CARRYOVER_KEY)
+            } catch {}
         } catch (err: any) {
-            setResumeText("")
-            setResumeLabel("Upload your resume")
-            setResumeSub("PDF (DOCX accepted)")
+            // Restore prior state (empty OR carryover) so the user isn't
+            // dumped to a blank upload after a failed re-upload attempt.
+            setResumeText(prevText)
+            setResumeLabel(prevText ? prevLabel : "Upload your resume")
+            setResumeSub(prevText ? prevSub : "PDF (DOCX accepted)")
             setResumeError(err?.message || "Upload failed. Try a different file.")
         } finally {
             setResumeUploading(false)
