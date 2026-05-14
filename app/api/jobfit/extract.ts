@@ -4333,8 +4333,14 @@ export function extractProfileSignals(
           ? overrides.locationPreference.allowedCities
           : base.locationPreference.allowedCities,
     },
+    // Use the override when it is provided as an array — including an
+    // empty array, which is the explicit "no target family" signal callers
+    // use for trial-flow runs that should bypass the family-mismatch
+    // RISK entirely. Previous logic gated on `length > 0` which silently
+    // treated `[]` as "no override" and fell back to base, defeating the
+    // suppression intent (see comment in jobfit-run-trial/route.ts).
     targetFamilies:
-      Array.isArray(overrides?.targetFamilies) && overrides.targetFamilies.length > 0
+      Array.isArray(overrides?.targetFamilies)
         ? overrides.targetFamilies
         : base.targetFamilies,
     tools: mergedTools,
