@@ -491,10 +491,52 @@ export default function SignalTrialJobFit() {
             }),
         }).catch(() => {})
 
+        // ── v2 landing handoff: hydrate + auto-run open-endpoint flow ──
+        // Checked BEFORE the result cache. A fresh handoff means the user
+        // just submitted a NEW form on the landing page and wants a fresh
+        // scan — restoring a cached result here would silently show the
+        // prior scan instead of running the new one.
+        try {
+            const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
+            if (raw) {
+                // Single-use: clear immediately so back-button reloads don't
+                // re-trigger the analysis.
+                sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
+                const parsed = JSON.parse(raw) as {
+                    resume_text?: string
+                    job_description?: string
+                    ts?: number
+                }
+                const ts = typeof parsed.ts === "number" ? parsed.ts : 0
+                const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
+                const r = String(parsed.resume_text || "").trim()
+                const j = String(parsed.job_description || "").trim()
+                if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
+                    // Drop any stale prior-scan cache — a fresh submit
+                    // supersedes whatever the user last looked at.
+                    try {
+                        sessionStorage.removeItem(RESULT_CACHE_KEY)
+                    } catch {}
+                    // Mirror values into state so the input view (used as
+                    // error fallback) shows them pre-filled if the run fails.
+                    setResume(r)
+                    setJd(j)
+                    setIsOpenFlow(true)
+                    // Fire-and-forget — runAnalysis owns its own loading state.
+                    void runAnalysis({ email: "", resume: r, jd: j, useOpenEndpoint: true })
+                    return
+                }
+            }
+        } catch {
+            // sessionStorage / JSON parse failure: silently fall through to
+            // the cached result restore below.
+        }
+
         // ── Cached result restore (back-nav from /signal/upgrade) ──
-        // Checked BEFORE the open-flow handoff so users returning from the
-        // upgrade page see their result instead of either an input view or
-        // a fresh auto-run (which would over-charge Haiku).
+        // Only reached when there is NO fresh handoff above. This is the
+        // "Back to my results" path — user returned from the upgrade page
+        // and we restore their just-completed scan from cache to avoid a
+        // re-run that would over-charge Haiku.
         try {
             const cachedRaw = sessionStorage.getItem(RESULT_CACHE_KEY)
             if (cachedRaw) {
@@ -518,37 +560,6 @@ export default function SignalTrialJobFit() {
                 sessionStorage.removeItem(RESULT_CACHE_KEY)
             }
         } catch {}
-
-        // ── v2 landing handoff: hydrate + auto-run open-endpoint flow ──
-        try {
-            const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
-            if (raw) {
-                // Single-use: clear immediately so back-button reloads don't
-                // re-trigger the analysis.
-                sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
-                const parsed = JSON.parse(raw) as {
-                    resume_text?: string
-                    job_description?: string
-                    ts?: number
-                }
-                const ts = typeof parsed.ts === "number" ? parsed.ts : 0
-                const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
-                const r = String(parsed.resume_text || "").trim()
-                const j = String(parsed.job_description || "").trim()
-                if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
-                    // Mirror values into state so the input view (used as
-                    // error fallback) shows them pre-filled if the run fails.
-                    setResume(r)
-                    setJd(j)
-                    setIsOpenFlow(true)
-                    // Fire-and-forget — runAnalysis owns its own loading state.
-                    void runAnalysis({ email: "", resume: r, jd: j, useOpenEndpoint: true })
-                }
-            }
-        } catch {
-            // sessionStorage / JSON parse failure: silently fall through to
-            // the normal input view.
-        }
     }, [])
 
     // ── Submit (manual input path) ──────────────────────────────────
