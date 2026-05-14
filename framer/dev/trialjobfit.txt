@@ -37,6 +37,17 @@ const LANDING_FALLBACK = "https://genuine-times-909123.framer.app/signal"
 const MIN_RESUME_CHARS = 100
 const MIN_JD_CHARS = 100
 
+// sessionStorage handoff from the v2 landing page (landingpage.txt) — the
+// landing form extracts the resume PDF and stashes {resume_text,
+// job_description, attribution, ts} here, then navigates to this page. When
+// present we hydrate state and auto-run against /api/jobfit-run-trial-open
+// (no email, no credit gate), skipping the manual input view entirely.
+const OPEN_FLOW_HANDOFF_KEY = "signal_open_trial_handoff"
+
+// Max age for a handoff payload to be honored. Beyond this we ignore it
+// (stale tab, user navigated back hours later) and show the input view.
+const OPEN_FLOW_HANDOFF_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes
+
 // ============================================================================
 // COLORS / TYPOGRAPHY
 // ============================================================================
@@ -267,8 +278,89 @@ export default function SignalTrialJobFit() {
     const [error, setError] = React.useState("")
     const [response, setResponse] = React.useState<TrialResponse | null>(null)
     const [upgradeLoading, setUpgradeLoading] = React.useState(false)
+    // True when this page was entered via the v2 landing-page handoff.
+    // In that mode the input view never renders; we go straight from
+    // loader to result (or error fallback shows the input view).
+    const [isOpenFlow, setIsOpenFlow] = React.useState(false)
+
+    // ── Core analysis runner — explicit params, no state reads ───────
+    //
+    // Extracted so the mount-time auto-run path can call it before React
+    // has flushed the state hydrated from the handoff payload. The button-
+    // click path (handleAnalyze) also routes through here.
+    async function runAnalysis(opts: {
+        email: string
+        resume: string
+        jd: string
+        useOpenEndpoint: boolean
+    }) {
+        const { email: e, resume: r, jd: j, useOpenEndpoint } = opts
+        setError("")
+
+        if (!useOpenEndpoint) {
+            if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+                setError("Enter your email so we can save your analysis.")
+                return
+            }
+        }
+        if (r.length < MIN_RESUME_CHARS) {
+            setError(
+                `Resume text is too short — need at least ${MIN_RESUME_CHARS} characters.`
+            )
+            return
+        }
+        if (j.length < MIN_JD_CHARS) {
+            setError(
+                `Job description is too short — need at least ${MIN_JD_CHARS} characters.`
+            )
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+            const endpoint = useOpenEndpoint
+                ? "/api/jobfit-run-trial-open"
+                : "/api/jobfit-run-trial"
+            const body: Record<string, unknown> = {
+                resume_text: r,
+                job_description: j,
+                session_id: sessionId,
+                utm_source: ss("signal_utm_source") || undefined,
+                utm_medium: ss("signal_utm_medium") || undefined,
+                utm_campaign: ss("signal_utm_campaign") || undefined,
+            }
+            if (!useOpenEndpoint) body.email = e
+
+            const res = await fetch(API_BASE + endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            })
+            const data = (await res.json()) as TrialResponse
+
+            if (!res.ok || ("ok" in data && data.ok === false)) {
+                const msg =
+                    ("ok" in data && (data.detail || data.error)) ||
+                    "Something went wrong. Please try again."
+                setError(String(msg))
+                return
+            }
+
+            setResponse(data)
+            try {
+                window.scrollTo({ top: 0, behavior: "smooth" })
+            } catch {}
+        } catch (err: any) {
+            setError(err?.message || "Network error. Please try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
 
     // ── Mount: read email from URL, capture attribution, track view ─
+    // Also: detect a v2-landing handoff payload and auto-run.
     React.useEffect(() => {
         if (typeof window === "undefined") return
 
@@ -301,70 +393,52 @@ export default function SignalTrialJobFit() {
                 utm_campaign: ss("signal_utm_campaign") || null,
             }),
         }).catch(() => {})
+
+        // ── v2 landing handoff: hydrate + auto-run open-endpoint flow ──
+        try {
+            const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
+            if (raw) {
+                // Single-use: clear immediately so back-button reloads don't
+                // re-trigger the analysis.
+                sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
+                const parsed = JSON.parse(raw) as {
+                    resume_text?: string
+                    job_description?: string
+                    ts?: number
+                }
+                const ts = typeof parsed.ts === "number" ? parsed.ts : 0
+                const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
+                const r = String(parsed.resume_text || "").trim()
+                const j = String(parsed.job_description || "").trim()
+                if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
+                    // Mirror values into state so the input view (used as
+                    // error fallback) shows them pre-filled if the run fails.
+                    setResume(r)
+                    setJd(j)
+                    setIsOpenFlow(true)
+                    // Fire-and-forget — runAnalysis owns its own loading state.
+                    void runAnalysis({ email: "", resume: r, jd: j, useOpenEndpoint: true })
+                }
+            }
+        } catch {
+            // sessionStorage / JSON parse failure: silently fall through to
+            // the normal input view.
+        }
     }, [])
 
-    // ── Submit ──────────────────────────────────────────────────────
+    // ── Submit (manual input path) ──────────────────────────────────
+    //
+    // Stays on the open endpoint when the page was entered via the v2
+    // landing handoff — open-flow retries from the fallback input view
+    // would otherwise hit the gated endpoint and demand an email the user
+    // never provided.
     async function handleAnalyze() {
-        setError("")
-
-        const e = email.trim().toLowerCase()
-        const r = resume.trim()
-        const j = jd.trim()
-
-        if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
-            setError("Enter your email so we can save your analysis.")
-            return
-        }
-        if (r.length < MIN_RESUME_CHARS) {
-            setError(
-                `Paste your full resume — at least ${MIN_RESUME_CHARS} characters.`
-            )
-            return
-        }
-        if (j.length < MIN_JD_CHARS) {
-            setError(
-                `Paste the full job description — at least ${MIN_JD_CHARS} characters.`
-            )
-            return
-        }
-
-        setLoading(true)
-
-        try {
-            const sessionId = localStorage.getItem("jobfit_session_id") || undefined
-            const res = await fetch(API_BASE + "/api/jobfit-run-trial", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: e,
-                    resume_text: r,
-                    job_description: j,
-                    session_id: sessionId,
-                    utm_source: ss("signal_utm_source") || undefined,
-                    utm_medium: ss("signal_utm_medium") || undefined,
-                    utm_campaign: ss("signal_utm_campaign") || undefined,
-                }),
-            })
-            const data = (await res.json()) as TrialResponse
-
-            if (!res.ok || ("ok" in data && data.ok === false)) {
-                const msg =
-                    ("ok" in data && (data.detail || data.error)) ||
-                    "Something went wrong. Please try again."
-                setError(String(msg))
-                return
-            }
-
-            setResponse(data)
-            // Scroll to top so the result hero is the first thing visible
-            try {
-                window.scrollTo({ top: 0, behavior: "smooth" })
-            } catch {}
-        } catch (err: any) {
-            setError(err?.message || "Network error. Please try again.")
-        } finally {
-            setLoading(false)
-        }
+        await runAnalysis({
+            email: email.trim().toLowerCase(),
+            resume: resume.trim(),
+            jd: jd.trim(),
+            useOpenEndpoint: isOpenFlow,
+        })
     }
 
     // ── Upgrade (handled by existing /api/checkout/create-session) ──
@@ -420,6 +494,9 @@ export default function SignalTrialJobFit() {
         setError("")
         setResume("")
         setJd("")
+        // Drop open-flow mode so a manual restart uses the normal input
+        // view and the gated endpoint (with email).
+        setIsOpenFlow(false)
         try {
             window.scrollTo({ top: 0, behavior: "smooth" })
         } catch {}
@@ -461,6 +538,7 @@ export default function SignalTrialJobFit() {
                         setJd={setJd}
                         error={error}
                         onAnalyze={handleAnalyze}
+                        isOpenFlow={isOpenFlow}
                     />
                 ) : (
                     <ResultsView
@@ -487,12 +565,15 @@ function InputView(props: {
     setJd: (s: string) => void
     error: string
     onAnalyze: () => void
+    isOpenFlow: boolean
 }) {
-    const { email, resume, setResume, jd, setJd, error, onAnalyze } = props
+    const { email, resume, setResume, jd, setJd, error, onAnalyze, isOpenFlow } = props
 
     const resumeReady = resume.trim().length >= MIN_RESUME_CHARS
     const jdReady = jd.trim().length >= MIN_JD_CHARS
-    const submitDisabled = !resumeReady || !jdReady || !email
+    // Open-flow runs (from the v2 landing handoff) never collect an email,
+    // so don't gate the button on it. The gated flow still requires email.
+    const submitDisabled = !resumeReady || !jdReady || (!isOpenFlow && !email)
 
     return (
         <>
@@ -543,7 +624,7 @@ function InputView(props: {
                     <div style={cardTitle}>
                         Stop Applying Blind: Get Your JobFit Score Now
                     </div>
-                    {email ? (
+                    {email && !isOpenFlow ? (
                         <div style={cardSub}>
                             {email} · One free JobFit per user.
                         </div>
@@ -551,11 +632,11 @@ function InputView(props: {
 
                     {error ? <div style={errBox}>{error}</div> : null}
 
-                    {/* Missing-email warning (no email field — email arrives via
-                        ?email= URL param from the landing page). Don't add an
-                        inline email field as a fallback; that re-introduces v1
-                        friction. Send the user back to start cleanly. */}
-                    {!email ? (
+                    {/* Missing-email warning is only relevant for the gated
+                        flow (which keys credits and idempotency off email).
+                        Open flow (v2 landing handoff) never collects email —
+                        no warning, no friction. */}
+                    {!email && !isOpenFlow ? (
                         <div style={missingEmailBox}>
                             Missing email. Start from{" "}
                             <a
