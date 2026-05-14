@@ -51,9 +51,9 @@ const OPEN_FLOW_HANDOFF_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes
 // Destination for upgrade CTAs when isOpenFlow=true. The new upgrade page
 // reads the handoff key below to render a verdict-driven personalized view.
 // Gated-flow users continue to use the existing direct-to-Stripe path
-// inside handleUpgrade.
-const UPGRADE_PAGE_URL =
-    "https://wrnsignal.workforcereadynow.com/signal/upgrade"
+// inside handleUpgrade. Relative path so sessionStorage handoff survives
+// across the multi-domain Framer publish (cross-origin would lose it).
+const UPGRADE_PAGE_URL = "/signal/upgrade"
 const UPGRADE_HANDOFF_KEY = "signal_upgrade_handoff"
 
 // Result-cache lets "Back to my results" from the upgrade page restore the
@@ -72,8 +72,9 @@ const LANDING_RESUME_CARRYOVER_KEY = "signal_landing_resume_carryover"
 // The v2 landing page lives at the root of the marketing domain.
 // LANDING_FALLBACK above still points at the legacy /signal route for
 // gated-flow upgrade-failure fallbacks; the Start Over flow goes to the
-// new landing instead.
-const NEW_LANDING_URL = "https://stopapplyingblind.com/"
+// new landing instead. Relative "/" keeps the user on whichever domain
+// they originally landed on (carryover sessionStorage stays intact).
+const NEW_LANDING_URL = "/"
 
 // ============================================================================
 // COLORS / TYPOGRAPHY

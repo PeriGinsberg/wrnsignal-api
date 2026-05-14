@@ -21,12 +21,16 @@ import * as React from "react"
 const API_BASE = "https://wrnsignal-api.vercel.app"
 
 // Destination for the auto-run trial result page (trialjobfit.txt).
-// The page lives at /signal/jobfit-run-trial — confirmed 2026-05-14.
-const TRIAL_RESULT_URL =
-    "https://wrnsignal.workforcereadynow.com/signal/jobfit-run-trial"
+// Relative path on purpose — keeps the navigation on the user's current
+// origin so the sessionStorage handoff survives. The Framer site is
+// published on multiple domains (stopapplyingblind.com and
+// wrnsignal.workforcereadynow.com) and an absolute URL pinned to one
+// origin breaks the cross-domain flow.
+const TRIAL_RESULT_URL = "/signal/jobfit-run-trial"
 
-// Existing member login destination — unchanged from prior landing page.
-const LOGIN_URL = "https://wrnsignal.workforcereadynow.com/signal/jobfit"
+// Existing member login destination. Relative to current origin so it
+// works regardless of which marketing domain the user landed on.
+const LOGIN_URL = "/signal/jobfit"
 
 // sessionStorage handoff key consumed by trialjobfit.txt on mount.
 const HANDOFF_KEY = "signal_open_trial_handoff"

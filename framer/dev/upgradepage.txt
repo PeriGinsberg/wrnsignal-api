@@ -24,10 +24,12 @@ import * as React from "react"
 
 const API_BASE = "https://wrnsignal-api-staging.vercel.app"
 
-const TRIAL_RESULT_URL =
-    "https://genuine-times-909123.framer.app/signal/jobfit-run-trial"
+// Relative paths so navigation stays on the user's current origin —
+// sessionStorage is per-origin and the Framer site is published on
+// multiple domains.
+const TRIAL_RESULT_URL = "/signal/jobfit-run-trial"
 
-const LANDING_URL = "https://genuine-times-909123.framer.app/signal"
+const LANDING_URL = "/signal"
 
 const HANDOFF_KEY = "signal_upgrade_handoff"
 const HANDOFF_MAX_AGE_MS = 10 * 60 * 1000
