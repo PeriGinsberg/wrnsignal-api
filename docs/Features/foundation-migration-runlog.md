@@ -781,3 +781,20 @@ This blocks real-world Case A render verification of D4. D4's implementation pas
 2. Manual data injection (forge positioning_runs_v2 row with case_letter='A')
 
 The bullet-quality + case_determination tuning session is now load-bearing for full Stage 1c verification, not just polish. Belongs in the session immediately.
+
+**Addendum (decision, 2026-05-15) — Stage 1c paused after D4 for case_determination tuning:**
+
+Stage 1c paused after D4 ships. Three case_determination tests (D2/D3/D4) consistently produced Case B regardless of verdict (Review/Review/Apply), risk severity, or persona. The case space is collapsing onto B — Cases A and C are not reachable with real data under current thresholds.
+
+This is a design issue, not a tuning nudge. The case_determination logic in `lib/positioning/v2/caseDetermination.ts` (rules + threshold constants in `lib/positioning/v2/caseThresholds.ts`) needs re-evaluation against real `jobfit_runs` distributions.
+
+Resume conditions for Stage 1c:
+- case_determination produces all three cases against representative real data
+- D2/D3/D4 visually re-verified against tuned thresholds end-to-end
+- One test instance each of Case A, B, C confirmed rendering correctly
+
+Until those conditions are met, D5/D6/D7 are deferred. Implementing more case-dependent UI on top of unverified case_determination is bad sequencing.
+
+D4's code is correct against the StartResponse type and matches FRD §4.4 spec. The verification gap is upstream (case_determination not producing Case A), not in D4's implementation.
+
+Scope and starting context for the tuning session live in `docs/Features/case-determination-tuning-plan.md`.
