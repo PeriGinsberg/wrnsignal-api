@@ -767,3 +767,17 @@ Three concerns:
 3. Worth investigating: should case_determination consider the candidate's target_roles vs the JD's actual role family? Currently case_determination operates on jobfit signals only. A profile-target/jd-role mismatch check at the case_determination layer might catch these.
 
 Belongs in the bullet-quality + case_determination tuning session. Specific test case documented for reproducibility.
+
+**Addendum (D4 testing, 2026-05-15) — case_determination produces Case B consistently:**
+
+Tested D4 with: Peri Test 100 / "Peri's Resume" persona / a JD aligned with the resume content.
+
+JobFit produced Apply + score 77 + 2 risks ("LIMITED KIDS/FAMILY CONTENT PROOF, UNPAID INTERNSHIP COMMITMENT"). Positioning landed Case B.
+
+Three case_determination tests across D2/D3/D4 all produced Case B regardless of verdict (Review/Review/Apply) or risk severity. Cases A and C cannot be triggered with current thresholds + real data.
+
+This blocks real-world Case A render verification of D4. D4's implementation passes tsc/build/code review, but visual confirmation of Case A behavior requires either:
+1. case_determination threshold tuning (the unblock for all case-based testing)
+2. Manual data injection (forge positioning_runs_v2 row with case_letter='A')
+
+The bullet-quality + case_determination tuning session is now load-bearing for full Stage 1c verification, not just polish. Belongs in the session immediately.
