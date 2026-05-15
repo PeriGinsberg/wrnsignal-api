@@ -743,3 +743,14 @@ Deferred to a dedicated bullet-quality session after Stage 1c D2-D4 polish lands
 - Decide whether the fix is in prompts, in templates, in scoring thresholds, or in copy editing
 
 Not blocking D1-D4 build. The structural skeleton is correct; bullet quality is polish on top.
+
+**Addendum (D2 testing, 2026-05-15) — case_determination threshold concern:**
+
+During D2 testing, observed a Case B verdict that surfaced "MAJOR FIELD MISMATCH" as the gap theme. Per FRD design, Case C is the lane-mismatch case ("Your resume is telling a different story than this job is asking for") and Case B is the "targeted changes needed" case. A field-mismatch risk landing inside Case B suggests the case_determination thresholds may not be triggering Case C when high-severity lane-mismatch risks appear within an Apply / Review verdict — Case B is winning when Case C framing would more accurately reflect what the user needs to hear.
+
+Belongs in the bullet-quality cleanup session. Investigation surface:
+- `lib/positioning/v2/caseDetermination.ts` rules — what specifically forces Case C vs Case B
+- Risk-severity scoring upstream — is lane-mismatch correctly tagged as high-severity?
+- Lane-mismatch detection itself — what produces "MAJOR FIELD MISMATCH" risks and which structured fields carry the signal forward
+
+Not blocking D3/D4. Surfaces a real misclassification pattern worth running across the bullet-quality sample alongside copy-quality review.
