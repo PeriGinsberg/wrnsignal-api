@@ -727,3 +727,19 @@ The migration includes `IN ('consulting', 'finance', ...)` three times — once 
 **Alternative considered:** Postgres `ENUM` type would give a single source of truth at the DB layer. Rejected for v1 because `ALTER TYPE ... ADD VALUE` has limitations (can't be in a transaction in older PG; reordering requires recreating the enum) and the top-level lane list is stable enough that the repetition cost is low.
 
 **Trigger to revisit:** If lane additions/changes happen more than once per quarter, convert to a Postgres ENUM in a follow-up migration. Until then, the runlog DD-01 captures the count and `lib/laneTaxonomy.ts` is the canonical source for additions.
+
+---
+
+### 2026-05-14 — Bullet quality concern surfaced during Stage 1c D1 testing
+
+During first end-to-end test of D1 against staging, the case-calibrated content rendered correctly (Case B, reasoning, workflow summary, disabled CTAs all surfaced from the v2/start response). However, observed that the underlying bullet quality — particularly RISK bullets — needs rework.
+
+Specific concern: bullet content quality, not structure. Backend logic produces correct response shape (case determination, gap counting, workflow preview), but the human-readable copy generated for risks lacks the precision and tone expected from WRN coaching output.
+
+Deferred to a dedicated bullet-quality session after Stage 1c D2-D4 polish lands. That session should:
+- Sample 5-10 real JD/persona pairs across cases A/B/C
+- Compare current bullet output against WRN's coaching standards
+- Identify which generation logic (case_specific, workflow_preview, risk extraction) needs adjustment
+- Decide whether the fix is in prompts, in templates, in scoring thresholds, or in copy editing
+
+Not blocking D1-D4 build. The structural skeleton is correct; bullet quality is polish on top.
