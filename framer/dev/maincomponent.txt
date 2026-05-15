@@ -4831,6 +4831,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             "Reflect on whether this target still fits where you want to land. The next stage will offer concrete options to broaden, narrow, or pivot.",
         reconsiderActionsSoon: "Actions coming soon (Stage 1d)",
         saveForLater: "Save for later",
+
+        // D2 — Case B framing copy. Tunable without touching render code.
+        caseBHeadline:
+            "Your resume needs targeted changes to compete strongly for this role.",
+        caseBBodyA:
+            "A resume should tell one story at a time. For this application, that means tightening focus and addressing specific gaps.",
+        caseBBodyB: "Here's what we'll work through:",
+
+        // D2 — TimeExpectationBlock copy. Shared across A/B/C in D3/D4.
+        timeExpectationFmt: (n: number) => `This will take about ${n} minutes.`,
+        saveAndReturn: "You can save your progress and return anytime.",
     }
 
     function formatLastVisit(days: number | null | undefined): string {
@@ -4940,6 +4951,59 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         )
     }
 
+    // D2 — FRD-spec 3-step numbered workflow preview. Replaces the
+    // condensed strip (renderV2WorkflowSummary) for full case renders.
+    // Reusable across Case A/B/C; D3 and D4 wire it for A and C with
+    // the same shape — only the parent case-block copy differs.
+    //
+    // Step 1: dynamic — gap_count + gap_themes from workflow_preview
+    // Step 2: static — content review framing per FRD
+    // Step 3: ternary — audit_findings_count when v2.5+ activates, else
+    //         "Formatting check (coming soon)". Per Peri 2026-05-15:
+    //         null state drops the "— formatting and structure" suffix
+    //         for cleaner read; the suffix appears only when a real
+    //         count is rendered.
+    function renderV2WorkflowSteps(result: any) {
+        const wp = result?.workflow_preview ?? {}
+        const gapCount = typeof wp.gap_count === "number" ? wp.gap_count : 0
+        const gapThemes = Array.isArray(wp.gap_themes) ? wp.gap_themes : []
+        const gapThemesText = gapThemes.length > 0 ? gapThemes.join(", ") : ""
+
+        const step1 = gapThemesText
+            ? `${gapCount} gaps to discuss — ${gapThemesText}`
+            : `${gapCount} gaps to discuss`
+
+        const step2 =
+            "Resume content review — headline, summary, skills, and bullet alignment"
+
+        const auditCount = wp.audit_findings_count
+        const step3 =
+            auditCount != null
+                ? `${auditCount} formatting findings — formatting and structure`
+                : "Formatting check (coming soon)"
+
+        const stepStyle: React.CSSProperties = {
+            fontSize: 13,
+            color: "rgba(255,255,255,0.78)",
+            lineHeight: "20px",
+        }
+        const numStyle: React.CSSProperties = { color: "rgba(255,255,255,0.95)" }
+
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={stepStyle}>
+                    <strong style={numStyle}>1.</strong> {step1}
+                </div>
+                <div style={stepStyle}>
+                    <strong style={numStyle}>2.</strong> {step2}
+                </div>
+                <div style={stepStyle}>
+                    <strong style={numStyle}>3.</strong> {step3}
+                </div>
+            </div>
+        )
+    }
+
     // D1 stubs — D2 will expand renderCaseA, D3 renderCaseB, D4 renderCaseC.
     function renderCaseA(result: any) {
         const refinements = Array.isArray(result?.case_specific?.small_refinements)
@@ -4966,13 +5030,100 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
 
     function renderCaseB(result: any) {
+        // D2 — FRD-spec Case B rendering. JobfitVerdictCard sources
+        // verdict + score from existing jobFitResult state (Option b
+        // per D2 design): the JobFit tab already populates it, so we
+        // read directly rather than extending /api/positioning/v2/start
+        // to include jobfit_summary. Edge case: fresh sign-in resume
+        // could find jobFitResult null — deferred per D2 scope; the
+        // verdict block is conditionally suppressed in that case.
+        const verdict = String(jobFitResult?.decision ?? "").trim()
+        const score =
+            typeof jobFitResult?.score === "number"
+                ? jobFitResult.score
+                : Number(jobFitResult?.score ?? 0)
+        const hasJobFitContext = verdict.length > 0 || score > 0
+
+        const wp = result?.workflow_preview ?? {}
+        const estMin =
+            typeof wp.estimated_minutes === "number" ? wp.estimated_minutes : 0
+
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
-                    <strong style={{ color: "rgba(255,255,255,0.95)" }}>Case B</strong>{" "}
-                    — {result?.case_reasoning ?? ""}
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                {/* JobfitVerdictCard — verdict + score read from jobFitResult */}
+                {hasJobFitContext ? (
+                    <div
+                        style={{
+                            padding: "12px 16px",
+                            borderRadius: 8,
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 4,
+                        }}
+                    >
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                            JobFit said:{" "}
+                            <strong style={{ color: "rgba(255,255,255,0.95)" }}>
+                                {verdict || "—"}
+                            </strong>
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                            Score:{" "}
+                            <strong style={{ color: "rgba(255,255,255,0.95)" }}>
+                                {score > 0 ? score : "—"}
+                            </strong>
+                        </div>
+                    </div>
+                ) : null}
+
+                {/* CaseBFraming — FRD-spec headline + 2 body paragraphs */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div
+                        style={{
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: "rgba(255,255,255,0.95)",
+                            lineHeight: "22px",
+                        }}
+                    >
+                        {V2_COPY.caseBHeadline}
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 13,
+                            color: "rgba(255,255,255,0.75)",
+                            lineHeight: "20px",
+                        }}
+                    >
+                        {V2_COPY.caseBBodyA}
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 13,
+                            color: "rgba(255,255,255,0.75)",
+                            lineHeight: "20px",
+                        }}
+                    >
+                        {V2_COPY.caseBBodyB}
+                    </div>
                 </div>
-                {renderV2WorkflowSummary(result)}
+
+                {/* WorkflowPreviewBlock — 3-step numbered list (reusable helper) */}
+                {renderV2WorkflowSteps(result)}
+
+                {/* TimeExpectationBlock — duration + save-and-return copy */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
+                        {V2_COPY.timeExpectationFmt(estMin)}
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                        {V2_COPY.saveAndReturn}
+                    </div>
+                </div>
+
+                {/* F3 — "Let's start" disabled until Phase 2 wires up */}
                 {renderV2DisabledCta("Let's start")}
             </div>
         )
