@@ -798,3 +798,9 @@ Until those conditions are met, D5/D6/D7 are deferred. Implementing more case-de
 D4's code is correct against the StartResponse type and matches FRD §4.4 spec. The verification gap is upstream (case_determination not producing Case A), not in D4's implementation.
 
 Scope and starting context for the tuning session live in `docs/Features/case-determination-tuning-plan.md`.
+
+**Addendum (2026-05-15 tuning, deferred follow-up) — estimated_minutes for Case A with refinements:**
+
+The 2026-05-15 case_determination tuning relaxed the Case A gate to admit Apply/Priority-Apply runs with all-low-severity risks (surfaced as small_refinements). Per FRD section 4.2 the type comment expects 5 minutes when small_refinements is non-empty vs 0 minutes when empty; `workflowPreview.ts::estimatedMinutesForCase` currently returns 0 for all Case A runs. Worth updating `estimatedMinutesForCase` to read small_refinements.length and return 5 when non-zero.
+
+Not blocking — UX impact is one cosmetic number; correctness of case assignment is intact. Track under workflowPreview follow-ups.

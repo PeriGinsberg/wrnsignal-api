@@ -23,6 +23,7 @@ import type {
   InferredLaneMismatch,
   JobfitResultJson,
   RiskStructuredItem,
+  SmallRefinement,
   WhyStructuredItem,
 } from "./types"
 import { extractRisks } from "./caseDetermination"
@@ -109,12 +110,29 @@ function buildCaseAData(inputs: CaseInputs): CaseSpecificData {
     summary = CASE_A_SUMMARY_GENERIC
   }
 
+  // small_refinements: 2026-05-15 tuning. Case A's gate relaxed to admit
+  // Apply/Priority-Apply runs with all-low-severity risks; surface those
+  // low-severity risks here so renderCaseA's refinements.length > 0 block
+  // becomes meaningful. Filters out items with blank keywords (defensive).
+  // Returns empty array (not undefined) for zero-risks Case A so the
+  // frontend can iterate without optional chaining.
+  const lowSeverityRefinements: SmallRefinement[] = []
+  if (inputs.jobfit && typeof inputs.jobfit === "object") {
+    const risks = extractRisks(inputs.jobfit)
+    for (const r of risks.items) {
+      if (r.severity !== "low") continue
+      const kw = typeof r.keyword === "string" ? r.keyword.trim() : ""
+      if (!kw) continue
+      lowSeverityRefinements.push({
+        id: kw,
+        description: (r.gap || r.reframe || kw).trim(),
+      })
+    }
+  }
+
   return {
     well_positioned_summary: summary,
-    // v2: empty array (not undefined). Frontend can iterate without optional
-    // chaining; explicit "computed, zero results" rather than "field absent".
-    // Real small_refinements signal source ships in v2.5+ (see Phase 1 plan F2).
-    small_refinements: [],
+    small_refinements: lowSeverityRefinements,
   }
 }
 

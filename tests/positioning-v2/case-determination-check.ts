@@ -382,6 +382,256 @@ console.log("\n=== Edge cases ===")
 }
 
 // ============================================================================
+// Family-mismatch rule (2026-05-15 tuning)
+// ============================================================================
+
+console.log("\n=== Family-mismatch rule ===")
+
+// Helper: builds a risks-and-whys shape that would normally land Apply→A,
+// so we can isolate the family-mismatch rule's effect.
+function applyCleanWithFamilies(
+  targetFamilies: string[] | undefined,
+  jobFamily: string | undefined,
+  whyCount = 3,
+) {
+  const why_structured = Array.from({ length: whyCount }, (_, i) => ({
+    keyword: `kw_${i}`,
+    lead: "",
+    connection: "",
+    action: "",
+  }))
+  return makeInputs({
+    decision: "Apply",
+    risk_structured: [],
+    why_structured,
+    job_signals: jobFamily ? { jobFamily } : undefined,
+    profile_signals: targetFamilies ? { targetFamilies } : undefined,
+  })
+}
+
+// Test 16: Apply + targetFamilies=["Marketing"] + jobFamily="Finance" → Case C
+{
+  const r = determineCase(applyCleanWithFamilies(["Marketing"], "Finance"))
+  check(
+    "16: Apply + Marketing target vs Finance JD → Case C",
+    r.case === "C",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+  check(
+    "16: reasoning mentions 'mismatch'",
+    /mismatch/i.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 17: Review + targetFamilies=["Marketing"] + jobFamily="Finance" → Case C
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Review",
+      risk_structured: [
+        { keyword: "x", gap: "", reframe: "", severity: "medium" },
+      ],
+      job_signals: { jobFamily: "Finance" },
+      profile_signals: { targetFamilies: ["Marketing"] },
+    }),
+  )
+  check(
+    "17: Review + Marketing target vs Finance JD → Case C (mismatch beats Review→B)",
+    r.case === "C",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 18: Apply + targetFamilies=["Marketing"] + jobFamily="Marketing" + 3 whys + 0 risks → Case A
+{
+  const r = determineCase(applyCleanWithFamilies(["Marketing"], "Marketing"))
+  check(
+    "18: Apply + Marketing target = Marketing JD → Case A (no mismatch, normal Apply path)",
+    r.case === "A",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 19: Apply + targetFamilies=["Other"] + jobFamily="Finance" → skip mismatch check, fall through
+// Without whys, falls to default Apply→B (empty risks + no whys path).
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [],
+      why_structured: [],
+      job_signals: { jobFamily: "Finance" },
+      profile_signals: { targetFamilies: ["Other"] },
+    }),
+  )
+  check(
+    "19: Apply + ['Other'] target → mismatch rule skips; falls to default → Case B",
+    r.case === "B",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+  check(
+    "19: reasoning does NOT mention 'mismatch'",
+    !/mismatch/i.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 20: Apply + targetFamilies=["Marketing"] + jobFamily="Other" + 3 whys → skip mismatch, Apply→A path
+{
+  const r = determineCase(applyCleanWithFamilies(["Marketing"], "Other"))
+  check(
+    "20: Apply + jobFamily='Other' → mismatch rule skips; falls to Apply→A",
+    r.case === "A",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 21: Apply + targetFamilies=["Marketing", "Other"] + jobFamily="Sales" → Case C
+// Other does NOT count as a wildcard; .includes() must find a real match.
+{
+  const r = determineCase(
+    applyCleanWithFamilies(["Marketing", "Other"], "Sales"),
+  )
+  check(
+    "21: Apply + ['Marketing','Other'] vs Sales → Case C (Other doesn't help)",
+    r.case === "C",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 22: Apply + targetFamilies=["Marketing", "Other"] + jobFamily="Marketing" + 3 whys + 0 risks → Case A
+{
+  const r = determineCase(
+    applyCleanWithFamilies(["Marketing", "Other"], "Marketing"),
+  )
+  check(
+    "22: Apply + ['Marketing','Other'] vs Marketing → Case A (Marketing matches)",
+    r.case === "A",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 23: Pass + family mismatch present → Case C from Pass rule (Pass preempts)
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Pass",
+      job_signals: { jobFamily: "Finance" },
+      profile_signals: { targetFamilies: ["Marketing"] },
+    }),
+  )
+  check("23: Pass + family mismatch → Case C", r.case === "C", `got ${r.case}`)
+  check(
+    "23: reasoning mentions 'Pass' (not 'mismatch') — Pass rule preempts",
+    /pass/i.test(r.reasoning) && !/mismatch/i.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// ============================================================================
+// Case A gate relaxation (2026-05-15 tuning)
+// ============================================================================
+
+console.log("\n=== Case A gate relaxation ===")
+
+// Test 24: Apply + 2 low-severity risks + 3 whys → Case A (NEW relaxed gate)
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "minor_a", gap: "", reframe: "", severity: "low" },
+        { keyword: "minor_b", gap: "", reframe: "", severity: "low" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "24: Apply + all-low-severity risks + 3 whys → Case A (relaxed gate)",
+    r.case === "A",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+  check(
+    "24: reasoning mentions 'low-severity' and risk count",
+    /low.?severity/i.test(r.reasoning) && /2 low.?severity/i.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 25: Apply + mixed low/medium risks + 3 whys → Case B (medium blocks)
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "minor_x", gap: "", reframe: "", severity: "low" },
+        { keyword: "real_x", gap: "", reframe: "", severity: "medium" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "25: Apply + low+medium risks → Case B (medium blocks Case A)",
+    r.case === "B",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 26: Apply + 1 low risk + 2 whys (below threshold) → Case B
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "minor_x", gap: "", reframe: "", severity: "low" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "26: Apply + all-low risks but whys below threshold → Case B",
+    r.case === "B",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 27: Priority Apply + 3 low-severity risks + 3 whys → Case A
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Priority Apply",
+      risk_structured: [
+        { keyword: "minor_a", gap: "", reframe: "", severity: "low" },
+        { keyword: "minor_b", gap: "", reframe: "", severity: "low" },
+        { keyword: "minor_c", gap: "", reframe: "", severity: "low" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "27: Priority Apply + all-low-severity risks + 3 whys → Case A",
+    r.case === "A",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// ============================================================================
 console.log(`\n=== RESULT: ${failures.length === 0 ? "PASS" : "FAIL"} ===`)
 if (failures.length) {
   console.log("Failures:")

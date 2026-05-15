@@ -503,6 +503,119 @@ console.log("\n=== Pattern checks ===")
 }
 
 // ============================================================================
+// small_refinements from low-severity risks (2026-05-15 tuning)
+// ============================================================================
+
+console.log("\n=== small_refinements population ===")
+
+// Test 16: Case A + 2 low-severity risks → small_refinements has 2 items
+{
+  const r = generateCaseSpecific(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "x", gap: "learn x", reframe: "", severity: "low" },
+        { keyword: "y", gap: "polish y", reframe: "", severity: "low" },
+      ],
+      why_structured: [
+        { keyword: "kw1", lead: "", connection: "", action: "" },
+        { keyword: "kw2", lead: "", connection: "", action: "" },
+        { keyword: "kw3", lead: "", connection: "", action: "" },
+      ],
+    }),
+    "A" as Case,
+  )
+  check(
+    "16: 2 low-severity risks → small_refinements has 2 items",
+    Array.isArray(r?.small_refinements) && r!.small_refinements!.length === 2,
+    JSON.stringify(r?.small_refinements),
+  )
+  check(
+    "16: small_refinements[0] has id='x' and description='learn x'",
+    r?.small_refinements?.[0]?.id === "x" &&
+      r?.small_refinements?.[0]?.description === "learn x",
+    JSON.stringify(r?.small_refinements?.[0]),
+  )
+  check(
+    "16: small_refinements[1] has id='y' and description='polish y'",
+    r?.small_refinements?.[1]?.id === "y" &&
+      r?.small_refinements?.[1]?.description === "polish y",
+    JSON.stringify(r?.small_refinements?.[1]),
+  )
+}
+
+// Test 17: Case A + mixed severity → only low items become refinements
+{
+  const r = generateCaseSpecific(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "low_one", gap: "low gap", reframe: "", severity: "low" },
+        { keyword: "med_one", gap: "med gap", reframe: "", severity: "medium" },
+        { keyword: "high_one", gap: "high gap", reframe: "", severity: "high" },
+      ],
+      why_structured: [
+        { keyword: "kw1", lead: "", connection: "", action: "" },
+      ],
+    }),
+    "A" as Case,
+  )
+  check(
+    "17: mixed severity → only low becomes refinement (1 item)",
+    Array.isArray(r?.small_refinements) && r!.small_refinements!.length === 1,
+    JSON.stringify(r?.small_refinements),
+  )
+  check(
+    "17: the one refinement is from the low-severity risk",
+    r?.small_refinements?.[0]?.id === "low_one",
+    JSON.stringify(r?.small_refinements?.[0]),
+  )
+}
+
+// Test 18: Case A + low-severity risks with blank keywords → filtered out
+{
+  const r = generateCaseSpecific(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "", gap: "no keyword", reframe: "", severity: "low" },
+        { keyword: "   ", gap: "whitespace only", reframe: "", severity: "low" },
+      ],
+      why_structured: [
+        { keyword: "kw1", lead: "", connection: "", action: "" },
+      ],
+    }),
+    "A" as Case,
+  )
+  check(
+    "18: blank keywords → small_refinements filtered to empty",
+    Array.isArray(r?.small_refinements) && r!.small_refinements!.length === 0,
+    JSON.stringify(r?.small_refinements),
+  )
+}
+
+// Test 19: Case A + low-severity risk with empty gap → description falls back to reframe
+{
+  const r = generateCaseSpecific(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "x", gap: "", reframe: "do x better", severity: "low" },
+      ],
+      why_structured: [
+        { keyword: "kw1", lead: "", connection: "", action: "" },
+      ],
+    }),
+    "A" as Case,
+  )
+  check(
+    "19: empty gap → description falls back to reframe",
+    r?.small_refinements?.[0]?.description === "do x better",
+    JSON.stringify(r?.small_refinements?.[0]),
+  )
+}
+
+// ============================================================================
 console.log(`\n=== RESULT: ${failures.length === 0 ? "PASS" : "FAIL"} ===`)
 if (failures.length) {
   console.log("Failures:")

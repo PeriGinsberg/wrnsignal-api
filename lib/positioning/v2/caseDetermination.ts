@@ -8,14 +8,18 @@
 //
 // Cascading rules (FRD section 4.1):
 //   1. verdict=Pass                                                  → Case C
-//   2. verdict=Review + high-severity risk                           → Case C
+//   2. Family mismatch (targetFamilies ∩ jobFamily = ∅, both signals
+//      present and non-"Other") on any non-Pass verdict              → Case C
+//      (Added 2026-05-15 tuning — see runlog. Catches lane-mismatch
+//      scenarios the per-risk severity tagger consistently undertags.)
+//   3. verdict=Review + high-severity risk                           → Case C
 //                                            (gated by CASE_C_HIGH_SEVERITY_TRIGGER)
-//   3. verdict=Review + no high-severity                             → Case B
-//   4. verdict=Apply/Priority Apply + 0 risks + whys ≥ threshold
-//      + no data quality issue                                       → Case A
-//   5. verdict=Apply/Priority Apply + high-severity                  → Case B
-//   6. verdict=Apply/Priority Apply (default)                        → Case B
-//   7. Defensive (missing/malformed/unexpected verdict)              → Case B
+//   4. verdict=Review + no high-severity                             → Case B
+//   5. verdict=Apply/Priority Apply + (0 risks OR all-low-severity)
+//      + whys ≥ threshold + no data quality issue                    → Case A
+//   6. verdict=Apply/Priority Apply + high-severity                  → Case B
+//   7. verdict=Apply/Priority Apply (default)                        → Case B
+//   8. Defensive (missing/malformed/unexpected verdict)              → Case B
 //
 // Defensive coding (cross-references Foundation DD-23: jobfit_runs.result_json
 // fields are unreliable on historical garbage runs — empty/scraped JDs
@@ -194,7 +198,45 @@ export function determineCase(inputs: CaseInputs): CaseAssignment {
     }
   }
 
-  // Rule 2: Review
+  // Rule 2: Family mismatch (added 2026-05-15 tuning).
+  // Fires for Review/Apply/Priority Apply verdicts when the candidate's
+  // targeted job families don't overlap with the JD's classified family.
+  // Catches the canonical Case C scenario (Communications candidate
+  // applying to Finance role) that the upstream scorer's per-risk
+  // severity tagging consistently misses (tagging field mismatches as
+  // medium instead of high — see runlog 2026-05-15 tuning session).
+  //
+  // "Other" semantics:
+  //   - targetFamilies === ["Other"] (single-element, just-Other) →
+  //     treated as no-signal, skip. "Other" usually means "no specific
+  //     target stated," not "specifically the Other family."
+  //   - jobFamily === "Other" or "unknown" → JD classifier couldn't pin
+  //     the family; no signal to compare against, skip.
+  //   - Multi-element targets containing Other (e.g. ["Marketing", "Other"])
+  //     → standard .includes() applies; jobFamily must match one of them.
+  const targetFamilies = jobfit.profile_signals?.targetFamilies
+  const jobFamily = jobfit.job_signals?.jobFamily
+  const targetsAreSignal =
+    Array.isArray(targetFamilies) &&
+    targetFamilies.length > 0 &&
+    !(targetFamilies.length === 1 && targetFamilies[0] === "Other")
+  const jobFamilyIsSignal =
+    typeof jobFamily === "string" &&
+    jobFamily.length > 0 &&
+    jobFamily !== "Other" &&
+    jobFamily !== "unknown"
+  if (
+    targetsAreSignal &&
+    jobFamilyIsSignal &&
+    !targetFamilies!.includes(jobFamily!)
+  ) {
+    return {
+      case: "C",
+      reasoning: `Profile targets [${targetFamilies!.join(", ")}] don't overlap with JD family ${jobFamily}; fundamental field mismatch.`,
+    }
+  }
+
+  // Rule 3: Review
   if (verdict === "Review") {
     if (hasHighSeverity && CASE_C_HIGH_SEVERITY_TRIGGER) {
       return {
@@ -212,18 +254,29 @@ export function determineCase(inputs: CaseInputs): CaseAssignment {
     }
   }
 
-  // Rule 3: Apply or Priority Apply
+  // Rule 5: Apply or Priority Apply
   if (verdict === "Apply" || verdict === "Priority Apply") {
-    // Case A: clean signal AND sufficient positive findings AND data trustworthy
+    // Case A: clean signal AND sufficient positive findings AND data trustworthy.
+    // Relaxed 2026-05-15: zero-risks OR all-low-severity-risks now satisfy
+    // the "clean signal" precondition. Rationale: prod B3 data (tuning
+    // session) showed 91.2% of Apply verdicts have ≥1 risk; the strict
+    // zero-risks gate made Case A unreachable in practice for non-Priority-
+    // Apply verdicts. Low-severity risks are surfaced as small_refinements
+    // by caseSpecific.ts::buildCaseAData (the FRD-spec "1-2 refinements"
+    // surface).
+    const allRisksLow =
+      risks.items.length > 0 &&
+      risks.items.every((r) => r.severity === "low")
     if (
-      risks.items.length === 0 &&
+      (risks.items.length === 0 || allRisksLow) &&
       whys >= CASE_A_MIN_WHY_COUNT &&
       !risks.dataQualityIssue
     ) {
-      return {
-        case: "A",
-        reasoning: `JobFit verdict is ${verdict} with no surfaced risks and ${whys} positive findings.`,
-      }
+      const reasoning =
+        risks.items.length === 0
+          ? `JobFit verdict is ${verdict} with no surfaced risks and ${whys} positive findings.`
+          : `JobFit verdict is ${verdict} with ${risks.items.length} low-severity risk(s) (surfaced as refinements) and ${whys} positive findings.`
+      return { case: "A", reasoning }
     }
 
     // High-severity even with favorable verdict → Case B

@@ -55,8 +55,9 @@ export type WhyStructuredItem = {
 /**
  * Minimum shape of jobfit_runs.result_json that Phase 1's case
  * determination + workflow preview + case-specific data need. Other
- * fields in the JSON (job_signals.jobFamily, profile_signals, etc.)
- * exist but Phase 1 doesn't consume them.
+ * fields in the JSON exist beyond these but Phase 1 doesn't consume
+ * them. (Note: job_signals.jobFamily and profile_signals.targetFamilies
+ * were added 2026-05-15 for the family-mismatch Case C trigger.)
  *
  * All fields optional because historical V4 runs may be missing V5
  * additions, and malformed/garbage runs may be missing fields entirely.
@@ -76,6 +77,20 @@ export type JobfitResultJson = {
   job_signals?: {
     jobTitle?: string
     companyName?: string
+    /**
+     * Canonical job family classification of the JD, e.g. "Marketing",
+     * "Sales", "HR", "Finance", "Other". Consumed by caseDetermination's
+     * family-mismatch Case C trigger.
+     */
+    jobFamily?: string
+  }
+  profile_signals?: {
+    /**
+     * Candidate's targeted job families. Consumed by caseDetermination's
+     * family-mismatch Case C trigger. Single-element ["Other"] is
+     * treated as no-signal (see caseDetermination.ts edge-case handling).
+     */
+    targetFamilies?: string[]
   }
 }
 
