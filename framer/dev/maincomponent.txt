@@ -1190,6 +1190,16 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [signalApplicationId, setSignalApplicationId] = React.useState<string | null>(null)
     const [reconsiderModalOpen, setReconsiderModalOpen] = React.useState(false)
 
+    // F11 — D4 Case A apply-CTA state. Tracks the PUT
+    // /api/applications/{id} lifecycle. Deliberately separate from
+    // positioningV2Loading: this is post-result UX, not the start call.
+    //   - applyCtaLoading: in-flight PUT (button shows "Marking as applied…")
+    //   - applyCtaSuccess: PUT succeeded (button locks to "Applied ✓")
+    //   - applyCtaError: last error message (clears on next click)
+    const [applyCtaLoading, setApplyCtaLoading] = React.useState(false)
+    const [applyCtaSuccess, setApplyCtaSuccess] = React.useState(false)
+    const [applyCtaError, setApplyCtaError] = React.useState<string | null>(null)
+
     // Networking open set
     // Hydration guard — state declared here with all other hooks
     const [mounted, setMounted] = React.useState(false)
@@ -1570,6 +1580,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setPositioningV2Error(null)
         setPositioningRunId(null)
         setSignalApplicationId(null)
+        // D4 — apply-CTA state belongs to the v2 lifecycle; reset
+        // alongside everything else when jobfit_run_id changes so a
+        // re-run of JobFit clears any "Applied ✓" state from the prior run.
+        setApplyCtaLoading(false)
+        setApplyCtaSuccess(false)
+        setApplyCtaError(null)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [(jobFitResult as any)?.jobfit_run_id])
 
@@ -1731,6 +1747,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setPositioningRunId(null)
         setSignalApplicationId(null)
         setReconsiderModalOpen(false)
+        // D4 — apply-CTA state cleared on new job alongside other v2 resets.
+        setApplyCtaLoading(false)
+        setApplyCtaSuccess(false)
+        setApplyCtaError(null)
         setTab("jobfit")
         setJobInputOpen(true)
         setJobfitWhyOpen(false)
@@ -2123,6 +2143,82 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setPositioningV2Error(e?.message || String(e))
         } finally {
             setPositioningV2Loading(false)
+        }
+    }
+
+    // D4 — Functional "I'm ready to apply" CTA wiring. Fires when the
+    // Case A apply button is clicked; PUTs application_status:"applied"
+    // to /api/applications/{signalApplicationId}. Mirrors
+    // runPositioningV2's setDebug instrumentation for parity. No-op
+    // when signalApplicationId is null (button is also disabled in that
+    // case — this is the belt to the suspenders).
+    async function runApplyForApplication() {
+        if (!signalApplicationId) return
+        setApplyCtaError(null)
+        setApplyCtaLoading(true)
+        const url = `${API_BASE}/api/applications/${encodeURIComponent(signalApplicationId)}`
+        const startedAt = Date.now()
+        try {
+            if (!accessToken) throw new Error("Please log in again.")
+
+            let res: Response
+            try {
+                res = await fetch(url, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({ application_status: "applied" }),
+                })
+            } catch (err: any) {
+                setDebug({
+                    stage: "fetch_throw",
+                    url,
+                    ms: Date.now() - startedAt,
+                    errorName: err?.name,
+                    errorMessage: err?.message,
+                    errorStackPreview: safePreview(err?.stack || "", 900),
+                })
+                throw new Error("Request failed. Please try again.")
+            }
+
+            const ms = Date.now() - startedAt
+            const contentType = res.headers.get("content-type") || ""
+            const raw = await res.text()
+
+            setDebug({
+                stage: "fetch_response",
+                url,
+                ms,
+                status: res.status,
+                ok: res.ok,
+                contentType,
+                responsePreview: safePreview(raw),
+            })
+
+            if (looksLikeHtml(raw) || contentType.includes("text/html")) {
+                throw new Error("Unexpected response. Please try again.")
+            }
+
+            let data: any = null
+            try {
+                data = JSON.parse(raw)
+            } catch {
+                throw new Error("Unexpected response. Please try again.")
+            }
+
+            if (!res.ok) {
+                throw new Error(
+                    data?.error || `Request failed (HTTP ${res.status}).`
+                )
+            }
+
+            setApplyCtaSuccess(true)
+        } catch (e: any) {
+            setApplyCtaError(e?.message || String(e))
+        } finally {
+            setApplyCtaLoading(false)
         }
     }
 
@@ -4874,6 +4970,26 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         // ("substantive changes") vs Case B's save-and-return framing.
         caseCTimeExpectation: "This will take 30-45 minutes.",
         caseCTimeBody: "Be prepared for substantive changes.",
+
+        // D4 — Case A framing copy (FRD section 4.4 Case A rendering).
+        // No TimeExpectationBlock for Case A: estimated_minutes=0 means
+        // the workflow ends at the apply CTA. FRD intentionally omits
+        // a time block from the Case A render — don't add one.
+        caseAHeadline: "Your resume is well-positioned for this role.",
+
+        // D4 — Case A small_refinements list label. Only renders when
+        // case_specific.small_refinements has items (always [] in v2;
+        // v2.5+ populates). Kept here for forward compatibility.
+        caseASmallRefinementsLabel: "1-2 small refinements we noticed:",
+
+        // D4 — "I'm ready to apply" CTA states (Q3 wiring). The CTA is
+        // functional in D4: gated on signalApplicationId, PUTs to
+        // /api/applications/{id} with application_status:"applied".
+        applyCtaIdle: "I'm ready to apply",
+        applyCtaInFlight: "Marking as applied…",
+        applyCtaSuccess: "Applied ✓",
+        applyCtaErrorFmt: (msg: string) =>
+            `Couldn't mark as applied: ${msg}. Tap to retry.`,
     }
 
     function formatLastVisit(days: number | null | undefined): string {
@@ -4957,6 +5073,69 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             >
                 {label} — {V2_COPY.phase2ComingSoon}
             </button>
+        )
+    }
+
+    // D4 — Functional "I'm ready to apply" CTA for Case A (FRD section
+    // 4.4 CTABlock). Distinct from renderV2DisabledCta because this one
+    // is wired to PUT /api/applications/{id}. State machine:
+    //   idle    → click → loading
+    //   loading → 200  → applied (terminal until reset)
+    //   loading → !ok  → error  (clickable again for retry)
+    // Disabled when signalApplicationId is null (race-safety fallback;
+    // in practice it populates from runPositioningV2's response).
+    // Extracted as a helper for future Case B/C terminal-state reuse.
+    function renderApplyCta() {
+        const disabled =
+            !signalApplicationId || applyCtaLoading || applyCtaSuccess
+        const label = applyCtaSuccess
+            ? V2_COPY.applyCtaSuccess
+            : applyCtaLoading
+            ? V2_COPY.applyCtaInFlight
+            : V2_COPY.applyCtaIdle
+
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={runApplyForApplication}
+                    style={{
+                        width: "100%",
+                        padding: "12px 18px",
+                        borderRadius: 8,
+                        border: applyCtaSuccess
+                            ? "1px solid rgba(74,222,128,0.4)"
+                            : "1px solid rgba(255,255,255,0.20)",
+                        background: applyCtaSuccess
+                            ? "rgba(74,222,128,0.10)"
+                            : disabled
+                            ? "rgba(255,255,255,0.04)"
+                            : "rgba(255,255,255,0.10)",
+                        color: applyCtaSuccess
+                            ? "#86efac"
+                            : disabled
+                            ? "rgba(255,255,255,0.45)"
+                            : "rgba(255,255,255,0.95)",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: disabled ? "not-allowed" : "pointer",
+                    }}
+                >
+                    {label}
+                </button>
+                {applyCtaError ? (
+                    <div
+                        style={{
+                            fontSize: 12,
+                            color: "#fca5a5",
+                            lineHeight: "18px",
+                        }}
+                    >
+                        {V2_COPY.applyCtaErrorFmt(applyCtaError)}
+                    </div>
+                ) : null}
+            </div>
         )
     }
 
@@ -5134,25 +5313,100 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
     // D1 stubs — D2 will expand renderCaseA, D3 renderCaseB, D4 renderCaseC.
     function renderCaseA(result: any) {
-        const refinements = Array.isArray(result?.case_specific?.small_refinements)
-            ? result.case_specific.small_refinements
+        // D4 — FRD-spec Case A rendering (section 4.4).
+        //
+        // Shape: JobfitVerdictCard + CaseAFraming (single headline +
+        // body from server's case_specific.well_positioned_summary) +
+        // optional small_refinements block (always empty in v2;
+        // conditional render kept for v2.5+ forward compatibility) +
+        // functional "I'm ready to apply" CTA (gated on
+        // signalApplicationId via renderApplyCta).
+        //
+        // No TimeExpectationBlock per FRD section 4.4 — Case A's
+        // estimated_minutes=0 means the workflow ends at this CTA.
+        const caseSpec = result?.case_specific ?? {}
+        const summary =
+            typeof caseSpec.well_positioned_summary === "string"
+                ? caseSpec.well_positioned_summary
+                : ""
+        const refinements = Array.isArray(caseSpec.small_refinements)
+            ? caseSpec.small_refinements
             : []
+
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
-                    <strong style={{ color: "rgba(255,255,255,0.95)" }}>Case A</strong>{" "}
-                    — {result?.case_reasoning ?? ""}
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                {/* JobfitVerdictCard — shared helper (D3) */}
+                {renderV2JobfitVerdictCard()}
+
+                {/* CaseAFraming — single headline + summary body */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div
+                        style={{
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: "rgba(255,255,255,0.95)",
+                            lineHeight: "22px",
+                        }}
+                    >
+                        {V2_COPY.caseAHeadline}
+                    </div>
+                    {summary.length > 0 ? (
+                        <div
+                            style={{
+                                fontSize: 13,
+                                color: "rgba(255,255,255,0.75)",
+                                lineHeight: "20px",
+                            }}
+                        >
+                            {summary}
+                        </div>
+                    ) : null}
                 </div>
-                {renderV2WorkflowSummary(result)}
-                {/* F3 — "I'm ready to apply" stubbed disabled in D1; D4 wires
-                     PUT /api/applications/{signalApplicationId}. */}
-                {renderV2DisabledCta("I'm ready to apply")}
-                {/* F3 — "Review small refinements": never renders in v2
-                     because small_refinements is always empty per Stage 1a.
-                     Conditional kept here for spec completeness. */}
-                {refinements.length > 0
-                    ? renderV2DisabledCta("Review small refinements")
-                    : null}
+
+                {/* small_refinements — never renders in v2 (refinements
+                     always []); v2.5+ populates. Item shape per FRD §4.2:
+                     { id, description } objects. String fallback handled
+                     defensively for forward compatibility. */}
+                {refinements.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div
+                            style={{
+                                fontSize: 13,
+                                color: "rgba(255,255,255,0.85)",
+                                lineHeight: "20px",
+                            }}
+                        >
+                            {V2_COPY.caseASmallRefinementsLabel}
+                        </div>
+                        <ul
+                            style={{
+                                margin: 0,
+                                paddingLeft: 20,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 4,
+                            }}
+                        >
+                            {refinements.map((r: any, i: number) => (
+                                <li
+                                    key={r?.id ?? i}
+                                    style={{
+                                        fontSize: 13,
+                                        color: "rgba(255,255,255,0.78)",
+                                        lineHeight: "20px",
+                                    }}
+                                >
+                                    {typeof r === "string"
+                                        ? r
+                                        : r?.description ?? ""}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : null}
+
+                {/* F3 — functional "I'm ready to apply" CTA (D4). */}
+                {renderApplyCta()}
             </div>
         )
     }
@@ -5460,23 +5714,29 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                 {caseRender}
 
-                {/* F5 — Reconsider the target entry (placeholder modal) */}
-                <button
-                    type="button"
-                    onClick={() => setReconsiderModalOpen(true)}
-                    style={{
-                        alignSelf: "flex-start",
-                        padding: "6px 12px",
-                        borderRadius: 6,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "transparent",
-                        color: "rgba(255,255,255,0.7)",
-                        fontSize: 12,
-                        cursor: "pointer",
-                    }}
-                >
-                    Reconsider the target
-                </button>
+                {/* F5 — Reconsider the target entry (placeholder modal).
+                     D4: suppressed for Case A — FRD §4.4 Case A CTABlock
+                     omits the reconsider button (a "well-positioned"
+                     verdict makes the reconsider prompt semantically
+                     wrong). Still shown for Case B and Case C. */}
+                {caseLetter !== "A" ? (
+                    <button
+                        type="button"
+                        onClick={() => setReconsiderModalOpen(true)}
+                        style={{
+                            alignSelf: "flex-start",
+                            padding: "6px 12px",
+                            borderRadius: 6,
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            background: "transparent",
+                            color: "rgba(255,255,255,0.7)",
+                            fontSize: 12,
+                            cursor: "pointer",
+                        }}
+                    >
+                        Reconsider the target
+                    </button>
+                ) : null}
 
                 {/* F4 — Save for later: switch tab back to JobFit. Server-side
                      row stays in_progress; next Positioning entry resumes via
