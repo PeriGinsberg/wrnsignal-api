@@ -4969,9 +4969,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         const gapThemes = Array.isArray(wp.gap_themes) ? wp.gap_themes : []
         const gapThemesText = gapThemes.length > 0 ? gapThemes.join(", ") : ""
 
+        const gapWord = gapCount === 1 ? "gap" : "gaps"
         const step1 = gapThemesText
-            ? `${gapCount} gaps to discuss — ${gapThemesText}`
-            : `${gapCount} gaps to discuss`
+            ? `${gapCount} ${gapWord} to discuss — ${gapThemesText}`
+            : `${gapCount} ${gapWord} to discuss`
 
         const step2 =
             "Resume content review — headline, summary, skills, and bullet alignment"
