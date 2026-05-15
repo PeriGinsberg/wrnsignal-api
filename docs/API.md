@@ -129,7 +129,7 @@ Four other auth modes exist:
 **Auth:** Authenticated user (ownership checked against `client_profile_id`).
 **Purpose:** Fetch a JobFit run plus any positioning / cover-letter / networking results linked by fingerprint hash.
 **Request:** — (path param `id`).
-**Returns:** `{ runId, fingerprintCode, fingerprintHash, verdict, score, createdAt, jobDescription, jobTitle, companyName, jobfit, positioning, coverLetter, networking }`
+**Returns:** `{ runId, fingerprintCode, fingerprintHash, verdict, score, createdAt, jobDescription, jobTitle, companyName, jobfit, positioning, coverLetter, networking }`. The `jobfit` object includes a `jobfit_run_id` field (= `runId`), matching the shape POST /api/jobfit returns so consumers can hydrate from either endpoint with the same handler.
 **Errors:** 401 unauthorized, 403 profile mismatch, 404 not found.
 
 ### Trial Flow (isolated — `jobfit_users` / `jobfit_profiles` / `jobfit_trial_runs`)

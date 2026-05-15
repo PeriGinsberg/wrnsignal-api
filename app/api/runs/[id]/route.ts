@@ -135,7 +135,17 @@ export async function GET(
       jobDescription: run.job_description ?? null,
       jobTitle: run.result_json?.job_signals?.jobTitle ?? null,
       companyName: run.result_json?.job_signals?.companyName ?? null,
-      jobfit: run.result_json,
+      // Include jobfit_run_id inside the jobfit object so this endpoint's
+      // shape matches POST /api/jobfit's response (which decorates the
+      // result with jobfit_run_id at the top level). The Framer deep-link
+      // handler hydrates jobFitResult from this field and the Stage 1c
+      // auto-trigger reads jobFitResult.jobfit_run_id to call
+      // /api/positioning/v2/start. Defensive null/non-object guard for
+      // the rare malformed-row case.
+      jobfit:
+        run.result_json && typeof run.result_json === "object"
+          ? { ...(run.result_json as any), jobfit_run_id: run.id }
+          : run.result_json,
       positioning: posRes,
       coverLetter: clRes,
       networking: netRes,
