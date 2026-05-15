@@ -754,3 +754,16 @@ Belongs in the bullet-quality cleanup session. Investigation surface:
 - Lane-mismatch detection itself — what produces "MAJOR FIELD MISMATCH" risks and which structured fields carry the signal forward
 
 Not blocking D3/D4. Surfaces a real misclassification pattern worth running across the bullet-quality sample alongside copy-quality review.
+
+**Addendum (D3 testing, 2026-05-15) — second case_determination concern:**
+
+Tested D3 with: Peri Test 100 / persona "Catherine Lees (Communications major, Product Manager target)" / Versant Finance-Analytics-HR Intern JD.
+
+JobFit produced Review + score 60 + 2 risks. Positioning landed Case B ("targeted changes"). The gap themes surfaced included "FINANCE & ANALYTICS DOMAIN GAP" and "PRIOR MEDIA INTERNSHIP EXPERIENCE MISSING."
+
+Three concerns:
+1. Case B "targeted changes" framing is too soft for a Communications-to-Finance/Analytics field jump. This is canonical Case C territory.
+2. The "MAJOR FIELD MISMATCH" gap theme from D2 + this test's results both suggest case_determination thresholds are too lenient. High-severity field mismatch should trigger Case C even under a "Review" verdict.
+3. Worth investigating: should case_determination consider the candidate's target_roles vs the JD's actual role family? Currently case_determination operates on jobfit signals only. A profile-target/jd-role mismatch check at the case_determination layer might catch these.
+
+Belongs in the bullet-quality + case_determination tuning session. Specific test case documented for reproducibility.
