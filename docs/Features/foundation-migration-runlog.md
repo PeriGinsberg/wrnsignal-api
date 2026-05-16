@@ -18,6 +18,8 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260512_intake_upsert_with_targeting.sql` | 2026-05-12 | 2026-05-12 | **prod** | Supabase SQL Editor | Peri | Same SQL. Function unused on prod until intake route is deployed there. |
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | Phase 1 deliverable 6. Creates `positioning_runs_v2` table + 5 indexes + 1 `set_updated_at` trigger. |
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation. |
+| `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-16 | dev | Supabase SQL Editor | Peri | New table. Phase 2 Stage 2a. Includes ai_cost_cents column (FRD §6.12) in initial schema vs. separate step per §7. Manual apply per Risk 6 (schema_migrations drift on dev). |
+| `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation + Phase 2a skeletons land. |
 
 ---
 
@@ -966,3 +968,21 @@ criteria met end-to-end against staging (commit `df0f6815`).
 
 Choice deferred to next session start. All three are independently
 ready to begin.
+
+### 2026-05-16 — Phase 2 Stage 2a kicked off
+
+First migration shipped for Positioning v2 Phase 2 (Resume Reframing Workflow).
+
+**Applied:**
+- `supabase/migrations/20260516_phase2_runs.sql` — new table per FRD §6.1, includes ai_cost_cents column per FRD §6.12 (consolidated from FRD §7's two-step ordering)
+- Applied to dev via Supabase SQL Editor (Path B — Foundation Risk 6 still applies; dev migration tracker drift unrepaired)
+- Verified on dev: table exists with correct columns, CHECK constraints firing, indexes present, set_updated_at trigger attached
+
+**Not yet shipped (next commit in this session):**
+- `lib/positioning/v2/phase2/types.ts` — PhaseTwoState, PhaseTwoItem, row + insert payload types
+- `lib/positioning/v2/phase2/itemPopulator.ts` — skeleton + JSDoc
+- `lib/positioning/v2/phase2/resumeComposer.ts` — skeleton + JSDoc
+- `lib/positioning/v2/phase2/aiClient.ts` — skeleton + JSDoc
+- `lib/positioning/v2/phase2/groundingValidator.ts` — skeleton + JSDoc
+
+Production promotion of the schema deferred until all Phase 2a skeletons land + tsc/build verified clean.

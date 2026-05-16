@@ -268,7 +268,7 @@ CREATE TABLE phase2_runs (
   completed_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_phase2_runs_positioning_run ON phase2_runs(positioning_run_id);
+CREATE INDEX idx_phase2_runs_positioning_run_id ON phase2_runs(positioning_run_id);
 CREATE INDEX idx_phase2_runs_profile_id ON phase2_runs(profile_id);
 CREATE INDEX idx_phase2_runs_status ON phase2_runs(status);
 
