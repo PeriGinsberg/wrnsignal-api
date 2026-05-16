@@ -245,8 +245,8 @@ Persists Phase 2 state per positioning_run. One row per (positioning_run_v2, cli
 CREATE TABLE phase2_runs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   positioning_run_id UUID NOT NULL REFERENCES positioning_runs_v2(id) ON DELETE CASCADE,
-  client_profile_id UUID NOT NULL REFERENCES client_profiles(id),
-  client_persona_id UUID NOT NULL REFERENCES client_personas(id),
+  profile_id UUID NOT NULL REFERENCES client_profiles(id),
+  persona_id UUID NOT NULL REFERENCES client_personas(id),
   case_letter TEXT NOT NULL CHECK (case_letter IN ('A', 'B', 'C')),
 
   -- Workflow state (full session JSONB; see §6.3 for schema)
@@ -269,12 +269,12 @@ CREATE TABLE phase2_runs (
 );
 
 CREATE INDEX idx_phase2_runs_positioning_run ON phase2_runs(positioning_run_id);
-CREATE INDEX idx_phase2_runs_profile ON phase2_runs(client_profile_id);
+CREATE INDEX idx_phase2_runs_profile_id ON phase2_runs(profile_id);
 CREATE INDEX idx_phase2_runs_status ON phase2_runs(status);
 
 CREATE TRIGGER update_phase2_runs_updated_at
   BEFORE UPDATE ON phase2_runs
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 ```
 
 Migration applies to dev first via the standard Supabase SQL Editor workaround per Foundation Risk 6 (dev migration tracker drift; see Foundation runlog).
@@ -426,7 +426,7 @@ Fetches the current phase2_run state.
 {
   phase2_run_id: string;
   positioning_run_id: string;
-  client_persona_id: string;
+  persona_id: string;
   case_letter: 'A' | 'B' | 'C';
   state: PhaseTwoState;
   revised_resume_text: string | null;
@@ -549,7 +549,7 @@ async function handlePhase2Draft(req: Request, id: string): Promise<Response> {
 
   // 2. Fetch phase2_run + verify ownership
   const run = await getPhase2Run(id);
-  if (!run || run.client_profile_id !== profileId) {
+  if (!run || run.profile_id !== profileId) {
     return errorResponse(404, 'not_found', 'Phase 2 run not found.');
   }
 
@@ -570,7 +570,7 @@ async function handlePhase2Draft(req: Request, id: string): Promise<Response> {
   }
 
   // 5. Fetch grounding source content
-  const persona = await getPersona(run.client_persona_id);
+  const persona = await getPersona(run.persona_id);
   const positioningRun = await getPositioningRunV2(run.positioning_run_id);
 
   // 6. Build prompt per §6.7
