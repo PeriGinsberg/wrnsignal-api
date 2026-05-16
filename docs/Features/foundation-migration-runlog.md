@@ -910,3 +910,59 @@ Tests in `tests/positioning-v2/case-determination-check.ts`:
 FRD (`docs/Features/positioning-phase1-frd.md` section 4.1) pseudocode
 predates both the 2026-05-15 tuning and this narrowing. Added a pointer
 note that the runlog + code are authoritative for current cascade behavior.
+
+### 2026-05-16 — case_determination tuning session CLOSED
+
+Stage 1c case_determination tuning is complete. All definition-of-done
+criteria met end-to-end against staging (commit `df0f6815`).
+
+**Case reachability verified:**
+
+| Case | Reachable | Evidence |
+|------|-----------|----------|
+| A | ✅ | Gate relaxed 2026-05-15 (Apply + zero-or-all-low risks + ≥3 whys). Unit-tested in tests 24/27. End-to-end real-data instance deferred to natural occurrence (not blocking — the gate logic is small and fully covered by unit tests; production data will surface a Case A instance organically). |
+| B | ✅ | Verified end-to-end multiple times across D2/D3/D4 in tuning session and the 2026-05-16 Diligent retest after the family-mismatch narrowing. |
+| C | ✅ | Verified end-to-end via both paths: Rule 1 (Pass verdict) covered by D3 pre-narrowing, and narrowed Rule 2 (Review + family mismatch) covered by Catherine Lees Communications→Finance shape which retains Case C under the narrowed rule. |
+
+**Cache + routing verified:**
+- Deep-link round-trip works (cache_hit response on repeat POSTs with matching fingerprint)
+- Returning-user banner works (in_progress runs resume; last_visit_days_ago surfaces)
+
+**Behavior regression closed:**
+- Apply verdict no longer wrongly overridden to Case C on family mismatch.
+  Diligent retest (Product Marketing Intern, Apply/91, 1 medium-severity
+  CRM tool fluency risk) now correctly renders Case B with 3-step workflow
+  and 17-minute estimate. Pre-narrowing, this same case wrongly rendered
+  Case C — the user-facing bug that surfaced the narrowing decision.
+
+**Code shipped during this tuning session:**
+- 2026-05-15 commit `2119a0a1` — case_determination Rule 2 added (family
+  mismatch → Case C) + Case A gate relaxed (all-low-severity risks admit
+  Apply/Priority Apply to Case A)
+- 2026-05-16 commit `f3364228` — ProductManagement added as first-class
+  JobFamily (target inferrer + JD detector + allowlists) — closed the
+  PM-target → ["Other"] inference gap that motivated the Diligent shape
+- 2026-05-16 commit `df0f6815` — Rule 2 narrowed to Review verdict only
+  (Apply / Priority Apply now trust upstream verdict over family taxonomy)
+
+**Deferred work tracked for future sessions:**
+- Scorer severity-tagging upstream: field-mismatch risks tag medium when
+  they should tag high. Affects when narrowed Rule 2 fires vs when Rule 3
+  (Review + high-severity → C) fires — currently more weight on Rule 2 than
+  ideal because severity tagging is unreliable. Tracked for scorer tuning.
+- HR + Operations inferrer cleanup: stale Consulting roll-up in
+  `lib/jobfit-family-inference.ts:113, 156`. Scope captured in the
+  2026-05-16 HR+Operations cleanup addendum above.
+- Bullet-quality content polish: separate session per the 2026-05-14 entry.
+  Reads rendered output, not case decision; clean separation preserved.
+
+**Resumption options for next session (logged, not committed):**
+1. Resume Stage 1c D5/D6/D7 — returning banner polish, error states,
+   mobile + loading polish. Original sequence resumption.
+2. Pick up the deferred HR+Operations inferrer cleanup. Self-contained,
+   behavior-changing scope already written.
+3. Pick up the bullet-quality content session for case_determination
+   rendered text. Reads outputs from this now-stable case-decision layer.
+
+Choice deferred to next session start. All three are independently
+ready to begin.

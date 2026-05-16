@@ -163,3 +163,66 @@ Ranked by my current prior — the session can re-rank after seeing real data.
 - Implementation in `caseDetermination.ts` + `caseThresholds.ts` + (if needed) the response builder / type files
 - Regression check: D2/D3/D4 test scenarios re-run through tuned thresholds and produce the correct case per scenario
 - One real-data test instance of each case (A, B, C) confirmed end-to-end before resuming Stage 1c
+
+---
+
+## Status: COMPLETE (2026-05-16)
+
+Tuning session closed. Per the Definition of Done above, all five criteria
+met:
+
+- **Hypotheses tested:** investigated via `inspect-case-determination-inputs.ts`
+  and inline review of `jobfit_runs` distribution. Findings drove the two
+  shipped tuning changes (Case A gate relaxation, family-mismatch Rule 2).
+- **Concrete proposal made + shipped:** see runlog entries for the three
+  commits (`2119a0a1`, `f3364228`, `df0f6815`).
+- **Implementation complete:** `caseDetermination.ts` + `caseThresholds.ts`
+  unchanged in second commit; `signals.ts` + extract.ts + inferrer +
+  allowlists updated in PM family commit; `caseDetermination.ts` updated
+  in narrowing commit. Tests in `case-determination-check.ts` expanded
+  from 27 to 30.
+- **Regression check passed:** D2/D3/D4 + Diligent shape verified.
+- **Real-data instance of each case confirmed end-to-end:** A via unit
+  tests (production instance deferred); B + C via real Stage 1c testing.
+
+See `docs/Features/foundation-migration-runlog.md` 2026-05-16 close-out
+entry for the full case-reachability + behavior-regression summary.
+
+### Lessons learned
+
+- **Severity tagging upstream remains a known concern.** Field-mismatch
+  risks consistently tag `medium` in `risk_structured` when they should
+  tag `high`. This forced the family-mismatch Rule 2 to do work that an
+  ideal upstream tagger would handle natively via Rule 3 (Review +
+  high-severity → Case C). Deferred to a scorer-tuning session. Until
+  that lands, narrowed Rule 2 is the load-bearing path for catching
+  Review-verdict field-mismatch cases.
+
+- **Family taxonomy is necessarily coarse; strict family-mismatch as a
+  Case C trigger needed verdict-bounded narrowing.** Adjacent disciplines
+  (Product Marketing vs Product Management, Marketing Analytics vs
+  Analytics, Strategy Consulting vs Business Operations, Healthcare vs
+  PreMed) are common legitimate overlaps where taxonomy says "different
+  families" but real hiring treats them as cross-applicable. The fix is
+  not to flatten the taxonomy — it's to scope rules that key off the
+  taxonomy to verdicts where the verdict itself is ambivalent (Review).
+  Apply / Priority Apply verdicts encode evidence-weighted confidence
+  that the taxonomy mismatch should not override.
+
+- **Family inference taxonomy gaps cause false `["Other"]` fallbacks
+  that silently break downstream rules.** Today's PM addition (commit
+  `f3364228`) fixed 3 of 5 dev profiles whose `target_roles = "Product
+  Manager"` were returning `["Other"]` and bypassing the family-mismatch
+  check entirely. The same gap is open for HR and Operations (currently
+  rolled into Consulting per stale comments at
+  `jobfit-family-inference.ts:113, 156`). Deferred to its own session
+  because the cleanup is behavior-changing for existing
+  Consulting-targeting candidates and warrants regression sweep.
+
+- **Verdict is the stronger signal than any single derived feature.**
+  Across this tuning session, every misclassification we caught came
+  from a rule overriding the verdict on the strength of one auxiliary
+  signal (family taxonomy, individual risk severity, etc.). The
+  narrowing of Rule 2 codifies the lesson: when JobFit has evaluated
+  evidence holistically and returned Apply/Priority Apply, downstream
+  rules should pile on, not override.
