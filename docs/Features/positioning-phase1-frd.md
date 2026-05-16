@@ -161,6 +161,14 @@ function determineCase(inputs: CaseInputs): { case: 'A' | 'B' | 'C'; reasoning: 
 }
 ```
 
+**Note:** This pseudocode reflects the original Phase 1 spec. Post-launch
+tuning iterations (2026-05-15 onward) have added rules not shown here —
+family-mismatch detection (narrowed to Review verdict 2026-05-16) and
+relaxation of the Case A risk gate. The runlog at
+`docs/Features/foundation-migration-runlog.md` (2026-05-14 entry and its
+addendums) is authoritative for current behavior; the implementation in
+`lib/positioning/v2/caseDetermination.ts` is the source of truth.
+
 #### Thresholds in config
 
 ```typescript

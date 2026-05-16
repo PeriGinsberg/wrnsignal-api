@@ -8,10 +8,13 @@
 //
 // Cascading rules (FRD section 4.1):
 //   1. verdict=Pass                                                  → Case C
-//   2. Family mismatch (targetFamilies ∩ jobFamily = ∅, both signals
-//      present and non-"Other") on any non-Pass verdict              → Case C
-//      (Added 2026-05-15 tuning — see runlog. Catches lane-mismatch
-//      scenarios the per-risk severity tagger consistently undertags.)
+//   2. verdict=Review + family mismatch (targetFamilies ∩ jobFamily
+//      = ∅, both signals present and non-"Other")                    → Case C
+//      (Added 2026-05-15 tuning; narrowed 2026-05-16 to Review-only —
+//      see runlog. Adjacent families like Product Marketing vs Product
+//      Management are common legitimate overlaps; on Apply/Priority
+//      Apply, JobFit's verdict is the stronger signal and shouldn't
+//      be overridden by family-taxonomy mismatch alone.)
 //   3. verdict=Review + high-severity risk                           → Case C
 //                                            (gated by CASE_C_HIGH_SEVERITY_TRIGGER)
 //   4. verdict=Review + no high-severity                             → Case B
@@ -198,13 +201,24 @@ export function determineCase(inputs: CaseInputs): CaseAssignment {
     }
   }
 
-  // Rule 2: Family mismatch (added 2026-05-15 tuning).
-  // Fires for Review/Apply/Priority Apply verdicts when the candidate's
-  // targeted job families don't overlap with the JD's classified family.
-  // Catches the canonical Case C scenario (Communications candidate
-  // applying to Finance role) that the upstream scorer's per-risk
-  // severity tagging consistently misses (tagging field mismatches as
-  // medium instead of high — see runlog 2026-05-15 tuning session).
+  // Rule 2: Family mismatch (added 2026-05-15 tuning, narrowed 2026-05-16).
+  // Fires for Review verdict only when the candidate's targeted job
+  // families don't overlap with the JD's classified family. Catches the
+  // canonical Case C scenario (Communications candidate applying to
+  // Finance role) that the upstream scorer's per-risk severity tagging
+  // consistently misses (tagging field mismatches as medium instead of
+  // high — see runlog 2026-05-15 tuning session).
+  //
+  // Why Review-only: adjacent families are common legitimate overlaps
+  // (Product Marketing vs Product Management, Marketing Analytics vs
+  // Analytics, Strategy Consulting vs Business Operations). When JobFit
+  // returns Apply/Priority Apply, it has already weighed evidence
+  // holistically and concluded the candidate is a strong match.
+  // Overriding that to Case C purely on family-taxonomy mismatch
+  // contradicts the stronger upstream signal. On Review the verdict is
+  // ambivalent, so the mismatch acts as a tiebreaker pushing toward C.
+  // Surfaced 2026-05-16 by Product Marketing Intern @ Diligent test
+  // case: Apply/91, one minor risk, was wrongly routed to Case C.
   //
   // "Other" semantics:
   //   - targetFamilies === ["Other"] (single-element, just-Other) →
@@ -226,6 +240,7 @@ export function determineCase(inputs: CaseInputs): CaseAssignment {
     jobFamily !== "Other" &&
     jobFamily !== "unknown"
   if (
+    verdict === "Review" &&
     targetsAreSignal &&
     jobFamilyIsSignal &&
     !targetFamilies!.includes(jobFamily!)

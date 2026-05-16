@@ -409,17 +409,19 @@ function applyCleanWithFamilies(
   })
 }
 
-// Test 16: Apply + targetFamilies=["Marketing"] + jobFamily="Finance" → Case C
+// Test 16: Apply + targetFamilies=["Marketing"] + jobFamily="Finance" + 3 whys + 0 risks → Case A
+// Narrowed 2026-05-16: family-mismatch rule fires on Review only. On Apply,
+// JobFit's verdict is the stronger signal and the mismatch is ignored.
 {
   const r = determineCase(applyCleanWithFamilies(["Marketing"], "Finance"))
   check(
-    "16: Apply + Marketing target vs Finance JD → Case C",
-    r.case === "C",
+    "16: Apply + Marketing target vs Finance JD → Case A (mismatch rule skipped on Apply)",
+    r.case === "A",
     `got ${r.case}: ${r.reasoning}`,
   )
   check(
-    "16: reasoning mentions 'mismatch'",
-    /mismatch/i.test(r.reasoning),
+    "16: reasoning does NOT mention 'mismatch'",
+    !/mismatch/i.test(r.reasoning),
     r.reasoning,
   )
 }
@@ -487,15 +489,17 @@ function applyCleanWithFamilies(
   )
 }
 
-// Test 21: Apply + targetFamilies=["Marketing", "Other"] + jobFamily="Sales" → Case C
-// Other does NOT count as a wildcard; .includes() must find a real match.
+// Test 21: Apply + targetFamilies=["Marketing", "Other"] + jobFamily="Sales" + 3 whys + 0 risks → Case A
+// Narrowed 2026-05-16: family-mismatch rule fires on Review only. The Apply
+// verdict escapes the check entirely, regardless of whether the mismatch
+// would have fired on Review (Other does not count as a wildcard match).
 {
   const r = determineCase(
     applyCleanWithFamilies(["Marketing", "Other"], "Sales"),
   )
   check(
-    "21: Apply + ['Marketing','Other'] vs Sales → Case C (Other doesn't help)",
-    r.case === "C",
+    "21: Apply + ['Marketing','Other'] vs Sales → Case A (Apply escapes mismatch rule)",
+    r.case === "A",
     `got ${r.case}: ${r.reasoning}`,
   )
 }
@@ -509,6 +513,95 @@ function applyCleanWithFamilies(
     "22: Apply + ['Marketing','Other'] vs Marketing → Case A (Marketing matches)",
     r.case === "A",
     `got ${r.case}: ${r.reasoning}`,
+  )
+}
+
+// Test 21b: Apply + family mismatch + 1 medium risk → Case B (Diligent case shape)
+// Mirrors the real-world test that surfaced the narrowing: Product Marketing
+// Intern at Diligent — JobFit Apply with one minor risk should not be
+// overridden to Case C just because targetFamilies=ProductManagement and
+// jobFamily=Marketing don't intersect.
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "crm_tool_fluency", gap: "", reframe: "", severity: "medium" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+      job_signals: { jobFamily: "Marketing" },
+      profile_signals: { targetFamilies: ["ProductManagement"] },
+    }),
+  )
+  check(
+    "21b: Apply + family mismatch + 1 medium risk → Case B (Apply path with risks)",
+    r.case === "B",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+  check(
+    "21b: reasoning does NOT mention 'mismatch'",
+    !/mismatch/i.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 21c: Priority Apply + family mismatch + 3 whys + 0 risks → Case A
+// Symmetric to test 16 for Priority Apply — confirms Priority Apply also
+// escapes the narrowed mismatch rule.
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Priority Apply",
+      risk_structured: [],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+      job_signals: { jobFamily: "Finance" },
+      profile_signals: { targetFamilies: ["Marketing"] },
+    }),
+  )
+  check(
+    "21c: Priority Apply + family mismatch → Case A (Priority Apply escapes mismatch rule)",
+    r.case === "A",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+  check(
+    "21c: reasoning does NOT mention 'mismatch'",
+    !/mismatch/i.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 21d: Apply + family mismatch + 1 high-severity risk → Case B via Rule 6
+// Confirms the Apply+high-severity path (Rule 6) still routes to B and is
+// not preempted by the (now-narrowed) mismatch rule.
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_structured: [
+        { keyword: "missing_required_skill", gap: "", reframe: "", severity: "high" },
+      ],
+      why_structured: [{ keyword: "a", lead: "", connection: "", action: "" }],
+      job_signals: { jobFamily: "Finance" },
+      profile_signals: { targetFamilies: ["Marketing"] },
+    }),
+  )
+  check(
+    "21d: Apply + family mismatch + high-severity risk → Case B (Rule 6, not Rule 2)",
+    r.case === "B",
+    `got ${r.case}: ${r.reasoning}`,
+  )
+  check(
+    "21d: reasoning mentions 'high-severity', not 'mismatch'",
+    /high.?severity/i.test(r.reasoning) && !/mismatch/i.test(r.reasoning),
+    r.reasoning,
   )
 }
 

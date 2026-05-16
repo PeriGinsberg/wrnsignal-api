@@ -849,3 +849,64 @@ Tracked here for pickup. Scope:
 5. Re-run `tests/jobfit-regression/regression-check.ts` and audit every
    diff — Consulting/HR/Operations boundary cases are the high-risk
    surface here.
+
+**Addendum (2026-05-16, narrowing) — Rule 2 (family mismatch) restricted to Review verdict:**
+
+The Rule 2 family-mismatch check (added in the 2026-05-15 tuning above) was
+firing too aggressively. Real-world case that surfaced the issue:
+
+- JD: "Product Marketing Intern" at Diligent
+- Profile target_roles: "Product Manager" (after the 2026-05-16 PM family
+  commit, this maps to targetFamilies = ["ProductManagement"])
+- JD classification: jobFamily = "Marketing" (correctly — jobTitleIsMarketing
+  matches "product marketing")
+- JobFit verdict: Apply, score 91, one minor risk (CRM tool fluency)
+- Positioning case: **C** (wrongly — JobFit said strong match)
+
+The family taxonomy treats ProductManagement and Marketing as distinct
+families, but in practice they are adjacent disciplines that frequently
+overlap in hiring (Product Marketing Manager vs Product Manager career
+ladders crossover constantly). When JobFit holistically evaluates evidence
+and returns Apply/Priority Apply, that verdict is a stronger signal than
+the taxonomy mismatch — overriding to Case C contradicts the upstream
+judgment.
+
+Narrowed Rule 2 to fire on Review verdict only. Rationale:
+- Pass already routes to Case C via Rule 1 (unchanged).
+- Review is ambivalent — family mismatch acts as a tiebreaker toward C.
+- Apply/Priority Apply have a confident positive verdict — taxonomy
+  mismatch alone should not override.
+
+Same Diligent case after narrowing: Apply + family-mismatch + 1 medium-
+severity risk → falls through to Rule 7 (default Apply path) → Case B.
+Aligns with the verdict.
+
+Other adjacent-family pairs that benefit from this narrowing (incomplete
+list, surface as production data accumulates):
+- Marketing Analytics vs Analytics
+- Strategy Consulting vs Business Operations
+- IT_Software vs Engineering (in software-adjacent Engineering roles)
+- Healthcare vs PreMed
+- ProductManagement vs IT_Software (technical PM roles)
+
+What was NOT changed:
+- Rule 2's "Other" semantics for targetFamilies and jobFamily — same skip
+  conditions apply on Review.
+- The mismatch reasoning string format — when Rule 2 fires on Review, the
+  reasoning text is unchanged.
+- Case A relaxation from the prior 2026-05-15 addendum — Apply + all-low-
+  severity + 3 whys still routes to Case A regardless of family signals.
+
+Tests in `tests/positioning-v2/case-determination-check.ts`:
+- Tests 16 and 21 had their expected outcomes flipped (Apply + mismatch
+  was Case C; now Case A under the unchanged Apply path).
+- Three new tests added (21b, 21c, 21d) to pin the narrowed behavior
+  explicitly: Apply + mismatch + medium risk → B (Diligent case shape);
+  Priority Apply + mismatch + clean → A; Apply + mismatch + high-severity
+  → B via Rule 6.
+- Test 17 (Review + mismatch → C) unchanged — it's the canonical happy
+  path for the narrowed rule.
+
+FRD (`docs/Features/positioning-phase1-frd.md` section 4.1) pseudocode
+predates both the 2026-05-15 tuning and this narrowing. Added a pointer
+note that the runlog + code are authoritative for current cascade behavior.
