@@ -51,6 +51,7 @@ const JOB_FAMILY_ALLOWLIST: JobFamily[] = [
   "PreMed",
   "Engineering",
   "IT_Software",
+  "ProductManagement",
   "Healthcare",
   "Legal",
   "Trades",

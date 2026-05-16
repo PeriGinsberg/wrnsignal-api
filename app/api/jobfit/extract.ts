@@ -1938,6 +1938,7 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
     PreMed: 0,
     Engineering: 0,
     IT_Software: 0,
+    ProductManagement: 0,
     Healthcare: 0,
     Legal: 0,
     Trades: 0,
@@ -2000,6 +2001,7 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
   const ordered: JobFamily[] = [
     "Engineering",
     "IT_Software",
+    "ProductManagement",
     "Healthcare",
     "Legal",
     "Trades",
@@ -3506,6 +3508,30 @@ export function extractJobSignals(
       jobTitleSlice
     )
 
+  // Product Management titles — route to ProductManagement family.
+  // Added 2026-05-16. PM is its own first-class family, distinct from
+  // IT_Software (engineering) and Marketing (Product Marketing).
+  //
+  // "cpo" intentionally excluded — too ambiguous with Chief Procurement
+  // Officer. The full phrase "chief product officer" is unambiguous.
+  //
+  // "product owner" included — Agile/SAFe role frequently grouped with PM
+  // in early-career targeting and intake free text.
+  //
+  // "product management" (standalone) deliberately excluded — appears in
+  // JD body text as a noun for the discipline ("collaborating with product
+  // management teams") more often than as a title position. PM titles in
+  // the wild use "Product Manager" / "Head of Product" / "Director of
+  // Product" / "VP of Product" / "Chief Product Officer". Standalone
+  // "Product Management" as a title phrase is vanishingly rare. The
+  // inferrer side (lib/jobfit-family-inference.ts) keeps "product
+  // management" because candidate target-roles free text uses the phrase
+  // legitimately ("I'm targeting product management roles").
+  const jobTitleIsProductManagement =
+    /\b(product manager|associate product manager|apm|product owner|senior product manager|principal product manager|group product manager|staff product manager|technical product manager|growth product manager|product lead|head of product|vp of product|vp product|director of product|chief product officer)\b/i.test(
+      jobTitleSlice
+    )
+
   // PR / communications agency "account" titles. At a PR or comms
   // agency, "Account Coordinator / Executive / Supervisor / Director"
   // is the standard career ladder — these are PR/media-relations roles,
@@ -3617,8 +3643,10 @@ export function extractJobSignals(
               ? "Trades"
               : jobTitleIsHR
                 ? "HR"
-                : jobTitleIsPRCommsAgency
-                  ? "Marketing"
+                : jobTitleIsProductManagement
+                  ? "ProductManagement"
+                  : jobTitleIsPRCommsAgency
+                    ? "Marketing"
                   : jobTitleIsMarketing
                     ? "Marketing"
                     : jobTitleIsConsulting

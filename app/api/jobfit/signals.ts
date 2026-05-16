@@ -20,6 +20,7 @@ export type JobFamily =
   | "PreMed"
   | "Engineering"
   | "IT_Software"
+  | "ProductManagement"
   | "Healthcare"
   | "Legal"
   | "Trades"

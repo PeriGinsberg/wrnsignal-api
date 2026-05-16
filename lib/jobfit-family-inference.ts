@@ -289,6 +289,36 @@ export function inferTargetFamilies(
     out.push("IT_Software")
   }
 
+  // ── Product Management ────────────────────────────────────────────────
+  // First-class family separate from IT_Software (the engineering side)
+  // and Marketing (Product Marketing is a distinct discipline). Added
+  // 2026-05-16 after dev profile testing surfaced that target_roles
+  // = "Product Manager" produced no family match, falling through to
+  // ["Other"] and causing case_determination Rule 2 (family-mismatch)
+  // to bail on the no-signal edge case.
+  //
+  // "cpo" intentionally excluded — too ambiguous with Chief Procurement
+  // Officer. "chief product officer" (full phrase) is unambiguous.
+  //
+  // "director of product" and "head of product" deliberately use bare
+  // substring matching — "Director of Product Marketing" will fire both
+  // Marketing and ProductManagement, which is correct for cross-targeting
+  // candidates.
+  if (
+    roles.includes("product manager") ||
+    roles.includes("product management") ||
+    /\bapm\b/.test(roles) ||
+    roles.includes("product owner") ||
+    roles.includes("head of product") ||
+    roles.includes("vp of product") ||
+    roles.includes("vp product") ||
+    roles.includes("director of product") ||
+    roles.includes("chief product officer") ||
+    roles.includes("product lead")
+  ) {
+    out.push("ProductManagement")
+  }
+
   // ── Engineering (non-software) ─────────────────────────────────────────
   if (
     roles.includes("mechanical engineer") ||

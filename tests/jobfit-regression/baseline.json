@@ -442,9 +442,9 @@
     "directWhyCount": 1,
     "riskCount": 5,
     "highRiskCount": 1,
-    "jobFamily": "Finance",
+    "jobFamily": "ProductManagement",
     "salesSubFamily": null,
-    "financeSubFamily": "credit",
+    "financeSubFamily": null,
     "gateType": "none"
   },
   "synthetic-0410ae": {
@@ -778,9 +778,9 @@
     "directWhyCount": 1,
     "riskCount": 5,
     "highRiskCount": 2,
-    "jobFamily": "Finance",
+    "jobFamily": "ProductManagement",
     "salesSubFamily": null,
-    "financeSubFamily": "asset_management",
+    "financeSubFamily": null,
     "gateType": "none"
   },
   "synthetic-0410p": {

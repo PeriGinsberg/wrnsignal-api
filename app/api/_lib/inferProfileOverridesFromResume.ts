@@ -35,6 +35,7 @@ const VALID_FAMILIES: JobFamily[] = [
   "PreMed",
   "Engineering",
   "IT_Software",
+  "ProductManagement",
   "Healthcare",
   "Legal",
   "Trades",

@@ -804,3 +804,48 @@ Scope and starting context for the tuning session live in `docs/Features/case-de
 The 2026-05-15 case_determination tuning relaxed the Case A gate to admit Apply/Priority-Apply runs with all-low-severity risks (surfaced as small_refinements). Per FRD section 4.2 the type comment expects 5 minutes when small_refinements is non-empty vs 0 minutes when empty; `workflowPreview.ts::estimatedMinutesForCase` currently returns 0 for all Case A runs. Worth updating `estimatedMinutesForCase` to read small_refinements.length and return 5 when non-zero.
 
 Not blocking — UX impact is one cosmetic number; correctness of case assignment is intact. Track under workflowPreview follow-ups.
+
+**Addendum (2026-05-16, follow-up) — HR + Operations cleanup deferred to separate session:**
+
+The 2026-05-15 case_determination tuning surfaced that 3 of 5 dev profiles
+had `target_roles = 'Product Manager'` but `inferTargetFamilies` returned
+`['Other']` because no PM keywords existed in `lib/jobfit-family-inference.ts`.
+Fix shipped 2026-05-16: added `ProductManagement` as a first-class JobFamily
+on both sides of inference (target inferrer + JD-side title detector) so
+PM-target vs PM-JD matches and PM-target vs non-PM-JD correctly triggers
+the family-mismatch path in case_determination Rule 2.
+
+The same investigation surfaced stale comments at
+`lib/jobfit-family-inference.ts:113, 156` claiming HR and Operations are
+routed through Consulting because "the scoring engine currently has no
+dedicated Operations or HR family." Both `"HR"` and `"Operations"` now
+exist as their own `JobFamily` values, and `extract.ts` has dedicated
+`jobTitleIsHR` (line 3504) and `jobTitleIsOperations` (line 3524)
+detectors routing to those families directly. The Consulting block in
+the inferrer is therefore over-inclusive: candidates targeting "HRBP"
+or "Operations Manager" get `['Consulting', 'Other']` instead of
+`['HR']` or `['Operations']`. This causes spurious cross-family matches
+(Consulting-targeting candidate gets matched to actual Operations JDs
+as a "direct family hit" via the bloated Consulting target set).
+
+Also affected: `JOB_FAMILY_ALLOWLIST` in
+`app/api/_lib/jobfitProfileAdapter.ts:43` silently strips `"HR"` and
+`"Operations"` — pre-existing drift from when those JobFamily values
+were added without updating the sanitizer's allowlist.
+
+Behavior-changing for any existing Consulting-targeting candidate
+whose actual stated target is HR/Operations work — they currently
+match Consulting JDs (right or wrong). Cleaning this up needs its own
+session with regression sweep against production runs to quantify
+impact before/after. Out of scope today.
+
+Tracked here for pickup. Scope:
+1. Remove HR roles from Consulting block in `jobfit-family-inference.ts`;
+   route to `"HR"` family directly.
+2. Remove Operations roles from Consulting block; route to `"Operations"`.
+3. Update or delete the stale comment blocks at lines 113 and 156.
+4. Add `"HR"` and `"Operations"` to `JOB_FAMILY_ALLOWLIST` in
+   `jobfitProfileAdapter.ts:43`.
+5. Re-run `tests/jobfit-regression/regression-check.ts` and audit every
+   diff — Consulting/HR/Operations boundary cases are the high-risk
+   surface here.
