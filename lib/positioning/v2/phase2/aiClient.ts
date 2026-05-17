@@ -14,37 +14,61 @@
 //   §4.2 — interview integrity (enforced via grounding constraint)
 //
 // Types: ./types.ts (PhaseTwoHeadlineItem, PhaseTwoBulletItem, PhaseTwoGapItem)
+// Cost:  ./costPolicy.ts (COST_CENTS_PER_ATTEMPT placeholder until Stage 2c)
 //
 // Model: Claude Haiku (claude-haiku-4-5-20251001 per existing project
 // pattern in app/api/jobfit/bulletGeneratorV5.ts). Chosen for latency
 // and cost — Phase 2 generation outputs are short (150-200 tokens) and
 // must complete inside the user's working tempo (FRD §4.5 target < 5s p50).
 //
-// Grounding: each prompt enforces the "no invention" constraint with
-// verbatim language ("You may use only the following source text. Do not
-// introduce facts, metrics, claims, skills, tools, or accomplishments not
-// explicitly present in the source."). Server-side validation per
-// groundingValidator.ts rejects drafts that introduce ungrounded entities.
-// The /draft endpoint (FRD §6.5.3) orchestrates the retry-on-fail loop.
+// STUB IMPLEMENTATION (Phase 2b): functions return deterministic fake
+// data prefixed with [STUB ...] so anyone testing knows they're not
+// seeing real AI output. Real Claude Haiku wiring (prompt construction,
+// API call, response parsing, token-accurate cost tracking) lands in
+// Stage 2c. Until that ships:
+//   - Phase 2 cannot ship to live users (real AI integration is
+//     load-bearing for the reframing value proposition)
+//   - Cost per /draft attempt is a fixed placeholder (1 cent) — see
+//     COST_CENTS_PER_ATTEMPT in costPolicy.ts
+//   - Stub drafts pass the (also-permissive) groundingValidator stub
+//     trivially, so /draft endpoint can be wired and tested end-to-end
 //
-// SKELETON — Phase 2a commit. Real Claude wiring (prompt construction,
-// API call, response parsing, cost tracking integration with
-// phase2_runs.ai_cost_cents) lands in a later Stage 2 commit. Stub
-// functions throw to make missing implementation obvious to callers.
+// Retry policy note for Stage 2c: when real Claude integration lands,
+// the retry call (attempt 2) should VARY the prompt slightly — bump
+// temperature, tweak the no-invention phrasing, etc. — to give a real
+// chance of producing different (and potentially grounded) output. The
+// stub here returns the SAME output on retry (deterministic), so the
+// second attempt always "passes" the permissive validator. Stage 2c
+// must replace this with genuine variation or single-shot grounding
+// success will hide latent issues.
 
 import type {
-  PhaseTwoHeadlineItem,
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
+  PhaseTwoHeadlineItem,
 } from "./types"
+
+// ============================================================================
+// Unified return type for all three generation paths
+// ============================================================================
+
+/**
+ * Result returned by every aiClient generation function.
+ *   - drafts: 1-3 strings for Pattern A (headline); exactly 1 element for
+ *     Patterns B and C (bullet/gap)
+ *   - questionAsked: the question SIGNAL formulated to prompt the user's
+ *     response. Present for Patterns B and C (where the workflow includes
+ *     a question step); absent for Pattern A (no question for headlines)
+ */
+export type GenerateResult = {
+  drafts: string[]
+  questionAsked?: string
+}
 
 // ============================================================================
 // Pattern A — headline option generation
 // ============================================================================
 
-/**
- * Input shape for generateHeadlineOptions.
- */
 export type GenerateHeadlineOptionsInput = {
   /** Full resume text (typically persona.resume_text). */
   resumeText: string
@@ -55,40 +79,39 @@ export type GenerateHeadlineOptionsInput = {
 }
 
 /**
- * Pattern A — generate 1-3 reframed headline options for a headline item.
+ * Pattern A — generate 1-3 reframed headline options.
  *
- * FRD §6.7.1:
+ * STUB v0.1: returns 3 deterministic fake options derived from the
+ * original headline. Each option is prefixed [STUB ...] to make the
+ * placeholder visible. Real Claude Haiku integration in Stage 2c per
+ * FRD §6.7.1.
+ *
+ * Per FRD §6.7.1:
  *   - Output: 1-3 reframed headline options
- *   - Constraint: each option must be evidence-grounded — anchored in
- *     skills/experience present in resumeText
- *   - Token budget: ~200 output tokens
+ *   - Constraint: evidence-grounded — anchored in skills present in resumeText
  *   - Model: Claude Haiku
+ *   - Token budget: ~200 output tokens
  *
- * Retry policy (FRD §6.7 common contract): if any returned option fails
- * grounding validation, the caller (/draft endpoint) regenerates once;
- * if regeneration also fails, the endpoint returns 422 and the frontend
- * transitions to manual-entry mode (FRD §6.9.1).
- *
- * @param input resumeText + jobDescription + item context
- * @returns 1-3 reframed headline option strings, each grounded in resumeText
- * @throws Error if AI request fails (network, malformed response, etc.) —
- *         caller handles via /draft 422/500 error contract
+ * No questionAsked returned (headlines have no question step).
  */
 export async function generateHeadlineOptions(
   input: GenerateHeadlineOptionsInput,
-): Promise<string[]> {
-  // TODO(phase-2-stage-2b): wire to Claude Haiku per FRD §6.7.1.
-  void input
-  throw new Error("generateHeadlineOptions: not implemented (Phase 2a skeleton)")
+): Promise<GenerateResult> {
+  // STUB: deterministic placeholder. Replace with real Claude call in Stage 2c.
+  const orig = input.item.original.slice(0, 100)
+  return {
+    drafts: [
+      `[STUB OPTION 1] ${orig}`,
+      `[STUB OPTION 2] ${orig} — refined`,
+      `[STUB OPTION 3] ${orig} — alternate framing`,
+    ],
+  }
 }
 
 // ============================================================================
 // Pattern B — bullet reframe drafting
 // ============================================================================
 
-/**
- * Input shape for generateBulletReframe.
- */
 export type GenerateBulletReframeInput = {
   /** Full resume text. */
   resumeText: string
@@ -101,39 +124,39 @@ export type GenerateBulletReframeInput = {
 }
 
 /**
- * Pattern B — draft a reframed bullet from the user's response to the
- * targeted question.
+ * Pattern B — draft a reframed bullet from the user's response.
  *
- * FRD §6.7.2:
+ * STUB v0.1: returns 1 deterministic fake reframe + a static
+ * questionAsked. Real Claude Haiku integration in Stage 2c per FRD §6.7.2.
+ *
+ * Per FRD §6.7.2:
  *   - Output: 1 reframed bullet
- *   - Constraint: bullet content must use only facts from item.original_bullet
- *     + userResponse (allowed-source set is intentionally narrow for
- *     Pattern B — broader resumeText is provided for context, not as
- *     fact source)
- *   - Token budget: ~150 output tokens
+ *   - Constraint: facts from original_bullet + userResponse only
  *   - Model: Claude Haiku
+ *   - Token budget: ~150 output tokens
  *
- * Retry + grounding: same contract as generateHeadlineOptions.
- *
- * @param input resumeText + jobDescription + item context + userResponse
- * @returns 1 reframed bullet string grounded in original_bullet + userResponse
- * @throws Error if AI request fails
+ * questionAsked is returned so /decide-time analytics can persist the
+ * exact prompt the user answered. In Stage 2c the question will be
+ * generated alongside the draft; the stub returns a fixed-content
+ * question for testing.
  */
 export async function generateBulletReframe(
   input: GenerateBulletReframeInput,
-): Promise<string> {
-  // TODO(phase-2-stage-2b): wire to Claude Haiku per FRD §6.7.2.
-  void input
-  throw new Error("generateBulletReframe: not implemented (Phase 2a skeleton)")
+): Promise<GenerateResult> {
+  // STUB: deterministic placeholder. Replace with real Claude call in Stage 2c.
+  const orig = input.item.original_bullet.slice(0, 80)
+  const resp = input.userResponse.slice(0, 100)
+  return {
+    drafts: [`[STUB REFRAME] ${orig} — using user response: "${resp}"`],
+    questionAsked:
+      "What was the specific outcome of this work, and what tools did you use?",
+  }
 }
 
 // ============================================================================
 // Pattern C — gap discussion drafting
 // ============================================================================
 
-/**
- * Input shape for generateGapResponse.
- */
 export type GenerateGapResponseInput = {
   /** Full resume text. */
   resumeText: string
@@ -149,26 +172,24 @@ export type GenerateGapResponseInput = {
  * Pattern C — draft a new bullet or skill addition from the user's
  * response to the probing question about a missing JD requirement.
  *
- * FRD §6.7.3:
- *   - Output: 1 new bullet OR 1 skill addition (the AI decides which
- *     form fits; downstream resumeComposer routes to the right resume
- *     section per §6.10 anchor logic)
- *   - Constraint: same as Pattern B — only facts from resumeText +
- *     userResponse (the gap by definition isn't in the original resume,
- *     so the user's response is the load-bearing source)
- *   - Token budget: ~150 output tokens
+ * STUB v0.1: returns 1 deterministic fake bullet + a static
+ * questionAsked. Real Claude Haiku integration in Stage 2c per FRD §6.7.3.
+ *
+ * Per FRD §6.7.3:
+ *   - Output: 1 new bullet OR 1 skill addition
+ *   - Constraint: facts from resumeText + userResponse only
  *   - Model: Claude Haiku
- *
- * Retry + grounding: same contract as generateHeadlineOptions.
- *
- * @param input resumeText + jobDescription + item context + userResponse
- * @returns 1 draft string grounded in resumeText + userResponse
- * @throws Error if AI request fails
+ *   - Token budget: ~150 output tokens
  */
 export async function generateGapResponse(
   input: GenerateGapResponseInput,
-): Promise<string> {
-  // TODO(phase-2-stage-2b): wire to Claude Haiku per FRD §6.7.3.
-  void input
-  throw new Error("generateGapResponse: not implemented (Phase 2a skeleton)")
+): Promise<GenerateResult> {
+  // STUB: deterministic placeholder. Replace with real Claude call in Stage 2c.
+  const gap = input.item.gap_description.slice(0, 80)
+  const resp = input.userResponse.slice(0, 100)
+  return {
+    drafts: [`[STUB GAP BULLET] Addresses "${gap}" via user response: "${resp}"`],
+    questionAsked:
+      "Have you done work that demonstrates this skill, even if not explicitly labeled?",
+  }
 }
