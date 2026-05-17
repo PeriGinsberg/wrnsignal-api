@@ -352,6 +352,7 @@ export async function POST(
   let attempts = 0
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt
+    const isRetry = attempt > 1
     let aiResult: GenerateResult
     try {
       if (item.type === "headline") {
@@ -359,6 +360,7 @@ export async function POST(
           resumeText,
           jobDescription,
           item: item as PhaseTwoHeadlineItem,
+          isRetry,
         })
       } else if (item.type === "bullet") {
         aiResult = await generateBulletReframe({
@@ -366,6 +368,7 @@ export async function POST(
           jobDescription,
           item: item as PhaseTwoBulletItem,
           userResponse: body.user_input!,
+          isRetry,
         })
       } else {
         aiResult = await generateGapResponse({
@@ -373,6 +376,7 @@ export async function POST(
           jobDescription,
           item: item as PhaseTwoGapItem,
           userResponse: body.user_input!,
+          isRetry,
         })
       }
     } catch (e) {

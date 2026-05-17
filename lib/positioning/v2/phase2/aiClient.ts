@@ -13,40 +13,69 @@
 //   §4.1 — reframing-not-generation principle (enforced in prompts)
 //   §4.2 — interview integrity (enforced via grounding constraint)
 //
-// Types: ./types.ts (PhaseTwoHeadlineItem, PhaseTwoBulletItem, PhaseTwoGapItem)
-// Cost:  ./costPolicy.ts (COST_CENTS_PER_ATTEMPT placeholder until Stage 2c)
+// REAL CLAUDE INTEGRATION (Stage 2c Commit 3):
+//   - Each pattern builds its user prompt via lib/positioning/v2/phase2/
+//     prompts/<pattern>Prompt.ts (Commit 1) and posts to Anthropic via
+//     invokeClaude() (Commit 2 — lib/positioning/v2/phase2/anthropicClient.ts)
+//   - Temperature: 0.7 first attempt, 1.0 on retry (caller signals via
+//     isRetry flag). Bumping temperature on retry gives genuine output
+//     variation rather than re-rolling the same near-deterministic draft.
+//   - Returns usage in result for token-accurate cost tracking. Commit 5
+//     migrates /draft route from COST_CENTS_PER_ATTEMPT to
+//     centsForUsage(result.usage).
+//   - JSON parsing consolidated into parseClaudeResponse() — all defensive
+//     paths (malformed JSON, missing/non-array drafts, non-string elements,
+//     insufficient_source_evidence reason field, truncation to maxDrafts)
+//     collapse to { drafts: [] } and surface to /draft as the grounding-
+//     failed path.
 //
-// Model: Claude Haiku (claude-haiku-4-5-20251001 per existing project
-// pattern in app/api/jobfit/bulletGeneratorV5.ts). Chosen for latency
+// Mock injection: each function accepts an optional invokeClaudeImpl to
+// allow unit tests to bypass the real API call (mirrors Commit 2's
+// fetchImpl pattern). Production callers omit it and get the real
+// invokeClaude.
+//
+// questionAsked: aiClient does NOT generate questions in Commit 3. The
+// populator (lib/positioning/v2/phase2/itemPopulator.ts) is the source
+// of truth for item.question_asked. /draft route's existing
+// `result.questionAsked ?? item.question_asked` fallback handles the
+// undefined case. v0.2 may add Claude-generated questions.
+//
+// Model: Claude Haiku 4.5 (claude-haiku-4-5-20251001). Chosen for latency
 // and cost — Phase 2 generation outputs are short (150-200 tokens) and
 // must complete inside the user's working tempo (FRD §4.5 target < 5s p50).
-//
-// STUB IMPLEMENTATION (Phase 2b): functions return deterministic fake
-// data prefixed with [STUB ...] so anyone testing knows they're not
-// seeing real AI output. Real Claude Haiku wiring (prompt construction,
-// API call, response parsing, token-accurate cost tracking) lands in
-// Stage 2c. Until that ships:
-//   - Phase 2 cannot ship to live users (real AI integration is
-//     load-bearing for the reframing value proposition)
-//   - Cost per /draft attempt is a fixed placeholder (1 cent) — see
-//     COST_CENTS_PER_ATTEMPT in costPolicy.ts
-//   - Stub drafts pass the (also-permissive) groundingValidator stub
-//     trivially, so /draft endpoint can be wired and tested end-to-end
-//
-// Retry policy note for Stage 2c: when real Claude integration lands,
-// the retry call (attempt 2) should VARY the prompt slightly — bump
-// temperature, tweak the no-invention phrasing, etc. — to give a real
-// chance of producing different (and potentially grounded) output. The
-// stub here returns the SAME output on retry (deterministic), so the
-// second attempt always "passes" the permissive validator. Stage 2c
-// must replace this with genuine variation or single-shot grounding
-// success will hide latent issues.
 
+import {
+  invokeClaude as defaultInvokeClaude,
+  type InvokeClaudeInput,
+  type InvokeClaudeResult,
+} from "./anthropicClient"
+import { SYSTEM_PROMPT } from "./prompts/systemPrompt"
+import {
+  buildHeadlinePrompt,
+  MAX_TOKENS_HEADLINE,
+} from "./prompts/headlinePrompt"
+import {
+  buildBulletPrompt,
+  MAX_TOKENS_BULLET,
+} from "./prompts/bulletPrompt"
+import {
+  buildGapPrompt,
+  MAX_TOKENS_GAP,
+} from "./prompts/gapPrompt"
 import type {
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
   PhaseTwoHeadlineItem,
 } from "./types"
+
+// ============================================================================
+// Temperature schedule
+// ============================================================================
+
+/** First-attempt temperature. Conservative — favor on-prompt drafts. */
+const TEMPERATURE_FIRST_ATTEMPT = 0.7
+/** Retry temperature. Higher — give genuine output variation when first try failed grounding. */
+const TEMPERATURE_RETRY = 1.0
 
 // ============================================================================
 // Unified return type for all three generation paths
@@ -55,14 +84,82 @@ import type {
 /**
  * Result returned by every aiClient generation function.
  *   - drafts: 1-3 strings for Pattern A (headline); exactly 1 element for
- *     Patterns B and C (bullet/gap)
- *   - questionAsked: the question SIGNAL formulated to prompt the user's
- *     response. Present for Patterns B and C (where the workflow includes
- *     a question step); absent for Pattern A (no question for headlines)
+ *     Patterns B and C (bullet/gap). Empty array on insufficient-evidence
+ *     or any defensive parse failure (caller treats as grounding-failed).
+ *   - questionAsked: Present in the type for backwards compat with /draft
+ *     route's fallback chain. NOT set by Commit 3 — Claude does not
+ *     generate questions. Populator's item.question_asked is the source
+ *     of truth.
+ *   - usage: Token usage from the Anthropic API call. Always present when
+ *     a GenerateResult is returned (only absent when aiClient throws,
+ *     which happens iff invokeClaude itself threw).
  */
 export type GenerateResult = {
   drafts: string[]
   questionAsked?: string
+  usage: {
+    input_tokens: number
+    output_tokens: number
+  }
+}
+
+// ============================================================================
+// Shared response parser
+// ============================================================================
+
+type ParsedDrafts = { drafts: string[] }
+
+/**
+ * Parse Claude's response text into a normalized drafts array. All defensive
+ * paths (malformed JSON, missing fields, type mismatches, insufficient
+ * evidence) collapse to { drafts: [] } so the caller has a single signal
+ * for "no usable drafts" without inspecting parse internals.
+ *
+ * Truncates drafts.length > maxDrafts with a console.warn (FRD §6.7.1 caps
+ * headline at 3 options; B/C at 1).
+ */
+function parseClaudeResponse(
+  text: string,
+  opts: { maxDrafts: number },
+): ParsedDrafts {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return { drafts: [] }
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return { drafts: [] }
+  }
+
+  const obj = parsed as Record<string, unknown>
+
+  // Intended empty: model returned the insufficient-evidence escape hatch.
+  if (obj.reason === "insufficient_source_evidence") {
+    return { drafts: [] }
+  }
+
+  if (!Array.isArray(obj.drafts)) {
+    return { drafts: [] }
+  }
+
+  const stringDrafts = obj.drafts.filter(
+    (d): d is string => typeof d === "string" && d.trim().length > 0,
+  )
+
+  if (stringDrafts.length === 0) {
+    return { drafts: [] }
+  }
+
+  if (stringDrafts.length > opts.maxDrafts) {
+    console.warn(
+      `[aiClient.parseClaudeResponse] truncating drafts ${stringDrafts.length} → ${opts.maxDrafts}`,
+    )
+    return { drafts: stringDrafts.slice(0, opts.maxDrafts) }
+  }
+
+  return { drafts: stringDrafts }
 }
 
 // ============================================================================
@@ -76,35 +173,44 @@ export type GenerateHeadlineOptionsInput = {
   jobDescription: string
   /** The headline item being processed. */
   item: PhaseTwoHeadlineItem
+  /** True if this is the retry attempt (per /draft loop). Affects temperature. */
+  isRetry?: boolean
+  /** Test-only: inject mock invokeClaude. Defaults to real implementation. */
+  invokeClaudeImpl?: (input: InvokeClaudeInput) => Promise<InvokeClaudeResult>
 }
 
 /**
  * Pattern A — generate 1-3 reframed headline options.
  *
- * STUB v0.1: returns 3 deterministic fake options derived from the
- * original headline. Each option is prefixed [STUB ...] to make the
- * placeholder visible. Real Claude Haiku integration in Stage 2c per
- * FRD §6.7.1.
- *
  * Per FRD §6.7.1:
  *   - Output: 1-3 reframed headline options
  *   - Constraint: evidence-grounded — anchored in skills present in resumeText
- *   - Model: Claude Haiku
- *   - Token budget: ~200 output tokens
+ *   - Model: Claude Haiku 4.5
+ *   - Token budget: MAX_TOKENS_HEADLINE (300 — covers ~200 output + JSON wrapper)
  *
- * No questionAsked returned (headlines have no question step).
+ * Insufficient evidence / malformed response → drafts: [], usage still reported.
  */
 export async function generateHeadlineOptions(
   input: GenerateHeadlineOptionsInput,
 ): Promise<GenerateResult> {
-  // STUB: deterministic placeholder. Replace with real Claude call in Stage 2c.
-  const orig = input.item.original.slice(0, 100)
+  const userPrompt = buildHeadlinePrompt({
+    resumeText: input.resumeText,
+    jobDescription: input.jobDescription,
+    originalHeadline: input.item.original,
+  })
+
+  const invoke = input.invokeClaudeImpl ?? defaultInvokeClaude
+  const apiResult = await invoke({
+    systemPrompt: SYSTEM_PROMPT,
+    userPrompt,
+    maxTokens: MAX_TOKENS_HEADLINE,
+    temperature: input.isRetry ? TEMPERATURE_RETRY : TEMPERATURE_FIRST_ATTEMPT,
+  })
+
+  const parsed = parseClaudeResponse(apiResult.text, { maxDrafts: 3 })
   return {
-    drafts: [
-      `[STUB OPTION 1] ${orig}`,
-      `[STUB OPTION 2] ${orig} — refined`,
-      `[STUB OPTION 3] ${orig} — alternate framing`,
-    ],
+    drafts: parsed.drafts,
+    usage: apiResult.usage,
   }
 }
 
@@ -121,35 +227,47 @@ export type GenerateBulletReframeInput = {
   item: PhaseTwoBulletItem
   /** User's typed response to the item's question_asked. Required. */
   userResponse: string
+  /** True if this is the retry attempt. Affects temperature. */
+  isRetry?: boolean
+  /** Test-only: inject mock invokeClaude. */
+  invokeClaudeImpl?: (input: InvokeClaudeInput) => Promise<InvokeClaudeResult>
 }
 
 /**
  * Pattern B — draft a reframed bullet from the user's response.
  *
- * STUB v0.1: returns 1 deterministic fake reframe + a static
- * questionAsked. Real Claude Haiku integration in Stage 2c per FRD §6.7.2.
- *
  * Per FRD §6.7.2:
  *   - Output: 1 reframed bullet
- *   - Constraint: facts from original_bullet + userResponse only
- *   - Model: Claude Haiku
- *   - Token budget: ~150 output tokens
+ *   - Constraint: facts from original_bullet + userResponse only (resume
+ *     marked context-only in the prompt; groundingValidator enforces)
+ *   - Model: Claude Haiku 4.5
+ *   - Token budget: MAX_TOKENS_BULLET (250)
  *
- * questionAsked is returned so /decide-time analytics can persist the
- * exact prompt the user answered. In Stage 2c the question will be
- * generated alongside the draft; the stub returns a fixed-content
- * question for testing.
+ * questionAsked NOT set — populator's item.question_asked is source of truth.
  */
 export async function generateBulletReframe(
   input: GenerateBulletReframeInput,
 ): Promise<GenerateResult> {
-  // STUB: deterministic placeholder. Replace with real Claude call in Stage 2c.
-  const orig = input.item.original_bullet.slice(0, 80)
-  const resp = input.userResponse.slice(0, 100)
+  const userPrompt = buildBulletPrompt({
+    resumeText: input.resumeText,
+    jobDescription: input.jobDescription,
+    originalBullet: input.item.original_bullet,
+    jdContext: input.item.jd_context,
+    userResponse: input.userResponse,
+  })
+
+  const invoke = input.invokeClaudeImpl ?? defaultInvokeClaude
+  const apiResult = await invoke({
+    systemPrompt: SYSTEM_PROMPT,
+    userPrompt,
+    maxTokens: MAX_TOKENS_BULLET,
+    temperature: input.isRetry ? TEMPERATURE_RETRY : TEMPERATURE_FIRST_ATTEMPT,
+  })
+
+  const parsed = parseClaudeResponse(apiResult.text, { maxDrafts: 1 })
   return {
-    drafts: [`[STUB REFRAME] ${orig} — using user response: "${resp}"`],
-    questionAsked:
-      "What was the specific outcome of this work, and what tools did you use?",
+    drafts: parsed.drafts,
+    usage: apiResult.usage,
   }
 }
 
@@ -166,30 +284,45 @@ export type GenerateGapResponseInput = {
   item: PhaseTwoGapItem
   /** User's typed response to the item's question_asked. Required. */
   userResponse: string
+  /** True if this is the retry attempt. Affects temperature. */
+  isRetry?: boolean
+  /** Test-only: inject mock invokeClaude. */
+  invokeClaudeImpl?: (input: InvokeClaudeInput) => Promise<InvokeClaudeResult>
 }
 
 /**
  * Pattern C — draft a new bullet or skill addition from the user's
  * response to the probing question about a missing JD requirement.
  *
- * STUB v0.1: returns 1 deterministic fake bullet + a static
- * questionAsked. Real Claude Haiku integration in Stage 2c per FRD §6.7.3.
- *
  * Per FRD §6.7.3:
  *   - Output: 1 new bullet OR 1 skill addition
- *   - Constraint: facts from resumeText + userResponse only
- *   - Model: Claude Haiku
- *   - Token budget: ~150 output tokens
+ *   - Constraint: facts from userResponse only (gap by definition absent
+ *     from resume; resume marked context-only in prompt)
+ *   - Model: Claude Haiku 4.5
+ *   - Token budget: MAX_TOKENS_GAP (250)
  */
 export async function generateGapResponse(
   input: GenerateGapResponseInput,
 ): Promise<GenerateResult> {
-  // STUB: deterministic placeholder. Replace with real Claude call in Stage 2c.
-  const gap = input.item.gap_description.slice(0, 80)
-  const resp = input.userResponse.slice(0, 100)
+  const userPrompt = buildGapPrompt({
+    resumeText: input.resumeText,
+    jobDescription: input.jobDescription,
+    gapDescription: input.item.gap_description,
+    jdContext: input.item.jd_context,
+    userResponse: input.userResponse,
+  })
+
+  const invoke = input.invokeClaudeImpl ?? defaultInvokeClaude
+  const apiResult = await invoke({
+    systemPrompt: SYSTEM_PROMPT,
+    userPrompt,
+    maxTokens: MAX_TOKENS_GAP,
+    temperature: input.isRetry ? TEMPERATURE_RETRY : TEMPERATURE_FIRST_ATTEMPT,
+  })
+
+  const parsed = parseClaudeResponse(apiResult.text, { maxDrafts: 1 })
   return {
-    drafts: [`[STUB GAP BULLET] Addresses "${gap}" via user response: "${resp}"`],
-    questionAsked:
-      "Have you done work that demonstrates this skill, even if not explicitly labeled?",
+    drafts: parsed.drafts,
+    usage: apiResult.usage,
   }
 }
