@@ -67,7 +67,7 @@ import {
   generateGapResponse,
   type GenerateResult,
 } from "@/lib/positioning/v2/phase2/aiClient"
-import { validateDraftGrounding } from "@/lib/positioning/v2/phase2/groundingValidator"
+import { isAcceptableAiResult } from "@/lib/positioning/v2/phase2/groundingValidator"
 import {
   shouldUseCachedDrafts,
   getCachedDrafts,
@@ -390,8 +390,9 @@ export async function POST(
       )
     }
 
-    // Per-draft grounding validation. Validate every returned draft; if
-    // ANY fails, treat the whole batch as failed and retry.
+    // Validate AI result: rejects empty drafts (Claude refused with
+    // insufficient_source_evidence) AND drafts that fail grounding.
+    // Both failure modes count as failed attempts and trigger retry.
     const allowedSources: string[] = (() => {
       if (item.type === "headline") return [resumeText]
       if (item.type === "bullet") {
@@ -401,19 +402,23 @@ export async function POST(
       return [item.gap_description, body.user_input ?? ""]
     })()
 
-    const allValid = aiResult.drafts.every((draft) => {
-      const v = validateDraftGrounding({ draft, allowedSources })
-      return v.ok
-    })
+    const validation = isAcceptableAiResult(aiResult.drafts, allowedSources)
 
-    if (allValid) {
+    if (validation.ok) {
       result = aiResult
       break
     }
 
-    console.warn(
-      `[positioning-v2/phase2/draft] GROUNDING_REJECTED phase2RunId=${phase2RunId} itemId=${body.item_id} attempt=${attempt}`,
-    )
+    // Distinguish failure modes for §11 telemetry tuning
+    if (validation.reason === "empty_drafts") {
+      console.warn(
+        `[positioning-v2/phase2/draft] INSUFFICIENT_EVIDENCE phase2RunId=${phase2RunId} itemId=${body.item_id} attempt=${attempt}`,
+      )
+    } else {
+      console.warn(
+        `[positioning-v2/phase2/draft] GROUNDING_REJECTED phase2RunId=${phase2RunId} itemId=${body.item_id} attempt=${attempt} ungrounded=${JSON.stringify(validation.ungrounded_entities ?? [])}`,
+      )
+    }
   }
 
   // ── 12b. 422 path: cost increment for failed attempts ──────────────────
