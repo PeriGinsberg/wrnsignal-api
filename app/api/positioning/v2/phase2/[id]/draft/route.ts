@@ -15,8 +15,8 @@
 //   - lib/positioning/v2/phase2/groundingValidator.ts (validateDraftGrounding)
 //   - lib/positioning/v2/phase2/draftCache.ts (shouldUseCachedDrafts,
 //     getCachedDrafts)
-//   - lib/positioning/v2/phase2/costPolicy.ts (COST_CENTS_PER_ATTEMPT,
-//     MAX_COST_CENTS)
+//   - lib/positioning/v2/phase2/costPolicy.ts (MAX_COST_CENTS,
+//     centsForUsage — token-accurate per-attempt cost via Claude usage)
 //   - app/api/positioning/v2/phase2/[id]/decide/route.ts (sibling Phase 2
 //     endpoint; same auth + error pattern)
 //
@@ -73,8 +73,8 @@ import {
   getCachedDrafts,
 } from "@/lib/positioning/v2/phase2/draftCache"
 import {
-  COST_CENTS_PER_ATTEMPT,
   MAX_COST_CENTS,
+  centsForUsage,
 } from "@/lib/positioning/v2/phase2/costPolicy"
 import type {
   PhaseTwoBulletItem,
@@ -350,6 +350,12 @@ export async function POST(
   // ── 12. Generation attempt loop (max 2: 1 + 1 retry on grounding fail) ─
   let result: GenerateResult | null = null
   let attempts = 0
+  // Accumulate token-accurate cost across every API attempt (success or
+  // failed grounding). Each call to Claude returns usage even when the
+  // draft fails grounding — we bill for tokens actually consumed, not
+  // for grounding outcome. Only the catch path (invokeClaude threw) is
+  // excluded — those return 500 without reaching either cost-update site.
+  let cumulativeCostCents = 0
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt
     const isRetry = attempt > 1
@@ -390,6 +396,11 @@ export async function POST(
       )
     }
 
+    // Track real token cost for this attempt regardless of downstream
+    // grounding outcome — Claude billed us for these tokens whether or
+    // not the draft was usable.
+    cumulativeCostCents += centsForUsage(aiResult.usage)
+
     // Validate AI result: rejects empty drafts (Claude refused with
     // insufficient_source_evidence) AND drafts that fail grounding.
     // Both failure modes count as failed attempts and trigger retry.
@@ -427,7 +438,7 @@ export async function POST(
   // returning 422. Separate UPDATE since no state mutation is needed in
   // the 422 path (drafts were not generated; cache untouched).
   if (!result) {
-    const costDelta = attempts * COST_CENTS_PER_ATTEMPT
+    const costDelta = cumulativeCostCents
     const newCostCents = phase2Run.ai_cost_cents + costDelta
     const { error: costErr } = await supabaseAdmin
       .from("phase2_runs")
@@ -489,7 +500,7 @@ export async function POST(
   }
 
   // ── 14. UPDATE phase2_run: state + ai_cost_cents increment atomically ──
-  const costDelta = attempts * COST_CENTS_PER_ATTEMPT
+  const costDelta = cumulativeCostCents
   const newCostCents = phase2Run.ai_cost_cents + costDelta
 
   const { error: updateErr } = await supabaseAdmin
