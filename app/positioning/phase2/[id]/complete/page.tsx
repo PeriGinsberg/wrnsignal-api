@@ -57,9 +57,9 @@ export default function Phase2CompletePage({
   const [error, setError] = useState({ status: 0, message: "" })
 
   // Decision form state
-  const [saveDecision, setSaveDecision] = useState<"save" | "discard" | null>(
-    null,
-  )
+  const [saveDecision, setSaveDecision] = useState<
+    "save" | "use_only" | "stick_with_original" | null
+  >(null)
   const [personaName, setPersonaName] = useState("")
 
   // Submission state
@@ -72,6 +72,12 @@ export default function Phase2CompletePage({
   // Success state
   const [completedResult, setCompletedResult] =
     useState<Phase2CompleteResponse | null>(null)
+  // The saveDecision that was active at the time of submission. Snapshotted
+  // separately so CompletedView can branch on the 3-way semantic distinction
+  // even though the API response only encodes 2-way (new_persona_id null/set).
+  const [completedDecision, setCompletedDecision] = useState<
+    "save" | "use_only" | "stick_with_original" | null
+  >(null)
 
   // Avoid unused-router warning if subcomponents handle nav via <a>; router
   // remains available for future polish (e.g., confirmation prompts).
@@ -173,6 +179,7 @@ export default function Phase2CompletePage({
     }
 
     setCompletedResult(result.data)
+    setCompletedDecision(saveDecision)
     setViewState("completed")
   }
 
@@ -202,7 +209,12 @@ export default function Phase2CompletePage({
   }
 
   if (viewState === "completed" && completedResult) {
-    return <CompletedView result={completedResult} />
+    return (
+      <CompletedView
+        result={completedResult}
+        decision={completedDecision}
+      />
+    )
   }
 
   if (!run) return null
@@ -241,7 +253,8 @@ export default function Phase2CompletePage({
       <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
         <strong>v0.1 note:</strong> <code>resumeComposer</code> is stubbed —
         the revised pane will match the original until real composition logic
-        ships in Stage 2c.
+        ships. Formatted .docx/.pdf export will land later; for now, use Copy
+        to grab the text.
       </div>
 
       {/* Side-by-side preview */}
@@ -284,7 +297,7 @@ export default function Phase2CompletePage({
 
           <label
             className={`flex items-start gap-2 p-3 rounded border cursor-pointer transition-colors ${
-              saveDecision === "discard"
+              saveDecision === "use_only"
                 ? "border-neutral-900 bg-neutral-50"
                 : "border-neutral-200 hover:border-neutral-400"
             }`}
@@ -292,17 +305,42 @@ export default function Phase2CompletePage({
             <input
               type="radio"
               name="save_decision"
-              checked={saveDecision === "discard"}
-              onChange={() => setSaveDecision("discard")}
+              checked={saveDecision === "use_only"}
+              onChange={() => setSaveDecision("use_only")}
               className="mt-1"
             />
             <div className="flex-1">
               <div className="text-sm font-medium text-neutral-900">
-                Discard revisions
+                Use for this job only
               </div>
               <div className="text-xs text-neutral-500 mt-0.5">
-                Finish the workflow without saving. The revised text is still
-                viewable on this run; it just won&rsquo;t become a reusable persona.
+                Finalizes this workflow. The revised text stays accessible on
+                this run; it just won&rsquo;t become a reusable persona.
+              </div>
+            </div>
+          </label>
+
+          <label
+            className={`flex items-start gap-2 p-3 rounded border cursor-pointer transition-colors ${
+              saveDecision === "stick_with_original"
+                ? "border-neutral-900 bg-neutral-50"
+                : "border-neutral-200 hover:border-neutral-400"
+            }`}
+          >
+            <input
+              type="radio"
+              name="save_decision"
+              checked={saveDecision === "stick_with_original"}
+              onChange={() => setSaveDecision("stick_with_original")}
+              className="mt-1"
+            />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-neutral-900">
+                Stick with my original resume
+              </div>
+              <div className="text-xs text-neutral-500 mt-0.5">
+                You went through the workflow but want to keep your original.
+                The revised text won&rsquo;t be saved or used.
               </div>
             </div>
           </label>
@@ -401,7 +439,14 @@ function ResumePane({
   )
 }
 
-function CompletedView({ result }: { result: Phase2CompleteResponse }) {
+function CompletedView({
+  result,
+  decision,
+}: {
+  result: Phase2CompleteResponse
+  decision: "save" | "use_only" | "stick_with_original" | null
+}) {
+  // Branch on decision for body + copy-button prominence + revised text display
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <div className="p-6 bg-green-50 border border-green-200 rounded">
@@ -409,7 +454,7 @@ function CompletedView({ result }: { result: Phase2CompleteResponse }) {
           Workflow completed!
         </h1>
         <p className="mt-2 text-sm text-green-800">
-          {result.new_persona_id ? (
+          {decision === "save" && result.new_persona_id && (
             <>
               Saved as a new persona{" "}
               <code className="bg-white px-1.5 py-0.5 rounded text-xs">
@@ -421,22 +466,59 @@ function CompletedView({ result }: { result: Phase2CompleteResponse }) {
               </a>
               .
             </>
-          ) : (
-            "Workflow finalized without saving as a persona."
           )}
+          {decision === "use_only" &&
+            "Here's your revised resume. Copy it to use for your application."}
+          {decision === "stick_with_original" &&
+            "You chose to keep your original resume. The revised text wasn't saved or applied."}
+          {decision === null && "Workflow finalized."}
         </p>
       </div>
 
-      <div className="mt-6">
-        <details className="text-sm text-neutral-600">
-          <summary className="cursor-pointer hover:text-neutral-900">
-            View the final revised resume text
-          </summary>
-          <div className="mt-3 p-3 bg-neutral-50 border border-neutral-200 rounded font-mono text-xs text-neutral-900 whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+      {/* Option 1 (save) — copy button + collapsible */}
+      {decision === "save" && (
+        <>
+          <div className="mt-6">
+            <CopyButton text={result.revised_resume_text} />
+          </div>
+          <div className="mt-4">
+            <details className="text-sm text-neutral-600">
+              <summary className="cursor-pointer hover:text-neutral-900">
+                View the final revised resume text
+              </summary>
+              <div className="mt-3 p-3 bg-neutral-50 border border-neutral-200 rounded font-mono text-xs text-neutral-900 whitespace-pre-wrap max-h-[480px] overflow-y-auto">
+                {result.revised_resume_text}
+              </div>
+            </details>
+          </div>
+        </>
+      )}
+
+      {/* Option 2 (use_only) — prominent copy + expanded text */}
+      {decision === "use_only" && (
+        <>
+          <div className="mt-6">
+            <CopyButton text={result.revised_resume_text} />
+          </div>
+          <div className="mt-4 p-3 bg-neutral-50 border border-neutral-200 rounded font-mono text-xs text-neutral-900 whitespace-pre-wrap max-h-[480px] overflow-y-auto">
             {result.revised_resume_text}
           </div>
-        </details>
-      </div>
+        </>
+      )}
+
+      {/* Option 3 (stick_with_original) — small de-emphasized collapsible */}
+      {decision === "stick_with_original" && (
+        <div className="mt-6">
+          <details className="text-xs text-neutral-500">
+            <summary className="cursor-pointer hover:text-neutral-700">
+              View the revised resume anyway
+            </summary>
+            <div className="mt-3 p-3 bg-neutral-50 border border-neutral-200 rounded font-mono text-xs text-neutral-700 whitespace-pre-wrap max-h-[480px] overflow-y-auto">
+              {result.revised_resume_text}
+            </div>
+          </details>
+        </div>
+      )}
 
       <div className="mt-6 flex items-center gap-3">
         <a
@@ -451,6 +533,9 @@ function CompletedView({ result }: { result: Phase2CompleteResponse }) {
 }
 
 function AlreadyFinalizedView({ run }: { run: Phase2RunResponse }) {
+  const revisedText = run.revised_resume_text ?? ""
+  const hasText = revisedText.trim().length > 0
+
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <div className="p-6 bg-neutral-50 border border-neutral-200 rounded">
@@ -472,6 +557,21 @@ function AlreadyFinalizedView({ run }: { run: Phase2RunResponse }) {
         )}
       </div>
 
+      {/* Revised text + Copy button (always available for returning users
+          who may need to grab the text after the fact). Doesn't reconstruct
+          which of the 3 options the user originally picked — just shows
+          what's on the row. */}
+      {hasText && (
+        <>
+          <div className="mt-6">
+            <CopyButton text={revisedText} />
+          </div>
+          <div className="mt-4 p-3 bg-neutral-50 border border-neutral-200 rounded font-mono text-xs text-neutral-900 whitespace-pre-wrap max-h-[480px] overflow-y-auto">
+            {revisedText}
+          </div>
+        </>
+      )}
+
       <div className="mt-6 flex items-center gap-3">
         <a
           href="/dashboard"
@@ -487,6 +587,43 @@ function AlreadyFinalizedView({ run }: { run: Phase2RunResponse }) {
         </a>
       </div>
     </div>
+  )
+}
+
+function CopyButton({
+  text,
+  label = "Copy revised resume",
+  prominent = true,
+}: {
+  text: string
+  label?: string
+  prominent?: boolean
+}) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard API can fail in non-secure contexts or older browsers.
+      // For prototype, fail silently; user can still select+copy manually
+      // from the visible text block.
+    }
+  }
+
+  const baseClasses = prominent
+    ? "px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800"
+    : "px-3 py-1.5 border border-neutral-300 text-neutral-700 text-xs font-medium rounded hover:bg-neutral-50"
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`${baseClasses} ${copied ? "bg-green-600 hover:bg-green-700" : ""}`}
+    >
+      {copied ? "Copied!" : label}
+    </button>
   )
 }
 
@@ -524,9 +661,9 @@ function formatErrorMessage(err: { code: string; detail?: string }): string {
     case "persona_name_too_long":
       return `Persona name must be ${MAX_PERSONA_NAME_LENGTH} characters or fewer.`
     case "no_changes_to_save":
-      return "You haven't accepted any items in this workflow. Either accept at least one recommendation on the selection screen, or choose 'Discard revisions' here."
+      return "You haven't accepted any items in this workflow. Either accept at least one recommendation on the selection screen, or pick 'Stick with my original resume' here."
     case "persona_cap_exceeded":
-      return "You've reached the 10-persona limit. Delete a persona from /dashboard before saving this one, or choose 'Discard revisions' instead."
+      return "You've reached the 10-persona limit. Delete a persona from /dashboard before saving this one, or pick 'Use for this job only' to keep the revised text for this application without saving as a persona."
     case "phase2_run_already_finalized":
       return "Another tab or session completed this workflow. Refresh the page to see the current state."
     case "phase2_run_not_found":
