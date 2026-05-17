@@ -115,6 +115,15 @@ export default function Phase2SelectionPage({
         </div>
       </div>
 
+      {/* Heads-up notice — only show when in_progress (no point on finalized) */}
+      {!isFinalized && (
+        <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+          <strong>Heads up:</strong> In this version, accept/decline/skip
+          decisions are final once submitted. Consider carefully before
+          deciding. Revise capability is planned for v0.2.
+        </div>
+      )}
+
       {/* Items list */}
       <div className="space-y-3">
         {items.length === 0 ? (

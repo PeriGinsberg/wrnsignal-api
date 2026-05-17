@@ -986,3 +986,17 @@ First migration shipped for Positioning v2 Phase 2 (Resume Reframing Workflow).
 - `lib/positioning/v2/phase2/groundingValidator.ts` — skeleton + JSDoc
 
 Production promotion of the schema deferred until all Phase 2a skeletons land + tsc/build verified clean.
+
+### 2026-05-18 — Phase 2 v0.1 known limitation: no revise-after-decide
+
+Surfaced during prototype smoke testing. Once a user accepts/declines/skips
+an item, the /decide endpoint returns 409 on subsequent calls per FRD §6.5.4
+("use a separate revise decision path; not in v0.1").
+
+Documented in prototype UI: selection screen shows amber notice; item detail
+page shows inline warning above action buttons.
+
+Tracked for v0.2 design: requires backend changes to /decide (accept
+revisions on already-decided items, handle state transitions) and
+resumeComposer (handle items toggling accept/decline state cleanly), plus
+frontend changes to enable navigation to decided items and render revise UI.

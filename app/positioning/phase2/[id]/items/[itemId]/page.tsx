@@ -493,32 +493,37 @@ function PatternAView({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-4 border-t border-neutral-200">
-        <button
-          onClick={onAccept}
-          disabled={
-            isDeciding ||
-            isGenerating ||
-            (selectedDraftIndex === null && !overrideText.trim())
-          }
-          className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
-        >
-          {isDeciding ? "Accepting…" : "Accept"}
-        </button>
-        <button
-          onClick={onRegenerate}
-          disabled={isDeciding || isGenerating}
-          className="px-4 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50 disabled:opacity-50"
-        >
-          {isGenerating ? "Regenerating…" : "Regenerate"}
-        </button>
-        <button
-          onClick={onDecline}
-          disabled={isDeciding || isGenerating}
-          className="ml-auto px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
-        >
-          Decline
-        </button>
+      <div className="pt-4 border-t border-neutral-200">
+        <div className="text-xs text-neutral-500 italic mb-3">
+          Note: this decision will be final.
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onAccept}
+            disabled={
+              isDeciding ||
+              isGenerating ||
+              (selectedDraftIndex === null && !overrideText.trim())
+            }
+            className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+          >
+            {isDeciding ? "Accepting…" : "Accept"}
+          </button>
+          <button
+            onClick={onRegenerate}
+            disabled={isDeciding || isGenerating}
+            className="px-4 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50 disabled:opacity-50"
+          >
+            {isGenerating ? "Regenerating…" : "Regenerate"}
+          </button>
+          <button
+            onClick={onDecline}
+            disabled={isDeciding || isGenerating}
+            className="ml-auto px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+          >
+            Decline
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -653,49 +658,54 @@ function PatternBCView({
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-4 border-t border-neutral-200">
-        {!hasDraft ? (
-          <button
-            onClick={onGenerate}
-            disabled={isGenerating || !userInput.trim()}
-            className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
-          >
-            {isGenerating ? "Generating…" : "Generate draft"}
-          </button>
-        ) : (
-          <>
+      <div className="pt-4 border-t border-neutral-200">
+        <div className="text-xs text-neutral-500 italic mb-3">
+          Note: this decision will be final.
+        </div>
+        <div className="flex items-center gap-2">
+          {!hasDraft ? (
             <button
-              onClick={onAccept}
-              disabled={isDeciding || isGenerating}
+              onClick={onGenerate}
+              disabled={isGenerating || !userInput.trim()}
               className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
             >
-              {isDeciding ? "Accepting…" : "Accept"}
+              {isGenerating ? "Generating…" : "Generate draft"}
             </button>
-            <button
-              onClick={onRegenerate}
-              disabled={isDeciding || isGenerating}
-              className="px-4 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50 disabled:opacity-50"
-            >
-              {isGenerating ? "Regenerating…" : "Regenerate"}
-            </button>
-          </>
-        )}
-        <button
-          onClick={onDecline}
-          disabled={isDeciding || isGenerating}
-          className="ml-auto px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
-        >
-          Decline
-        </button>
-        {!isBullet && (
+          ) : (
+            <>
+              <button
+                onClick={onAccept}
+                disabled={isDeciding || isGenerating}
+                className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {isDeciding ? "Accepting…" : "Accept"}
+              </button>
+              <button
+                onClick={onRegenerate}
+                disabled={isDeciding || isGenerating}
+                className="px-4 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50 disabled:opacity-50"
+              >
+                {isGenerating ? "Regenerating…" : "Regenerate"}
+              </button>
+            </>
+          )}
           <button
-            onClick={onSkip}
+            onClick={onDecline}
             disabled={isDeciding || isGenerating}
-            className="px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+            className="ml-auto px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
           >
-            Skip (don&rsquo;t have this)
+            Decline
           </button>
-        )}
+          {!isBullet && (
+            <button
+              onClick={onSkip}
+              disabled={isDeciding || isGenerating}
+              className="px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+            >
+              Skip (don&rsquo;t have this)
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -733,21 +743,26 @@ function ManualEntryView({
           className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:border-neutral-500"
         />
       </div>
-      <div className="flex items-center gap-2 pt-4 border-t border-neutral-200">
-        <button
-          onClick={onAccept}
-          disabled={isDeciding || !overrideText.trim()}
-          className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
-        >
-          {isDeciding ? "Accepting…" : "Accept manual entry"}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={isDeciding}
-          className="px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
-        >
-          Cancel
-        </button>
+      <div className="pt-4 border-t border-neutral-200">
+        <div className="text-xs text-neutral-500 italic mb-3">
+          Note: this decision will be final.
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onAccept}
+            disabled={isDeciding || !overrideText.trim()}
+            className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+          >
+            {isDeciding ? "Accepting…" : "Accept manual entry"}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={isDeciding}
+            className="px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   )
