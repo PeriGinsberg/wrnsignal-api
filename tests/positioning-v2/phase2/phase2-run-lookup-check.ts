@@ -11,7 +11,10 @@
 
 import { readFileSync } from "node:fs"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import { findExistingPhase2Run } from "@/lib/positioning/v2/phase2/phase2RunLookup"
+import {
+  findExistingPhase2Run,
+  findPhase2RunByIdForProfile,
+} from "@/lib/positioning/v2/phase2/phase2RunLookup"
 import type { PhaseTwoState } from "@/lib/positioning/v2/phase2/types"
 
 const failures: string[] = []
@@ -235,6 +238,74 @@ async function main() {
         "4: multiple in_progress rows → returns most recent",
         result.row?.id === newerId,
         `expected ${newerId} (newer), got ${result.row?.id ?? null} (older was ${olderId})`,
+      )
+    }
+
+    console.log("\n=== findPhase2RunByIdForProfile ===")
+
+    // Test 5: no row at this id → returns null
+    {
+      const nonExistentId = "00000000-0000-0000-0000-000000000000"
+      const result = await findPhase2RunByIdForProfile(
+        supabase,
+        nonExistentId,
+        fixtureProfileId!,
+      )
+      check(
+        "5: no row at this id → row=null, error=null",
+        result.row === null && result.error === null,
+        `got row=${result.row?.id ?? null}, error=${result.error}`,
+      )
+    }
+
+    // Test 6: row exists + owned by profile → returns row
+    {
+      const id = await createPhase2Run("in_progress")
+      const result = await findPhase2RunByIdForProfile(
+        supabase,
+        id,
+        fixtureProfileId!,
+      )
+      check(
+        "6: row exists + owned → returns row",
+        result.row?.id === id,
+        `expected ${id}, got ${result.row?.id ?? null}`,
+      )
+      check(
+        "6: row.profile_id matches authed profile",
+        result.row?.profile_id === fixtureProfileId,
+        `got ${result.row?.profile_id}`,
+      )
+    }
+
+    // Test 7: row exists but wrong owner → returns null (F11)
+    {
+      const id = createdPhase2RunIds[createdPhase2RunIds.length - 1]
+      const wrongProfileId = "11111111-1111-1111-1111-111111111111"
+      const result = await findPhase2RunByIdForProfile(
+        supabase,
+        id,
+        wrongProfileId,
+      )
+      check(
+        "7: row exists but wrong owner → row=null (F11 collapse)",
+        result.row === null && result.error === null,
+        `expected null (not leaked), got row=${result.row?.id ?? null}, error=${result.error}`,
+      )
+    }
+
+    // Test 8: malformed UUID → bubbles as Postgres error in result.error
+    {
+      const malformedId = "not-a-uuid"
+      const result = await findPhase2RunByIdForProfile(
+        supabase,
+        malformedId,
+        fixtureProfileId!,
+      )
+      check(
+        "8: malformed UUID → row=null, error populated (bubbles as Postgres error)",
+        result.row === null && typeof result.error === "string" && result.error.length > 0,
+        `expected non-null error string, got row=${result.row?.id ?? null}, error=${result.error}`,
       )
     }
   } finally {

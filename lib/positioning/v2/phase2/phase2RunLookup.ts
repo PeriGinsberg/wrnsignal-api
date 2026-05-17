@@ -9,8 +9,10 @@
 //
 // Types: ./types.ts (PhaseTwoRunRow)
 //
-// v0.1 scope: one helper (findExistingPhase2Run). Additional helpers added
-// here as later Stage 2 endpoints surface lookup needs.
+// Helpers in this module:
+//   - findExistingPhase2Run: 409 conflict detection for POST /start
+//   - findPhase2RunByIdForProfile: id+ownership lookup for GET/POST [id]
+//     endpoints (reused by /draft, /decide, /complete as those ship)
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { PhaseTwoRunRow } from "./types"
@@ -76,4 +78,63 @@ export async function findExistingPhase2Run(
   }
 
   return { row: rows[0] ?? null, error: null }
+}
+
+export type FindPhase2RunByIdResult = {
+  /**
+   * The row if found AND owned by profileId, else null.
+   * F11 collapse: callers cannot distinguish "not found" from "wrong
+   * owner" — both surface as null, both should yield 404 at the route
+   * layer. Don't leak existence-with-wrong-owner.
+   */
+  row: PhaseTwoRunRow | null
+  /** Supabase error message if the query itself failed. Null on success. */
+  error: string | null
+}
+
+/**
+ * Fetch a phase2_run by id, scoped to ownership by profileId. Used by
+ * all per-id Phase 2 endpoints (GET /[id], POST /[id]/draft, POST
+ * /[id]/decide, POST /[id]/complete) to enforce the F11 pattern:
+ * not-found and wrong-owner produce identical responses at the route
+ * layer (both 404 with the same error code).
+ *
+ * Malformed UUIDs in `phase2RunId` cause Supabase to return a Postgres
+ * error (`invalid input syntax for type uuid`). This helper surfaces
+ * that error via the `error` field; callers should treat it as 500
+ * (matches Phase 1 precedent of not pre-validating UUID format).
+ *
+ * @param supabase Supabase admin client
+ * @param phase2RunId The phase2_runs.id to fetch
+ * @param profileId The authenticated profile's id; rows owned by other
+ *                  profiles are returned as null
+ * @returns { row, error } — row is the phase2_run if found+owned, else
+ *          null. error is non-null only on query-level failure.
+ */
+export async function findPhase2RunByIdForProfile(
+  supabase: SupabaseClient,
+  phase2RunId: string,
+  profileId: string,
+): Promise<FindPhase2RunByIdResult> {
+  const { data, error } = await supabase
+    .from("phase2_runs")
+    .select("*")
+    .eq("id", phase2RunId)
+    .maybeSingle<PhaseTwoRunRow>()
+
+  if (error) {
+    return { row: null, error: error.message }
+  }
+
+  if (!data) {
+    // Not found — return null (F11: same shape as wrong-owner).
+    return { row: null, error: null }
+  }
+
+  if (data.profile_id !== profileId) {
+    // Wrong owner — collapse to null (F11: don't leak existence).
+    return { row: null, error: null }
+  }
+
+  return { row: data, error: null }
 }
