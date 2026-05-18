@@ -222,7 +222,7 @@ async function signInViaMagicLink(email) {
   return sessionData.session.access_token
 }
 
-async function postDraft(token, runId, itemId) {
+async function postDraft(token, runId, itemId, draftType) {
   const res = await fetch(
     `${BASE_URL}/api/positioning/v2/phase2/${runId}/draft`,
     {
@@ -231,7 +231,7 @@ async function postDraft(token, runId, itemId) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ item_id: itemId }),
+      body: JSON.stringify({ item_id: itemId, draft_type: draftType }),
     },
   )
   const text = await res.text()
@@ -331,7 +331,7 @@ async function main() {
   // ── Step 6: POST /draft ────────────────────────────────────────────────
   console.log("\n=== Step 4: POST /draft ===")
   const startTime = Date.now()
-  const res = await postDraft(token, phase2RunId, targetItem.id)
+  const res = await postDraft(token, phase2RunId, targetItem.id, targetItem.type)
   const latencyMs = Date.now() - startTime
   console.log(`  status: ${res.status}, latencyMs: ${latencyMs}`)
 
