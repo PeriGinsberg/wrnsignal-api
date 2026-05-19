@@ -29,7 +29,14 @@
 //   - 200: returns updated state + recomposed revised_resume_text
 //   - 400: invalid request body OR resolveFinalText returned an error
 //          (selected_draft_index_out_of_range, missing_selection,
-//          missing_draft_or_edit, etc. — see decisionResolver.ts)
+//          missing_draft_or_edit, etc. — see decisionResolver.ts).
+//          C1 adds: compositional_outcome_required (gap accept missing
+//          outcome), target_bullet_text_required (gap accept with
+//          reword outcome missing the bullet text), target_bullet_not_
+//          verbatim (gap accept with reword outcome whose
+//          target_bullet_text is not a substring of persona.resume_text).
+//          validateBody also adds: invalid_compositional_outcome,
+//          invalid_target_bullet_text.
 //   - 404 phase2_run_not_found: F11 (not found OR wrong owner)
 //   - 404 item_not_found: phase2_run exists but item_id is not in state.items
 //   - 409 item_already_decided: item already has accept/decline/skip set;
@@ -120,6 +127,22 @@ function validateBody(raw: unknown): ValidationResult {
     return { ok: false, error: "invalid_manual_entry" }
   }
 
+  // C1: gap compositional outcome fields (validated semantically by
+  // resolveFinalText; here we only check primitive type shape).
+  if (b.compositional_outcome !== undefined) {
+    if (
+      b.compositional_outcome !== "reword_existing_bullet" &&
+      b.compositional_outcome !== "add_new_bullet" &&
+      b.compositional_outcome !== "note_for_cover_letter" &&
+      b.compositional_outcome !== "acknowledge_genuine_gap"
+    ) {
+      return { ok: false, error: "invalid_compositional_outcome" }
+    }
+  }
+  if (b.target_bullet_text !== undefined && typeof b.target_bullet_text !== "string") {
+    return { ok: false, error: "invalid_target_bullet_text" }
+  }
+
   return {
     ok: true,
     body: {
@@ -128,6 +151,10 @@ function validateBody(raw: unknown): ValidationResult {
       edited_text: b.edited_text as string | undefined,
       selected_draft_index: b.selected_draft_index as number | undefined,
       manual_entry: b.manual_entry as boolean | undefined,
+      compositional_outcome: b.compositional_outcome as
+        | DecideRequestFields["compositional_outcome"]
+        | undefined,
+      target_bullet_text: b.target_bullet_text as string | undefined,
     },
   }
 }
@@ -240,13 +267,11 @@ export async function POST(
     )
   }
 
-  // ── 7. Resolve final_text via pure function ────────────────────────────
-  const resolved = resolveFinalText(item, body)
-  if (!resolved.ok) {
-    return withCorsJson(request, { error: resolved.error }, 400)
-  }
-
-  // ── 8. Fetch persona.resume_text for composer base ─────────────────────
+  // ── 7. Fetch persona.resume_text ────────────────────────────────────────
+  // Needed BEFORE step 8's resolveFinalText call so the resolver can
+  // enforce the C1 verbatim invariant when compositional_outcome ===
+  // "reword_existing_bullet" (target_bullet_text must be a substring of
+  // persona.resume_text). Also used by composeRevisedResume in step 12.
   const { data: persona, error: personaErr } = await supabaseAdmin
     .from("client_personas")
     .select("resume_text")
@@ -267,8 +292,19 @@ export async function POST(
   // Defensive: persona row could be missing (race with persona deletion)
   // or resume_text could be null on a malformed persona. Treat as empty
   // string — composer stub returns originalResumeText unchanged, so empty
-  // in → empty out. Real composer (Stage 2b) will need to defend similarly.
+  // in → empty out. C1 verbatim check against "" will reject any
+  // target_bullet_text — correct behavior (no resume → no valid bullet).
   const originalResumeText = persona?.resume_text ?? ""
+
+  // ── 8. Resolve final_text via pure function ─────────────────────────────
+  // resolveFinalText also enforces C1 gap-specific validation:
+  //   - compositional_outcome required on gap accept
+  //   - target_bullet_text required + verbatim when outcome is reword
+  //   - returns compositional_outcome + target_bullet_text for persistence
+  const resolved = resolveFinalText(item, body, originalResumeText)
+  if (!resolved.ok) {
+    return withCorsJson(request, { error: resolved.error }, 400)
+  }
 
   // ── 9. Mutate item in state ────────────────────────────────────────────
   // Build a fresh state object (state.items is a fresh copy from SELECT;
@@ -303,6 +339,23 @@ export async function POST(
         ...headlineBase,
         selected_draft_index: setIdx,
         user_override_text: setOverride,
+      }
+    }
+    // C1 gap-specific: persist compositional_outcome + target_bullet_text
+    // from the resolver's output. On accept, resolver returns the
+    // payload's values (validated for verbatim invariant). On
+    // decline/skip, resolver returns null for both — which retroactively
+    // clears any stale values if a previously-undecided item is reaching
+    // these flags now. Retroactive population: legacy rows without these
+    // fields get the new values written; A2 backward-compat readers
+    // (`?? null`, `?? []`) already handle the legacy-read case so the
+    // write side is symmetric.
+    if (item.type === "gap") {
+      const gapBase = base as Extract<PhaseTwoItem, { type: "gap" }>
+      return {
+        ...gapBase,
+        compositional_outcome: resolved.compositional_outcome,
+        target_bullet_text: resolved.target_bullet_text,
       }
     }
     return base as PhaseTwoItem
