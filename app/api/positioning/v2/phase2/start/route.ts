@@ -260,11 +260,56 @@ export async function POST(request: NextRequest) {
   }
   const caseSpecific = generateCaseSpecific(caseInputs, caseAssigned)
 
+  // ── 7.5. Fetch persona resume_text (Stage 2b Commit 2 — required by
+  //         itemPopulator's anchorBullet for verbatim bullet anchoring).
+  //         Defensive profile_id filter belts the implicit binding via
+  //         positioning_run ownership. Two error codes distinguish the
+  //         data-integrity failure (persona row missing entirely; 500)
+  //         from the user-fixable state (persona exists but resume_text
+  //         empty; 400). ─────────────────────────────────────────────────
+  const { data: persona, error: personaErr } = await supabaseAdmin
+    .from("client_personas")
+    .select("resume_text")
+    .eq("id", personaId)
+    .eq("profile_id", profileId)
+    .maybeSingle<{ resume_text: string | null }>()
+
+  if (personaErr) {
+    return withCorsJson(
+      request,
+      { error: "persona_lookup_failed", detail: personaErr.message },
+      500,
+    )
+  }
+  if (!persona) {
+    return withCorsJson(
+      request,
+      { error: "persona_not_found" },
+      500,
+    )
+  }
+  const personaResumeText = (persona.resume_text ?? "").trim()
+  if (personaResumeText.length === 0) {
+    return withCorsJson(
+      request,
+      {
+        error: "persona_resume_text_empty",
+        detail:
+          "Persona has no resume text. Phase 2 reframes require a resume to anchor against.",
+      },
+      400,
+    )
+  }
+
   // ── 8. Populate items + build initial state ─────────────────────────────
-  // populateItems is a stub in v0.1 (returns []). Items array will be empty
-  // until Stage 2b implements per FRD §6.2. Endpoint structure is wired
-  // correctly — only the items themselves are placeholder.
-  const items = populateItems(posRow, jf.row.result_json, caseSpecific)
+  // populateItems (Stage 2b Commit 2 wiring) returns real items for Case B
+  // runs and [] for Case A/C (defense-in-depth; route gated above).
+  const items = populateItems(
+    posRow,
+    jf.row.result_json,
+    caseSpecific,
+    personaResumeText,
+  )
 
   const initialState: PhaseTwoState = {
     items,
