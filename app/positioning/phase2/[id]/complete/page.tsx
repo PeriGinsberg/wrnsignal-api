@@ -249,12 +249,12 @@ export default function Phase2CompletePage({
         </p>
       </div>
 
-      {/* v0.1 stub notice */}
+      {/* B1 partial-composition notice — remove when B2 ships gap composition */}
       <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
-        <strong>v0.1 note:</strong> <code>resumeComposer</code> is stubbed —
-        the revised pane will match the original until real composition logic
-        ships. Formatted .docx/.pdf export will land later; for now, use Copy
-        to grab the text.
+        <strong>v0.1 note:</strong> gap-item composition is in development.
+        The revised pane shows headline and bullet changes; gap item changes
+        will appear in the next release. Formatted .docx/.pdf export will land
+        later; for now, use Copy to grab the text.
       </div>
 
       {/* Side-by-side preview */}
