@@ -595,7 +595,7 @@ function PatternBCView({
         </div>
         <div className="text-sm text-neutral-900 italic">
           {item.question_asked ??
-            "(Question not yet generated — populator stub in v0.1; type a response anyway and SIGNAL will draft.)"}
+            "(No question available for this item — type a response anyway and SIGNAL will draft.)"}
         </div>
       </div>
 

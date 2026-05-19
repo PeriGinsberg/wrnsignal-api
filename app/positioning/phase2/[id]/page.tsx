@@ -130,8 +130,7 @@ export default function Phase2SelectionPage({
           <div className="border border-neutral-200 rounded p-6 text-neutral-500 text-sm">
             <p className="font-medium text-neutral-700">No items to review.</p>
             <p className="mt-2">
-              In v0.1, <code className="bg-neutral-100 px-1 rounded text-xs">populateItems</code>{" "}
-              returns an empty array. Real population logic lands in Stage 2c.
+              Your resume already aligns well with this role — there&rsquo;s nothing for Phase 2 to address. You can apply directly, or revisit if the JD changes.
             </p>
           </div>
         ) : (
