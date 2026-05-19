@@ -126,6 +126,9 @@ const gapItem: PhaseTwoGapItem = {
   skipped: false,
   manual_entry: false,
   decided_at: null,
+  compositional_outcome: null,
+  target_bullet_text: null,
+  suggested_bullets_for_reword: [],
 }
 
 // ============================================================================

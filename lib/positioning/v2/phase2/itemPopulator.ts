@@ -199,6 +199,15 @@ export function populateItems(
     skipped: false,
     manual_entry: false,
     decided_at: null,
+    // A2 multi-outcome composition fields. Safe defaults: outcome is null
+    // until the user decides in /decide (C1); target bullet text is null
+    // until "reword_existing_bullet" is chosen with a bullet picker
+    // selection; suggested_bullets_for_reword is [] until AI fills it in
+    // A3. Legacy phase2_runs rows lack these fields entirely — downstream
+    // readers default accordingly. See PhaseTwoGapItem JSDoc.
+    compositional_outcome: null,
+    target_bullet_text: null,
+    suggested_bullets_for_reword: [],
   }))
 
   console.log(

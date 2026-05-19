@@ -89,6 +89,9 @@ function makeGap(overrides: Partial<PhaseTwoGapItem> = {}): PhaseTwoGapItem {
     declined: false,
     skipped: false,
     manual_entry: false,
+    compositional_outcome: null,
+    target_bullet_text: null,
+    suggested_bullets_for_reword: [],
     decided_at: null,
     ...overrides,
   }

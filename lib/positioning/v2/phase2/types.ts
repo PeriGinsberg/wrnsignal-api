@@ -156,6 +156,19 @@ export type PhaseTwoBulletItem = {
  * populated by populator or first /draft call; user_response and draft
  * populated on first /draft after user answers; final_text set on /decide
  * accept (from draft or edited_text).
+ *
+ * Multi-outcome composition (Phase 2 v1 build A2):
+ *   - compositional_outcome, target_bullet_text, and
+ *     suggested_bullets_for_reword model the four-way composer outcome
+ *     described in FRD §6.10. The populator (A2) emits safe defaults;
+ *     /decide (C1) sets compositional_outcome + target_bullet_text on
+ *     accept; suggested_bullets_for_reword is filled by AI in A3.
+ *   - Legacy phase2_runs rows seeded before A2 lack these fields entirely.
+ *     Defensive readers in resumeComposer / frontend must default
+ *     `item.compositional_outcome ?? null`, `item.target_bullet_text ??
+ *     null`, `item.suggested_bullets_for_reword ?? []` to keep older
+ *     fixtures (e.g. the hand-seeded phase2_run 9d5ebb75 demo row)
+ *     readable without DB backfill.
  */
 export type PhaseTwoGapItem = {
   id: string
@@ -182,6 +195,56 @@ export type PhaseTwoGapItem = {
   skipped: boolean
   manual_entry: boolean
   decided_at: string | null
+  /**
+   * How the user wants this gap composed into the revised resume. Set by
+   * /decide (Commit C1) when the user chooses their compositional outcome.
+   * Null until decided.
+   *
+   *   - "reword_existing_bullet": user picked an existing resume bullet to
+   *     update. `target_bullet_text` holds that bullet's verbatim string.
+   *     resumeComposer runs locate-and-replace on the target.
+   *   - "add_new_bullet": user wants a new bullet added to the resume.
+   *     resumeComposer appends `final_text` after the last bullet-bearing
+   *     line.
+   *   - "note_for_cover_letter": user noted this for cover letter use.
+   *     resumeComposer makes no resume change; the completion screen
+   *     surfaces the note.
+   *   - "acknowledge_genuine_gap": user honestly doesn't have this
+   *     experience. resumeComposer makes no resume change; the completion
+   *     screen acknowledges.
+   *   - null: not yet decided.
+   *
+   * Legacy DB rows (seeded before A2) read this as `undefined`; consumers
+   * should default `compositional_outcome ?? null`.
+   */
+  compositional_outcome:
+    | "reword_existing_bullet"
+    | "add_new_bullet"
+    | "note_for_cover_letter"
+    | "acknowledge_genuine_gap"
+    | null
+  /**
+   * The verbatim resume bullet the user picked to reword. Required when
+   * `compositional_outcome === "reword_existing_bullet"`; null otherwise.
+   * Must be a character-for-character substring of persona.resume_text
+   * (verbatim invariant — resumeComposer locate-and-replace depends on
+   * this).
+   *
+   * Legacy DB rows read this as `undefined`; consumers should default
+   * `target_bullet_text ?? null`.
+   */
+  target_bullet_text: string | null
+  /**
+   * AI-suggested top 3 existing resume bullets most relevant to this gap.
+   * Populated at populator time by Commit A3 (`aiClient`-driven); A2 emits
+   * `[]` as the safe default. Each entry is a verbatim resume substring.
+   * Frontend's bullet-picker UX (D2) reads this for the default "top 3"
+   * display when the user chooses `reword_existing_bullet`.
+   *
+   * Legacy DB rows read this as `undefined`; consumers should default
+   * `suggested_bullets_for_reword ?? []`.
+   */
+  suggested_bullets_for_reword: string[]
 }
 
 /**

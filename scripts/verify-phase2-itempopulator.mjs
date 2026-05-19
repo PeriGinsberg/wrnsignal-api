@@ -638,6 +638,28 @@ async function main() {
       } else {
         fail(`gap.question_asked malformed`, seededGap.question_asked?.slice(0, 80))
       }
+      // A2 multi-outcome composition fields — populator emits safe defaults.
+      // /decide (C1) sets compositional_outcome + target_bullet_text on
+      // accept; aiClient (A3) populates suggested_bullets_for_reword.
+      if (seededGap.compositional_outcome === null) {
+        pass(`gap.compositional_outcome === null (A2 default, undecided)`)
+      } else {
+        fail(`gap.compositional_outcome should be null on populator emit`,
+             String(seededGap.compositional_outcome))
+      }
+      if (seededGap.target_bullet_text === null) {
+        pass(`gap.target_bullet_text === null (A2 default, no reword target until C1)`)
+      } else {
+        fail(`gap.target_bullet_text should be null on populator emit`,
+             String(seededGap.target_bullet_text))
+      }
+      if (Array.isArray(seededGap.suggested_bullets_for_reword) &&
+          seededGap.suggested_bullets_for_reword.length === 0) {
+        pass(`gap.suggested_bullets_for_reword === [] (A2 default, A3 populates)`)
+      } else {
+        fail(`gap.suggested_bullets_for_reword should be [] on populator emit`,
+             JSON.stringify(seededGap.suggested_bullets_for_reword))
+      }
     } else {
       fail("seeded synthetic gap not found among gap items", gapItems.map((g) => g.label).join("|"))
     }

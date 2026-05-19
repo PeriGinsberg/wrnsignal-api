@@ -600,9 +600,167 @@ console.log("\n=== Null emission (no headline + no family mismatch → no headli
   )
   // Output may still contain bullets/gaps — that's the point: the
   // null-emission rule is headline-specific, not whole-run-suppression.
+  const gapItem = items.find(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
   check(
     "8c: gaps still emit (synthetic Kubernetes requirement is unrepresented)",
     items.some((i) => i.type === "gap"),
+  )
+  // A2 multi-outcome composition fields — emitted gap items must have the
+  // three new fields populated with their initial defaults. /decide (C1)
+  // and aiClient (A3) set them later in the lifecycle.
+  check(
+    "8c: gap.compositional_outcome === null (undecided)",
+    gapItem?.compositional_outcome === null,
+    String(gapItem?.compositional_outcome),
+  )
+  check(
+    "8c: gap.target_bullet_text === null (no reword target until C1)",
+    gapItem?.target_bullet_text === null,
+    String(gapItem?.target_bullet_text),
+  )
+  check(
+    "8c: gap.suggested_bullets_for_reword === [] (A3 populates)",
+    Array.isArray(gapItem?.suggested_bullets_for_reword) &&
+      gapItem.suggested_bullets_for_reword.length === 0,
+    JSON.stringify(gapItem?.suggested_bullets_for_reword),
+  )
+}
+
+// ============================================================================
+// Test 8d — A2 default-shape: every emitted gap item carries the three
+//           new fields with their safe defaults. Uses Test 5b's synthetic
+//           substrate (5 unrepresented core requirements → 3 gaps capped)
+//           so we can check every emitted gap rather than a single item.
+// ============================================================================
+
+console.log("\n=== A2 gap-item default fields (every emitted gap) ===")
+
+{
+  const fiveCoreUnits = Array.from({ length: 5 }, (_, i) => ({
+    id: `req-${i + 1}`,
+    key: `kubernetes_core_${i + 1}`,
+    kind: "function",
+    label: `kubernetes orchestration topic ${i + 1}`,
+    snippet: `JD snippet for synthetic core requirement ${i + 1}`,
+    strength: 8,
+    functionTag: "platform_eng",
+    requiredness: "core",
+  }))
+  const jobfit = {
+    job_signals: { jobTitle: "Test Role", requirement_units: fiveCoreUnits },
+  } as unknown as JobfitResultJson
+  const resume = "completely unrelated short resume"
+  const run = makePositioningRun("B")
+  const items = populateItems(run, jobfit, null, resume)
+  const gaps = items.filter(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "8d: emits 3 gap items (cap)",
+    gaps.length === 3,
+    `gaps=${gaps.length}`,
+  )
+  let allDefaultsCorrect = true
+  for (const g of gaps) {
+    if (g.compositional_outcome !== null) {
+      allDefaultsCorrect = false
+      console.log(`       FAIL: gap ${g.id} compositional_outcome=${g.compositional_outcome}`)
+    }
+    if (g.target_bullet_text !== null) {
+      allDefaultsCorrect = false
+      console.log(`       FAIL: gap ${g.id} target_bullet_text=${JSON.stringify(g.target_bullet_text)}`)
+    }
+    if (
+      !Array.isArray(g.suggested_bullets_for_reword) ||
+      g.suggested_bullets_for_reword.length !== 0
+    ) {
+      allDefaultsCorrect = false
+      console.log(`       FAIL: gap ${g.id} suggested_bullets_for_reword=${JSON.stringify(g.suggested_bullets_for_reword)}`)
+    }
+  }
+  check(
+    "8d: every gap item has compositional_outcome=null, target_bullet_text=null, suggested_bullets_for_reword=[]",
+    allDefaultsCorrect,
+  )
+}
+
+// ============================================================================
+// Test 8e — Backward compat: a legacy phase2_runs row stored before A2
+//           lacks the three new fields entirely. Reading such a row from
+//           JSONB returns `undefined` for those fields, NOT null. Consumers
+//           (resumeComposer in B1/B2, frontend in D-series) must default
+//           `?? null` / `?? []` per the PhaseTwoGapItem JSDoc. This test
+//           pins that contract — both the typed cast and the runtime read
+//           behavior.
+// ============================================================================
+
+console.log("\n=== A2 backward-compat: legacy gap row read shape ===")
+
+{
+  // Synthetic legacy row matching the hand-seeded phase2_run 9d5ebb75
+  // demo fixture's gap item (which predates A2). Cast through unknown
+  // because the TS type now requires the three new fields — this test
+  // is exactly about reading data that doesn't have them.
+  const legacyGapItem = {
+    id: "gap-test-1",
+    type: "gap",
+    label: "Address marketing analytics gap",
+    gap_description:
+      "JD asks for experience with marketing analytics tools and campaign performance measurement; resume does not mention metrics or analytics tools",
+    jd_context:
+      "Required: experience tracking campaign performance using Google Analytics, social media metrics, or similar tools",
+    question_asked:
+      "Have you ever measured the performance of any content you created?",
+    user_response: null,
+    draft: null,
+    final_text: "i was responsible for managing likes and engagement",
+    accepted: true,
+    declined: false,
+    skipped: false,
+    manual_entry: true,
+    decided_at: "2026-05-17T20:20:20.989Z",
+    // NO compositional_outcome, NO target_bullet_text,
+    // NO suggested_bullets_for_reword — legacy DB row shape.
+  } as unknown as PhaseTwoGapItem
+
+  // Runtime reads: the missing fields return undefined, not null.
+  // Downstream consumers must defensively default.
+  check(
+    "8e: legacy row reads compositional_outcome as undefined",
+    (legacyGapItem as { compositional_outcome?: unknown }).compositional_outcome === undefined,
+  )
+  check(
+    "8e: legacy row reads target_bullet_text as undefined",
+    (legacyGapItem as { target_bullet_text?: unknown }).target_bullet_text === undefined,
+  )
+  check(
+    "8e: legacy row reads suggested_bullets_for_reword as undefined",
+    (legacyGapItem as { suggested_bullets_for_reword?: unknown }).suggested_bullets_for_reword === undefined,
+  )
+  // Defensive default pattern that B1/B2/D consumers will use:
+  const outcome = legacyGapItem.compositional_outcome ?? null
+  const target = legacyGapItem.target_bullet_text ?? null
+  const suggestions = legacyGapItem.suggested_bullets_for_reword ?? []
+  check(
+    "8e: defensive `?? null` defaults legacy compositional_outcome to null",
+    outcome === null,
+  )
+  check(
+    "8e: defensive `?? null` defaults legacy target_bullet_text to null",
+    target === null,
+  )
+  check(
+    "8e: defensive `?? []` defaults legacy suggested_bullets_for_reword to []",
+    Array.isArray(suggestions) && suggestions.length === 0,
+  )
+  // Other fields on the legacy row still read normally — the new fields
+  // are additive, not destructive.
+  check(
+    "8e: legacy row still reads existing fields normally (e.g., final_text)",
+    legacyGapItem.final_text ===
+      "i was responsible for managing likes and engagement",
   )
 }
 
