@@ -40,6 +40,7 @@ function makeHeadline(overrides: Partial<PhaseTwoHeadlineItem> = {}): PhaseTwoHe
     type: "headline",
     label: "Reframe headline",
     original: "Old headline",
+    synthesize_mode: false,
     draft_options: ["Option A", "Option B", "Option C"],
     selected_draft_index: null,
     user_override_text: null,

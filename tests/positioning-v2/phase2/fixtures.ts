@@ -164,6 +164,11 @@ export const CATHERINE_RESUME_ANCHORED_LINE =
  * Use when a test needs a complete-looking JobfitResultJson rather than
  * isolated slices. Lacks requirement_units — see
  * CATHERINE_JOBFIT_WITH_UNITS for the gap-extractor fixture.
+ *
+ * risk_codes mirrors the live jobfit_run 96722a07 shape: V5 object entry
+ * carrying RISK_FAMILY_MISMATCH. Phase 2 v1 build A1 reads risk_codes for
+ * the headline synthesize-trigger; the entry is present so the trigger
+ * fires whenever this fixture is paired with a resume that has no headline.
  */
 export const CATHERINE_JOBFIT: JobfitResultJson = {
   decision: "Review",
@@ -172,6 +177,9 @@ export const CATHERINE_JOBFIT: JobfitResultJson = {
     WHY_REFRAME_FLAVORED,
     WHY_NOT_REFRAME_FLAVORED,
     WHY_FRAME_AS_FLAVORED,
+  ],
+  risk_codes: [
+    { code: "RISK_FAMILY_MISMATCH", severity: "medium" },
   ],
   job_signals: {
     jobTitle:
@@ -182,6 +190,18 @@ export const CATHERINE_JOBFIT: JobfitResultJson = {
   profile_signals: {
     targetFamilies: ["Other"],
   },
+}
+
+/**
+ * Same as CATHERINE_JOBFIT but with no RISK_FAMILY_MISMATCH risk_code
+ * (and risk_structured: []). Pair with CATHERINE_RESUME_NO_HEADLINE to
+ * exercise the null-emission path of extractHeadlineCandidate (no
+ * headline AND no synthesize-trigger → no headline item).
+ */
+export const CATHERINE_JOBFIT_WITHOUT_FAMILY_MISMATCH: JobfitResultJson = {
+  ...CATHERINE_JOBFIT,
+  risk_codes: [],
+  risk_structured: [],
 }
 
 /**
@@ -203,3 +223,61 @@ export const CATHERINE_JOBFIT_WITH_UNITS: JobfitResultJson = {
     ],
   } as unknown as JobfitResultJson["job_signals"],
 }
+
+// ─── Full Catherine resume_text (live DB, persona_version 3) ──────
+//
+// Byte-exact mirror of client_personas.resume_text on persona
+// f283397c-f26d-43bc-9095-0f77c7d9cea9 in dev Supabase, as of
+// updated_at 2026-05-19T16:40:42 (4430 chars). Generated via
+// `scripts/emit-catherine-fixture.mjs` to avoid hand-transcription of
+// tabs, curly apostrophes (U+2019), and en-dashes (U+2013).
+//
+// Structure (line indices):
+//   L000  CATHERINE LEES
+//   L001  Summit, NJ | catherine.b.lees12@gmail.com | … (contact)
+//   L002  (blank)
+//   L003  Strategic Communication junior… (3-sentence headline, one line)
+//   L004  EDUCATION
+//   … (EDUCATION body, CORE COMPETENCIES, CREATIVE EXPERIENCE,
+//      LEADERSHIP & INVOLVEMENT, ADDITIONAL EXPERIENCE)
+//
+// Used by extractHeadlineCandidate replace-path tests and the
+// item-populator headline-replace test. Verbatim invariant holds:
+// the captured headline string is character-for-character present.
+export const CATHERINE_RESUME_TEXT =
+  "CATHERINE LEES\nSummit, NJ | catherine.b.lees12@gmail.com | 908.477.5138 | LinkedIn  | Portfolio \n\nStrategic Communication junior with strong skills in visual storytelling, graphic design, and content creation. Experienced in editorial photography, brand messaging, and campaign development. Seeking a creative internship to apply hands-on content creation and strategic communication skills in entertainment marketing.\nEDUCATION\n\nThe Ohio State University | School of Communication – Columbus, OH\nB.S. Communication, Strategic Communication | GPA: 3.63 \t\t\t\t\t\t            \t             May 2027\nHonors: Dean’s List (4 semesters)\nStudy Abroad: Accademia Italiana Florence – Florence, Italy \t\t\t\t\t\t          \t          Spring 2026\nFocus: Visual Design, Fashion Design, Photography, Architecture\nCertificates & Tools : Muck Rack Fundamentals of Media Relations Certification | Adobe Creative Cloud (Photoshop, InDesign, Illustrator) | Canva | Google Workspace | Microsoft Office\nRelevant Coursework: Strategic Message Design | Writing for Strategic Communication | Visual Communication Design | Advertising & Creative Strategy | Media & Society | Design Aesthetics of Fashion and Retail\nAI Academy by Smarter X: Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication\nCORE COMPETENCIES\n\nBrand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication  | Photography\nCREATIVE EXPERIENCE\n\nGraphic Designer & Photographer | Scarlette Fashion Magazine – Columbus, OH                                                                       Sep 2023 – Present\nLead photographer for editorial shoots, managing creative direction and execution to engage audiences\nDesigned magazine spreads for digital and print publication\nRepresented the publication at Columbus Fashion Week as part of the press team\nCatherine Lees Photography – Freelance\t\t\t\t\t\t                                                  Jan 2023 – Present\nDelivered photography for 30+ client events, managing creative execution and client communication\nBuilt and promoted a personal creative brand through visual storytelling\nSelected Academic Projects\nClient Communications & Brand Strategy \nCollaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews\nPerformed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities\nDeveloped an integrated PESO communications strategy aligned with brand voice and audience insights\nPresented findings through a professional client deck and written report\nVisual Communication & Creative Design\nConcepted and designed creative visual campaigns aligned with strategic objectives\nCreated digital assets and animated GIFs to drive emotional engagement and message clarity\nApplied design principles across layout, typography, color, and composition\nProduced polished creative work using Adobe Photoshop across multiple formats\nWriting, PR & Media Relations\nProduced a professional writing portfolio including press releases and feature articles\nWrote AP-style news releases with emphasis on clarity, ethics, and audience alignment\nPracticed media relations and message control through simulated press conference scenarios\nLEADERSHIP & INVOLVEMENT\n\nBuckeye Professional Advancement & Development (BPAD) – Columbus, OH\nProfessional Relations Coordinator | Member Class Events Coordinator\t\t                                                                  Sep 2024 – Present\nSelected as 1 of 24 students from 300+ applicants\nCoordinated sponsorship, networking, and professional development events\nKappa Kappa Gamma Sorority – Columbus, OH\nMerchandise Committee | Social Media Coordinator\t\t                                                                                                   Feb 2024 – Present\nDesigned 30+ branded merchandise concepts annually\nCreated and scheduled social media content to support engagement and brand consistency\nADDITIONAL EXPERIENCE\n\nVolunteer | Summit Luminary Fund - Summit, NJ   \t\t\t\t\t\t                                 Dec 2016 - Present\nBartender | Summit Elks Lodge - Summit, NJ\t\t\t\t\t\t\t                             May 2025 - Aug 2025\n"
+
+/**
+ * The exact captured headline block expected from
+ * extractHeadlineCandidate(CATHERINE_RESUME_TEXT, ...). The full L003
+ * paragraph (3 sentences) joined into a single string. Used for
+ * verbatim-invariant assertions and content-match assertions in the
+ * replace-path tests.
+ */
+export const CATHERINE_RESUME_HEADLINE_BLOCK =
+  "Strategic Communication junior with strong skills in visual storytelling, graphic design, and content creation. Experienced in editorial photography, brand messaging, and campaign development. Seeking a creative internship to apply hands-on content creation and strategic communication skills in entertainment marketing."
+
+/**
+ * Synthetic variant: same as CATHERINE_RESUME_TEXT with the L003 headline
+ * paragraph removed. Contact line + blank line stay; EDUCATION immediately
+ * follows. Used by the synthesize-path test (paired with CATHERINE_JOBFIT
+ * which carries RISK_FAMILY_MISMATCH → triggers synthesize) and the
+ * null-emission test (paired with CATHERINE_JOBFIT_WITHOUT_FAMILY_MISMATCH
+ * → no synthesize-trigger → returns null).
+ *
+ * Length: 4109 chars (CATHERINE_RESUME_TEXT length minus the 320-char
+ * headline minus 1 newline).
+ */
+export const CATHERINE_RESUME_NO_HEADLINE =
+  "CATHERINE LEES\nSummit, NJ | catherine.b.lees12@gmail.com | 908.477.5138 | LinkedIn  | Portfolio \n\nEDUCATION\n\nThe Ohio State University | School of Communication – Columbus, OH\nB.S. Communication, Strategic Communication | GPA: 3.63 \t\t\t\t\t\t            \t             May 2027\nHonors: Dean’s List (4 semesters)\nStudy Abroad: Accademia Italiana Florence – Florence, Italy \t\t\t\t\t\t          \t          Spring 2026\nFocus: Visual Design, Fashion Design, Photography, Architecture\nCertificates & Tools : Muck Rack Fundamentals of Media Relations Certification | Adobe Creative Cloud (Photoshop, InDesign, Illustrator) | Canva | Google Workspace | Microsoft Office\nRelevant Coursework: Strategic Message Design | Writing for Strategic Communication | Visual Communication Design | Advertising & Creative Strategy | Media & Society | Design Aesthetics of Fashion and Retail\nAI Academy by Smarter X: Enrolled in foundational training in AI assisted content creation, prompt development, and ethical use of AI in creative and strategic communication\nCORE COMPETENCIES\n\nBrand Messaging & Storytelling | Creative Strategy | Visual Communication | Graphic Design | Audience Research | PR Writing & Media Relations | Campaign Development | Social Media Content (TikTok, Instagram) | Client Communication  | Photography\nCREATIVE EXPERIENCE\n\nGraphic Designer & Photographer | Scarlette Fashion Magazine – Columbus, OH                                                                       Sep 2023 – Present\nLead photographer for editorial shoots, managing creative direction and execution to engage audiences\nDesigned magazine spreads for digital and print publication\nRepresented the publication at Columbus Fashion Week as part of the press team\nCatherine Lees Photography – Freelance\t\t\t\t\t\t                                                  Jan 2023 – Present\nDelivered photography for 30+ client events, managing creative execution and client communication\nBuilt and promoted a personal creative brand through visual storytelling\nSelected Academic Projects\nClient Communications & Brand Strategy \nCollaborated with team on a client-based communications audit for a boutique retail brand, including brand immersion and stakeholder interviews\nPerformed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities\nDeveloped an integrated PESO communications strategy aligned with brand voice and audience insights\nPresented findings through a professional client deck and written report\nVisual Communication & Creative Design\nConcepted and designed creative visual campaigns aligned with strategic objectives\nCreated digital assets and animated GIFs to drive emotional engagement and message clarity\nApplied design principles across layout, typography, color, and composition\nProduced polished creative work using Adobe Photoshop across multiple formats\nWriting, PR & Media Relations\nProduced a professional writing portfolio including press releases and feature articles\nWrote AP-style news releases with emphasis on clarity, ethics, and audience alignment\nPracticed media relations and message control through simulated press conference scenarios\nLEADERSHIP & INVOLVEMENT\n\nBuckeye Professional Advancement & Development (BPAD) – Columbus, OH\nProfessional Relations Coordinator | Member Class Events Coordinator\t\t                                                                  Sep 2024 – Present\nSelected as 1 of 24 students from 300+ applicants\nCoordinated sponsorship, networking, and professional development events\nKappa Kappa Gamma Sorority – Columbus, OH\nMerchandise Committee | Social Media Coordinator\t\t                                                                                                   Feb 2024 – Present\nDesigned 30+ branded merchandise concepts annually\nCreated and scheduled social media content to support engagement and brand consistency\nADDITIONAL EXPERIENCE\n\nVolunteer | Summit Luminary Fund - Summit, NJ   \t\t\t\t\t\t                                 Dec 2016 - Present\nBartender | Summit Elks Lodge - Summit, NJ\t\t\t\t\t\t\t                             May 2025 - Aug 2025\n"
+
+/**
+ * Verbatim SWOT-anchor line as it appears in CATHERINE_RESUME_TEXT. The
+ * line has no bullet glyph prefix in this version of the resume (the
+ * older CATHERINE_RESUME_SLICE prefixes with "○ "; the v3 resume Peri
+ * uploaded omits all bullet glyphs). Used by the item-populator test's
+ * bullet verbatim-invariant assertion when paired with the full
+ * CATHERINE_RESUME_TEXT.
+ */
+export const CATHERINE_TEXT_SWOT_LINE =
+  "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities"

@@ -121,7 +121,7 @@ export function populateItems(
   }
 
   // ── Extract candidates ────────────────────────────────────────────────
-  const headlineCandidate = extractHeadlineCandidate(jobfit)
+  const headlineCandidate = extractHeadlineCandidate(jobfit, resumeText)
   const bulletCandidates = extractBulletCandidates(jobfit, resumeText)
   const gapCandidates = extractGapCandidates(jobfit, resumeText)
 
@@ -133,15 +133,24 @@ export function populateItems(
   // ── Transform to PhaseTwoItem objects with position-based IDs ─────────
   const headlineItems: PhaseTwoHeadlineItem[] = []
   if (headlineCandidate !== null) {
+    // Branch on the candidate's `kind`:
+    //   - "replace":    real headline block detected — use it verbatim as
+    //                   the locate-and-replace anchor; synthesize_mode=false.
+    //   - "synthesize": no headline found; emit informational placeholder
+    //                   "Headline targeting: ${jobTitle}" and flag
+    //                   synthesize_mode=true so resumeComposer's insertion
+    //                   path inserts final_text at the first blank line
+    //                   after the contact block instead of replacing.
+    const isReplace = headlineCandidate.kind === "replace"
+    const original = isReplace
+      ? headlineCandidate.original
+      : `Headline targeting: ${headlineCandidate.jobTitle}`
     headlineItems.push({
       id: "headline-1",
       type: "headline",
       label: headlineLabel(headlineCandidate.jobTitle),
-      // v0.1 synthesizes a placeholder "original" rather than scraping
-      // resume_text for a headline line. The user sees the target and
-      // accepts drafts from there; a blind-read pass to identify the
-      // actual resume headline ships in v2.5+.
-      original: `Headline targeting: ${headlineCandidate.jobTitle}`,
+      original,
+      synthesize_mode: !isReplace,
       draft_options: [],
       selected_draft_index: null,
       user_override_text: null,

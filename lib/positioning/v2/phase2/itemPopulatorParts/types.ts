@@ -10,25 +10,62 @@
 // Pure types only — no runtime values, no logic.
 
 /**
- * Inputs needed to draft 1-3 headline reframe options downstream.
- * Produced by extractHeadlineCandidate; consumed in Commit 2 by the
- * itemPopulator orchestrator + later by aiClient.draftHeadlineOptions.
+ * Inputs needed to drive headline emission in the populator. Discriminated
+ * on `kind`:
  *
- * Returns null from the extractor when jobTitle is missing — without a
- * target title there is nothing to reframe toward.
+ *   - "replace"   — a real headline block was detected in the resume.
+ *                   `original` is the verbatim captured string (single line
+ *                   OR multi-line joined with \n). resumeComposer's
+ *                   locate-and-replace path uses `original` as the anchor
+ *                   to swap with `final_text` at /complete time.
+ *
+ *   - "synthesize" — no headline block found in the resume, but the JD
+ *                    carries a RISK_FAMILY_MISMATCH signal in
+ *                    jobfit.risk_codes. The populator synthesizes a
+ *                    placeholder informational string for `original`
+ *                    ("Headline targeting: ${jobTitle}") and the
+ *                    PhaseTwoHeadlineItem is flagged `synthesize_mode: true`
+ *                    so resumeComposer's insertion path knows to write
+ *                    the final_text at the first blank line after the
+ *                    contact block rather than replacing.
+ *
+ * The extractor returns `null` (no headline item at all) when EITHER:
+ *   - jobTitle is missing (no target to reframe toward), OR
+ *   - no headline block found AND no synthesize-trigger present.
+ *
+ * Produced by extractHeadlineCandidate; consumed by the itemPopulator
+ * orchestrator + later by aiClient.draftHeadlineOptions.
  */
-export type HeadlineCandidate = {
-  /** Source: job_signals.jobTitle (trimmed, non-empty). */
-  jobTitle: string
-  /** Source: job_signals.jobFamily (trimmed). Null when JD lacks family detection. */
-  jobFamily: string | null
-  /**
-   * Top-3 keywords from why_structured by array order (which is
-   * weight-descending out of JobFit). Empty when why_structured is
-   * missing or malformed.
-   */
-  topWhyKeywords: string[]
-}
+export type HeadlineCandidate =
+  | {
+      kind: "replace"
+      /**
+       * Verbatim captured headline content from the resume. Multi-line
+       * blocks are joined with \n so the full string is a substring of
+       * the original resume_text (preserves the verbatim invariant that
+       * resumeComposer's locate-and-replace depends on).
+       */
+      original: string
+      /** Source: job_signals.jobTitle (trimmed, non-empty). */
+      jobTitle: string
+      /** Source: job_signals.jobFamily (trimmed). Null when JD lacks family detection. */
+      jobFamily: string | null
+      /**
+       * Top-3 keywords from why_structured by array order (which is
+       * weight-descending out of JobFit). Empty when why_structured is
+       * missing or malformed.
+       */
+      topWhyKeywords: string[]
+    }
+  | {
+      kind: "synthesize"
+      /** Source: job_signals.jobTitle (trimmed, non-empty). */
+      jobTitle: string
+      /** Source: job_signals.jobFamily (trimmed). Null when JD lacks family detection. */
+      jobFamily: string | null
+      /** Top-3 keywords from why_structured by array order. */
+      topWhyKeywords: string[]
+    }
 
 /**
  * Inputs needed to draft a Pattern B bullet reframe downstream. Produced

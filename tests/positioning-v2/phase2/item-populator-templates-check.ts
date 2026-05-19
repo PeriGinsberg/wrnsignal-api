@@ -180,6 +180,7 @@ console.log("\n=== Candidate type shape compilation ===")
   // structurally compatible with the expected shapes. Failures here
   // would surface at tsc time; this runtime check is belt-and-suspenders.
   const h: HeadlineCandidate = {
+    kind: "synthesize",
     jobTitle: "X",
     jobFamily: null,
     topWhyKeywords: [],

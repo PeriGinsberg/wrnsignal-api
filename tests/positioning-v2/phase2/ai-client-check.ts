@@ -82,6 +82,7 @@ const headlineItem: PhaseTwoHeadlineItem = {
   type: "headline",
   label: "Headline",
   original: "Marketing student with internship experience",
+  synthesize_mode: false,
   draft_options: [],
   selected_draft_index: null,
   user_override_text: null,
