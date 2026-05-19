@@ -272,6 +272,141 @@ console.log("\n=== Edge cases ===")
   )
 }
 
+// Test 11b: V4-fallback with V5 object-shape risk_codes (Apply + high
+// severity) → Case B. Pre-fix this returned Case A because the V4 filter
+// dropped all object entries → items=[] → zero-risks Apply promoted to A.
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_codes: [
+        { code: "RISK_FAMILY_MISMATCH", severity: "high" },
+        { code: "RISK_DOMAIN_EXPERIENCE", severity: "medium" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "11b: V4 fallback with V5-object risk_codes (high severity) → Case B",
+    r.case === "B",
+    `got ${r.case}`,
+  )
+  check(
+    "11b: high-severity object entry surfaces in reasoning",
+    /RISK_FAMILY_MISMATCH/.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 11c: V4-fallback with V5 object-shape risk_codes (Apply + only
+// medium severities, ≥3 whys) → Case B because risks.length > 0 blocks
+// the Case A "zero-risks-or-all-low" precondition.
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_codes: [
+        { code: "RISK_X", severity: "medium" },
+        { code: "RISK_Y", severity: "medium" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "11c: V4 fallback with V5-object risk_codes (medium severity) → Case B",
+    r.case === "B",
+    `got ${r.case}`,
+  )
+}
+
+// Test 11d: V4-fallback with mixed string + V5 object entries — both
+// surface as risk items. (Unlikely in production but the union admits it
+// and we want both shapes contributing.)
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_codes: [
+        "RISK_STRING_ENTRY",
+        { code: "RISK_OBJECT_ENTRY", severity: "high" },
+      ],
+    }),
+  )
+  check(
+    "11d: V4 fallback with mixed string+object entries → Case B",
+    r.case === "B",
+    `got ${r.case}`,
+  )
+  check(
+    "11d: object entry's high severity drives reasoning",
+    /RISK_OBJECT_ENTRY/.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
+// Test 11e: V5 object risk_codes with missing/invalid severity → defaults
+// to medium (matches the malformed-risk_structured fallback above).
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_codes: [
+        { code: "RISK_NO_SEVERITY" }, // severity missing
+        { code: "RISK_BAD_SEVERITY", severity: "bogus" as unknown }, // invalid
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  // Both default to medium → 2 medium risks → not high-severity, but not
+  // zero-risks either → Case B (the default Apply+risks branch).
+  check(
+    "11e: V5 object risk_codes with missing/invalid severity → Case B (defaults to medium)",
+    r.case === "B",
+    `got ${r.case}`,
+  )
+}
+
+// Test 11f: V5 object risk_codes with empty .code field are skipped
+// (defensive: don't surface bare {} or {code: ""} as a phantom risk).
+{
+  const r = determineCase(
+    makeInputs({
+      decision: "Apply",
+      risk_codes: [
+        { code: "" }, // skipped — empty code
+        { code: "RISK_KEPT", severity: "medium" },
+      ],
+      why_structured: [
+        { keyword: "a", lead: "", connection: "", action: "" },
+        { keyword: "b", lead: "", connection: "", action: "" },
+        { keyword: "c", lead: "", connection: "", action: "" },
+      ],
+    }),
+  )
+  check(
+    "11f: V5 object with empty code is skipped; non-empty entries kept → Case B (1 risk)",
+    r.case === "B",
+    `got ${r.case}`,
+  )
+  check(
+    "11f: reasoning reflects exactly 1 risk (the kept one)",
+    /1 risk/.test(r.reasoning),
+    r.reasoning,
+  )
+}
+
 // Test 12: risk_structured is not an array → defensive path produces Case B
 {
   const r = determineCase(

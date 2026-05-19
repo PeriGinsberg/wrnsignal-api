@@ -53,6 +53,23 @@ export type WhyStructuredItem = {
 }
 
 /**
+ * V5 risk code object. JobFit V5 emits this shape on jobfit_runs
+ * .result_json.risk_codes — see app/api/jobfit/signals.ts:274 RiskCode for
+ * the writer's full type. Phase 1 reads only `code` (used as the keyword)
+ * and `severity` (used to drive Case A/B/C cascade thresholds). The other
+ * fields on the writer's RiskCode (job_fact, profile_fact, risk, weight)
+ * are emitted but unused at this layer.
+ *
+ * Pre-V5 historical runs stored risk_codes as plain `string[]`. The union
+ * on JobfitResultJson.risk_codes below admits both shapes; caseDetermination's
+ * V4-fallback path handles both.
+ */
+export type RiskCodeV5 = {
+  code: string
+  severity?: Severity
+}
+
+/**
  * Minimum shape of jobfit_runs.result_json that Phase 1's case
  * determination + workflow preview + case-specific data need. Other
  * fields in the JSON exist beyond these but Phase 1 doesn't consume
@@ -73,7 +90,7 @@ export type JobfitResultJson = {
   score?: number
   why_structured?: WhyStructuredItem[]
   risk_structured?: RiskStructuredItem[]
-  risk_codes?: string[]
+  risk_codes?: Array<string | RiskCodeV5>
   job_signals?: {
     jobTitle?: string
     companyName?: string

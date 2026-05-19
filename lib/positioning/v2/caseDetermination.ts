@@ -125,20 +125,42 @@ export function extractRisks(jobfit: JobfitResultJson): RiskExtraction {
     return { items, dataQualityIssue: hadMalformed, v4Fallback: false }
   }
 
-  // V4 fallback: risk_codes present, no risk_structured
+  // V4 fallback: risk_codes present, no risk_structured.
+  //
+  // Accepts both historical shapes:
+  //   - V4 entries: bare strings (e.g. "RISK_FAMILY_MISMATCH"). Severity
+  //     unknown → defaulted to medium (V4 didn't tag severity).
+  //   - V5 entries: objects with .code (and usually .severity). JobFit V5
+  //     emits this shape on every recent run; see RiskCodeV5 + the writer's
+  //     app/api/jobfit/signals.ts:274 RiskCode. When severity is missing or
+  //     not one of high/medium/low, defaults to medium (same fallback as
+  //     the malformed-risk_structured path above).
+  //
+  // Pre-fix the filter rejected non-string entries, silently producing
+  // items=[] for V5-shape rows that hit this fallback path (rare combination
+  // of risk_structured missing + risk_codes populated, ~2.3% of recent runs
+  // per probe-catherine-risk-codes-runtime). That breakage could wrongly
+  // promote Apply/Priority Apply rows to Case A on the zero-risks check.
   if (Array.isArray(jobfit.risk_codes) && jobfit.risk_codes.length > 0) {
-    return {
-      items: jobfit.risk_codes
-        .filter((c): c is string => typeof c === "string")
-        .map((code) => ({
-          keyword: code,
-          gap: "",
-          reframe: "",
-          severity: "medium" as const, // V4 doesn't tag severity
-        })),
-      dataQualityIssue: false,
-      v4Fallback: true,
+    const items: RiskStructuredItem[] = []
+    for (const raw of jobfit.risk_codes) {
+      if (typeof raw === "string") {
+        if (raw.length === 0) continue
+        items.push({ keyword: raw, gap: "", reframe: "", severity: "medium" })
+      } else if (raw && typeof raw === "object") {
+        const obj = raw as { code?: unknown; severity?: unknown }
+        const code = typeof obj.code === "string" ? obj.code : ""
+        if (code.length === 0) continue
+        const severity =
+          obj.severity === "high" ||
+          obj.severity === "medium" ||
+          obj.severity === "low"
+            ? obj.severity
+            : "medium"
+        items.push({ keyword: code, gap: "", reframe: "", severity })
+      }
     }
+    return { items, dataQualityIssue: false, v4Fallback: true }
   }
 
   // risk_structured is defined but not an array → malformed

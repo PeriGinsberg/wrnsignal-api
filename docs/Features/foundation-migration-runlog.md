@@ -343,6 +343,45 @@ Where `reason ∈ {empty_company, empty_title, empty_both}`. Only emitted when a
 
 **No schema change in this entry.** All data sourcing happens at the application layer.
 
+### DD-28 — Phase 1: caseDetermination V4-fallback accepts V5 object risk_codes
+
+**Recorded:** 2026-05-19 (surfaced while gathering inputs for Phase 2 v1 build commit A1 — real headline detection in extractHeadlineCandidate, which also reads `jobfit.risk_codes` for the `RISK_FAMILY_MISMATCH` synthesize-trigger).
+
+**Discovery:** `lib/positioning/v2/types.ts` declared `JobfitResultJson.risk_codes?: string[]`. The writer (`app/api/jobfit/signals.ts:274 RiskCode`) emits **object** entries: `{ code, job_fact, profile_fact?, risk, severity, weight? }`. caseDetermination's V4 fallback (`extractRisks` lines 128-142) filtered `typeof === "string"` then `.map(code => ({ keyword: code, ... }))` — V5 object entries silently dropped.
+
+**Live runtime survey (43 most recent jobfit_runs, `scripts/probe-catherine-risk-codes-runtime.mjs` against dev):**
+
+| Shape | Count |
+|---|---|
+| risk_codes absent | 0 |
+| risk_codes empty array | 5 |
+| `[string, ...]` (V4) | **0** |
+| `[object, ...]` (V5) | 38 |
+| Mixed | 0 |
+| risk_structured array present | 42 |
+| Would hit V4-fallback path (risk_structured non-array AND risk_codes populated) | 1 |
+| ...AND entries are V5-object (silently dropped pre-fix) | 1 |
+
+**Impact pre-fix:** ~2.3% of recent runs (1/43 sample) hit the broken path. The V5 primary path (42/43) is unaffected. The broken path could promote Apply/Priority Apply rows to Case A because the V4 fallback returned `items: []` + `dataQualityIssue: false`, satisfying the zero-risks-AND-no-data-quality-issue Case A precondition. User-facing UX: Case A surface ("clean signal, 1-2 refinements") instead of Case B ("targeted changes needed") on rows that had real risks.
+
+**Why latent so long:** The V5 primary path covers ~98% of recent runs cleanly. The V4 fallback only fires when `risk_structured` is missing AND `risk_codes` is populated — a rare combination tied to Foundation DD-23-flavored data quality (historical V4 runs against partially-scraped JDs). The type-vs-runtime drift didn't surface because the broken path was rarely exercised AND the failure mode (Case A instead of Case B) doesn't crash or visibly degrade.
+
+**Fix scope (this commit):**
+- `lib/positioning/v2/types.ts`: declare narrow `RiskCodeV5 = { code: string; severity?: Severity }` and widen `risk_codes?: Array<string | RiskCodeV5>`.
+- `lib/positioning/v2/caseDetermination.ts`: rewrite V4-fallback loop to handle both shapes. String entries unchanged (severity defaults to medium). Object entries use `.code` for keyword; `.severity` if valid, else medium. Empty `.code` skipped.
+- `tests/positioning-v2/case-determination-check.ts`: 6 new sub-tests (11b-11f) covering V5 object entries through the fallback. Existing Test 11 (V4 strings) still passes.
+
+**Not changed in this commit:**
+- V5 primary path (`risk_structured`) — already correct, untouched.
+- Other risk_codes consumers (`signals.ts` is the writer; `deterministicBulletRendererV4`, `evidenceBuilder`, `bulletGeneratorV5` already assume object shape correctly).
+- The type drift in `lib/positioning/v2/types.ts:76` is only partially closed — full `RiskCode` shape from `signals.ts:274` is intentionally narrowed to `RiskCodeV5` because Phase 1 reads only `code` and `severity`. Widening further would create unnecessary cross-cutting coupling (lib → app dependency).
+
+**Verification:**
+- 64/64 caseDetermination tests pass (53 existing + 11 new sub-assertions across 6 new named tests).
+- JobFit regression check: 46 live cases ran with output **identical** to pre-change state (verified via `git stash` + re-run). The preexisting 21 "missing from live run" baseline-drift warnings are unaffected — separately scoped issue, not introduced by this commit.
+
+**Surfaced as part of:** Phase 2 v1 build A1 of 8 (real headline detection) Step 1 reads. Fix landed as a separate pre-A1 commit per surgical-scope discipline.
+
 ### DD-24 — Stage 1e validation complete · Foundation SHIPPED
 
 **Executed:** 2026-05-12 (all four steps).
