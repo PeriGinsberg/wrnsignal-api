@@ -7,9 +7,13 @@
 // Run: npx tsx tests/positioning-v2/phase2/item-populator-check.ts
 // Exits 1 on any failure.
 
-import { populateItems } from "@/lib/positioning/v2/phase2/itemPopulator"
+import {
+  populateItems,
+  type SuggestBulletsForGapImpl,
+} from "@/lib/positioning/v2/phase2/itemPopulator"
 import type {
   Case,
+  CaseSpecificData,
   JobfitResultJson,
   PositioningRunV2Row,
 } from "@/lib/positioning/v2/types"
@@ -17,6 +21,7 @@ import type {
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
   PhaseTwoHeadlineItem,
+  PhaseTwoItem,
 } from "@/lib/positioning/v2/phase2/types"
 import {
   CATHERINE_JOBFIT_WITH_UNITS,
@@ -37,6 +42,39 @@ function check(name: string, cond: boolean, detail?: string): void {
     failures.push(line)
     console.log(`  ✗ ${line}`)
   }
+}
+
+/**
+ * No-op AI mock for tests that don't care about gap suggestions. Returns
+ * empty suggestions + zero usage for every call so the existing test
+ * assertions (which predate A3's AI integration) continue to hold.
+ * Tests that DO care about suggestions pass a custom mock to
+ * populateItems directly.
+ */
+const noopSuggestBullets: SuggestBulletsForGapImpl = async () => ({
+  suggestions: [],
+  usage: { input_tokens: 0, output_tokens: 0 },
+})
+
+/**
+ * Test helper that awaits populateItems with the noop AI mock and returns
+ * just `items` (the existing tests don't care about cost). Replaces
+ * the synchronous `populateItems(...)` call sites that pre-date A3.
+ */
+async function populate(
+  run: PositioningRunV2Row,
+  jobfit: JobfitResultJson,
+  caseSpecific: CaseSpecificData | null,
+  resumeText: string,
+): Promise<PhaseTwoItem[]> {
+  const { items } = await populateItems(
+    run,
+    jobfit,
+    caseSpecific,
+    resumeText,
+    noopSuggestBullets,
+  )
+  return items
 }
 
 /** Minimal PositioningRunV2Row fixture builder. Only the fields populateItems
@@ -67,6 +105,14 @@ function makePositioningRun(caseAssigned: Case, id = "run-test-1"): PositioningR
 }
 
 // ============================================================================
+// async main() — populateItems is async as of A3 (it awaits per-gap
+// AI bullet-suggestion calls). Tests are wrapped accordingly. Matches
+// ai-client-check.ts convention.
+// ============================================================================
+
+async function main(): Promise<void> {
+
+// ============================================================================
 // Test 1 — Happy path Case B against the Catherine v3 fixture (real resume)
 // ============================================================================
 
@@ -74,7 +120,7 @@ console.log("=== Happy path (Catherine v3 real resume, Case B, replace headline)
 
 {
   const run = makePositioningRun("B")
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -224,7 +270,7 @@ console.log("\n=== Verbatim invariant (permanent) ===")
 
 {
   const run = makePositioningRun("B")
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -275,7 +321,7 @@ console.log("\n=== Case gate — Case A ===")
 
 {
   const run = makePositioningRun("A")
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -296,7 +342,7 @@ console.log("\n=== Case gate — Case C ===")
 
 {
   const run = makePositioningRun("C")
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -330,7 +376,7 @@ console.log("\n=== Caps enforcement ===")
   } as JobfitResultJson
   const resume = "alpha beta gamma delta echo content here"
   const run = makePositioningRun("B")
-  const items = populateItems(run, jobfit, null, resume)
+  const items = await populate(run, jobfit, null, resume)
   const bullets = items.filter((i) => i.type === "bullet")
   check(
     "5: 5 anchorable reframe-flavored whys → exactly 3 bullet items (cap)",
@@ -365,7 +411,7 @@ console.log("\n=== Caps enforcement ===")
   } as unknown as JobfitResultJson
   const resume = "completely unrelated short resume"
   const run = makePositioningRun("B")
-  const items = populateItems(run, jobfit, null, resume)
+  const items = await populate(run, jobfit, null, resume)
   const gaps = items.filter((i) => i.type === "gap")
   check(
     "5b: 5 unrepresented core requirements → exactly 3 gap items (cap)",
@@ -389,7 +435,7 @@ console.log("\n=== Canonical ordering ===")
 
 {
   const run = makePositioningRun("B")
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -443,7 +489,7 @@ console.log("\n=== Zero-items edge cases ===")
     ],
   } as unknown as JobfitResultJson
   const run = makePositioningRun("B")
-  const items = populateItems(run, jobfit, null, "alpha beta gamma")
+  const items = await populate(run, jobfit, null, "alpha beta gamma")
   check(
     "7a: only-jobTitle + family mismatch (no bullets, no gaps) → [headlineItem]",
     items.length === 1 && items[0].type === "headline",
@@ -480,7 +526,7 @@ console.log("\n=== Zero-items edge cases ===")
     // no risk_codes
   }
   const run = makePositioningRun("B")
-  const items = populateItems(run, jobfit, null, "alpha beta gamma")
+  const items = await populate(run, jobfit, null, "alpha beta gamma")
   check(
     "7b: only-jobTitle + NO family mismatch + no anchorable content → []",
     items.length === 0,
@@ -502,7 +548,7 @@ console.log("\n=== Zero-items edge cases ===")
     ],
   }
   const run = makePositioningRun("B")
-  const items = populateItems(run, jobfit, null, "alpha beta gamma")
+  const items = await populate(run, jobfit, null, "alpha beta gamma")
   check(
     "8: no jobTitle, no anchorable whys, no core requirements → []",
     items.length === 0,
@@ -521,7 +567,7 @@ console.log("\n=== Synthesize-path headline (no headline in resume + family mism
 
 {
   const run = makePositioningRun("B")
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -586,7 +632,7 @@ console.log("\n=== Null emission (no headline + no family mismatch → no headli
     } as unknown as JobfitResultJson["job_signals"],
   }
   const run = makePositioningRun("B")
-  const items = populateItems(
+  const items = await populate(
     run,
     jobfitNoMismatchWithUnits,
     null,
@@ -653,7 +699,7 @@ console.log("\n=== A2 gap-item default fields (every emitted gap) ===")
   } as unknown as JobfitResultJson
   const resume = "completely unrelated short resume"
   const run = makePositioningRun("B")
-  const items = populateItems(run, jobfit, null, resume)
+  const items = await populate(run, jobfit, null, resume)
   const gaps = items.filter(
     (i): i is PhaseTwoGapItem => i.type === "gap",
   )
@@ -772,7 +818,7 @@ console.log("\n=== Defensive ===")
 
 {
   const run = makePositioningRun("B")
-  const items = populateItems(
+  const items = await populate(
     run,
     null as unknown as JobfitResultJson,
     null,
@@ -791,7 +837,7 @@ console.log("\n=== Defensive ===")
   // extractGapCandidates emits everything (no content to check against).
   // The fixture has 1 core requirement, so total = 1 headline + 1 gap = 2.
   const run = makePositioningRun("B")
-  const items = populateItems(run, CATHERINE_JOBFIT_WITH_UNITS, null, "")
+  const items = await populate(run, CATHERINE_JOBFIT_WITH_UNITS, null, "")
   const headlines = items.filter((i): i is PhaseTwoHeadlineItem => i.type === "headline")
   const bullets = items.filter((i) => i.type === "bullet")
   const gaps = items.filter((i) => i.type === "gap")
@@ -824,7 +870,7 @@ console.log("\n=== Defensive ===")
     ...makePositioningRun("B"),
     case_assigned: "Z" as unknown as Case,
   }
-  const items = populateItems(
+  const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
     null,
@@ -838,6 +884,314 @@ console.log("\n=== Defensive ===")
 }
 
 // ============================================================================
+// Test 12 — A3: AI suggestions populate gap items end-to-end. Uses Test
+//           8c's Kubernetes-fixture substrate (the gap that actually
+//           fires against the v3 resume) plus a mock suggestBulletsForGap
+//           that returns 3 verbatim resume bullets. Asserts the
+//           orchestrator threaded suggestions into the gap item.
+// ============================================================================
+
+console.log("\n=== A3: AI bullet suggestions populate gap items ===")
+
+{
+  // 3 verbatim substrings of CATHERINE_RESUME_TEXT (lines L020, L029,
+  // L031 from the real resume). Used by the mock to simulate Claude
+  // returning relevant verbatim picks.
+  const verbatimSuggestions = [
+    "Lead photographer for editorial shoots, managing creative direction and execution to engage audiences",
+    "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities",
+    "Presented findings through a professional client deck and written report",
+  ]
+  // Sanity: confirm the fixture strings really are verbatim in the
+  // resume (the test would still pass if any string accidentally
+  // matched something else but would erode the architectural intent).
+  for (const s of verbatimSuggestions) {
+    if (!CATHERINE_RESUME_TEXT.includes(s)) {
+      throw new Error(
+        `Test 12 fixture corruption: ${JSON.stringify(s)} is not a verbatim substring of CATHERINE_RESUME_TEXT`,
+      )
+    }
+  }
+  let callCount = 0
+  const mock: SuggestBulletsForGapImpl = async () => {
+    callCount++
+    return {
+      suggestions: verbatimSuggestions,
+      usage: { input_tokens: 800, output_tokens: 60 },
+    }
+  }
+  const trulyUnrepresentedReq = {
+    id: "synthetic-req-12",
+    key: "kubernetes_orchestration",
+    kind: "function",
+    label: "kubernetes orchestration and container deployment",
+    snippet: "Required: hands-on Kubernetes cluster orchestration experience",
+    strength: 8,
+    functionTag: "platform_eng",
+    requiredness: "core",
+  }
+  const jobfit: JobfitResultJson = {
+    ...CATHERINE_JOBFIT_WITH_UNITS,
+    job_signals: {
+      ...(CATHERINE_JOBFIT_WITH_UNITS.job_signals ?? {}),
+      requirement_units: [trulyUnrepresentedReq],
+    } as unknown as JobfitResultJson["job_signals"],
+  }
+  const run = makePositioningRun("B")
+  const result = await populateItems(
+    run,
+    jobfit,
+    null,
+    CATHERINE_RESUME_TEXT,
+    mock,
+  )
+  const gaps = result.items.filter(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "12: exactly 1 gap emitted",
+    gaps.length === 1,
+    `gaps=${gaps.length}`,
+  )
+  check(
+    "12: gap.suggested_bullets_for_reword has 3 entries",
+    gaps[0]?.suggested_bullets_for_reword.length === 3,
+    `length=${gaps[0]?.suggested_bullets_for_reword.length}`,
+  )
+  let allVerbatim = true
+  for (const s of gaps[0]?.suggested_bullets_for_reword ?? []) {
+    if (!CATHERINE_RESUME_TEXT.includes(s)) {
+      allVerbatim = false
+      console.log(`       FAIL: suggestion not verbatim: ${JSON.stringify(s).slice(0, 80)}`)
+    }
+  }
+  check(
+    "12: every suggestion is a verbatim substring of resumeText",
+    allVerbatim,
+  )
+  check(
+    "12: suggestions preserve mock-returned order",
+    JSON.stringify(gaps[0]?.suggested_bullets_for_reword) ===
+      JSON.stringify(verbatimSuggestions),
+  )
+  check(
+    "12: aiCostCents > 0 (cost tracked)",
+    result.aiCostCents > 0,
+    `aiCostCents=${result.aiCostCents}`,
+  )
+  // Suggestions returned on first attempt — should NOT retry. We expect
+  // exactly 1 call. (Retry semantics tested separately in suggest-
+  // bullets-for-gap-check.ts and below in Test 14.)
+  check(
+    "12: mock called exactly 1x (no retry on non-empty result)",
+    callCount === 1,
+    `callCount=${callCount}`,
+  )
+}
+
+// ============================================================================
+// Test 13 — A3: cost-cap mid-populate exhaustion. 3 gaps; mock charges
+//           heavy cost so the cap fires after gap 2. Gap 3 emits with
+//           empty suggestions but the run still completes.
+// ============================================================================
+
+console.log("\n=== A3: cost-cap mid-populate exhaustion ===")
+
+{
+  // Fixture: 3 unrepresented requirements → 3 gaps.
+  const threeUnrepresentedReqs = Array.from({ length: 3 }, (_, i) => ({
+    id: `synthetic-req-cap-${i + 1}`,
+    key: `kubernetes_topic_${i + 1}`,
+    kind: "function",
+    label: `kubernetes orchestration topic ${i + 1}`,
+    snippet: `JD snippet for synthetic core requirement ${i + 1}`,
+    strength: 8,
+    functionTag: "platform_eng",
+    requiredness: "core",
+  }))
+  const jobfit: JobfitResultJson = {
+    ...CATHERINE_JOBFIT_WITH_UNITS,
+    job_signals: {
+      ...(CATHERINE_JOBFIT_WITH_UNITS.job_signals ?? {}),
+      requirement_units: threeUnrepresentedReqs,
+    } as unknown as JobfitResultJson["job_signals"],
+  }
+  // Mock charges ~30 cents per call. After gap 1 + retry (~60 cents)
+  // we exceed the $0.50 cap. (Real Haiku calls cost ~1 cent — this
+  // mock cost is intentionally heavy to exercise the cap reliably
+  // without needing a 50+ call workflow.) Each call returns empty
+  // suggestions to force the retry path; second attempt also empty
+  // because we want to verify the cap fires BEFORE the third gap's
+  // first attempt, not after.
+  let callCount = 0
+  const heavyMock: SuggestBulletsForGapImpl = async () => {
+    callCount++
+    // 60_000 output tokens × $5/MTok = 30 cents (ceil)
+    return {
+      suggestions: [],
+      usage: { input_tokens: 0, output_tokens: 60_000 },
+    }
+  }
+  const run = makePositioningRun("B")
+  const result = await populateItems(
+    run,
+    jobfit,
+    null,
+    CATHERINE_RESUME_TEXT,
+    heavyMock,
+  )
+  const gaps = result.items.filter(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "13: 3 gap items still emit (cost cap doesn't drop items)",
+    gaps.length === 3,
+    `gaps=${gaps.length}`,
+  )
+  check(
+    "13: every gap emits with empty suggestions (cap fired OR mock returned [])",
+    gaps.every((g) => g.suggested_bullets_for_reword.length === 0),
+  )
+  check(
+    "13: aiCostCents reflects calls that completed before cap fired",
+    result.aiCostCents > 0,
+    `aiCostCents=${result.aiCostCents}`,
+  )
+  // Call sequence: gap 1 first attempt (cost=30) + retry (cost=60) →
+  // now ≥ MAX_COST_CENTS=50 → gap 2 first attempt SKIPPED. callCount=2.
+  // The cap-hit log fires on the gap-2 iteration entry.
+  check(
+    "13: mock invoked at most 2x (cap short-circuits remaining gaps)",
+    callCount <= 2,
+    `callCount=${callCount}`,
+  )
+  check(
+    "13: /start does NOT throw — populator succeeds with empty suggestions on capped gaps",
+    Array.isArray(result.items),
+  )
+}
+
+// ============================================================================
+// Test 14 — A3: retry-once on empty first-attempt suggestions. Mock returns
+//           empty on first call and 3 verbatim on second (isRetry=true).
+//           Asserts the populator retried and got real suggestions.
+// ============================================================================
+
+console.log("\n=== A3: retry-once on empty first-attempt suggestions ===")
+
+{
+  const trulyUnrepresentedReq = {
+    id: "synthetic-req-retry",
+    key: "kubernetes_retry",
+    kind: "function",
+    label: "kubernetes orchestration",
+    snippet: "JD snippet",
+    strength: 8,
+    functionTag: "platform_eng",
+    requiredness: "core",
+  }
+  const jobfit: JobfitResultJson = {
+    ...CATHERINE_JOBFIT_WITH_UNITS,
+    job_signals: {
+      ...(CATHERINE_JOBFIT_WITH_UNITS.job_signals ?? {}),
+      requirement_units: [trulyUnrepresentedReq],
+    } as unknown as JobfitResultJson["job_signals"],
+  }
+  const verbatimOnRetry = [
+    "Lead photographer for editorial shoots, managing creative direction and execution to engage audiences",
+  ]
+  let callCount = 0
+  const retryMock: SuggestBulletsForGapImpl = async (input) => {
+    callCount++
+    return {
+      suggestions: input.isRetry ? verbatimOnRetry : [],
+      usage: { input_tokens: 400, output_tokens: 50 },
+    }
+  }
+  const run = makePositioningRun("B")
+  const result = await populateItems(
+    run,
+    jobfit,
+    null,
+    CATHERINE_RESUME_TEXT,
+    retryMock,
+  )
+  const gap = result.items.find(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "14: gap emitted",
+    gap !== undefined,
+  )
+  check(
+    "14: mock invoked exactly 2x (first attempt + retry)",
+    callCount === 2,
+    `callCount=${callCount}`,
+  )
+  check(
+    "14: suggestions populated from retry attempt",
+    gap?.suggested_bullets_for_reword.length === 1 &&
+      gap.suggested_bullets_for_reword[0] === verbatimOnRetry[0],
+  )
+}
+
+// ============================================================================
+// Test 15 — A3: error swallowing. If suggestBulletsForGap throws (network
+//           error, Anthropic 5xx), populator logs and emits gap with
+//           empty suggestions. /start does NOT fail.
+// ============================================================================
+
+console.log("\n=== A3: error swallowing on AI call failure ===")
+
+{
+  const trulyUnrepresentedReq = {
+    id: "synthetic-req-throw",
+    key: "kubernetes_throw",
+    kind: "function",
+    label: "kubernetes orchestration",
+    snippet: "JD snippet",
+    strength: 8,
+    functionTag: "platform_eng",
+    requiredness: "core",
+  }
+  const jobfit: JobfitResultJson = {
+    ...CATHERINE_JOBFIT_WITH_UNITS,
+    job_signals: {
+      ...(CATHERINE_JOBFIT_WITH_UNITS.job_signals ?? {}),
+      requirement_units: [trulyUnrepresentedReq],
+    } as unknown as JobfitResultJson["job_signals"],
+  }
+  const throwingMock: SuggestBulletsForGapImpl = async () => {
+    throw new Error("simulated Anthropic 500")
+  }
+  const run = makePositioningRun("B")
+  // Should NOT throw — populator catches and falls through.
+  const result = await populateItems(
+    run,
+    jobfit,
+    null,
+    CATHERINE_RESUME_TEXT,
+    throwingMock,
+  )
+  const gap = result.items.find(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "15: gap still emits despite AI call failure",
+    gap !== undefined,
+  )
+  check(
+    "15: gap.suggested_bullets_for_reword === [] on AI failure",
+    gap?.suggested_bullets_for_reword.length === 0,
+  )
+  check(
+    "15: aiCostCents === 0 (no successful calls billed)",
+    result.aiCostCents === 0,
+    `aiCostCents=${result.aiCostCents}`,
+  )
+}
+
+// ============================================================================
 console.log(`\n=== RESULT: ${failures.length === 0 ? "PASS" : "FAIL"} ===`)
 if (failures.length) {
   console.log("Failures:")
@@ -845,3 +1199,10 @@ if (failures.length) {
   process.exit(1)
 }
 console.log("All checks passed.")
+
+} // end async function main
+
+main().catch((e) => {
+  console.error("Unhandled error in main():", e)
+  process.exit(1)
+})

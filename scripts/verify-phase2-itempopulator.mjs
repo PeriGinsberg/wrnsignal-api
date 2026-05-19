@@ -653,12 +653,42 @@ async function main() {
         fail(`gap.target_bullet_text should be null on populator emit`,
              String(seededGap.target_bullet_text))
       }
-      if (Array.isArray(seededGap.suggested_bullets_for_reword) &&
-          seededGap.suggested_bullets_for_reword.length === 0) {
-        pass(`gap.suggested_bullets_for_reword === [] (A2 default, A3 populates)`)
-      } else {
-        fail(`gap.suggested_bullets_for_reword should be [] on populator emit`,
+      // A3: suggested_bullets_for_reword is populated by aiClient.suggestBulletsForGap
+      // at populator time against the real Anthropic API on staging.
+      // Acceptance criteria (FRD §6.10 + A3 verbatim invariant):
+      //   - field is an Array (always)
+      //   - length is 0..3 (capped at MAX_SUGGESTED_BULLETS)
+      //   - every entry is a verbatim substring of persona.resume_text
+      //     (resumeComposer locate-and-replace dependency)
+      // Empty array is acceptable — the seeded fixture's Kubernetes
+      // requirement may genuinely have no relevant bullets in Catherine's
+      // marketing/design resume. Logged informational rather than failed.
+      if (!Array.isArray(seededGap.suggested_bullets_for_reword)) {
+        fail(`gap.suggested_bullets_for_reword must be an Array`,
              JSON.stringify(seededGap.suggested_bullets_for_reword))
+      } else {
+        const suggestions = seededGap.suggested_bullets_for_reword
+        if (suggestions.length === 0) {
+          pass(`gap.suggested_bullets_for_reword is [] (Claude found no relevant bullets for the Kubernetes-flavored synthetic gap against Catherine's marketing resume — acceptable degradation per A3 spec)`)
+        } else if (suggestions.length > 3) {
+          fail(`gap.suggested_bullets_for_reword should cap at 3`,
+               `length=${suggestions.length}`)
+        } else {
+          pass(`gap.suggested_bullets_for_reword.length === ${suggestions.length} (0..3, capped)`)
+          let allVerbatim = true
+          for (let i = 0; i < suggestions.length; i++) {
+            const s = suggestions[i]
+            if (typeof s !== "string" || !resumeText.includes(s)) {
+              allVerbatim = false
+              console.log(`       FAIL: suggestion[${i}] not verbatim in resume_text: ${JSON.stringify(s).slice(0, 100)}`)
+            }
+          }
+          if (allVerbatim) {
+            pass(`every suggestion is a verbatim substring of persona.resume_text (A3 invariant)`)
+          } else {
+            fail(`A3 verbatim invariant breached on live staging data`)
+          }
+        }
       }
     } else {
       fail("seeded synthetic gap not found among gap items", gapItems.map((g) => g.label).join("|"))

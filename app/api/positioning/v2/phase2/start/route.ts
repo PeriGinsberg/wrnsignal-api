@@ -302,9 +302,14 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 8. Populate items + build initial state ─────────────────────────────
-  // populateItems (Stage 2b Commit 2 wiring) returns real items for Case B
-  // runs and [] for Case A/C (defense-in-depth; route gated above).
-  const items = populateItems(
+  // populateItems is async as of A3: it returns the items[] AND the cost
+  // accumulated by populator-time AI calls (currently just the bullet-
+  // suggestion enrichment for gap items per Phase 2 v1 build A3).
+  // ai_cost_cents flows into the phase2_runs INSERT so /draft's cost-cap
+  // check sees the populator cost as the cumulative baseline. Returns
+  // empty items + 0 cents for Case A/C (defense-in-depth; route gated
+  // above).
+  const { items, aiCostCents } = await populateItems(
     posRow,
     jf.row.result_json,
     caseSpecific,
@@ -326,6 +331,7 @@ export async function POST(request: NextRequest) {
     persona_id: personaId,
     case_letter: caseAssigned,
     state: initialState,
+    ai_cost_cents: aiCostCents,
   }
 
   const { data: insertedRow, error: insertErr } = await supabaseAdmin

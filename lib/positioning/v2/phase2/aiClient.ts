@@ -62,6 +62,10 @@ import {
   buildGapPrompt,
   MAX_TOKENS_GAP,
 } from "./prompts/gapPrompt"
+import {
+  buildSuggestBulletsForGapPrompt,
+  MAX_TOKENS_SUGGEST_BULLETS,
+} from "./prompts/suggestBulletsForGapPrompt"
 import type {
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
@@ -76,6 +80,17 @@ import type {
 const TEMPERATURE_FIRST_ATTEMPT = 0.7
 /** Retry temperature. Higher — give genuine output variation when first try failed grounding. */
 const TEMPERATURE_RETRY = 1.0
+
+/**
+ * suggestBulletsForGap temperatures. Lower than the draft-generation paths
+ * because we want grounded SELECTION (verbatim picking from the resume),
+ * not creative variation. Even on retry the temperature stays modest —
+ * if the model can't find good matches, we'd rather it return an empty
+ * array than start paraphrasing under high-temp pressure (the verbatim
+ * filter would drop them anyway).
+ */
+const TEMPERATURE_SUGGEST_BULLETS_FIRST = 0.3
+const TEMPERATURE_SUGGEST_BULLETS_RETRY = 0.7
 
 // ============================================================================
 // Unified return type for all three generation paths
@@ -267,6 +282,118 @@ export async function generateBulletReframe(
   const parsed = parseClaudeResponse(apiResult.text, { maxDrafts: 1 })
   return {
     drafts: parsed.drafts,
+    usage: apiResult.usage,
+  }
+}
+
+// ============================================================================
+// A3 — bullet suggestion for gap reword (populator-time)
+// ============================================================================
+
+/**
+ * Maximum number of bullet suggestions returned. Frontend's bullet-picker
+ * UX (D2) defaults to a "top 3" display when the user picks
+ * `reword_existing_bullet` as the compositional outcome. Cap matches.
+ */
+const MAX_SUGGESTED_BULLETS = 3
+
+export type SuggestBulletsForGapInput = {
+  /** Description of the gap being addressed. PhaseTwoGapItem.gap_description. */
+  gapDescription: string
+  /** JD excerpt motivating this gap. PhaseTwoGapItem.jd_context. */
+  jdContext: string
+  /**
+   * Full resume text (persona.resume_text). PRIMARY source — every returned
+   * suggestion must be a verbatim substring of this string. Post-parse
+   * filter drops non-verbatim entries.
+   */
+  resumeText: string
+  /** True if this is the retry attempt. Affects temperature. */
+  isRetry?: boolean
+  /** Test-only: inject mock invokeClaude. */
+  invokeClaudeImpl?: (input: InvokeClaudeInput) => Promise<InvokeClaudeResult>
+}
+
+export type SuggestBulletsForGapResult = {
+  /**
+   * 0-3 verbatim resume bullet substrings ordered by Claude's relevance
+   * judgment. Empty array means either the model returned no matches OR
+   * every returned candidate failed the verbatim filter — caller can
+   * treat both cases identically (frontend falls back to "show all
+   * bullets" if the picker has no top-3).
+   */
+  suggestions: string[]
+  /** Token usage from the Anthropic API call. Feeds centsForUsage(). */
+  usage: {
+    input_tokens: number
+    output_tokens: number
+  }
+}
+
+/**
+ * Surface up to 3 existing resume bullets most relevant to a gap. Called
+ * at populator time (Phase 2 v1 build A3) so the suggestions are cached
+ * on phase2_runs.state.items[N].suggested_bullets_for_reword and the
+ * frontend doesn't pay a per-click AI latency when the user opens the
+ * gap-detail screen.
+ *
+ * Architectural contract (load-bearing):
+ *   Every returned suggestion is a CHARACTER-FOR-CHARACTER substring of
+ *   `resumeText`. The model is instructed to return verbatim picks and
+ *   this function post-filters anything that fails the invariant. If
+ *   every candidate fails, returns suggestions=[]; the cost is still
+ *   reported in `usage` (the API call happened).
+ *
+ * Defensive paths (all collapse to suggestions=[], usage still reported):
+ *   - Malformed JSON, missing `drafts` field, non-string elements →
+ *     parseClaudeResponse returns []. Filter step gets nothing to
+ *     verify.
+ *   - All candidates fail verbatim check → filter drops everything.
+ *   - More than 3 verbatim candidates → cap at 3 in original order.
+ *
+ * Does NOT retry internally. Caller (itemPopulator) decides retry policy.
+ */
+export async function suggestBulletsForGap(
+  input: SuggestBulletsForGapInput,
+): Promise<SuggestBulletsForGapResult> {
+  const userPrompt = buildSuggestBulletsForGapPrompt({
+    gapDescription: input.gapDescription,
+    jdContext: input.jdContext,
+    resumeText: input.resumeText,
+  })
+
+  const invoke = input.invokeClaudeImpl ?? defaultInvokeClaude
+  const apiResult = await invoke({
+    systemPrompt: SYSTEM_PROMPT,
+    userPrompt,
+    maxTokens: MAX_TOKENS_SUGGEST_BULLETS,
+    temperature: input.isRetry
+      ? TEMPERATURE_SUGGEST_BULLETS_RETRY
+      : TEMPERATURE_SUGGEST_BULLETS_FIRST,
+  })
+
+  // Parse first (handles all the standard defensive cases: malformed
+  // JSON, missing field, non-string elements). MAX_SUGGESTED_BULLETS is
+  // the parse-stage cap — we may still drop more in the verbatim filter
+  // below.
+  const parsed = parseClaudeResponse(apiResult.text, {
+    maxDrafts: MAX_SUGGESTED_BULLETS,
+  })
+
+  // Verbatim filter. Every candidate must be a substring of resumeText.
+  // Defensive against:
+  //   - Model paraphrased despite the instruction (drop)
+  //   - Model added bullet glyphs or normalized whitespace (drop — the
+  //     stored suggestion must be a locate-and-replace anchor and any
+  //     normalization breaks that)
+  //   - resumeText being empty (every candidate fails; suggestions=[])
+  const resume = typeof input.resumeText === "string" ? input.resumeText : ""
+  const verbatim = parsed.drafts.filter(
+    (d) => d.length > 0 && resume.includes(d),
+  )
+
+  return {
+    suggestions: verbatim.slice(0, MAX_SUGGESTED_BULLETS),
     usage: apiResult.usage,
   }
 }

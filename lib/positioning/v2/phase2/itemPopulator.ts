@@ -54,11 +54,38 @@ import {
   gapQuestionTemplate,
   headlineLabel,
 } from "./itemPopulatorParts/templates"
+import {
+  suggestBulletsForGap as defaultSuggestBulletsForGap,
+  type SuggestBulletsForGapInput,
+  type SuggestBulletsForGapResult,
+} from "./aiClient"
+import { centsForUsage, MAX_COST_CENTS } from "./costPolicy"
 
 /** Maximum bullet items emitted per run. */
 const MAX_BULLETS = 3
 /** Maximum gap items emitted per run. */
 const MAX_GAPS = 3
+
+/**
+ * Result returned by populateItems. Items array seeds phase2_runs.state
+ * .items. aiCostCents is the integer cents accumulated during populator-
+ * time AI calls (currently just A3's bullet suggestions); caller persists
+ * it to phase2_runs.ai_cost_cents at INSERT time so subsequent /draft
+ * calls see the populator cost as the cumulative baseline.
+ */
+export type PopulateItemsResult = {
+  items: PhaseTwoItem[]
+  aiCostCents: number
+}
+
+/**
+ * Dependency-injection override for tests. Match the suggestBulletsForGap
+ * signature so the populator can call it identically regardless of source.
+ * Production callers omit it; the real aiClient implementation is used.
+ */
+export type SuggestBulletsForGapImpl = (
+  input: SuggestBulletsForGapInput,
+) => Promise<SuggestBulletsForGapResult>
 
 /**
  * Build the initial PhaseTwoItem[] for a new phase2_run.
@@ -102,12 +129,18 @@ const MAX_GAPS = 3
  * @returns Ordered array of PhaseTwoItem ready to seed phase2_runs.state.items.
  *          Empty array is a valid result (see edge cases).
  */
-export function populateItems(
+export async function populateItems(
   positioningRun: PositioningRunV2Row,
   jobfit: JobfitResultJson,
   caseSpecific: CaseSpecificData | null,
   resumeText: string,
-): PhaseTwoItem[] {
+  /**
+   * Test-only: inject a mock suggestBulletsForGap to avoid live Anthropic
+   * calls. Production callers omit; the real aiClient.suggestBulletsForGap
+   * is used. Mirrors the invokeClaudeImpl DI pattern in aiClient itself.
+   */
+  suggestBulletsImpl?: SuggestBulletsForGapImpl,
+): Promise<PopulateItemsResult> {
   // caseSpecific is wired through for forward-compat (FRD §6.2 future
   // headline_recommendation field). Currently unused — silence the lint.
   void caseSpecific
@@ -117,7 +150,7 @@ export function populateItems(
     console.log(
       `[itemPopulator] case-gated case=${positioningRun.case_assigned} run=${positioningRun.id}`,
     )
-    return []
+    return { items: [], aiCostCents: 0 }
   }
 
   // ── Extract candidates ────────────────────────────────────────────────
@@ -184,35 +217,122 @@ export function populateItems(
     decided_at: null,
   }))
 
-  const gapItems: PhaseTwoGapItem[] = cappedGaps.map((c, idx) => ({
-    id: `gap-${idx + 1}`,
-    type: "gap" as const,
-    label: gapLabel(c.keyword),
-    gap_description: c.gap_description,
-    jd_context: c.jd_context,
-    question_asked: gapQuestionTemplate(c.gap_description, c.jd_context),
-    user_response: null,
-    draft: null,
-    final_text: null,
-    accepted: false,
-    declined: false,
-    skipped: false,
-    manual_entry: false,
-    decided_at: null,
-    // A2 multi-outcome composition fields. Safe defaults: outcome is null
-    // until the user decides in /decide (C1); target bullet text is null
-    // until "reword_existing_bullet" is chosen with a bullet picker
-    // selection; suggested_bullets_for_reword is [] until AI fills it in
-    // A3. Legacy phase2_runs rows lack these fields entirely — downstream
-    // readers default accordingly. See PhaseTwoGapItem JSDoc.
-    compositional_outcome: null,
-    target_bullet_text: null,
-    suggested_bullets_for_reword: [],
-  }))
+  // ── Gap items + A3 bullet suggestions (serial AI calls per gap) ──────
+  // Each gap gets one suggestBulletsForGap call. Calls run SERIALLY so the
+  // cost-cap check fires before each one (parallel would race the
+  // accumulator and over-spend). Latency cost: ~1-3s per gap. Acceptable
+  // for v0.1 — perf parallelization is a separate commit per design lock.
+  //
+  // Cost-cap behavior: when accumulated cost >= MAX_COST_CENTS, remaining
+  // gaps emit with suggested_bullets_for_reword: [] (the A2 default).
+  // Populator does NOT throw — /start succeeds and the user gets a usable
+  // run; the bullet-picker UX falls back to "show all bullets" for the
+  // un-suggested gaps.
+  //
+  // Retry-on-parse-failure: aiClient does NOT retry internally. If
+  // suggestions=[] from the first attempt could be either "model returned
+  // no good matches" (legitimate) OR "parse/verbatim failure" (recoverable).
+  // We can't discriminate from outside aiClient, so we retry exactly once
+  // with isRetry=true. If the second attempt also returns [], we treat
+  // it as legitimate-no-matches.
+  const suggestBullets = suggestBulletsImpl ?? defaultSuggestBulletsForGap
+  const gapItems: PhaseTwoGapItem[] = []
+  let aiCostCents = 0
+  let costCapHit = false
+
+  for (let idx = 0; idx < cappedGaps.length; idx++) {
+    const c = cappedGaps[idx]
+    let suggestions: string[] = []
+
+    if (costCapHit) {
+      // Cost cap already exhausted on a prior iteration; skip AI calls
+      // for remaining gaps. Item still emits with [] suggestions (A2
+      // default) so the user gets the gap item, just without picker
+      // top-3 cache.
+    } else if (aiCostCents >= MAX_COST_CENTS) {
+      // Pre-call check — covers the rare case where prior iterations
+      // hit exactly the cap. Flip the flag so subsequent iterations
+      // short-circuit without re-checking.
+      costCapHit = true
+      console.log(
+        `[itemPopulator] cost cap exhausted (${aiCostCents}/${MAX_COST_CENTS}), skipping AI bullet suggestions for remaining gaps`,
+      )
+    } else {
+      try {
+        let result = await suggestBullets({
+          gapDescription: c.gap_description,
+          jdContext: c.jd_context,
+          resumeText,
+          isRetry: false,
+        })
+        aiCostCents += centsForUsage(result.usage)
+        // Single retry on empty suggestions — handles parse/verbatim
+        // failures recoverable by re-rolling at a higher temperature.
+        // Legitimate "no good matches" cases also fall through this
+        // retry (one extra call, ~1 cent), which is acceptable cost
+        // for the simplicity of not threading parse-failure-vs-no-
+        // match discrimination out of aiClient.
+        if (result.suggestions.length === 0) {
+          // Re-check cap before the retry call — defensive against
+          // the unusual case where the first call exactly hit the cap.
+          if (aiCostCents < MAX_COST_CENTS) {
+            result = await suggestBullets({
+              gapDescription: c.gap_description,
+              jdContext: c.jd_context,
+              resumeText,
+              isRetry: true,
+            })
+            aiCostCents += centsForUsage(result.usage)
+          }
+        }
+        suggestions = result.suggestions
+      } catch (e) {
+        // AI call failed (network error, Anthropic 5xx, invalid API key).
+        // Log and continue with empty suggestions — populator is
+        // non-fail-critical for the suggestion enrichment; the gap item
+        // still emits with the A2 default. /start does NOT throw on AI
+        // failure here.
+        console.warn(
+          `[itemPopulator] suggestBulletsForGap failed for gap-${idx + 1} run=${positioningRun.id}: ${e instanceof Error ? e.message : String(e)}`,
+        )
+        suggestions = []
+      }
+    }
+
+    gapItems.push({
+      id: `gap-${idx + 1}`,
+      type: "gap" as const,
+      label: gapLabel(c.keyword),
+      gap_description: c.gap_description,
+      jd_context: c.jd_context,
+      question_asked: gapQuestionTemplate(c.gap_description, c.jd_context),
+      user_response: null,
+      draft: null,
+      final_text: null,
+      accepted: false,
+      declined: false,
+      skipped: false,
+      manual_entry: false,
+      decided_at: null,
+      // A2 multi-outcome composition fields. compositional_outcome and
+      // target_bullet_text stay at their A2 defaults — user decides in
+      // /decide (C1). suggested_bullets_for_reword is now populated by
+      // A3's aiClient call above (verbatim-filtered, capped at 3, or []
+      // if AI returned nothing usable or the cost cap was exhausted).
+      // Legacy phase2_runs rows lack these fields entirely — downstream
+      // readers default accordingly. See PhaseTwoGapItem JSDoc.
+      compositional_outcome: null,
+      target_bullet_text: null,
+      suggested_bullets_for_reword: suggestions,
+    })
+  }
 
   console.log(
-    `[itemPopulator] populated case=B run=${positioningRun.id} headline=${headlineItems.length} bullets=${bulletItems.length} gaps=${gapItems.length}`,
+    `[itemPopulator] populated case=B run=${positioningRun.id} headline=${headlineItems.length} bullets=${bulletItems.length} gaps=${gapItems.length} aiCostCents=${aiCostCents}`,
   )
 
-  return [...headlineItems, ...bulletItems, ...gapItems]
+  return {
+    items: [...headlineItems, ...bulletItems, ...gapItems],
+    aiCostCents,
+  }
 }
