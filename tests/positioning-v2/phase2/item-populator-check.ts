@@ -9,6 +9,7 @@
 
 import {
   populateItems,
+  type ClassifyGapShapeImpl,
   type SuggestBulletsForGapImpl,
 } from "@/lib/positioning/v2/phase2/itemPopulator"
 import type {
@@ -18,6 +19,7 @@ import type {
   PositioningRunV2Row,
 } from "@/lib/positioning/v2/types"
 import type {
+  GapShape,
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
   PhaseTwoHeadlineItem,
@@ -57,9 +59,21 @@ const noopSuggestBullets: SuggestBulletsForGapImpl = async () => ({
 })
 
 /**
- * Test helper that awaits populateItems with the noop AI mock and returns
- * just `items` (the existing tests don't care about cost). Replaces
- * the synchronous `populateItems(...)` call sites that pre-date A3.
+ * No-op G1 classifier mock for tests that don't care about gap_shape.
+ * Always returns "unknown" with zero cost so existing assertions
+ * (predating G1) continue to hold. Tests that DO care about shape
+ * classification pass a custom mock.
+ */
+const noopClassifyShape: ClassifyGapShapeImpl = async () => ({
+  shape: "unknown",
+  aiCostCents: 0,
+  llmCalled: false,
+})
+
+/**
+ * Test helper that awaits populateItems with no-op AI mocks and returns
+ * just `items` (existing tests don't care about cost or shape). Replaces
+ * the synchronous `populateItems(...)` call sites that pre-date A3/G1.
  */
 async function populate(
   run: PositioningRunV2Row,
@@ -73,6 +87,7 @@ async function populate(
     caseSpecific,
     resumeText,
     noopSuggestBullets,
+    noopClassifyShape,
   )
   return items
 }
@@ -730,6 +745,14 @@ console.log("\n=== A2 gap-item default fields (every emitted gap) ===")
     "8d: every gap item has compositional_outcome=null, target_bullet_text=null, suggested_bullets_for_reword=[]",
     allDefaultsCorrect,
   )
+  // G1: with noopClassifyShape every emitted gap_shape === "unknown".
+  // The classifier integration test (Test 16 below) covers shape-aware
+  // population against a non-no-op mock.
+  check(
+    "8d: every gap.gap_shape === 'unknown' (noopClassifyShape result)",
+    gaps.every((g) => g.gap_shape === "unknown"),
+    gaps.map((g) => g.gap_shape).join(","),
+  )
 }
 
 // ============================================================================
@@ -800,6 +823,16 @@ console.log("\n=== A2 backward-compat: legacy gap row read shape ===")
   check(
     "8e: defensive `?? []` defaults legacy suggested_bullets_for_reword to []",
     Array.isArray(suggestions) && suggestions.length === 0,
+  )
+  // G1: gap_shape is also additive — legacy rows lack it.
+  check(
+    "8e: legacy row reads gap_shape as undefined",
+    (legacyGapItem as { gap_shape?: unknown }).gap_shape === undefined,
+  )
+  const shape = legacyGapItem.gap_shape ?? "unknown"
+  check(
+    "8e: defensive `?? \"unknown\"` defaults legacy gap_shape to 'unknown'",
+    shape === "unknown",
   )
   // Other fields on the legacy row still read normally — the new fields
   // are additive, not destructive.
@@ -944,6 +977,7 @@ console.log("\n=== A3: AI bullet suggestions populate gap items ===")
     null,
     CATHERINE_RESUME_TEXT,
     mock,
+    noopClassifyShape,
   )
   const gaps = result.items.filter(
     (i): i is PhaseTwoGapItem => i.type === "gap",
@@ -1039,6 +1073,7 @@ console.log("\n=== A3: cost-cap mid-populate exhaustion ===")
     null,
     CATHERINE_RESUME_TEXT,
     heavyMock,
+    noopClassifyShape,
   )
   const gaps = result.items.filter(
     (i): i is PhaseTwoGapItem => i.type === "gap",
@@ -1115,6 +1150,7 @@ console.log("\n=== A3: retry-once on empty first-attempt suggestions ===")
     null,
     CATHERINE_RESUME_TEXT,
     retryMock,
+    noopClassifyShape,
   )
   const gap = result.items.find(
     (i): i is PhaseTwoGapItem => i.type === "gap",
@@ -1172,6 +1208,7 @@ console.log("\n=== A3: error swallowing on AI call failure ===")
     null,
     CATHERINE_RESUME_TEXT,
     throwingMock,
+    noopClassifyShape,
   )
   const gap = result.items.find(
     (i): i is PhaseTwoGapItem => i.type === "gap",
@@ -1188,6 +1225,183 @@ console.log("\n=== A3: error swallowing on AI call failure ===")
     "15: aiCostCents === 0 (no successful calls billed)",
     result.aiCostCents === 0,
     `aiCostCents=${result.aiCostCents}`,
+  )
+}
+
+// ============================================================================
+// Test 16 — G1: multi-shape end-to-end populator integration. 3 gaps with
+//           shapes chosen so the orchestrator's mock returns distinct
+//           values per gap. Asserts each emitted PhaseTwoGapItem carries
+//           the expected gap_shape.
+// ============================================================================
+
+console.log("\n=== G1: multi-shape end-to-end populator ===")
+
+{
+  // 3 unrepresented core requirements — labels chosen so:
+  //   (a) every token is genuinely absent from Catherine's resume (no
+  //       overlap with words like "team", "work", "analysis", etc. that
+  //       trip extractGapCandidates's label-token-overlap filter)
+  //   (b) the mock can route shape deterministically by gap_description
+  //       prefix, independent of any heuristic evolution.
+  const threeReqs = [
+    {
+      id: "shape-req-cert",
+      key: "kubernetes_pmp_cert",
+      kind: "function",
+      label: "kubernetes pmp credential",
+      snippet: "PMP certification preferred",
+      strength: 8,
+      functionTag: "platform_eng",
+      requiredness: "core",
+    },
+    {
+      id: "shape-req-skill",
+      key: "kubernetes_dataviz",
+      kind: "function",
+      label: "kubernetes dataviz capability",
+      snippet: "data visualization capability",
+      strength: 8,
+      functionTag: "platform_eng",
+      requiredness: "core",
+    },
+    {
+      id: "shape-req-exp",
+      key: "kubernetes_infra_orch",
+      kind: "function",
+      label: "kubernetes infrastructure orchestration",
+      snippet: "Led platform infrastructure for 7+ years",
+      strength: 8,
+      functionTag: "platform_eng",
+      requiredness: "core",
+    },
+  ]
+  const jobfit: JobfitResultJson = {
+    ...CATHERINE_JOBFIT_WITH_UNITS,
+    job_signals: {
+      ...(CATHERINE_JOBFIT_WITH_UNITS.job_signals ?? {}),
+      requirement_units: threeReqs,
+    } as unknown as JobfitResultJson["job_signals"],
+  }
+  // Shape mock: route by gap_description prefix so the order is
+  // independent of how extractGapCandidates orders things.
+  const shapeByPrefix: Record<string, GapShape> = {
+    "kubernetes pmp": "certification",
+    "kubernetes dataviz": "skill",
+    "kubernetes infrastructure": "experience",
+  }
+  let shapeCallCount = 0
+  const mockClassifyShape: ClassifyGapShapeImpl = async ({ candidate }) => {
+    shapeCallCount++
+    const prefix = Object.keys(shapeByPrefix).find((p) =>
+      candidate.gap_description.startsWith(p),
+    )
+    return {
+      shape: prefix ? shapeByPrefix[prefix] : "unknown",
+      aiCostCents: 1,
+      llmCalled: true,
+    }
+  }
+  const run = makePositioningRun("B")
+  const result = await populateItems(
+    run,
+    jobfit,
+    null,
+    CATHERINE_RESUME_TEXT,
+    noopSuggestBullets,
+    mockClassifyShape,
+  )
+  const gaps = result.items.filter(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "16: 3 gap items emitted (one per shape)",
+    gaps.length === 3,
+    `gaps=${gaps.length}`,
+  )
+  check(
+    "16: classifier invoked once per gap",
+    shapeCallCount === 3,
+    `calls=${shapeCallCount}`,
+  )
+  const gapByPrefix: Record<string, PhaseTwoGapItem | undefined> = {
+    cert: gaps.find((g) => g.gap_description.startsWith("kubernetes pmp")),
+    skill: gaps.find((g) => g.gap_description.startsWith("kubernetes dataviz")),
+    exp: gaps.find((g) => g.gap_description.startsWith("kubernetes infrastructure")),
+  }
+  check(
+    "16: cert gap carries gap_shape='certification'",
+    gapByPrefix.cert?.gap_shape === "certification",
+    gapByPrefix.cert?.gap_shape,
+  )
+  check(
+    "16: skill gap carries gap_shape='skill'",
+    gapByPrefix.skill?.gap_shape === "skill",
+    gapByPrefix.skill?.gap_shape,
+  )
+  check(
+    "16: experience gap carries gap_shape='experience'",
+    gapByPrefix.exp?.gap_shape === "experience",
+    gapByPrefix.exp?.gap_shape,
+  )
+  // Cost accumulates from G1 calls (1 cent × 3) — A3 was no-op.
+  check(
+    "16: aiCostCents reflects 3 G1 classification calls",
+    result.aiCostCents === 3,
+    `aiCostCents=${result.aiCostCents}`,
+  )
+}
+
+// ============================================================================
+// Test 17 — G1: classifier throws → populator falls back to "experience"
+//           without failing /start. Mirrors A3 Test 15 error-swallowing
+//           semantics for the gap-shape orchestrator.
+// ============================================================================
+
+console.log("\n=== G1: error swallowing on classifier failure ===")
+
+{
+  const trulyUnrepresentedReq = {
+    id: "shape-req-throw",
+    key: "kubernetes_throw_shape",
+    kind: "function",
+    label: "kubernetes orchestration",
+    snippet: "JD snippet",
+    strength: 8,
+    functionTag: "platform_eng",
+    requiredness: "core",
+  }
+  const jobfit: JobfitResultJson = {
+    ...CATHERINE_JOBFIT_WITH_UNITS,
+    job_signals: {
+      ...(CATHERINE_JOBFIT_WITH_UNITS.job_signals ?? {}),
+      requirement_units: [trulyUnrepresentedReq],
+    } as unknown as JobfitResultJson["job_signals"],
+  }
+  const throwingClassifier: ClassifyGapShapeImpl = async () => {
+    throw new Error("unexpected orchestrator crash")
+  }
+  const run = makePositioningRun("B")
+  // Should NOT throw — populator catches and falls through.
+  const result = await populateItems(
+    run,
+    jobfit,
+    null,
+    CATHERINE_RESUME_TEXT,
+    noopSuggestBullets,
+    throwingClassifier,
+  )
+  const gap = result.items.find(
+    (i): i is PhaseTwoGapItem => i.type === "gap",
+  )
+  check(
+    "17: gap still emits despite classifier crash",
+    gap !== undefined,
+  )
+  check(
+    "17: gap.gap_shape falls back to 'experience' (safe default)",
+    gap?.gap_shape === "experience",
+    gap?.gap_shape,
   )
 }
 

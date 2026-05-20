@@ -39,6 +39,7 @@ import type {
   PositioningRunV2Row,
 } from "@/lib/positioning/v2/types"
 import type {
+  GapShape,
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
   PhaseTwoHeadlineItem,
@@ -59,6 +60,11 @@ import {
   type SuggestBulletsForGapInput,
   type SuggestBulletsForGapResult,
 } from "./aiClient"
+import {
+  classifyGapShape as defaultClassifyGapShape,
+  type ClassifyGapShapeAiImpl,
+  type ClassifyGapShapeOrchestratorResult,
+} from "./itemPopulatorParts/classifyGapShape"
 import { centsForUsage, MAX_COST_CENTS } from "./costPolicy"
 
 /** Maximum bullet items emitted per run. */
@@ -86,6 +92,22 @@ export type PopulateItemsResult = {
 export type SuggestBulletsForGapImpl = (
   input: SuggestBulletsForGapInput,
 ) => Promise<SuggestBulletsForGapResult>
+
+/**
+ * Dependency-injection override for the G1 gap-shape classifier
+ * orchestrator. Tests pass a mock so unit checks don't hit the live
+ * heuristic dictionaries OR the Anthropic API. Production callers omit;
+ * the real orchestrator (./itemPopulatorParts/classifyGapShape) is used.
+ *
+ * Note: this is the ORCHESTRATOR signature (heuristic + LLM fallback),
+ * not the raw aiClient LLM call. The orchestrator handles cost-cap
+ * routing internally — the populator just passes `aiAllowed` per gap.
+ */
+export type ClassifyGapShapeImpl = (input: {
+  candidate: import("./itemPopulatorParts/types").GapCandidate
+  aiAllowed: boolean
+  aiImpl?: ClassifyGapShapeAiImpl
+}) => Promise<ClassifyGapShapeOrchestratorResult>
 
 /**
  * Build the initial PhaseTwoItem[] for a new phase2_run.
@@ -140,6 +162,13 @@ export async function populateItems(
    * is used. Mirrors the invokeClaudeImpl DI pattern in aiClient itself.
    */
   suggestBulletsImpl?: SuggestBulletsForGapImpl,
+  /**
+   * Test-only: inject a mock G1 gap-shape classifier orchestrator. When
+   * omitted, the real heuristic+LLM orchestrator runs. Tests that don't
+   * care about classification can pass a no-op that always returns
+   * { shape: "unknown", aiCostCents: 0, llmCalled: false }.
+   */
+  classifyGapShapeImpl?: ClassifyGapShapeImpl,
 ): Promise<PopulateItemsResult> {
   // caseSpecific is wired through for forward-compat (FRD §6.2 future
   // headline_recommendation field). Currently unused — silence the lint.
@@ -217,25 +246,34 @@ export async function populateItems(
     decided_at: null,
   }))
 
-  // ── Gap items + A3 bullet suggestions (serial AI calls per gap) ──────
-  // Each gap gets one suggestBulletsForGap call. Calls run SERIALLY so the
-  // cost-cap check fires before each one (parallel would race the
-  // accumulator and over-spend). Latency cost: ~1-3s per gap. Acceptable
-  // for v0.1 — perf parallelization is a separate commit per design lock.
+  // ── Gap items: G1 classify + A3 bullet suggestions per gap ───────────
+  // Each gap runs through two AI-bearing operations in fixed order:
+  //
+  //   1. G1 classifyGapShape — heuristic-first; LLM only on low-confidence
+  //      / unclassified gaps. Sets PhaseTwoGapItem.gap_shape.
+  //   2. A3 suggestBulletsForGap — Claude picks top-3 verbatim resume
+  //      bullets relevant to this gap. Populates
+  //      PhaseTwoGapItem.suggested_bullets_for_reword.
+  //
+  // Order matters: classify FIRST. Future commits (A4 if shipped) may use
+  // gap_shape to decide WHICH bullet/skill suggestion call to make. The
+  // defensive sequencing keeps us free to wire shape-aware suggestion
+  // later without re-flowing the populator.
+  //
+  // Calls run SERIALLY so the cost-cap check fires before each one
+  // (parallel would race the accumulator and over-spend). Latency cost:
+  // ~1-3s per gap for A3, ~0.3s for G1 when LLM fires (most gaps skip
+  // the LLM entirely).
   //
   // Cost-cap behavior: when accumulated cost >= MAX_COST_CENTS, remaining
-  // gaps emit with suggested_bullets_for_reword: [] (the A2 default).
-  // Populator does NOT throw — /start succeeds and the user gets a usable
-  // run; the bullet-picker UX falls back to "show all bullets" for the
-  // un-suggested gaps.
-  //
-  // Retry-on-parse-failure: aiClient does NOT retry internally. If
-  // suggestions=[] from the first attempt could be either "model returned
-  // no good matches" (legitimate) OR "parse/verbatim failure" (recoverable).
-  // We can't discriminate from outside aiClient, so we retry exactly once
-  // with isRetry=true. If the second attempt also returns [], we treat
-  // it as legitimate-no-matches.
+  // AI calls are short-circuited per operation:
+  //   - G1: orchestrator runs heuristic only; gap_shape uses the
+  //     heuristic best guess (or "experience" default for unclassified).
+  //   - A3: suggested_bullets_for_reword: [] (the A2 default).
+  // Populator does NOT throw — /start succeeds and the user gets a
+  // usable run.
   const suggestBullets = suggestBulletsImpl ?? defaultSuggestBulletsForGap
+  const classifyShape = classifyGapShapeImpl ?? defaultClassifyGapShape
   const gapItems: PhaseTwoGapItem[] = []
   let aiCostCents = 0
   let costCapHit = false
@@ -243,21 +281,52 @@ export async function populateItems(
   for (let idx = 0; idx < cappedGaps.length; idx++) {
     const c = cappedGaps[idx]
     let suggestions: string[] = []
+    // Default to the candidate's seed shape ("unknown" from
+    // extractGapCandidates). Overwritten by the G1 classifier below.
+    let gapShape: GapShape = c.gap_shape
 
-    if (costCapHit) {
-      // Cost cap already exhausted on a prior iteration; skip AI calls
-      // for remaining gaps. Item still emits with [] suggestions (A2
-      // default) so the user gets the gap item, just without picker
-      // top-3 cache.
-    } else if (aiCostCents >= MAX_COST_CENTS) {
-      // Pre-call check — covers the rare case where prior iterations
-      // hit exactly the cap. Flip the flag so subsequent iterations
-      // short-circuit without re-checking.
+    // Cap-state housekeeping. Mirrors the pattern used for A3 below.
+    if (!costCapHit && aiCostCents >= MAX_COST_CENTS) {
       costCapHit = true
       console.log(
-        `[itemPopulator] cost cap exhausted (${aiCostCents}/${MAX_COST_CENTS}), skipping AI bullet suggestions for remaining gaps`,
+        `[itemPopulator] cost cap exhausted (${aiCostCents}/${MAX_COST_CENTS}) before gap-${idx + 1}; remaining AI calls skipped`,
       )
-    } else {
+    }
+
+    // ── G1: classify gap_shape ───────────────────────────────────────
+    // aiAllowed gates the orchestrator's LLM fallback. When false, the
+    // orchestrator returns the pure-heuristic best guess (no cost).
+    try {
+      const shapeResult = await classifyShape({
+        candidate: c,
+        aiAllowed: !costCapHit,
+      })
+      aiCostCents += shapeResult.aiCostCents
+      gapShape = shapeResult.shape
+    } catch (e) {
+      // Classifier shouldn't throw (it catches LLM errors internally),
+      // but defend against unexpected exceptions in the orchestrator.
+      // Fall back to "experience" — the safest default per design.
+      console.warn(
+        `[itemPopulator] classifyGapShape unexpectedly threw for gap-${idx + 1} run=${positioningRun.id}: ${e instanceof Error ? e.message : String(e)}`,
+      )
+      gapShape = "experience"
+    }
+
+    // Re-check cap between G1 and A3 — G1 may have just pushed us over.
+    if (!costCapHit && aiCostCents >= MAX_COST_CENTS) {
+      costCapHit = true
+      console.log(
+        `[itemPopulator] cost cap exhausted after G1 for gap-${idx + 1}; skipping A3 suggestBulletsForGap`,
+      )
+    }
+
+    // ── A3: bullet suggestions for reword ────────────────────────────
+    // Single retry on empty suggestions — handles parse/verbatim
+    // failures recoverable by re-rolling at a higher temperature.
+    // Legitimate "no good matches" cases also fall through this
+    // retry (one extra call, ~1 cent).
+    if (!costCapHit) {
       try {
         let result = await suggestBullets({
           gapDescription: c.gap_description,
@@ -266,15 +335,7 @@ export async function populateItems(
           isRetry: false,
         })
         aiCostCents += centsForUsage(result.usage)
-        // Single retry on empty suggestions — handles parse/verbatim
-        // failures recoverable by re-rolling at a higher temperature.
-        // Legitimate "no good matches" cases also fall through this
-        // retry (one extra call, ~1 cent), which is acceptable cost
-        // for the simplicity of not threading parse-failure-vs-no-
-        // match discrimination out of aiClient.
         if (result.suggestions.length === 0) {
-          // Re-check cap before the retry call — defensive against
-          // the unusual case where the first call exactly hit the cap.
           if (aiCostCents < MAX_COST_CENTS) {
             result = await suggestBullets({
               gapDescription: c.gap_description,
@@ -287,11 +348,8 @@ export async function populateItems(
         }
         suggestions = result.suggestions
       } catch (e) {
-        // AI call failed (network error, Anthropic 5xx, invalid API key).
-        // Log and continue with empty suggestions — populator is
-        // non-fail-critical for the suggestion enrichment; the gap item
-        // still emits with the A2 default. /start does NOT throw on AI
-        // failure here.
+        // AI call failed. Log and continue with empty suggestions —
+        // populator is non-fail-critical for the suggestion enrichment.
         console.warn(
           `[itemPopulator] suggestBulletsForGap failed for gap-${idx + 1} run=${positioningRun.id}: ${e instanceof Error ? e.message : String(e)}`,
         )
@@ -316,14 +374,19 @@ export async function populateItems(
       decided_at: null,
       // A2 multi-outcome composition fields. compositional_outcome and
       // target_bullet_text stay at their A2 defaults — user decides in
-      // /decide (C1). suggested_bullets_for_reword is now populated by
-      // A3's aiClient call above (verbatim-filtered, capped at 3, or []
-      // if AI returned nothing usable or the cost cap was exhausted).
+      // /decide (C1). suggested_bullets_for_reword is populated by A3's
+      // aiClient call above (verbatim-filtered, capped at 3, or [] if
+      // AI returned nothing usable or the cost cap was exhausted).
       // Legacy phase2_runs rows lack these fields entirely — downstream
       // readers default accordingly. See PhaseTwoGapItem JSDoc.
       compositional_outcome: null,
       target_bullet_text: null,
       suggested_bullets_for_reword: suggestions,
+      // G1 gap_shape: set by the classifier above (heuristic-first,
+      // LLM fallback). Legacy phase2_runs rows seeded before G1 lack
+      // this field — readers default `gap_shape ?? "unknown"`. See
+      // PhaseTwoGapItem JSDoc.
+      gap_shape: gapShape,
     })
   }
 

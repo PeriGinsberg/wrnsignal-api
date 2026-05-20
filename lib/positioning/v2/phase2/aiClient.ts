@@ -66,7 +66,12 @@ import {
   buildSuggestBulletsForGapPrompt,
   MAX_TOKENS_SUGGEST_BULLETS,
 } from "./prompts/suggestBulletsForGapPrompt"
+import {
+  buildClassifyGapShapePrompt,
+  MAX_TOKENS_CLASSIFY_GAP_SHAPE,
+} from "./prompts/classifyGapShapePrompt"
 import type {
+  GapShape,
   PhaseTwoBulletItem,
   PhaseTwoGapItem,
   PhaseTwoHeadlineItem,
@@ -91,6 +96,18 @@ const TEMPERATURE_RETRY = 1.0
  */
 const TEMPERATURE_SUGGEST_BULLETS_FIRST = 0.3
 const TEMPERATURE_SUGGEST_BULLETS_RETRY = 0.7
+
+/**
+ * classifyGapShape temperatures. Lowest of any Phase 2 path because
+ * classification is deterministic — given the gap text + context, the
+ * shape should be a stable 1-of-7 pick. First attempt = 0.0 (true greedy
+ * decoding). Retry bumps modestly to nudge the model off a wrong-but-
+ * confident first answer without inviting genuine variation. If the
+ * model still can't decide on retry, the caller's "unknown → fallback
+ * to experience" path handles it.
+ */
+const TEMPERATURE_CLASSIFY_GAP_SHAPE_FIRST = 0.0
+const TEMPERATURE_CLASSIFY_GAP_SHAPE_RETRY = 0.3
 
 // ============================================================================
 // Unified return type for all three generation paths
@@ -450,6 +467,114 @@ export async function generateGapResponse(
   const parsed = parseClaudeResponse(apiResult.text, { maxDrafts: 1 })
   return {
     drafts: parsed.drafts,
+    usage: apiResult.usage,
+  }
+}
+
+// ============================================================================
+// G1 — gap_shape classification (populator-time, LLM fallback only)
+// ============================================================================
+
+/**
+ * The seven legal shape values. Used by the local response parser to
+ * reject malformed Claude responses without coupling to the GapShape
+ * type's literal-union narrowing (Set<string> comparison is cheaper than
+ * a switch over the union).
+ */
+const VALID_GAP_SHAPES: ReadonlySet<GapShape> = new Set([
+  "experience",
+  "skill",
+  "certification",
+  "tool",
+  "language",
+  "coursework",
+  "unknown",
+])
+
+export type ClassifyGapShapeInput = {
+  /** Description of the gap to classify. PhaseTwoGapItem.gap_description. */
+  gapDescription: string
+  /** JD excerpt anchoring the gap. PhaseTwoGapItem.jd_context. */
+  jdContext: string
+  /** True if this is the retry attempt. Affects temperature. */
+  isRetry?: boolean
+  /** Test-only: inject mock invokeClaude. */
+  invokeClaudeImpl?: (input: InvokeClaudeInput) => Promise<InvokeClaudeResult>
+}
+
+export type ClassifyGapShapeResult = {
+  /**
+   * Classified shape. "unknown" is returned on either (a) the model
+   * explicitly returning {"shape":"unknown"} or (b) any defensive parse
+   * failure (malformed JSON, missing field, illegal shape value). The
+   * caller's heuristic-fallback logic is responsible for promoting
+   * "unknown" to a usable shape ("experience" is the safest default per
+   * the kickoff spec).
+   */
+  shape: GapShape
+  /** Token usage from the Anthropic API call. Feeds centsForUsage(). */
+  usage: {
+    input_tokens: number
+    output_tokens: number
+  }
+}
+
+/**
+ * Parse Claude's classification response. Tight local parser (not the
+ * shared parseClaudeResponse) because the output shape is `{"shape": X}`
+ * rather than `{"drafts": [...]}`. All defensive paths collapse to
+ * `shape: "unknown"` — the caller can't distinguish "model said unknown"
+ * from "model returned garbage", which is fine: both bypass the
+ * heuristic and feed the same fallback default.
+ */
+function parseShapeResponse(text: string): GapShape {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return "unknown"
+  }
+  if (!parsed || typeof parsed !== "object") return "unknown"
+  const shape = (parsed as { shape?: unknown }).shape
+  if (typeof shape !== "string") return "unknown"
+  if (!VALID_GAP_SHAPES.has(shape as GapShape)) return "unknown"
+  return shape as GapShape
+}
+
+/**
+ * Classify the structural shape of a gap via Claude. Called by the
+ * classifyGapShape orchestrator (lib/positioning/v2/phase2/
+ * itemPopulatorParts/classifyGapShape.ts) only when the deterministic
+ * heuristic returns low confidence or unclassified — most gaps never
+ * reach this method.
+ *
+ * Defensive paths (all collapse to shape="unknown", usage still reported):
+ *   - Malformed JSON, missing/wrong-type `shape` field → "unknown".
+ *   - Model returned an illegal shape value (e.g. "executive") → "unknown".
+ *
+ * Does NOT retry internally. Caller (the orchestrator) decides retry
+ * policy. Errors thrown by invokeClaude propagate — caller catches.
+ */
+export async function classifyGapShape(
+  input: ClassifyGapShapeInput,
+): Promise<ClassifyGapShapeResult> {
+  const userPrompt = buildClassifyGapShapePrompt({
+    gapDescription: input.gapDescription,
+    jdContext: input.jdContext,
+  })
+
+  const invoke = input.invokeClaudeImpl ?? defaultInvokeClaude
+  const apiResult = await invoke({
+    systemPrompt: SYSTEM_PROMPT,
+    userPrompt,
+    maxTokens: MAX_TOKENS_CLASSIFY_GAP_SHAPE,
+    temperature: input.isRetry
+      ? TEMPERATURE_CLASSIFY_GAP_SHAPE_RETRY
+      : TEMPERATURE_CLASSIFY_GAP_SHAPE_FIRST,
+  })
+
+  return {
+    shape: parseShapeResponse(apiResult.text),
     usage: apiResult.usage,
   }
 }

@@ -31,6 +31,13 @@ type RequirementUnitRaw = {
   label?: unknown
   snippet?: unknown
   requiredness?: unknown
+  /**
+   * JobFit EvidenceKind passthrough — read into GapCandidate.kind so the
+   * G1 gap_shape classifier (lib/positioning/v2/phase2/itemPopulatorParts/
+   * classifyGapShape.ts) can use it as a deterministic signal. Defensively
+   * unknown — non-string values default to "" in the emit step.
+   */
+  kind?: unknown
 }
 
 /** Pull jobfit.job_signals.requirement_units, defending at each hop. */
@@ -118,10 +125,20 @@ export function extractGapCandidates(
 
     if (isRepresentedInResume(key, label, resumeLower, resumeTokens)) continue
 
+    // kind: passthrough for the G1 classifier. Empty string when the
+    // source unit lacked a kind field (production data always has it; this
+    // path covers malformed fixtures only).
+    const kind = typeof u.kind === "string" ? u.kind : ""
+
     out.push({
       gap_description: label,
       jd_context: snippet,
       keyword: key,
+      kind,
+      // gap_shape: "unknown" is the populator-input default. The
+      // itemPopulator orchestrator (G1) overwrites this with the
+      // classifier's result before constructing PhaseTwoGapItem.
+      gap_shape: "unknown",
     })
   }
   return out

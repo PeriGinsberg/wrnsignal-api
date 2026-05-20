@@ -195,6 +195,8 @@ console.log("\n=== Candidate type shape compilation ===")
     gap_description: "x",
     jd_context: "y",
     keyword: "z",
+    kind: "function",
+    gap_shape: "unknown",
   }
   check(
     "10: HeadlineCandidate / BulletCandidate / GapCandidate shapes constructed",

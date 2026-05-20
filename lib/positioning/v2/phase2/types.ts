@@ -44,6 +44,44 @@ export type PhaseTwoRunStatus = "in_progress" | "completed" | "abandoned"
 export type PhaseTwoItemType = "headline" | "bullet" | "gap"
 
 /**
+ * Structural shape of a gap, classifying which resume section the user's
+ * eventual answer should land in. Set at populator time by Phase 2 v1
+ * build G1 (hybrid heuristic + LLM fallback in
+ * lib/positioning/v2/phase2/itemPopulatorParts/classifyGapShape.ts).
+ * Consumed downstream by:
+ *   - C2 (multi-outcome /decide validation): rejects shape-inappropriate
+ *     outcome choices (e.g. "add_new_bullet" on a `tool` gap).
+ *   - B3/B4 (resumeComposer shape-aware composition): routes acceptance
+ *     text into the appropriate section (skills line, certifications,
+ *     experience bullets).
+ *   - D1 (frontend outcome buttons): renders only shape-appropriate
+ *     buttons; prevents missing-section outcomes.
+ *
+ * Values:
+ *   - "experience"    — bullet-shaped, requires job/internship/project
+ *                       experience. Default fallback when classifier is
+ *                       ambiguous (B2's existing composer handles it).
+ *   - "skill"         — single competency or capability, fits in a skills
+ *                       list.
+ *   - "certification" — formal credential or license.
+ *   - "tool"          — specific software, platform, or technology.
+ *   - "language"      — spoken or written human language.
+ *   - "coursework"    — academic familiarity, fits in education coursework.
+ *   - "unknown"       — classifier could not confidently pick. Legacy
+ *                       phase2_runs rows seeded before G1 read this as
+ *                       `undefined`; consumers default `gap_shape ??
+ *                       "unknown"`.
+ */
+export type GapShape =
+  | "experience"
+  | "skill"
+  | "certification"
+  | "tool"
+  | "language"
+  | "coursework"
+  | "unknown"
+
+/**
  * Headline reframe item (Pattern A). SIGNAL generates 1-3 option drafts;
  * user picks one, types an override, or declines.
  *
@@ -245,6 +283,19 @@ export type PhaseTwoGapItem = {
    * `suggested_bullets_for_reword ?? []`.
    */
   suggested_bullets_for_reword: string[]
+  /**
+   * Structural shape of this gap. Set by the G1 hybrid classifier at
+   * populator time (heuristic-first, LLM fallback for low-confidence
+   * candidates). Drives shape-aware composition + UX in downstream
+   * commits (C2 outcome validation, B3/B4 composer, D1 buttons).
+   *
+   * Legacy DB rows (seeded before G1) read this as `undefined`;
+   * consumers should default `gap_shape ?? "unknown"`. The "unknown"
+   * value is a legal terminal state when the classifier could not pick,
+   * not a sentinel for "field absent" — readers must still defend
+   * against undefined for backward compat.
+   */
+  gap_shape: GapShape
 }
 
 /**

@@ -653,6 +653,35 @@ async function main() {
         fail(`gap.target_bullet_text should be null on populator emit`,
              String(seededGap.target_bullet_text))
       }
+      // G1: gap_shape is populated by classifyGapShape at populator time.
+      // Acceptance: field is a string in the 7-value union. The seeded
+      // synthetic gap's label is generic ("verify itempopulator unique
+      // gap label ...") so the heuristic should fall to PASS 6 and
+      // either land on the Claude classification result OR "experience"
+      // (the safe default). Either outcome is legal; this just asserts
+      // the field is present and from the legal set.
+      const validGapShapes = new Set([
+        "experience",
+        "skill",
+        "certification",
+        "tool",
+        "language",
+        "coursework",
+        "unknown",
+      ])
+      if (typeof seededGap.gap_shape !== "string") {
+        fail(
+          "gap.gap_shape must be a string",
+          JSON.stringify(seededGap.gap_shape),
+        )
+      } else if (!validGapShapes.has(seededGap.gap_shape)) {
+        fail(
+          "gap.gap_shape must be one of the 7-value union",
+          seededGap.gap_shape,
+        )
+      } else {
+        pass(`gap.gap_shape === '${seededGap.gap_shape}' (G1 classifier output, legal value)`)
+      }
       // A3: suggested_bullets_for_reword is populated by aiClient.suggestBulletsForGap
       // at populator time against the real Anthropic API on staging.
       // Acceptance criteria (FRD §6.10 + A3 verbatim invariant):

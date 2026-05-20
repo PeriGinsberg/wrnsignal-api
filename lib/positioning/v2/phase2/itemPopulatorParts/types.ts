@@ -9,6 +9,11 @@
 //
 // Pure types only — no runtime values, no logic.
 
+import type { GapShape } from "../types"
+
+// Re-export so external consumers can import GapShape from either module.
+export type { GapShape } from "../types"
+
 /**
  * Inputs needed to drive headline emission in the populator. Discriminated
  * on `kind`:
@@ -104,4 +109,24 @@ export type GapCandidate = {
   jd_context: string
   /** Source: requirement_units[].key (e.g. "financial_analysis"). */
   keyword: string
+  /**
+   * Source: requirement_units[].kind (JobFit EvidenceKind enum surfaced
+   * verbatim as a string — typed loose here because JobfitResultJson's
+   * job_signals.requirement_units isn't typed in the parent module).
+   *
+   * Used by the gap_shape classifier (Phase 2 v1 build G1): `kind ===
+   * "tool"` is a direct tool signal; `kind ∈ {deliverable, stakeholder,
+   * environment}` maps to "experience". Empty string when the source
+   * unit lacked a kind field (defensive — should never happen for
+   * production data).
+   */
+  kind: string
+  /**
+   * Initial shape classification. extractGapCandidates always emits
+   * "unknown" — the populator orchestrator (G1) overwrites this with the
+   * hybrid heuristic + LLM result before constructing PhaseTwoGapItem.
+   * Carrying it on the candidate keeps the type complete at every layer.
+   */
+  gap_shape: GapShape
 }
+

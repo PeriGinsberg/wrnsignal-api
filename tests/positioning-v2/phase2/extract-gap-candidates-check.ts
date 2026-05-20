@@ -61,6 +61,19 @@ console.log("=== Happy path (Catherine fixture) ===")
     "1: candidate.jd_context = requirement.snippet",
     c?.jd_context === REQ_CORE_FINANCIAL_ANALYSIS.snippet,
   )
+  // G1: extractGapCandidates passes the requirement's kind through and
+  // seeds gap_shape="unknown". The populator orchestrator overwrites
+  // gap_shape via classifyGapShape before constructing PhaseTwoGapItem.
+  check(
+    "1: candidate.kind = requirement.kind (passthrough for classifier)",
+    c?.kind === REQ_CORE_FINANCIAL_ANALYSIS.kind,
+    c?.kind,
+  )
+  check(
+    "1: candidate.gap_shape = 'unknown' (G1 populator-input default)",
+    c?.gap_shape === "unknown",
+    c?.gap_shape,
+  )
 }
 
 // ============================================================================
@@ -299,6 +312,17 @@ console.log("\n=== Defensive ===")
   check(
     "19: wrong-type key field → entry skipped; valid entry still emits",
     candidates.length === 1 && candidates[0].keyword === "good_key",
+  )
+  // G1: when source unit lacks a kind field, candidate.kind defaults to ""
+  // (defensive — production data always has kind).
+  check(
+    "19: candidate.kind defaults to '' when source unit lacks the field",
+    candidates[0]?.kind === "",
+    candidates[0]?.kind,
+  )
+  check(
+    "19: candidate.gap_shape still defaults to 'unknown' on defaulted-kind path",
+    candidates[0]?.gap_shape === "unknown",
   )
 }
 

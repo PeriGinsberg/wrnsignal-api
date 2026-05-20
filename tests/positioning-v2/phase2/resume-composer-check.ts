@@ -116,6 +116,7 @@ function makeGap(
     skipped: false,
     manual_entry: false,
     decided_at: null,
+    gap_shape: "unknown",
     compositional_outcome: null,
     target_bullet_text: null,
     suggested_bullets_for_reword: [],
