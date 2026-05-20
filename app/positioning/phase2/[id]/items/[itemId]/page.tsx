@@ -54,7 +54,7 @@
 
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   apiCall,
@@ -63,6 +63,10 @@ import {
   type Phase2DecideResponse,
   type PhaseTwoItem,
 } from "@/lib/positioning-prototype"
+import {
+  extractAllResumeBullets,
+  type ResumeBulletWithSection,
+} from "@/lib/positioning/v2/phase2/clientHelpers"
 
 /**
  * The three compositional outcomes wired through the D1 gap picker.
@@ -119,6 +123,14 @@ export default function Phase2ItemPage({
   const [pendingFinalText, setPendingFinalText] = useState<string>("")
   const [pendingManualEntry, setPendingManualEntry] = useState(false)
 
+  // D2: bullet-picker sub-step. When the user clicks "Update an existing
+  // bullet with this" in GapOutcomePicker, we transition to BulletPickerView
+  // (instead of firing /decide). originalResumeText drives the "show all
+  // bullets" expansion. The actual /decide fires from BulletPickerView's
+  // onSelect via handleRewordExistingDecide below.
+  const [bulletPickerStep, setBulletPickerStep] = useState(false)
+  const [originalResumeText, setOriginalResumeText] = useState<string>("")
+
   // ──────────────────────────────────────────────────────────────────────
   // EFFECTS
   // ──────────────────────────────────────────────────────────────────────
@@ -148,6 +160,12 @@ export default function Phase2ItemPage({
         return
       }
       setItem(found)
+      // D2: stash the original resume_text from the GET response. The
+      // bullet picker extracts selectable bullets client-side via
+      // extractAllResumeBullets(originalResumeText). Empty string OK —
+      // the picker handles the empty-resume edge case (rare but
+      // possible when persona.resume_text is null).
+      setOriginalResumeText(result.data.original_resume_text ?? "")
       if (found.type === "bullet" || found.type === "gap") {
         setUserInput(found.user_response ?? "")
       }
@@ -155,6 +173,14 @@ export default function Phase2ItemPage({
     }
     load()
   }, [params])
+
+  // D2: derive the full bullet list from the resume text once per load.
+  // Memoized so re-renders of the picker don't re-parse 4kb of resume
+  // text on every keystroke / state flip.
+  const allResumeBullets = useMemo(
+    () => extractAllResumeBullets(originalResumeText),
+    [originalResumeText],
+  )
 
   // Auto-generate Pattern A drafts on first paint (cache miss + not decided)
   useEffect(() => {
@@ -324,14 +350,13 @@ export default function Phase2ItemPage({
 
   /**
    * D1: fire /decide with the chosen compositional_outcome for a gap.
-   * Called from the 4-button picker. The pendingFinalText was stashed
-   * by handleAccept above.
+   * Called from the 4-button picker (add_new_bullet, note_for_cover_letter,
+   * acknowledge_genuine_gap). The pendingFinalText was stashed by
+   * handleAccept above.
    *
-   * "reword_existing_bullet" / "add_certification" / shape-routed add_*
-   * outcomes are NOT yet wired through the picker — D2 ships the bullet
-   * picker that produces target_bullet_text for reword. The picker's
-   * "Update an existing bullet" button calls into a stub state instead
-   * of this handler (see GapOutcomePicker below).
+   * D2 added the parallel handleRewordExistingDecide below for the
+   * reword_existing_bullet path — the bullet picker produces the
+   * target_bullet_text + this handler doesn't need to know about it.
    */
   async function handleGapOutcomeDecide(outcome: GapPickerOutcome) {
     if (!item) return
@@ -343,6 +368,48 @@ export default function Phase2ItemPage({
       decision: "accept",
       edited_text: pendingFinalText,
       compositional_outcome: outcome,
+    }
+    if (pendingManualEntry) {
+      body.manual_entry = true
+    }
+
+    const result = await apiCall<Phase2DecideResponse>(
+      `/api/positioning/v2/phase2/${phase2RunId}/decide`,
+      { method: "POST", body: JSON.stringify(body) },
+    )
+
+    if (!result.ok) {
+      setActionError(
+        result.error + (result.detail ? `: ${result.detail}` : ""),
+      )
+      setActionInFlight(null)
+      return
+    }
+
+    router.push(`/positioning/phase2/${phase2RunId}`)
+  }
+
+  /**
+   * D2: fire /decide with compositional_outcome="reword_existing_bullet"
+   * + the bullet the user picked. Called from BulletPickerView's onSelect.
+   *
+   * pendingFinalText was stashed by handleAccept (the AI-drafted reword
+   * text or user edit). target_bullet_text is the verbatim resume line
+   * the user picked — preserves the verbatim invariant resumeComposer's
+   * locate-and-replace depends on (FRD §6.10). Backend C1 also validates
+   * the substring match server-side; we don't double-check client-side.
+   */
+  async function handleRewordExistingDecide(targetBulletText: string) {
+    if (!item) return
+    setActionInFlight("decide")
+    setActionError("")
+
+    const body: Record<string, unknown> = {
+      item_id: item.id,
+      decision: "accept",
+      edited_text: pendingFinalText,
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: targetBulletText,
     }
     if (pendingManualEntry) {
       body.manual_entry = true
@@ -465,10 +532,20 @@ export default function Phase2ItemPage({
       {/* Body — branch on state */}
       {isDecided ? (
         <DecidedView item={item} />
+      ) : bulletPickerStep && item.type === "gap" ? (
+        <BulletPickerView
+          pendingFinalText={pendingFinalText}
+          suggestedBullets={item.suggested_bullets_for_reword ?? []}
+          allResumeBullets={allResumeBullets}
+          onSelect={handleRewordExistingDecide}
+          onBack={() => setBulletPickerStep(false)}
+          actionInFlight={actionInFlight}
+        />
       ) : gapOutcomeStep && item.type === "gap" ? (
         <GapOutcomePicker
           pendingFinalText={pendingFinalText}
           onPick={handleGapOutcomeDecide}
+          onPickUpdateExisting={() => setBulletPickerStep(true)}
           onCancel={() => {
             setGapOutcomeStep(false)
             setPendingFinalText("")
@@ -888,13 +965,17 @@ function PatternBCView({
 }
 
 /**
- * D1: post-accept outcome picker for gap items. Renders the 4 buttons
+ * Post-accept outcome picker for gap items. Renders the 4 buttons
  * locked in the design conversation, in the locked order:
  *
- *   1. Update an existing bullet with this   (D1 STUB — D2 ships picker)
+ *   1. Update an existing bullet with this   → bullet picker sub-step (D2)
  *   2. Add as a new bullet                    (add_new_bullet)
  *   3. Note for cover letter                  (note_for_cover_letter)
  *   4. This isn't something I've done         (acknowledge_genuine_gap)
+ *
+ * D1 stubbed button 1 with a "Coming soon" message. D2 wires button 1
+ * through onPickUpdateExisting to the BulletPickerView sub-step. The
+ * other three still fire /decide directly via onPick.
  *
  * Buttons stack vertically on all viewports (predictable mobile layout +
  * each button has a description; horizontal would crowd at 375px). Each
@@ -903,22 +984,23 @@ function PatternBCView({
 function GapOutcomePicker({
   pendingFinalText,
   onPick,
+  onPickUpdateExisting,
   onCancel,
   actionInFlight,
 }: {
   pendingFinalText: string
   onPick: (outcome: GapPickerOutcome) => void
+  /** D2: triggers the bullet picker sub-step (renders BulletPickerView in the parent). */
+  onPickUpdateExisting: () => void
   onCancel: () => void
   actionInFlight: "generate" | "decide" | null
 }) {
   const isDeciding = actionInFlight === "decide"
-  const [stubMsg, setStubMsg] = useState<string | null>(null)
 
   const baseBtnClasses =
     "w-full text-left p-4 min-h-[64px] border rounded-signal-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
   const enabledBtnClasses =
     "border-neutral-200 bg-white hover:border-signal-accent hover:bg-signal-accent-soft"
-  const stubBtnClasses = "border-neutral-200 bg-neutral-50 hover:border-neutral-300"
 
   return (
     <div className="space-y-6">
@@ -937,35 +1019,19 @@ function GapOutcomePicker({
           How should this land in your resume?
         </EyebrowLabel>
         <div className="space-y-3">
-          {/* 1. Update existing bullet — D1 STUB */}
+          {/* 1. Update existing bullet — D2 wired (was D1 STUB). */}
           <button
-            onClick={() =>
-              setStubMsg(
-                "This option is coming in the next release. For now, pick one of the other options below.",
-              )
-            }
+            onClick={onPickUpdateExisting}
             disabled={isDeciding}
-            className={`${baseBtnClasses} ${stubBtnClasses}`}
+            className={`${baseBtnClasses} ${enabledBtnClasses}`}
           >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="font-bold text-sm text-neutral-900">
-                  Update an existing bullet with this
-                </div>
-                <div className="text-xs text-neutral-500 mt-1">
-                  We&rsquo;ll help you pick which bullet to rewrite.
-                </div>
-              </div>
-              <span className="text-[10px] uppercase tracking-[0.12em] font-bold px-2 py-0.5 rounded-signal-pill bg-neutral-200 text-neutral-600 whitespace-nowrap">
-                Coming soon
-              </span>
+            <div className="font-bold text-sm text-neutral-900">
+              Update an existing bullet with this
+            </div>
+            <div className="text-xs text-neutral-500 mt-1">
+              We&rsquo;ll help you pick which bullet to rewrite.
             </div>
           </button>
-          {stubMsg && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-signal-sm text-sm text-amber-900">
-              {stubMsg}
-            </div>
-          )}
 
           {/* 2. Add as a new bullet */}
           <button
@@ -1086,5 +1152,297 @@ function ManualEntryView({
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * D2: bullet picker sub-step. Surfaces the AI-suggested top-3 reword
+ * candidates from item.suggested_bullets_for_reword (populated at
+ * populator time by A3), with a "Show all bullets" expansion that
+ * reveals every other selectable bullet in the resume.
+ *
+ * Layout:
+ *
+ *   You accepted: <pendingFinalText>            ← accent-soft callout
+ *
+ *   PICK A BULLET TO UPDATE
+ *   Which existing bullet should this update?
+ *
+ *   OUR SUGGESTIONS  (if top-3 present)
+ *   [radio]  Bullet text
+ *            — Section Name                       ← muted, title-cased
+ *   [radio]  Bullet text — Section Name
+ *   [radio]  Bullet text — Section Name
+ *
+ *   Show all bullets ▾                             ← expansion link
+ *     (on expand:)
+ *   ALL RESUME BULLETS  (full list excluding the top-3 already shown)
+ *   [radio]  ...
+ *
+ *   [Update this bullet]   ← primary CTA, disabled until selection
+ *   ← Back to outcomes
+ *
+ * Empty-state handling:
+ *   - suggestedBullets.length === 0 AND allResumeBullets.length === 0:
+ *     "This resume has no bullets to update — pick a different
+ *      outcome." + Back link only (no list, no CTA).
+ *   - suggestedBullets.length === 0 AND allResumeBullets.length > 0:
+ *     Skip the suggestions section, show "We couldn't find existing
+ *      bullets that match this gap — pick any bullet below to update."
+ *     + the full list expanded by default.
+ *
+ * Verbatim invariant: the bullet text passed to onSelect is the
+ * VERBATIM resume line (preserved by extractAllResumeBullets). Display
+ * may trim for readability but the onSelect payload is untouched —
+ * resumeComposer's locate-and-replace needs character-for-character
+ * match (C1 verbatim invariant, FRD §6.10).
+ */
+function BulletPickerView({
+  pendingFinalText,
+  suggestedBullets,
+  allResumeBullets,
+  onSelect,
+  onBack,
+  actionInFlight,
+}: {
+  pendingFinalText: string
+  /** A3's verbatim resume substrings — top 3 candidates by Claude judgment. */
+  suggestedBullets: string[]
+  /** Every selectable bullet in the resume, with section context. */
+  allResumeBullets: ResumeBulletWithSection[]
+  /** Fires /decide with reword_existing_bullet + target_bullet_text. */
+  onSelect: (bulletText: string) => void
+  /** Back to GapOutcomePicker without firing /decide. */
+  onBack: () => void
+  actionInFlight: "generate" | "decide" | null
+}) {
+  const isDeciding = actionInFlight === "decide"
+  const [selectedBulletText, setSelectedBulletText] = useState<string | null>(
+    null,
+  )
+  const [showAllBullets, setShowAllBullets] = useState(false)
+
+  // Bullets to render under the "All bullets" expansion. Exclude any
+  // that are already in suggestedBullets (verbatim match) so the user
+  // doesn't see the same bullet twice. Section context is preserved.
+  const additionalBullets = useMemo(
+    () =>
+      allResumeBullets.filter(
+        (b) => !suggestedBullets.includes(b.text),
+      ),
+    [allResumeBullets, suggestedBullets],
+  )
+
+  // For "OUR SUGGESTIONS", map A3's verbatim strings back to {text,
+  // section} pairs by looking them up in allResumeBullets. A3's
+  // suggestions ARE verbatim substrings of the resume so this lookup
+  // succeeds whenever the resume has bullets the parser detected. If a
+  // suggestion isn't found (rare — would mean A3 returned a string
+  // outside what extractAllResumeBullets considers "selectable"), we
+  // still render it with section="" so the user can pick it.
+  const suggestedWithSection = useMemo(
+    () =>
+      suggestedBullets.map((text) => {
+        const match = allResumeBullets.find((b) => b.text === text)
+        return { text, section: match?.section ?? "" }
+      }),
+    [suggestedBullets, allResumeBullets],
+  )
+
+  const hasAnyBullets =
+    suggestedBullets.length > 0 || allResumeBullets.length > 0
+
+  // No bullets in the resume at all — empty-state path.
+  if (!hasAnyBullets) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <EyebrowLabel>You accepted</EyebrowLabel>
+          <div className="p-4 bg-signal-accent-soft border border-signal-accent/30 rounded-signal-md text-sm text-neutral-900 whitespace-pre-wrap">
+            {pendingFinalText}
+          </div>
+        </div>
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-signal-sm text-sm text-amber-900">
+          This resume has no bullets to update — pick a different outcome.
+        </div>
+        <div className="pt-4 border-t border-neutral-200">
+          <button
+            onClick={onBack}
+            disabled={isDeciding}
+            className="text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
+          >
+            ← Back to outcomes
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // No AI suggestions but resume has bullets — empty-suggestions path.
+  // Expand "all bullets" by default so the user isn't stuck behind a link.
+  const noAiSuggestions = suggestedBullets.length === 0
+  const allListExpanded = showAllBullets || noAiSuggestions
+
+  return (
+    <div className="space-y-6">
+      {/* You accepted */}
+      <div>
+        <EyebrowLabel>You accepted</EyebrowLabel>
+        <div className="p-4 bg-signal-accent-soft border border-signal-accent/30 rounded-signal-md text-sm text-neutral-900 whitespace-pre-wrap">
+          {pendingFinalText}
+        </div>
+      </div>
+
+      {/* Heading */}
+      <div>
+        <EyebrowLabel>Pick a bullet to update</EyebrowLabel>
+        <p className="text-sm text-neutral-900">
+          Which existing bullet should this update?
+        </p>
+      </div>
+
+      {/* Empty-AI-suggestions explanation */}
+      {noAiSuggestions && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-signal-sm text-sm text-amber-900">
+          We couldn&rsquo;t find existing bullets that match this gap — pick
+          any bullet below to update.
+        </div>
+      )}
+
+      {/* Suggestions */}
+      {suggestedBullets.length > 0 && (
+        <div>
+          <EyebrowLabel className="mb-2">Our suggestions</EyebrowLabel>
+          <div className="space-y-2">
+            {suggestedWithSection.map((b, idx) => (
+              <BulletRadioCard
+                key={`sug-${idx}`}
+                bullet={b}
+                selected={selectedBulletText === b.text}
+                onSelect={() => setSelectedBulletText(b.text)}
+                disabled={isDeciding}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Show-all toggle (hidden when noAiSuggestions because we
+       *  auto-expand). */}
+      {!noAiSuggestions && additionalBullets.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowAllBullets((v) => !v)}
+            disabled={isDeciding}
+            className="text-sm font-semibold text-signal-accent-foreground hover:underline disabled:opacity-50"
+          >
+            {showAllBullets ? "Hide additional bullets ▴" : "Show all bullets ▾"}
+          </button>
+        </div>
+      )}
+
+      {/* Additional bullets */}
+      {allListExpanded && additionalBullets.length > 0 && (
+        <div>
+          <EyebrowLabel className="mb-2">
+            {noAiSuggestions ? "All resume bullets" : "Other bullets"}
+          </EyebrowLabel>
+          <div className="space-y-2">
+            {additionalBullets.map((b, idx) => (
+              <BulletRadioCard
+                key={`all-${idx}`}
+                bullet={b}
+                selected={selectedBulletText === b.text}
+                onSelect={() => setSelectedBulletText(b.text)}
+                disabled={isDeciding}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="pt-4 border-t border-neutral-200">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              if (selectedBulletText !== null) onSelect(selectedBulletText)
+            }}
+            disabled={isDeciding || selectedBulletText === null}
+            className="px-4 py-2 min-h-[44px] bg-signal-primary text-signal-primary-foreground text-sm font-bold rounded-signal-md hover:bg-signal-primary-hover disabled:opacity-50"
+          >
+            {isDeciding ? "Updating…" : "Update this bullet"}
+          </button>
+          <button
+            onClick={onBack}
+            disabled={isDeciding}
+            className="ml-auto text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
+          >
+            ← Back to outcomes
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * D2: single bullet row in the picker. Shows the bullet text + section
+ * annotation. Selection state styled via D1's selected-card pattern
+ * (signal-accent border + signal-accent-soft background). Section
+ * annotation uses em-dash + title-cased section name + muted text per
+ * the design lock.
+ */
+function BulletRadioCard({
+  bullet,
+  selected,
+  onSelect,
+  disabled,
+}: {
+  bullet: ResumeBulletWithSection
+  selected: boolean
+  onSelect: () => void
+  disabled: boolean
+}) {
+  return (
+    <label
+      className={`block p-3 min-h-[64px] rounded-signal-md border cursor-pointer transition-colors ${
+        selected
+          ? "border-signal-accent bg-signal-accent-soft"
+          : "border-neutral-200 hover:border-signal-accent hover:bg-signal-accent-soft/40"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      <input
+        type="radio"
+        name="bullet-picker"
+        checked={selected}
+        onChange={onSelect}
+        disabled={disabled}
+        className="sr-only"
+      />
+      <div className="flex items-start gap-3">
+        <span
+          className={`mt-1 inline-block w-4 h-4 rounded-full border flex-shrink-0 ${
+            selected ? "border-signal-accent bg-signal-accent" : "border-neutral-400"
+          }`}
+          aria-hidden="true"
+        >
+          {selected && (
+            <span className="block w-2 h-2 rounded-full bg-white m-auto mt-1" />
+          )}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm text-neutral-900 whitespace-pre-wrap break-words">
+            {bullet.text.trim()}
+          </div>
+          {bullet.section && (
+            <div className="text-xs text-neutral-500 mt-1">
+              — {bullet.section}
+            </div>
+          )}
+        </div>
+      </div>
+    </label>
   )
 }

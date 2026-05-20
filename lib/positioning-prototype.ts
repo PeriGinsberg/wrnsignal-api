@@ -116,7 +116,11 @@ export async function apiCall<T>(
 // Response type aliases for the 5 Phase 2 endpoints
 // ============================================================================
 
-/** Response from GET /api/positioning/v2/phase2/[id] (per FRD §6.5.2). */
+/** Response from GET /api/positioning/v2/phase2/[id] (per FRD §6.5.2).
+ *  D2 added `original_resume_text` (verbatim persona.resume_text) so the
+ *  bullet picker can extract resume bullets client-side without hitting
+ *  a separate endpoint. Null only when the persona lookup misses (race
+ *  with persona deletion) — production paths always return a string. */
 export type Phase2RunResponse = {
   phase2_run_id: string
   positioning_run_id: string
@@ -124,6 +128,8 @@ export type Phase2RunResponse = {
   case_letter: "A" | "B" | "C"
   state: PhaseTwoState
   revised_resume_text: string | null
+  /** D2: verbatim persona.resume_text for client-side bullet extraction. */
+  original_resume_text: string | null
   status: PhaseTwoRunStatus
   new_persona_id: string | null
   created_at: string

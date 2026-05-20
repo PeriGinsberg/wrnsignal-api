@@ -131,11 +131,27 @@ export async function GET(
     )
   }
 
-  // ── 4. Build response (11 fields per FRD §6.5.2) ────────────────────────
+  // ── 4. Fetch persona.resume_text (D2 addition) ──────────────────────────
+  // D2 surfaces `original_resume_text` on the GET response so the
+  // frontend bullet picker can extract resume bullets client-side
+  // without a separate endpoint. Single field, additive — does not
+  // affect /start or /decide payloads. The persona lookup uses the
+  // same persona_id the F11-collapsed row carries; failure is
+  // treated as null (we surface what we can rather than 500'ing the
+  // whole GET).
+  const { data: persona } = await supabaseAdmin
+    .from("client_personas")
+    .select("resume_text")
+    .eq("id", result.row.persona_id)
+    .maybeSingle<{ resume_text: string | null }>()
+  const originalResumeText = persona?.resume_text ?? null
+
+  // ── 5. Build response (12 fields per FRD §6.5.2 + D2 addition) ──────────
   // Subset of PhaseTwoRunRow. Omits:
   //   - profile_id: security (don't expose FKs)
   //   - ai_cost_cents: internal accounting (not user-relevant)
-  // Renames id → phase2_run_id (matches POST /start response).
+  // Renames id → phase2_run_id (matches POST /start response). Adds
+  // original_resume_text from the persona lookup above.
   const row = result.row
   return withCorsJson(
     request,
@@ -146,6 +162,7 @@ export async function GET(
       case_letter: row.case_letter,
       state: row.state,
       revised_resume_text: row.revised_resume_text,
+      original_resume_text: originalResumeText,
       status: row.status,
       new_persona_id: row.new_persona_id,
       created_at: row.created_at,
