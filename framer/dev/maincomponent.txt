@@ -2014,21 +2014,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     }
 
     async function runPositioning() {
-        // v1.0.1 — Run Positioning now bootstraps Phase 2 (Resume
-        // Reframing Workflow) instead of the old V5 strategy generator
-        // at /api/positioning. Two sequential backend calls:
-        //   1. /api/positioning/v2/start        — creates positioning_runs_v2
-        //   2. /api/positioning/v2/phase2/start — creates phase2_runs +
-        //                                          populates state.items
-        // Then opens the Phase 2 selection screen in a new tab. The
-        // user drives the interactive resume-reframing flow there;
-        // this Framer session stays alive on whatever tab the user
-        // was on.
-        //
-        // The OLD /api/positioning route still works (will be 410'd in
-        // a follow-up commit after the new flow is smoke-verified).
-        // The dead `runPositioningV2` scaffolding below remains in
-        // place; v1.1 cleanup will remove it.
         clearErrorAndDebug()
         setLoadingPositioning(true)
 
@@ -2036,18 +2021,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             if (!hasJob) throw new Error("Paste a job description first.")
             if (!accessToken) throw new Error("Please log in again.")
 
-            const jobfitRunId = jobFitResult?.jobfit_run_id
-            if (!jobfitRunId) {
-                throw new Error(
-                    "Run JobFit first — Phase 2 needs a JobFit run to bootstrap from."
-                )
-            }
-
-            // Step 1: bootstrap positioning_runs_v2 (Phase 1 route).
-            const startData = await postJsonWithDebug(
-                `${API_BASE}/api/positioning/v2/start`,
+            const data = await postJsonWithDebug(
+                `${API_BASE}/api/positioning`,
                 {
-                    jobfit_run_id: jobfitRunId,
+                    job: job.trim(),
                     ...(selectedPersonaId
                         ? { persona_id: selectedPersonaId }
                         : {}),
@@ -2056,74 +2033,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 accessToken
             )
 
-            const positioningRunId = startData?.run_id
-            if (!positioningRunId) {
-                throw new Error(
-                    "Positioning bootstrap failed: no run_id returned."
-                )
-            }
-
-            // Step 2: bootstrap phase2_runs (selects items per case).
-            const phase2Data = await postJsonWithDebug(
-                `${API_BASE}/api/positioning/v2/phase2/start`,
-                { positioning_run_id: positioningRunId },
-                setDebug,
-                accessToken
-            )
-
-            const phase2RunId = phase2Data?.phase2_run_id
-            if (!phase2RunId) {
-                throw new Error(
-                    "Phase 2 bootstrap failed: no phase2_run_id returned."
-                )
-            }
-
-            // Step 3: open the Phase 2 selection screen in a new tab.
-            // Same origin serves Next.js pages + API endpoints, so
-            // API_BASE works as the page base URL too.
-            window.open(
-                `${API_BASE}/positioning/phase2/${phase2RunId}`,
-                "_blank",
-                "noopener,noreferrer"
-            )
+            setPositioningResult(data)
+            setPosDriversOpen(true)
+            setPosBulletsOpen(false)
+            setPosSummaryOpen(false)
+            setTab("positioning")
         } catch (e: any) {
-            // Map known backend error codes/messages to user-facing
-            // copy. postJsonWithDebug throws with e.message = data.detail
-            // || data.error, so a simple includes() match against the
-            // known error codes is sufficient for v1.0.1. v1.1 may
-            // formalize this into an error-code → copy lookup table.
-            const raw = e?.message || String(e)
-            let friendly: string
-            if (
-                raw.includes("case_not_supported") ||
-                raw.includes("Case A") ||
-                raw.includes("Case C")
-            ) {
-                friendly =
-                    "This role isn't yet supported for the new positioning workflow. Try a different role or check back later."
-            } else if (
-                raw.includes("no_persona_configured") ||
-                raw.includes("persona_resume_text_empty") ||
-                raw.includes("empty_persona")
-            ) {
-                friendly =
-                    "This persona needs a resume before positioning can run. Upload or update the persona first."
-            } else if (
-                raw.includes("in_progress_phase2_run_exists") ||
-                raw.includes("phase2_run_already_exists")
-            ) {
-                friendly =
-                    "You've already started this positioning run. Refresh and resume where you left off."
-            } else if (
-                raw.includes("phase2_run_not_found") ||
-                raw.includes("positioning_run_not_found")
-            ) {
-                friendly =
-                    "Positioning data couldn't be found. Refresh the page or contact support."
-            } else {
-                friendly = raw
-            }
-            setErrorMsg(friendly)
+            setErrorMsg(e?.message || String(e))
         } finally {
             setLoadingPositioning(false)
         }
