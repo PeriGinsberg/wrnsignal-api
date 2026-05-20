@@ -1190,6 +1190,14 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [signalApplicationId, setSignalApplicationId] = React.useState<string | null>(null)
     const [reconsiderModalOpen, setReconsiderModalOpen] = React.useState(false)
 
+    // v1.0.1 — Phase 2 bootstrap state. Distinct from positioningV2Loading
+    // (which tracks the auto-fired /api/positioning/v2/start call on tab
+    // entry). startingPhase2 tracks the user-initiated /api/positioning/v2/
+    // phase2/start call fired by clicking the "Let's start" CTA in
+    // renderCaseB. Errors surface via startPhase2Error.
+    const [startingPhase2, setStartingPhase2] = React.useState(false)
+    const [startPhase2Error, setStartPhase2Error] = React.useState<string | null>(null)
+
     // F11 — D4 Case A apply-CTA state. Tracks the PUT
     // /api/applications/{id} lifecycle. Deliberately separate from
     // positioningV2Loading: this is post-result UX, not the start call.
@@ -2143,6 +2151,134 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setPositioningV2Error(e?.message || String(e))
         } finally {
             setPositioningV2Loading(false)
+        }
+    }
+
+    // v1.0.1 — Phase 2 bootstrap. Fires when the user clicks the
+    // "Let's start →" CTA on the Case B positioning landing page.
+    // positioningRunId was already populated by runPositioningV2's
+    // auto-fire on tab entry, so this is a single backend call:
+    //
+    //   POST /api/positioning/v2/phase2/start
+    //     body: { positioning_run_id }
+    //     → returns { phase2_run_id, state, status }
+    //
+    // On success, opens the Phase 2 selection screen in a new tab —
+    // the user drives the interactive Resume Reframing Workflow there,
+    // this Framer session stays alive on the positioning tab.
+    //
+    // No button-state change after successful click — by the time the
+    // POST resolves, the new tab has opened and the user has moved on.
+    // 409 phase2_run_already_exists handles the double-click case
+    // gracefully (the second click hits the already-created phase2_run).
+    async function startPhase2() {
+        setStartPhase2Error(null)
+        setStartingPhase2(true)
+        const url = `${API_BASE}/api/positioning/v2/phase2/start`
+        const startedAt = Date.now()
+        try {
+            if (!accessToken) throw new Error("Please log in again.")
+            if (!positioningRunId) {
+                throw new Error(
+                    "Positioning hasn't finished setting up yet. Wait a moment and try again."
+                )
+            }
+
+            let res: Response
+            try {
+                res = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({
+                        positioning_run_id: positioningRunId,
+                    }),
+                })
+            } catch (err: any) {
+                setDebug({
+                    stage: "fetch_throw",
+                    url,
+                    ms: Date.now() - startedAt,
+                    errorName: err?.name,
+                    errorMessage: err?.message,
+                    errorStackPreview: safePreview(err?.stack || "", 900),
+                })
+                throw new Error("Request failed. Please try again.")
+            }
+
+            const ms = Date.now() - startedAt
+            const contentType = res.headers.get("content-type") || ""
+            const raw = await res.text()
+
+            setDebug({
+                stage: "fetch_response",
+                url,
+                ms,
+                status: res.status,
+                ok: res.ok,
+                contentType,
+                responsePreview: safePreview(raw),
+            })
+
+            if (looksLikeHtml(raw) || contentType.includes("text/html")) {
+                throw new Error("Unexpected response. Please try again.")
+            }
+
+            let data: any = null
+            try {
+                data = JSON.parse(raw)
+            } catch {
+                throw new Error("Unexpected response. Please try again.")
+            }
+
+            if (!res.ok) {
+                // Map known phase2/start error codes to user-facing copy.
+                // Single backend call → short error matrix. v1.1 may
+                // formalize this into an error-code → copy lookup table.
+                const code = data?.error || ""
+                let friendly: string
+                if (code === "case_not_supported") {
+                    friendly =
+                        "This role isn't supported for the new positioning workflow yet."
+                } else if (
+                    code === "in_progress_phase2_run_exists" ||
+                    code === "phase2_run_already_exists"
+                ) {
+                    friendly =
+                        "You've already started this positioning run. Refresh and resume where you left off."
+                } else if (code === "persona_resume_text_empty") {
+                    friendly =
+                        "This persona needs a resume before positioning can run. Upload or update the persona first."
+                } else {
+                    friendly =
+                        data?.detail ||
+                        data?.error ||
+                        `Request failed (HTTP ${res.status}).`
+                }
+                throw new Error(friendly)
+            }
+
+            const phase2RunId = data?.phase2_run_id
+            if (!phase2RunId) {
+                throw new Error(
+                    "Phase 2 bootstrap returned no phase2_run_id."
+                )
+            }
+
+            // Open the Phase 2 selection screen in a new tab. Same
+            // origin serves Next.js pages + API endpoints, so API_BASE
+            // works as the page base URL too.
+            window.open(
+                `${API_BASE}/positioning/phase2/${phase2RunId}`,
+                "_blank",
+                "noopener,noreferrer"
+            )
+        } catch (e: any) {
+            setStartPhase2Error(e?.message || String(e))
+        } finally {
+            setStartingPhase2(false)
         }
     }
 
@@ -5076,6 +5212,45 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         )
     }
 
+    // v1.0.1 — enabled CTA primitive parallel to renderV2DisabledCta.
+    // Used by Case B's "Let's start" button to fire startPhase2. The
+    // disabled primitive above stays untouched — Case C's "Yes, let's
+    // work on this" continues to use it (Phase 2 doesn't support Case
+    // C yet). Visual: signal-orange gradient on the button background,
+    // dark text on the orange surface (matches the renderJfCtaGo /
+    // primary CTA palette already in this file). Loading state swaps
+    // label to "Setting up your workflow... (~7s)" with explicit time
+    // signal per design lock.
+    function renderV2EnabledCta(
+        label: string,
+        onClick: () => void,
+        loading: boolean
+    ) {
+        return (
+            <button
+                type="button"
+                onClick={onClick}
+                disabled={loading}
+                style={{
+                    width: "100%",
+                    padding: "12px 18px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: loading
+                        ? "rgba(255,255,255,0.06)"
+                        : "linear-gradient(90deg,#FEB06A,#f97316)",
+                    color: loading ? "rgba(255,255,255,0.55)" : "#0B1F35",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: loading ? "wait" : "pointer",
+                    transition: "opacity 120ms ease",
+                }}
+            >
+                {loading ? "Setting up your workflow... (~7s)" : label}
+            </button>
+        )
+    }
+
     // D4 — Functional "I'm ready to apply" CTA for Case A (FRD section
     // 4.4 CTABlock). Distinct from renderV2DisabledCta because this one
     // is wired to PUT /api/applications/{id}. State machine:
@@ -5476,8 +5651,31 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     </div>
                 </div>
 
-                {/* F3 — "Let's start" disabled until Phase 2 wires up */}
-                {renderV2DisabledCta("Let's start")}
+                {/* v1.0.1 — "Let's start →" wired to startPhase2. The
+                 *  click fires POST /api/positioning/v2/phase2/start with
+                 *  positioningRunId (already in state from
+                 *  runPositioningV2's auto-fire on tab entry), then
+                 *  window.open's the Phase 2 selection screen in a new
+                 *  tab. Case C's "Yes, let's work on this" CTA in
+                 *  renderCaseC below stays disabled — Phase 2 doesn't
+                 *  support Case C yet. */}
+                {renderV2EnabledCta("Let's start →", startPhase2, startingPhase2)}
+                {startPhase2Error && (
+                    <div
+                        style={{
+                            marginTop: 8,
+                            padding: "10px 12px",
+                            borderRadius: 8,
+                            background: "rgba(232,112,112,0.08)",
+                            border: "1px solid rgba(232,112,112,0.30)",
+                            color: "rgba(232,112,112,0.95)",
+                            fontSize: 12,
+                            lineHeight: "18px",
+                        }}
+                    >
+                        {startPhase2Error}
+                    </div>
+                )}
             </div>
         )
     }
