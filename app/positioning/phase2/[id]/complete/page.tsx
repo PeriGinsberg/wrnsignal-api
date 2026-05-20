@@ -249,12 +249,11 @@ export default function Phase2CompletePage({
         </p>
       </div>
 
-      {/* B1 partial-composition notice — remove when B2 ships gap composition */}
+      {/* B2 partial-composition notice — remove when D2 surfaces cover letter notes + acknowledged gaps */}
       <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
-        <strong>v0.1 note:</strong> gap-item composition is in development.
-        The revised pane shows headline and bullet changes; gap item changes
-        will appear in the next release. Formatted .docx/.pdf export will land
-        later; for now, use Copy to grab the text.
+        <strong>v0.1 note:</strong> cover letter notes and acknowledged gaps
+        will surface in this view in the next release. .docx/.pdf export will
+        land later — for now, use Copy to grab the revised text.
       </div>
 
       {/* Side-by-side preview */}

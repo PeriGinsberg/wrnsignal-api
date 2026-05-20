@@ -210,6 +210,118 @@ function replaceFirstOccurrence(
 }
 
 // ============================================================================
+// Gap "add_new_bullet" insertion: detect bullet-bearing lines, anchor + glyph
+// ============================================================================
+
+/**
+ * Bullet-glyph characters Phase 2 recognizes as "this line is a bullet."
+ * Per the design lock: ●, ○, •, -, *. Other Unicode bullet variants
+ * (◦ U+25E6, ‣ U+2023, ⁃ U+2043, ∙ U+2219) are NOT recognized — if a real
+ * persona surfaces them, extend the list.
+ *
+ * Note: bare "-" or "*" lines used purely as visual separators (e.g.,
+ * "---" or "* * *") would qualify under this rule. None of our known
+ * persona resumes use that pattern; if one does in the future, the
+ * separator line will be misclassified as a bullet anchor (the resulting
+ * insertion would land below the separator — visible but ugly). Pre-
+ * emptive complexity to handle that case isn't justified yet.
+ */
+const BULLET_GLYPHS = new Set(["●", "○", "•", "-", "*"])
+
+/**
+ * Match the leading-whitespace + glyph + post-glyph-whitespace of a bullet
+ * line. Capture group 1 is the whitespace prefix (often empty for
+ * left-aligned bullets); the glyph itself is matched in a character
+ * class so we know one of the recognized glyphs led the line. Designed
+ * to support both `● Coordinated…` and `   - Built…` shapes.
+ *
+ * Note: the trailing `\s*` consumes the post-glyph whitespace so the new
+ * bullet matches the original's spacing convention.
+ */
+const BULLET_LINE_RX = /^(\s*)([●○•\-*])(\s*)/
+
+/**
+ * Returns the bullet-glyph + indentation prefix of a line if it's a
+ * bullet-bearing line, or null otherwise. Used to detect the anchor for
+ * add_new_bullet insertion.
+ *
+ * "Bullet-bearing" means: the first non-whitespace character is one of
+ * BULLET_GLYPHS. Empty lines and lines whose first non-whitespace is a
+ * letter, digit, or other punctuation do NOT qualify.
+ *
+ * The returned prefix preserves the indentation + glyph + trailing
+ * whitespace exactly so a new bullet built from it matches the original's
+ * formatting. Example: input `"  ○ Performed industry…"` → returns
+ * `"  ○ "`.
+ */
+function bulletPrefixOf(line: string): string | null {
+  const m = BULLET_LINE_RX.exec(line)
+  if (!m) return null
+  // m[0] is the full match (indent + glyph + post-whitespace).
+  // m[2] is the glyph; verify it's recognized (the regex character class
+  // already enforces this but the Set check makes the intent explicit
+  // and protects against future regex edits).
+  if (!BULLET_GLYPHS.has(m[2])) return null
+  return m[0]
+}
+
+/**
+ * Locate the last bullet-bearing line in a line array by scanning from
+ * the end backwards. Returns the line index of the last bullet, or -1
+ * if no line in the array is bullet-bearing (pure-prose resume case;
+ * caller falls back to append-at-end).
+ *
+ * Reverse scan matches the spec's "first line whose first non-whitespace
+ * character is a bullet glyph" rule interpreted from the end — we want
+ * the FINAL bullet position so a freshly added bullet lands after all
+ * existing ones.
+ */
+function findLastBulletLineIndex(lines: string[]): number {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (bulletPrefixOf(lines[i]) !== null) return i
+  }
+  return -1
+}
+
+/**
+ * Append a new bullet to `workingText` for the add_new_bullet gap
+ * outcome. Algorithm:
+ *
+ *   1. Split workingText into lines.
+ *   2. Reverse-scan for the last bullet-bearing line.
+ *   3. If found: clone that line's prefix (indent + glyph + post-glyph
+ *      whitespace) and insert a new line with `<prefix><finalText>`
+ *      immediately after the anchor.
+ *   4. If not found (pure-prose resume): append the finalText at the
+ *      end of workingText with a blank line separator. No glyph
+ *      inserted — the assumption is that a resume without bullets won't
+ *      suddenly start using them.
+ *
+ * Returns the modified text. Pure function. No side effects.
+ */
+function appendNewBullet(workingText: string, finalText: string): string {
+  const lines = workingText.split("\n")
+  const lastBulletIdx = findLastBulletLineIndex(lines)
+
+  if (lastBulletIdx >= 0) {
+    const prefix = bulletPrefixOf(lines[lastBulletIdx]) ?? ""
+    const newLine = `${prefix}${finalText}`
+    const before = lines.slice(0, lastBulletIdx + 1)
+    const after = lines.slice(lastBulletIdx + 1)
+    return [...before, newLine, ...after].join("\n")
+  }
+
+  // Fallback: no bullets anywhere. Append at end with blank-line
+  // separator and no glyph. Preserve the resume's existing trailing
+  // newline (Catherine v3 ends with "\n"; the slice doesn't) by
+  // checking and adjusting separator structure.
+  if (workingText.endsWith("\n")) {
+    return `${workingText}\n${finalText}\n`
+  }
+  return `${workingText}\n\n${finalText}`
+}
+
+// ============================================================================
 // Main entry point
 // ============================================================================
 
@@ -217,7 +329,7 @@ function replaceFirstOccurrence(
  * Recompose the revised resume from the original resume text and the
  * user's accepted decisions.
  *
- * FRD §6.10 algorithm (B1 scope: headline + bullet only; B2 ships gap):
+ * FRD §6.10 algorithm (B2 scope: headlines + bullets + gaps):
  *   1. Start with originalResumeText as the base.
  *   2. Filter items to accepted=true with non-null final_text.
  *   3. Process headlines first:
@@ -230,9 +342,27 @@ function replaceFirstOccurrence(
  *      - locate item.original_bullet verbatim, replace with
  *        item.final_text (first occurrence only).
  *      - Log + skip if anchor is missing.
- *   5. Gap items: SKIPPED in B1 (B2 will implement). Accepted gaps pass
- *      through with no effect on output.
+ *   5. Then process gap items (B2). Split into two sub-passes:
+ *      5a. compositional_outcome === "reword_existing_bullet": locate
+ *          item.target_bullet_text verbatim, replace with
+ *          item.final_text. Log + skip on null target or missing
+ *          anchor.
+ *      5b. compositional_outcome === "add_new_bullet": append
+ *          item.final_text as a new bullet after the resume's last
+ *          bullet-bearing line, preserving the glyph + indentation
+ *          convention. Multiple add_new_bullet items in one run
+ *          CLUSTER — each append moves the "last bullet" anchor
+ *          forward so subsequent appends land immediately below.
+ *      "note_for_cover_letter" and "acknowledge_genuine_gap" outcomes
+ *      are no-ops at the composer level — D2 surfaces them on the
+ *      completion screen.
  *   6. Return the final working text.
+ *
+ * Sub-pass ordering rationale (3a before 3b):
+ *   A freshly added bullet from 3b must never collide with a reword
+ *   target from 3a. Doing 3a first means reword targets are matched
+ *   against the original bullet set; doing 3b second means new
+ *   appends can't be accidentally consumed as reword anchors.
  *
  * Edge cases (per FRD §6.10 contract):
  *   - Empty items array → returns originalResumeText unchanged.
@@ -315,14 +445,107 @@ export function composeRevisedResume(
     working = text
   }
 
-  // ── Pass 3: gaps (B2) ────────────────────────────────────────────────
-  // Gap items are intentionally NOT processed in B1. The four
-  // compositional outcomes (reword_existing_bullet, add_new_bullet,
-  // note_for_cover_letter, acknowledge_genuine_gap) each need their
-  // own composer path. B2 implements them. For B1, accepted gap items
-  // pass through with no effect on output. Tests pin this behavior so
-  // a future regression that accidentally writes gap content here
-  // would surface.
+  // ── Pass 3: gap items — split into two sub-passes ────────────────────
+  // 3a (reword) runs BEFORE 3b (append) so a newly-appended bullet
+  // from 3b can never accidentally serve as a reword anchor for 3a.
+  // See JSDoc above for the full rationale.
+
+  // ── Pass 3a: gap reword_existing_bullet ──────────────────────────────
+  for (const item of items) {
+    if (item.type !== "gap") continue
+    if (!item.accepted) continue
+
+    // Defensive: legacy gap rows (seeded before A2) lack the
+    // compositional_outcome field; readGapItem(...) ?? null default is
+    // the load-bearing contract documented on PhaseTwoGapItem JSDoc.
+    const outcome = item.compositional_outcome ?? null
+    if (outcome !== "reword_existing_bullet") continue
+
+    if (item.final_text === null) {
+      console.warn(
+        `[resumeComposer] accepted gap (reword) has null final_text, skipping. id=${item.id}`,
+      )
+      continue
+    }
+    const targetBulletText = item.target_bullet_text ?? null
+    if (targetBulletText === null) {
+      console.warn(
+        `[resumeComposer] accepted gap with reword outcome has null target_bullet_text, skipping. id=${item.id} (state-corruption signal: /decide should have set this)`,
+      )
+      continue
+    }
+
+    const { text, found } = replaceFirstOccurrence(
+      working,
+      targetBulletText,
+      item.final_text,
+    )
+    if (!found) {
+      console.warn(
+        `[resumeComposer] gap reword target_bullet_text not found in resume_text, skipping. id=${item.id} (resume drift OR a prior accepted item already overwrote this line)`,
+      )
+      continue
+    }
+    working = text
+  }
+
+  // ── Pass 3b: gap add_new_bullet ──────────────────────────────────────
+  for (const item of items) {
+    if (item.type !== "gap") continue
+    if (!item.accepted) continue
+    const outcome = item.compositional_outcome ?? null
+    if (outcome !== "add_new_bullet") continue
+
+    if (item.final_text === null) {
+      console.warn(
+        `[resumeComposer] accepted gap (add_new_bullet) has null final_text, skipping. id=${item.id}`,
+      )
+      continue
+    }
+
+    // Each append moves the "last bullet" anchor forward — multiple
+    // sequential add_new_bullet items cluster after the original last
+    // bullet, in items[] order. appendNewBullet re-scans the current
+    // working text each call so the clustering is implicit.
+    working = appendNewBullet(working, item.final_text)
+  }
+
+  // ── Pass 3c: gap no-op outcomes (cover letter / acknowledge) ─────────
+  // Resume text is unchanged for these outcomes. D2 surfaces them on
+  // the completion screen. Logged for telemetry visibility — useful
+  // for debugging whether the composer is seeing the expected mix of
+  // outcomes from /decide.
+  for (const item of items) {
+    if (item.type !== "gap") continue
+    if (!item.accepted) continue
+    const outcome = item.compositional_outcome ?? null
+
+    if (outcome === "note_for_cover_letter" || outcome === "acknowledge_genuine_gap") {
+      console.log(
+        `[resumeComposer] gap outcome=${outcome} is a no-op at composer level (D2 surfaces on completion screen). id=${item.id}`,
+      )
+      continue
+    }
+
+    // Legacy gap items (no compositional_outcome) and any unknown value
+    // (shouldn't be possible per C1's literal type, but defensive)
+    // land here. Log + skip — don't synthesize a default outcome.
+    if (outcome === null) {
+      console.warn(
+        `[resumeComposer] accepted gap has no compositional_outcome, skipping. id=${item.id} (legacy row predating C1, OR a decide handler bug)`,
+      )
+      continue
+    }
+    if (outcome !== "reword_existing_bullet" && outcome !== "add_new_bullet") {
+      console.warn(
+        `[resumeComposer] accepted gap has unknown compositional_outcome=${outcome}, skipping. id=${item.id}`,
+      )
+    }
+  }
+
+  // Retained for forward-compat: the type-narrowing helpers stay
+  // exported-equivalent so a future commit can use them without re-
+  // declaring. void-ing them satisfies the "unused" linter.
   void isReadyHeadline
   void isReadyBullet
 

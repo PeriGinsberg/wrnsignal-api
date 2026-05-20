@@ -34,6 +34,7 @@ import type {
 import {
   CATHERINE_RESUME_HEADLINE_BLOCK,
   CATHERINE_RESUME_NO_HEADLINE,
+  CATHERINE_RESUME_SLICE,
   CATHERINE_RESUME_TEXT,
 } from "./fixtures"
 
@@ -378,27 +379,33 @@ console.log("\n=== 9. Headline + bullet combined ===")
   )
 }
 
-console.log("\n=== 10. Gap items ignored in B1 (B2 implements) ===")
+console.log("\n=== 10. Gap with no-op outcome leaves resume unchanged (B2 surface) ===")
 {
+  // Originally a B1 "all gaps ignored" pin. After B2, gaps with the
+  // two no-op outcomes (note_for_cover_letter, acknowledge_genuine_gap)
+  // still don't modify the resume — D2 will surface them on the
+  // completion screen. Using note_for_cover_letter here exercises that
+  // path. The resume-modifying outcomes (reword_existing_bullet,
+  // add_new_bullet) are covered in B2's new Tests 17-28 below.
   const items: PhaseTwoItem[] = [
     makeGap({
       id: "gap-1",
-      final_text: "This gap content should NOT appear in revised text in B1",
+      final_text: "Notable point worth mentioning in the cover letter",
       accepted: true,
       decided_at: "2026-05-19T00:00:00Z",
-      compositional_outcome: "add_new_bullet",
+      compositional_outcome: "note_for_cover_letter",
       target_bullet_text: null,
       suggested_bullets_for_reword: [],
     }),
   ]
   const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
   check(
-    "10: revised text unchanged when only an accepted gap item is present",
+    "10: revised text unchanged when gap outcome is note_for_cover_letter",
     result === CATHERINE_RESUME_TEXT,
   )
   check(
-    "10: gap final_text NOT injected into revised text (B2 will handle)",
-    !result.includes("This gap content should NOT appear"),
+    "10: gap final_text NOT injected into revised text (no-op outcome)",
+    !result.includes("Notable point worth mentioning in the cover letter"),
   )
 }
 
@@ -588,6 +595,440 @@ console.log("\n=== 16. Defensive: empty items array ===")
   check(
     "16: empty items → returns originalResumeText unchanged",
     result === CATHERINE_RESUME_TEXT,
+  )
+}
+
+// ============================================================================
+// B2 — gap multi-outcome composition
+// ============================================================================
+
+console.log("\n=== 17. Gap reword_existing_bullet happy path (Catherine v3) ===")
+{
+  const target =
+    "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities"
+  if (!CATHERINE_RESUME_TEXT.includes(target)) {
+    throw new Error("Test 17 fixture corruption: target not in CATHERINE_RESUME_TEXT")
+  }
+  const reword =
+    "Drove data-driven brand analysis through industry, audience, and SWOT research that informed positioning decisions"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: target,
+      final_text: reword,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check("17: revised contains the reword final_text", result.includes(reword))
+  check(
+    "17: revised does NOT contain the target bullet",
+    !result.includes(target),
+  )
+  check("17: revised differs from original", result !== CATHERINE_RESUME_TEXT)
+}
+
+console.log("\n=== 18. Gap add_new_bullet happy path (SLICE with ● glyphs) ===")
+{
+  // CATHERINE_RESUME_SLICE has explicit ● top-level + ○ nested bullet
+  // glyphs. v3 has no glyphs (Test 26 covers that defensive case).
+  // Reverse scan finds the last `● ` line — "Coordinated sponsorship,
+  // networking, and professional development events" — as the anchor.
+  const newBullet = "Led cross-functional collaboration between marketing and operations teams"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: newBullet,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_SLICE, items)
+  check(
+    "18: revised contains the new bullet text",
+    result.includes(newBullet),
+  )
+  check(
+    "18: new bullet carries the ● glyph + matching whitespace",
+    result.includes(`● ${newBullet}`),
+    `looking for "● ${newBullet.slice(0, 40)}…"`,
+  )
+  // The new bullet should appear AFTER the resume's prior last bullet line.
+  const lastOriginalBullet =
+    "● Coordinated sponsorship, networking, and professional development events"
+  const lastOriginalIdx = result.indexOf(lastOriginalBullet)
+  const newBulletIdx = result.indexOf(`● ${newBullet}`)
+  check(
+    "18: new bullet appears AFTER the original last bullet (anchor preserved)",
+    lastOriginalIdx >= 0 && newBulletIdx > lastOriginalIdx,
+    `lastOriginal=${lastOriginalIdx} newBullet=${newBulletIdx}`,
+  )
+  check("18: revised differs from original", result !== CATHERINE_RESUME_SLICE)
+}
+
+console.log("\n=== 19. Gap note_for_cover_letter is a no-op ===")
+{
+  const noteText = "Worth mentioning in the cover letter: deep brand work."
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "note_for_cover_letter",
+      target_bullet_text: null,
+      final_text: noteText,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "19: revised text unchanged when outcome is note_for_cover_letter",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check("19: note text NOT injected into resume", !result.includes(noteText))
+}
+
+console.log("\n=== 20. Gap acknowledge_genuine_gap is a no-op ===")
+{
+  const ackText = "I genuinely don't have this experience — TBD how to surface."
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "acknowledge_genuine_gap",
+      target_bullet_text: null,
+      final_text: ackText,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "20: revised text unchanged when outcome is acknowledge_genuine_gap",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check("20: ack text NOT injected into resume", !result.includes(ackText))
+}
+
+console.log("\n=== 21. Legacy gap (no compositional_outcome field) → log + skip ===")
+{
+  // Simulate a legacy row written before A2/C1 by casting through unknown.
+  // The PhaseTwoGapItem TS type now requires compositional_outcome, but
+  // hand-seeded rows like phase2_run 9d5ebb75 predate the field and read
+  // as `undefined` at runtime — composer must default `?? null` and skip.
+  const legacyGap = {
+    id: "gap-legacy-1",
+    type: "gap",
+    label: "Legacy gap",
+    gap_description: "Gap from before A2",
+    jd_context: "JD",
+    question_asked: "Q",
+    user_response: null,
+    draft: null,
+    final_text: "Legacy gap final_text that must NOT appear in revised text",
+    accepted: true,
+    declined: false,
+    skipped: false,
+    manual_entry: false,
+    decided_at: "2026-05-17T00:00:00Z",
+    // NO compositional_outcome / target_bullet_text / suggested_bullets
+  } as unknown as PhaseTwoItem
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, [legacyGap])
+  check(
+    "21: legacy gap row → revised text unchanged",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check(
+    "21: legacy gap final_text NOT injected",
+    !result.includes("Legacy gap final_text"),
+  )
+}
+
+console.log("\n=== 22. Gap reword with null target_bullet_text → log + skip ===")
+{
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: null, // state corruption — outcome=reword without target
+      final_text: "Should not apply because target is null",
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "22: reword with null target → revised text unchanged",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check(
+    "22: reword final_text NOT injected",
+    !result.includes("Should not apply because target is null"),
+  )
+}
+
+console.log("\n=== 23. Gap reword target not in resume (verbatim broken) → log + skip ===")
+{
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: "This bullet text does not appear anywhere in the v3 resume.",
+      final_text: "Reworded version",
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "23: reword with missing target → revised text unchanged",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check(
+    "23: reword final_text NOT injected",
+    !result.includes("Reworded version"),
+  )
+}
+
+console.log("\n=== 24. Multiple add_new_bullet items cluster after original last bullet ===")
+{
+  const newA = "First new bullet from multi-append test"
+  const newB = "Second new bullet should land right after the first"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: newA,
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: newB,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_SLICE, items)
+  const idxA = result.indexOf(`● ${newA}`)
+  const idxB = result.indexOf(`● ${newB}`)
+  const lastOriginalBullet =
+    "● Coordinated sponsorship, networking, and professional development events"
+  const lastOriginalIdx = result.indexOf(lastOriginalBullet)
+  check("24: both new bullets present with glyph", idxA > 0 && idxB > 0)
+  check(
+    "24: bullet A appears AFTER the original last bullet",
+    idxA > lastOriginalIdx,
+    `lastOriginal=${lastOriginalIdx} idxA=${idxA}`,
+  )
+  check(
+    "24: bullet B appears AFTER bullet A (clustering — second append anchors on first)",
+    idxB > idxA,
+    `idxA=${idxA} idxB=${idxB}`,
+  )
+  // Confirm they're consecutive (no other lines between them).
+  const lines = result.split("\n")
+  const lineA = lines.findIndex((l) => l === `● ${newA}`)
+  const lineB = lines.findIndex((l) => l === `● ${newB}`)
+  check(
+    "24: bullets A and B are on consecutive lines (no separator between)",
+    lineA >= 0 && lineB === lineA + 1,
+    `lineA=${lineA} lineB=${lineB}`,
+  )
+}
+
+console.log("\n=== 25. Reword-before-append orchestration (3a → 3b) ===")
+{
+  // Setup: one gap that REWORDS the slice's last ● bullet, then one gap
+  // that APPENDS a new ● bullet. Per the architectural ordering (3a →
+  // 3b), the reword must apply to the ORIGINAL last bullet (not the
+  // newly-appended one). Test pins this.
+  const originalLastBullet =
+    "● Coordinated sponsorship, networking, and professional development events"
+  const rewordTarget = originalLastBullet
+  const rewordText = "● Reworded last bullet from gap-1"
+  const newAppend = "Newly appended bullet from gap-2"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: rewordTarget,
+      final_text: rewordText,
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: newAppend,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_SLICE, items)
+  check(
+    "25: reword fired — original last bullet text is GONE",
+    !result.includes(originalLastBullet),
+  )
+  check(
+    "25: reword fired — rewordText present",
+    result.includes(rewordText),
+  )
+  check(
+    "25: append fired — newAppend present",
+    result.includes(`● ${newAppend}`),
+  )
+  // The newly appended bullet must land AFTER the rewordText (3b anchored
+  // on the post-3a text, which now has rewordText as the last ● line).
+  const rewordIdx = result.indexOf(rewordText)
+  const appendIdx = result.indexOf(`● ${newAppend}`)
+  check(
+    "25: new bullet from 3b appears AFTER reworded line from 3a (correct ordering)",
+    appendIdx > rewordIdx,
+    `reword=${rewordIdx} append=${appendIdx}`,
+  )
+}
+
+console.log("\n=== 26. add_new_bullet with no bullets in resume (defensive fallback) ===")
+{
+  // CATHERINE_RESUME_TEXT (v3) has NO bullet glyphs anywhere. The
+  // appendNewBullet algorithm falls back to "append at end with blank
+  // line separator". No glyph inserted (the resume's convention was no
+  // glyphs).
+  const newContent = "New bullet content with no glyph since resume has none"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: newContent,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "26: new content appended somewhere",
+    result.includes(newContent),
+  )
+  check("26: revised differs from original", result !== CATHERINE_RESUME_TEXT)
+  // Confirm the new content is at the END (defensive fallback path).
+  const tail = result.slice(-newContent.length - 5)
+  check(
+    "26: new content appears at/near the end of revised text",
+    tail.includes(newContent),
+    `tail: ${JSON.stringify(tail.slice(-80))}`,
+  )
+  // Confirm the new content does NOT have a glyph prefix (resume had none).
+  check(
+    "26: new content does NOT have ● glyph prefix (resume convention: no glyphs)",
+    !result.includes(`● ${newContent}`),
+  )
+}
+
+console.log("\n=== 27. Mixed item types in one run (headline + bullet + gap-reword + gap-append) ===")
+{
+  // SLICE has both ● bullets AND no headline (it skips straight from
+  // EDUCATION to body). So the headline test uses synthesize mode.
+  // For replace-mode headline test we'd need the v3 resume — but v3
+  // doesn't have bullet glyphs. To exercise all four item types we use
+  // SLICE + synthesize-mode headline.
+  const sliceWithFakeHeadlineOriginal = CATHERINE_RESUME_SLICE
+  const headlineReplaceFinal = "Synthesized headline injected via composer"
+  const bulletTarget =
+    "○ Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities for the boutique retail brand"
+  if (!sliceWithFakeHeadlineOriginal.includes(bulletTarget)) {
+    throw new Error("Test 27 fixture: bulletTarget not in CATHERINE_RESUME_SLICE")
+  }
+  const bulletReframed = "○ Drove SWOT and audience analysis to inform brand positioning"
+  const gapRewordTarget =
+    "● Coordinated sponsorship, networking, and professional development events"
+  const gapRewordFinal = "● Owned cross-team sponsorship and event ops for BPAD"
+  const gapAppendText = "Built campaign-measurement dashboards for the Diligent team"
+  const items: PhaseTwoItem[] = [
+    makeHeadline({
+      id: "headline-1",
+      synthesize_mode: true,
+      final_text: headlineReplaceFinal,
+      original: "Headline targeting: <placeholder>",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+    }),
+    makeBullet({
+      id: "bullet-1",
+      original_bullet: bulletTarget,
+      final_text: bulletReframed,
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+    }),
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: gapRewordTarget,
+      final_text: gapRewordFinal,
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: gapAppendText,
+    }),
+  ]
+  const result = composeRevisedResume(sliceWithFakeHeadlineOriginal, items)
+  check("27: headline synthesize injected", result.includes(headlineReplaceFinal))
+  check("27: bullet reframe applied", result.includes(bulletReframed) && !result.includes(bulletTarget))
+  check("27: gap reword applied", result.includes(gapRewordFinal) && !result.includes(gapRewordTarget))
+  check("27: gap append applied", result.includes(`● ${gapAppendText}`))
+  // Ordering pin: headline → bullet → gap-reword → gap-append. Each
+  // change should appear in the result; verify the gap-append (last
+  // change to apply) lands AFTER the gap-reword in document order.
+  const gapRewordIdx = result.indexOf(gapRewordFinal)
+  const gapAppendIdx = result.indexOf(`● ${gapAppendText}`)
+  check(
+    "27: gap-append lands after gap-reword in document order",
+    gapAppendIdx > gapRewordIdx,
+    `reword=${gapRewordIdx} append=${gapAppendIdx}`,
+  )
+}
+
+console.log("\n=== 28. Determinism for gap items (re-run produces identical output) ===")
+{
+  const target =
+    "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: target,
+      final_text: "Deterministic reword for B2",
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-19T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: "Deterministic append for B2",
+    }),
+  ]
+  const r1 = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  const r2 = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "28: identical gap-bearing inputs produce byte-identical output across two runs",
+    r1 === r2,
+    `r1.length=${r1.length} r2.length=${r2.length}`,
   )
 }
 
