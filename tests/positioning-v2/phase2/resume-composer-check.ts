@@ -1490,12 +1490,27 @@ console.log("\n=== 39. Determinism — B3 outcomes produce byte-identical output
   )
 }
 
-console.log("\n=== 40. add_certification (B4 scope) → composer no-op, no false 'unknown' warning ===")
+console.log("\n=== 40. add_certification — all 3 detection tiers fail → silent skip + log ===")
 {
-  // Pass 3d should log "not yet handled at composer level (B4 will ship)"
-  // for add_certification rather than the generic "unknown
-  // compositional_outcome" warning. We can't easily assert console output
-  // here, but the architectural contract is: revised text unchanged.
+  // Repurposed from the B3 "composer no-op (deferred to B4)" pin. After
+  // B4, add_certification IS handled, so Catherine v3's resume — which
+  // has a "Certificates & Tools :" line that B4's Tier 3 detects — no
+  // longer produces an unchanged revised text. Use a synthetic resume
+  // with NO cert anchors of any kind to pin the section-not-found path:
+  //   - no CERTIFICATIONS / CERTIFICATES / LICENSES section header
+  //   - no "Certifications:" / "Certs:" key-prefix line
+  //   - no combined "Certificates & Tools" / "Tools & Certifications" line
+  // All three tiers return null, composer logs the silent skip, revised
+  // text is unchanged. v0.2 section-creation will close this gap.
+  const synthResume = `JANE DOE
+Boston, MA | jane@example.com | 555-0100
+
+EDUCATION
+University of Somewhere
+
+EXPERIENCE
+Some role
+Another role`
   const items: PhaseTwoItem[] = [
     makeGap({
       id: "gap-1",
@@ -1506,14 +1521,377 @@ console.log("\n=== 40. add_certification (B4 scope) → composer no-op, no false
       final_text: "PMP Certification — Project Management Institute",
     }),
   ]
-  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  const result = composeRevisedResume(synthResume, items)
   check(
-    "40: add_certification leaves resume unchanged in B3 (B4 will ship)",
-    result === CATHERINE_RESUME_TEXT,
+    "40: all 3 tiers fail → revised unchanged",
+    result === synthResume,
   )
   check(
-    "40: certification text NOT injected (deferred to B4)",
+    "40: cert text NOT injected (no anchor detected; v0.2 will section-create)",
     !result.includes("PMP Certification — Project Management Institute"),
+  )
+}
+
+// ============================================================================
+// B4 — composer for add_certification with 3-tier detection fallback
+// ============================================================================
+//
+// Tier 1: Pattern A — standalone CERTIFICATIONS section header + pipe-list
+// Tier 2: Pattern B — "Certifications:" / "Certs:" / "Licenses:" key-prefix
+// Tier 3: Pattern B — "Certificates & Tools :" combined cert+tools key-prefix
+//                     (Catherine v3's canonical pattern)
+//
+// All three tiers fail → silent skip + log; section creation deferred to
+// v0.2 (see Test 40 above for the silent-skip pin).
+
+console.log("\n=== 41. add_certification Tier 1 happy path — standalone CERTIFICATIONS section (Pattern A) ===")
+{
+  const synthResume = `JANE DOE
+Boston, MA | jane@example.com | 555-0100
+
+EDUCATION
+University of Somewhere
+
+CERTIFICATIONS
+
+PMP | Series 7 | AWS Certified Solutions Architect
+
+EXPERIENCE
+Some role`
+  const newCert = "CFA Level I"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: newCert,
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "41: revised contains the cert appended at end of CERTIFICATIONS pipe list",
+    result.includes(`AWS Certified Solutions Architect | ${newCert}`),
+  )
+  check(
+    "41: CERTIFICATIONS header preserved",
+    result.includes("CERTIFICATIONS"),
+  )
+  check("41: revised differs from original", result !== synthResume)
+}
+
+console.log("\n=== 42. add_certification Tier 2 happy path — 'Certifications:' key-prefix (Pattern B) ===")
+{
+  const synthResume = `JOHN DOE
+Boston, MA | john@example.com
+
+EDUCATION
+University of Somewhere
+Certifications: PMP | Series 7 | Six Sigma Green Belt
+
+EXPERIENCE
+Some role`
+  const newCert = "ITIL Foundation"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: newCert,
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "42: revised contains the cert appended at end of Certifications: list",
+    result.includes(`Six Sigma Green Belt | ${newCert}`),
+  )
+  check(
+    "42: 'Certifications:' key-prefix preserved verbatim",
+    result.includes("Certifications: PMP | Series 7"),
+  )
+}
+
+console.log("\n=== 43. add_certification Tier 3 happy path — Catherine v3 'Certificates & Tools :' (Pattern B combined) ===")
+{
+  const newCert = "PMP Certified"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: newCert,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "43: revised contains the cert appended after 'Microsoft Office' (end of combined list)",
+    result.includes(`Microsoft Office | ${newCert}`),
+  )
+  check(
+    "43: 'Certificates & Tools : ' prefix preserved with space-before-colon intact",
+    result.includes("Certificates & Tools : Muck Rack Fundamentals"),
+  )
+  check("43: revised differs from original", result !== CATHERINE_RESUME_TEXT)
+}
+
+console.log("\n=== 44. add_certification tier ordering — Tier 1 wins when both Tier 1 and Tier 2 anchors exist ===")
+{
+  // Synthetic resume with BOTH a standalone CERTIFICATIONS section (Tier 1)
+  // AND a "Certifications:" key-prefix line (Tier 2). Tier 1 must win —
+  // the composer should not also append to the Tier 2 line.
+  const synthResume = `JANE DOE
+Boston, MA | jane@example.com
+
+EDUCATION
+University of Somewhere
+Certifications: Six Sigma Green Belt | Scrum Master | Lean Practitioner
+
+CERTIFICATIONS
+
+PMP | Series 7 | AWS Certified Solutions Architect
+
+EXPERIENCE
+Some role`
+  const newCert = "CFA Level II"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: newCert,
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "44: cert appended to Tier 1 pipe-list (standalone CERTIFICATIONS section wins)",
+    result.includes(`AWS Certified Solutions Architect | ${newCert}`),
+  )
+  check(
+    "44: Tier 2 'Certifications:' line UNCHANGED (Tier 1 short-circuited the fallback)",
+    result.includes("Certifications: Six Sigma Green Belt | Scrum Master | Lean Practitioner") &&
+      !result.includes(`Lean Practitioner | ${newCert}`),
+  )
+}
+
+console.log("\n=== 45. B3 backward-compat regression — all B3 add_* outcomes still work after B4 ===")
+{
+  // Sanity loop over the four B3 outcomes against Catherine v3 (which
+  // has every anchor B3 needs). Each should produce a modified resume.
+  const cases = [
+    { outcome: "add_to_skills_list" as const, final_text: "B4-regression skill", appearsAfter: "Photography" },
+    { outcome: "add_tool_or_software" as const, final_text: "B4-regression tool", appearsAfter: "Microsoft Office" },
+    { outcome: "add_to_coursework" as const, final_text: "B4-regression course", appearsAfter: "Design Aesthetics of Fashion and Retail" },
+  ]
+  for (const c of cases) {
+    const items: PhaseTwoItem[] = [
+      makeGap({
+        id: "gap-1",
+        accepted: true,
+        decided_at: "2026-05-20T00:00:00Z",
+        compositional_outcome: c.outcome,
+        target_bullet_text: null,
+        final_text: c.final_text,
+      }),
+    ]
+    const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+    check(
+      `45: B3 outcome "${c.outcome}" still appends after B4 changes`,
+      result.includes(`${c.appearsAfter} | ${c.final_text}`),
+    )
+  }
+  // add_language uses a synthetic fixture (Catherine has no LANGUAGES
+  // section). Content needs >= 2 pipes (3 items) to meet
+  // PIPE_LIST_MIN_PIPES — same v1 limitation pinned by Test 35.
+  const synthLangResume = `JANE DOE
+Boston, MA | jane@example.com
+
+EDUCATION
+University of Somewhere
+
+LANGUAGES
+
+English | Spanish | Italian
+
+EXPERIENCE
+Some role`
+  const newLang = "B4-regression language"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_language",
+      target_bullet_text: null,
+      final_text: newLang,
+    }),
+  ]
+  const result = composeRevisedResume(synthLangResume, items)
+  check(
+    `45: B3 outcome "add_language" still appends after B4 changes`,
+    result.includes(`Italian | ${newLang}`),
+  )
+}
+
+console.log("\n=== 46. Determinism — add_certification produces byte-identical output across two runs ===")
+{
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: "Deterministic cert",
+    }),
+  ]
+  const r1 = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  const r2 = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "46: identical add_certification input produces byte-identical output across two runs",
+    r1 === r2,
+    `r1.length=${r1.length} r2.length=${r2.length}`,
+  )
+}
+
+console.log("\n=== 47. add_certification with null final_text → skip + log ===")
+{
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: null,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "47: null final_text → revised unchanged (state-corruption signal logged)",
+    result === CATHERINE_RESUME_TEXT,
+  )
+}
+
+console.log("\n=== 48. Multiple add_certification items → sequential append in state.items[] order ===")
+{
+  const cert1 = "PMP Certified"
+  const cert2 = "CFA Level I"
+  const cert3 = "Series 7"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: cert1,
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: cert2,
+    }),
+    makeGap({
+      id: "gap-3",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: cert3,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "48: all three certs appended in items[] order at end of combined list",
+    result.includes(`Microsoft Office | ${cert1} | ${cert2} | ${cert3}`),
+  )
+}
+
+console.log("\n=== 49a. Operations commute — tool BEFORE cert in state.items[] (Catherine combined line) ===")
+{
+  // Both outcomes target Catherine v3's "Certificates & Tools :" line.
+  // With state.items = [tool, cert]: Pass 3c iterates → tool dispatches
+  // first → cert dispatches second (and re-detects the now-modified
+  // line). Both lands on the same line; tool appears before cert.
+  const newTool = "Tableau"
+  const newCert = "PMP Certified"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-tool",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_tool_or_software",
+      target_bullet_text: null,
+      final_text: newTool,
+    }),
+    makeGap({
+      id: "gap-cert",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: newCert,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "49a: tool appended first, cert appended second (state.items[] order)",
+    result.includes(`Microsoft Office | ${newTool} | ${newCert}`),
+  )
+  // Original prefix still intact (single combined line, not duplicated).
+  const lineMatches = (result.match(/Certificates & Tools :/g) || []).length
+  check(
+    "49a: 'Certificates & Tools :' line is NOT duplicated (both appends on same line)",
+    lineMatches === 1,
+    `lineMatches=${lineMatches}`,
+  )
+}
+
+console.log("\n=== 49b. Operations commute — cert BEFORE tool in state.items[] (Catherine combined line) ===")
+{
+  // Reverse the order from 49a. Same combined line target, opposite
+  // append order. Result is a valid resume in either direction —
+  // operations commute on the shared line.
+  const newTool = "Tableau"
+  const newCert = "PMP Certified"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-cert",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: newCert,
+    }),
+    makeGap({
+      id: "gap-tool",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_tool_or_software",
+      target_bullet_text: null,
+      final_text: newTool,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "49b: cert appended first, tool appended second (state.items[] order reversed from 49a)",
+    result.includes(`Microsoft Office | ${newCert} | ${newTool}`),
+  )
+  const lineMatches = (result.match(/Certificates & Tools :/g) || []).length
+  check(
+    "49b: 'Certificates & Tools :' line is NOT duplicated",
+    lineMatches === 1,
+    `lineMatches=${lineMatches}`,
   )
 }
 

@@ -409,6 +409,59 @@ const COURSEWORK_KEY_PREFIXES: readonly string[] = [
   "Selected Coursework",
 ]
 
+/** Section header keywords for Pattern A — standalone Certifications section
+ *  (B4). Used as Tier 1 of the add_certification detection fallback. */
+const CERTIFICATIONS_SECTION_HEADERS: readonly string[] = [
+  "CERTIFICATIONS",
+  "CERTIFICATES",
+  "PROFESSIONAL CERTIFICATIONS",
+  "LICENSES & CERTIFICATIONS",
+  "LICENSES AND CERTIFICATIONS",
+]
+
+/** Inline key-prefix keywords for Pattern B — cert-only key-prefix lines
+ *  (B4). Used as Tier 2 of the add_certification detection fallback.
+ *
+ *  Note: "Licenses" is intentionally broad — it'll match a resume that
+ *  puts driver's-license / class-C-CDL credentials in a pipe-delimited
+ *  list. Drivers'-license-as-certification is a defensible classification
+ *  for v1; if a real persona surfaces a misclassification we tighten the
+ *  list. */
+const CERTIFICATIONS_KEY_PREFIXES: readonly string[] = [
+  "Certifications",
+  "Certificates",
+  "Certs",
+  "Professional Certifications",
+  "Licenses",
+  "Licenses & Certifications",
+  "Licenses and Certifications",
+]
+
+/** Inline key-prefix keywords for Pattern B — combined cert+tools lines
+ *  (B4). Used as Tier 3 of the add_certification detection fallback.
+ *
+ *  Catherine v3's "Certificates & Tools : ..." line is the canonical
+ *  example. The same line is ALSO targeted by B3's add_tool_or_software
+ *  Pattern B path via TOOLS_KEY_PREFIXES (which contains "Certificates &
+ *  Tools" and "Tools & Certifications" — intentional overlap).
+ *
+ *  NOTE on keyword overlap: "Certificates & Tools" and "Tools &
+ *  Certifications" appear in BOTH this list and B3's TOOLS_KEY_PREFIXES.
+ *  This is intentional and correct — the physical line is shared between
+ *  the add_tool_or_software and add_certification outcomes. Each outcome
+ *  resolves its own detector chain independently; both append at the
+ *  end of the same pipe-list when they fire. The result is deterministic
+ *  per state.items[] order (operations commute — both orderings produce
+ *  a valid resume). Do NOT consolidate these lists. */
+const CERTS_AND_TOOLS_COMBINED_KEY_PREFIXES: readonly string[] = [
+  "Certificates & Tools",
+  "Certificates and Tools",
+  "Certifications & Tools",
+  "Certifications and Tools",
+  "Tools & Certifications",
+  "Tools and Certifications",
+]
+
 /**
  * Count of pipe characters in a line. Used to gate whether a candidate
  * line qualifies as a pipe-delimited list (PIPE_LIST_MIN_PIPES floor).
@@ -562,22 +615,26 @@ function appendToPipeList(line: string, newItem: string): string {
  *          forward so subsequent appends land immediately below.
  *
  *      5c. compositional_outcome ∈ { add_to_skills_list,
- *          add_tool_or_software, add_language, add_to_coursework }
- *          (B3): detect the target list line (Pattern A header+content
- *          OR Pattern B inline key-prefix) and append the new item
- *          with " | " separator. Section-not-found is a silent skip
- *          with a log — frontend D1 prevents the user from picking an
- *          outcome whose section the composer can't detect.
+ *          add_tool_or_software, add_language, add_to_coursework,
+ *          add_certification } (B3 + B4): detect the target list line
+ *          (Pattern A header+content OR Pattern B inline key-prefix)
+ *          and append the new item with " | " separator. Section-not-
+ *          found is a silent skip with a log — frontend D1 prevents
+ *          the user from picking an outcome whose section the composer
+ *          can't detect. add_certification (B4) uses a 3-tier fallback
+ *          chain: standalone CERTIFICATIONS section → cert-only key-
+ *          prefix line → combined certs+tools key-prefix line. The
+ *          combined-line tier shares Catherine v3's "Certificates &
+ *          Tools :" anchor with B3's add_tool_or_software outcome;
+ *          operations commute (state.items[] order determines append
+ *          order on the shared line, both orderings produce a valid
+ *          resume).
  *
  *      5d. compositional_outcome ∈ { note_for_cover_letter,
  *          acknowledge_genuine_gap } (B2): no-op at the composer level.
- *          D2 surfaces these on the completion screen. Logged for
- *          telemetry visibility. Legacy gap rows with no
+ *          D3 surfaces these on the completion screen side panel.
+ *          Logged for telemetry visibility. Legacy gap rows with no
  *          compositional_outcome (predate C1) also land here and skip.
- *
- *      "add_certification" is intentionally not in 5c — it ships in
- *      B4 with section-creation logic for resumes that lack a
- *      certifications header today.
  *
  *   6. Return the final working text.
  *
@@ -757,10 +814,17 @@ export function composeRevisedResume(
   //   add_language         → Pattern A (LANGUAGES_SECTION_HEADERS) →
   //                          Pattern B (LANGUAGES_KEY_PREFIXES)
   //   add_to_coursework    → Pattern B (COURSEWORK_KEY_PREFIXES)
+  //   add_certification    → Pattern A (CERTIFICATIONS_SECTION_HEADERS) →
+  //                          Pattern B (CERTIFICATIONS_KEY_PREFIXES) →
+  //                          Pattern B (CERTS_AND_TOOLS_COMBINED_KEY_PREFIXES
+  //                          — Catherine v3's "Certificates & Tools :" line)
   //
-  // add_certification is intentionally NOT handled here — B4 ships it
-  // with section-creation logic for resumes lacking a certifications
-  // header.
+  // The add_certification + add_tool_or_software paths can both target
+  // Catherine's combined "Certificates & Tools :" line; the operations
+  // commute — state.items[] order determines append order, and both
+  // orderings produce a valid resume. Section creation for resumes
+  // lacking ANY certifications anchor is deferred to v0.2 — today we
+  // silent-skip.
   for (const item of items) {
     if (item.type !== "gap") continue
     if (!item.accepted) continue
@@ -769,7 +833,8 @@ export function composeRevisedResume(
       outcome !== "add_to_skills_list" &&
       outcome !== "add_tool_or_software" &&
       outcome !== "add_language" &&
-      outcome !== "add_to_coursework"
+      outcome !== "add_to_coursework" &&
+      outcome !== "add_certification"
     ) {
       continue
     }
@@ -812,6 +877,26 @@ export function composeRevisedResume(
     } else if (outcome === "add_to_coursework") {
       target = findCourseworkLine(working)
       detector = "coursework_key_prefix"
+    } else if (outcome === "add_certification") {
+      // 3-tier fallback. Tier 3 (combined certs+tools key-prefix) is
+      // Catherine v3's canonical case. v0.2 will add section-creation
+      // logic for resumes lacking ANY certifications anchor.
+      target = findPipeDelimitedSectionLine(
+        working,
+        CERTIFICATIONS_SECTION_HEADERS,
+      )
+      detector = "certifications_section_header"
+      if (target === null) {
+        target = findKeyPrefixedListLine(working, CERTIFICATIONS_KEY_PREFIXES)
+        detector = "certifications_key_prefix"
+      }
+      if (target === null) {
+        target = findKeyPrefixedListLine(
+          working,
+          CERTS_AND_TOOLS_COMBINED_KEY_PREFIXES,
+        )
+        detector = "certs_and_tools_combined_key_prefix"
+      }
     }
 
     if (target === null) {
@@ -834,9 +919,7 @@ export function composeRevisedResume(
   // Logs the disposition of every accepted gap item the prior passes
   // didn't actively modify. Categories:
   //   - note_for_cover_letter / acknowledge_genuine_gap → composer no-op
-  //     by design; D2 surfaces these on the completion screen.
-  //   - add_certification → B3 doesn't handle (B4 ships it with
-  //     section-creation logic). Log as deferred rather than unknown.
+  //     by design; D3 surfaces these on the completion screen side panel.
   //   - null compositional_outcome → legacy row predating C1 OR a
   //     decide handler bug. Log + skip.
   //   - Outcomes 3a-3c already handled in their own passes; this loop
@@ -851,6 +934,7 @@ export function composeRevisedResume(
     "add_tool_or_software", // 3c
     "add_language", // 3c
     "add_to_coursework", // 3c
+    "add_certification", // 3c (B4)
   ])
   for (const item of items) {
     if (item.type !== "gap") continue
@@ -865,13 +949,7 @@ export function composeRevisedResume(
     }
     if (outcome === "note_for_cover_letter" || outcome === "acknowledge_genuine_gap") {
       console.log(
-        `[resumeComposer] gap outcome=${outcome} is a no-op at composer level (D2 surfaces on completion screen). id=${item.id}`,
-      )
-      continue
-    }
-    if (outcome === "add_certification") {
-      console.log(
-        `[resumeComposer] gap outcome=add_certification is not yet handled at composer level (B4 ships it with section-creation logic). id=${item.id}`,
+        `[resumeComposer] gap outcome=${outcome} is a no-op at composer level (D3 surfaces on completion screen side panel). id=${item.id}`,
       )
       continue
     }

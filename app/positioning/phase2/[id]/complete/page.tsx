@@ -249,11 +249,11 @@ export default function Phase2CompletePage({
         </p>
       </div>
 
-      {/* B3 partial-composition notice — remove when D3 surfaces the cover-letter / acknowledged-gap side panel */}
+      {/* B4 partial-composition notice — remove when D3 surfaces the cover-letter / acknowledged-gap side panel */}
       <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
-        <strong>v0.1 note:</strong> certification additions and the cover-letter
-        / acknowledged-gap side panel will land in upcoming releases. .docx/.pdf
-        export will come later — for now, use Copy to grab the revised text.
+        <strong>v0.1 note:</strong> cover letter notes and acknowledged gaps
+        will surface in a side panel in the next release. .docx/.pdf export
+        will come later — for now, use Copy to grab the revised text.
       </div>
 
       {/* Side-by-side preview */}
