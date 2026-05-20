@@ -146,7 +146,51 @@ export async function GET(
     .maybeSingle<{ resume_text: string | null }>()
   const originalResumeText = persona?.resume_text ?? null
 
-  // ── 5. Build response (12 fields per FRD §6.5.2 + D2 addition) ──────────
+  // ── 5. Fetch JobFit decision (D3 addition) ──────────────────────────────
+  // D3's category-aware coaching message on the completion page reads the
+  // JobFit recommendation category (Priority Apply / Apply / Review / Pass).
+  // Chain lookup: phase2_run.positioning_run_id →
+  // positioning_runs_v2.jobfit_run_id → jobfit_runs.result_json.decision
+  // (or .verdict on legacy V4 runs). Both fields are checked because
+  // older runs persist the verdict under `verdict` rather than the V5+
+  // canonical `decision` field (see JobfitResultJson JSDoc).
+  //
+  // Same pattern as D2's original_resume_text addition: one additional
+  // server-side lookup, one field on the response. Any miss collapses
+  // to null — the frontend renders the standard "resume ready" message
+  // when no category context is available (graceful degradation, not a
+  // 500).
+  let jobfitDecision: string | null = null
+  const { data: positioningRun } = await supabaseAdmin
+    .from("positioning_runs_v2")
+    .select("jobfit_run_id")
+    .eq("id", result.row.positioning_run_id)
+    .maybeSingle<{ jobfit_run_id: string | null }>()
+  if (positioningRun?.jobfit_run_id) {
+    const { data: jobfitRun } = await supabaseAdmin
+      .from("jobfit_runs")
+      .select("result_json")
+      .eq("id", positioningRun.jobfit_run_id)
+      .maybeSingle<{
+        result_json: { decision?: string; verdict?: string } | null
+      }>()
+    const rj = jobfitRun?.result_json
+    const raw = rj?.decision ?? rj?.verdict ?? null
+    // Validate against the canonical Decision union from
+    // app/api/jobfit/signals.ts so a malformed jobfit_run can't surface
+    // an unexpected string to the frontend. Anything outside the union
+    // collapses to null and renders the standard message.
+    if (
+      raw === "Priority Apply" ||
+      raw === "Apply" ||
+      raw === "Review" ||
+      raw === "Pass"
+    ) {
+      jobfitDecision = raw
+    }
+  }
+
+  // ── 6. Build response (13 fields — D2 + D3 additions) ───────────────────
   // Subset of PhaseTwoRunRow. Omits:
   //   - profile_id: security (don't expose FKs)
   //   - ai_cost_cents: internal accounting (not user-relevant)
@@ -163,6 +207,7 @@ export async function GET(
       state: row.state,
       revised_resume_text: row.revised_resume_text,
       original_resume_text: originalResumeText,
+      jobfit_decision: jobfitDecision,
       status: row.status,
       new_persona_id: row.new_persona_id,
       created_at: row.created_at,

@@ -8,9 +8,24 @@
 // FRD: docs/Features/positioning-phase2-frd.md §5.5 workflow completion +
 //      §6.5.5 /complete endpoint
 //
-// v0.1 caveat: resumeComposer is stubbed (returns originalResumeText
-// unchanged), so the side-by-side preview shows identical text on both
-// sides for any run. Notice surfaced inline so the user knows why.
+// D3 addition (v1 final commit): JobFit-category-aware coaching message
+// renders above the resume diff. Conditional surface:
+//   - Zero acknowledge_genuine_gap items OR no jobfit_decision context
+//     → standard "resume ready" message (signal-accent-soft callout)
+//   - Acknowledged gaps + Apply / Priority Apply → "your cover letter is
+//     the right place to address these honestly" (signal-accent-soft)
+//   - Acknowledged gaps + Review → "use your cover letter to demonstrate
+//     self-awareness and learning trajectory" (amber caution)
+//   - Acknowledged gaps + Pass → "JobFit did not recommend this role;
+//     prepare carefully" (signal-primary stronger caution)
+// Priority Apply merges with Apply for messaging — same coaching, no
+// 4-way branching.
+//
+// Downstream gap (formally scoped to v0.2): the cover-letter generator
+// at /api/coverletter does NOT currently consume note_for_cover_letter
+// items from phase2_runs.state. The coaching message tells the user to
+// "use your cover letter" but the automated cover-letter route doesn't
+// see those notes yet. v0.2 runlog entry tracks the integration scope.
 
 "use client"
 
@@ -230,6 +245,18 @@ export default function Phase2CompletePage({
     persona?.resume_text ??
     "(no revisions yet)"
 
+  // D3: count accepted gap items with acknowledge_genuine_gap outcome.
+  // Drives the category-aware coaching message above the resume diff.
+  // Acknowledge-genuine-gap is the user's honest "I haven't done this"
+  // signal — surfacing it as coaching helps users make intentional
+  // cover-letter + interview preparation decisions.
+  const acknowledgedGapsCount = run.state.items.filter(
+    (i) =>
+      i.type === "gap" &&
+      i.accepted === true &&
+      i.compositional_outcome === "acknowledge_genuine_gap",
+  ).length
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
@@ -249,11 +276,23 @@ export default function Phase2CompletePage({
         </p>
       </div>
 
-      {/* B4 partial-composition notice — remove when D3 surfaces the cover-letter / acknowledged-gap side panel */}
-      <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
-        <strong>v0.1 note:</strong> cover letter notes and acknowledged gaps
-        will surface in a side panel in the next release. .docx/.pdf export
-        will come later — for now, use Copy to grab the revised text.
+      {/* D3: category-aware coaching message. Renders ABOVE the resume
+       *  diff per design lock. Branches on acknowledged_gaps_count +
+       *  jobfit_decision. Zero acknowledged gaps → standard "resume ready"
+       *  message. See CompletionMessage JSDoc for the category matrix. */}
+      <CompletionMessage
+        acknowledgedGapsCount={acknowledgedGapsCount}
+        jobfitDecision={run.jobfit_decision}
+      />
+
+      {/* v0.1 export-format notice — narrowed in D3 from the B4 banner
+       *  which mentioned cover-letter notes + acknowledged-gap side panel.
+       *  Acknowledged gaps now surface via CompletionMessage above; cover
+       *  letter notes flow downstream (v0.2 integration tracked in
+       *  runlog). Only export-format constraint remains. */}
+      <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-signal-sm text-sm text-amber-900">
+        <strong>v0.1 note:</strong> .docx/.pdf export will come later — for
+        now, use Copy to grab the revised text.
       </div>
 
       {/* Side-by-side preview */}
@@ -412,6 +451,117 @@ export default function Phase2CompletePage({
 // ============================================================================
 // Subcomponents
 // ============================================================================
+
+/**
+ * D3: JobFit-category-aware coaching message rendered above the resume
+ * diff on /complete. The architectural pivot vs. the original D3 plan:
+ * we don't LIST cover-letter notes or acknowledged gaps (cover-letter
+ * notes flow downstream — currently to nowhere, but v0.2 wires them
+ * into /api/coverletter; acknowledged gaps the user already decided
+ * don't need resurfacing). Instead we surface a single category-aware
+ * coaching message that helps users prep for cover-letter writing +
+ * interview readiness based on:
+ *
+ *   - whether they have any acknowledge_genuine_gap items, AND
+ *   - the JobFit recommendation category (Apply / Review / Pass)
+ *
+ * Priority Apply merges with Apply — same coaching, no 4-way branching.
+ *
+ * Category matrix:
+ *
+ *   Zero acknowledged | any category | (signal-accent-soft, neutral)
+ *     → "Your revised resume is ready."
+ *
+ *   ≥1 acknowledged   | Apply / Priority Apply | (signal-accent-soft)
+ *     → "You acknowledged N gap(s) — your cover letter is the right
+ *        place to address these honestly."
+ *
+ *   ≥1 acknowledged   | Review | (amber caution)
+ *     → "This role was a 'Review' fit. Your acknowledged gap(s) will
+ *        likely come up in interviews. Use your cover letter to
+ *        demonstrate self-awareness and learning trajectory."
+ *
+ *   ≥1 acknowledged   | Pass | (signal-primary stronger caution)
+ *     → "JobFit recommended this role wasn't a strong fit. You've
+ *        decided to apply anyway. The N gap(s) you acknowledged may
+ *        be material to interview outcomes. Prepare your cover letter
+ *        and interview responses carefully."
+ *
+ *   ≥1 acknowledged   | null (lookup miss) | (signal-accent-soft)
+ *     → Falls back to "resume ready" copy. No category context to
+ *        condition coaching on.
+ */
+function CompletionMessage({
+  acknowledgedGapsCount,
+  jobfitDecision,
+}: {
+  acknowledgedGapsCount: number
+  jobfitDecision: "Priority Apply" | "Apply" | "Review" | "Pass" | null
+}) {
+  // Zero acknowledged → standard "resume ready" message regardless of
+  // category. Also the fallback path when jobfit_decision is null.
+  if (acknowledgedGapsCount === 0 || jobfitDecision === null) {
+    return (
+      <div className="mb-6 p-4 bg-signal-accent-soft border border-signal-accent/30 rounded-signal-md">
+        <p className="text-sm text-neutral-900">
+          Your revised resume is ready. Review the changes below and decide
+          whether to save them as a new persona.
+        </p>
+      </div>
+    )
+  }
+
+  const n = acknowledgedGapsCount
+  const gapPhrase = n === 1 ? "1 gap" : `${n} gaps`
+
+  // Priority Apply merges with Apply — same coaching, no separate branch.
+  const isApplyish = jobfitDecision === "Apply" || jobfitDecision === "Priority Apply"
+
+  if (isApplyish) {
+    return (
+      <div className="mb-6 p-4 bg-signal-accent-soft border border-signal-accent/30 rounded-signal-md">
+        <div className="text-[11px] uppercase tracking-[0.12em] text-signal-accent-foreground font-semibold mb-1">
+          Your revised resume is ready
+        </div>
+        <p className="text-sm text-neutral-900">
+          You acknowledged {gapPhrase} — your cover letter is the right place
+          to address {n === 1 ? "this" : "these"} honestly.
+        </p>
+      </div>
+    )
+  }
+
+  if (jobfitDecision === "Review") {
+    return (
+      <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-signal-md">
+        <div className="text-[11px] uppercase tracking-[0.12em] text-amber-900 font-semibold mb-1">
+          &ldquo;Review&rdquo; fit — prepare your cover letter carefully
+        </div>
+        <p className="text-sm text-amber-900">
+          This role was a &ldquo;Review&rdquo; fit. Your acknowledged{" "}
+          {n === 1 ? "gap" : "gaps"} will likely come up in interviews. Use
+          your cover letter to demonstrate self-awareness and learning
+          trajectory.
+        </p>
+      </div>
+    )
+  }
+
+  // Pass — strongest caution. signal-primary tint.
+  return (
+    <div className="mb-6 p-4 bg-signal-primary/15 border border-signal-primary/40 rounded-signal-md">
+      <div className="text-[11px] uppercase tracking-[0.12em] text-signal-primary-foreground font-semibold mb-1">
+        JobFit did not recommend this role
+      </div>
+      <p className="text-sm text-neutral-900">
+        JobFit recommended this role wasn&rsquo;t a strong fit. You&rsquo;ve
+        decided to apply anyway. The {gapPhrase} you acknowledged may be
+        material to interview outcomes. Prepare your cover letter and
+        interview responses carefully.
+      </p>
+    </div>
+  )
+}
 
 function ResumePane({
   label,
