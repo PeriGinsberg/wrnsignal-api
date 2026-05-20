@@ -3,6 +3,37 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* ============================================================================
+   * SIGNAL accent tokens (introduced in v1 build D1).
+   *
+   * Frontend D1 applies SIGNAL's accent palette (orange primaries, teal
+   * accents) onto the existing light-themed Phase 2 prototype pages.
+   * v1.1 will swap these token values to SIGNAL's dark theme (BG navy +
+   * white text) as a separate unified theming pass — the token NAMES
+   * stay; only the values change. Reference these via Tailwind utility
+   * classes (bg-signal-primary, text-signal-accent, rounded-signal-md,
+   * etc.) — do NOT hardcode hex literals in component code, so the v1.1
+   * swap is one file.
+   *
+   * Source: framer/prod/maincomponent.txt (WRN_BLUE, WRN_ORANGE,
+   * WRN_TEAL constants on lines 108-111 + step-indicator orange #f97316).
+   * ============================================================================ */
+
+  /* Primary CTA (SIGNAL orange). Foreground is the dark text color used
+   * ON the orange — matches Framer's "color: #0B0F1A" on orange button. */
+  --signal-primary: #FEB06A;
+  --signal-primary-hover: #FD9E50;
+  --signal-primary-foreground: #0B1F35;
+
+  /* Accent (SIGNAL teal). Two surfaces: solid for emphasis, soft tinted
+   * for light-mode backgrounds (e.g. "you accepted" callout). */
+  --signal-accent: #218C8C;
+  --signal-accent-soft: #E4F2F2;
+  --signal-accent-foreground: #0A3D3D;
+
+  /* Brand blue — used for informational accents (Framer's WRN_BLUE). */
+  --signal-blue: #51ADE5;
 }
 
 @theme inline {
@@ -10,6 +41,23 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* SIGNAL color tokens exposed as Tailwind utilities (bg-signal-primary,
+   * text-signal-accent-foreground, border-signal-accent, etc.). */
+  --color-signal-primary: var(--signal-primary);
+  --color-signal-primary-hover: var(--signal-primary-hover);
+  --color-signal-primary-foreground: var(--signal-primary-foreground);
+  --color-signal-accent: var(--signal-accent);
+  --color-signal-accent-soft: var(--signal-accent-soft);
+  --color-signal-accent-foreground: var(--signal-accent-foreground);
+  --color-signal-blue: var(--signal-blue);
+
+  /* SIGNAL border-radius scale (matches Framer: 8 / 10 / 14 / 999).
+   * Exposed as rounded-signal-sm / -md / -lg / -pill. */
+  --radius-signal-sm: 8px;
+  --radius-signal-md: 10px;
+  --radius-signal-lg: 14px;
+  --radius-signal-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {

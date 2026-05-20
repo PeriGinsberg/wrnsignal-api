@@ -4,14 +4,51 @@
 // Handles all three interaction patterns:
 //   - Pattern A (headline): auto-generate 1-3 options on first paint;
 //     user picks radio or types override; accept/decline/regenerate.
+//     D1 adds a synthesize_mode branch — when the populator emitted
+//     synthesize_mode=true (no headline in the resume), the page hides
+//     the "Current headline" block and shows an "ADD" badge + framing
+//     copy "Add a summary statement" instead of "Refine your headline".
+//
 //   - Pattern B (bullet): user types response to question, generates
 //     draft, then accept/edit/regenerate/decline. No skip — a bullet
 //     always exists in the resume; it can be rewritten or declined,
-//     not skipped (per FRD §5.3 semantic distinction).
-//   - Pattern C (gap): same flow as Pattern B + Skip button (per FRD
-//     §5.3: skip = user doesn't have this experience).
+//     not skipped (per FRD §5.3 semantic distinction). D1 leaves
+//     this branch unchanged.
+//
+//   - Pattern C (gap): D1 inserts a NEW outcome-picker step between
+//     "user accepts a draft" and "fires /decide". The 4-button picker
+//     surfaces shape-appropriate compositional outcomes from C2:
+//
+//        1. "Update an existing bullet with this"  — D1 stub
+//           (D2 ships the bullet picker; the button here shows a
+//            "coming in next release" message and does NOT fire /decide)
+//        2. "Add as a new bullet"                   — add_new_bullet
+//        3. "Note for cover letter"                 — note_for_cover_letter
+//        4. "This isn't something I've done"        — acknowledge_genuine_gap
+//
+//     Without this step, /decide would 400 on every gap accept
+//     (compositional_outcome_required, introduced by C1/C2 backend).
+//     D1 is the user-facing fix.
+//
 //   - Manual-entry mode: triggered on /draft 422 grounding failure;
-//     user types final_text directly, bypasses validation.
+//     user types final_text directly, bypasses validation. For gap
+//     items the manual-entry accept also routes through the 4-button
+//     picker — same flow as the AI-drafted path, manual_entry=true is
+//     preserved on the final /decide call.
+//
+// SIGNAL look-and-feel: D1 applies the SIGNAL accent token palette
+// (orange primaries, teal accents, Framer-matching border radius
+// scale, uppercase letter-spacing eyebrow labels). Token values live
+// in app/globals.css (--signal-*). Tailwind utilities like
+// bg-signal-primary, rounded-signal-md, etc. reference them. v1.1
+// will swap the tokens to the SIGNAL dark theme as a separate
+// unified theming pass across selection + items + completion pages —
+// the rest of the prototype keeps the light baseline today for
+// consistency.
+//
+// Mobile-first: page padding is p-4 sm:p-8 (tighter on phones), the
+// 4-button gap picker stacks vertically with 64px+ touch targets, and
+// the action rows on PatternA wrap on narrow viewports.
 //
 // FRD: docs/Features/positioning-phase2-frd.md §5.3 section workflow
 
@@ -26,6 +63,20 @@ import {
   type Phase2DecideResponse,
   type PhaseTwoItem,
 } from "@/lib/positioning-prototype"
+
+/**
+ * The three compositional outcomes wired through the D1 gap picker.
+ * "reword_existing_bullet" / "add_certification" / "add_to_skills_list"
+ * / "add_tool_or_software" / "add_language" / "add_to_coursework" are
+ * intentionally NOT in this set — D1's picker stubs the "Update existing
+ * bullet" button (D2 ships the bullet picker) and the shape-routed add_*
+ * outcomes aren't surfaced as picker buttons yet (frontend D2/D3 may add
+ * them; today's UX is the 4-outcome decision the kickoff locked).
+ */
+type GapPickerOutcome =
+  | "add_new_bullet"
+  | "note_for_cover_letter"
+  | "acknowledge_genuine_gap"
 
 export default function Phase2ItemPage({
   params,
@@ -59,6 +110,14 @@ export default function Phase2ItemPage({
   )
   const [overrideText, setOverrideText] = useState("") // Pattern A override / B/C edit / manual
   const [editMode, setEditMode] = useState(false) // Pattern B/C: editing the draft
+
+  // D1: gap-outcome step. For Pattern C items, "Accept" no longer fires
+  // /decide immediately — it stashes the candidate final_text and reveals
+  // the 4-button picker. The actual /decide fires when the user clicks
+  // one of the outcome buttons (or returns null if they click Back).
+  const [gapOutcomeStep, setGapOutcomeStep] = useState(false)
+  const [pendingFinalText, setPendingFinalText] = useState<string>("")
+  const [pendingManualEntry, setPendingManualEntry] = useState(false)
 
   // ──────────────────────────────────────────────────────────────────────
   // EFFECTS
@@ -183,9 +242,39 @@ export default function Phase2ItemPage({
 
   async function handleAccept() {
     if (!item) return
-    setActionInFlight("decide")
     setActionError("")
 
+    // D1: gap items don't fire /decide on Accept — they show the 4-button
+    // outcome picker. Compute the final_text we'd send, stash it, then
+    // flip the gapOutcomeStep flag so the picker renders. The actual
+    // /decide call happens in handleGapOutcomeDecide below when the
+    // user picks an outcome.
+    if (item.type === "gap") {
+      let finalText: string | null = null
+
+      if (manualEntryMode) {
+        if (!overrideText.trim()) {
+          setActionError("Please type your content first.")
+          return
+        }
+        finalText = overrideText
+      } else if (editMode && overrideText.trim()) {
+        finalText = overrideText
+      } else if (item.draft) {
+        finalText = item.draft
+      } else {
+        setActionError("Generate a draft first.")
+        return
+      }
+
+      setPendingFinalText(finalText)
+      setPendingManualEntry(manualEntryMode)
+      setGapOutcomeStep(true)
+      return
+    }
+
+    // Headline + bullet — existing flow fires /decide immediately.
+    setActionInFlight("decide")
     const body: Record<string, unknown> = {
       item_id: item.id,
       decision: "accept",
@@ -210,11 +299,53 @@ export default function Phase2ItemPage({
         return
       }
     } else {
-      // Pattern B/C
+      // Pattern B (bullet)
       if (editMode && overrideText.trim()) {
         body.edited_text = overrideText
       }
       // Else: backend uses item.draft via final_text resolution
+    }
+
+    const result = await apiCall<Phase2DecideResponse>(
+      `/api/positioning/v2/phase2/${phase2RunId}/decide`,
+      { method: "POST", body: JSON.stringify(body) },
+    )
+
+    if (!result.ok) {
+      setActionError(
+        result.error + (result.detail ? `: ${result.detail}` : ""),
+      )
+      setActionInFlight(null)
+      return
+    }
+
+    router.push(`/positioning/phase2/${phase2RunId}`)
+  }
+
+  /**
+   * D1: fire /decide with the chosen compositional_outcome for a gap.
+   * Called from the 4-button picker. The pendingFinalText was stashed
+   * by handleAccept above.
+   *
+   * "reword_existing_bullet" / "add_certification" / shape-routed add_*
+   * outcomes are NOT yet wired through the picker — D2 ships the bullet
+   * picker that produces target_bullet_text for reword. The picker's
+   * "Update an existing bullet" button calls into a stub state instead
+   * of this handler (see GapOutcomePicker below).
+   */
+  async function handleGapOutcomeDecide(outcome: GapPickerOutcome) {
+    if (!item) return
+    setActionInFlight("decide")
+    setActionError("")
+
+    const body: Record<string, unknown> = {
+      item_id: item.id,
+      decision: "accept",
+      edited_text: pendingFinalText,
+      compositional_outcome: outcome,
+    }
+    if (pendingManualEntry) {
+      body.manual_entry = true
     }
 
     const result = await apiCall<Phase2DecideResponse>(
@@ -262,12 +393,12 @@ export default function Phase2ItemPage({
   // ──────────────────────────────────────────────────────────────────────
 
   if (viewState === "loading") {
-    return <div className="p-8 text-neutral-500 text-sm">Loading item…</div>
+    return <div className="p-4 sm:p-8 text-neutral-500 text-sm">Loading item…</div>
   }
 
   if (viewState === "error") {
     return (
-      <div className="p-8 max-w-2xl">
+      <div className="p-4 sm:p-8 max-w-2xl">
         <h1 className="text-2xl font-semibold text-red-700">Error</h1>
         <p className="mt-2 text-neutral-700">
           {error.status}: {error.message}
@@ -285,15 +416,26 @@ export default function Phase2ItemPage({
   if (!item) return null
 
   const isDecided = item.accepted || item.declined || item.skipped
-  const patternLabel =
-    item.type === "headline"
-      ? "Headline (Pattern A)"
-      : item.type === "bullet"
-        ? "Bullet (Pattern B)"
-        : "Gap (Pattern C)"
+
+  // D1: page-title copy + the ADD/REPLACE badge are headline-shape aware.
+  // The selection-screen card label stays as-is in D1 (v1.1 will update
+  // itemPopulator's headlineLabel() template alongside the dark-theme pass).
+  let pageTitle: string
+  if (item.type === "headline") {
+    pageTitle = item.synthesize_mode
+      ? "Add a summary statement"
+      : "Refine your headline"
+  } else if (item.type === "bullet") {
+    pageTitle = "Reframe a bullet"
+  } else {
+    pageTitle = "Address a gap"
+  }
+
+  const showHeadlineBadge = item.type === "headline" && !isDecided
+  const isSynthesize = item.type === "headline" && item.synthesize_mode
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
+    <div className="p-4 sm:p-8 max-w-3xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <a
@@ -302,17 +444,38 @@ export default function Phase2ItemPage({
         >
           ← Back to selection
         </a>
-        <h1 className="mt-3 text-xl font-semibold text-neutral-900">
-          {item.label}
-        </h1>
-        <div className="mt-1 text-xs uppercase tracking-wide text-neutral-500">
-          {patternLabel}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-semibold text-neutral-900">
+            {pageTitle}
+          </h1>
+          {showHeadlineBadge && (
+            <span
+              className={`text-[10px] uppercase tracking-[0.14em] font-bold px-2 py-1 rounded-signal-pill ${
+                isSynthesize
+                  ? "bg-signal-primary text-signal-primary-foreground"
+                  : "bg-signal-accent-soft text-signal-accent-foreground"
+              }`}
+            >
+              {isSynthesize ? "ADD" : "REPLACE"}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Body — branch on state */}
       {isDecided ? (
         <DecidedView item={item} />
+      ) : gapOutcomeStep && item.type === "gap" ? (
+        <GapOutcomePicker
+          pendingFinalText={pendingFinalText}
+          onPick={handleGapOutcomeDecide}
+          onCancel={() => {
+            setGapOutcomeStep(false)
+            setPendingFinalText("")
+            setPendingManualEntry(false)
+          }}
+          actionInFlight={actionInFlight}
+        />
       ) : manualEntryMode ? (
         <ManualEntryView
           overrideText={overrideText}
@@ -323,6 +486,7 @@ export default function Phase2ItemPage({
             setOverrideText("")
           }}
           actionInFlight={actionInFlight}
+          itemType={item.type}
         />
       ) : item.type === "headline" ? (
         <PatternAView
@@ -356,7 +520,7 @@ export default function Phase2ItemPage({
 
       {/* Action error */}
       {actionError && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-signal-sm text-sm text-red-800">
           {actionError}
         </div>
       )}
@@ -367,6 +531,15 @@ export default function Phase2ItemPage({
 // ============================================================================
 // Subcomponents
 // ============================================================================
+
+/** Reusable eyebrow label — SIGNAL pattern (uppercase + tracking + small + semibold). */
+function EyebrowLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`text-[11px] uppercase tracking-[0.12em] text-neutral-500 font-semibold mb-1 ${className}`}>
+      {children}
+    </div>
+  )
+}
 
 function DecidedView({ item }: { item: PhaseTwoItem }) {
   const decisionKind = item.accepted
@@ -382,7 +555,7 @@ function DecidedView({ item }: { item: PhaseTwoItem }) {
 
   return (
     <div>
-      <div className={`p-3 rounded border ${decisionColor} text-sm`}>
+      <div className={`p-3 rounded-signal-sm border ${decisionColor} text-sm`}>
         This item was <strong>{decisionKind.toLowerCase()}</strong>
         {item.decided_at &&
           ` on ${new Date(item.decided_at).toLocaleString()}`}
@@ -390,10 +563,8 @@ function DecidedView({ item }: { item: PhaseTwoItem }) {
       </div>
       {item.accepted && item.final_text && (
         <div className="mt-4">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-            Final content
-          </div>
-          <div className="p-3 bg-neutral-50 border border-neutral-200 rounded text-sm text-neutral-900 whitespace-pre-wrap">
+          <EyebrowLabel>Final content</EyebrowLabel>
+          <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-signal-sm text-sm text-neutral-900 whitespace-pre-wrap">
             {item.final_text}
           </div>
         </div>
@@ -428,21 +599,28 @@ function PatternAView({
 
   return (
     <div className="space-y-6">
-      {/* Original */}
-      <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-          Current headline
+      {/* Current headline OR synthesize-mode notice */}
+      {item.synthesize_mode ? (
+        <div>
+          <EyebrowLabel>Current summary</EyebrowLabel>
+          <div className="p-3 bg-neutral-50 border border-dashed border-neutral-300 rounded-signal-sm text-sm text-neutral-500 italic">
+            No current summary — we&rsquo;ll add one.
+          </div>
         </div>
-        <div className="p-3 bg-neutral-50 border border-neutral-200 rounded text-sm text-neutral-900">
-          {item.original}
+      ) : (
+        <div>
+          <EyebrowLabel>Current headline</EyebrowLabel>
+          <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-signal-sm text-sm text-neutral-900">
+            {item.original}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Draft options */}
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">
-          Suggested reframes
-        </div>
+        <EyebrowLabel className="mb-2">
+          {item.synthesize_mode ? "Suggested summaries" : "Suggested reframes"}
+        </EyebrowLabel>
         {isGenerating && item.draft_options.length === 0 ? (
           <div className="text-sm text-neutral-500 italic">
             Generating options…
@@ -452,9 +630,9 @@ function PatternAView({
             {item.draft_options.map((option, idx) => (
               <label
                 key={idx}
-                className={`block p-3 rounded border cursor-pointer transition-colors ${
+                className={`block p-3 rounded-signal-sm border cursor-pointer transition-colors ${
                   selectedDraftIndex === idx
-                    ? "border-neutral-900 bg-neutral-50"
+                    ? "border-signal-accent bg-signal-accent-soft"
                     : "border-neutral-200 hover:border-neutral-400"
                 }`}
               >
@@ -477,9 +655,7 @@ function PatternAView({
 
       {/* Override */}
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-          Or write your own
-        </div>
+        <EyebrowLabel>Or write your own</EyebrowLabel>
         <textarea
           value={overrideText}
           onChange={(e) => {
@@ -487,8 +663,10 @@ function PatternAView({
             if (e.target.value.trim()) setSelectedDraftIndex(null)
           }}
           rows={2}
-          placeholder="Type a custom headline…"
-          className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:border-neutral-500"
+          placeholder={item.synthesize_mode
+            ? "Type a custom summary…"
+            : "Type a custom headline…"}
+          className="w-full px-3 py-2 border border-neutral-300 rounded-signal-sm text-sm focus:outline-none focus:border-signal-accent"
         />
       </div>
 
@@ -497,7 +675,7 @@ function PatternAView({
         <div className="text-xs text-neutral-500 italic mb-3">
           Note: this decision will be final.
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={onAccept}
             disabled={
@@ -505,21 +683,21 @@ function PatternAView({
               isGenerating ||
               (selectedDraftIndex === null && !overrideText.trim())
             }
-            className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-4 py-2 min-h-[44px] bg-signal-primary text-signal-primary-foreground text-sm font-bold rounded-signal-md hover:bg-signal-primary-hover disabled:opacity-50"
           >
             {isDeciding ? "Accepting…" : "Accept"}
           </button>
           <button
             onClick={onRegenerate}
             disabled={isDeciding || isGenerating}
-            className="px-4 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50 disabled:opacity-50"
+            className="px-4 py-2 min-h-[44px] border border-neutral-300 text-neutral-700 text-sm font-semibold rounded-signal-md hover:bg-neutral-50 disabled:opacity-50"
           >
             {isGenerating ? "Regenerating…" : "Regenerate"}
           </button>
           <button
             onClick={onDecline}
             disabled={isDeciding || isGenerating}
-            className="ml-auto px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+            className="ml-auto px-4 py-2 min-h-[44px] text-neutral-600 text-sm font-semibold hover:text-neutral-900 disabled:opacity-50"
           >
             Decline
           </button>
@@ -567,10 +745,10 @@ function PatternBCView({
     <div className="space-y-6">
       {/* Context */}
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
+        <EyebrowLabel>
           {isBullet ? "Original bullet" : "Gap to address"}
-        </div>
-        <div className="p-3 bg-neutral-50 border border-neutral-200 rounded text-sm text-neutral-900">
+        </EyebrowLabel>
+        <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-signal-sm text-sm text-neutral-900">
           {isBullet
             ? (item as Extract<PhaseTwoItem, { type: "bullet" }>)
                 .original_bullet
@@ -580,19 +758,15 @@ function PatternBCView({
       </div>
 
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-          Job description context
-        </div>
-        <div className="p-3 bg-neutral-50 border border-neutral-200 rounded text-sm text-neutral-900">
+        <EyebrowLabel>Job description context</EyebrowLabel>
+        <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-signal-sm text-sm text-neutral-900">
           {item.jd_context}
         </div>
       </div>
 
       {/* Question */}
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-          Question
-        </div>
+        <EyebrowLabel>Question</EyebrowLabel>
         <div className="text-sm text-neutral-900 italic">
           {item.question_asked ??
             "(No question available for this item — type a response anyway and SIGNAL will draft.)"}
@@ -601,25 +775,23 @@ function PatternBCView({
 
       {/* User response */}
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-          Your response
-        </div>
+        <EyebrowLabel>Your response</EyebrowLabel>
         <textarea
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           rows={4}
           placeholder="Type 2-4 sentences about your relevant experience…"
-          className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:border-neutral-500"
+          className="w-full px-3 py-2 border border-neutral-300 rounded-signal-sm text-sm focus:outline-none focus:border-signal-accent"
         />
       </div>
 
       {/* Draft */}
       {hasDraft && !editMode && (
         <div>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
+          <EyebrowLabel>
             Suggested {isBullet ? "reframed bullet" : "new bullet/skill"}
-          </div>
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-neutral-900 whitespace-pre-wrap">
+          </EyebrowLabel>
+          <div className="p-3 bg-signal-accent-soft border border-signal-accent/30 rounded-signal-sm text-sm text-neutral-900 whitespace-pre-wrap">
             {item.draft}
           </div>
           <button
@@ -636,14 +808,12 @@ function PatternBCView({
 
       {editMode && (
         <div>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-            Edit draft
-          </div>
+          <EyebrowLabel>Edit draft</EyebrowLabel>
           <textarea
             value={overrideText}
             onChange={(e) => setOverrideText(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:border-neutral-500"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-signal-sm text-sm focus:outline-none focus:border-signal-accent"
           />
           <button
             onClick={() => {
@@ -660,14 +830,16 @@ function PatternBCView({
       {/* Actions */}
       <div className="pt-4 border-t border-neutral-200">
         <div className="text-xs text-neutral-500 italic mb-3">
-          Note: this decision will be final.
+          {isBullet
+            ? "Note: this decision will be final."
+            : "After Accept, you'll pick how this lands in your resume."}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!hasDraft ? (
             <button
               onClick={onGenerate}
               disabled={isGenerating || !userInput.trim()}
-              className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+              className="px-4 py-2 min-h-[44px] bg-signal-primary text-signal-primary-foreground text-sm font-bold rounded-signal-md hover:bg-signal-primary-hover disabled:opacity-50"
             >
               {isGenerating ? "Generating…" : "Generate draft"}
             </button>
@@ -676,14 +848,18 @@ function PatternBCView({
               <button
                 onClick={onAccept}
                 disabled={isDeciding || isGenerating}
-                className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 min-h-[44px] bg-signal-primary text-signal-primary-foreground text-sm font-bold rounded-signal-md hover:bg-signal-primary-hover disabled:opacity-50"
               >
-                {isDeciding ? "Accepting…" : "Accept"}
+                {isDeciding
+                  ? "Accepting…"
+                  : isBullet
+                    ? "Accept"
+                    : "Accept and continue"}
               </button>
               <button
                 onClick={onRegenerate}
                 disabled={isDeciding || isGenerating}
-                className="px-4 py-2 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50 disabled:opacity-50"
+                className="px-4 py-2 min-h-[44px] border border-neutral-300 text-neutral-700 text-sm font-semibold rounded-signal-md hover:bg-neutral-50 disabled:opacity-50"
               >
                 {isGenerating ? "Regenerating…" : "Regenerate"}
               </button>
@@ -692,7 +868,7 @@ function PatternBCView({
           <button
             onClick={onDecline}
             disabled={isDeciding || isGenerating}
-            className="ml-auto px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+            className="ml-auto px-4 py-2 min-h-[44px] text-neutral-600 text-sm font-semibold hover:text-neutral-900 disabled:opacity-50"
           >
             Decline
           </button>
@@ -700,12 +876,150 @@ function PatternBCView({
             <button
               onClick={onSkip}
               disabled={isDeciding || isGenerating}
-              className="px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+              className="px-4 py-2 min-h-[44px] text-neutral-600 text-sm font-semibold hover:text-neutral-900 disabled:opacity-50"
             >
               Skip (don&rsquo;t have this)
             </button>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * D1: post-accept outcome picker for gap items. Renders the 4 buttons
+ * locked in the design conversation, in the locked order:
+ *
+ *   1. Update an existing bullet with this   (D1 STUB — D2 ships picker)
+ *   2. Add as a new bullet                    (add_new_bullet)
+ *   3. Note for cover letter                  (note_for_cover_letter)
+ *   4. This isn't something I've done         (acknowledge_genuine_gap)
+ *
+ * Buttons stack vertically on all viewports (predictable mobile layout +
+ * each button has a description; horizontal would crowd at 375px). Each
+ * button is ≥ 64px tall (well above the 44px touch-target floor).
+ */
+function GapOutcomePicker({
+  pendingFinalText,
+  onPick,
+  onCancel,
+  actionInFlight,
+}: {
+  pendingFinalText: string
+  onPick: (outcome: GapPickerOutcome) => void
+  onCancel: () => void
+  actionInFlight: "generate" | "decide" | null
+}) {
+  const isDeciding = actionInFlight === "decide"
+  const [stubMsg, setStubMsg] = useState<string | null>(null)
+
+  const baseBtnClasses =
+    "w-full text-left p-4 min-h-[64px] border rounded-signal-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  const enabledBtnClasses =
+    "border-neutral-200 bg-white hover:border-signal-accent hover:bg-signal-accent-soft"
+  const stubBtnClasses = "border-neutral-200 bg-neutral-50 hover:border-neutral-300"
+
+  return (
+    <div className="space-y-6">
+      {/* What the user accepted, surfaced in the accent palette so it
+       *  reads as "your selection." */}
+      <div>
+        <EyebrowLabel>You accepted</EyebrowLabel>
+        <div className="p-4 bg-signal-accent-soft border border-signal-accent/30 rounded-signal-md text-sm text-neutral-900 whitespace-pre-wrap">
+          {pendingFinalText}
+        </div>
+      </div>
+
+      {/* Picker */}
+      <div>
+        <EyebrowLabel className="mb-3">
+          How should this land in your resume?
+        </EyebrowLabel>
+        <div className="space-y-3">
+          {/* 1. Update existing bullet — D1 STUB */}
+          <button
+            onClick={() =>
+              setStubMsg(
+                "This option is coming in the next release. For now, pick one of the other options below.",
+              )
+            }
+            disabled={isDeciding}
+            className={`${baseBtnClasses} ${stubBtnClasses}`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="font-bold text-sm text-neutral-900">
+                  Update an existing bullet with this
+                </div>
+                <div className="text-xs text-neutral-500 mt-1">
+                  We&rsquo;ll help you pick which bullet to rewrite.
+                </div>
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.12em] font-bold px-2 py-0.5 rounded-signal-pill bg-neutral-200 text-neutral-600 whitespace-nowrap">
+                Coming soon
+              </span>
+            </div>
+          </button>
+          {stubMsg && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-signal-sm text-sm text-amber-900">
+              {stubMsg}
+            </div>
+          )}
+
+          {/* 2. Add as a new bullet */}
+          <button
+            onClick={() => onPick("add_new_bullet")}
+            disabled={isDeciding}
+            className={`${baseBtnClasses} ${enabledBtnClasses}`}
+          >
+            <div className="font-bold text-sm text-neutral-900">
+              Add as a new bullet
+            </div>
+            <div className="text-xs text-neutral-500 mt-1">
+              We&rsquo;ll insert this as a new bullet in your resume.
+            </div>
+          </button>
+
+          {/* 3. Note for cover letter */}
+          <button
+            onClick={() => onPick("note_for_cover_letter")}
+            disabled={isDeciding}
+            className={`${baseBtnClasses} ${enabledBtnClasses}`}
+          >
+            <div className="font-bold text-sm text-neutral-900">
+              Note for cover letter
+            </div>
+            <div className="text-xs text-neutral-500 mt-1">
+              Save this for your cover letter — won&rsquo;t change your resume.
+            </div>
+          </button>
+
+          {/* 4. Acknowledge genuine gap */}
+          <button
+            onClick={() => onPick("acknowledge_genuine_gap")}
+            disabled={isDeciding}
+            className={`${baseBtnClasses} ${enabledBtnClasses}`}
+          >
+            <div className="font-bold text-sm text-neutral-900">
+              This isn&rsquo;t something I&rsquo;ve done
+            </div>
+            <div className="text-xs text-neutral-500 mt-1">
+              Honest acknowledgment — won&rsquo;t change your resume.
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Back */}
+      <div className="pt-4 border-t border-neutral-200">
+        <button
+          onClick={onCancel}
+          disabled={isDeciding}
+          className="text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-50"
+        >
+          ← Back to edit
+        </button>
       </div>
     </div>
   )
@@ -717,48 +1031,55 @@ function ManualEntryView({
   onAccept,
   onCancel,
   actionInFlight,
+  itemType,
 }: {
   overrideText: string
   setOverrideText: (s: string) => void
   onAccept: () => void
   onCancel: () => void
   actionInFlight: "generate" | "decide" | null
+  itemType: "headline" | "bullet" | "gap"
 }) {
   const isDeciding = actionInFlight === "decide"
+  // For gap items the manual-entry Accept routes through the 4-button
+  // picker (handleAccept stashes the text + flips gapOutcomeStep). The
+  // button copy reflects this — "Accept and continue" → picker.
+  const acceptCopy =
+    itemType === "gap" ? "Accept and continue" : "Accept manual entry"
   return (
     <div className="space-y-4">
-      <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+      <div className="p-3 bg-amber-50 border border-amber-200 rounded-signal-sm text-sm text-amber-900">
         We couldn&rsquo;t draft something grounded in what you&rsquo;ve shared.
         Try writing your own — you know your experience best.
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">
-          Your content (manual entry)
-        </div>
+        <EyebrowLabel>Your content (manual entry)</EyebrowLabel>
         <textarea
           value={overrideText}
           onChange={(e) => setOverrideText(e.target.value)}
           rows={4}
           placeholder="Type the final content here…"
-          className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:border-neutral-500"
+          className="w-full px-3 py-2 border border-neutral-300 rounded-signal-sm text-sm focus:outline-none focus:border-signal-accent"
         />
       </div>
       <div className="pt-4 border-t border-neutral-200">
         <div className="text-xs text-neutral-500 italic mb-3">
-          Note: this decision will be final.
+          {itemType === "gap"
+            ? "After Accept, you'll pick how this lands in your resume."
+            : "Note: this decision will be final."}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={onAccept}
             disabled={isDeciding || !overrideText.trim()}
-            className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-4 py-2 min-h-[44px] bg-signal-primary text-signal-primary-foreground text-sm font-bold rounded-signal-md hover:bg-signal-primary-hover disabled:opacity-50"
           >
-            {isDeciding ? "Accepting…" : "Accept manual entry"}
+            {isDeciding ? "Accepting…" : acceptCopy}
           </button>
           <button
             onClick={onCancel}
             disabled={isDeciding}
-            className="px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 disabled:opacity-50"
+            className="px-4 py-2 min-h-[44px] text-neutral-600 text-sm font-semibold hover:text-neutral-900 disabled:opacity-50"
           >
             Cancel
           </button>
