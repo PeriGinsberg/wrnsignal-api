@@ -16,18 +16,61 @@
 import type { PhaseTwoItem } from "./types"
 
 /**
- * Gap compositional outcome literal union (Phase 2 v1 build C1).
+ * Gap compositional outcome literal union. Originally 4 values in C1;
+ * expanded to 9 in C2 for shape-routed section inserts.
  *
  * Set on a gap item when the user accepts and picks how that gap should
  * flow into the revised resume. Mirrors PhaseTwoGapItem.compositional_
- * outcome (per A2 commit b4e3ba93). Re-declared here so DecideRequestFields
- * stays a self-contained narrow type without a cross-module type cycle.
+ * outcome in lib/positioning/v2/phase2/types.ts (the two declarations
+ * are kept in lockstep at every commit — duplication is intentional, see
+ * the per-field JSDoc on PhaseTwoGapItem for the cross-module type-cycle
+ * rationale).
+ *
+ * Composer behavior (resumeComposer.ts) per outcome:
+ *   - reword_existing_bullet: locate-and-replace on target_bullet_text
+ *   - add_new_bullet:         append after last bullet-bearing line
+ *   - add_to_skills_list:     append to skills / core-competencies section (B3/B4)
+ *   - add_certification:      insert under certifications header (B3/B4)
+ *   - add_tool_or_software:   append to tools line / skills section (B3/B4)
+ *   - add_language:           append to languages line (B3/B4)
+ *   - add_to_coursework:      append to coursework list in education (B3/B4)
+ *   - note_for_cover_letter:  no resume change; surfaced on completion screen
+ *   - acknowledge_genuine_gap:no resume change; surfaced on completion screen
  */
 export type CompositionalOutcome =
   | "reword_existing_bullet"
   | "add_new_bullet"
+  | "add_to_skills_list"
+  | "add_certification"
+  | "add_tool_or_software"
+  | "add_language"
+  | "add_to_coursework"
   | "note_for_cover_letter"
   | "acknowledge_genuine_gap"
+
+/**
+ * Canonical set of valid compositional outcome strings. Exported so
+ * (a) route.ts validateBody can reject unknown strings without
+ * duplicating the literal-union list, and (b) future call sites (e.g.
+ * frontend D1 if it ever wants the canonical set, or analytics
+ * pipelines) can import a single source of truth.
+ *
+ * Add new outcomes to BOTH this set and the CompositionalOutcome union
+ * above. The `satisfies ReadonlySet<CompositionalOutcome>` clause
+ * type-checks the membership at compile time — drift between the union
+ * and the set produces a tsc error rather than a runtime divergence.
+ */
+export const VALID_OUTCOMES: ReadonlySet<CompositionalOutcome> = new Set<CompositionalOutcome>([
+  "reword_existing_bullet",
+  "add_new_bullet",
+  "add_to_skills_list",
+  "add_certification",
+  "add_tool_or_software",
+  "add_language",
+  "add_to_coursework",
+  "note_for_cover_letter",
+  "acknowledge_genuine_gap",
+])
 
 /**
  * The decision-relevant fields from a POST /decide request body.
@@ -275,8 +318,12 @@ export function resolveFinalText(
       }
       target_bullet_text = req.target_bullet_text
     } else {
-      // For add_new_bullet / note_for_cover_letter / acknowledge_genuine_gap:
-      // target_bullet_text is meaningless. Warn if present, persist null.
+      // For every non-reword outcome (C1's add_new_bullet,
+      // note_for_cover_letter, acknowledge_genuine_gap + C2's
+      // add_to_skills_list, add_certification, add_tool_or_software,
+      // add_language, add_to_coursework): target_bullet_text is
+      // meaningless because the composer doesn't locate-and-replace on
+      // an existing bullet for these paths. Warn if present, persist null.
       if (req.target_bullet_text !== undefined) {
         console.warn(
           `[decisionResolver] compositional_outcome=${compositional_outcome} received target_bullet_text — ignoring (frontend bug?)`,

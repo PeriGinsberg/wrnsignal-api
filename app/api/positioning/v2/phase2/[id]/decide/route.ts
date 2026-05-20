@@ -60,6 +60,8 @@ import { corsOptionsResponse, withCorsJson } from "../../../../../_lib/cors"
 import { findPhase2RunByIdForProfile } from "@/lib/positioning/v2/phase2/phase2RunLookup"
 import {
   resolveFinalText,
+  VALID_OUTCOMES,
+  type CompositionalOutcome,
   type DecideRequestFields,
 } from "@/lib/positioning/v2/phase2/decisionResolver"
 import { composeRevisedResume } from "@/lib/positioning/v2/phase2/resumeComposer"
@@ -129,12 +131,13 @@ function validateBody(raw: unknown): ValidationResult {
 
   // C1: gap compositional outcome fields (validated semantically by
   // resolveFinalText; here we only check primitive type shape).
+  // C2: literal-set lookup against VALID_OUTCOMES (9-value set exported
+  // from decisionResolver.ts). Unknown strings → invalid_compositional_
+  // outcome 400, same error code as C1.
   if (b.compositional_outcome !== undefined) {
     if (
-      b.compositional_outcome !== "reword_existing_bullet" &&
-      b.compositional_outcome !== "add_new_bullet" &&
-      b.compositional_outcome !== "note_for_cover_letter" &&
-      b.compositional_outcome !== "acknowledge_genuine_gap"
+      typeof b.compositional_outcome !== "string" ||
+      !VALID_OUTCOMES.has(b.compositional_outcome as CompositionalOutcome)
     ) {
       return { ok: false, error: "invalid_compositional_outcome" }
     }

@@ -235,9 +235,10 @@ export type PhaseTwoGapItem = {
   decided_at: string | null
   /**
    * How the user wants this gap composed into the revised resume. Set by
-   * /decide (Commit C1) when the user chooses their compositional outcome.
-   * Null until decided.
+   * /decide (Commit C1, expanded in C2) when the user chooses their
+   * compositional outcome. Null until decided.
    *
+   * Original C1 outcomes (resume-modifying or notational):
    *   - "reword_existing_bullet": user picked an existing resume bullet to
    *     update. `target_bullet_text` holds that bullet's verbatim string.
    *     resumeComposer runs locate-and-replace on the target.
@@ -250,14 +251,43 @@ export type PhaseTwoGapItem = {
    *   - "acknowledge_genuine_gap": user honestly doesn't have this
    *     experience. resumeComposer makes no resume change; the completion
    *     screen acknowledges.
+   *
+   * C2 additions (shape-routed section inserts — composer behavior
+   * implemented in B3/B4):
+   *   - "add_to_skills_list": append to the skills / core-competencies
+   *     section. For skill-shaped gaps that don't warrant a full bullet.
+   *   - "add_certification": insert under the certifications header
+   *     (or synthesize one when absent). For certification-shaped gaps.
+   *   - "add_tool_or_software": append to a tools line or the skills
+   *     section. For tool-shaped gaps.
+   *   - "add_language": append to the languages line / section.
+   *     For language-shaped gaps.
+   *   - "add_to_coursework": append to the coursework list in the
+   *     education section. For coursework-shaped gaps.
+   *
+   * Terminal value:
    *   - null: not yet decided.
    *
-   * Legacy DB rows (seeded before A2) read this as `undefined`; consumers
-   * should default `compositional_outcome ?? null`.
+   * Backward-compat: legacy DB rows (seeded before A2) read this field as
+   * `undefined`; consumers should default `compositional_outcome ?? null`.
+   * The 5 C2 additions are additive — no row stored on or before G1 can
+   * carry them, so the existing legacy-default pattern handles every
+   * pre-C2 row identically.
+   *
+   * Shape-outcome independence: C2 does NOT enforce a consistency check
+   * between gap_shape and compositional_outcome. The user can pick any
+   * outcome regardless of the system's shape classification. Frontend D1
+   * surfaces shape-appropriate defaults; the route accepts any
+   * combination so the user remains authoritative over their own resume.
    */
   compositional_outcome:
     | "reword_existing_bullet"
     | "add_new_bullet"
+    | "add_to_skills_list"
+    | "add_certification"
+    | "add_tool_or_software"
+    | "add_language"
+    | "add_to_coursework"
     | "note_for_cover_letter"
     | "acknowledge_genuine_gap"
     | null
