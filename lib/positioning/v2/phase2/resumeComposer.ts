@@ -322,6 +322,210 @@ function appendNewBullet(workingText: string, finalText: string): string {
 }
 
 // ============================================================================
+// Pipe-delimited / key-prefixed list detection (B3)
+// ============================================================================
+//
+// B3 adds composition into four non-bullet sections (skills, tools,
+// languages, coursework). The detectors below target two resume
+// structural patterns observed across the persona fixtures we've seen:
+//
+//   Pattern A — section header on its own line, followed by a blank line
+//               (sometimes), then a pipe-delimited content line:
+//
+//     CORE COMPETENCIES
+//
+//     Brand Messaging | Creative Strategy | Visual Communication | …
+//
+//   Pattern B — key-prefixed inline line (single line carrying both the
+//               keyword and the pipe-delimited content):
+//
+//     Certificates & Tools : Muck Rack Certification | Adobe Creative … | Microsoft Office
+//     Relevant Coursework: Strategic Message Design | Writing for Strategic Communication | …
+//
+// Pattern B's colon spacing varies across resumes ("Tools :" with a space
+// before the colon vs "Coursework:" without). The detector accepts both.
+//
+// Both patterns require at least PIPE_LIST_MIN_PIPES pipes on the content
+// line — a "section" with one item isn't disambiguatable from prose and
+// we don't try to compose into it. Non-pipe formats (bulleted skills,
+// comma-separated, paragraph-prose) are silently skipped — v0.2 will
+// handle them when we have more persona fixtures to validate against.
+
+/** A line needs at least this many ` | ` pipes to count as a pipe-list. */
+const PIPE_LIST_MIN_PIPES = 2
+
+/** Section header keywords for Pattern A — skills / competencies section. */
+const SKILLS_SECTION_HEADERS: readonly string[] = [
+  "CORE COMPETENCIES",
+  "COMPETENCIES",
+  "SKILLS",
+  "KEY SKILLS",
+  "TECHNICAL SKILLS",
+  "PROFESSIONAL SKILLS",
+]
+
+/** Section header keywords for Pattern A — tools / technologies section. */
+const TOOLS_SECTION_HEADERS: readonly string[] = [
+  "TOOLS",
+  "TECHNOLOGIES",
+  "SOFTWARE",
+  "TECHNICAL TOOLS",
+  "TOOLS & TECHNOLOGIES",
+]
+
+/** Section header keywords for Pattern A — languages section. */
+const LANGUAGES_SECTION_HEADERS: readonly string[] = [
+  "LANGUAGES",
+  "LANGUAGE PROFICIENCIES",
+  "LANGUAGE SKILLS",
+]
+
+/** Inline key-prefix keywords for Pattern B — tools variants. Catherine's
+ *  "Certificates & Tools : ..." is the canonical case. */
+const TOOLS_KEY_PREFIXES: readonly string[] = [
+  "Tools",
+  "Technologies",
+  "Software",
+  "Tech Stack",
+  "Technical Tools",
+  "Tools & Technologies",
+  "Certificates & Tools",
+  "Tools & Certifications",
+]
+
+/** Inline key-prefix keywords for Pattern B — languages variants. */
+const LANGUAGES_KEY_PREFIXES: readonly string[] = [
+  "Languages",
+  "Language Proficiencies",
+  "Language Skills",
+  "Spoken Languages",
+]
+
+/** Inline key-prefix keywords for Pattern B — coursework variants. */
+const COURSEWORK_KEY_PREFIXES: readonly string[] = [
+  "Relevant Coursework",
+  "Coursework",
+  "Relevant Courses",
+  "Selected Coursework",
+]
+
+/**
+ * Count of pipe characters in a line. Used to gate whether a candidate
+ * line qualifies as a pipe-delimited list (PIPE_LIST_MIN_PIPES floor).
+ */
+function pipeCount(line: string): number {
+  return (line.match(/\|/g) ?? []).length
+}
+
+/**
+ * Pattern A locator: header-line + content-line. Algorithm:
+ *
+ *   1. Walk lines top-to-bottom.
+ *   2. When a line's trimmed value (case-insensitively) equals any
+ *      headerKeyword, scan the next 5 lines for one with >=
+ *      PIPE_LIST_MIN_PIPES pipes.
+ *   3. Return { lineIndex, line } for the content line; otherwise
+ *      keep walking — another section may match later in the resume.
+ *   4. If no header-then-content sequence qualifies, returns null.
+ *
+ * Headers are case-insensitive; content lines preserve their exact
+ * casing in the return.
+ */
+function findPipeDelimitedSectionLine(
+  workingText: string,
+  headerKeywords: readonly string[],
+): { lineIndex: number; line: string } | null {
+  const lines = workingText.split("\n")
+  const lowerKeywords = headerKeywords.map((k) => k.toLowerCase())
+  for (let i = 0; i < lines.length; i++) {
+    const headerLine = lines[i].trim()
+    if (headerLine.length === 0) continue
+    if (!lowerKeywords.includes(headerLine.toLowerCase())) continue
+    // Header matched. Scan up to 5 lines after for pipe content.
+    const scanLimit = Math.min(lines.length, i + 6)
+    for (let j = i + 1; j < scanLimit; j++) {
+      if (pipeCount(lines[j]) >= PIPE_LIST_MIN_PIPES) {
+        return { lineIndex: j, line: lines[j] }
+      }
+    }
+    // Header found but no qualifying content within 5 lines — keep
+    // walking. Another header variant (e.g. resume has both "SKILLS"
+    // and "CORE COMPETENCIES" lines, only one pipe-formatted) may match
+    // later.
+  }
+  return null
+}
+
+/**
+ * Pattern B locator: single-line key-prefix list. Algorithm:
+ *
+ *   1. Walk lines top-to-bottom.
+ *   2. For each keyPrefix, check whether the line (after stripping
+ *      leading whitespace) starts with the prefix case-insensitively
+ *      followed by optional whitespace + colon + optional whitespace
+ *      and then content with >= PIPE_LIST_MIN_PIPES pipes.
+ *   3. Return the matched line. Single-line — NO 5-line scan window.
+ *
+ * Colon spacing is intentionally permissive: matches both `Coursework:`
+ * (no space before colon) and `Tools :` (space before colon —
+ * Catherine's actual format). Spaces after the colon are also flexible.
+ *
+ * Case-insensitive on the keyword. The returned `line` is verbatim
+ * (caller's later append preserves the original casing + spacing).
+ */
+function findKeyPrefixedListLine(
+  workingText: string,
+  keyPrefixes: readonly string[],
+): { lineIndex: number; line: string } | null {
+  const lines = workingText.split("\n")
+  const lowerPrefixes = keyPrefixes.map((p) => p.toLowerCase())
+  for (let i = 0; i < lines.length; i++) {
+    const lineRaw = lines[i]
+    const lineLower = lineRaw.toLowerCase()
+    // Strip leading whitespace before prefix comparison so an indented
+    // `  Tools : …` still matches. Track the strip offset only for the
+    // prefix check; the returned line is verbatim.
+    const trimmedStart = lineLower.replace(/^\s+/, "")
+    for (const keyLower of lowerPrefixes) {
+      if (!trimmedStart.startsWith(keyLower)) continue
+      const afterKey = trimmedStart.slice(keyLower.length)
+      // Optional whitespace + colon + optional whitespace
+      const colonMatch = /^\s*:\s*/.exec(afterKey)
+      if (!colonMatch) continue
+      const content = afterKey.slice(colonMatch[0].length)
+      if (pipeCount(content) < PIPE_LIST_MIN_PIPES) continue
+      return { lineIndex: i, line: lineRaw }
+    }
+  }
+  return null
+}
+
+/**
+ * Thin wrapper over findKeyPrefixedListLine specialized for coursework.
+ * Kept as its own helper so future "where does coursework live" tuning
+ * is one-callsite without touching the general-purpose detector.
+ */
+function findCourseworkLine(
+  workingText: string,
+): { lineIndex: number; line: string } | null {
+  return findKeyPrefixedListLine(workingText, COURSEWORK_KEY_PREFIXES)
+}
+
+/**
+ * Append an item to a pipe-delimited list line with the canonical
+ * " | " separator. Trims trailing whitespace from the original line
+ * before appending so an irregular trailing tab/space doesn't show up
+ * as " <ws> | newItem".
+ *
+ * Used for both Pattern A content lines and Pattern B key-prefix lines —
+ * structurally identical from the appender's perspective (both are
+ * pipe-delimited list lines).
+ */
+function appendToPipeList(line: string, newItem: string): string {
+  return `${line.trimEnd()} | ${newItem}`
+}
+
+// ============================================================================
 // Main entry point
 // ============================================================================
 
@@ -342,27 +546,53 @@ function appendNewBullet(workingText: string, finalText: string): string {
  *      - locate item.original_bullet verbatim, replace with
  *        item.final_text (first occurrence only).
  *      - Log + skip if anchor is missing.
- *   5. Then process gap items (B2). Split into two sub-passes:
- *      5a. compositional_outcome === "reword_existing_bullet": locate
- *          item.target_bullet_text verbatim, replace with
+ *   5. Then process gap items. Split into FOUR sub-passes (3a-3d) for
+ *      determinism + cross-section safety:
+ *
+ *      5a. compositional_outcome === "reword_existing_bullet" (B2):
+ *          locate item.target_bullet_text verbatim, replace with
  *          item.final_text. Log + skip on null target or missing
  *          anchor.
- *      5b. compositional_outcome === "add_new_bullet": append
+ *
+ *      5b. compositional_outcome === "add_new_bullet" (B2): append
  *          item.final_text as a new bullet after the resume's last
  *          bullet-bearing line, preserving the glyph + indentation
  *          convention. Multiple add_new_bullet items in one run
  *          CLUSTER — each append moves the "last bullet" anchor
  *          forward so subsequent appends land immediately below.
- *      "note_for_cover_letter" and "acknowledge_genuine_gap" outcomes
- *      are no-ops at the composer level — D2 surfaces them on the
- *      completion screen.
+ *
+ *      5c. compositional_outcome ∈ { add_to_skills_list,
+ *          add_tool_or_software, add_language, add_to_coursework }
+ *          (B3): detect the target list line (Pattern A header+content
+ *          OR Pattern B inline key-prefix) and append the new item
+ *          with " | " separator. Section-not-found is a silent skip
+ *          with a log — frontend D1 prevents the user from picking an
+ *          outcome whose section the composer can't detect.
+ *
+ *      5d. compositional_outcome ∈ { note_for_cover_letter,
+ *          acknowledge_genuine_gap } (B2): no-op at the composer level.
+ *          D2 surfaces these on the completion screen. Logged for
+ *          telemetry visibility. Legacy gap rows with no
+ *          compositional_outcome (predate C1) also land here and skip.
+ *
+ *      "add_certification" is intentionally not in 5c — it ships in
+ *      B4 with section-creation logic for resumes that lack a
+ *      certifications header today.
+ *
  *   6. Return the final working text.
  *
- * Sub-pass ordering rationale (3a before 3b):
- *   A freshly added bullet from 3b must never collide with a reword
- *   target from 3a. Doing 3a first means reword targets are matched
- *   against the original bullet set; doing 3b second means new
- *   appends can't be accidentally consumed as reword anchors.
+ * Sub-pass ordering rationale:
+ *   - 3a before 3b: a freshly added bullet from 3b must never collide
+ *     with a reword target from 3a. Doing 3a first means reword
+ *     targets are matched against the original bullet set; doing 3b
+ *     second means new appends can't be accidentally consumed as
+ *     reword anchors.
+ *   - 3c after 3a/3b: additions to skills/tools/languages/coursework
+ *     are in unrelated sections from bullets, so ordering is
+ *     architecturally academic — but pinning a deterministic order
+ *     keeps composer output byte-stable across runs.
+ *   - 3d last: no-op outcomes are pure telemetry and don't depend on
+ *     any working-text state.
  *
  * Edge cases (per FRD §6.10 contract):
  *   - Empty items array → returns originalResumeText unchanged.
@@ -510,37 +740,149 @@ export function composeRevisedResume(
     working = appendNewBullet(working, item.final_text)
   }
 
-  // ── Pass 3c: gap no-op outcomes (cover letter / acknowledge) ─────────
-  // Resume text is unchanged for these outcomes. D2 surfaces them on
-  // the completion screen. Logged for telemetry visibility — useful
-  // for debugging whether the composer is seeing the expected mix of
-  // outcomes from /decide.
+  // ── Pass 3c: gap additions to skills/tools/languages/coursework ──────
+  // For each accepted gap item with one of the four "add to non-bullet
+  // section" outcomes, detect the target list line and append the new
+  // item with " | " separator. Section-not-found is a silent skip —
+  // frontend D1 prevents the user from selecting an outcome whose
+  // target section the composer can't detect, so reaching this skip
+  // path in production usually indicates a stale-resume race (resume
+  // edited mid-flow) or a manual API call bypassing the UI.
+  //
+  // Detection strategy per outcome:
+  //   add_to_skills_list   → Pattern A (SKILLS_SECTION_HEADERS)
+  //   add_tool_or_software → Pattern A (TOOLS_SECTION_HEADERS) →
+  //                          Pattern B (TOOLS_KEY_PREFIXES) →
+  //                          Pattern A (SKILLS_SECTION_HEADERS fallback)
+  //   add_language         → Pattern A (LANGUAGES_SECTION_HEADERS) →
+  //                          Pattern B (LANGUAGES_KEY_PREFIXES)
+  //   add_to_coursework    → Pattern B (COURSEWORK_KEY_PREFIXES)
+  //
+  // add_certification is intentionally NOT handled here — B4 ships it
+  // with section-creation logic for resumes lacking a certifications
+  // header.
+  for (const item of items) {
+    if (item.type !== "gap") continue
+    if (!item.accepted) continue
+    const outcome = item.compositional_outcome ?? null
+    if (
+      outcome !== "add_to_skills_list" &&
+      outcome !== "add_tool_or_software" &&
+      outcome !== "add_language" &&
+      outcome !== "add_to_coursework"
+    ) {
+      continue
+    }
+
+    if (item.final_text === null) {
+      console.warn(
+        `[resumeComposer] accepted gap (outcome=${outcome}) has null final_text, skipping. id=${item.id}`,
+      )
+      continue
+    }
+
+    let target: { lineIndex: number; line: string } | null = null
+    let detector = ""
+
+    if (outcome === "add_to_skills_list") {
+      target = findPipeDelimitedSectionLine(working, SKILLS_SECTION_HEADERS)
+      detector = "skills_section_header"
+    } else if (outcome === "add_tool_or_software") {
+      // 3-tier fallback. Telemetry log below records which tier matched
+      // so B4's certifications-overlap behavior is debuggable (Catherine's
+      // "Certificates & Tools :" line will be picked up by the Pattern B
+      // tier here AND by B4's certifications detector).
+      target = findPipeDelimitedSectionLine(working, TOOLS_SECTION_HEADERS)
+      detector = "tools_section_header"
+      if (target === null) {
+        target = findKeyPrefixedListLine(working, TOOLS_KEY_PREFIXES)
+        detector = "tools_key_prefix"
+      }
+      if (target === null) {
+        target = findPipeDelimitedSectionLine(working, SKILLS_SECTION_HEADERS)
+        detector = "skills_section_header_fallback"
+      }
+    } else if (outcome === "add_language") {
+      target = findPipeDelimitedSectionLine(working, LANGUAGES_SECTION_HEADERS)
+      detector = "languages_section_header"
+      if (target === null) {
+        target = findKeyPrefixedListLine(working, LANGUAGES_KEY_PREFIXES)
+        detector = "languages_key_prefix"
+      }
+    } else if (outcome === "add_to_coursework") {
+      target = findCourseworkLine(working)
+      detector = "coursework_key_prefix"
+    }
+
+    if (target === null) {
+      console.warn(
+        `[resumeComposer] outcome=${outcome} target section not detected, skipping. id=${item.id}`,
+      )
+      continue
+    }
+
+    console.log(
+      `[resumeComposer] outcome=${outcome} matched detector=${detector} at line ${target.lineIndex}, appending. id=${item.id}`,
+    )
+
+    const lines = working.split("\n")
+    lines[target.lineIndex] = appendToPipeList(target.line, item.final_text)
+    working = lines.join("\n")
+  }
+
+  // ── Pass 3d: gap no-op + telemetry pass ──────────────────────────────
+  // Logs the disposition of every accepted gap item the prior passes
+  // didn't actively modify. Categories:
+  //   - note_for_cover_letter / acknowledge_genuine_gap → composer no-op
+  //     by design; D2 surfaces these on the completion screen.
+  //   - add_certification → B3 doesn't handle (B4 ships it with
+  //     section-creation logic). Log as deferred rather than unknown.
+  //   - null compositional_outcome → legacy row predating C1 OR a
+  //     decide handler bug. Log + skip.
+  //   - Outcomes 3a-3c already handled in their own passes; this loop
+  //     short-circuits silently for those.
+  //   - Genuinely unknown string → log warning (defensive — TS type
+  //     should prevent this at compile time, but JSON-payload drift
+  //     from older clients is the realistic source).
+  const HANDLED_BY_OTHER_PASSES: ReadonlySet<string> = new Set([
+    "reword_existing_bullet", // 3a
+    "add_new_bullet", // 3b
+    "add_to_skills_list", // 3c
+    "add_tool_or_software", // 3c
+    "add_language", // 3c
+    "add_to_coursework", // 3c
+  ])
   for (const item of items) {
     if (item.type !== "gap") continue
     if (!item.accepted) continue
     const outcome = item.compositional_outcome ?? null
 
-    if (outcome === "note_for_cover_letter" || outcome === "acknowledge_genuine_gap") {
-      console.log(
-        `[resumeComposer] gap outcome=${outcome} is a no-op at composer level (D2 surfaces on completion screen). id=${item.id}`,
-      )
-      continue
-    }
-
-    // Legacy gap items (no compositional_outcome) and any unknown value
-    // (shouldn't be possible per C1's literal type, but defensive)
-    // land here. Log + skip — don't synthesize a default outcome.
     if (outcome === null) {
       console.warn(
         `[resumeComposer] accepted gap has no compositional_outcome, skipping. id=${item.id} (legacy row predating C1, OR a decide handler bug)`,
       )
       continue
     }
-    if (outcome !== "reword_existing_bullet" && outcome !== "add_new_bullet") {
-      console.warn(
-        `[resumeComposer] accepted gap has unknown compositional_outcome=${outcome}, skipping. id=${item.id}`,
+    if (outcome === "note_for_cover_letter" || outcome === "acknowledge_genuine_gap") {
+      console.log(
+        `[resumeComposer] gap outcome=${outcome} is a no-op at composer level (D2 surfaces on completion screen). id=${item.id}`,
       )
+      continue
     }
+    if (outcome === "add_certification") {
+      console.log(
+        `[resumeComposer] gap outcome=add_certification is not yet handled at composer level (B4 ships it with section-creation logic). id=${item.id}`,
+      )
+      continue
+    }
+    if (HANDLED_BY_OTHER_PASSES.has(outcome)) {
+      // Handled by 3a/3b/3c. Those passes log their own success / skip
+      // details; this loop doesn't re-log.
+      continue
+    }
+    console.warn(
+      `[resumeComposer] accepted gap has unknown compositional_outcome=${outcome}, skipping. id=${item.id}`,
+    )
   }
 
   // Retained for forward-compat: the type-narrowing helpers stay

@@ -1033,6 +1033,490 @@ console.log("\n=== 28. Determinism for gap items (re-run produces identical outp
   )
 }
 
+// ============================================================================
+// B3 — composer for skill / tool / language / coursework additions
+// ============================================================================
+//
+// B3 adds Pass 3c handling for the four "add to non-bullet section"
+// outcomes:
+//
+//   add_to_skills_list      → CORE COMPETENCIES / SKILLS / etc.
+//   add_tool_or_software    → TOOLS section / "Tools :" key-prefix /
+//                             fallback to SKILLS
+//   add_language            → LANGUAGES section / "Languages:" key-prefix
+//   add_to_coursework       → "Relevant Coursework:" key-prefix
+//
+// Catherine v3's fixture has CORE COMPETENCIES (Pattern A), "Certificates
+// & Tools :" (Pattern B with space-before-colon), and "Relevant
+// Coursework:" (Pattern B with standard colon). She has no LANGUAGES
+// section, so language tests use a synthetic fixture below.
+
+console.log("\n=== 29. add_to_skills_list happy path against CORE COMPETENCIES (Pattern A) ===")
+{
+  const newSkill = "Excel pivot tables"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: newSkill,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "29: revised contains the new skill appended after Photography",
+    result.includes(`Photography | ${newSkill}`),
+  )
+  check(
+    "29: original CORE COMPETENCIES content still intact (only end of list changed)",
+    result.includes("Brand Messaging & Storytelling | Creative Strategy | Visual Communication"),
+  )
+  check("29: revised differs from original", result !== CATHERINE_RESUME_TEXT)
+}
+
+console.log("\n=== 30. add_tool_or_software happy path against Catherine's 'Certificates & Tools :' (Pattern B) ===")
+{
+  const newTool = "Tableau"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_tool_or_software",
+      target_bullet_text: null,
+      final_text: newTool,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "30: revised contains the new tool appended after 'Microsoft Office'",
+    result.includes(`Microsoft Office | ${newTool}`),
+  )
+  check(
+    "30: Pattern B key-prefix preserved verbatim (Certificates & Tools : ...)",
+    result.includes("Certificates & Tools : Muck Rack Fundamentals"),
+  )
+  check("30: revised differs from original", result !== CATHERINE_RESUME_TEXT)
+}
+
+console.log("\n=== 31. add_language happy path against synthetic resume with LANGUAGES section ===")
+{
+  // Synthetic fixture — Catherine has no languages section. Pattern A
+  // shape: header line + blank + pipe-delimited content.
+  const synthResume = `JANE DOE
+Boston, MA | jane@example.com | 555-0100
+
+EDUCATION
+University of Somewhere
+
+LANGUAGES
+
+English | Spanish | Italian
+
+EXPERIENCE
+Some role`
+  const newLanguage = "French"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_language",
+      target_bullet_text: null,
+      final_text: newLanguage,
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "31: revised contains the new language appended to LANGUAGES content",
+    result.includes(`English | Spanish | Italian | ${newLanguage}`),
+  )
+  check("31: LANGUAGES header preserved", result.includes("LANGUAGES"))
+  check("31: revised differs from original", result !== synthResume)
+}
+
+console.log("\n=== 32. add_to_coursework happy path against Catherine's 'Relevant Coursework:' (Pattern B) ===")
+{
+  const newCourse = "Statistical Analysis"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_coursework",
+      target_bullet_text: null,
+      final_text: newCourse,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "32: revised contains the new course appended after 'Design Aesthetics of Fashion and Retail'",
+    result.includes(`Design Aesthetics of Fashion and Retail | ${newCourse}`),
+  )
+  check(
+    "32: 'Relevant Coursework:' key-prefix preserved",
+    result.includes("Relevant Coursework: Strategic Message Design"),
+  )
+  check("32: revised differs from original", result !== CATHERINE_RESUME_TEXT)
+}
+
+console.log("\n=== 33. add_tool_or_software falls back to SKILLS when no TOOLS line exists ===")
+{
+  // Synthetic resume with CORE COMPETENCIES but no tools section and no
+  // tools key-prefix line. Pattern B fallback chain should land on the
+  // skills section.
+  const synthResume = `JOHN DOE
+Boston, MA | john@example.com | 555-0100
+
+EDUCATION
+University of Somewhere
+
+CORE COMPETENCIES
+
+Strategic Planning | Project Management | Communication | Leadership
+
+EXPERIENCE
+Some role`
+  const newTool = "Salesforce"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_tool_or_software",
+      target_bullet_text: null,
+      final_text: newTool,
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "33: tool appended to SKILLS section as fallback when no tools detector matched",
+    result.includes(`Leadership | ${newTool}`),
+  )
+}
+
+console.log("\n=== 34a. add_to_skills_list with no skills section → silent skip ===")
+{
+  const synthResume = `JOHN DOE
+Boston, MA | john@example.com
+
+EDUCATION
+University of Somewhere
+
+EXPERIENCE
+Some role`
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: "Excel",
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "34a: revised unchanged when no skills section detected",
+    result === synthResume,
+  )
+  check("34a: final_text NOT injected anywhere", !result.includes("Excel"))
+}
+
+console.log("\n=== 34b. add_tool_or_software with no tools/skills section → silent skip ===")
+{
+  const synthResume = `JOHN DOE
+Boston, MA | john@example.com
+
+EXPERIENCE
+Some role
+Some other role`
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_tool_or_software",
+      target_bullet_text: null,
+      final_text: "Tableau",
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check("34b: revised unchanged when no detectors match", result === synthResume)
+  check("34b: final_text NOT injected anywhere", !result.includes("Tableau"))
+}
+
+console.log("\n=== 34c. add_language with no languages section → silent skip ===")
+{
+  // Catherine's v3 resume has no LANGUAGES section.
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_language",
+      target_bullet_text: null,
+      final_text: "Mandarin",
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "34c: revised unchanged when no languages section detected",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check("34c: 'Mandarin' NOT injected anywhere", !result.includes("Mandarin"))
+}
+
+console.log("\n=== 34d. add_to_coursework with no coursework line → silent skip ===")
+{
+  const synthResume = `JOHN DOE
+Boston, MA | john@example.com
+
+EDUCATION
+University of Somewhere
+B.S. Engineering
+
+EXPERIENCE
+Some role`
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_coursework",
+      target_bullet_text: null,
+      final_text: "Linear Algebra",
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "34d: revised unchanged when no coursework line detected",
+    result === synthResume,
+  )
+  check(
+    "34d: 'Linear Algebra' NOT injected anywhere",
+    !result.includes("Linear Algebra"),
+  )
+}
+
+console.log("\n=== 35. Bulleted skills section (not pipe-delimited) → silent skip per v1 scope ===")
+{
+  // Pins the v1 limitation: non-pipe formats are out of B3's scope.
+  // A skills section that uses bulleted/newline formatting won't satisfy
+  // the PIPE_LIST_MIN_PIPES floor, so the detector returns null and we
+  // silently skip. v0.2 will handle this once we have more fixtures.
+  const synthResume = `JOHN DOE
+Boston, MA | john@example.com
+
+CORE COMPETENCIES
+● Strategic Planning
+● Project Management
+● Communication
+
+EXPERIENCE
+Some role`
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: "Data Analysis",
+    }),
+  ]
+  const result = composeRevisedResume(synthResume, items)
+  check(
+    "35: bulleted skills section → revised unchanged (pipe-list floor not met)",
+    result === synthResume,
+  )
+  check(
+    "35: 'Data Analysis' NOT injected (B3 doesn't handle bulleted format yet)",
+    !result.includes("Data Analysis"),
+  )
+}
+
+console.log("\n=== 36. add_to_skills_list with null final_text → skip + log ===")
+{
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: null,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "36: null final_text → revised unchanged",
+    result === CATHERINE_RESUME_TEXT,
+  )
+}
+
+console.log("\n=== 37. Multiple add_to_skills_list items → sequential append in order ===")
+{
+  const skill1 = "Excel pivot tables"
+  const skill2 = "PowerPoint storytelling"
+  const skill3 = "SQL basics"
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: skill1,
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: skill2,
+    }),
+    makeGap({
+      id: "gap-3",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: skill3,
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "37: all three skills appended sequentially in items[] order",
+    result.includes(`Photography | ${skill1} | ${skill2} | ${skill3}`),
+  )
+}
+
+console.log("\n=== 38. B2 backward-compat regression — reword + add_new_bullet still work after B3 ===")
+{
+  const target =
+    "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities"
+  if (!CATHERINE_RESUME_TEXT.includes(target)) {
+    throw new Error("Test 38 fixture corruption")
+  }
+  const rewordText = "Drove analytics that informed brand positioning"
+  const appendTextSlice = "Newly appended via B3 regression test"
+  // Reword on v3 (no glyphs) + append on SLICE (with glyphs) — run the
+  // reword on v3 here, append on SLICE separately below.
+  const itemsReword: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "reword_existing_bullet",
+      target_bullet_text: target,
+      final_text: rewordText,
+    }),
+  ]
+  const r1 = composeRevisedResume(CATHERINE_RESUME_TEXT, itemsReword)
+  check("38: B2 reword still produces revised text", r1.includes(rewordText) && !r1.includes(target))
+
+  const itemsAppend: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_new_bullet",
+      target_bullet_text: null,
+      final_text: appendTextSlice,
+    }),
+  ]
+  const r2 = composeRevisedResume(CATHERINE_RESUME_SLICE, itemsAppend)
+  check(
+    "38: B2 add_new_bullet still produces revised text",
+    r2.includes(`● ${appendTextSlice}`),
+  )
+
+  // B2 no-ops still no-op
+  const itemsNoOp: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "note_for_cover_letter",
+      target_bullet_text: null,
+      final_text: "B2 no-op text — should not appear",
+    }),
+  ]
+  const r3 = composeRevisedResume(CATHERINE_RESUME_TEXT, itemsNoOp)
+  check(
+    "38: B2 note_for_cover_letter is still a no-op",
+    r3 === CATHERINE_RESUME_TEXT,
+  )
+}
+
+console.log("\n=== 39. Determinism — B3 outcomes produce byte-identical output across runs ===")
+{
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_skills_list",
+      target_bullet_text: null,
+      final_text: "Deterministic skill",
+    }),
+    makeGap({
+      id: "gap-2",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_tool_or_software",
+      target_bullet_text: null,
+      final_text: "Deterministic tool",
+    }),
+    makeGap({
+      id: "gap-3",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_to_coursework",
+      target_bullet_text: null,
+      final_text: "Deterministic course",
+    }),
+  ]
+  const r1 = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  const r2 = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "39: identical B3 inputs produce byte-identical output across two runs",
+    r1 === r2,
+    `r1.length=${r1.length} r2.length=${r2.length}`,
+  )
+}
+
+console.log("\n=== 40. add_certification (B4 scope) → composer no-op, no false 'unknown' warning ===")
+{
+  // Pass 3d should log "not yet handled at composer level (B4 will ship)"
+  // for add_certification rather than the generic "unknown
+  // compositional_outcome" warning. We can't easily assert console output
+  // here, but the architectural contract is: revised text unchanged.
+  const items: PhaseTwoItem[] = [
+    makeGap({
+      id: "gap-1",
+      accepted: true,
+      decided_at: "2026-05-20T00:00:00Z",
+      compositional_outcome: "add_certification",
+      target_bullet_text: null,
+      final_text: "PMP Certification — Project Management Institute",
+    }),
+  ]
+  const result = composeRevisedResume(CATHERINE_RESUME_TEXT, items)
+  check(
+    "40: add_certification leaves resume unchanged in B3 (B4 will ship)",
+    result === CATHERINE_RESUME_TEXT,
+  )
+  check(
+    "40: certification text NOT injected (deferred to B4)",
+    !result.includes("PMP Certification — Project Management Institute"),
+  )
+}
+
 // ────────────────────────────────────────────────────────────────────────
 console.log(`\n=== RESULT: ${failures.length === 0 ? "PASS" : "FAIL"} ===`)
 if (failures.length) {
