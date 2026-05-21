@@ -17,6 +17,7 @@ import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } fr
 import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
 import { AddNotePanel } from "./AddNotePanel"
 import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
+import type { LifecycleStatus } from "../../LifecycleStatusPill"
 import { DashboardView } from "./dashboard/DashboardView"
 
 type Tab = "dashboard" | "tracker" | "source" | "notes" | "history" | "analysis"
@@ -130,6 +131,7 @@ export default function CoachClientPage() {
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null)
   const [clientPersonas, setClientPersonas] = useState<ClientPersona[]>([])
   const [acceptedAt, setAcceptedAt] = useState<string | null>(null)
+  const [lifecycleStatus, setLifecycleStatus] = useState<LifecycleStatus>("Active")
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
   const [clientApps, setClientApps] = useState<ClientApplication[]>([])
   const [historyRuns, setHistoryRuns] = useState<HistoryRun[]>([])
@@ -208,6 +210,7 @@ export default function CoachClientPage() {
       setClientProfile(profileData.profile || null)
       setClientPersonas(profileData.personas || [])
       setAcceptedAt(profileData.accepted_at ?? null)
+      setLifecycleStatus((profileData.lifecycle_status as LifecycleStatus) ?? "Active")
       setClientApps(trackerData.applications || [])
       setCoachRecs(trackerData.recommendations || [])
       setHistoryRuns(trackerData.history || [])
@@ -462,11 +465,14 @@ export default function CoachClientPage() {
             // resort for legacy links that pre-date the invite flow.
             engagement_started_at: acceptedAt ?? (clientProfile as any).created_at ?? null,
           }}
+          lifecycleStatus={lifecycleStatus}
+          getToken={getToken}
           onAddNote={() => setAddNoteOpen(true)}
           onSourceJob={() => setTab("source")}
           onRemoveClient={() => {
             if (!removingClient) handleRemoveClient()
           }}
+          onLifecycleStatusChange={setLifecycleStatus}
         />
       )}
 

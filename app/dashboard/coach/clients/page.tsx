@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
+import { LifecycleStatusPill, type LifecycleStatus } from "../LifecycleStatusPill"
 
 type CoachClient = {
   id: string
@@ -16,6 +17,7 @@ type CoachClient = {
   name: string | null
   email: string | null
   status: string | null
+  lifecycle_status: LifecycleStatus
   attention_level: "high" | "medium" | "low" | null
   stats: {
     applications: number
@@ -60,22 +62,6 @@ async function getToken() {
 async function authFetch(url: string, opts: RequestInit = {}) {
   const token = await getToken()
   return fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` } })
-}
-
-function StatusPill({ status }: { status: string | null }) {
-  const s = status || "active"
-  const styles: Record<string, { bg: string; color: string }> = {
-    active: { bg: "rgba(74,222,128,0.12)", color: "#4ade80" },
-    invited: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
-    inactive: { bg: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" },
-  }
-  const st = styles[s] || styles.active
-  return (
-    <span style={{
-      fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-      background: st.bg, color: st.color, padding: "2px 8px", borderRadius: 999,
-    }}>{s}</span>
-  )
 }
 
 function Avatar({ name, email }: { name: string | null; email: string | null }) {
@@ -173,12 +159,27 @@ export default function MyClientsFullPage() {
                 }}>
                   <Avatar name={c.name} email={c.email} />
                   <div style={{ minWidth: 0, flex: "1 1 180px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{
                         fontSize: 14, fontWeight: 700, color: T.TEXT,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                       }}>{c.name || "Unnamed"}</span>
-                      <StatusPill status={c.status} />
+                      <LifecycleStatusPill
+                        value={c.lifecycle_status}
+                        getToken={getToken}
+                        clientProfileId={c.client_profile_id}
+                        onChange={(next) => {
+                          setClients((prev) =>
+                            prev
+                              ? prev.map((cc) =>
+                                  cc.client_profile_id === c.client_profile_id
+                                    ? { ...cc, lifecycle_status: next }
+                                    : cc,
+                                )
+                              : prev,
+                          )
+                        }}
+                      />
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>

@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
     // ── 1. Active coach-client relationships ──────────────────────────
     const { data: relRows, error: relErr } = await supabase
       .from("coach_clients")
-      .select("id, client_profile_id, invited_email, access_level, status, accepted_at, last_viewed_at, private_notes")
+      .select("id, client_profile_id, invited_email, access_level, status, lifecycle_status, accepted_at, last_viewed_at, private_notes")
       .eq("coach_profile_id", coachProfileId)
       .eq("status", "active")
     if (relErr) throw new Error(`Failed to fetch coach relationships: ${relErr.message}`)
@@ -222,6 +222,7 @@ export async function GET(req: NextRequest) {
           name: profile?.name ?? null,
           email: profile?.email ?? rel.invited_email,
           status: rel.status,
+          lifecycle_status: rel.lifecycle_status ?? "Active",
           attention_level,
           stats,
           last_activity: lastActivity,

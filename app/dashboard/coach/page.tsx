@@ -25,6 +25,7 @@ import {
   T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
 import { CrossClientActionItemsList } from "./_action-items/CrossClientActionItemsList"
+import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -44,6 +45,7 @@ type CoachClient = {
   name: string | null
   email: string | null
   status: string | null
+  lifecycle_status: LifecycleStatus
   attention_level: "high" | "medium" | "low" | null
   stats: {
     applications: number
@@ -190,24 +192,6 @@ const IconClipboardCheck = () => (
 // ──────────────────────────────────────────────────────────────
 // Reusable atoms
 // ──────────────────────────────────────────────────────────────
-
-function StatusPill({ status }: { status: string | null }) {
-  const s = status || "active"
-  const styles: Record<string, { bg: string; color: string }> = {
-    active: { bg: "rgba(74,222,128,0.12)", color: "#4ade80" },
-    invited: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
-    inactive: { bg: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" },
-  }
-  const st = styles[s] || styles.active
-  return (
-    <span style={{
-      fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-      background: st.bg, color: st.color, padding: "2px 8px", borderRadius: 999,
-    }}>
-      {s}
-    </span>
-  )
-}
 
 function CountPill({ n, color = T.WRN_ORANGE }: { n: number; color?: string }) {
   return (
@@ -471,7 +455,15 @@ function MiniCell({ label, value, color }: { label: string; value: string | numb
   )
 }
 
-function ClientRow({ client, onOpen }: { client: CoachClient; onOpen: () => void }) {
+function ClientRow({
+  client,
+  onOpen,
+  onLifecycleStatusChange,
+}: {
+  client: CoachClient
+  onOpen: () => void
+  onLifecycleStatusChange: (next: LifecycleStatus) => void
+}) {
   const updates = client.updates_since_visit
   return (
     <div style={{
@@ -484,11 +476,16 @@ function ClientRow({ client, onOpen }: { client: CoachClient; onOpen: () => void
       <Avatar name={client.name} email={client.email} />
 
       <div style={{ minWidth: 0, flex: "1 1 180px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: T.TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {client.name || "Unnamed"}
           </span>
-          <StatusPill status={client.status} />
+          <LifecycleStatusPill
+            value={client.lifecycle_status}
+            getToken={getToken}
+            clientProfileId={client.client_profile_id}
+            onChange={onLifecycleStatusChange}
+          />
         </div>
       </div>
 
@@ -524,13 +521,14 @@ function ClientRow({ client, onOpen }: { client: CoachClient; onOpen: () => void
 }
 
 function MyClientsSection({
-  clients, onOpen, onCreate, onInvite, onShowAll,
+  clients, onOpen, onCreate, onInvite, onShowAll, onLifecycleStatusChange,
 }: {
   clients: CoachClient[]
   onOpen: (clientId: string) => void
   onCreate: () => void
   onInvite: () => void
   onShowAll: () => void
+  onLifecycleStatusChange: (clientProfileId: string, next: LifecycleStatus) => void
 }) {
   const visible = clients.slice(0, COLLAPSED_LIMIT)
   const hasMore = clients.length > COLLAPSED_LIMIT
@@ -567,7 +565,12 @@ function MyClientsSection({
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {visible.map((c) => (
-            <ClientRow key={c.client_profile_id} client={c} onOpen={() => onOpen(c.client_profile_id)} />
+            <ClientRow
+              key={c.client_profile_id}
+              client={c}
+              onOpen={() => onOpen(c.client_profile_id)}
+              onLifecycleStatusChange={(next) => onLifecycleStatusChange(c.client_profile_id, next)}
+            />
           ))}
           {hasMore && (
             <button
@@ -737,6 +740,20 @@ export default function CoachHomePage() {
         onCreate={() => setShowCreateClient(true)}
         onInvite={() => { setInviteOpen(true); setInviteResult(null) }}
         onShowAll={() => router.push("/dashboard/coach/clients")}
+        onLifecycleStatusChange={(clientProfileId, next) => {
+          // Optimistic local update — PATCH already succeeded inside the pill.
+          setData((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              clients: prev.clients.map((c) =>
+                c.client_profile_id === clientProfileId
+                  ? { ...c, lifecycle_status: next }
+                  : c,
+              ),
+            }
+          })
+        }}
       />
 
       {/* Invite modal — preserved from previous build */}

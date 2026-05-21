@@ -20,6 +20,8 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation. |
 | `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-16 | dev | Supabase SQL Editor | Peri | New table. Phase 2 Stage 2a. Includes ai_cost_cents column (FRD §6.12) in initial schema vs. separate step per §7. Manual apply per Risk 6 (schema_migrations drift on dev). |
 | `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation + Phase 2a skeletons land. |
+| `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | 2026-05-21 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 1, Commit 1.4). Adds coach-managed `lifecycle_status` column to `coach_clients` (Prospect/Active/Inactive/Archived), distinct from system-owned `status`. Default 'Active' so existing rows defaulted in. Sanity: SELECT confirmed all rows defaulted; CHECK constraint rejected 'Bogus' negative test. |
+| `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply after Phase 1 ship-out, separate explicit promotion step. |
 
 ---
 

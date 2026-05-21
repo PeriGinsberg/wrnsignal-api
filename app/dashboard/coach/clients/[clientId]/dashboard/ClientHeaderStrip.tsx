@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { T, eyebrow } from "../../../../../../lib/dashboard-theme"
 import { Avatar } from "./Avatar"
+import { LifecycleStatusPill, type LifecycleStatus } from "../../../LifecycleStatusPill"
 
 export type ClientHeaderProfile = {
   id: string
@@ -20,14 +21,25 @@ export type ClientHeaderProfile = {
 
 type Props = {
   profile: ClientHeaderProfile
+  lifecycleStatus: LifecycleStatus
+  getToken: () => Promise<string | null>
   onAddNote: () => void
   onSourceJob: () => void
   onRemoveClient: () => void
+  onLifecycleStatusChange: (next: LifecycleStatus) => void
 }
 
 // Renders the persistent header strip: avatar + name + summary line +
 // engagement-start date + lifecycle badge + action buttons.
-export function ClientHeaderStrip({ profile, onAddNote, onSourceJob, onRemoveClient }: Props) {
+export function ClientHeaderStrip({
+  profile,
+  lifecycleStatus,
+  getToken,
+  onAddNote,
+  onSourceJob,
+  onRemoveClient,
+  onLifecycleStatusChange,
+}: Props) {
   const router = useRouter()
   const [overflowOpen, setOverflowOpen] = useState(false)
 
@@ -95,23 +107,13 @@ export function ClientHeaderStrip({ profile, onAddNote, onSourceJob, onRemoveCli
             </div>
           )}
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
-            {/* Lifecycle badge — placeholder for pilot. TODO: replace
-                with dynamic field once lifecycle states feature ships. */}
-            <span
-              style={{
-                background: "rgba(74,222,128,0.12)",
-                color: "#4ade80",
-                fontSize: 10,
-                fontWeight: 900,
-                letterSpacing: 0.8,
-                textTransform: "uppercase",
-                padding: "3px 10px",
-                borderRadius: 999,
-              }}
-              title="Placeholder until lifecycle states ship"
-            >
-              Active
-            </span>
+            <LifecycleStatusPill
+              value={lifecycleStatus}
+              getToken={getToken}
+              clientProfileId={profile.id}
+              onChange={onLifecycleStatusChange}
+              size="md"
+            />
             {engagementStart && (
               <span style={{ fontSize: 11, color: T.DIM }}>
                 Client since {engagementStart}
