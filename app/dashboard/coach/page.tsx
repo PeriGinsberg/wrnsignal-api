@@ -34,7 +34,18 @@ import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill
 type CoachHome = {
   ok: boolean
   coach: { firstName: string; fullName: string | null }
-  metrics: { activeClients: number; activeProspects: number }
+  // Phase 2 Item 14: 6-tile metric set. activeProspects/Clients are counts
+  // of coach_clients by lifecycle_status; total* fields are 30-day windowed
+  // counts of signal_applications. avgInterviewRate is null when there
+  // are zero applications in the 30-day window.
+  metrics: {
+    activeProspects: number
+    activeClients: number
+    totalApplications: number
+    totalInterviewing: number
+    totalOffers: number
+    avgInterviewRate: number | null
+  }
   clients: CoachClient[]
   requiresAction: ActionItem[]
 }
@@ -52,7 +63,6 @@ type CoachClient = {
     interviewing: number
     offers: number
     rejected: number
-    pending_recs: number
     interview_rate: number
   }
   last_activity: string | null
@@ -329,10 +339,13 @@ function MetricTile({ tile }: { tile: Tile }) {
 }
 
 function MetricsBar({ tiles }: { tiles: Tile[] }) {
+  // 3 × 2 grid for the Phase 2 6-tile metric set. Row 1: Active Prospects /
+  // Active Clients / Total Applications. Row 2: Total Interviewing /
+  // Total Offers / Avg Interview Rate.
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "repeat(4, 1fr)",
+      gridTemplateColumns: "repeat(3, 1fr)",
       gap: 10,
       marginBottom: 24,
     }}>
@@ -634,34 +647,25 @@ export default function CoachHomePage() {
     setInviting(false)
   }
 
-  // Aggregate top-level metrics from per-client stats (client-side only).
+  // Phase 2 Item 14 — 6-tile metric set. All values come straight from
+  // the API's `metrics` object (server-side aggregated). Grid is 3 × 2.
+  //   Row 1: Active Prospects | Active Clients     | Total Applications
+  //   Row 2: Total Interviewing | Total Offers     | Avg Interview Rate
+  // Clicks are added in Phase 2 Item 12 (commit 2.2); static here.
   const tiles: Tile[] = useMemo(() => {
     if (!data) return []
-    const cs = data.clients
-    const totalApps = cs.reduce((s, c) => s + c.stats.applications, 0)
-    const totalIntvw = cs.reduce((s, c) => s + c.stats.interviewing, 0)
-    const totalOffers = cs.reduce((s, c) => s + c.stats.offers, 0)
-    // Avg interview rate: mean across clients that have any "applied" denominator
-    // (interview_rate is 0 for clients with no submitted apps; including them
-    // would drag the average down meaninglessly). Only average over clients
-    // that have at least one submitted application.
-    const submitted = cs.filter((c) =>
-      c.stats.applications > 0 && (c.stats.interviewing + c.stats.offers + c.stats.rejected) > 0
-    )
-    const avgRate = submitted.length > 0
-      ? Math.round(submitted.reduce((s, c) => s + c.stats.interview_rate, 0) / submitted.length)
-      : 0
+    const m = data.metrics
     return [
-      // Row 1
-      { label: "Active clients",     value: data.metrics.activeClients },
-      { label: "Total applications", value: totalApps },
-      { label: "Interviewing",       value: totalIntvw, color: T.WRN_BLUE },
-      { label: "Offers in flight",   value: totalOffers, color: T.SUCCESS },
-      // Row 2 — Phase 2 Item 14 will rebuild the metric set; intentional gap
-      // here as one tile (Pending recs) was removed pending that redesign.
-      { label: "Avg interview rate", value: `${avgRate}%` },
-      { label: "Active prospects",   value: "—", subtitle: "Coming soon", muted: true },
-      { label: "Clients per phase",  value: "—", subtitle: "Methodology not yet configured", muted: true },
+      { label: "Active prospects",    value: m.activeProspects, color: "#F4A261" },
+      { label: "Active clients",      value: m.activeClients,   color: "#2CA58D" },
+      { label: "Total applications",  value: m.totalApplications, subtitle: "Past 30 days" },
+      { label: "Total interviewing",  value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: "Past 30 days" },
+      { label: "Total offers",        value: m.totalOffers, color: T.SUCCESS, subtitle: "Past 30 days" },
+      {
+        label: "Avg interview rate",
+        value: m.avgInterviewRate === null ? "—" : `${m.avgInterviewRate}%`,
+        subtitle: "Past 30 days",
+      },
     ]
   }, [data])
 

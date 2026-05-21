@@ -24,7 +24,6 @@ type CoachClient = {
     interviewing: number
     offers: number
     rejected: number
-    pending_recs: number
     interview_rate: number
   }
   last_activity: string | null

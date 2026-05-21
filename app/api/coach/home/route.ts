@@ -160,6 +160,9 @@ export async function GET(req: NextRequest) {
           .select("id, application_status, created_at")
           .eq("profile_id", cpid)
 
+        // Per-client stats. `pending_recs` was removed Phase 1 (tile)
+        // + Phase 2 (API surface). attention_level recomputed below from
+        // the same pendingRecs query, no longer surfaced in stats.
         const stats = {
           applications: apps?.length ?? 0,
           interviewing: (apps || []).filter((a: any) => a.application_status === "interviewing").length,
@@ -167,7 +170,6 @@ export async function GET(req: NextRequest) {
           // landing's per-client mini-cells + top-level metrics aggregation.
           offers: (apps || []).filter((a: any) => a.application_status === "offer").length,
           rejected: (apps || []).filter((a: any) => a.application_status === "rejected").length,
-          pending_recs: 0,
           interview_rate: 0,
         }
         const appliedCount = (apps || []).filter((a: any) =>
@@ -175,14 +177,15 @@ export async function GET(req: NextRequest) {
         ).length
         stats.interview_rate = appliedCount > 0 ? Math.round((stats.interviewing / appliedCount) * 100) : 0
 
-        // Pending coach recs (client hasn't responded)
+        // Pending coach recs (used internally for attention_level sort only;
+        // not returned to the client).
         const { data: pendingRecs } = await supabase
           .from("coach_job_recommendations")
           .select("id, created_at")
           .eq("client_profile_id", cpid)
           .eq("coach_profile_id", coachProfileId)
           .eq("client_status", "new")
-        stats.pending_recs = pendingRecs?.length ?? 0
+        const pendingRecsCount = pendingRecs?.length ?? 0
 
         const lastActivity =
           (apps || []).map((a: any) => a.created_at).sort().reverse()[0] || null
@@ -212,9 +215,11 @@ export async function GET(req: NextRequest) {
 
         const updates_since_visit = statusChangesCount + newAppsCount + (recResponseCount ?? 0)
 
-        // Attention level (existing pattern)
+        // Attention level: same intent as pre-Phase-2 (pending coach recs
+        // OR interviewing apps → "medium"). Uses internal pendingRecsCount
+        // since `stats.pending_recs` no longer exists.
         const attention_level: "high" | "medium" | "low" =
-          stats.pending_recs > 0 || stats.interviewing > 0 ? "medium" : "low"
+          pendingRecsCount > 0 || stats.interviewing > 0 ? "medium" : "low"
 
         return {
           id: rel.id,
@@ -228,6 +233,9 @@ export async function GET(req: NextRequest) {
           last_activity: lastActivity,
           last_viewed_at: rel.last_viewed_at,
           updates_since_visit,
+          // Internal-only: app IDs feed the 30-day aggregation queries
+          // below. Stripped before response.
+          _appIds: appIds,
           // user_id reused below for R1 last-login lookup
           _user_id: profile?.user_id || null,
         }
@@ -438,8 +446,143 @@ export async function GET(req: NextRequest) {
       return a.client_name.localeCompare(b.client_name)
     })
 
-    // Strip _user_id from the response
-    const cleanClients = clientCards.map(({ _user_id, ...rest }) => rest)
+    // ── 5. Coach-level metric tiles (Phase 2 Item 14) ───────────────
+    //
+    // Six metrics, three of them date-windowed to last 30 days. Scoping
+    // by lifecycle_status (added Phase 1):
+    //   - activeProspects  → COUNT clients with lifecycle_status='Prospect'
+    //   - activeClients    → COUNT clients with lifecycle_status='Active'
+    //   - totalApplications→ apps from Active+Inactive clients, 30d window
+    //   - totalInterviewing→ same scope, transitioned to 'interviewing' in 30d
+    //   - totalOffers      → Active+Inactive+ARCHIVED scope, transitioned
+    //                        to 'offer' in 30d (Archived included for
+    //                        marketing: clients off-boarded after an offer)
+    //   - avgInterviewRate → totalInterviewing / totalApplications,
+    //                        null when denominator is 0 (UI shows "—")
+    //
+    // Status-transition timestamps come from signal_applications_status_history
+    // where present; fall back to signal_applications.created_at for apps
+    // with no history rows (pre-2026-05-07 apps were not backfilled —
+    // see supabase/migrations/20260507_coach_home_landing.sql).
+    const since30dIso = daysAgo(30)
+
+    const aiProfileIds: string[] = []          // Active + Inactive
+    const aiaProfileIds: string[] = []         // Active + Inactive + Archived
+    const aiAppIds: string[] = []              // app IDs for A+I scope
+    const aiaAppIds: string[] = []             // app IDs for A+I+A scope
+    let activeProspectsCount = 0
+    let activeClientsCount = 0
+    for (const c of clientCards) {
+      const ls = c.lifecycle_status
+      if (ls === "Prospect") activeProspectsCount++
+      else if (ls === "Active") activeClientsCount++
+      if (ls === "Active" || ls === "Inactive") {
+        aiProfileIds.push(c.client_profile_id)
+        aiAppIds.push(...c._appIds)
+      }
+      if (ls === "Active" || ls === "Inactive" || ls === "Archived") {
+        aiaProfileIds.push(c.client_profile_id)
+        aiaAppIds.push(...c._appIds)
+      }
+    }
+
+    // Total Applications: A+I scope, created in 30d.
+    let totalApplications = 0
+    if (aiProfileIds.length > 0) {
+      const { count } = await supabase
+        .from("signal_applications")
+        .select("id", { count: "exact", head: true })
+        .in("profile_id", aiProfileIds)
+        .gte("created_at", since30dIso)
+      totalApplications = count ?? 0
+    }
+
+    // Status-history rows (last 30d) for both scopes. One query per scope
+    // since the app-id sets differ; both queries chunk through the same
+    // table. Returned rows include `application_id` so we can dedupe.
+    async function transitionedAppIds(scopeAppIds: string[], toStatus: string): Promise<Set<string>> {
+      if (scopeAppIds.length === 0) return new Set()
+      const { data } = await supabase
+        .from("signal_applications_status_history")
+        .select("application_id")
+        .in("application_id", scopeAppIds)
+        .eq("to_status", toStatus)
+        .gte("changed_at", since30dIso)
+      return new Set((data || []).map((r: any) => r.application_id as string))
+    }
+
+    // For the fallback path (apps with no history row), we also need the
+    // set of apps that have ANY history row, so we know which apps to
+    // fall back on. Single query per scope.
+    async function appsWithAnyHistory(scopeAppIds: string[]): Promise<Set<string>> {
+      if (scopeAppIds.length === 0) return new Set()
+      const { data } = await supabase
+        .from("signal_applications_status_history")
+        .select("application_id")
+        .in("application_id", scopeAppIds)
+      return new Set((data || []).map((r: any) => r.application_id as string))
+    }
+
+    // Apps in A+I scope with current status + created_at for the fallback.
+    // Reused for the "currently at status X with no history" branch.
+    const appsByScope: Record<string, Array<{ id: string; application_status: string; created_at: string }>> = {
+      ai: [],
+      aia: [],
+    }
+    if (aiAppIds.length > 0) {
+      const { data } = await supabase
+        .from("signal_applications")
+        .select("id, application_status, created_at")
+        .in("id", aiAppIds)
+      appsByScope.ai = (data || []) as any
+    }
+    if (aiaAppIds.length > 0) {
+      const { data } = await supabase
+        .from("signal_applications")
+        .select("id, application_status, created_at")
+        .in("id", aiaAppIds)
+      appsByScope.aia = (data || []) as any
+    }
+
+    function countWithFallback(
+      apps: Array<{ id: string; application_status: string; created_at: string }>,
+      transitioned: Set<string>,
+      anyHistory: Set<string>,
+      targetStatus: string,
+    ): number {
+      let n = 0
+      for (const a of apps) {
+        if (transitioned.has(a.id)) n++
+        else if (
+          !anyHistory.has(a.id) &&
+          a.application_status === targetStatus &&
+          a.created_at >= since30dIso
+        ) n++
+      }
+      return n
+    }
+
+    const [aiInterviewing, aiAnyHistory, aiaOffers, aiaAnyHistory] = await Promise.all([
+      transitionedAppIds(aiAppIds, "interviewing"),
+      appsWithAnyHistory(aiAppIds),
+      transitionedAppIds(aiaAppIds, "offer"),
+      appsWithAnyHistory(aiaAppIds),
+    ])
+
+    const totalInterviewing = countWithFallback(
+      appsByScope.ai, aiInterviewing, aiAnyHistory, "interviewing",
+    )
+    const totalOffers = countWithFallback(
+      appsByScope.aia, aiaOffers, aiaAnyHistory, "offer",
+    )
+
+    const avgInterviewRate: number | null =
+      totalApplications > 0
+        ? Math.round((totalInterviewing / totalApplications) * 100)
+        : null
+
+    // Strip internals (_user_id, _appIds) before response.
+    const cleanClients = clientCards.map(({ _user_id, _appIds, ...rest }) => rest)
 
     const firstName = (coach.name || "").split(/\s+/)[0] || "Coach"
 
@@ -447,8 +590,12 @@ export async function GET(req: NextRequest) {
       ok: true,
       coach: { firstName, fullName: coach.name },
       metrics: {
-        activeClients: cleanClients.length,
-        activeProspects: 0,  // placeholder for pilot — "Coming soon"
+        activeProspects: activeProspectsCount,
+        activeClients: activeClientsCount,
+        totalApplications,
+        totalInterviewing,
+        totalOffers,
+        avgInterviewRate,
       },
       clients: cleanClients,
       requiresAction,
