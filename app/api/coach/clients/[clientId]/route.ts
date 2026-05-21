@@ -65,9 +65,13 @@ export async function DELETE(
     if (relErr || !rel) return withCorsJson(req, { error: "Client relationship not found" }, 404)
     if (rel.status === "revoked") return withCorsJson(req, { ok: true, message: "Already removed" })
 
+    // coach_clients has no updated_at column (per
+    // supabase/migrations/20260413_coach_client_system.sql:13-34 +
+    // 20260507_coach_home_landing.sql). Earlier code wrote one anyway and
+    // every DELETE 500'd with "Could not find the 'updated_at' column".
     const { error: updateErr } = await supabase
       .from("coach_clients")
-      .update({ status: "revoked", updated_at: new Date().toISOString() })
+      .update({ status: "revoked" })
       .eq("id", rel.id)
 
     if (updateErr) throw new Error(`Remove failed: ${updateErr.message}`)
