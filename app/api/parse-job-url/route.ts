@@ -598,6 +598,9 @@ export async function POST(req: NextRequest) {
 
   // 4. All other platforms: fetch with Chrome UA, 10s timeout
   let html: string
+  // Captured for PARSE_FAILED telemetry below. When the fetch succeeds
+  // we record the 2xx status code; the BLOCKED paths return earlier.
+  let fetchStatus = 0
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10000)
@@ -611,6 +614,7 @@ export async function POST(req: NextRequest) {
       signal: controller.signal,
     })
     clearTimeout(timer)
+    fetchStatus = res.status
 
     if (!res.ok) {
       console.error(`[parse-job-url] fetch failed: ${res.status} ${rawUrl}`)
@@ -634,6 +638,7 @@ export async function POST(req: NextRequest) {
         {
           error: `Could not fetch page (HTTP ${res.status})`,
           code: "BLOCKED",
+          suggestion: "paste_text",
         },
         422
       )
@@ -647,6 +652,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Failed to fetch the job posting URL. The site may block automated access.",
         code: "BLOCKED",
+        suggestion: "paste_text",
       },
       422
     )
@@ -715,11 +721,22 @@ export async function POST(req: NextRequest) {
 
   // 8. Final validation
   if (parsed.jobDescription.length < 100) {
+    // Minimal hostname telemetry — captures the failure distribution
+    // without leaking query params or path-encoded PII. Vercel logs
+    // ingest this automatically; future denylist additions should be
+    // prioritized off this signal, not anecdote.
+    console.log("[parse-job-url] PARSE_FAILED", {
+      hostname: parsedUrl.hostname.toLowerCase(),
+      status_code: fetchStatus,
+      content_length: html.length,
+      timestamp: new Date().toISOString(),
+    })
     return withCorsJson(
       req,
       {
         error: "Could not extract job description from this page",
         code: "PARSE_FAILED",
+        suggestion: "paste_text",
       },
       422
     )

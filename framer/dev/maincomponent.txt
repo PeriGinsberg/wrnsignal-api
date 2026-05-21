@@ -1786,7 +1786,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 body: JSON.stringify({ url: jobUrl.trim() }),
             })
             const data = await res.json()
-            if (data.code === "LINKEDIN" || data.code === "INDEED_BLOCKED" || data.code === "BLOCKED") {
+            if (data.suggestion === "paste_text") {
                 setShowBlockedPopup(true)
                 setShowLinkedInHelper(true)
                 return
@@ -9274,16 +9274,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 textAlign: "center" as const,
                                             }}>
                                                 <div style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", color: "#FFD60A", marginBottom: 14 }}>
-                                                    LinkedIn / Indeed Detected
+                                                    We couldn't read this job posting
                                                 </div>
-                                                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: "1.7", marginBottom: 8 }}>
-                                                    This site blocks automated access. No worries — just:
-                                                </div>
-                                                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: "1.8", textAlign: "left" as const, margin: "0 auto", maxWidth: 340, marginBottom: 24 }}>
-                                                    1. Open the job posting (button below)<br />
-                                                    2. Select all text — <strong style={{ color: "#fff" }}>Ctrl+A</strong> (Windows) or <strong style={{ color: "#fff" }}>Cmd+A</strong> (Mac)<br />
-                                                    3. Copy — <strong style={{ color: "#fff" }}>Ctrl+C</strong> / <strong style={{ color: "#fff" }}>Cmd+C</strong><br />
-                                                    4. Come back here and paste it below
+                                                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: "1.7", marginBottom: 24, textAlign: "left" as const, margin: "0 auto 24px", maxWidth: 380 }}>
+                                                    Some sites block us from reading their job postings automatically. Others use formatting we can't handle. To continue, copy and paste the job description text directly below.
                                                 </div>
                                                 <div style={{ display: "flex", gap: 10 }}>
                                                     <button
@@ -9326,7 +9320,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             marginTop: 10,
                                         }}>
                                             <div style={{ fontSize: 12, fontWeight: 900, color: "#FFD60A", marginBottom: 8 }}>
-                                                LINKEDIN / INDEED DETECTED
+                                                PASTE THE JOB DESCRIPTION
                                             </div>
                                             <textarea
                                                 value={linkedInPasteText}
