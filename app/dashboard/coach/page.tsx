@@ -681,11 +681,12 @@ export default function CoachHomePage() {
   //   Row 1: Active Prospects | Active Clients     | Total Applications
   //   Row 2: Total Interviewing | Total Offers     | Avg Interview Rate
   //
-  // Phase 2 Item 12 (revised): two client-count tiles are clickable and
-  // drive a filtered My Clients roster. The three application-count
-  // tiles route to /dashboard/coach/applications-recent in Commit 2.3
-  // (different mental model — apps, not clients) and stay non-clickable
-  // here. Avg Interview Rate is never clickable per locked spec.
+  // Phase 2 Item 12 (revised) — click destinations:
+  //   - Client-count tiles (Prospects/Clients) → filtered My Clients roster
+  //   - Application-count tiles (Apps/Interviewing/Offers) → cross-client
+  //     applications-recent surface (different mental model: apps, not
+  //     clients)
+  //   - Avg Interview Rate is never clickable per locked spec.
   const tiles: Tile[] = useMemo(() => {
     if (!data) return []
     const m = data.metrics
@@ -694,9 +695,12 @@ export default function CoachHomePage() {
         href: "/dashboard/coach/clients?filter=prospect" },
       { label: "Active clients", value: m.activeClients, color: "#2CA58D",
         href: "/dashboard/coach/clients?filter=active" },
-      { label: "Total applications", value: m.totalApplications, subtitle: "Past 30 days" },
-      { label: "Total interviewing", value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: "Past 30 days" },
-      { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: "Past 30 days" },
+      { label: "Total applications", value: m.totalApplications, subtitle: "Past 30 days",
+        href: "/dashboard/coach/applications-recent?status=all" },
+      { label: "Total interviewing", value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: "Past 30 days",
+        href: "/dashboard/coach/applications-recent?status=interviewing" },
+      { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: "Past 30 days",
+        href: "/dashboard/coach/applications-recent?status=offer" },
       {
         label: "Avg interview rate",
         value: m.avgInterviewRate === null ? "—" : `${m.avgInterviewRate}%`,

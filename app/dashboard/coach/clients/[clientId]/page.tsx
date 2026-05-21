@@ -231,6 +231,41 @@ export default function CoachClientPage() {
 
   useEffect(() => { loadAll() }, [loadAll])
 
+  // Deep-link landing behavior for arrivals from
+  // /dashboard/coach/applications-recent. Two URL hints drive two
+  // effects on the tracker tab once data is loaded:
+  //   - ?expand=app-<id>  → auto-open that card via the existing
+  //                          openAppIds Set (same mechanism as the
+  //                          header-click toggle, so the rendered
+  //                          expanded state is identical)
+  //   - #app-<id>          → scroll the card into view centered
+  // Browser-native anchor scroll races with React tab-switch + fetch,
+  // so we both auto-expand and re-scroll explicitly once
+  //   (a) the tracker tab is active, and
+  //   (b) loading flipped false → app rows are now in the DOM with
+  //       id="app-<id>" anchors.
+  useEffect(() => {
+    if (loading || tab !== "tracker") return
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const expand = params.get("expand")
+    if (expand && expand.startsWith("app-")) {
+      const appId = expand.slice(4)
+      setOpenAppIds((prev) => {
+        if (prev.has(appId)) return prev
+        const next = new Set(prev)
+        next.add(appId)
+        return next
+      })
+    }
+    const hash = window.location.hash
+    if (!hash || !hash.startsWith("#app-")) return
+    requestAnimationFrame(() => {
+      const el = document.getElementById(hash.slice(1))
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+  }, [loading, tab])
+
   async function fetchUrl() {
     if (!sourceUrl.trim()) return
     setFetchingUrl(true)
@@ -727,7 +762,7 @@ export default function CoachClientPage() {
                   const isOpen = openAppIds.has(app.id)
                   const isAnnotating = annotatingAppId === app.id
                   return (
-                    <div key={app.id} style={{ ...card, padding: 18 }}>
+                    <div key={app.id} id={`app-${app.id}`} style={{ ...card, padding: 18 }}>
                       {/* Clickable header row */}
                       <div
                         onClick={() => {
