@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, type LifecycleStatus } from "../LifecycleStatusPill"
+import { BackToDashboard } from "../BackToDashboard"
 
 // Phase 2 Item 12 (revised): only lifecycle-status filters route here.
 // Application-count filters go to /dashboard/coach/applications-recent
@@ -150,6 +151,7 @@ export default function MyClientsFullPage() {
 
   return (
     <div>
+      <BackToDashboard />
       <div style={{ marginBottom: 20 }}>
         <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 6 }}>COACHES CENTER</div>
         <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>

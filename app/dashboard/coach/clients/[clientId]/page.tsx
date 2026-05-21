@@ -438,12 +438,13 @@ export default function CoachClientPage() {
       <a
         href="/dashboard/coach/clients"
         style={{
-          fontSize: 12,
-          fontWeight: 900,
-          color: T.WRN_ORANGE,
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#2CA58D",
           textDecoration: "none",
           display: "inline-block",
-          marginBottom: 14,
+          marginBottom: 18,
+          letterSpacing: 0.2,
         }}
       >
         ← Back to My Clients

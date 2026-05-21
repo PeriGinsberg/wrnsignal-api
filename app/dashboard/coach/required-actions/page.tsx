@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { CrossClientActionItemsList } from "../_action-items/CrossClientActionItemsList"
+import { BackToDashboard } from "../BackToDashboard"
 
 type HeuristicItem = {
   id: string
@@ -102,6 +103,7 @@ export default function RequiredActionsPage() {
 
   return (
     <div>
+      <BackToDashboard />
       <div style={{ marginBottom: 24 }}>
         <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 6 }}>COACHES CENTER</div>
         <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
