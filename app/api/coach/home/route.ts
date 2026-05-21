@@ -581,8 +581,33 @@ export async function GET(req: NextRequest) {
         ? Math.round((totalInterviewing / totalApplications) * 100)
         : null
 
+    // ── 6. Optional client-list filter (Phase 2 Item 12, revised) ────
+    //
+    // The coach can drill into the Active Prospects or Active Clients
+    // tile from Coach Home; the resulting My Clients view is filtered to
+    // the matching lifecycle_status bucket. Metrics stay unfiltered
+    // (totals) — only the `clients` array shrinks.
+    //
+    // Application-count tiles (Total Apps / Interviewing / Offers) do
+    // NOT route here — they go to /dashboard/coach/applications-recent
+    // in Commit 2.3 because they're per-application, not per-client.
+    //
+    // Allowlist: prospect | active. Invalid values silently ignored.
+    const ALLOWED_FILTERS = ["prospect", "active"] as const
+    const filterParam = req.nextUrl.searchParams.get("filter")
+    const activeFilter = (filterParam && (ALLOWED_FILTERS as readonly string[]).includes(filterParam))
+      ? filterParam
+      : null
+
+    let filteredCards = clientCards
+    if (activeFilter === "prospect") {
+      filteredCards = clientCards.filter((c) => c.lifecycle_status === "Prospect")
+    } else if (activeFilter === "active") {
+      filteredCards = clientCards.filter((c) => c.lifecycle_status === "Active")
+    }
+
     // Strip internals (_user_id, _appIds) before response.
-    const cleanClients = clientCards.map(({ _user_id, _appIds, ...rest }) => rest)
+    const cleanClients = filteredCards.map(({ _user_id, _appIds, ...rest }) => rest)
 
     const firstName = (coach.name || "").split(/\s+/)[0] || "Coach"
 
@@ -597,6 +622,11 @@ export async function GET(req: NextRequest) {
         totalOffers,
         avgInterviewRate,
       },
+      // Echo back the filter that was actually applied (after allowlist
+      // validation). null when no filter was requested OR when the
+      // requested value was invalid. Lets the UI decide whether to render
+      // a chip without re-implementing the allowlist.
+      appliedFilter: activeFilter,
       clients: cleanClients,
       requiresAction,
     })
