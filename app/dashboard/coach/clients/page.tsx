@@ -11,6 +11,7 @@ import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, type LifecycleStatus } from "../LifecycleStatusPill"
 import { BackToDashboard } from "../BackToDashboard"
+import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
 
 // Phase 2 Item 12 (revised): only lifecycle-status filters route here.
 // Application-count filters go to /dashboard/coach/applications-recent
@@ -191,13 +192,21 @@ export default function MyClientsFullPage() {
             {sorted.map((c) => {
               const updates = c.updates_since_visit
               return (
-                <div key={c.client_profile_id} style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "12px 14px",
-                  background: "rgba(255,255,255,0.025)",
-                  border: `1px solid ${T.BORDER_SOFT}`,
-                  borderRadius: 10,
-                }}>
+                <div
+                  key={c.client_profile_id}
+                  onClick={() => router.push(`/dashboard/coach/clients/${c.client_profile_id}`)}
+                  onMouseEnter={onCoachRowEnter}
+                  onMouseLeave={(e) => onCoachRowLeave(e)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    padding: "12px 14px",
+                    background: COACH_ROW_DEFAULT_BG,
+                    border: `1px solid ${T.BORDER_SOFT}`,
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    transition: COACH_ROW_TRANSITION,
+                  }}
+                >
                   <Avatar name={c.name} email={c.email} />
                   <div style={{ minWidth: 0, flex: "1 1 180px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -238,7 +247,7 @@ export default function MyClientsFullPage() {
                     )}
                   </div>
                   <button
-                    onClick={() => router.push(`/dashboard/coach/clients/${c.client_profile_id}`)}
+                    onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/coach/clients/${c.client_profile_id}`) }}
                     style={{
                       ...btnSecondary,
                       fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,

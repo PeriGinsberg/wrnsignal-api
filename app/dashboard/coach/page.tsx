@@ -26,6 +26,7 @@ import {
 } from "../../../lib/dashboard-theme"
 import { CrossClientActionItemsList } from "./_action-items/CrossClientActionItemsList"
 import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
+import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -417,13 +418,16 @@ function ActionRow({ item, onClick }: { item: ActionItem; onClick: () => void })
   return (
     <div
       onClick={onClick}
+      onMouseEnter={onCoachRowEnter}
+      onMouseLeave={(e) => onCoachRowLeave(e)}
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "12px 14px",
-        background: "rgba(255,255,255,0.025)",
+        background: COACH_ROW_DEFAULT_BG,
         border: `1px solid ${T.BORDER_SOFT}`,
         borderRadius: 10,
         cursor: "pointer",
+        transition: COACH_ROW_TRANSITION,
       }}
     >
       <span style={{
@@ -509,13 +513,20 @@ function ClientRow({
 }) {
   const updates = client.updates_since_visit
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 14,
-      padding: "12px 14px",
-      background: "rgba(255,255,255,0.025)",
-      border: `1px solid ${T.BORDER_SOFT}`,
-      borderRadius: 10,
-    }}>
+    <div
+      onClick={onOpen}
+      onMouseEnter={onCoachRowEnter}
+      onMouseLeave={(e) => onCoachRowLeave(e)}
+      style={{
+        display: "flex", alignItems: "center", gap: 14,
+        padding: "12px 14px",
+        background: COACH_ROW_DEFAULT_BG,
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 10,
+        cursor: "pointer",
+        transition: COACH_ROW_TRANSITION,
+      }}
+    >
       <Avatar name={client.name} email={client.email} />
 
       <div style={{ minWidth: 0, flex: "1 1 180px" }}>
@@ -549,7 +560,7 @@ function ClientRow({
       </div>
 
       <button
-        onClick={onOpen}
+        onClick={(e) => { e.stopPropagation(); onOpen() }}
         style={{
           ...btnSecondary,
           fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,

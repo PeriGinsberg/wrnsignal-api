@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { T } from "../../../../lib/dashboard-theme"
+import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
 
 export type Priority = "urgent" | "this_week" | "when_ready"
 
@@ -186,24 +187,18 @@ export function CrossClientActionItemsList({
               <div
                 key={item.note_id}
                 onClick={() => router.push(`/dashboard/coach/clients/${item.client_id}`)}
+                onMouseEnter={onCoachRowEnter}
+                onMouseLeave={(e) => onCoachRowLeave(e)}
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
                   gap: 12,
                   padding: "10px 12px",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.025)",
+                  background: COACH_ROW_DEFAULT_BG,
                   border: `1px solid ${T.BORDER_SOFT}`,
                   cursor: "pointer",
-                  transition: "border-color 0.12s, background 0.12s",
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget.style as any).borderColor = "rgba(254,176,106,0.28)"
-                  ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.04)"
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget.style as any).borderColor = T.BORDER_SOFT
-                  ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.025)"
+                  transition: COACH_ROW_TRANSITION,
                 }}
               >
                 <input

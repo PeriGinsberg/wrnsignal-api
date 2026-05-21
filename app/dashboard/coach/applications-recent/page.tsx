@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { BackToDashboard } from "../BackToDashboard"
+import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
 
 type StatusFilter = "all" | "interviewing" | "offer"
 const STATUS_LABELS: Record<StatusFilter, string> = {
@@ -209,15 +210,18 @@ export default function ApplicationsRecentPage() {
                 <div
                   key={row.application_id}
                   onClick={() => router.push(href)}
+                  onMouseEnter={onCoachRowEnter}
+                  onMouseLeave={(e) => onCoachRowLeave(e)}
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1.4fr 1.6fr 1.2fr 0.9fr 0.7fr",
                     gap: 12,
                     padding: "12px 14px",
-                    background: "rgba(255,255,255,0.025)",
+                    background: COACH_ROW_DEFAULT_BG,
                     border: `1px solid ${T.BORDER_SOFT}`,
                     borderRadius: 10,
                     cursor: "pointer",
+                    transition: COACH_ROW_TRANSITION,
                     alignItems: "center",
                   }}
                 >
