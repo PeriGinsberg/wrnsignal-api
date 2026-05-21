@@ -1039,3 +1039,53 @@ Tracked for v0.2 design: requires backend changes to /decide (accept
 revisions on already-decided items, handle state transitions) and
 resumeComposer (handle items toggling accept/decline state cleanly), plus
 frontend changes to enable navigation to decided items and render revise UI.
+
+### 2026-05-21 — copy-prod-clients-to-dev refactored for multi-target (--target=erin|peri)
+
+`scripts/seed-erin-coaches-center/copy-prod-clients-to-dev.ts` and
+`verify-copy.ts` refactored to accept `--target=<erin|peri>` and
+`--clients=<comma-uuids>` flags. Goal: enable parallel coach test
+setups on dev (Erin's existing 5 clients stay untouched; Peri's
+testing now has its own 3-client roster).
+
+**Schema check (no migration needed):**
+
+Probed `dev.client_profiles.copied_from_prod_id` for a UNIQUE
+constraint via test-insert. The probe insert with a duplicate
+copied_from_prod_id value succeeded (caught only by an unrelated FK
+on user_id), confirming UNIQUE is ABSENT. Multi-target seeding works
+without any ALTER TABLE. Foundation Risk 6 (dev migration tracker
+drift) remains — but no migration was needed today.
+
+**Idempotency change:**
+
+v1 keyed on `copied_from_prod_id` alone (one dev row per prod UUID).
+v2 keys on `email` (one dev row per target+prod UUID pair). Same
+prod UUID can now be copied to both `erin+catherine@...` and
+`peri+catherine@...` without colliding. Email-collision-with-
+different-source still errors loudly (manual intervention path).
+
+**Peri seed executed:**
+
+- Coach: `peri+devcoach1@workforcereadynow.com` → resolved id
+  `cadc73c9-84f2-4406-914b-000ef5cc9c09`
+- Clients: 3 prod UUIDs — Catherine Lees (3a2ef935-...), Josh
+  Rosenblatt (2a9373f4-...), Lily Stein (37564ec9-...)
+- Created: 3 auth users, 3 client_profiles, 4 client_personas, 3
+  candidate_targeting, 30 signal_applications, 15 jobfit_runs, 26
+  status_history rows, 3 coach_clients links
+- 0 errors, 0 skipped
+- verify-copy.ts --target=peri all 4 queries passed
+
+Existing Erin roster (`erin+catherine@`, `erin+josh@`, `erin+lily@`,
+`erin+ryan@`, `erin+zoe@`) untouched and verified intact in Q1's
+broader scan.
+
+Note observed during Q1: Peri's coach profile id was already linked
+to 5 of Erin's `erin+` clients before this run (pre-existing cross-
+linking, not introduced today). Not a refactor concern; surfaced
+for awareness.
+
+**Transcripts:**
+- `scripts/seed-erin-coaches-center/results/copy-peri-dryrun-2026-05-21T13-53-01-960Z.txt`
+- `scripts/seed-erin-coaches-center/results/copy-peri-confirm-2026-05-21T13-59-05-349Z.txt`
