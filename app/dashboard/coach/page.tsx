@@ -638,7 +638,6 @@ export default function CoachHomePage() {
     const totalApps = cs.reduce((s, c) => s + c.stats.applications, 0)
     const totalIntvw = cs.reduce((s, c) => s + c.stats.interviewing, 0)
     const totalOffers = cs.reduce((s, c) => s + c.stats.offers, 0)
-    const totalPending = cs.reduce((s, c) => s + c.stats.pending_recs, 0)
     // Avg interview rate: mean across clients that have any "applied" denominator
     // (interview_rate is 0 for clients with no submitted apps; including them
     // would drag the average down meaninglessly). Only average over clients
@@ -655,9 +654,9 @@ export default function CoachHomePage() {
       { label: "Total applications", value: totalApps },
       { label: "Interviewing",       value: totalIntvw, color: T.WRN_BLUE },
       { label: "Offers in flight",   value: totalOffers, color: T.SUCCESS },
-      // Row 2
+      // Row 2 — Phase 2 Item 14 will rebuild the metric set; intentional gap
+      // here as one tile (Pending recs) was removed pending that redesign.
       { label: "Avg interview rate", value: `${avgRate}%` },
-      { label: "Pending recs",       value: totalPending, color: T.WRN_ORANGE },
       { label: "Active prospects",   value: "—", subtitle: "Coming soon", muted: true },
       { label: "Clients per phase",  value: "—", subtitle: "Methodology not yet configured", muted: true },
     ]
