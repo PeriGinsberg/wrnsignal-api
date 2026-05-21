@@ -6,10 +6,19 @@
 // the existing per-client stats including offers/rejected. No new API.
 
 import { useEffect, useMemo, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, type LifecycleStatus } from "../LifecycleStatusPill"
+
+// Phase 2 Item 12: filter values that drive a narrowed roster view.
+// Must stay in sync with the allowlist in app/api/coach/home/route.ts.
+const FILTER_LABELS: Record<string, string> = {
+  prospect: "Active Prospects",
+  active: "Active Clients",
+  "has-recent-applications": "With recent applications",
+  interviewing: "Interviewing",
+}
 
 type CoachClient = {
   id: string
@@ -89,22 +98,35 @@ function MiniCell({ label, value, color }: { label: string; value: string | numb
 
 export default function MyClientsFullPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const filterParam = searchParams.get("filter")
+  // Drop the param entirely if it's not in the allowlist — server ignores
+  // unknown filters too, this keeps the chip-render side in sync.
+  const filter = filterParam && FILTER_LABELS[filterParam] ? filterParam : null
+
   const [clients, setClients] = useState<CoachClient[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
-    const res = await authFetch("/api/coach/home")
+    const url = filter
+      ? `/api/coach/home?filter=${encodeURIComponent(filter)}`
+      : "/api/coach/home"
+    const res = await authFetch(url)
     if (res.status === 403) { setForbidden(true); setLoading(false); return }
     if (res.ok) {
       const j = await res.json()
       setClients(j.clients || [])
     }
     setLoading(false)
-  }, [])
+  }, [filter])
 
   useEffect(() => { load() }, [load])
+
+  function clearFilter() {
+    router.push("/dashboard/coach/clients")
+  }
 
   // Same default sort as the Dashboard summary
   const sorted = useMemo(() => {
@@ -137,12 +159,32 @@ export default function MyClientsFullPage() {
         <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8 }}>
           Full client list. Click Open → to drill into a client&apos;s tracker, profile, and personas.
         </p>
+        {filter && (
+          <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
+            color: "#FEB06A", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
+          }}>
+            <span>Filtered: {FILTER_LABELS[filter]}</span>
+            <button
+              onClick={clearFilter}
+              aria-label="Clear filter"
+              title="Clear filter"
+              style={{
+                background: "none", border: "none", color: "#FEB06A",
+                fontSize: 14, fontWeight: 900, cursor: "pointer",
+                padding: 0, lineHeight: 1, fontFamily: "inherit",
+              }}
+            >×</button>
+          </div>
+        )}
       </div>
 
       <div style={{ ...card, padding: 20 }}>
         {sorted.length === 0 ? (
           <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-            No clients yet. Use Create or Invite from the Dashboard to add one.
+            {filter
+              ? `No clients match the "${FILTER_LABELS[filter]}" filter. Clear the filter to see your full roster.`
+              : "No clients yet. Use Create or Invite from the Dashboard to add one."}
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

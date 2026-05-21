@@ -581,8 +581,63 @@ export async function GET(req: NextRequest) {
         ? Math.round((totalInterviewing / totalApplications) * 100)
         : null
 
+    // ── 6. Optional client-list filter (Phase 2 Item 12) ────────────
+    //
+    // The coach can drill into a tile by clicking it on the Coach Home
+    // page; the resulting My Clients view is filtered down to the subset
+    // that matched the tile. Metrics stay unfiltered (totals) — only
+    // the `clients` array shrinks.
+    //
+    //   prospect                 lifecycle_status = 'Prospect'
+    //   active                   lifecycle_status = 'Active'
+    //   has-recent-applications  A+I scope, ≥1 app in 30d (by created_at)
+    //   interviewing             A+I scope, ≥1 app transitioned to
+    //                            'interviewing' in 30d (same status-history
+    //                            preference + created_at fallback as the
+    //                            totals query above)
+    //
+    // Invalid filter values are silently ignored (unfiltered result).
+    const ALLOWED_FILTERS = ["prospect", "active", "has-recent-applications", "interviewing"] as const
+    const filterParam = req.nextUrl.searchParams.get("filter")
+    const activeFilter = (filterParam && (ALLOWED_FILTERS as readonly string[]).includes(filterParam))
+      ? filterParam
+      : null
+
+    let filteredCards = clientCards
+    if (activeFilter) {
+      // Lookups for the app-driven filters. appsByScope.ai already has
+      // {id, application_status, created_at} for every app in A+I scope.
+      const appsAiById = new Map(appsByScope.ai.map((a) => [a.id, a]))
+      filteredCards = clientCards.filter((c) => {
+        const ls = c.lifecycle_status
+        if (activeFilter === "prospect") return ls === "Prospect"
+        if (activeFilter === "active") return ls === "Active"
+        if (activeFilter === "has-recent-applications") {
+          if (ls !== "Active" && ls !== "Inactive") return false
+          return c._appIds.some((appId: string) => {
+            const a = appsAiById.get(appId)
+            return !!a && a.created_at >= since30dIso
+          })
+        }
+        if (activeFilter === "interviewing") {
+          if (ls !== "Active" && ls !== "Inactive") return false
+          return c._appIds.some((appId: string) => {
+            if (aiInterviewing.has(appId)) return true
+            const a = appsAiById.get(appId)
+            if (!a) return false
+            return (
+              !aiAnyHistory.has(appId) &&
+              a.application_status === "interviewing" &&
+              a.created_at >= since30dIso
+            )
+          })
+        }
+        return false
+      })
+    }
+
     // Strip internals (_user_id, _appIds) before response.
-    const cleanClients = clientCards.map(({ _user_id, _appIds, ...rest }) => rest)
+    const cleanClients = filteredCards.map(({ _user_id, _appIds, ...rest }) => rest)
 
     const firstName = (coach.name || "").split(/\s+/)[0] || "Coach"
 
@@ -597,6 +652,11 @@ export async function GET(req: NextRequest) {
         totalOffers,
         avgInterviewRate,
       },
+      // Echo back the filter that was actually applied (after allowlist
+      // validation). null when no filter was requested OR when the
+      // requested value was invalid. Lets the UI decide whether to render
+      // a chip without re-implementing the allowlist.
+      appliedFilter: activeFilter,
       clients: cleanClients,
       requiresAction,
     })

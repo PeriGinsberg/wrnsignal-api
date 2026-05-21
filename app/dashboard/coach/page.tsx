@@ -309,17 +309,30 @@ type Tile = {
   color?: string
   subtitle?: string
   muted?: boolean
+  // Phase 2 Item 12: clickable tiles drive filtered My Clients view.
+  // When `href` is set, the tile becomes a button that navigates there.
+  // Tiles without href stay static (Total Offers, Avg Interview Rate).
+  href?: string
 }
 
 function MetricTile({ tile }: { tile: Tile }) {
-  return (
-    <div style={{
-      background: T.CARD,
-      border: `1px solid ${T.BORDER_SOFT}`,
-      borderRadius: 12,
-      padding: "14px 16px",
-      opacity: tile.muted ? 0.55 : 1,
-    }}>
+  const router = useRouter()
+  const [hovered, setHovered] = useState(false)
+  const clickable = !!tile.href
+  const baseStyle: React.CSSProperties = {
+    background: clickable && hovered ? "rgba(254,176,106,0.06)" : T.CARD,
+    border: `1px solid ${clickable && hovered ? "rgba(254,176,106,0.35)" : T.BORDER_SOFT}`,
+    borderRadius: 12,
+    padding: "14px 16px",
+    opacity: tile.muted ? 0.55 : 1,
+    cursor: clickable ? "pointer" : "default",
+    transition: "background 0.12s, border-color 0.12s",
+    textAlign: "left" as const,
+    fontFamily: "inherit",
+    width: "100%",
+  }
+  const body = (
+    <>
       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.MUTED }}>
         {tile.label}
       </div>
@@ -334,7 +347,21 @@ function MetricTile({ tile }: { tile: Tile }) {
           {tile.subtitle}
         </div>
       )}
-    </div>
+    </>
+  )
+  if (!clickable) {
+    return <div style={baseStyle}>{body}</div>
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => router.push(tile.href!)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={baseStyle}
+    >
+      {body}
+    </button>
   )
 }
 
@@ -647,20 +674,26 @@ export default function CoachHomePage() {
     setInviting(false)
   }
 
-  // Phase 2 Item 14 — 6-tile metric set. All values come straight from
-  // the API's `metrics` object (server-side aggregated). Grid is 3 × 2.
+  // Phase 2 Item 14 — 6-tile metric set. Grid is 3 × 2.
   //   Row 1: Active Prospects | Active Clients     | Total Applications
   //   Row 2: Total Interviewing | Total Offers     | Avg Interview Rate
-  // Clicks are added in Phase 2 Item 12 (commit 2.2); static here.
+  // Phase 2 Item 12 — four tiles are clickable, each drives a filtered
+  // My Clients view. Total Offers is non-clickable in this commit (its
+  // click target — a cross-client offers list — is Commit 2.3 / Item 13).
+  // Avg Interview Rate is never clickable per locked spec.
   const tiles: Tile[] = useMemo(() => {
     if (!data) return []
     const m = data.metrics
     return [
-      { label: "Active prospects",    value: m.activeProspects, color: "#F4A261" },
-      { label: "Active clients",      value: m.activeClients,   color: "#2CA58D" },
-      { label: "Total applications",  value: m.totalApplications, subtitle: "Past 30 days" },
-      { label: "Total interviewing",  value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: "Past 30 days" },
-      { label: "Total offers",        value: m.totalOffers, color: T.SUCCESS, subtitle: "Past 30 days" },
+      { label: "Active prospects", value: m.activeProspects, color: "#F4A261",
+        href: "/dashboard/coach/clients?filter=prospect" },
+      { label: "Active clients", value: m.activeClients, color: "#2CA58D",
+        href: "/dashboard/coach/clients?filter=active" },
+      { label: "Total applications", value: m.totalApplications, subtitle: "Past 30 days",
+        href: "/dashboard/coach/clients?filter=has-recent-applications" },
+      { label: "Total interviewing", value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: "Past 30 days",
+        href: "/dashboard/coach/clients?filter=interviewing" },
+      { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: "Past 30 days" },
       {
         label: "Avg interview rate",
         value: m.avgInterviewRate === null ? "—" : `${m.avgInterviewRate}%`,
