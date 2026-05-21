@@ -23,6 +23,13 @@ const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
   Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
 }
 
+const ANNOTATION_PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
+  urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
+  important: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
+  info: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+  positive: { bg: "rgba(74,222,128,0.15)", color: "#4ade80" },
+}
+
 const INTERVIEW_GRADIENT: Record<string, string> = {
   scheduled: "linear-gradient(90deg,#a78bfa,#51ADE5)",
   awaiting_feedback: "linear-gradient(90deg,#FEB06A,#f97316)",
@@ -164,6 +171,17 @@ function formatDate(d: string | null) {
   try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return d }
 }
 
+function formatRelativeDate(d: string | null): string {
+  if (!d) return ""
+  const t = new Date(d).getTime()
+  if (Number.isNaN(t)) return ""
+  const diffDays = Math.floor((Date.now() - t) / 86400000)
+  if (diffDays <= 0) return "today"
+  if (diffDays === 1) return "yesterday"
+  if (diffDays < 7) return `${diffDays} days ago`
+  return formatDate(d)
+}
+
 function scoreColor(score: number | null): string {
   if (score === null) return T.DIM
   if (score >= 75) return "#4ade80"
@@ -197,6 +215,7 @@ export default function TrackerPage() {
   const [coachRecMap, setCoachRecMap] = useState<Record<string, any>>({})
   const [coachRecsRaw, setCoachRecsRaw] = useState<any[]>([])
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({})
+  const [expandedAnnotations, setExpandedAnnotations] = useState<Record<string, boolean>>({})
 
   // Add job form
   const [newJob, setNewJob] = useState({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "", persona_id: "" })
@@ -704,6 +723,26 @@ export default function TrackerPage() {
                             ⚡ From {coachRec.coach_name || "Coach"}
                           </span>
                         )}
+                        {/* Coach annotations badge (from /api/applications enrichment).
+                            Toggle expanded panel below the row; stop click from
+                            triggering the row's expand/collapse handler. */}
+                        {Array.isArray(a.coach_annotations) && a.coach_annotations.length > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedAnnotations((prev) => ({ ...prev, [a.id]: !prev[a.id] }))
+                            }}
+                            style={{
+                              display: "inline-block", marginTop: 4, marginLeft: coachRec ? 6 : 0,
+                              background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
+                              color: "#FEB06A", fontSize: 11, fontWeight: 900, borderRadius: 4,
+                              padding: "2px 8px", whiteSpace: "nowrap", cursor: "pointer",
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            📝 {a.coach_annotations.length} note{a.coach_annotations.length === 1 ? "" : "s"} {expandedAnnotations[a.id] ? "▴" : "▾"}
+                          </button>
+                        )}
                       </div>
                       <span style={{ fontSize: 11, color: a.persona_name ? T.WRN_ORANGE : T.DIM }}>{a.persona_name || "—"}</span>
                       <span style={{ fontSize: 12, color: T.MUTED }}>{a.location || "—"}</span>
@@ -767,6 +806,35 @@ export default function TrackerPage() {
                             </div>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* Coach annotations panel (collapsible).
+                        Shows notes from coach_annotations table, filtered server-side
+                        to visible_to_client=true and target_type='application' in
+                        app/api/applications/route.ts GET. */}
+                    {expandedAnnotations[a.id] && Array.isArray(a.coach_annotations) && a.coach_annotations.length > 0 && (
+                      <div style={{ padding: "10px 18px 14px", borderBottom: `1px solid rgba(255,255,255,0.06)`, background: "rgba(254,176,106,0.03)" }}>
+                        <div style={{ ...eyebrow, color: "#FEB06A", marginBottom: 8 }}>FROM YOUR COACH</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {a.coach_annotations.map((ann: any) => {
+                            const ps = ANNOTATION_PRIORITY_STYLE[ann.priority] || ANNOTATION_PRIORITY_STYLE.info
+                            return (
+                              <div key={ann.id} style={{
+                                borderLeft: `2px solid ${ps.color}`, background: "rgba(255,255,255,0.03)",
+                                borderRadius: "0 6px 6px 0", padding: "8px 12px",
+                              }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                                  <Pill text={ann.priority || "info"} style={ps} />
+                                  <span style={{ fontSize: 11, color: T.DIM }}>{formatRelativeDate(ann.created_at)}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", lineHeight: "18px", whiteSpace: "pre-wrap" }}>
+                                  {ann.note}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
                     )}
 

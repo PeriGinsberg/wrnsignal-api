@@ -85,12 +85,41 @@ export async function GET(req: NextRequest) {
 
     if (error) throw new Error(`Applications lookup failed: ${error.message}`)
 
+    // Enrich each application with the coach annotations the client is
+    // allowed to see. Service-role bypasses RLS, so the route MUST
+    // explicitly filter on client_profile_id + visible_to_client=true
+    // (mirrors RLS policy "coach_annotation_access" in
+    // supabase/migrations/20260413_coach_client_system.sql:140-155).
+    // Matches the shape the tracker route's read uses for the coach
+    // view: target_type="application" + target_id IN (appIds).
+    const appIds = (data || []).map((app: any) => app.id as string)
+    const annotationsByApp: Record<string, Array<Record<string, unknown>>> = {}
+    if (appIds.length > 0) {
+      const { data: annotations, error: annErr } = await supabase
+        .from("coach_annotations")
+        .select("id, target_id, note, priority, created_at")
+        .in("target_id", appIds)
+        .eq("target_type", "application")
+        .eq("client_profile_id", profileId)
+        .eq("visible_to_client", true)
+        .order("created_at", { ascending: false })
+      if (annErr) {
+        throw new Error(`Annotations lookup failed: ${annErr.message}`)
+      }
+      for (const ann of annotations || []) {
+        const tid = ann.target_id as string
+        if (!annotationsByApp[tid]) annotationsByApp[tid] = []
+        annotationsByApp[tid].push(ann as Record<string, unknown>)
+      }
+    }
+
     const apps = (data || []).map((app: any) => ({
       ...app,
       interview_count: Array.isArray(app.signal_interviews) ? app.signal_interviews.length : 0,
       persona_name: app.client_personas?.name || null,
       signal_interviews: undefined,
       client_personas: undefined,
+      coach_annotations: annotationsByApp[app.id] || [],
     }))
 
     return withCorsJson(req, { ok: true, applications: apps })
