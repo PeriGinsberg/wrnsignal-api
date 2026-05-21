@@ -120,14 +120,25 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "Application not found or does not belong to this client" }, 404)
     }
 
+    // Insert shape matches the columns declared in
+    // supabase/migrations/20260413_coach_client_system.sql:114-136
+    // and the read filter at app/api/coach/clients/[clientId]/tracker/
+    // route.ts:117-124 (target_type = "application" AND target_id IN
+    // (...) AND coach_profile_id = ...). Prior version wrote to
+    // application_id + annotation_type, which DO NOT EXIST on the
+    // table — every save silently 500'd. See
+    // docs/coach-note-save-bug-investigation-2026-05-19.md for the
+    // full diagnostic trace.
     const { data: annotation, error: annErr } = await supabase
       .from("coach_annotations")
       .insert({
         coach_profile_id: profileId,
         client_profile_id: clientProfileId,
-        application_id: applicationId,
+        target_type: "application",
+        target_id: applicationId,
         note,
-        annotation_type: body.annotation_type || "general",
+        priority: body.priority || "info",
+        visible_to_client: body.visible_to_client !== false,
       })
       .select("*")
       .single()
