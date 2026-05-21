@@ -413,7 +413,7 @@ export default function CoachClientPage() {
     try {
       const res = await authFetch(`/api/coach/clients/${clientId}`, { method: "DELETE" })
       if (res.ok) {
-        router.push("/dashboard/coach")
+        router.push("/dashboard/coach/clients")
       } else {
         const j = await res.json().catch(() => ({}))
         alert(j?.error || "Failed to remove client.")
@@ -433,7 +433,7 @@ export default function CoachClientPage() {
       {/* Back link sits above the persistent header strip so it doesn't
           eat one of the four action button slots in the strip. */}
       <a
-        href="/dashboard/coach"
+        href="/dashboard/coach/clients"
         style={{
           fontSize: 12,
           fontWeight: 900,
