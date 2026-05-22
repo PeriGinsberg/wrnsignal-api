@@ -18,6 +18,8 @@ import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
 import { AddNotePanel } from "./AddNotePanel"
 import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
 import type { LifecycleStatus } from "../../LifecycleStatusPill"
+import { ApplicationStatusEditPill } from "./ApplicationStatusEditPill"
+import type { ApplicationStatus } from "../../../../_lib/applicationStatuses"
 import { DashboardView } from "./dashboard/DashboardView"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
@@ -776,12 +778,25 @@ export default function CoachClientPage() {
                       >
                         <span style={{ fontSize: 14, fontWeight: 950, color: T.TEXT }}>{app.company_name}</span>
                         <span style={{ fontSize: 13, color: T.MUTED }}>— {app.job_title}</span>
-                        <span style={{
-                          fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 999,
-                          background: "rgba(255,255,255,0.06)", color: T.MUTED,
-                        }}>
-                          {app.application_status}
-                        </span>
+                        <ApplicationStatusEditPill
+                          value={app.application_status}
+                          getToken={getToken}
+                          clientProfileId={clientId}
+                          applicationId={app.id}
+                          onChange={(next) => {
+                            // Optimistic local update — the row's status pill
+                            // reflects the new value immediately; reload is on
+                            // the next data fetch. signal_applications_status_history
+                            // write happens server-side and feeds R3/R4/R5
+                            // signals on Coach Home + Client Dashboard
+                            // (Phase 3.0 heuristic engine).
+                            setClientApps((prev) =>
+                              prev.map((a) =>
+                                a.id === app.id ? { ...a, application_status: next as ApplicationStatus } : a,
+                              ),
+                            )
+                          }}
+                        />
                         {app.signal_decision && (
                           <Badge text={app.signal_decision} style={DECISION_STYLE[app.signal_decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
                         )}

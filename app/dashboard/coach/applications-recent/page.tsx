@@ -20,6 +20,7 @@ import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { BackToDashboard } from "../BackToDashboard"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
+import { APP_STATUS_STYLE } from "../../../_lib/applicationStatuses"
 
 type StatusFilter = "all" | "interviewing" | "offer"
 const STATUS_LABELS: Record<StatusFilter, string> = {
@@ -53,16 +54,8 @@ const LIFECYCLE_STYLE: Record<string, { bg: string; color: string }> = {
   Archived: { bg: "#333333", color: "#FFFFFF" },
 }
 
-// Mirrors the tracker page application_status pill styling.
-const APP_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  saved: { bg: "rgba(255,255,255,0.07)", color: "#51ADE5" },
-  applied: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  interviewing: { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
-  offer: { bg: "rgba(74,222,128,0.15)", color: "#4ade80" },
-  rejected: { bg: "rgba(248,113,113,0.10)", color: "#f87171" },
-  withdrawn: { bg: "rgba(255,255,255,0.05)", color: "#94a3b8" },
-  coach_recommended: { bg: "rgba(0,245,212,0.10)", color: "#00F5D4" },
-}
+// APP_STATUS_STYLE is imported above — single source of truth shared
+// with the tracker page + the coach status edit pill.
 
 function relativeDate(iso: string): string {
   const t = new Date(iso).getTime()

@@ -4,17 +4,12 @@ import { useEffect, useState, useCallback } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, card, eyebrow, headline, input, textarea, btnPrimary, btnSecondary, label } from "../../../lib/dashboard-theme"
 import { FRAMER_URL } from "../../../lib/urls"
+import { APP_STATUSES, APP_STATUS_STYLE as STATUS_STYLE } from "../../_lib/applicationStatuses"
 
 // ── Status + Decision color maps ────────────────────────────
-
-const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  saved: { bg: "rgba(255,255,255,0.07)", color: "#51ADE5" },
-  applied: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  interviewing: { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
-  offer: { bg: "rgba(74,222,128,0.15)", color: "#4ade80" },
-  rejected: { bg: "rgba(248,113,113,0.10)", color: "#f87171" },
-  withdrawn: { bg: "rgba(255,255,255,0.05)", color: "#94a3b8" },
-}
+// STATUS_STYLE is imported above as APP_STATUS_STYLE — single source of
+// truth shared with the coach Job Tracker status edit pill + the
+// applications-recent surface.
 
 const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
   "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
@@ -65,7 +60,8 @@ function formatInterviewStage(stage: string): string {
   return stage.replace(/_/g, " ")
 }
 const INTERVIEW_STATUSES = ["not_scheduled", "scheduled", "awaiting_feedback", "offer_extended", "rejected", "ghosted"]
-const APP_STATUSES = ["saved", "applied", "interviewing", "offer", "rejected", "withdrawn"]
+// APP_STATUSES is now imported from app/_lib/applicationStatuses.ts
+// (shared with the coach status edit + the coach status PATCH endpoint).
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -154,7 +150,7 @@ const selectStyle: React.CSSProperties = {
   colorScheme: "dark",
 }
 
-function SelectField({ value, options, onChange, style: s }: { value: string; options: (string | { value: string; label: string })[]; onChange: (v: string) => void; style?: React.CSSProperties }) {
+function SelectField({ value, options, onChange, style: s }: { value: string; options: readonly (string | { value: string; label: string })[]; onChange: (v: string) => void; style?: React.CSSProperties }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...selectStyle, ...s }}>
       {options.map((o) => {
