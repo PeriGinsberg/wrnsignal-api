@@ -22,6 +22,7 @@ import { ApplicationStatusEditPill } from "./ApplicationStatusEditPill"
 import type { ApplicationStatus } from "../../../../_lib/applicationStatuses"
 import { SavingSpinner } from "../../SavingSpinner"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
+import { LoadingShell } from "../../LoadingShell"
 import { DashboardView } from "./dashboard/DashboardView"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
@@ -188,8 +189,16 @@ export default function CoachClientPage() {
   const [needsAttentionRefreshKey, setNeedsAttentionRefreshKey] = useState(0)
   const [removingClient, setRemovingClient] = useState(false)
 
-  const loadAll = useCallback(async () => {
-    setLoading(true)
+  // silent: true skips the setLoading(true) flip so a post-save refetch
+  // doesn't unmount the page tree and flash the LoadingShell. Used by
+  // Send-to-Dashboard and the per-app annotate flow — both already
+  // have their own button-level saving state, so the brief stale
+  // window (a few hundred ms) is preferable to a full-page flash.
+  // Genuine initial-mount loads (useEffect → loadAll()) still flip
+  // setLoading and render LoadingShell.
+  const loadAll = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true
+    if (!silent) setLoading(true)
     try {
       const [trackerRes, profileRes] = await Promise.all([
         authFetch(`/api/coach/clients/${clientId}/tracker`),
@@ -198,7 +207,7 @@ export default function CoachClientPage() {
 
       if (!trackerRes.ok || !profileRes.ok) {
         setError("Failed to load client data")
-        setLoading(false)
+        if (!silent) setLoading(false)
         return
       }
 
@@ -223,7 +232,7 @@ export default function CoachClientPage() {
     } catch {
       setError("Failed to load client data")
     }
-    setLoading(false)
+    if (!silent) setLoading(false)
   }, [clientId])
 
   useEffect(() => { loadAll() }, [loadAll])
@@ -400,7 +409,7 @@ export default function CoachClientPage() {
       if (res.ok) {
         setSendSuccess(true)
         setRunSuccess(true)
-        await loadAll()
+        await loadAll({ silent: true })
         setTimeout(() => clearSourceForm(), 3000)
       } else {
         const j = await res.json()
@@ -448,7 +457,8 @@ export default function CoachClientPage() {
     }
   }
 
-  if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
+  if (loading) return <LoadingShell />
+
   if (error) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
 
   return (
@@ -934,7 +944,7 @@ export default function CoachClientPage() {
                                       if (res.ok) {
                                         setAnnotatingAppId(null)
                                         setAnnotationNote("")
-                                        await loadAll()
+                                        await loadAll({ silent: true })
                                       }
                                     } finally {
                                       setAnnotationSaving(false)

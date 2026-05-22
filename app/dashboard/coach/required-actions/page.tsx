@@ -19,6 +19,7 @@ import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { CrossClientActionItemsList } from "../_action-items/CrossClientActionItemsList"
 import { BackToDashboard } from "../BackToDashboard"
 import { DismissSignalButton, useDismissSignal } from "../DismissSignalButton"
+import { LoadingShell } from "../LoadingShell"
 
 type HeuristicItem = {
   id: string
@@ -100,7 +101,8 @@ export default function RequiredActionsPage() {
       setHeuristics((prev) => (prev ? [...prev, s] : [s])),
   })
 
-  if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
+  if (loading) return <LoadingShell />
+
 
   if (forbidden) {
     return (

@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { BackToDashboard } from "../BackToDashboard"
+import { LoadingShell } from "../LoadingShell"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
 import { APP_STATUS_STYLE } from "../../../_lib/applicationStatuses"
 
@@ -110,7 +111,7 @@ export default function ApplicationsRecentPage() {
   if (loading) return (
     <div>
       <BackToDashboard />
-      <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
+      <LoadingShell />
     </div>
   )
 

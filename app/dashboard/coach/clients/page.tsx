@@ -11,6 +11,7 @@ import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, type LifecycleStatus } from "../LifecycleStatusPill"
 import { BackToDashboard } from "../BackToDashboard"
+import { LoadingShell } from "../LoadingShell"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
 
 // Phase 2 Item 12 (revised): only lifecycle-status filters route here.
@@ -139,7 +140,8 @@ export default function MyClientsFullPage() {
     })
   }, [clients])
 
-  if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
+  if (loading) return <LoadingShell />
+
 
   if (forbidden) {
     return (

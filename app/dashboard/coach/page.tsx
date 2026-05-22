@@ -30,6 +30,7 @@ import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
 import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
 import { SavingSpinner } from "./SavingSpinner"
+import { LoadingShell } from "./LoadingShell"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -797,7 +798,8 @@ export default function CoachHomePage() {
     ]
   }, [data])
 
-  if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
+  if (loading) return <LoadingShell />
+
 
   if (accessForbidden) {
     return (
