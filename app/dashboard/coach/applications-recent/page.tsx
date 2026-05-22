@@ -47,11 +47,12 @@ type Row = {
 }
 
 // Mirrors LifecycleStatusPill's palette (read-only here — clients aren't
-// editable from this surface, just labeled).
+// editable from this surface, just labeled). Inactive revised 6.4 from
+// #D1D5DB to #7DD3FC (icy blue) for better contrast on dark navy bg.
 const LIFECYCLE_STYLE: Record<string, { bg: string; color: string }> = {
   Prospect: { bg: "#F4A261", color: "#FFFFFF" },
   Active: { bg: "#2CA58D", color: "#FFFFFF" },
-  Inactive: { bg: "#D1D5DB", color: "#333333" },
+  Inactive: { bg: "#7DD3FC", color: "#333333" },
   Archived: { bg: "#333333", color: "#FFFFFF" },
 }
 

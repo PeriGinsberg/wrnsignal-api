@@ -30,18 +30,20 @@ export const LIFECYCLE_STATUS_VALUES: LifecycleStatus[] = [
   "Archived",
 ]
 
-// Brand palette per Phase 1 spec.
-//   Prospect — Orange #F4A261  (tension / early-stage)
-//   Active   — Teal   #2CA58D  (direction / positive engagement)
-//   Inactive — M.Gray #D1D5DB  (clarity / paused)        dark text
-//   Archived — D.Gray #333333  (clarity / closed)        white text
+// Brand palette per Phase 1 spec (Inactive revised 6.4 per Erin testing).
+//   Prospect — Orange   #F4A261  (tension / early-stage)
+//   Active   — Teal     #2CA58D  (direction / positive engagement)
+//   Inactive — Icy Blue #7DD3FC  (paused/dormant semantic, high contrast
+//                                 vs dark navy page bg — original M.Gray
+//                                 #D1D5DB read as low-contrast)  dark text
+//   Archived — D.Gray   #333333  (clarity / closed)               white text
 const PILL_STYLES: Record<
   LifecycleStatus,
   { bg: string; color: string }
 > = {
   Prospect: { bg: "#F4A261", color: "#FFFFFF" },
   Active: { bg: "#2CA58D", color: "#FFFFFF" },
-  Inactive: { bg: "#D1D5DB", color: "#333333" },
+  Inactive: { bg: "#7DD3FC", color: "#333333" },
   Archived: { bg: "#333333", color: "#FFFFFF" },
 }
 
