@@ -14,6 +14,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label } from "../../../../../lib/dashboard-theme"
+import { SavingSpinner } from "../../SavingSpinner"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -736,13 +737,15 @@ function PersonaCard(props: {
             <button
               onClick={props.onResumeSave}
               disabled={resumeSaving}
-              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: resumeSaving ? 0.5 : 1 }}
+              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: resumeSaving ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
             >
+              {resumeSaving && <SavingSpinner />}
               {resumeSaving ? "Saving…" : "Save Resume"}
             </button>
             <button
               onClick={props.onResumeCancel}
-              style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px" }}
+              disabled={resumeSaving}
+              style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", opacity: resumeSaving ? 0.5 : 1 }}
             >
               Cancel
             </button>

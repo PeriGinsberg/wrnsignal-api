@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
+import { SavingSpinner } from "./SavingSpinner"
 
 /* ── Colors ──────────────────────────────────────────────────── */
 const PLUM = "#3D1A4A"
@@ -203,7 +204,20 @@ export default function CreateClientModal({
         </div>
 
         {/* ── Body ── */}
-        <div style={{ padding: "28px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Phase 4.1.5: dim during submit so the multi-section form
+            reads as non-interactive. Cancel + Submit buttons stay at
+            full visibility in the footer below. */}
+        <div
+          style={{
+            padding: "28px 32px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+            opacity: submitting ? 0.5 : 1,
+            pointerEvents: submitting ? "none" : "auto",
+            transition: "opacity 120ms ease",
+          }}
+        >
 
           {/* Section 1: Client Info */}
           <div>
@@ -399,9 +413,12 @@ export default function CreateClientModal({
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button
               onClick={handleClose}
+              disabled={submitting}
               style={{
                 fontSize: 13, color: MUTED,
-                background: "none", border: "none", cursor: "pointer",
+                background: "none", border: "none",
+                cursor: submitting ? "default" : "pointer",
+                opacity: submitting ? 0.5 : 1,
                 fontFamily: "inherit",
               }}
             >
@@ -416,8 +433,10 @@ export default function CreateClientModal({
                 border: "none", cursor: submitting || result ? "default" : "pointer",
                 opacity: submitting || result ? 0.6 : 1,
                 fontFamily: "inherit",
+                display: "inline-flex", alignItems: "center", gap: 8,
               }}
             >
+              {submitting && <SavingSpinner />}
               {submitting ? "Creating account..." : "Create Account & Send Invite \u2192"}
             </button>
           </div>

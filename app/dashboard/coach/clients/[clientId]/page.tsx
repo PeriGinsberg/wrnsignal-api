@@ -20,6 +20,7 @@ import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
 import type { LifecycleStatus } from "../../LifecycleStatusPill"
 import { ApplicationStatusEditPill } from "./ApplicationStatusEditPill"
 import type { ApplicationStatus } from "../../../../_lib/applicationStatuses"
+import { SavingSpinner } from "../../SavingSpinner"
 import { DashboardView } from "./dashboard/DashboardView"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
@@ -652,11 +653,18 @@ export default function CoachClientPage() {
                                 } catch {}
                                 setSavingRec(false)
                               }}
-                              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: savingRec ? 0.5 : 1 }}
+                              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: savingRec ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                             >
+                              {savingRec && <SavingSpinner />}
                               {savingRec ? "Saving..." : "Save Changes"}
                             </button>
-                            <button onClick={() => setEditingRecId(null)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px" }}>Cancel</button>
+                            <button
+                              onClick={() => setEditingRecId(null)}
+                              disabled={savingRec}
+                              style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", opacity: savingRec ? 0.5 : 1 }}
+                            >
+                              Cancel
+                            </button>
                           </div>
                         </div>
                       ) : (
@@ -852,6 +860,19 @@ export default function CoachClientPage() {
                             </button>
                           ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+                              {/* Form-fields wrapper: dim during save (Phase 4.1.5). Sibling
+                                  of the button row below so the buttons stay full-visibility
+                                  with their own disabled/spinner state. */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 10,
+                                  opacity: annotationSaving ? 0.5 : 1,
+                                  pointerEvents: annotationSaving ? "none" : "auto",
+                                  transition: "opacity 120ms ease",
+                                }}
+                              >
                               <div>
                                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5, fontSize: 9 }}>PRIORITY</span>
                                 <div style={{ display: "flex", gap: 6 }}>
@@ -887,6 +908,7 @@ export default function CoachClientPage() {
                                 />
                                 Visible to client
                               </label>
+                              </div>
                               <div style={{ display: "flex", gap: 8 }}>
                                 <button
                                   onClick={async () => {
@@ -915,13 +937,15 @@ export default function CoachClientPage() {
                                     }
                                   }}
                                   disabled={annotationSaving || !annotationNote.trim()}
-                                  style={{ ...btnPrimary, fontSize: 11, padding: "6px 14px", background: "#FEB06A", color: "#04060F", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1 }}
+                                  style={{ ...btnPrimary, fontSize: 11, padding: "6px 14px", background: "#FEB06A", color: "#04060F", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                                 >
+                                  {annotationSaving && <SavingSpinner size={10} />}
                                   {annotationSaving ? "Saving..." : "Save Note"}
                                 </button>
                                 <button
                                   onClick={() => setAnnotatingAppId(null)}
-                                  style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px" }}
+                                  disabled={annotationSaving}
+                                  style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", opacity: annotationSaving ? 0.5 : 1 }}
                                 >
                                   Cancel
                                 </button>
@@ -1106,8 +1130,10 @@ export default function CoachClientPage() {
                 style={{
                   ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
                   width: "100%", opacity: running || !selectedPersona ? 0.5 : 1,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
+                {running && <SavingSpinner />}
                 {running ? "Running SIGNAL Analysis..." : "Run SIGNAL Analysis →"}
               </button>
             </div>
@@ -1396,8 +1422,10 @@ export default function CoachClientPage() {
                     style={{
                       ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
                       width: "100%", opacity: sending || annNote.trim().length < 20 ? 0.5 : 1,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                     }}
                   >
+                    {sending && <SavingSpinner />}
                     {sending ? "Sending..." : "Send to Dashboard ✓"}
                   </button>
                 </div>

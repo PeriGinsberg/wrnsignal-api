@@ -10,6 +10,7 @@ import {
   btnPrimary,
   btnSecondary,
 } from "../../../../../lib/dashboard-theme"
+import { SavingSpinner } from "../../SavingSpinner"
 
 export type NoteType = "session_recap" | "action_item" | "other"
 export type NotePriority = "urgent" | "this_week" | "when_ready"
@@ -390,8 +391,12 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                           fontSize: 11,
                           padding: "6px 14px",
                           opacity: savingEdit || editBody.trim().length === 0 ? 0.5 : 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
+                        {savingEdit && <SavingSpinner size={10} />}
                         {savingEdit ? "Saving…" : "Save"}
                       </button>
                       <button

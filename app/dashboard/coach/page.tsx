@@ -29,6 +29,7 @@ import { CrossClientActionItemsList } from "./_action-items/CrossClientActionIte
 import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
 import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
+import { SavingSpinner } from "./SavingSpinner"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -915,7 +916,16 @@ export default function CoachHomePage() {
             ) : (
               <div>
                 <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>INVITE A CLIENT</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    opacity: inviting ? 0.5 : 1,
+                    pointerEvents: inviting ? "none" : "auto",
+                    transition: "opacity 120ms ease",
+                  }}
+                >
                   <div>
                     <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>CLIENT EMAIL</span>
                     <input
@@ -960,13 +970,15 @@ export default function CoachHomePage() {
                   <button
                     onClick={sendInvite}
                     disabled={inviting || !inviteEmail.trim()}
-                    style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900, flex: 1, opacity: inviting || !inviteEmail.trim() ? 0.5 : 1 }}
+                    style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900, flex: 1, opacity: inviting || !inviteEmail.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                   >
+                    {inviting && <SavingSpinner />}
                     {inviting ? "Sending..." : "Send Invite →"}
                   </button>
                   <button
                     onClick={() => { setInviteOpen(false); setInviteEmail(""); setInviteNote(""); setInviteResult(null) }}
-                    style={{ ...btnSecondary, fontSize: 13 }}
+                    disabled={inviting}
+                    style={{ ...btnSecondary, fontSize: 13, opacity: inviting ? 0.5 : 1 }}
                   >
                     Cancel
                   </button>

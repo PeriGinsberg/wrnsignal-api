@@ -9,6 +9,7 @@ import {
   eyebrow,
   label,
 } from "../../../../../lib/dashboard-theme"
+import { SavingSpinner } from "../../SavingSpinner"
 
 export type NoteType = "session_recap" | "action_item" | "other"
 export type NotePriority = "urgent" | "this_week" | "when_ready"
@@ -168,13 +169,6 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
           </button>
         </div>
 
-        {/* Save-state animation keyframes for the inline spinner below.
-            Pure CSS — reuses the pattern from app/dashboard/accept-invite
-            with the WRN-family color updated to teal (#2CA58D) per the
-            brand "direction/positive action" rule (orange is reserved
-            for tension/correction). */}
-        <style>{`@keyframes coachNoteSpin { to { transform: rotate(360deg) } }`}</style>
-
         {/* Form fields dim during save (Phase 4 Item 5) so the textarea
             + chip pickers read as non-interactive. pointer-events:none
             blocks accidental clicks; underlying inputs stay enabled so
@@ -328,21 +322,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
               gap: 8,
             }}
           >
-            {saving && (
-              <span
-                aria-hidden="true"
-                style={{
-                  display: "inline-block",
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  border: "2px solid rgba(255,255,255,0.25)",
-                  borderTopColor: "#2CA58D",
-                  animation: "coachNoteSpin 0.8s linear infinite",
-                  flexShrink: 0,
-                }}
-              />
-            )}
+            {saving && <SavingSpinner />}
             {saving ? "Saving…" : "Save note"}
           </button>
         </div>
