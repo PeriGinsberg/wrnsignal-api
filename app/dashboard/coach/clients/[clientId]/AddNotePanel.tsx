@@ -62,15 +62,20 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
     }
   }, [open])
 
-  // Close on Escape.
+  // Close on Escape. Guarded against in-flight saves to match the
+  // Cancel button's disabled state — prevents accidental mid-save
+  // dismissal that could orphan an optimistic UI state.
   useEffect(() => {
     if (!open) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Escape") {
+        if (saving) return
+        onClose()
+      }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [open, onClose])
+  }, [open, onClose, saving])
 
   async function handleSave() {
     const trimmed = body.trim()
@@ -163,7 +168,30 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
           </button>
         </div>
 
-        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 18 }}>
+        {/* Save-state animation keyframes for the inline spinner below.
+            Pure CSS — reuses the pattern from app/dashboard/accept-invite
+            with the WRN-family color updated to teal (#2CA58D) per the
+            brand "direction/positive action" rule (orange is reserved
+            for tension/correction). */}
+        <style>{`@keyframes coachNoteSpin { to { transform: rotate(360deg) } }`}</style>
+
+        {/* Form fields dim during save (Phase 4 Item 5) so the textarea
+            + chip pickers read as non-interactive. pointer-events:none
+            blocks accidental clicks; underlying inputs stay enabled so
+            tab-focus + screen readers still see them. */}
+        <div
+          style={{
+            padding: 24,
+            flex: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 18,
+            opacity: saving ? 0.5 : 1,
+            pointerEvents: saving ? "none" : "auto",
+            transition: "opacity 120ms ease",
+          }}
+        >
           <div>
             <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>TYPE</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -295,8 +323,26 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
               fontSize: 12,
               padding: "10px 18px",
               opacity: saving || body.trim().length === 0 ? 0.5 : 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
+            {saving && (
+              <span
+                aria-hidden="true"
+                style={{
+                  display: "inline-block",
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  border: "2px solid rgba(255,255,255,0.25)",
+                  borderTopColor: "#2CA58D",
+                  animation: "coachNoteSpin 0.8s linear infinite",
+                  flexShrink: 0,
+                }}
+              />
+            )}
             {saving ? "Saving…" : "Save note"}
           </button>
         </div>
