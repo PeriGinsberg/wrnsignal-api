@@ -451,20 +451,39 @@ export default function CoachClientPage() {
     <div>
       {/* Back link sits above the persistent header strip so it doesn't
           eat one of the four action button slots in the strip. */}
-      <a
-        href="/dashboard/coach/clients"
-        style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#2CA58D",
-          textDecoration: "none",
-          display: "inline-block",
-          marginBottom: 18,
-          letterSpacing: 0.2,
-        }}
-      >
-        ← Back to My Clients
-      </a>
+      {/* Context-aware back-link (Commit 2.4.1).
+          - Dashboard tab → roster (one level up: this is the client's "home")
+          - Any other tab → this client's Dashboard (one level up: clears
+            the tab param to /dashboard/coach/clients/[id], which lands on
+            the default tab — future-proof if the default ever changes).
+          Defensive fallback "Back to Client Details" covers the race where
+          clientProfile is still loading; reads as deliberate copy. */}
+      {(() => {
+        const onDashboard = tab === "dashboard"
+        const name = clientProfile?.name?.trim() || ""
+        const label = onDashboard
+          ? "← Back to My Clients"
+          : `← Back to ${name || "Client Details"}`
+        const href = onDashboard
+          ? "/dashboard/coach/clients"
+          : `/dashboard/coach/clients/${clientId}`
+        return (
+          <a
+            href={href}
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#2CA58D",
+              textDecoration: "none",
+              display: "inline-block",
+              marginBottom: 18,
+              letterSpacing: 0.2,
+            }}
+          >
+            {label}
+          </a>
+        )
+      })()}
 
       {/* Persistent header strip — visible on every tab including dashboard. */}
       {clientProfile && (
