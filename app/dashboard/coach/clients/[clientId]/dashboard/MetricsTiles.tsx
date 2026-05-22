@@ -15,6 +15,7 @@
 // Job Tracker tab with a status filter pre-applied, same UX as before.
 
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
+import { type MetricsWindow, windowSubtitle } from "../../../MetricsWindowToggle"
 
 export type ClientDashboardMetrics = {
   totalJobs: number
@@ -30,22 +31,27 @@ type TileDef = {
   label: string
   color: string
   filterStatus: FilterStatus
-  subtitle: string
+  // Phase 5: when `windowed` is true, subtitle reflects the active
+  // window. totalJobs is intentionally NOT windowed — its subtitle
+  // stays "All-time" regardless of toggle state.
+  windowed: boolean
 }
 
 const TILE_DEFS: readonly TileDef[] = [
-  { key: "totalJobs",  label: "Total Jobs",  color: "rgba(255,255,255,0.85)", filterStatus: "all",          subtitle: "All-time" },
-  { key: "interviews", label: "Interviews",  color: "#a78bfa",                filterStatus: "interviewing", subtitle: "Past 30 days" },
-  { key: "offers",     label: "Offers",      color: "#4ade80",                filterStatus: "offer",        subtitle: "Past 30 days" },
-  { key: "rejected",   label: "Rejected",    color: "#E87070",                filterStatus: "rejected",     subtitle: "Past 30 days" },
+  { key: "totalJobs",  label: "Total Jobs",  color: "rgba(255,255,255,0.85)", filterStatus: "all",          windowed: false },
+  { key: "interviews", label: "Interviews",  color: "#a78bfa",                filterStatus: "interviewing", windowed: true },
+  { key: "offers",     label: "Offers",      color: "#4ade80",                filterStatus: "offer",        windowed: true },
+  { key: "rejected",   label: "Rejected",    color: "#E87070",                filterStatus: "rejected",     windowed: true },
 ] as const
 
 type Props = {
   metrics: ClientDashboardMetrics
+  metricsWindow: MetricsWindow
   onTileClick: (filterStatus: FilterStatus) => void
 }
 
-export function MetricsTiles({ metrics, onTileClick }: Props) {
+export function MetricsTiles({ metrics, metricsWindow, onTileClick }: Props) {
+  const dynamicSubtitle = windowSubtitle(metricsWindow)
   return (
     <div
       style={{
@@ -57,6 +63,7 @@ export function MetricsTiles({ metrics, onTileClick }: Props) {
     >
       {TILE_DEFS.map((def) => {
         const value = metrics[def.key]
+        const subtitle = def.windowed ? dynamicSubtitle : "All-time"
         return (
           <button
             key={def.key}
@@ -74,7 +81,7 @@ export function MetricsTiles({ metrics, onTileClick }: Props) {
             onMouseLeave={(e) => {
               ;(e.currentTarget.style as any).borderColor = T.BORDER_SOFT
             }}
-            aria-label={`${def.label}: ${value} (${def.subtitle})`}
+            aria-label={`${def.label}: ${value} (${subtitle})`}
           >
             <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 6 }}>
               {def.label}
@@ -83,7 +90,7 @@ export function MetricsTiles({ metrics, onTileClick }: Props) {
               {value}
             </div>
             <div style={{ fontSize: 10, color: T.DIM, fontWeight: 600, marginTop: 4 }}>
-              {def.subtitle}
+              {subtitle}
             </div>
           </button>
         )

@@ -95,6 +95,21 @@ const daysAgo = (d: number) => new Date(Date.now() - d * MS_DAY).toISOString()
 const daysBetween = (iso: string) =>
   Math.floor((Date.now() - new Date(iso).getTime()) / MS_DAY)
 
+// Phase 5 — metrics time-window toggle. Resolves the `?window=` query
+// param to a threshold ISO string (or null for "all time"). Invalid /
+// missing values default to 30d, preserving backward-compatibility for
+// any caller that doesn't know about the new param.
+type MetricsWindow = "7d" | "30d" | "all"
+function parseWindow(raw: string | null): MetricsWindow {
+  if (raw === "7d" || raw === "30d" || raw === "all") return raw
+  return "30d"
+}
+function windowThreshold(w: MetricsWindow): string | null {
+  if (w === "7d") return daysAgo(7)
+  if (w === "30d") return daysAgo(30)
+  return null // "all" → no lower bound
+}
+
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -284,7 +299,12 @@ export async function GET(req: NextRequest) {
     // where present; fall back to signal_applications.created_at for apps
     // with no history rows (pre-2026-05-07 apps were not backfilled —
     // see supabase/migrations/20260507_coach_home_landing.sql).
-    const since30dIso = daysAgo(30)
+    //
+    // Phase 5: the lower-bound threshold is now driven by the ?window=
+    // query param (7d | 30d | all). `windowSince` is null for "all time"
+    // — downstream queries skip the .gte(... ) filter in that case.
+    const metricsWindow = parseWindow(req.nextUrl.searchParams.get("window"))
+    const windowSince = windowThreshold(metricsWindow)
 
     const aiProfileIds: string[] = []          // Active + Inactive
     const aiaProfileIds: string[] = []         // Active + Inactive + Archived
@@ -306,28 +326,32 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Total Applications: A+I scope, created in 30d.
+    // Total Applications: A+I scope, created within the active window
+    // (or all-time when windowSince is null).
     let totalApplications = 0
     if (aiProfileIds.length > 0) {
-      const { count } = await supabase
+      let q = supabase
         .from("signal_applications")
         .select("id", { count: "exact", head: true })
         .in("profile_id", aiProfileIds)
-        .gte("created_at", since30dIso)
+      if (windowSince) q = q.gte("created_at", windowSince)
+      const { count } = await q
       totalApplications = count ?? 0
     }
 
-    // Status-history rows (last 30d) for both scopes. One query per scope
-    // since the app-id sets differ; both queries chunk through the same
-    // table. Returned rows include `application_id` so we can dedupe.
+    // Status-history rows (within the active window) for both scopes.
+    // One query per scope since the app-id sets differ; both queries
+    // chunk through the same table. Returned rows include
+    // `application_id` so we can dedupe.
     async function transitionedAppIds(scopeAppIds: string[], toStatus: string): Promise<Set<string>> {
       if (scopeAppIds.length === 0) return new Set()
-      const { data } = await supabase
+      let q = supabase
         .from("signal_applications_status_history")
         .select("application_id")
         .in("application_id", scopeAppIds)
         .eq("to_status", toStatus)
-        .gte("changed_at", since30dIso)
+      if (windowSince) q = q.gte("changed_at", windowSince)
+      const { data } = await q
       return new Set((data || []).map((r: any) => r.application_id as string))
     }
 
@@ -376,7 +400,7 @@ export async function GET(req: NextRequest) {
         else if (
           !anyHistory.has(a.id) &&
           a.application_status === targetStatus &&
-          a.created_at >= since30dIso
+          (windowSince === null || a.created_at >= windowSince)
         ) n++
       }
       return n

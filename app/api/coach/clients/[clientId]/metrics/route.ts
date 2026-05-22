@@ -76,6 +76,21 @@ async function getCoachProfileId(userId: string, email: string | null): Promise<
 const MS_DAY = 24 * 60 * 60 * 1000
 const daysAgo = (d: number) => new Date(Date.now() - d * MS_DAY).toISOString()
 
+// Phase 5 — metrics time-window toggle. Same parse/threshold helpers
+// as /api/coach/home so both endpoints honor identical semantics.
+// Invalid / missing values default to 30d, preserving backward
+// compatibility for any caller that doesn't know about the new param.
+type MetricsWindow = "7d" | "30d" | "all"
+function parseWindow(raw: string | null): MetricsWindow {
+  if (raw === "7d" || raw === "30d" || raw === "all") return raw
+  return "30d"
+}
+function windowThreshold(w: MetricsWindow): string | null {
+  if (w === "7d") return daysAgo(7)
+  if (w === "30d") return daysAgo(30)
+  return null // "all" → no lower bound
+}
+
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -109,7 +124,13 @@ export async function GET(
 
     // Pull all of the client's applications + the recent status-history
     // rows. Same shape the Coach Home aggregation uses.
-    const since30dIso = daysAgo(30)
+    //
+    // Phase 5: the lower-bound threshold is now driven by the ?window=
+    // query param (7d | 30d | all). `windowSince` is null for "all
+    // time" — downstream filters drop the lower bound in that case.
+    // totalJobs is intentionally NOT windowed; it stays all-time.
+    const metricsWindow = parseWindow(req.nextUrl.searchParams.get("window"))
+    const windowSince = windowThreshold(metricsWindow)
     const { data: apps, error: appsErr } = await supabase
       .from("signal_applications")
       .select("id, application_status, created_at")
@@ -135,28 +156,30 @@ export async function GET(
       for (const h of historyRows) anyHistory.add(h.application_id)
     }
 
-    // Build per-target Set of app_ids that transitioned to target in 30d.
-    function transitionedIn30d(target: string): Set<string> {
+    // Build per-target Set of app_ids that transitioned to target
+    // within the active window (or any time when windowSince is null).
+    function transitionedInWindow(target: string): Set<string> {
       const s = new Set<string>()
       for (const h of historyRows) {
-        if (h.to_status === target && h.changed_at >= since30dIso) {
-          s.add(h.application_id)
-        }
+        if (h.to_status !== target) continue
+        if (windowSince !== null && h.changed_at < windowSince) continue
+        s.add(h.application_id)
       }
       return s
     }
 
     function countWithFallback(target: string): number {
-      const transitioned = transitionedIn30d(target)
+      const transitioned = transitionedInWindow(target)
       let n = 0
       for (const a of appList) {
         if (transitioned.has(a.id)) { n++; continue }
         // Fallback: no history row for this app AND current status is the
-        // target AND created in 30d (pre-backfill apps land here).
+        // target AND created in the active window (pre-backfill apps
+        // land here; "all time" drops the lower bound).
         if (
           !anyHistory.has(a.id) &&
           a.application_status === target &&
-          a.created_at >= since30dIso
+          (windowSince === null || a.created_at >= windowSince)
         ) n++
       }
       return n

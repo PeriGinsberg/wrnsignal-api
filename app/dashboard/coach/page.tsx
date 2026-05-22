@@ -31,6 +31,7 @@ import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANS
 import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
 import { SavingSpinner } from "./SavingSpinner"
 import { LoadingShell } from "./LoadingShell"
+import { MetricsWindowToggle, useMetricsWindow, windowSubtitle } from "./MetricsWindowToggle"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -741,9 +742,14 @@ export default function CoachHomePage() {
   const [inviting, setInviting] = useState(false)
   const [inviteResult, setInviteResult] = useState<any>(null)
 
+  // Phase 5 — metrics time-window toggle. Hook reads localStorage on
+  // mount + writes on change. Shared key across Coach Home + Client
+  // Dashboard so the coach's preference is global.
+  const [metricsWindow, setMetricsWindow] = useMetricsWindow()
+
   const load = useCallback(async () => {
     setLoading(true)
-    const res = await authFetch("/api/coach/home")
+    const res = await authFetch(`/api/coach/home?window=${metricsWindow}`)
     if (res.status === 403) {
       setAccessForbidden(true)
       setLoading(false)
@@ -751,7 +757,7 @@ export default function CoachHomePage() {
     }
     if (res.ok) setData((await res.json()) as CoachHome)
     setLoading(false)
-  }, [])
+  }, [metricsWindow])
 
   useEffect(() => { load() }, [load])
 
@@ -779,24 +785,28 @@ export default function CoachHomePage() {
   const tiles: Tile[] = useMemo(() => {
     if (!data) return []
     const m = data.metrics
+    // Phase 5: subtitle text on the 4 windowed tiles tracks the active
+    // window. Active Prospects + Active Clients stay point-in-time (no
+    // subtitle change — they have no time concept).
+    const sub = windowSubtitle(metricsWindow)
     return [
       { label: "Active prospects", value: m.activeProspects, color: "#F4A261",
         href: "/dashboard/coach/clients?filter=prospect" },
       { label: "Active clients", value: m.activeClients, color: "#2CA58D",
         href: "/dashboard/coach/clients?filter=active" },
-      { label: "Total applications", value: m.totalApplications, subtitle: "Past 30 days",
+      { label: "Total applications", value: m.totalApplications, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=all" },
-      { label: "Total interviewing", value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: "Past 30 days",
+      { label: "Total interviewing", value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=interviewing" },
-      { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: "Past 30 days",
+      { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=offer" },
       {
         label: "Avg interview rate",
         value: m.avgInterviewRate === null ? "—" : `${m.avgInterviewRate}%`,
-        subtitle: "Past 30 days",
+        subtitle: sub,
       },
     ]
-  }, [data])
+  }, [data, metricsWindow])
 
   if (loading) return <LoadingShell />
 
@@ -822,6 +832,16 @@ export default function CoachHomePage() {
   return (
     <div>
       <HeaderStrip firstName={data.coach.firstName} />
+
+      {/* Phase 5 — segmented time-window toggle, right-aligned above
+          the metrics bar. Controls the four windowed tiles (Total
+          Applications / Interviewing / Offers / Avg Interview Rate);
+          Active Prospects + Active Clients are point-in-time and
+          ignore the toggle. */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <MetricsWindowToggle value={metricsWindow} onChange={setMetricsWindow} />
+      </div>
+
       <MetricsBar tiles={tiles} />
 
       {/* Action Items + Engagement Signals — paired side-by-side. Each

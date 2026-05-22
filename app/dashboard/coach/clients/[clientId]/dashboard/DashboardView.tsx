@@ -6,6 +6,7 @@ import { MetricsTiles, type ClientDashboardMetrics } from "./MetricsTiles"
 import { MethodologyPlaceholder } from "./MethodologyPlaceholder"
 import { NeedsAttentionSection } from "./NeedsAttentionSection"
 import { RecentNotesSection } from "./RecentNotesSection"
+import { MetricsWindowToggle, useMetricsWindow } from "../../../MetricsWindowToggle"
 
 type Props = {
   authFetch: (url: string, opts?: RequestInit) => Promise<Response>
@@ -38,12 +39,17 @@ export function DashboardView({
     rejected: 0,
   })
 
+  // Phase 5 — same shared-localStorage window state as Coach Home.
+  // Selecting a window here also updates the Coach Home toggle on
+  // next mount (single coach_metrics_window key).
+  const [metricsWindow, setMetricsWindow] = useMetricsWindow()
+
   const loadMetrics = useCallback(async () => {
-    const res = await authFetch(`/api/coach/clients/${clientId}/metrics`)
+    const res = await authFetch(`/api/coach/clients/${clientId}/metrics?window=${metricsWindow}`)
     if (!res.ok) return
     const j = await res.json()
     if (j?.metrics) setMetrics(j.metrics as ClientDashboardMetrics)
-  }, [authFetch, clientId])
+  }, [authFetch, clientId, metricsWindow])
 
   useEffect(() => { loadMetrics() }, [loadMetrics])
 
@@ -51,7 +57,15 @@ export function DashboardView({
     <div>
       <SinceLastVisitStrip authFetch={authFetch} clientId={clientId} />
 
-      <MetricsTiles metrics={metrics} onTileClick={onTileClick} />
+      {/* Phase 5 — segmented time-window toggle, right-aligned above
+          the tile grid. Controls Interviews / Offers / Rejected.
+          Total Jobs is intentionally all-time and ignores the
+          toggle. */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <MetricsWindowToggle value={metricsWindow} onChange={setMetricsWindow} />
+      </div>
+
+      <MetricsTiles metrics={metrics} metricsWindow={metricsWindow} onTileClick={onTileClick} />
 
       <MethodologyPlaceholder />
 
