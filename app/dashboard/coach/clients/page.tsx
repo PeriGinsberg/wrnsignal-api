@@ -182,7 +182,12 @@ export default function MyClientsFullPage() {
         )}
       </div>
 
-      <div style={{ ...card, padding: 20 }}>
+      {/* overflow: "visible" overrides the card's default overflow:hidden
+          so LifecycleStatusPill dropdowns on bottom-of-roster rows
+          aren't clipped at the card boundary. Same pattern as the
+          MyClientsSection on Coach Home — v1.1 portal refactor will
+          eliminate this need. */}
+      <div style={{ ...card, padding: 20, overflow: "visible" }}>
         {sorted.length === 0 ? (
           <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
             {filter

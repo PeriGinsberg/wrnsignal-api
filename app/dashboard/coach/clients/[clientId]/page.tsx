@@ -782,7 +782,13 @@ export default function CoachClientPage() {
                   const isOpen = openAppIds.has(app.id)
                   const isAnnotating = annotatingAppId === app.id
                   return (
-                    <div key={app.id} id={`app-${app.id}`} style={{ ...card, padding: 18 }}>
+                    // overflow: "visible" overrides the card's default
+                    // overflow:hidden so ApplicationStatusEditPill
+                    // dropdowns on bottom-of-list cards aren't clipped
+                    // at the card boundary (same bug class as Coach
+                    // Home My Clients section, surfaced by 6.2 smoke).
+                    // v1.1 portal refactor will eliminate this need.
+                    <div key={app.id} id={`app-${app.id}`} style={{ ...card, padding: 18, overflow: "visible" }}>
                       {/* Clickable header row */}
                       <div
                         onClick={() => {
