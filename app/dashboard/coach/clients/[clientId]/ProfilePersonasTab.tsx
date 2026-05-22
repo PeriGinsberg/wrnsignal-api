@@ -265,6 +265,11 @@ export default function ProfilePersonasTab({
   const [resumeTab, setResumeTab] = useState<"paste" | "upload">("paste")
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState<string | null>(null)
+  // Phase 4 Commit 4.1.7 — ref on the hidden file input so the
+  // "Upload PDF" tab can programmatically open the OS picker. The
+  // native bare-text "Choose File / No file chosen" rendering was an
+  // undiscoverable affordance; the tab itself is now THE button.
+  const fileRef = useRef<HTMLInputElement | null>(null)
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
@@ -509,7 +514,19 @@ export default function ProfilePersonasTab({
                 {(["paste", "upload"] as const).map((t) => (
                   <button
                     key={t}
-                    onClick={() => setResumeTab(t)}
+                    onClick={() => {
+                      setResumeTab(t)
+                      // Auto-open OS file picker when the coach activates
+                      // the Upload PDF tab. Fires on every click — including
+                      // when the tab is already active, which is the
+                      // recovery path after the coach cancels the OS dialog.
+                      // requestAnimationFrame waits for the resumeTab state
+                      // flip to render so the (now display:none) input is
+                      // in the DOM before .click() runs.
+                      if (t === "upload" && !uploading) {
+                        requestAnimationFrame(() => fileRef.current?.click())
+                      }
+                    }}
                     style={{
                       padding: "7px 16px", fontSize: 12, border: "none", cursor: "pointer",
                       background: resumeTab === t ? "rgba(254,176,106,0.10)" : "rgba(255,255,255,0.03)",
@@ -533,7 +550,13 @@ export default function ProfilePersonasTab({
 
               {resumeTab === "upload" && (
                 <div>
+                  {/* Hidden native input. The "Upload PDF" tab above is
+                      the visible affordance; clicking it programmatically
+                      triggers .click() on this input via fileRef. Cancel
+                      from the OS dialog is browser-native; coach re-opens
+                      the picker by re-clicking the tab. */}
                   <input
+                    ref={fileRef}
                     type="file"
                     accept=".pdf,.docx,.doc,.txt"
                     onChange={(e) => {
@@ -541,12 +564,7 @@ export default function ProfilePersonasTab({
                       if (f) uploadPdf(f)
                     }}
                     disabled={uploading}
-                    style={{
-                      fontSize: 12,
-                      color: T.MUTED,
-                      opacity: uploading ? 0.5 : 1,
-                      pointerEvents: uploading ? "none" : "auto",
-                    }}
+                    style={{ display: "none" }}
                   />
                   {uploading && (
                     <p style={{ fontSize: 11, color: T.DIM, marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
