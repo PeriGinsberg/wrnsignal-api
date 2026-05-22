@@ -540,9 +540,20 @@ export default function ProfilePersonasTab({
                       const f = e.target.files?.[0]
                       if (f) uploadPdf(f)
                     }}
-                    style={{ fontSize: 12, color: T.MUTED }}
+                    disabled={uploading}
+                    style={{
+                      fontSize: 12,
+                      color: T.MUTED,
+                      opacity: uploading ? 0.5 : 1,
+                      pointerEvents: uploading ? "none" : "auto",
+                    }}
                   />
-                  {uploading && <p style={{ fontSize: 11, color: T.DIM, marginTop: 6 }}>Extracting...</p>}
+                  {uploading && (
+                    <p style={{ fontSize: 11, color: T.DIM, marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <SavingSpinner size={10} />
+                      Extracting...
+                    </p>
+                  )}
                   {uploadMsg && <p style={{ fontSize: 11, color: uploadMsg === "Resume extracted" ? "#4ade80" : T.ERROR, marginTop: 6 }}>{uploadMsg}</p>}
                   {newResume && (
                     <p style={{ fontSize: 11, color: T.DIM, marginTop: 6 }}>{newResume.length.toLocaleString()} characters extracted</p>

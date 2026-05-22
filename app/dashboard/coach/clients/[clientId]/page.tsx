@@ -1005,7 +1005,13 @@ export default function CoachClientPage() {
               <div style={{ display: "flex", gap: 10 }}>
                 <input
                   type="url"
-                  style={{ ...input, flex: 1 }}
+                  style={{
+                    ...input,
+                    flex: 1,
+                    opacity: fetchingUrl ? 0.5 : 1,
+                    pointerEvents: fetchingUrl ? "none" : "auto",
+                    transition: "opacity 120ms ease",
+                  }}
                   placeholder="Paste job posting URL..."
                   value={sourceUrl}
                   onChange={(e) => setSourceUrl(e.target.value)}
@@ -1013,8 +1019,9 @@ export default function CoachClientPage() {
                 <button
                   onClick={fetchUrl}
                   disabled={fetchingUrl || !sourceUrl.trim()}
-                  style={{ ...btnSecondary, fontSize: 12, padding: "0 18px", whiteSpace: "nowrap", opacity: fetchingUrl ? 0.5 : 1 }}
+                  style={{ ...btnSecondary, fontSize: 12, padding: "0 18px", whiteSpace: "nowrap", opacity: fetchingUrl ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
+                  {fetchingUrl && <SavingSpinner />}
                   {fetchingUrl ? "Fetching..." : "Fetch JD"}
                 </button>
               </div>
@@ -1034,7 +1041,14 @@ export default function CoachClientPage() {
                   LinkedIn blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
                 </p>
                 <textarea
-                  style={{ ...textarea, minHeight: 120, marginBottom: 10 }}
+                  style={{
+                    ...textarea,
+                    minHeight: 120,
+                    marginBottom: 10,
+                    opacity: fetchingUrl ? 0.5 : 1,
+                    pointerEvents: fetchingUrl ? "none" : "auto",
+                    transition: "opacity 120ms ease",
+                  }}
                   placeholder="Paste the full LinkedIn job page text here..."
                   value={linkedInPasteText}
                   onChange={(e) => setLinkedInPasteText(e.target.value)}
@@ -1042,8 +1056,9 @@ export default function CoachClientPage() {
                 <button
                   onClick={parseLinkedInPaste}
                   disabled={fetchingUrl || !linkedInPasteText.trim()}
-                  style={{ ...btnSecondary, fontSize: 12, padding: "8px 18px", opacity: fetchingUrl || !linkedInPasteText.trim() ? 0.5 : 1 }}
+                  style={{ ...btnSecondary, fontSize: 12, padding: "8px 18px", opacity: fetchingUrl || !linkedInPasteText.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
+                  {fetchingUrl && <SavingSpinner />}
                   {fetchingUrl ? "Parsing..." : "Parse Text →"}
                 </button>
               </div>

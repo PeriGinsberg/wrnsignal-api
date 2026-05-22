@@ -338,14 +338,18 @@ export default function CreateClientModal({
                   }}
                 />
                 <div
-                  onClick={() => fileRef.current?.click()}
+                  onClick={() => { if (!uploading) fileRef.current?.click() }}
                   style={{
                     border: `1.5px dashed ${BORDER}`, borderRadius: 8,
-                    padding: 32, textAlign: "center", cursor: "pointer",
+                    padding: 32, textAlign: "center",
+                    cursor: uploading ? "default" : "pointer",
                   }}
                 >
                   {uploading ? (
-                    <div style={{ fontSize: 13, color: MUTED }}>Extracting resume...</div>
+                    <div style={{ fontSize: 13, color: MUTED, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <SavingSpinner />
+                      Extracting resume...
+                    </div>
                   ) : uploadStatus === "Resume extracted" ? (
                     <div style={{ fontSize: 13, color: SUCCESS, fontWeight: 600 }}>Resume extracted &#10003;</div>
                   ) : (
