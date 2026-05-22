@@ -248,7 +248,7 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
 // no color shift, no row-level change. Today's Schedule (a placeholder
 // section) intentionally omits titleHref → renders plain text.
 function Section({
-  icon, title, titleHref, count, headerRight, children, accentColor, noBottomMargin,
+  icon, title, titleHref, count, headerRight, children, accentColor, noBottomMargin, allowOverflow,
 }: {
   icon: React.ReactNode
   title: string
@@ -258,6 +258,15 @@ function Section({
   children: React.ReactNode
   accentColor?: string
   noBottomMargin?: boolean
+  // Set true ONLY on sections that host dropdowns/popovers — bypasses
+  // the overflow:hidden on `card` so the menu can extend past the
+  // section's bottom edge without being clipped. Surfaced by 6.1
+  // testing: viewport-collision-aware placement isn't enough on its
+  // own when an ancestor card clips the dropdown before it hits the
+  // viewport edge. Future v1.1 portal refactor will eliminate this
+  // need by mounting dropdowns at document.body, escaping every
+  // overflow:hidden ancestor.
+  allowOverflow?: boolean
 }) {
   const iconColor = accentColor ?? T.WRN_ORANGE
   const [titleHovered, setTitleHovered] = useState(false)
@@ -282,6 +291,7 @@ function Section({
         padding: 20,
         marginBottom: noBottomMargin ? 0 : 20,
         position: "relative",
+        ...(allowOverflow ? { overflow: "visible" } : {}),
       }}
     >
       {accentColor && (
@@ -692,6 +702,7 @@ function MyClientsSection({
       titleHref="/dashboard/coach/clients"
       count={clients.length}
       headerRight={headerRight}
+      allowOverflow
     >
       {clients.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>No clients yet. Use Create or Invite above to add one.</p>
