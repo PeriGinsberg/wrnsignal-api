@@ -20,7 +20,11 @@ import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
 import type { LifecycleStatus } from "../../LifecycleStatusPill"
 import { DashboardView } from "./dashboard/DashboardView"
 
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "history" | "analysis"
+// 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
+// History) tab was removed entirely — its surface no longer ships in the
+// Beta. jobfit_runs table + sourced_by_coach_id column intentionally
+// retained (data is preserved; only the surface is gone).
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -55,15 +59,6 @@ type ClientApplication = {
   job_url: string | null
   created_at: string | null
   coach_annotations: any[]
-}
-
-type HistoryRun = {
-  id: string
-  company: string | null
-  title: string | null
-  decision: string | null
-  score: number | null
-  created_at: string
 }
 
 async function getToken() {
@@ -134,7 +129,6 @@ export default function CoachClientPage() {
   const [lifecycleStatus, setLifecycleStatus] = useState<LifecycleStatus>("Active")
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
   const [clientApps, setClientApps] = useState<ClientApplication[]>([])
-  const [historyRuns, setHistoryRuns] = useState<HistoryRun[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -213,7 +207,6 @@ export default function CoachClientPage() {
       setLifecycleStatus((profileData.lifecycle_status as LifecycleStatus) ?? "Active")
       setClientApps(trackerData.applications || [])
       setCoachRecs(trackerData.recommendations || [])
-      setHistoryRuns(trackerData.history || [])
 
       // Default to first ACTIVE persona for the Source-a-Job selector.
       // Archived personas should never be auto-selected for new analyses.
@@ -418,20 +411,8 @@ export default function CoachClientPage() {
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
     { id: "notes", label: "Notes" },
-    { id: "history", label: "Analyses History" },
     { id: "analysis", label: "Profile & Personas" },
   ]
-
-  // Apps shape for MetricsTiles + Job Tracker filter
-  const metricsApps = useMemo(
-    () =>
-      clientApps.map((a) => ({
-        id: a.id,
-        application_status: a.application_status,
-        created_at: a.created_at,
-      })),
-    [clientApps]
-  )
 
   const filteredApps = useMemo(() => {
     if (statusFilter === "all") return clientApps
@@ -535,7 +516,6 @@ export default function CoachClientPage() {
         <DashboardView
           authFetch={authFetch}
           clientId={clientId}
-          apps={metricsApps}
           notesRefreshKey={notesRefreshKey}
           needsAttentionRefreshKey={needsAttentionRefreshKey}
           onTileClick={handleTileClick}
@@ -1403,37 +1383,11 @@ export default function CoachClientPage() {
         />
       )}
 
-      {/* TAB 4 — Analyses History */}
-      {tab === "history" && (
-        <div>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>ALL ANALYSES FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
-          {historyRuns.length === 0 ? (
-            <p style={{ color: T.MUTED, fontSize: 13 }}>No analyses run yet.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {historyRuns.map((run) => (
-                <div key={run.id} style={{ ...card, padding: 18 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 950, color: T.TEXT }}>{run.company || "—"}</span>
-                    <span style={{ fontSize: 13, color: T.MUTED }}>{run.title || "—"}</span>
-                    {run.decision && (
-                      <Badge text={run.decision} style={DECISION_STYLE[run.decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
-                    )}
-                    {run.score !== null && (
-                      <span style={{ fontSize: 11, color: T.DIM }}>Score: {run.score}</span>
-                    )}
-                    <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
-                      {new Date(run.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Analyses History tab + section removed in Phase 2 Commit 2.4.
+          jobfit_runs table + sourced_by_coach_id column are intentionally
+          retained — data preserved, only the surface is gone. */}
 
-      {/* TAB 5 — Profile & Personas */}
+      {/* TAB 4 — Profile & Personas */}
       {tab === "analysis" && clientProfile && (
         <ProfilePersonasTab
           clientId={clientId}

@@ -1,44 +1,51 @@
 "use client"
 
+// Client Dashboard metric tiles (Phase 2 Commit 2.4).
+//
+// 4-tile set per locked spec:
+//   - Total Jobs    all-time count of signal_applications for this client
+//   - Interviews    apps with current status 'interviewing' OR transitioned
+//                   to 'interviewing' in last 30 days
+//   - Offers        same logic with 'offer' (last 30 days)
+//   - Rejected      same logic with 'rejected' (last 30 days)
+//
+// Values come pre-computed from /api/coach/clients/[clientId]/metrics
+// (the endpoint applies the status-history-or-fallback rule shared
+// with the Coach Home aggregator). Tile click still navigates to the
+// Job Tracker tab with a status filter pre-applied, same UX as before.
+
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
 
-export type MetricsApp = {
-  id: string
-  application_status: string
-  created_at: string | null
+export type ClientDashboardMetrics = {
+  totalJobs: number
+  interviews: number
+  offers: number
+  rejected: number
 }
 
-const TILE_DEFS = [
-  { key: "applications", label: "Applications", color: "rgba(255,255,255,0.85)", filterStatus: "all" as const },
-  { key: "interviews",   label: "Interviews",   color: "#a78bfa",                filterStatus: "interviewing" as const },
-  { key: "offers",       label: "Offers",       color: "#4ade80",                filterStatus: "offer" as const },
-  { key: "rejections",   label: "Rejections",   color: "#E87070",                filterStatus: "rejected" as const },
+type FilterStatus = "all" | "interviewing" | "offer" | "rejected"
+
+type TileDef = {
+  key: keyof ClientDashboardMetrics
+  label: string
+  color: string
+  filterStatus: FilterStatus
+  subtitle: string
+}
+
+const TILE_DEFS: readonly TileDef[] = [
+  { key: "totalJobs",  label: "Total Jobs",  color: "rgba(255,255,255,0.85)", filterStatus: "all",          subtitle: "All-time" },
+  { key: "interviews", label: "Interviews",  color: "#a78bfa",                filterStatus: "interviewing", subtitle: "Past 30 days" },
+  { key: "offers",     label: "Offers",      color: "#4ade80",                filterStatus: "offer",        subtitle: "Past 30 days" },
+  { key: "rejected",   label: "Rejected",    color: "#E87070",                filterStatus: "rejected",     subtitle: "Past 30 days" },
 ] as const
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000
-
-type Counts = { lifetime: number; thisWeek: number }
-
-function countsForBucket(apps: MetricsApp[], statusFilter: "all" | string, weekAgoIso: string): Counts {
-  let lifetime = 0
-  let thisWeek = 0
-  for (const a of apps) {
-    if (statusFilter !== "all" && a.application_status !== statusFilter) continue
-    lifetime++
-    if (a.created_at && a.created_at > weekAgoIso) thisWeek++
-  }
-  return { lifetime, thisWeek }
-}
-
 type Props = {
-  apps: MetricsApp[]
-  // Click handler navigates to Job Tracker with status filter pre-applied.
-  onTileClick: (filterStatus: "all" | "interviewing" | "offer" | "rejected") => void
+  metrics: ClientDashboardMetrics
+  onTileClick: (filterStatus: FilterStatus) => void
 }
 
-export function MetricsTiles({ apps, onTileClick }: Props) {
-  const weekAgoIso = new Date(Date.now() - WEEK_MS).toISOString()
-
+export function MetricsTiles({ metrics, onTileClick }: Props) {
   return (
     <div
       style={{
@@ -49,7 +56,7 @@ export function MetricsTiles({ apps, onTileClick }: Props) {
       }}
     >
       {TILE_DEFS.map((def) => {
-        const c = countsForBucket(apps, def.filterStatus, weekAgoIso)
+        const value = metrics[def.key]
         return (
           <button
             key={def.key}
@@ -67,19 +74,17 @@ export function MetricsTiles({ apps, onTileClick }: Props) {
             onMouseLeave={(e) => {
               ;(e.currentTarget.style as any).borderColor = T.BORDER_SOFT
             }}
-            aria-label={`${def.label}: ${c.lifetime} total${c.thisWeek > 0 ? `, ${c.thisWeek} this week` : ""}`}
+            aria-label={`${def.label}: ${value} (${def.subtitle})`}
           >
             <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 6 }}>
               {def.label}
             </div>
             <div style={{ fontSize: 32, fontWeight: 950, color: def.color, lineHeight: 1.1, letterSpacing: -1 }}>
-              {c.lifetime}
+              {value}
             </div>
-            {c.thisWeek > 0 && (
-              <div style={{ fontSize: 11, color: T.WRN_ORANGE, fontWeight: 700, marginTop: 4 }}>
-                +{c.thisWeek} this week
-              </div>
-            )}
+            <div style={{ fontSize: 10, color: T.DIM, fontWeight: 600, marginTop: 4 }}>
+              {def.subtitle}
+            </div>
           </button>
         )
       })}
