@@ -13,9 +13,17 @@ type Props = {
 }
 
 export function NoteVisibilityIcon({ visible, size = 12 }: Props) {
+  // Color convention:
+  //   - Visible to client → WRN Teal (positive/direction, matches the
+  //     teal save-state spinner family).
+  //   - Coach-private → WRN Goldenrod. Brand convention in the WRN
+  //     methodology workbook is amber = coach-facing/internal content.
+  //     Avoids the "red = error" mismatch (a private note isn't
+  //     destructive; it's deliberate-internal) and contrasts against
+  //     the dark navy background better than a dim gray.
   const teal = "#2CA58D"
-  const dim = "rgba(255,255,255,0.45)"
-  const color = visible ? teal : dim
+  const goldenrod = "#E1A92E"
+  const color = visible ? teal : goldenrod
   const labelText = visible ? "Visible to client" : "Coach-private note"
 
   return (
