@@ -1,10 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { T, eyebrow } from "../../../../../../lib/dashboard-theme"
 import { Avatar } from "./Avatar"
 import { LifecycleStatusPill, type LifecycleStatus } from "../../../LifecycleStatusPill"
+import { useDropdownPlacement } from "../../../useDropdownPlacement"
+
+// Overflow menu has 1 item × ~36px row + 12px padding = ~48px. Bumped
+// to 60 for headroom. The overflow trigger lives in the page header
+// (top of viewport), so realistically the dropdown will always have
+// room below — but the hook costs nothing and keeps the pattern
+// consistent across all three coach-side dropdowns.
+const OVERFLOW_MENU_HEIGHT_ESTIMATE = 60
 
 export type ClientHeaderProfile = {
   id: string
@@ -42,6 +50,12 @@ export function ClientHeaderStrip({
 }: Props) {
   const router = useRouter()
   const [overflowOpen, setOverflowOpen] = useState(false)
+  const overflowWrapRef = useRef<HTMLDivElement | null>(null)
+  const overflowPlacement = useDropdownPlacement(
+    overflowWrapRef,
+    overflowOpen,
+    OVERFLOW_MENU_HEIGHT_ESTIMATE,
+  )
 
   // Build summary line from the four populated fields, in order:
   // FT/internship · target roles · timeframe · location. Empty fields
@@ -133,7 +147,7 @@ export function ClientHeaderStrip({
         <ActionButton accent="muted" disabled title="Calendly integration coming soon">
           Schedule
         </ActionButton>
-        <div style={{ position: "relative" }}>
+        <div ref={overflowWrapRef} style={{ position: "relative" }}>
           <button
             onClick={() => setOverflowOpen((v) => !v)}
             aria-label="More actions"
@@ -162,7 +176,7 @@ export function ClientHeaderStrip({
               <div
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 6px)",
+                  [overflowPlacement === "up" ? "bottom" : "top"]: "calc(100% + 6px)",
                   right: 0,
                   background: T.NAV_BG,
                   border: `1px solid ${T.BORDER}`,

@@ -13,6 +13,13 @@
 // Never surface the word "lifecycle" in the UI.
 
 import { useEffect, useRef, useState } from "react"
+import { useDropdownPlacement } from "./useDropdownPlacement"
+
+// Estimated dropdown height for placement detection. 4 options × ~28px
+// row + 8px padding = ~120px. Bumped to 144 to leave headroom for the
+// browser's variable font-rendering. See useDropdownPlacement.ts for
+// why a hardcoded estimate is used instead of measuring.
+const DROPDOWN_HEIGHT_ESTIMATE = 144
 
 export type LifecycleStatus = "Prospect" | "Active" | "Inactive" | "Archived"
 
@@ -60,6 +67,7 @@ export function LifecycleStatusPill({
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const wrapRef = useRef<HTMLDivElement | null>(null)
+  const placement = useDropdownPlacement(wrapRef, open, DROPDOWN_HEIGHT_ESTIMATE)
 
   useEffect(() => {
     if (!open) return
@@ -142,7 +150,7 @@ export function LifecycleStatusPill({
           onClick={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            top: "calc(100% + 4px)",
+            [placement === "up" ? "bottom" : "top"]: "calc(100% + 4px)",
             left: 0,
             background: "#0D1F35",
             border: "1px solid rgba(255,255,255,0.12)",

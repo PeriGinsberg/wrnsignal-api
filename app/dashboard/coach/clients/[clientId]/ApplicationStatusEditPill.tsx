@@ -19,6 +19,12 @@ import {
   APP_STATUS_STYLE,
   type ApplicationStatus,
 } from "../../../../_lib/applicationStatuses"
+import { useDropdownPlacement } from "../../useDropdownPlacement"
+
+// Estimated dropdown height for placement detection. 6 options × ~28px
+// row + 8px padding = ~176px. Bumped to 200 to leave headroom. See
+// useDropdownPlacement.ts for why a hardcoded estimate is used.
+const DROPDOWN_HEIGHT_ESTIMATE = 200
 
 type Props = {
   value: string
@@ -39,6 +45,7 @@ export function ApplicationStatusEditPill({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
+  const placement = useDropdownPlacement(wrapRef, open, DROPDOWN_HEIGHT_ESTIMATE)
 
   useEffect(() => {
     if (!open) return
@@ -143,7 +150,7 @@ export function ApplicationStatusEditPill({
           onClick={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            top: "calc(100% + 4px)",
+            [placement === "up" ? "bottom" : "top"]: "calc(100% + 4px)",
             left: 0,
             background: "#0D1F35",
             border: "1px solid rgba(255,255,255,0.12)",
