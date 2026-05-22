@@ -24,6 +24,10 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import {
+  runHeuristics,
+  type HeuristicClient,
+} from "../../../../_lib/coachEngagementHeuristics"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -85,6 +89,8 @@ async function getProfileId(userId: string, email: string | null) {
   throw new Error("Profile not found")
 }
 
+// Phase 3 Commit 3.0: also pulls last_viewed_at, which the engagement-
+// signal engine needs for R3-R5 (the "no coach view since" predicate).
 async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: string, supabase: any) {
   const levels: Record<string, string[]> = {
     view: ["view", "annotate", "full"],
@@ -93,7 +99,7 @@ async function verifyCoachAccess(coachProfileId: string, clientProfileId: string
   }
   const { data } = await supabase
     .from("coach_clients")
-    .select("id, access_level, status")
+    .select("id, access_level, status, last_viewed_at")
     .eq("coach_profile_id", coachProfileId)
     .eq("client_profile_id", clientProfileId)
     .eq("status", "active")
@@ -127,19 +133,37 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "Forbidden: no active coach relationship" }, 403)
     }
 
-    // Index handles WHERE clause; sort happens after fetch.
-    const { data, error } = await supabase
-      .from("coach_client_notes")
-      .select("id, body, priority, created_at, completed_at")
-      .eq("coach_profile_id", profileId)
-      .eq("client_profile_id", clientProfileId)
-      .eq("type", "action_item")
-      .is("deleted_at", null)
-      .is("completed_at", null)
+    // Action items + engagement signals run in parallel (independent
+    // queries). Response shape changed Phase 3 Commit 3.0 from a flat
+    // `items` array to two named arrays:
+    //   actionItems       coach-authored action item notes (existing)
+    //   engagementSignals system-detected R1-R6 signals (new)
+    // Sole consumer NeedsAttentionSection.tsx is updated in the same
+    // commit. The legacy `items` key is no longer returned.
+    const [notesResult, clientProfileResult] = await Promise.all([
+      supabase
+        .from("coach_client_notes")
+        .select("id, body, priority, created_at, completed_at")
+        .eq("coach_profile_id", profileId)
+        .eq("client_profile_id", clientProfileId)
+        .eq("type", "action_item")
+        .is("deleted_at", null)
+        .is("completed_at", null),
+      // For the heuristic engine we need the client's name/email/user_id;
+      // last_viewed_at comes from the verifyCoachAccess result above (it
+      // already pulled the coach_clients row). One extra query for the
+      // profile fields, parallelized with the notes fetch.
+      supabase
+        .from("client_profiles")
+        .select("id, name, email, user_id")
+        .eq("id", clientProfileId)
+        .maybeSingle(),
+    ])
 
-    if (error) throw new Error(`Needs-attention query failed: ${error.message}`)
+    const { data: notesData, error: notesErr } = notesResult
+    if (notesErr) throw new Error(`Needs-attention query failed: ${notesErr.message}`)
 
-    const items = (data ?? [])
+    const actionItems = (notesData ?? [])
       .map((r) => ({
         note_id: r.id as string,
         body: r.body as string,
@@ -155,7 +179,25 @@ export async function GET(
         return b.created_at.localeCompare(a.created_at)
       })
 
-    return withCorsJson(req, { ok: true, items })
+    // Build a single-client HeuristicClient and invoke the shared engine.
+    // last_viewed_at comes from the access row we already verified.
+    const cp = clientProfileResult.data
+    const heuristicClients: HeuristicClient[] = cp
+      ? [{
+          client_profile_id: cp.id as string,
+          name: (cp.name as string | null) ?? null,
+          email: (cp.email as string | null) ?? null,
+          user_id: (cp.user_id as string | null) ?? null,
+          last_viewed_at: (access as any).last_viewed_at ?? null,
+        }]
+      : []
+    const engagementSignals = await runHeuristics({
+      supabase,
+      coachProfileId: profileId,
+      clients: heuristicClients,
+    })
+
+    return withCorsJson(req, { ok: true, actionItems, engagementSignals })
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500

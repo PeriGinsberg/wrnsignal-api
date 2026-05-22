@@ -25,6 +25,11 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import {
+  runHeuristics,
+  type HeuristicClient,
+  type EngagementSignal,
+} from "../../_lib/coachEngagementHeuristics"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -94,20 +99,10 @@ export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
-type ActionItem = {
-  id: string                 // synthetic; client+rule stable enough for React keys
-  kind:
-    | "no_login"
-    | "rec_pending_review"
-    | "moved_interviewing"
-    | "moved_rejected"
-    | "offer_no_followup"
-    | "poor_fit_no_rec"
-  client_profile_id: string
-  client_name: string
-  message: string
-  days_elapsed: number
-}
+// Coach Home's "requiresAction" array reuses the EngagementSignal shape
+// exported by the shared heuristics module. Same fields, same semantics —
+// just a re-alias so the response shape stays stable for the client.
+type ActionItem = EngagementSignal
 
 export async function GET(req: NextRequest) {
   try {
@@ -251,199 +246,24 @@ export async function GET(req: NextRequest) {
       return (a.name || "").localeCompare(b.name || "")
     })
 
-    // ── 4. Heuristic rules → ActionItem[] ─────────────────────────────
-    const requiresAction: ActionItem[] = []
-    const seenClientRule = new Set<string>()  // dedupe: at most one item per (client, rule)
-    const push = (item: ActionItem) => {
-      const key = `${item.client_profile_id}:${item.kind}`
-      if (seenClientRule.has(key)) return
-      seenClientRule.add(key)
-      requiresAction.push(item)
-    }
-
-    // R1 — client hasn't logged in 7+ days
-    // Read auth.users.last_sign_in_at via admin API (per-user lookup).
-    for (const c of clientCards) {
-      if (!c._user_id) continue
-      try {
-        const { data: u } = await supabase.auth.admin.getUserById(c._user_id)
-        const last = u?.user?.last_sign_in_at
-        if (!last) continue
-        const days = daysBetween(last)
-        if (days >= 7) {
-          push({
-            id: `r1:${c.client_profile_id}`,
-            kind: "no_login",
-            client_profile_id: c.client_profile_id,
-            client_name: c.name || c.email || "(unknown)",
-            message: `${(c.name || c.email || "Client").split(" ")[0]} hasn't logged in for ${days} days`,
-            days_elapsed: days,
-          })
-        }
-      } catch {}
-    }
-
-    // R2 — coach rec pending client review 3+ days
-    if (clientProfileIds.length > 0) {
-      const { data: stale } = await supabase
-        .from("coach_job_recommendations")
-        .select("id, client_profile_id, created_at")
-        .eq("coach_profile_id", coachProfileId)
-        .in("client_profile_id", clientProfileIds)
-        .is("client_responded_at", null)
-        .lt("created_at", daysAgo(3))
-        .order("created_at", { ascending: true })
-      for (const rec of stale || []) {
-        const c = clientCards.find((x) => x.client_profile_id === rec.client_profile_id)
-        if (!c) continue
-        const days = daysBetween(rec.created_at)
-        push({
-          id: `r2:${rec.id}`,
-          kind: "rec_pending_review",
-          client_profile_id: rec.client_profile_id,
-          client_name: c.name || c.email || "(unknown)",
-          message: `${(c.name || c.email || "Client").split(" ")[0]} — coach rec pending review for ${days} days`,
-          days_elapsed: days,
-        })
-      }
-    }
-
-    // R3, R4, R5 — status_history-driven
-    if (clientProfileIds.length > 0) {
-      // Pull all relevant transitions in one shot
-      const { data: histRows } = await supabase
-        .from("signal_applications_status_history")
-        .select("id, application_id, to_status, changed_at, signal_applications!inner(profile_id, company_name, job_title)")
-        .in("to_status", ["interviewing", "rejected", "offer"])
-        .in("signal_applications.profile_id", clientProfileIds)
-        .order("changed_at", { ascending: false })
-
-      // Group by (client, to_status) → latest transition only
-      type Hist = {
-        id: string
-        application_id: string
-        to_status: string
-        changed_at: string
-        client_profile_id: string
-        company_name: string
-        job_title: string
-      }
-      const latestPerClient = new Map<string, Hist>()  // `${cpid}:${to_status}:${app_id}` → row
-      for (const r of (histRows || []) as any[]) {
-        const cpid = r.signal_applications?.profile_id
-        if (!cpid) continue
-        const key = `${cpid}:${r.to_status}:${r.application_id}`
-        if (!latestPerClient.has(key)) {
-          latestPerClient.set(key, {
-            id: r.id,
-            application_id: r.application_id,
-            to_status: r.to_status,
-            changed_at: r.changed_at,
-            client_profile_id: cpid,
-            company_name: r.signal_applications?.company_name ?? "",
-            job_title: r.signal_applications?.job_title ?? "",
-          })
-        }
-      }
-
-      // Verify the transition is still the CURRENT status (i.e. nothing
-      // moved past it). Pull current statuses for those apps.
-      const candidateAppIds = Array.from(latestPerClient.values()).map((h) => h.application_id)
-      const currentStatusByApp = new Map<string, string>()
-      if (candidateAppIds.length > 0) {
-        const { data: currentApps } = await supabase
-          .from("signal_applications")
-          .select("id, application_status")
-          .in("id", candidateAppIds)
-        for (const a of currentApps || []) currentStatusByApp.set(a.id, a.application_status)
-      }
-
-      const baselineThresholds: Record<string, number> = {
-        interviewing: 2,
-        rejected: 3,
-        offer: 1,
-      }
-      const ruleByStatus: Record<string, ActionItem["kind"]> = {
-        interviewing: "moved_interviewing",
-        rejected: "moved_rejected",
-        offer: "offer_no_followup",
-      }
-
-      for (const h of latestPerClient.values()) {
-        // Status must still be the same (i.e. they didn't move past it)
-        if (currentStatusByApp.get(h.application_id) !== h.to_status) continue
-
-        const days = daysBetween(h.changed_at)
-        const threshold = baselineThresholds[h.to_status]
-        if (days < threshold) continue
-
-        // No coach view since the change
-        const c = clientCards.find((x) => x.client_profile_id === h.client_profile_id)
-        if (!c) continue
-        if (c.last_viewed_at && c.last_viewed_at > h.changed_at) continue
-
-        const first = (c.name || c.email || "Client").split(" ")[0]
-        const co = h.company_name || "an application"
-        const messages: Record<string, string> = {
-          interviewing: `${first} moved ${co} to Interviewing ${days} days ago — no follow-up`,
-          rejected: `${first} was rejected from ${co} ${days} days ago — no acknowledgment`,
-          offer: `${first} has an offer from ${co} (${days}d) — needs follow-up`,
-        }
-        push({
-          id: `${ruleByStatus[h.to_status]}:${h.application_id}`,
-          kind: ruleByStatus[h.to_status],
-          client_profile_id: h.client_profile_id,
-          client_name: c.name || c.email || "(unknown)",
-          message: messages[h.to_status],
-          days_elapsed: days,
-        })
-      }
-    }
-
-    // R6 — poor-fit app added 5+ days ago, no coach rec from this coach
-    if (clientProfileIds.length > 0) {
-      const { data: poorFit } = await supabase
-        .from("signal_applications")
-        .select("id, profile_id, company_name, job_title, signal_score, created_at, application_status")
-        .in("profile_id", clientProfileIds)
-        .not("signal_score", "is", null)
-        .lt("signal_score", 60)
-        .lt("created_at", daysAgo(5))
-        .not("application_status", "in", "(rejected,withdrawn)")
-
-      // Pull this coach's recs for these clients to filter out apps
-      // that already got a coach rec.
-      const { data: coachRecs } = await supabase
-        .from("coach_job_recommendations")
-        .select("client_profile_id, company_name, job_title")
-        .eq("coach_profile_id", coachProfileId)
-        .in("client_profile_id", clientProfileIds)
-      const recKey = (cpid: string, co: string, ti: string) =>
-        `${cpid}|${(co || "").toLowerCase().trim()}|${(ti || "").toLowerCase().trim()}`
-      const recSet = new Set((coachRecs || []).map((r: any) => recKey(r.client_profile_id, r.company_name, r.job_title)))
-
-      for (const a of poorFit || []) {
-        if (recSet.has(recKey(a.profile_id, a.company_name, a.job_title))) continue
-        const c = clientCards.find((x) => x.client_profile_id === a.profile_id)
-        if (!c) continue
-        const days = daysBetween(a.created_at)
-        const first = (c.name || c.email || "Client").split(" ")[0]
-        push({
-          id: `r6:${a.id}`,
-          kind: "poor_fit_no_rec",
-          client_profile_id: a.profile_id,
-          client_name: c.name || c.email || "(unknown)",
-          message: `${first} added ${a.company_name || "a low-fit app"} (score ${a.signal_score}) ${days}d ago — no coach rec yet`,
-          days_elapsed: days,
-        })
-      }
-    }
-
-    // Sort action items: oldest issues first (highest days_elapsed),
-    // then by client name for stability
-    requiresAction.sort((a, b) => {
-      if (b.days_elapsed !== a.days_elapsed) return b.days_elapsed - a.days_elapsed
-      return a.client_name.localeCompare(b.client_name)
+    // ── 4. Engagement signals (R1–R6) ─────────────────────────────────
+    //
+    // The R1-R6 heuristic engine was extracted to a shared module in
+    // Phase 3 Commit 3.0 so both this cross-client surface and the
+    // per-client /needs-attention endpoint share one implementation.
+    // The engine's input shape (HeuristicClient[]) is a strict subset of
+    // the clientCards we already built above — map it down.
+    const heuristicClients: HeuristicClient[] = clientCards.map((c) => ({
+      client_profile_id: c.client_profile_id,
+      name: c.name,
+      email: c.email,
+      user_id: c._user_id,
+      last_viewed_at: c.last_viewed_at,
+    }))
+    const requiresAction: ActionItem[] = await runHeuristics({
+      supabase,
+      coachProfileId,
+      clients: heuristicClients,
     })
 
     // ── 5. Coach-level metric tiles (Phase 2 Item 14) ───────────────
