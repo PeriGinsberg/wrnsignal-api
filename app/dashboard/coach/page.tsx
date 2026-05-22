@@ -919,7 +919,19 @@ export default function CoachHomePage() {
         onInvite={() => { setInviteOpen(true); setInviteResult(null) }}
         onShowAll={() => router.push("/dashboard/coach/clients")}
         onLifecycleStatusChange={(clientProfileId, next) => {
-          // Optimistic local update — PATCH already succeeded inside the pill.
+          // Two-step update — order matters (6.5 fix surfaced by TC-597
+          // testing). Step 1: optimistic local mutation of the client
+          // row so the pill swaps color immediately. Step 2: silent
+          // background refetch so the metric tiles (totalApplications,
+          // totalInterviewing, totalOffers, avgInterviewRate) and the
+          // requiresAction list reconcile with the server's lifecycle-
+          // scope filters. Without step 2, data.metrics stays frozen
+          // at the pre-change snapshot — pill updates but tile counts
+          // don't, which Erin caught when archiving a client and
+          // seeing Total Interviewing not decrease. load() goes
+          // through the silent path automatically (hasLoadedOnceRef
+          // is already true by this point — set on the genuine first
+          // mount) so no LoadingShell flash during the refetch.
           setData((prev) => {
             if (!prev) return prev
             return {
@@ -931,6 +943,7 @@ export default function CoachHomePage() {
               ),
             }
           })
+          load()
         }}
       />
 
