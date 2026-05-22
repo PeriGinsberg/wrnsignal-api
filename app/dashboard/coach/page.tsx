@@ -19,6 +19,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import CreateClientModal from "./CreateClientModal"
 import {
@@ -238,11 +239,16 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
 // reinforce the column distinction. Other sections (Today's Schedule,
 // My Clients) omit the prop and render with the default orange icon and
 // no top strip.
+// Phase 2 Commit 2.5 — Section title is clickable when `titleHref` is
+// provided. Hover affordance: underline appears on the title text only,
+// no color shift, no row-level change. Today's Schedule (a placeholder
+// section) intentionally omits titleHref → renders plain text.
 function Section({
-  icon, title, count, headerRight, children, accentColor, noBottomMargin,
+  icon, title, titleHref, count, headerRight, children, accentColor, noBottomMargin,
 }: {
   icon: React.ReactNode
   title: string
+  titleHref?: string
   count?: number
   headerRight?: React.ReactNode
   children: React.ReactNode
@@ -250,6 +256,21 @@ function Section({
   noBottomMargin?: boolean
 }) {
   const iconColor = accentColor ?? T.WRN_ORANGE
+  const [titleHovered, setTitleHovered] = useState(false)
+  const titleSpan = (
+    <span
+      style={{
+        fontSize: 16,
+        fontWeight: 600,
+        color: T.TEXT,
+        letterSpacing: -0.2,
+        textDecoration: titleHref && titleHovered ? "underline" : "none",
+        cursor: titleHref ? "pointer" : "default",
+      }}
+    >
+      {title}
+    </span>
+  )
   return (
     <div
       style={{
@@ -276,7 +297,18 @@ function Section({
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <span style={{ display: "inline-flex", color: iconColor }}>{icon}</span>
-        <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>{title}</span>
+        {titleHref ? (
+          <Link
+            href={titleHref}
+            onMouseEnter={() => setTitleHovered(true)}
+            onMouseLeave={() => setTitleHovered(false)}
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            {titleSpan}
+          </Link>
+        ) : (
+          titleSpan
+        )}
         {typeof count === "number" && count > 0 && <CountPill n={count} color={iconColor} />}
         {headerRight && <span style={{ marginLeft: "auto" }}>{headerRight}</span>}
       </div>
@@ -456,6 +488,7 @@ function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargi
     <Section
       icon={<IconBell />}
       title="Engagement Signals"
+      titleHref="/dashboard/coach/required-actions"
       count={items.length}
       accentColor={T.WRN_BLUE}
       noBottomMargin={noBottomMargin}
@@ -613,7 +646,13 @@ function MyClientsSection({
   )
 
   return (
-    <Section icon={<IconUsers />} title="My clients" count={clients.length} headerRight={headerRight}>
+    <Section
+      icon={<IconUsers />}
+      title="My clients"
+      titleHref="/dashboard/coach/clients"
+      count={clients.length}
+      headerRight={headerRight}
+    >
       {clients.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>No clients yet. Use Create or Invite above to add one.</p>
       ) : (
@@ -767,6 +806,7 @@ export default function CoachHomePage() {
         <Section
           icon={<IconClipboardCheck />}
           title="Action Items"
+          titleHref="/dashboard/coach/required-actions"
           accentColor={T.WRN_ORANGE}
           noBottomMargin
         >
