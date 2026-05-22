@@ -21,6 +21,7 @@ import type { LifecycleStatus } from "../../LifecycleStatusPill"
 import { ApplicationStatusEditPill } from "./ApplicationStatusEditPill"
 import type { ApplicationStatus } from "../../../../_lib/applicationStatuses"
 import { SavingSpinner } from "../../SavingSpinner"
+import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { DashboardView } from "./dashboard/DashboardView"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
@@ -838,8 +839,11 @@ export default function CoachClientPage() {
                             <div style={{ marginBottom: 12 }}>
                               <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 6 }}>YOUR NOTES</div>
                               {app.coach_annotations.map((ann: any, i: number) => (
-                                <p key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", marginBottom: 4, paddingLeft: 8, borderLeft: `2px solid ${T.WRN_ORANGE}40` }}>
-                                  {ann.note}
+                                <p key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", marginBottom: 4, paddingLeft: 8, borderLeft: `2px solid ${T.WRN_ORANGE}40`, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                                  <span style={{ marginTop: 3 }}>
+                                    <NoteVisibilityIcon visible={ann.visible_to_client !== false} />
+                                  </span>
+                                  <span>{ann.note}</span>
                                 </p>
                               ))}
                             </div>
