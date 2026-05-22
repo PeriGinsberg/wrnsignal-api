@@ -18,6 +18,7 @@ import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { CrossClientActionItemsList } from "../_action-items/CrossClientActionItemsList"
 import { BackToDashboard } from "../BackToDashboard"
+import { DismissSignalButton, useDismissSignal } from "../DismissSignalButton"
 
 type HeuristicItem = {
   id: string
@@ -87,6 +88,17 @@ export default function RequiredActionsPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // Phase 3 Commit 3.2 — dismiss + undo wiring for the engagement
+  // signal rows below. Hook owns toast state; setHeuristics is the
+  // local-state mutator for optimistic remove + restore.
+  const { dismiss, toastNode } = useDismissSignal<HeuristicItem>({
+    authFetch,
+    onLocalRemove: (id) =>
+      setHeuristics((prev) => (prev ? prev.filter((x) => x.id !== id) : prev)),
+    onLocalRestore: (s) =>
+      setHeuristics((prev) => (prev ? [...prev, s] : [s])),
+  })
 
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
 
@@ -167,32 +179,63 @@ export default function RequiredActionsPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {heuristicList.map((item) => (
-              <div
+              <EngagementSignalFullRow
                 key={item.id}
+                item={item}
                 onClick={() => router.push(`/dashboard/coach/clients/${item.client_profile_id}`)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "12px 14px",
-                  background: "rgba(255,255,255,0.025)",
-                  border: `1px solid ${T.BORDER_SOFT}`,
-                  borderRadius: 10,
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{
-                  fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-                  color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
-                  padding: "3px 8px", borderRadius: 6, flexShrink: 0,
-                }}>
-                  {RULE_LABEL[item.kind]}
-                </span>
-                <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
-                <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
-              </div>
+                onDismiss={dismiss}
+              />
             ))}
           </div>
         )}
       </section>
+      {toastNode}
+    </div>
+  )
+}
+
+// Inline row component for the Required Actions full page. Mirrors
+// ActionRow on Coach Home but lives here to avoid cross-file imports
+// of a private component. Tracks its own hover state so the dismiss
+// button only appears on row hover (Phase 3 Commit 3.2).
+function EngagementSignalFullRow({
+  item,
+  onClick,
+  onDismiss,
+}: {
+  item: HeuristicItem
+  onClick: () => void
+  onDismiss: (item: HeuristicItem) => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "12px 14px",
+        background: hovered ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.025)",
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 10,
+        cursor: "pointer",
+        transition: "background 120ms ease",
+      }}
+    >
+      <span style={{
+        fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+        color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
+        padding: "3px 8px", borderRadius: 6, flexShrink: 0,
+      }}>
+        {RULE_LABEL[item.kind]}
+      </span>
+      <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
+      <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
+      <DismissSignalButton
+        onClick={() => onDismiss(item)}
+        visible={hovered}
+      />
     </div>
   )
 }

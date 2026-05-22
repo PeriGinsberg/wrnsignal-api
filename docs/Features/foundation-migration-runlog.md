@@ -22,6 +22,8 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation + Phase 2a skeletons land. |
 | `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | 2026-05-21 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 1, Commit 1.4). Adds coach-managed `lifecycle_status` column to `coach_clients` (Prospect/Active/Inactive/Archived), distinct from system-owned `status`. Default 'Active' so existing rows defaulted in. Sanity: SELECT confirmed all rows defaulted; CHECK constraint rejected 'Bogus' negative test. |
 | `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply after Phase 1 ship-out, separate explicit promotion step. |
+| `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | 2026-05-22 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 3, Commit 3.2). New table holding (coach_profile_id, signal_key) dismissal pairs for R1-R6 engagement signals. signal_key = engine-emitted `id` directly (locked Phase 3.0). UNIQUE constraint + index on coach_profile_id support ON CONFLICT DO NOTHING idempotency. Sanity: COUNT = 0 confirmed fresh. ON CONFLICT path will be exercised by real dismissal smoke (TC-661). |
+| `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply post-pitch, separate explicit promotion step. |
 
 ---
 

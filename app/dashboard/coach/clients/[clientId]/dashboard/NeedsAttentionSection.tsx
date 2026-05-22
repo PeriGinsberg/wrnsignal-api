@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
+import { DismissSignalButton, useDismissSignal } from "../../../DismissSignalButton"
 
 type Priority = "urgent" | "this_week" | "when_ready"
 
@@ -80,6 +81,16 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  // Phase 3 Commit 3.2 — dismiss wiring for the engagement signal
+  // subsection. Action items don't get dismiss (only checkbox-complete).
+  const { dismiss, toastNode } = useDismissSignal<EngagementSignal>({
+    authFetch,
+    onLocalRemove: (id) =>
+      setEngagementSignals((prev) => prev.filter((x) => x.id !== id)),
+    onLocalRestore: (s) =>
+      setEngagementSignals((prev) => [...prev, s]),
+  })
 
   async function load() {
     setLoading(true)
@@ -235,34 +246,65 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {visibleSignals.map((item) => (
-                  <div
+                  <NeedsAttentionSignalRow
                     key={item.id}
+                    item={item}
                     onClick={() => router.push(`/dashboard/coach/clients/${item.client_profile_id}`)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 12,
-                      padding: "10px 12px",
-                      background: "rgba(255,255,255,0.025)",
-                      border: `1px solid ${T.BORDER_SOFT}`,
-                      borderRadius: 10,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span style={{
-                      fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-                      color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
-                      padding: "3px 8px", borderRadius: 6, flexShrink: 0,
-                    }}>
-                      {RULE_LABEL[item.kind]}
-                    </span>
-                    <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
-                    <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
-                  </div>
+                    onDismiss={dismiss}
+                  />
                 ))}
               </div>
             </div>
           )}
         </div>
       )}
+      {toastNode}
     </section>
+  )
+}
+
+// Inline row for engagement signals inside NeedsAttentionSection.
+// Hover state drives the dismiss button visibility — same pattern as
+// ActionRow on Coach Home and EngagementSignalFullRow on the
+// Required Actions page.
+function NeedsAttentionSignalRow({
+  item,
+  onClick,
+  onDismiss,
+}: {
+  item: EngagementSignal
+  onClick: () => void
+  onDismiss: (item: EngagementSignal) => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "10px 12px",
+        background: hovered ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.025)",
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 10,
+        cursor: "pointer",
+        transition: "background 120ms ease",
+      }}
+    >
+      <span style={{
+        fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+        color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
+        padding: "3px 8px", borderRadius: 6, flexShrink: 0,
+      }}>
+        {RULE_LABEL[item.kind]}
+      </span>
+      <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
+      <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
+      <DismissSignalButton
+        onClick={() => onDismiss(item)}
+        visible={hovered}
+      />
+    </div>
   )
 }

@@ -28,6 +28,7 @@ import {
 import { CrossClientActionItemsList } from "./_action-items/CrossClientActionItemsList"
 import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
+import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -446,12 +447,24 @@ function TodaysScheduleSection() {
 // Section D — Requires action (collapsible)
 // ──────────────────────────────────────────────────────────────
 
-function ActionRow({ item, onClick }: { item: ActionItem; onClick: () => void }) {
+function ActionRow({
+  item,
+  onClick,
+  onDismiss,
+}: {
+  item: ActionItem
+  onClick: () => void
+  onDismiss?: (item: ActionItem) => void
+}) {
+  // Local hover state drives the dismiss button visibility (Phase 3.2).
+  // Imperative bg mutation via onCoachRowEnter/Leave still runs alongside
+  // for the row-level bg color shift — the two are independent.
+  const [hovered, setHovered] = useState(false)
   return (
     <div
       onClick={onClick}
-      onMouseEnter={onCoachRowEnter}
-      onMouseLeave={(e) => onCoachRowLeave(e)}
+      onMouseEnter={(e) => { onCoachRowEnter(e); setHovered(true) }}
+      onMouseLeave={(e) => { onCoachRowLeave(e); setHovered(false) }}
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "12px 14px",
@@ -471,6 +484,12 @@ function ActionRow({ item, onClick }: { item: ActionItem; onClick: () => void })
       </span>
       <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
       <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
+      {onDismiss && (
+        <DismissSignalButton
+          onClick={() => onDismiss(item)}
+          visible={hovered}
+        />
+      )}
     </div>
   )
 }
@@ -481,24 +500,41 @@ function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargi
   onShowAll: () => void
   noBottomMargin?: boolean
 }) {
-  const visible = items.slice(0, COLLAPSED_LIMIT)
-  const hasMore = items.length > COLLAPSED_LIMIT
+  // Local copy of items so optimistic dismissal can remove rows without
+  // round-tripping through the parent state. Resyncs when parent refetches
+  // (items prop reference changes).
+  const [localItems, setLocalItems] = useState<ActionItem[]>(items)
+  useEffect(() => { setLocalItems(items) }, [items])
+
+  const { dismiss, toastNode } = useDismissSignal<ActionItem>({
+    authFetch,
+    onLocalRemove: (id) => setLocalItems((prev) => prev.filter((x) => x.id !== id)),
+    onLocalRestore: (s) => setLocalItems((prev) => [...prev, s]),
+  })
+
+  const visible = localItems.slice(0, COLLAPSED_LIMIT)
+  const hasMore = localItems.length > COLLAPSED_LIMIT
 
   return (
     <Section
       icon={<IconBell />}
       title="Engagement Signals"
       titleHref="/dashboard/coach/required-actions"
-      count={items.length}
+      count={localItems.length}
       accentColor={T.WRN_BLUE}
       noBottomMargin={noBottomMargin}
     >
-      {items.length === 0 ? (
+      {localItems.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing flagged from activity right now.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {visible.map((item) => (
-            <ActionRow key={item.id} item={item} onClick={() => onItemClick(item.client_profile_id)} />
+            <ActionRow
+              key={item.id}
+              item={item}
+              onClick={() => onItemClick(item.client_profile_id)}
+              onDismiss={dismiss}
+            />
           ))}
           {hasMore && (
             <button
@@ -509,11 +545,12 @@ function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargi
                 padding: "8px 0 0", textAlign: "left", marginTop: 4,
               }}
             >
-              Show all {items.length} →
+              Show all {localItems.length} →
             </button>
           )}
         </div>
       )}
+      {toastNode}
     </Section>
   )
 }

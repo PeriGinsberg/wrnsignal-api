@@ -85,6 +85,23 @@ export async function runHeuristics(
   if (clients.length === 0) return signals
   const clientProfileIds = clients.map((c) => c.client_profile_id)
 
+  // Phase 3 Commit 3.2 — load this coach's dismissal set up front so we
+  // can filter dismissed signal IDs at the end. signal_key = the engine's
+  // emitted `id` directly (architectural lock from 3.0). Same filter
+  // applies in both cross-client and per-client modes — coach gestures
+  // on Coach Home propagate to Client Dashboard + Required Actions
+  // automatically on next read.
+  const dismissedKeys = new Set<string>()
+  {
+    const { data: dismissed } = await supabase
+      .from("coach_engagement_signal_dismissals")
+      .select("signal_key")
+      .eq("coach_profile_id", coachProfileId)
+    for (const r of dismissed || []) {
+      if (typeof r.signal_key === "string") dismissedKeys.add(r.signal_key)
+    }
+  }
+
   // R1 — client hasn't logged in 7+ days. auth.users.last_sign_in_at via
   // admin API (per-user lookup).
   for (const c of clients) {
@@ -266,12 +283,21 @@ export async function runHeuristics(
     }
   }
 
+  // Phase 3 Commit 3.2 — filter dismissed signals. Done in a single pass
+  // after R1-R6 finish so the dedup + signal-construction logic above
+  // stays unchanged. Re-firings of the same condition produce the same
+  // `id`, so dismissed signals stay dismissed across re-runs.
+  const filteredSignals =
+    dismissedKeys.size > 0
+      ? signals.filter((s) => !dismissedKeys.has(s.id))
+      : signals
+
   // Sort: oldest issues first (highest days_elapsed), then by client_name
   // ASC for stability. Matches the prior /api/coach/home behavior exactly.
-  signals.sort((a, b) => {
+  filteredSignals.sort((a, b) => {
     if (b.days_elapsed !== a.days_elapsed) return b.days_elapsed - a.days_elapsed
     return a.client_name.localeCompare(b.client_name)
   })
 
-  return signals
+  return filteredSignals
 }
