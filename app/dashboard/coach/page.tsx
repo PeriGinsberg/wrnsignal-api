@@ -17,7 +17,7 @@
 // T.CARD bg + T.BORDER_SOFT; avatars use translucent colored bg + brighter
 // text (palette of 5, deterministic by hash of client name).
 
-import { useEffect, useMemo, useState, useCallback } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
@@ -747,16 +747,28 @@ export default function CoachHomePage() {
   // Dashboard so the coach's preference is global.
   const [metricsWindow, setMetricsWindow] = useMetricsWindow()
 
+  // Phase 5 amendment — gates setLoading so that only the GENUINE
+  // first-mount fetch renders the LoadingShell. Subsequent refetches
+  // (toggle change, hook's localStorage sync on mount) refresh data
+  // in place. Without this, every toggle click flashed a LoadingShell
+  // for ~200ms before the new tile values rendered (same flash class
+  // as the 4.3 post-save bug, different trigger). Set to true at the
+  // START of the function so a re-entrant call during a pending
+  // fetch also skips the loading flip.
+  const hasLoadedOnceRef = useRef(false)
+
   const load = useCallback(async () => {
-    setLoading(true)
+    const silent = hasLoadedOnceRef.current
+    hasLoadedOnceRef.current = true
+    if (!silent) setLoading(true)
     const res = await authFetch(`/api/coach/home?window=${metricsWindow}`)
     if (res.status === 403) {
       setAccessForbidden(true)
-      setLoading(false)
+      if (!silent) setLoading(false)
       return
     }
     if (res.ok) setData((await res.json()) as CoachHome)
-    setLoading(false)
+    if (!silent) setLoading(false)
   }, [metricsWindow])
 
   useEffect(() => { load() }, [load])
