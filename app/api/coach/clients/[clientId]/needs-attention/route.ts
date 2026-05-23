@@ -141,11 +141,16 @@ export async function GET(
     // Sole consumer NeedsAttentionSection.tsx is updated in the same
     // commit. The legacy `items` key is no longer returned.
     const [notesResult, clientProfileResult] = await Promise.all([
+      // Filter by coach_client_id (canonical relationship id) instead of
+      // the (coach_profile_id, client_profile_id) pair. access.id came
+      // from verifyCoachAccess above and uniquely identifies the
+      // coach-client pair. Forward-compatible with prospect notes where
+      // client_profile_id is NULL (canonicalized 2026-05-23, Prospects
+      // v0.1 Commit 2a).
       supabase
         .from("coach_client_notes")
         .select("id, body, priority, created_at, completed_at")
-        .eq("coach_profile_id", profileId)
-        .eq("client_profile_id", clientProfileId)
+        .eq("coach_client_id", access.id)
         .eq("type", "action_item")
         .is("deleted_at", null)
         .is("completed_at", null),

@@ -131,11 +131,16 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "Invalid type filter" }, 400)
     }
 
+    // Filter by coach_client_id (canonical relationship id) instead of
+    // the (coach_profile_id, client_profile_id) pair. access.id came from
+    // verifyCoachAccess above which already enforced ownership at both
+    // sides, so coach_client_id uniquely identifies the right row scope.
+    // Forward-compatible with prospect notes where client_profile_id is
+    // NULL (canonicalized 2026-05-23, Prospects v0.1 Commit 2a).
     let q = supabase
       .from("coach_client_notes")
       .select("id, type, body, priority, completed_at, created_at, updated_at")
-      .eq("coach_profile_id", profileId)
-      .eq("client_profile_id", clientProfileId)
+      .eq("coach_client_id", access.id)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
 

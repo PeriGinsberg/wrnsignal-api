@@ -118,21 +118,25 @@ export async function PUT(
     }
 
     // Load existing note + ownership check. Excludes soft-deleted rows so
-    // a deleted note can't be re-edited back to life.
+    // a deleted note can't be re-edited back to life. Ownership is now
+    // verified via coach_client_id (which uniquely identifies the
+    // coach-client pair) instead of the legacy two-step coach_profile_id
+    // + client_profile_id check. access.id came from verifyCoachAccess
+    // above and is guaranteed to be the coach_clients row for (this
+    // coach, this client). Canonicalized 2026-05-23, Prospects v0.1
+    // Commit 2a — forward-compatible with prospect notes where
+    // client_profile_id is NULL.
     const { data: existing, error: readErr } = await supabase
       .from("coach_client_notes")
-      .select("id, coach_profile_id, client_profile_id, type, priority, completed_at, deleted_at")
+      .select("id, coach_client_id, type, priority, completed_at, deleted_at")
       .eq("id", noteId)
       .maybeSingle()
     if (readErr) throw new Error(`Note read failed: ${readErr.message}`)
     if (!existing || existing.deleted_at) {
       return withCorsJson(req, { ok: false, error: "Note not found" }, 404)
     }
-    if (existing.coach_profile_id !== profileId) {
-      return withCorsJson(req, { ok: false, error: "Forbidden: not the note author" }, 403)
-    }
-    if (existing.client_profile_id !== clientProfileId) {
-      return withCorsJson(req, { ok: false, error: "Note does not belong to this client" }, 400)
+    if (existing.coach_client_id !== access.id) {
+      return withCorsJson(req, { ok: false, error: "Forbidden: note does not belong to this coach-client relationship" }, 403)
     }
 
     const body = await req.json().catch(() => null)
@@ -255,20 +259,18 @@ export async function DELETE(
       return withCorsJson(req, { ok: false, error: "Forbidden: annotate or full access required" }, 403)
     }
 
+    // Ownership now verified via coach_client_id (see PUT handler comment).
     const { data: existing, error: readErr } = await supabase
       .from("coach_client_notes")
-      .select("id, coach_profile_id, client_profile_id, deleted_at")
+      .select("id, coach_client_id, deleted_at")
       .eq("id", noteId)
       .maybeSingle()
     if (readErr) throw new Error(`Note read failed: ${readErr.message}`)
     if (!existing || existing.deleted_at) {
       return withCorsJson(req, { ok: false, error: "Note not found" }, 404)
     }
-    if (existing.coach_profile_id !== profileId) {
-      return withCorsJson(req, { ok: false, error: "Forbidden: not the note author" }, 403)
-    }
-    if (existing.client_profile_id !== clientProfileId) {
-      return withCorsJson(req, { ok: false, error: "Note does not belong to this client" }, 400)
+    if (existing.coach_client_id !== access.id) {
+      return withCorsJson(req, { ok: false, error: "Forbidden: note does not belong to this coach-client relationship" }, 403)
     }
 
     const now = new Date().toISOString()
