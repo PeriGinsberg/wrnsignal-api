@@ -21,6 +21,44 @@ export async function sendClientInvite({
 }: SendClientInviteParams) {
   const subject = `Your SIGNAL account is ready, ${clientFirstName}`
 
+  // Targets block renders conditionally. Existing caller (coach/create-client)
+  // always passes non-empty values → hasAnyTargets is true → identical
+  // output to pre-change behavior. New caller (coach/coach-clients/[id]/
+  // send-invite) passes empty strings when the coach hasn't captured
+  // targets yet → alternate copy renders ("coach will be in touch") and
+  // the table is omitted. See FRD §6.5 + Commit 2c, 2026-05-23.
+  const hasAnyTargets = Boolean(
+    (targetRoles && targetRoles.trim()) ||
+    (targetLocations && targetLocations.trim()) ||
+    (timeframe && timeframe.trim())
+  )
+
+  const targetsBlockHtml = hasAnyTargets
+    ? `      <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
+        Your coach <strong style="color:#2A0F35;">${coachName}</strong> has configured your profile with the following targets:
+      </p>
+
+      <!-- Profile summary -->
+      <div style="background:#FAF5F7;border:1px solid #EDD5E0;border-radius:8px;padding:20px;margin-bottom:24px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:6px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;width:120px;vertical-align:top;">Roles</td>
+            <td style="padding:6px 0;font-size:14px;color:#2A0F35;font-weight:600;">${targetRoles}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;vertical-align:top;">Locations</td>
+            <td style="padding:6px 0;font-size:14px;color:#2A0F35;font-weight:600;">${targetLocations}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;vertical-align:top;">Timeframe</td>
+            <td style="padding:6px 0;font-size:14px;color:#2A0F35;font-weight:600;">${timeframe}</td>
+          </tr>
+        </table>
+      </div>`
+    : `      <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
+        Your coach <strong style="color:#2A0F35;">${coachName}</strong> will be in touch with details about your job search targets.
+      </p>`
+
   const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -42,27 +80,7 @@ export async function sendClientInvite({
         Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center — it scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
       </p>
 
-      <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
-        Your coach <strong style="color:#2A0F35;">${coachName}</strong> has configured your profile with the following targets:
-      </p>
-
-      <!-- Profile summary -->
-      <div style="background:#FAF5F7;border:1px solid #EDD5E0;border-radius:8px;padding:20px;margin-bottom:24px;">
-        <table style="width:100%;border-collapse:collapse;">
-          <tr>
-            <td style="padding:6px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;width:120px;vertical-align:top;">Roles</td>
-            <td style="padding:6px 0;font-size:14px;color:#2A0F35;font-weight:600;">${targetRoles}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;vertical-align:top;">Locations</td>
-            <td style="padding:6px 0;font-size:14px;color:#2A0F35;font-weight:600;">${targetLocations}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;vertical-align:top;">Timeframe</td>
-            <td style="padding:6px 0;font-size:14px;color:#2A0F35;font-weight:600;">${timeframe}</td>
-          </tr>
-        </table>
-      </div>
+${targetsBlockHtml}
 
       <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
         Click below to sign in and start using SIGNAL. No password needed — this link logs you in automatically.
@@ -97,15 +115,19 @@ export async function sendClientInvite({
 </body>
 </html>`
 
+  const targetsBlockText = hasAnyTargets
+    ? `Your coach ${coachName} has configured your profile with the following targets:
+
+Roles: ${targetRoles}
+Locations: ${targetLocations}
+Timeframe: ${timeframe}`
+    : `Your coach ${coachName} will be in touch with details about your job search targets.`
+
   const textBody = `Hi ${clientFirstName},
 
 Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center — it scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
 
-Your coach ${coachName} has configured your profile with the following targets:
-
-Roles: ${targetRoles}
-Locations: ${targetLocations}
-Timeframe: ${timeframe}
+${targetsBlockText}
 
 Click below to sign in and start using SIGNAL:
 ${magicLink}
