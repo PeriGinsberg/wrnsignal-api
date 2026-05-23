@@ -24,6 +24,8 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply after Phase 1 ship-out, separate explicit promotion step. |
 | `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | 2026-05-22 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 3, Commit 3.2). New table holding (coach_profile_id, signal_key) dismissal pairs for R1-R6 engagement signals. signal_key = engine-emitted `id` directly (locked Phase 3.0). UNIQUE constraint + index on coach_profile_id support ON CONFLICT DO NOTHING idempotency. Sanity: COUNT = 0 confirmed fresh. ON CONFLICT path will be exercised by real dismissal smoke (TC-661). |
 | `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply post-pitch, separate explicit promotion step. |
+| `supabase/migrations/20260523_prospects_v0_1.sql` | 2026-05-22 | 2026-05-22 | dev | Supabase SQL Editor | Peri | New columns on coach_clients (3 capture + 14 phase) + DROP NOT NULL on invited_email and coach_client_notes.client_profile_id + partial index. Coaches Center Prospects v0.1 feature, Commit 1 of 4. Manual apply per Risk 6. Filename bumped from 20260522 (collision with engagement-signal-dismissals migration). |
+| `supabase/migrations/20260523_prospects_v0_1.sql` | 2026-05-22 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after Prospects v0.1 beta validation on dev. |
 
 ---
 
@@ -1093,3 +1095,80 @@ for awareness.
 **Transcripts:**
 - `scripts/seed-erin-coaches-center/results/copy-peri-dryrun-2026-05-21T13-53-01-960Z.txt`
 - `scripts/seed-erin-coaches-center/results/copy-peri-confirm-2026-05-21T13-59-05-349Z.txt`
+
+### 2026-05-22 — Prospects v0.1 schema migration (Commit 1 of 4)
+
+First migration shipped for Coaches Center Prospects v0.1. The
+feature decouples prospect capture from SIGNAL account creation:
+coach_clients rows can now exist in lifecycle_status='Prospect'
+with client_profile_id IS NULL, carrying capture data (name,
+source attribution) and sales-pipeline phase checkboxes.
+
+**Applied:**
+
+- `supabase/migrations/20260523_prospects_v0_1.sql` per FRD §6.1
+  (`docs/Features/coaches-center-prospects-frd.md`)
+- Applied to dev via Supabase SQL Editor (Path B — Foundation Risk 6
+  applies as usual)
+- Filename bumped from 20260522 to 20260523 due to collision with
+  `20260522_coach_engagement_signal_dismissals.sql` (Phase 3 Commit 3.2)
+
+**Scope (six DDL changes):**
+
+- 17 new columns on `coach_clients`: `name`, `source_category` (with CHECK
+  constraint on 5 enum values), `source_detail`, plus 7 phase boolean +
+  7 paired `_at` timestamp columns
+- `coach_clients.invited_email` DROP NOT NULL (prospects captured
+  without email)
+- `coach_client_notes.client_profile_id` DROP NOT NULL (so prospect
+  notes can attach via `coach_client_id` only)
+- Partial index `idx_coach_clients_prospect_list`
+  ON `(coach_profile_id, lifecycle_status)`
+  WHERE `lifecycle_status = 'Prospect'`
+
+**Verified on dev:**
+
+- All 17 new columns present and readable (V1 indirect via SELECT)
+- `invited_email` is nullable (V2 indirect via successful INSERT with NULL)
+- `coach_client_notes.client_profile_id` is nullable (V3 indirect)
+- Partial index present with correct WHERE predicate (V4 via pg_indexes)
+- `source_category` CHECK constraint enforced — `'not_a_valid_value'`
+  rejected (V5 indirect via Smoke 4)
+- `lifecycle_status` DEFAULT='Active' unchanged (V6 indirect)
+- Smoke test: INSERT/SELECT/DELETE round-trip of a Prospect-shape
+  row succeeded with NULL email and NULL `client_profile_id`
+- EXPLAIN on prospects list query: Seq Scan at 20 rows (correct
+  planner choice; index will be used as table grows)
+
+**Design decision captured (Q3 from FRD §12):**
+
+`lifecycle_status` DEFAULT='Active' is intentionally unchanged. The
+existing `/api/coach/invite` flow correctly creates
+"going-to-be-a-client" rows with Active default. New prospect-capture
+flow explicitly sets `lifecycle_status='Prospect'` on INSERT. Two
+entry points, two defaults, no conflict. Pending-invite rows
+(`status='pending'`, `client_profile_id IS NULL`, `lifecycle_status='Active'`)
+will NOT surface in the Prospects list (filtered on
+`lifecycle_status='Prospect'`).
+
+**Pre-existing wrinkle observed (out of scope):**
+
+The single existing pending-invite row in dev (1 of the 15 Active
+rows) renders as "Active" lifecycle_status in the My Clients list
+even though the invitee hasn't claimed yet. This is a pre-existing
+UX gap, not caused by this migration. Tracked as observation only;
+not fixed in this commit.
+
+**Commit:** `2d2238fa` on origin/dev. Production promotion deferred
+to a separate explicit step after Prospects v0.1 beta validation
+on dev.
+
+**Next:**
+
+- Commit 2 of 4: Notes refactor (canonicalize `coach_client_notes`
+  reads on `coach_client_id`) + new POST `/api/coach/clients/[clientId]/send-invite`
+  endpoint
+- Commit 3 of 4: `/api/coach/home` NULL hardening + `runHeuristics`
+  prospect exclusion
+- Commit 4 of 4: Full prospect feature surface (5 API endpoints +
+  frontend pages + LifecycleStatusPill refactor + nav addition)
