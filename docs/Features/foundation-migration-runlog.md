@@ -1310,3 +1310,136 @@ content assertions.
 Production promotion of the Commit 1 schema migration remains deferred
 to a separate explicit step after Prospects v0.1 beta validation on
 dev (Commit 4 ships first).
+
+### 2026-05-23 — Prospects v0.1 Commit 3 (NULL hardening) shipped
+
+Commit 3 of the Coaches Center Prospects v0.1 feature is now on
+origin/dev. Commit 2 added the API surface that creates prospects;
+Commit 3 is the defensive surgery on existing routes to handle the
+no-`client_profile_id` state that prospects introduce. Without these
+changes, the first real prospect captured via Commit 4's UI would
+produce broken output across Coach Home tiles, the cross-client
+action items list, and the engagement signal engine.
+
+Three files modified in a single commit (`46e50d3f`):
+
+- **`app/api/coach/home/route.ts`** — five edit points handle the
+  nullable `client_profile_id` state. The `cpid` variable is now
+  typed as `string | null` (no more lying `as string` cast).
+  Per-client stats queries (signal_applications, coach_job_
+  recommendations pending count, recResponseCount) are guarded with
+  `if (cpid)` blocks — prospects skip the queries and return
+  zero-stats cards. The `heuristicClients` map at the call site
+  filters out prospects before passing to `runHeuristics` (the
+  primary fix for the `r1:null` signal-id bug surfaced in the Round
+  3 investigation — NULL string-coerces in template literals).
+  Lifecycle bucket pushes (`aiProfileIds`, `aiaProfileIds`) gain
+  defensive `c.client_profile_id &&` guards — currently safe via
+  the lifecycle gate (Prospect excluded from these buckets) but
+  explicit rather than coincidental.
+
+- **`app/api/coach/action-items/route.ts`** — name lookup restructured
+  to handle prospect notes (NULL `client_profile_id`). The pre-Commit-3
+  pattern SELECTed `client_profile_id` from `coach_client_notes` and
+  joined to `client_profiles` for the name — which would return
+  silently-null names for any prospect note. New pattern: two-stage
+  lookup. Stage 1 fetches `coach_clients` rows (always present, contains
+  the prospect's name + linked profile id + invited_email). Stage 2
+  fetches `client_profiles` for the populated profile ids (richer
+  post-onboarding data for converted clients). Name resolution is a
+  fallback chain: `prof?.name ?? cc?.name ?? null`, with the same
+  pattern for email. The response shape gains `coach_client_id` and
+  `client_id` becomes explicitly nullable. A TODO comment marks
+  the frontend Commit 4 dependency (must route prospect entries via
+  `coach_client_id` since `client_id` will be null).
+
+- **`app/api/_lib/coachEngagementHeuristics.ts`** — defensive
+  `validClients` filter at the top of `runHeuristics`. Belt-and-
+  suspenders: Coach Home's call-site filter is the primary fix
+  (above), but `runHeuristics` itself now rejects any NULL
+  `client_profile_id` or `user_id` with a warn-log identifying the
+  offending row. If a future caller passes prospects unfiltered, the
+  bug surfaces in logs rather than producing broken signal IDs.
+  Five downstream references renamed `clients` → `validClients`
+  (length check + R1/R2/R3-R5/R6 inner finds).
+
+**Verification:** 30/30 assertions across three phases.
+
+- Phase A (8 assertions) — Coach Home behavior with no prospects in
+  DB: response shape unchanged vs pre-Commit-3 baseline, no broken
+  signal IDs introduced.
+- Phase B (6 assertions) — `/api/coach/action-items` + per-client
+  needs-attention work for existing client-stage notes (proves the
+  two-stage lookup didn't break the existing path).
+- Phase C (16 assertions) — load-bearing prospect-data exercise.
+  Created a real Prospect `coach_clients` row with NULL
+  `client_profile_id`, posted 1 session_recap + 1 action_item note
+  via the Commit 2b prospect notes routes, then verified Coach Home
+  renders the prospect with `client_profile_id === null` (literal
+  null, not "null" string, not undefined), zero per-client stats
+  (no queries fired), no broken signal IDs in requiresAction, and
+  activeProspects tile incremented by 1. Verified
+  `/api/coach/action-items` returns the prospect's action_item with
+  `client_name = "Commit 3 Test Prospect"` resolved via the
+  `coach_clients.name` fallback (the two-stage lookup working
+  end-to-end), `client_id: null`, and the new `coach_client_id`
+  field populated.
+
+**Design notes from this commit:**
+
+The Edit 1C heuristicClients filter was originally drafted with a
+TypeScript type-predicate `(c): c is typeof c & { client_profile_id:
+string; _user_id: string }` to narrow the filter output for the
+subsequent `.map()`. The simpler approach (filter then map with
+`as string` casts inside the map) typechecked on first try, so the
+predicate form wasn't needed. Kept as documentation in case future
+similar filters need the predicate pattern.
+
+The action-items response shape change makes `client_id` nullable,
+which is a known dependency for Commit 4 frontend work. The
+existing frontend that consumes `/api/coach/action-items` builds
+URLs like `/dashboard/coach/clients/[client_id]` — passing null
+would produce broken routing. The risk window between Commit 3 and
+Commit 4 is near-zero (prospects can only be created via the
+internal Commit 2b routes today, not via UI), but the TODO comment
+at the items map is the discoverability mechanism for whoever
+picks up Commit 4. The frontend must route prospect-stage action
+items via `coach_client_id` instead.
+
+**Cumulative Prospects v0.1 state on origin/dev:**
+
+| Commit | SHA | Scope |
+|---|---|---|
+| 1 schema | `2d2238fa` | Schema migration |
+| 1 runlog | `11a0046a` | Runlog entry |
+| 2a notes refactor | `b7f89656` | Canonicalize on `coach_client_id` |
+| 2b prospect notes | `0b00c599` | 4 new routes |
+| FRD correction | `2c8a5b4b` | Lifecycle terminology + URL fix |
+| 2c send-invite | `4d17ac77` | Auth user + profile + link flow |
+| 2 runlog | `e091ed11` | Commit 2 runlog entry |
+| 3 NULL hardening | `46e50d3f` | `/api/coach/home` + heuristics + action-items |
+
+**Next:**
+
+Commit 4 of 4 — the full feature surface. Remaining scope:
+
+- 5 new prospect CRUD endpoints (FRD §6.4: GET list, POST create,
+  GET detail, PATCH update including lifecycle conversion, DELETE)
+- Frontend pages: `/dashboard/coach/prospects` list, prospect
+  detail page, "+ Add Prospect" capture modal
+- `LifecycleStatusPill` context-aware refactor (PATCH target
+  branches on `client_profile_id` null check)
+- Nav addition to `COACH_NAV` in `app/dashboard/layout.tsx`
+- New client-detail route keyed by `coach_clients.id` for the
+  post-conversion-pre-invite state
+- Collapsed "Prospect history" block on Client detail pages after
+  conversion
+- Frontend consumer of `/api/coach/action-items` updated to route
+  prospect entries via `coach_client_id` (per Commit 3 TODO)
+- "Active Prospects" tile href update on Coach Home from
+  `/dashboard/coach/clients?filter=prospect` to
+  `/dashboard/coach/prospects`
+
+Production promotion of the Commit 1 schema migration remains
+deferred to a separate explicit step after Commit 4 ships and beta
+validation on dev.
