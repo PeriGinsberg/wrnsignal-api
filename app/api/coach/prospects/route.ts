@@ -1,0 +1,403 @@
+// app/api/coach/prospects/route.ts
+//
+// Prospect list + create endpoints (Prospects v0.1 Commit 4b,
+// 2026-05-24). FRD: docs/Features/coaches-center-prospects-frd.md §6.4.1, §6.4.2.
+//
+// Routes:
+//   GET    — list prospects for the authed coach (lifecycle='Prospect',
+//            status='active'). Sorted last_activity_at DESC NULLS LAST,
+//            then created_at (invited_at proxy) DESC.
+//   POST   — create a new prospect + optional initial_note.
+//
+// Per-prospect operations (detail/update/delete) live in ./[id]/route.ts.
+// Per-prospect notes operations (GET/POST/PUT/DELETE) live in
+// ./[id]/notes/* (shipped in Commit 2b, 0b00c599).
+
+import { type NextRequest } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+// ── Constants + types (inlined per coach-route duplication pattern) ──
+
+const SOURCE_CATEGORIES = ["referral", "social_media", "website", "personal_contact", "other"] as const
+type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
+
+const LIFECYCLE_STATUSES = ["Prospect", "Active", "Inactive", "Archived"] as const
+type LifecycleStatus = (typeof LIFECYCLE_STATUSES)[number]
+
+const PHASE_KEYS = [
+  "initial_contact_made",
+  "discovery_call_scheduled",
+  "discovery_call_completed",
+  "sow_sent",
+  "sow_signed",
+  "invoice_sent",
+  "invoice_paid",
+] as const
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Raw shape of a coach_clients row after SELECT-ing the 18 columns we
+// need. Used by helpers below.
+type CoachClientRow = {
+  id: string
+  name: string | null
+  invited_email: string | null
+  source_category: string | null
+  source_detail: string | null
+  lifecycle_status: string
+  invited_at: string
+  client_profile_id: string | null
+  phase_initial_contact_made: boolean
+  phase_initial_contact_made_at: string | null
+  phase_discovery_call_scheduled: boolean
+  phase_discovery_call_scheduled_at: string | null
+  phase_discovery_call_completed: boolean
+  phase_discovery_call_completed_at: string | null
+  phase_sow_sent: boolean
+  phase_sow_sent_at: string | null
+  phase_sow_signed: boolean
+  phase_sow_signed_at: string | null
+  phase_invoice_sent: boolean
+  phase_invoice_sent_at: string | null
+  phase_invoice_paid: boolean
+  phase_invoice_paid_at: string | null
+}
+
+const PROSPECT_SELECT_COLS = [
+  "id",
+  "name",
+  "invited_email",
+  "source_category",
+  "source_detail",
+  "lifecycle_status",
+  "invited_at",
+  "client_profile_id",
+  "phase_initial_contact_made",
+  "phase_initial_contact_made_at",
+  "phase_discovery_call_scheduled",
+  "phase_discovery_call_scheduled_at",
+  "phase_discovery_call_completed",
+  "phase_discovery_call_completed_at",
+  "phase_sow_sent",
+  "phase_sow_sent_at",
+  "phase_sow_signed",
+  "phase_sow_signed_at",
+  "phase_invoice_sent",
+  "phase_invoice_sent_at",
+  "phase_invoice_paid",
+  "phase_invoice_paid_at",
+].join(", ")
+
+// ── Auth helpers (inline; same shape as 2c send-invite) ──
+
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+function getBearerToken(req: Request) {
+  const h = req.headers.get("authorization") || ""
+  const m = h.match(/^Bearer\s+(.+)$/i)
+  const token = m?.[1]?.trim()
+  if (!token) throw new Error("Unauthorized: missing bearer token")
+  return token
+}
+
+async function getAuthedUser(req: Request) {
+  const token = getBearerToken(req)
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.auth.getUser(token)
+  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
+  return {
+    userId: data.user.id,
+    email: (data.user.email ?? "").trim().toLowerCase() || null,
+  }
+}
+
+async function getCoachProfile(userId: string, email: string | null) {
+  const supabase = getSupabaseAdmin()
+  const { data } = await supabase
+    .from("client_profiles")
+    .select("id, name, is_coach, coach_org")
+    .eq("user_id", userId)
+    .maybeSingle()
+  if (data) return data
+  if (email) {
+    const { data: byEmail } = await supabase
+      .from("client_profiles")
+      .select("id, name, is_coach, coach_org, user_id")
+      .eq("email", email)
+      .maybeSingle()
+    if (byEmail) {
+      if (byEmail.user_id !== userId) {
+        await supabase
+          .from("client_profiles")
+          .update({ user_id: userId, updated_at: new Date().toISOString() })
+          .eq("id", byEmail.id)
+      }
+      const { user_id: _u, ...rest } = byEmail as any
+      return rest
+    }
+  }
+  return null
+}
+
+// ── Response shape transformers (inlined per file) ──
+
+function computeLastActivityAt(row: CoachClientRow, latestNoteCreatedAt: string | null): string | null {
+  const candidates = [
+    row.phase_initial_contact_made_at,
+    row.phase_discovery_call_scheduled_at,
+    row.phase_discovery_call_completed_at,
+    row.phase_sow_sent_at,
+    row.phase_sow_signed_at,
+    row.phase_invoice_sent_at,
+    row.phase_invoice_paid_at,
+    latestNoteCreatedAt,
+  ].filter((v): v is string => v !== null && v !== undefined)
+  if (candidates.length === 0) return null
+  return candidates.reduce((a, b) => (a > b ? a : b))
+}
+
+function buildProspectListItem(row: CoachClientRow, lastActivityAt: string | null) {
+  return {
+    id: row.id,
+    name: row.name,
+    invited_email: row.invited_email,
+    source_category: row.source_category as SourceCategory | null,
+    source_detail: row.source_detail,
+    phases: {
+      initial_contact_made:     { checked: row.phase_initial_contact_made,     at: row.phase_initial_contact_made_at },
+      discovery_call_scheduled: { checked: row.phase_discovery_call_scheduled, at: row.phase_discovery_call_scheduled_at },
+      discovery_call_completed: { checked: row.phase_discovery_call_completed, at: row.phase_discovery_call_completed_at },
+      sow_sent:                 { checked: row.phase_sow_sent,                 at: row.phase_sow_sent_at },
+      sow_signed:               { checked: row.phase_sow_signed,               at: row.phase_sow_signed_at },
+      invoice_sent:             { checked: row.phase_invoice_sent,             at: row.phase_invoice_sent_at },
+      invoice_paid:             { checked: row.phase_invoice_paid,             at: row.phase_invoice_paid_at },
+    },
+    lifecycle_status: row.lifecycle_status as LifecycleStatus,
+    last_activity_at: lastActivityAt,
+    // Schema has no created_at on coach_clients; invited_at is the
+    // temporal anchor (DEFAULT now() at INSERT). Aliased here so the
+    // API surface reads naturally.
+    created_at: row.invited_at,
+  }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return corsOptionsResponse(req.headers.get("origin"))
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    // Gate 1+2: auth
+    const { userId, email: callerEmail } = await getAuthedUser(req)
+    // Gate 3+3.5: is_coach
+    const coach = await getCoachProfile(userId, callerEmail)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
+    const coachProfileId = coach.id as string
+
+    const supabase = getSupabaseAdmin()
+
+    // Query prospects for this coach.
+    const { data: rowsData, error: listErr } = await supabase
+      .from("coach_clients")
+      .select(PROSPECT_SELECT_COLS)
+      .eq("coach_profile_id", coachProfileId)
+      .eq("status", "active")
+      .eq("lifecycle_status", "Prospect")
+    if (listErr) throw new Error(`Prospects list failed: ${listErr.message}`)
+    const rows = (rowsData ?? []) as unknown as CoachClientRow[]
+
+    if (rows.length === 0) {
+      return withCorsJson(req, { ok: true, prospects: [] })
+    }
+
+    // Batch query for latest note timestamp per prospect. One query +
+    // in-memory groupBy beats N queries.
+    const ids = rows.map((r) => r.id)
+    const latestNoteByCoachClient = new Map<string, string>()
+    {
+      const { data: noteRows, error: notesErr } = await supabase
+        .from("coach_client_notes")
+        .select("coach_client_id, created_at")
+        .in("coach_client_id", ids)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+      if (notesErr) throw new Error(`Notes lookup failed: ${notesErr.message}`)
+      for (const n of (noteRows ?? []) as Array<{ coach_client_id: string; created_at: string }>) {
+        if (!latestNoteByCoachClient.has(n.coach_client_id)) {
+          latestNoteByCoachClient.set(n.coach_client_id, n.created_at)
+        }
+      }
+    }
+
+    const prospects = rows
+      .map((row) => {
+        const lastActivity = computeLastActivityAt(row, latestNoteByCoachClient.get(row.id) ?? null)
+        return buildProspectListItem(row, lastActivity)
+      })
+      .sort((a, b) => {
+        // last_activity_at DESC NULLS LAST, then created_at DESC.
+        const aAct = a.last_activity_at
+        const bAct = b.last_activity_at
+        if (aAct && bAct) return bAct.localeCompare(aAct)
+        if (aAct) return -1
+        if (bAct) return 1
+        return b.created_at.localeCompare(a.created_at)
+      })
+
+    return withCorsJson(req, { ok: true, prospects })
+  } catch (err: any) {
+    const msg = err?.message || String(err)
+    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    return withCorsJson(req, { ok: false, error: msg }, status)
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    // Gate 1+2: auth
+    const { userId, email: callerEmail } = await getAuthedUser(req)
+    // Gate 3+3.5: is_coach
+    const coach = await getCoachProfile(userId, callerEmail)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
+    const coachProfileId = coach.id as string
+
+    // Gate 5: body parses as JSON. POST requires a body (name is
+    // required), so empty body is invalid.
+    const body = await req.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
+    }
+
+    // ── Validation ──
+
+    const name = typeof body.name === "string" ? body.name.trim() : ""
+    if (!name) return withCorsJson(req, { ok: false, error: "name is required" }, 400)
+    if (name.length > 200) return withCorsJson(req, { ok: false, error: "name too long (max 200 chars)" }, 400)
+
+    const sourceCategoryRaw = typeof body.source_category === "string" ? body.source_category.trim() : ""
+    if (!(SOURCE_CATEGORIES as readonly string[]).includes(sourceCategoryRaw)) {
+      return withCorsJson(req, {
+        ok: false,
+        error: `source_category must be one of: ${SOURCE_CATEGORIES.join(", ")}`,
+      }, 400)
+    }
+    const sourceCategory = sourceCategoryRaw as SourceCategory
+
+    // invited_email: empty-after-trim → null (not empty string). Avoids
+    // mixing '' and NULL in the column for the no-email case.
+    const invitedEmailRaw = typeof body.invited_email === "string"
+      ? body.invited_email.trim().toLowerCase()
+      : null
+    const invitedEmail = invitedEmailRaw && invitedEmailRaw.length > 0 ? invitedEmailRaw : null
+    if (invitedEmail && !EMAIL_RE.test(invitedEmail)) {
+      return withCorsJson(req, { ok: false, error: "Invalid invited_email format" }, 400)
+    }
+
+    // source_detail: same empty-after-trim → null pattern.
+    const sourceDetailRaw = typeof body.source_detail === "string"
+      ? body.source_detail.trim()
+      : null
+    const sourceDetail = sourceDetailRaw && sourceDetailRaw.length > 0 ? sourceDetailRaw : null
+    if (sourceDetail && sourceDetail.length > 500) {
+      return withCorsJson(req, { ok: false, error: "source_detail too long (max 500 chars)" }, 400)
+    }
+
+    const initialNoteRaw = typeof body.initial_note === "string"
+      ? body.initial_note.trim()
+      : null
+    const initialNote = initialNoteRaw && initialNoteRaw.length > 0 ? initialNoteRaw : null
+    if (initialNote && initialNote.length > 5000) {
+      return withCorsJson(req, { ok: false, error: "initial_note too long (max 5000 chars)" }, 400)
+    }
+
+    // ── Side effects ──
+
+    const supabase = getSupabaseAdmin()
+
+    // 1. INSERT coach_clients. lifecycle_status explicit (schema
+    //    default is 'Active' — Prospects v0.1 Commit 1 / FRD §12 Q3).
+    const { data: createdData, error: insertErr } = await supabase
+      .from("coach_clients")
+      .insert({
+        coach_profile_id: coachProfileId,
+        client_profile_id: null,
+        status: "active",
+        access_level: "full",
+        lifecycle_status: "Prospect",
+        name,
+        invited_email: invitedEmail,
+        source_category: sourceCategory,
+        source_detail: sourceDetail,
+        // invite_token defaults via gen_random_uuid()
+        // invited_at defaults via now()
+        // 14 phase columns default per schema (booleans false, _at null)
+      })
+      .select(PROSPECT_SELECT_COLS)
+      .single()
+    if (insertErr || !createdData) {
+      return withCorsJson(req, {
+        ok: false,
+        error: `Failed to create prospect: ${insertErr?.message || "unknown error"}`,
+      }, 500)
+    }
+    const created = createdData as unknown as CoachClientRow
+
+    // 2. Optional initial_note. Non-fatal: prospect is usable
+    //    regardless; coach can add notes via /notes routes (2b).
+    if (initialNote) {
+      const { error: noteErr } = await supabase
+        .from("coach_client_notes")
+        .insert({
+          coach_client_id: created.id,
+          coach_profile_id: coachProfileId,
+          client_profile_id: null,  // legal post-Commit-1 schema
+          type: "other",            // FRD §6.4.2 lock
+          body: initialNote,
+          priority: null,
+        })
+      if (noteErr) {
+        console.warn("[create-prospect] initial note insert failed:", noteErr.message)
+      }
+    }
+
+    // 3. last_activity_at computation. If the initial note succeeded,
+    //    re-query for the actual created_at (Postgres timestamp). If
+    //    no note was requested, skip the query.
+    let latestNoteAt: string | null = null
+    if (initialNote) {
+      const { data: latest } = await supabase
+        .from("coach_client_notes")
+        .select("created_at")
+        .eq("coach_client_id", created.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      latestNoteAt = (latest?.created_at as string | null) ?? null
+    }
+
+    const lastActivity = computeLastActivityAt(created, latestNoteAt)
+
+    return withCorsJson(req, {
+      ok: true,
+      prospect: buildProspectListItem(created, lastActivity),
+    }, 201)
+  } catch (err: any) {
+    const msg = err?.message || String(err)
+    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    return withCorsJson(req, { ok: false, error: msg }, status)
+  }
+}
