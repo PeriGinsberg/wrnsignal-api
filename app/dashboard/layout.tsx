@@ -361,6 +361,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     placeholder="dev-test-1234"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        signInWithPassword()
+                      }
+                    }}
                     style={{ ...input, marginTop: 8 }}
                   />
                 </>
