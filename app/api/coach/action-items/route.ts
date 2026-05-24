@@ -189,9 +189,6 @@ export async function GET(req: NextRequest) {
         const prof = cc?.client_profile_id ? profileById.get(cc.client_profile_id) : null
         const name = prof?.name ?? cc?.name ?? null
         const email = prof?.email ?? cc?.invited_email ?? null
-        // TODO Commit 4: frontend must handle nullable client_id
-        // (route via coach_client_id instead). See FRD §6.3 + Commit 3
-        // runlog entry.
         return {
           note_id: n.id as string,
           body: n.body as string,

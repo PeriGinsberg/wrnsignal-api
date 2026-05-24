@@ -22,7 +22,12 @@ export type CrossClientActionItem = {
   body: string
   priority: Priority
   created_at: string
-  client_id: string
+  // Nullable for prospect-attached notes (lifecycle='Prospect' or
+  // post-conversion-pre-invite). Prospects v0.1 Commit 3 added
+  // coach_client_id to the response so consumers can route via it
+  // when client_id is null.
+  client_id: string | null
+  coach_client_id: string
   client_name: string | null
   client_email: string | null
 }
@@ -129,8 +134,13 @@ export function CrossClientActionItemsList({
 
   async function complete(item: CrossClientActionItem) {
     setBusyId(item.note_id)
+    // Prospect notes (client_id null) live at a different URL than
+    // client-keyed notes. Route accordingly.
+    const url = item.client_id
+      ? `/api/coach/clients/${item.client_id}/note-feed/${item.note_id}`
+      : `/api/coach/prospects/${item.coach_client_id}/notes/${item.note_id}`
     try {
-      const res = await authFetch(`/api/coach/clients/${item.client_id}/note-feed/${item.note_id}`, {
+      const res = await authFetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completed_at: new Date().toISOString() }),
@@ -186,7 +196,12 @@ export function CrossClientActionItemsList({
             return (
               <div
                 key={item.note_id}
-                onClick={() => router.push(`/dashboard/coach/clients/${item.client_id}`)}
+                onClick={() => {
+                  const href = item.client_id
+                    ? `/dashboard/coach/clients/${item.client_id}`
+                    : `/dashboard/coach/prospects/${item.coach_client_id}`
+                  router.push(href)
+                }}
                 onMouseEnter={onCoachRowEnter}
                 onMouseLeave={(e) => onCoachRowLeave(e)}
                 style={{
