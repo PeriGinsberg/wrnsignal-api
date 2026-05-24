@@ -184,6 +184,7 @@ function buildProspectListItem(row: CoachClientRow, lastActivityAt: string | nul
       invoice_paid:             { checked: row.phase_invoice_paid,             at: row.phase_invoice_paid_at },
     },
     lifecycle_status: row.lifecycle_status as LifecycleStatus,
+    client_profile_id: row.client_profile_id,
     last_activity_at: lastActivityAt,
     // Schema has no created_at on coach_clients; invited_at is the
     // temporal anchor (DEFAULT now() at INSERT). Aliased here so the

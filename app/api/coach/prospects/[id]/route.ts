@@ -208,6 +208,7 @@ function buildProspectListItem(row: CoachClientRow, lastActivityAt: string | nul
       invoice_paid:             { checked: row.phase_invoice_paid,             at: row.phase_invoice_paid_at },
     },
     lifecycle_status: row.lifecycle_status as LifecycleStatus,
+    client_profile_id: row.client_profile_id,
     last_activity_at: lastActivityAt,
     created_at: row.invited_at,
   }
