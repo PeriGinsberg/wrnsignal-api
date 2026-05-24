@@ -1443,3 +1443,188 @@ Commit 4 of 4 — the full feature surface. Remaining scope:
 Production promotion of the Commit 1 schema migration remains
 deferred to a separate explicit step after Commit 4 ships and beta
 validation on dev.
+
+### 2026-05-24 — Prospects v0.1 Commit 4b (CRUD endpoints) shipped
+
+Commit 4b of the Coaches Center Prospects v0.1 feature is now on
+origin/dev. This is the backend half of Commit 4 — five new REST
+endpoints that let coaches list, create, fetch, update, and revoke
+prospects. The frontend pages, capture modal, nav integration, and
+existing-surface touchpoints are 4c/4d scope.
+
+One commit (`5634f323`), 929 insertions across two new files. No
+modifications to existing code; net-additive.
+
+**Endpoints shipped:**
+
+- **GET `/api/coach/prospects`** — list prospects for the authed
+  coach. Filters: `coach_profile_id = caller`, `status = 'active'`,
+  `lifecycle_status = 'Prospect'`. Response includes the 7-phase
+  pair object (`{ checked, at }` per phase) + computed
+  `last_activity_at` (max of phase `_at` timestamps + most-recent
+  note `created_at`). Sort: `last_activity_at DESC NULLS LAST`,
+  then `created_at DESC`. Batch notes query avoids N+1 pattern.
+
+- **POST `/api/coach/prospects`** — create a new prospect. Required
+  fields: `name`, `source_category` (5-enum). Optional:
+  `invited_email`, `source_detail`, `initial_note`. Side effects:
+  INSERT `coach_clients` with `lifecycle_status='Prospect'`,
+  `client_profile_id=NULL`, plus optional `coach_client_notes`
+  INSERT (non-fatal — prospect remains usable if note fails).
+  Re-query for `latestNoteAt` after the optional note insert
+  guarantees correct `last_activity_at` regardless of note outcome.
+
+- **GET `/api/coach/prospects/[id]`** — full detail including notes
+  array. Does NOT require `lifecycle_status='Prospect'` (per FRD
+  §6.4.3 explicit: also serves post-conversion `Client`-without-
+  profile rows, supporting the post-conversion-pre-invite state in
+  Commit 4d).
+
+- **PATCH `/api/coach/prospects/[id]`** — update any subset of
+  fields. SELECT-then-UPDATE for phase logic: phase booleans set on
+  false→true also set the paired `_at` column to `now()`;
+  true→false clears the `_at`; same-value transitions are skipped
+  as no-ops. The TOCTOU race window is small (one-coach-one-prospect
+  UI) and the simpler code path was preferred over single-statement
+  CASE WHEN; comment documents the choice.
+
+- **DELETE `/api/coach/prospects/[id]`** — soft-revoke via
+  `status='revoked'`. Preserves audit trail, the row's notes, and
+  the row's phase history. Reversible by a future endpoint. Matches
+  Phase 1's existing DELETE precedent. The FRD was silent on DELETE
+  semantics (4 endpoints in §6.4 vs the 5-endpoint scope in the
+  brief); the design decision was made at pre-flight (Q1) and is
+  captured here in the runlog rather than via an FRD-correction
+  commit. Already-revoked rows return 403 via gate-6's
+  `status='active'` filter (existence-collapsed-into-ownership
+  pattern, same as 2b/2c).
+
+**Design decisions captured at pre-flight (12 questions):**
+
+The §6.4 pre-flight identified 12 open questions. Five were flagged
+as guesses requiring user lock-in; seven were FRD/schema-derived
+with low risk. Final dispositions:
+
+- Q1 (DELETE semantics): soft-revoke via `status='revoked'`. Matches
+  Phase 1 precedent.
+- Q2 (PATCH→Active triggers send-invite?): NO. Conversion is a pure
+  UPDATE; send-invite is a separate explicit endpoint (2c). Coach
+  decides when each happens.
+- Q3 (PATCH on non-`Prospect` lifecycle): allowed at the API; UI
+  may choose to hide phase checkboxes for post-conversion rows.
+  TODO comment in PATCH route flags the post-v0.1 consideration of
+  gating phase updates with a 422 if `lifecycle_status != 'Prospect'`.
+- Q4 (list filters `Prospect` only): yes; post-conversion-pre-invite
+  routing handled via a different surface (Commit 4d's new client
+  detail route by `coach_clients.id`).
+- Q5 (POST duplicate email detection): no 409. Coaches may track
+  the same email across multiple referral touch points. Frontend
+  can soft-warn at create time.
+- Q6 (rename `email` → `invited_email` in the API): yes; field
+  names match column names.
+- Q7 (PATCH phase logic atomicity): SELECT-then-UPDATE rather than
+  single-statement CASE WHEN. Comment in code references this
+  pre-flight Q7 lock.
+- Q8 (sort `last_activity_at DESC NULLS LAST`, then `created_at
+  DESC`): yes; matches My Clients sort intent.
+- Q9 (pagination): no; v0.1 prospect counts per coach are small.
+- Q10 (PATCH returns full detail including notes): yes; matches
+  FRD §6.4.4.
+- Q11 (`initial_note` type locked to `'other'`): yes; per FRD §6.4.2.
+- Q12 (`source_category` mutable via PATCH): yes; UI may choose to
+  lock it.
+
+**Three validation tightenings caught at design review and verified
+end-to-end:**
+
+1. **`lifecycle_status` null gate in PATCH.** Schema NOT NULL; the
+   first draft would have returned the opaque "lifecycle_status
+   invalid" error on `{lifecycle_status: null}`. Explicit null gate
+   returns the clearer "lifecycle_status cannot be null" error
+   before the enum check.
+
+2. **`phases` array rejection.** `body.phases && typeof body.phases
+   === "object"` would have silently accepted `body.phases = []`
+   (arrays are objects in JS) and looped no-op. Added
+   `Array.isArray` check returning 400 "phases must be an object".
+   Brief comment noted that unknown keys in `body.phases` are
+   silently ignored (matches the lenient pattern in other coach
+   routes; strict mode would 400).
+
+3. **Empty-after-trim → null** for `invited_email` and
+   `source_detail` in POST and PATCH. Without this, a coach sending
+   `invited_email: "   "` would have inserted empty string into the
+   column, coexisting with NULL semantics. Now `trim()` + truthy
+   length guard normalizes whitespace-only inputs to NULL. Name
+   PATCH treats explicit-empty-string differently: returns 400 "name
+   cannot be empty (use null to clear)" to avoid implicit clears.
+
+**Verification:** 43/43 assertions across three regression phases.
+
+- Phase A (3 assertions) — existing routes from 2a/2b/2c/3 still
+  work unchanged. Coach Home, action-items, prospect notes verified
+  against the same dev fixtures.
+- Phase B (31 assertions) — each new endpoint's happy paths +
+  validation gates:
+  - GET list shape (1)
+  - POST create: 1 happy + 3 null-coercion (invited_email
+    whitespace → null, source_detail whitespace → null, both fields
+    omitted) + 5 validation errors (empty name, bad enum, long
+    detail, long note, bad email format) = 9 total
+  - GET detail: 3 (happy + wrong-coach + non-existent)
+  - PATCH: 14 (each scalar field independently, phase transitions
+    set/clear `_at`, all three tightenings + their error messages,
+    empty body, no-op skip)
+  - DELETE: 5 (happy + already-revoked + list-exclusion + detail
+    403 post-DELETE + notes preserved via direct SQL)
+- Phase C (10 assertions) — full lifecycle integration: create →
+  list → detail → PATCH multiple times → DELETE → confirm revoked
+  + notes preserved + list-exclusion.
+
+Hard cleanup verified zero residue (no `Commit 4b Test%` prefix
+rows left in `coach_clients`).
+
+**Cumulative Prospects v0.1 state on origin/dev:**
+
+| Commit | SHA | Scope |
+|---|---|---|
+| 1 schema | `2d2238fa` | Schema migration |
+| 1 runlog | `11a0046a` | Runlog entry |
+| 2a notes refactor | `b7f89656` | Canonicalize on `coach_client_id` |
+| 2b prospect notes | `0b00c599` | 4 new routes |
+| FRD correction | `2c8a5b4b` | Lifecycle terminology + URL fix |
+| 2c send-invite | `4d17ac77` | Auth user + profile + link flow |
+| 2 runlog | `e091ed11` | Commit 2 runlog entry |
+| 3 NULL hardening | `46e50d3f` | `/api/coach/home` + heuristics + action-items |
+| 3 runlog | `fcb2f9b8` | Commit 3 runlog entry |
+| 4b CRUD endpoints | `5634f323` | 5 prospect CRUD endpoints |
+
+**Backend half of Prospects v0.1 is complete.** All API surfaces
+exist:
+- Prospect lifecycle (Commit 4b): list, create, detail, update,
+  revoke
+- Prospect notes (Commit 2b): GET/POST + PUT/DELETE
+- Conversion → SIGNAL account (Commit 2c): send-invite
+- Defensive NULL handling on existing surfaces (Commit 3)
+
+**Next:**
+
+Commit 4c — frontend pages:
+- `/dashboard/coach/prospects` list page (rendering 4b's GET list)
+- Prospect detail page (rendering 4b's GET detail with notes)
+- "+ Add Prospect" capture modal (POST to 4b's create endpoint)
+
+Commit 4d — integration touchpoints:
+- `LifecycleStatusPill` context-aware refactor (PATCH lifecycle via
+  4b)
+- Nav addition to `COACH_NAV` in `app/dashboard/layout.tsx`
+- "Active Prospects" tile href update on Coach Home
+- Action-items consumer updated to route prospect entries via
+  `coach_client_id` (per Commit 3 TODO)
+- Post-conversion-pre-invite client-detail route keyed by
+  `coach_clients.id`
+- Collapsed "Prospect history" block on Client detail pages
+
+Production promotion of the Commit 1 schema migration remains
+deferred to a separate explicit step after Commit 4 ships and beta
+validation on dev.
