@@ -84,15 +84,59 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: 
   other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
 }
 
+// ── Note constants (mirror app/dashboard/coach/clients/[clientId]/NotesTab.tsx
+//    for visual parity. Duplicated inline per the established coach-route
+//    pattern rather than extracted to a shared module.) ──
+
+const NOTE_TYPES = ["session_recap", "action_item", "other"] as const
+type NoteType = (typeof NOTE_TYPES)[number]
+
+const NOTE_PRIORITIES = ["urgent", "this_week", "when_ready"] as const
+type NotePriority = (typeof NOTE_PRIORITIES)[number]
+
+const NOTE_TYPE_LABEL: Record<NoteType, string> = {
+  session_recap: "Session Recap",
+  action_item: "Action Item",
+  other: "Other",
+}
+
+const NOTE_TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
+  session_recap: { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
+  action_item:   { bg: "rgba(254,176,106,0.12)", color: "#FEB06A" },
+  other:         { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+}
+
+const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
+  urgent: "Urgent",
+  this_week: "This Week",
+  when_ready: "When Ready",
+}
+
+const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
+  urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
+  this_week:  { bg: "rgba(254,176,106,0.15)", color: "#FEB06A", border: "rgba(254,176,106,0.4)" },
+  when_ready: { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5", border: "rgba(81,173,229,0.4)" },
+}
+
+const DEFAULT_NOTE_TYPE: NoteType = "session_recap"
+const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
+
+const NOTE_FILTER_OPTIONS: { value: "" | NoteType; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "session_recap", label: "Session Recap" },
+  { value: "action_item", label: "Action Item" },
+  { value: "other", label: "Other" },
+]
+
 // ── Types ──
 
 type PhasePair = { checked: boolean; at: string | null }
 
 type ProspectNote = {
   id: string
-  type: string
+  type: NoteType
   body: string
-  priority: string | null
+  priority: NotePriority | null
   completed_at: string | null
   created_at: string
   updated_at: string
@@ -400,6 +444,94 @@ function SourceSection({
 
 // ── Notes section ──
 
+// TypeChipPicker / PriorityChipPicker — small reusable inline pickers
+// used by both the Add and Edit forms.
+
+function TypeChipPicker({
+  value,
+  onChange,
+  size = "md",
+}: {
+  value: NoteType
+  onChange: (next: NoteType) => void
+  size?: "sm" | "md"
+}) {
+  const fontSize = size === "sm" ? 10 : 11
+  const padding = size === "sm" ? "4px 10px" : "6px 12px"
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {NOTE_TYPES.map((t) => {
+        const active = value === t
+        return (
+          <button
+            key={t}
+            type="button"
+            onClick={() => onChange(t)}
+            style={{
+              fontSize,
+              fontWeight: 900,
+              padding,
+              borderRadius: 8,
+              cursor: "pointer",
+              textTransform: "uppercase",
+              letterSpacing: 0.6,
+              border: active ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
+              background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+              color: active ? T.WRN_ORANGE : T.DIM,
+              fontFamily: "inherit",
+            }}
+          >
+            {NOTE_TYPE_LABEL[t]}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function PriorityChipPicker({
+  value,
+  onChange,
+  size = "md",
+}: {
+  value: NotePriority
+  onChange: (next: NotePriority) => void
+  size?: "sm" | "md"
+}) {
+  const fontSize = size === "sm" ? 10 : 11
+  const padding = size === "sm" ? "4px 10px" : "6px 12px"
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {NOTE_PRIORITIES.map((p) => {
+        const active = value === p
+        const s = NOTE_PRIORITY_BADGE[p]
+        return (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            style={{
+              fontSize,
+              fontWeight: 900,
+              padding,
+              borderRadius: 8,
+              cursor: "pointer",
+              textTransform: "uppercase",
+              letterSpacing: 0.6,
+              border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
+              background: active ? s.bg : "rgba(255,255,255,0.04)",
+              color: active ? s.color : T.DIM,
+              fontFamily: "inherit",
+            }}
+          >
+            {NOTE_PRIORITY_LABEL[p]}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function ProspectNotesSection({
   prospectId,
   notes,
@@ -409,53 +541,163 @@ function ProspectNotesSection({
   notes: ProspectNote[]
   onChanged: () => void
 }) {
+  // Local filter (matches NotesTab pattern — no URL sync).
+  const [filter, setFilter] = useState<"" | NoteType>("")
+
+  // Add form state.
   const [adding, setAdding] = useState(false)
-  const [draft, setDraft] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [draftBody, setDraftBody] = useState("")
+  const [draftType, setDraftType] = useState<NoteType>(DEFAULT_NOTE_TYPE)
+  const [draftPriority, setDraftPriority] = useState<NotePriority>(DEFAULT_ACTION_ITEM_PRIORITY)
+  const [savingAdd, setSavingAdd] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+
+  // Edit form state.
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editBody, setEditBody] = useState("")
+  const [editType, setEditType] = useState<NoteType>(DEFAULT_NOTE_TYPE)
+  const [editPriority, setEditPriority] = useState<NotePriority>(DEFAULT_ACTION_ITEM_PRIORITY)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  // Per-note busy state for inline operations (complete / delete).
   const [busyNoteId, setBusyNoteId] = useState<string | null>(null)
+  const [rowError, setRowError] = useState<string | null>(null)
+
+  // In-memory filter — notes come from the parent via GET detail,
+  // and the parent re-fetches via onChanged() after each mutation.
+  const filteredNotes = filter ? notes.filter((n) => n.type === filter) : notes
+
+  function startAdd() {
+    setAdding(true)
+    setDraftBody("")
+    setDraftType(DEFAULT_NOTE_TYPE)
+    setDraftPriority(DEFAULT_ACTION_ITEM_PRIORITY)
+    setAddError(null)
+  }
+
+  function cancelAdd() {
+    setAdding(false)
+    setDraftBody("")
+    setAddError(null)
+  }
 
   async function handleAdd() {
-    const trimmed = draft.trim()
+    const trimmed = draftBody.trim()
     if (!trimmed) {
-      setError("Note can't be empty")
+      setAddError("Note can't be empty")
       return
     }
-    setSaving(true)
-    setError(null)
+    setSavingAdd(true)
+    setAddError(null)
     try {
-      // Prospect notes lock type to 'other' per FRD §6.4.2 Q11.
+      const body: Record<string, string> = {
+        body: trimmed,
+        type: draftType,
+      }
+      if (draftType === "action_item") body.priority = draftPriority
       const res = await authFetch(`/api/coach/prospects/${prospectId}/notes`, {
         method: "POST",
-        body: JSON.stringify({ body: trimmed, type: "other" }),
+        body: JSON.stringify(body),
       })
       const j = await res.json().catch(() => ({}))
       if (res.status === 201 || j?.ok) {
-        setDraft("")
-        setAdding(false)
+        cancelAdd()
         onChanged()
       } else {
-        setError(j?.error || "Couldn't save note — try again")
+        setAddError(j?.error || "Couldn't save note — try again")
       }
     } catch {
-      setError("Network error — try again")
+      setAddError("Network error — try again")
     } finally {
-      setSaving(false)
+      setSavingAdd(false)
+    }
+  }
+
+  function startEdit(n: ProspectNote) {
+    setEditingId(n.id)
+    setEditBody(n.body)
+    setEditType(n.type)
+    setEditPriority((n.priority ?? DEFAULT_ACTION_ITEM_PRIORITY))
+    setEditError(null)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditBody("")
+    setEditError(null)
+  }
+
+  async function saveEdit(noteId: string) {
+    const trimmed = editBody.trim()
+    if (!trimmed) {
+      setEditError("Note can't be empty")
+      return
+    }
+    setSavingEdit(true)
+    setEditError(null)
+    try {
+      const res = await authFetch(`/api/coach/prospects/${prospectId}/notes/${noteId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          body: trimmed,
+          type: editType,
+          priority: editType === "action_item" ? editPriority : null,
+        }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) {
+        cancelEdit()
+        onChanged()
+      } else {
+        setEditError(j?.error || "Couldn't save note — try again")
+      }
+    } catch {
+      setEditError("Network error — try again")
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  async function toggleCompletion(n: ProspectNote) {
+    if (n.type !== "action_item") return
+    setBusyNoteId(n.id)
+    setRowError(null)
+    const next = n.completed_at ? null : new Date().toISOString()
+    try {
+      const res = await authFetch(`/api/coach/prospects/${prospectId}/notes/${n.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ completed_at: next }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) {
+        onChanged()
+      } else {
+        setRowError(j?.error || "Couldn't update completion")
+      }
+    } catch {
+      setRowError("Network error")
+    } finally {
+      setBusyNoteId(null)
     }
   }
 
   async function handleDelete(noteId: string) {
     if (!confirm("Delete this note?")) return
     setBusyNoteId(noteId)
+    setRowError(null)
     try {
       const res = await authFetch(`/api/coach/prospects/${prospectId}/notes/${noteId}`, {
         method: "DELETE",
       })
-      if (res.ok) {
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) {
         onChanged()
+      } else {
+        setRowError(j?.error || "Couldn't delete note")
       }
     } catch {
-      // Silent — list reload will reflect actual state on next refresh.
+      setRowError("Network error")
     } finally {
       setBusyNoteId(null)
     }
@@ -463,7 +705,7 @@ function ProspectNotesSection({
 
   const headerRight = !adding ? (
     <button
-      onClick={() => { setAdding(true); setDraft(""); setError(null) }}
+      onClick={startAdd}
       style={{
         ...btnSecondary,
         fontSize: 12,
@@ -480,53 +722,116 @@ function ProspectNotesSection({
 
   return (
     <Section title="Notes" count={notes.length > 0 ? `(${notes.length})` : undefined} headerRight={headerRight}>
+      {/* Filter chip bar */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: adding || notes.length > 0 ? 16 : 0 }}>
+        {NOTE_FILTER_OPTIONS.map((f) => {
+          const active = filter === f.value
+          return (
+            <button
+              key={f.value || "all"}
+              onClick={() => setFilter(f.value)}
+              style={{
+                fontSize: 11,
+                fontWeight: 900,
+                padding: "6px 14px",
+                borderRadius: 8,
+                cursor: "pointer",
+                textTransform: "uppercase",
+                letterSpacing: 0.6,
+                border: active ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
+                background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                color: active ? T.WRN_ORANGE : T.DIM,
+                fontFamily: "inherit",
+              }}
+            >
+              {f.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Inline Add form */}
       {adding && (
-        <div style={{ marginBottom: 16, padding: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10 }}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 14,
+            background: "rgba(255,255,255,0.03)",
+            border: `1px solid ${T.BORDER_SOFT}`,
+            borderRadius: 10,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            opacity: savingAdd ? 0.5 : 1,
+            pointerEvents: savingAdd ? "none" : "auto",
+            transition: "opacity 120ms ease",
+          }}
+        >
+          <div>
+            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6, fontSize: 9 }}>TYPE</span>
+            <TypeChipPicker value={draftType} onChange={setDraftType} />
+          </div>
+          {draftType === "action_item" && (
+            <div>
+              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6, fontSize: 9 }}>PRIORITY</span>
+              <PriorityChipPicker value={draftPriority} onChange={setDraftPriority} />
+            </div>
+          )}
           <textarea
             style={{ ...textarea, minHeight: 80, fontSize: 13 }}
             placeholder="What did you want to capture?"
-            value={draft}
-            onChange={(e) => { setDraft(e.target.value); if (error) setError(null) }}
+            value={draftBody}
+            onChange={(e) => { setDraftBody(e.target.value); if (addError) setAddError(null) }}
             autoFocus
           />
-          {error && (
-            <div style={{ padding: 8, marginTop: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-              <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{error}</span>
+          {addError && (
+            <div style={{ padding: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
+              <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{addError}</span>
             </div>
           )}
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={handleAdd}
-              disabled={saving || draft.trim().length === 0}
+              disabled={savingAdd || draftBody.trim().length === 0}
               style={{
                 ...btnPrimary,
                 fontSize: 11,
                 padding: "6px 14px",
-                opacity: saving || draft.trim().length === 0 ? 0.5 : 1,
+                opacity: savingAdd || draftBody.trim().length === 0 ? 0.5 : 1,
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
               }}
             >
-              {saving && <SavingSpinner size={10} />}
-              {saving ? "Saving..." : "Save"}
+              {savingAdd && <SavingSpinner size={10} />}
+              {savingAdd ? "Saving..." : "Save"}
             </button>
-            <button
-              onClick={() => { setAdding(false); setDraft(""); setError(null) }}
-              disabled={saving}
-              style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px" }}
-            >
+            <button onClick={cancelAdd} disabled={savingAdd} style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px" }}>
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      {notes.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>No notes yet</p>
+      {rowError && (
+        <div style={{ marginBottom: 12, padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
+          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{rowError}</span>
+        </div>
+      )}
+
+      {/* Notes list (filtered in-memory) */}
+      {filteredNotes.length === 0 ? (
+        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
+          {filter ? `No ${NOTE_TYPE_LABEL[filter as NoteType].toLowerCase()} notes` : "No notes yet"}
+        </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {notes.map((n) => {
+          {filteredNotes.map((n) => {
+            const isEditing = editingId === n.id
+            const isActionItem = n.type === "action_item"
+            const isCompleted = !!n.completed_at
+            const typeBadge = NOTE_TYPE_BADGE[n.type]
+            const priorityBadge = n.priority ? NOTE_PRIORITY_BADGE[n.priority] : null
             const created = n.created_at ? new Date(n.created_at) : null
             const createdLabel = created
               ? created.toLocaleString("en-US", {
@@ -537,6 +842,8 @@ function ProspectNotesSection({
                   minute: "2-digit",
                 })
               : null
+            const wasEdited = n.updated_at && n.created_at && n.updated_at !== n.created_at
+
             return (
               <div
                 key={n.id}
@@ -545,33 +852,156 @@ function ProspectNotesSection({
                   background: "rgba(255,255,255,0.025)",
                   border: `1px solid ${T.BORDER_SOFT}`,
                   borderRadius: 10,
+                  opacity: isCompleted ? 0.6 : 1,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  {createdLabel && (
-                    <span style={{ fontSize: 11, color: T.DIM }}>{createdLabel}</span>
+                {/* Header row: completion checkbox (action_item only) + badges + date + edited marker */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                  {isActionItem && (
+                    <input
+                      type="checkbox"
+                      checked={isCompleted}
+                      disabled={busyNoteId === n.id}
+                      onChange={() => toggleCompletion(n)}
+                      style={{ accentColor: T.WRN_ORANGE, width: 16, height: 16, cursor: "pointer" }}
+                      aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
+                    />
                   )}
-                  <button
-                    onClick={() => handleDelete(n.id)}
-                    disabled={busyNoteId === n.id}
+                  <span
                     style={{
-                      marginLeft: "auto",
-                      background: "none",
-                      border: "none",
-                      color: T.DIM,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      padding: 0,
-                      opacity: busyNoteId === n.id ? 0.5 : 1,
+                      background: typeBadge.bg,
+                      color: typeBadge.color,
+                      fontSize: 10,
+                      fontWeight: 900,
+                      letterSpacing: 0.8,
+                      textTransform: "uppercase",
+                      padding: "3px 10px",
+                      borderRadius: 999,
                     }}
                   >
-                    {busyNoteId === n.id ? "..." : "Delete"}
-                  </button>
+                    {NOTE_TYPE_LABEL[n.type]}
+                  </span>
+                  {isActionItem && priorityBadge && n.priority && (
+                    <span
+                      style={{
+                        background: priorityBadge.bg,
+                        color: priorityBadge.color,
+                        fontSize: 10,
+                        fontWeight: 900,
+                        letterSpacing: 0.8,
+                        textTransform: "uppercase",
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                      }}
+                    >
+                      {NOTE_PRIORITY_LABEL[n.priority]}
+                    </span>
+                  )}
+                  {isCompleted && (
+                    <span style={{ fontSize: 11, color: T.SUCCESS, fontWeight: 700 }}>
+                      ✓ Completed {new Date(n.completed_at!).toLocaleDateString()}
+                    </span>
+                  )}
+                  {createdLabel && (
+                    <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
+                      {createdLabel}
+                      {wasEdited ? " · edited" : ""}
+                    </span>
+                  )}
                 </div>
-                <p style={{ fontSize: 13, color: T.TEXT, lineHeight: "20px", whiteSpace: "pre-wrap", margin: 0 }}>
-                  {n.body}
-                </p>
+
+                {isEditing ? (
+                  <div style={{ opacity: savingEdit ? 0.5 : 1, pointerEvents: savingEdit ? "none" : "auto", transition: "opacity 120ms ease" }}>
+                    <div style={{ marginBottom: 10 }}>
+                      <TypeChipPicker value={editType} onChange={setEditType} size="sm" />
+                    </div>
+                    {editType === "action_item" && (
+                      <div style={{ marginBottom: 10 }}>
+                        <PriorityChipPicker value={editPriority} onChange={setEditPriority} size="sm" />
+                      </div>
+                    )}
+                    <textarea
+                      style={{ ...textarea, minHeight: 100, fontSize: 13 }}
+                      value={editBody}
+                      onChange={(e) => { setEditBody(e.target.value); if (editError) setEditError(null) }}
+                    />
+                    {editError && (
+                      <div style={{ padding: 8, marginTop: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
+                        <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{editError}</span>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <button
+                        onClick={() => saveEdit(n.id)}
+                        disabled={savingEdit || editBody.trim().length === 0}
+                        style={{
+                          ...btnPrimary,
+                          fontSize: 11,
+                          padding: "6px 14px",
+                          opacity: savingEdit || editBody.trim().length === 0 ? 0.5 : 1,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        {savingEdit && <SavingSpinner size={10} />}
+                        {savingEdit ? "Saving..." : "Save"}
+                      </button>
+                      <button onClick={cancelEdit} disabled={savingEdit} style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px" }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: T.TEXT,
+                        lineHeight: "20px",
+                        whiteSpace: "pre-wrap",
+                        margin: 0,
+                        textDecoration: isCompleted ? "line-through" : "none",
+                      }}
+                    >
+                      {n.body}
+                    </p>
+                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                      <button
+                        onClick={() => startEdit(n)}
+                        style={{
+                          background: "none",
+                          border: `1px solid ${T.BORDER_SOFT}`,
+                          color: T.MUTED,
+                          fontSize: 11,
+                          fontWeight: 900,
+                          borderRadius: 6,
+                          padding: "4px 12px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(n.id)}
+                        disabled={busyNoteId === n.id}
+                        style={{
+                          background: "none",
+                          border: `1px solid ${T.BORDER_SOFT}`,
+                          color: T.DIM,
+                          fontSize: 11,
+                          fontWeight: 900,
+                          borderRadius: 6,
+                          padding: "4px 12px",
+                          cursor: "pointer",
+                          opacity: busyNoteId === n.id ? 0.5 : 1,
+                        }}
+                      >
+                        {busyNoteId === n.id ? "..." : "Delete"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )
           })}
