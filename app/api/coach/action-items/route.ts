@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
     // (open + not soft-deleted action items).
     let q = supabase
       .from("coach_client_notes")
-      .select("id, body, priority, created_at, client_profile_id")
+      .select("id, body, priority, created_at, client_profile_id, coach_client_id")
       .eq("coach_profile_id", coachProfileId)
       .eq("type", "action_item")
       .is("completed_at", null)
@@ -129,35 +129,78 @@ export async function GET(req: NextRequest) {
     const { data: notes, error: notesErr } = await q
     if (notesErr) throw new Error(`Action items query failed: ${notesErr.message}`)
 
-    // Resolve client names in one batch. Coaches typically have <50
-    // clients, and most don't appear in every batch — set ensures one
-    // lookup per distinct client.
-    const clientIds = Array.from(
-      new Set((notes ?? []).map((n) => n.client_profile_id as string).filter(Boolean))
+    // Resolve names via coach_clients first (where prospect names live —
+    // notes attached to a Prospect-status coach_clients row have NULL
+    // client_profile_id, so the legacy client_profiles-only lookup would
+    // return null name for those notes). Two-stage lookup:
+    //   1. coach_clients by coach_client_id → row name + linked profile id
+    //   2. client_profiles by the linked profile id → richer name/email
+    // Prefer the client_profiles fields when populated (post-onboarding
+    // updates land there); fall back to coach_clients.name +
+    // invited_email for prospect notes. Prospects v0.1 Commit 3 / FRD §6.3.
+    const coachClientIds = Array.from(
+      new Set((notes ?? []).map((n) => n.coach_client_id as string).filter(Boolean))
     )
-    const nameByClientId = new Map<string, { name: string | null; email: string | null }>()
-    if (clientIds.length > 0) {
+    const coachClientById = new Map<string, {
+      name: string | null
+      client_profile_id: string | null
+      invited_email: string | null
+    }>()
+    if (coachClientIds.length > 0) {
+      const { data: ccs, error: ccErr } = await supabase
+        .from("coach_clients")
+        .select("id, name, client_profile_id, invited_email")
+        .in("id", coachClientIds)
+      if (ccErr) throw new Error(`coach_clients lookup failed: ${ccErr.message}`)
+      for (const cc of ccs ?? []) {
+        coachClientById.set(cc.id as string, {
+          name: (cc.name as string | null) ?? null,
+          client_profile_id: (cc.client_profile_id as string | null) ?? null,
+          invited_email: (cc.invited_email as string | null) ?? null,
+        })
+      }
+    }
+
+    const profileIds = Array.from(
+      new Set(
+        Array.from(coachClientById.values())
+          .map((cc) => cc.client_profile_id)
+          .filter((id): id is string => !!id),
+      ),
+    )
+    const profileById = new Map<string, { name: string | null; email: string | null }>()
+    if (profileIds.length > 0) {
       const { data: profs, error: profsErr } = await supabase
         .from("client_profiles")
         .select("id, name, email")
-        .in("id", clientIds)
+        .in("id", profileIds)
       if (profsErr) throw new Error(`Client lookup failed: ${profsErr.message}`)
       for (const p of profs ?? []) {
-        nameByClientId.set(p.id as string, { name: p.name as string | null, email: p.email as string | null })
+        profileById.set(p.id as string, {
+          name: (p.name as string | null) ?? null,
+          email: (p.email as string | null) ?? null,
+        })
       }
     }
 
     const items = (notes ?? [])
       .map((n) => {
-        const client = nameByClientId.get(n.client_profile_id as string)
+        const cc = coachClientById.get(n.coach_client_id as string)
+        const prof = cc?.client_profile_id ? profileById.get(cc.client_profile_id) : null
+        const name = prof?.name ?? cc?.name ?? null
+        const email = prof?.email ?? cc?.invited_email ?? null
+        // TODO Commit 4: frontend must handle nullable client_id
+        // (route via coach_client_id instead). See FRD §6.3 + Commit 3
+        // runlog entry.
         return {
           note_id: n.id as string,
           body: n.body as string,
           priority: n.priority as string,
           created_at: n.created_at as string,
-          client_id: n.client_profile_id as string,
-          client_name: client?.name ?? null,
-          client_email: client?.email ?? null,
+          client_id: (n.client_profile_id as string | null) ?? null,
+          coach_client_id: n.coach_client_id as string,
+          client_name: name,
+          client_email: email,
         }
       })
       .sort((a, b) => {

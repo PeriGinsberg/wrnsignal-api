@@ -160,15 +160,24 @@ export async function GET(req: NextRequest) {
     // Plus updates_since_visit count.
     const clientCards = await Promise.all(
       relationships.map(async (rel) => {
-        const cpid = rel.client_profile_id as string
-        const profile = profileMap[cpid]
+        // cpid is null for prospect-lifecycle rows (Prospects v0.1
+        // Commit 3 / FRD §6.3 NULL hardening). Per-client stat queries
+        // below are guarded — prospects have no apps/recs to count, so
+        // the queries can be skipped entirely.
+        const cpid = rel.client_profile_id as string | null
+        const profile = cpid ? profileMap[cpid] : null
         const baseline = visitBaselineByRel.get(rel.id)!
 
-        // Apps for stats + updates count
-        const { data: apps } = await supabase
-          .from("signal_applications")
-          .select("id, application_status, created_at")
-          .eq("profile_id", cpid)
+        // Apps for stats + updates count. Prospects (no
+        // client_profile_id) have no apps; skip the query.
+        let apps: Array<{ id: string; application_status: string; created_at: string }> = []
+        if (cpid) {
+          const { data } = await supabase
+            .from("signal_applications")
+            .select("id, application_status, created_at")
+            .eq("profile_id", cpid)
+          apps = (data as any) ?? []
+        }
 
         // Per-client stats. `pending_recs` was removed Phase 1 (tile)
         // + Phase 2 (API surface). attention_level recomputed below from
@@ -188,14 +197,17 @@ export async function GET(req: NextRequest) {
         stats.interview_rate = appliedCount > 0 ? Math.round((stats.interviewing / appliedCount) * 100) : 0
 
         // Pending coach recs (used internally for attention_level sort only;
-        // not returned to the client).
-        const { data: pendingRecs } = await supabase
-          .from("coach_job_recommendations")
-          .select("id, created_at")
-          .eq("client_profile_id", cpid)
-          .eq("coach_profile_id", coachProfileId)
-          .eq("client_status", "new")
-        const pendingRecsCount = pendingRecs?.length ?? 0
+        // not returned to the client). Skip for prospects.
+        let pendingRecsCount = 0
+        if (cpid) {
+          const { data: pendingRecs } = await supabase
+            .from("coach_job_recommendations")
+            .select("id, created_at")
+            .eq("client_profile_id", cpid)
+            .eq("coach_profile_id", coachProfileId)
+            .eq("client_status", "new")
+          pendingRecsCount = pendingRecs?.length ?? 0
+        }
 
         const lastActivity =
           (apps || []).map((a: any) => a.created_at).sort().reverse()[0] || null
@@ -216,12 +228,17 @@ export async function GET(req: NextRequest) {
 
         const newAppsCount = (apps || []).filter((a: any) => a.created_at > baseline).length
 
-        const { count: recResponseCount } = await supabase
-          .from("coach_job_recommendations")
-          .select("id", { count: "exact", head: true })
-          .eq("client_profile_id", cpid)
-          .eq("coach_profile_id", coachProfileId)
-          .gt("client_responded_at", baseline)
+        // Rec-response count — skip for prospects (no recs exist).
+        let recResponseCount: number | null = 0
+        if (cpid) {
+          const { count } = await supabase
+            .from("coach_job_recommendations")
+            .select("id", { count: "exact", head: true })
+            .eq("client_profile_id", cpid)
+            .eq("coach_profile_id", coachProfileId)
+            .gt("client_responded_at", baseline)
+          recResponseCount = count
+        }
 
         const updates_since_visit = statusChangesCount + newAppsCount + (recResponseCount ?? 0)
 
@@ -268,13 +285,22 @@ export async function GET(req: NextRequest) {
     // per-client /needs-attention endpoint share one implementation.
     // The engine's input shape (HeuristicClient[]) is a strict subset of
     // the clientCards we already built above — map it down.
-    const heuristicClients: HeuristicClient[] = clientCards.map((c) => ({
-      client_profile_id: c.client_profile_id,
-      name: c.name,
-      email: c.email,
-      user_id: c._user_id,
-      last_viewed_at: c.last_viewed_at,
-    }))
+    // Prospects have NULL client_profile_id + NULL user_id — exclude
+    // them from the heuristic input. R1-R6 all require these to
+    // operate; passing NULLs leads to no-op queries OR spurious
+    // signal IDs like "r1:null" (NULL string-coerces in template
+    // literals). Defensive guard in runHeuristics catches stragglers
+    // if any get through (belt-and-suspenders). Prospects v0.1
+    // Commit 3 / FRD §6.3.
+    const heuristicClients: HeuristicClient[] = clientCards
+      .filter((c) => c.client_profile_id !== null && c._user_id !== null)
+      .map((c) => ({
+        client_profile_id: c.client_profile_id as string,
+        name: c.name,
+        email: c.email,
+        user_id: c._user_id as string,
+        last_viewed_at: c.last_viewed_at,
+      }))
     const requiresAction: ActionItem[] = await runHeuristics({
       supabase,
       coachProfileId,
@@ -316,11 +342,17 @@ export async function GET(req: NextRequest) {
       const ls = c.lifecycle_status
       if (ls === "Prospect") activeProspectsCount++
       else if (ls === "Active") activeClientsCount++
-      if (ls === "Active" || ls === "Inactive") {
+      // Defensive null filter: client_profile_id is nullable (NULL for
+      // prospects). Today the lifecycle gate already excludes Prospect
+      // from both buckets so we're safe by construction, but the
+      // explicit guard makes the intent clear and future-proofs against
+      // any other lifecycle ever producing a NULL cpid. Prospects v0.1
+      // Commit 3 / FRD §6.3.
+      if (c.client_profile_id && (ls === "Active" || ls === "Inactive")) {
         aiProfileIds.push(c.client_profile_id)
         aiAppIds.push(...c._appIds)
       }
-      if (ls === "Active" || ls === "Inactive" || ls === "Archived") {
+      if (c.client_profile_id && (ls === "Active" || ls === "Inactive" || ls === "Archived")) {
         aiaProfileIds.push(c.client_profile_id)
         aiaAppIds.push(...c._appIds)
       }

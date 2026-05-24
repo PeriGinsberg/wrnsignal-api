@@ -73,6 +73,25 @@ export async function runHeuristics(
 ): Promise<EngagementSignal[]> {
   const { supabase, coachProfileId, clients } = opts
 
+  // Defensive guard: R1-R6 all require client_profile_id + user_id to
+  // operate. The /api/coach/home caller filters prospects out before
+  // invoking (Prospects v0.1 Commit 3, FRD §6.3) — this filter catches
+  // any stragglers if a future caller passes prospects unfiltered.
+  // Belt-and-suspenders: primary fix is at the call site.
+  const validClients = clients.filter((c) => {
+    if (!c.client_profile_id || !c.user_id) {
+      console.warn(
+        `[runHeuristics] Skipping client with NULL client_profile_id or user_id: ` +
+        JSON.stringify({
+          client_profile_id: c.client_profile_id,
+          user_id: c.user_id,
+        })
+      )
+      return false
+    }
+    return true
+  })
+
   const signals: EngagementSignal[] = []
   const seenClientRule = new Set<string>()
   const push = (item: EngagementSignal) => {
@@ -82,8 +101,8 @@ export async function runHeuristics(
     signals.push(item)
   }
 
-  if (clients.length === 0) return signals
-  const clientProfileIds = clients.map((c) => c.client_profile_id)
+  if (validClients.length === 0) return signals
+  const clientProfileIds = validClients.map((c) => c.client_profile_id)
 
   // Phase 3 Commit 3.2 — load this coach's dismissal set up front so we
   // can filter dismissed signal IDs at the end. signal_key = the engine's
@@ -104,7 +123,7 @@ export async function runHeuristics(
 
   // R1 — client hasn't logged in 7+ days. auth.users.last_sign_in_at via
   // admin API (per-user lookup).
-  for (const c of clients) {
+  for (const c of validClients) {
     if (!c.user_id) continue
     try {
       const { data: u } = await supabase.auth.admin.getUserById(c.user_id)
@@ -137,7 +156,7 @@ export async function runHeuristics(
       .lt("created_at", daysAgoIso(3))
       .order("created_at", { ascending: true })
     for (const rec of stale || []) {
-      const c = clients.find((x) => x.client_profile_id === rec.client_profile_id)
+      const c = validClients.find((x) => x.client_profile_id === rec.client_profile_id)
       if (!c) continue
       const days = daysBetween(rec.created_at as string)
       push({
@@ -219,7 +238,7 @@ export async function runHeuristics(
       if (days < threshold) continue
 
       // No coach view since the change
-      const c = clients.find((x) => x.client_profile_id === h.client_profile_id)
+      const c = validClients.find((x) => x.client_profile_id === h.client_profile_id)
       if (!c) continue
       if (c.last_viewed_at && c.last_viewed_at > h.changed_at) continue
 
@@ -268,7 +287,7 @@ export async function runHeuristics(
       const co = a.company_name as string
       const ti = a.job_title as string
       if (recSet.has(recKey(cpid, co, ti))) continue
-      const c = clients.find((x) => x.client_profile_id === cpid)
+      const c = validClients.find((x) => x.client_profile_id === cpid)
       if (!c) continue
       const days = daysBetween(a.created_at as string)
       const first = (c.name || c.email || "Client").split(" ")[0]
