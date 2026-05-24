@@ -1172,3 +1172,141 @@ on dev.
   prospect exclusion
 - Commit 4 of 4: Full prospect feature surface (5 API endpoints +
   frontend pages + LifecycleStatusPill refactor + nav addition)
+
+### 2026-05-23 — Prospects v0.1 Commit 2 (notes refactor + new routes + send-invite endpoint) shipped
+
+Commit 2 of the Coaches Center Prospects v0.1 feature is now on
+origin/dev. The schema work from Commit 1 (2d2238fa, applied to dev
+2026-05-22) is now backed by the API surface that exercises it.
+
+**Three sub-commits shipped, in order:**
+
+- **2a — Notes refactor (`b7f89656`):** 5 existing routes under
+  `/api/coach/clients/[clientId]/note-feed/*` and
+  `/api/coach/clients/[clientId]/needs-attention` refactored to filter
+  `coach_client_notes` by `coach_client_id` instead of
+  `(coach_profile_id, client_profile_id)`. Behavior-preserving against
+  existing client notes (verified via end-to-end regression: same 3
+  notes / 1 action item returned for the same test client as the
+  pre-refactor baseline). Trust chain preserved — `verifyCoachAccess`
+  still gates ownership upstream; the new filter uses its returned
+  `access.id` as the canonical relationship key. PUT/DELETE ownership
+  check consolidated from two error paths (400 + 403) into one (403).
+  Net change across 3 files: 29 insertions, 17 deletions.
+
+- **2b — Prospect notes routes (`0b00c599`):** 4 new routes under
+  `/api/coach/prospects/[id]/notes/*` (GET/POST + PUT/DELETE) keyed by
+  `coach_clients.id` directly. Helper `verifyCoachClientAccess` inlined
+  per file (matches existing coach-route duplication pattern). POST
+  insert sets `client_profile_id` to the row's existing value — NULL
+  for prospects (legal post-Commit-1), populated for converted
+  Active-status clients. Cross-tenant verification confirmed working
+  (403 with "no active coach relationship" when peri+coach1 attempted
+  to GET another coach's row). Net change: 2 new files, 568 insertions.
+
+- **2c — Send-invite endpoint (`4d17ac77`):** New
+  `POST /api/coach/coach-clients/[id]/send-invite` that converts an
+  Active-status `coach_clients` row without a SIGNAL account into a
+  full SIGNAL user (auth user + `client_profiles` row + linked
+  `coach_clients.client_profile_id` + magic link). Two branches:
+  create-new (full create flow modeled on `coach/create-client`) and
+  link-existing (UPDATE-only when a `client_profiles` row already
+  exists for the email). Compensating cleanup chain on the create-new
+  branch handles failures at any hard step (auth user → profile →
+  link). Steps 4-6 (persona insert, magic link, email send) are
+  non-fatal.
+
+  Also touches `lib/email/sendClientInvite.ts` (shared utility) with a
+  conditional `hasAnyTargets` block: when all 3 target fields
+  (`targetRoles`, `targetLocations`, `timeframe`) are empty, the
+  template renders alternate copy ("Your coach will be in touch with
+  details about your job search targets") instead of the empty-table
+  rendering that the original template would produce. Behavior is
+  byte-identical for the existing `create-client` caller (always
+  passes non-empty target fields, so `hasAnyTargets` always evaluates
+  true). Net change: 2 files, 433 insertions, 26 deletions.
+
+**FRD correction landed alongside (`2c8a5b4b`):**
+
+Pre-flight on Commit 2c caught a terminology bug in the FRD that
+would have produced a permanently-422 endpoint if shipped as written.
+The FRD §6.5 spec used `'Client'` as a lifecycle_status value, but
+the DB CHECK constraint admits only `('Prospect', 'Active',
+'Inactive', 'Archived')` — `'Client'` is coach-facing colloquial
+shorthand for `'Active'`, not a literal DB value. Six literal-string
+bugs + one status code (200 → 201) + one URL drift
+(`/api/coach/clients/[clientId]/send-invite` →
+`/api/coach/coach-clients/[id]/send-invite`) were corrected, plus a
+new terminology disambiguation note added (literal `Active` vs
+colloquial "Client").
+
+Single commit, doc-only. Surfaced as a separate concern before any
+2c code was written.
+
+**Three design saves caught mid-build:**
+
+1. **Post-Step-3 cascade-delete bug (2c).** The outer try/catch's
+   compensating cleanup nullifies `createdProfileId` and
+   `createdAuthUserId` only inside the Step 2 / Step 3 failure branches
+   — but if Steps 4-6 (which are non-fatal by design) somehow threw
+   unexpectedly, the outer catch would fire with `createdProfileId`
+   non-null AND the coach_clients row already linked. `client_profiles`
+   FK to coach_clients has ON DELETE CASCADE → deleting the profile
+   would cascade-delete the coach_clients row, destroying the coach's
+   prospect record entirely. Fix: nullify both tracking refs
+   immediately after Step 3 succeeds. The successful state is the
+   steady state; later non-fatal failures should leave it intact.
+
+2. **Template verification gap (2c).** Phase A-extra of regression
+   exercised `coach/create-client`'s invite flow to verify the
+   `sendClientInvite` template tweak didn't break the existing caller.
+   The first verification round saw Postmark policy rejections (test
+   addresses marked inactive) and reasoned that "Postmark received
+   the payload → template rendered." This is necessary-but-not-
+   sufficient: a template tweak could fail silently in ways that
+   don't throw (inverted conditional, typo'd variable producing
+   `undefined` string, etc.). Added a second verification round with
+   direct template-render inspection via monkey-patched
+   `postmarkClient.sendEmail` — 25 content-level assertions across
+   both `hasAnyTargets` branches, all passing.
+
+3. **`PostgrestFilterBuilder.catch()` typecheck (2c).** First build
+   attempt surfaced that `supabase.from(...).delete().eq(...).catch(...)`
+   doesn't typecheck — the query builder is `then`-able (so `await`
+   works) but doesn't implement the full Promise interface. Wrapped
+   the relevant call in `try { await ... } catch {}` per the same
+   pattern used in the outer catch. Comment added at the call site so
+   the divergence isn't "fixed" back later.
+
+**Cumulative Prospects v0.1 state on origin/dev:**
+
+| Commit | SHA | Scope |
+|---|---|---|
+| 1 schema | `2d2238fa` | Schema migration |
+| 1 runlog | `11a0046a` | Runlog entry |
+| 2a notes refactor | `b7f89656` | Canonicalize on `coach_client_id` |
+| 2b prospect notes | `0b00c599` | 4 new routes |
+| FRD correction | `2c8a5b4b` | Lifecycle terminology + URL fix |
+| 2c send-invite | `4d17ac77` | Auth user + profile + link flow |
+
+**Verification totals across Commit 2:** 50+ assertions including
+behavioral regression of 5 existing routes, cross-tenant access
+check, all 6 error paths (409/400/422 ×2/403/link-existing branch),
+profile-already-exists branch, and 25 direct template-render
+content assertions.
+
+**Next:**
+- Commit 3 of 4: `/api/coach/home` NULL hardening (5 specific edit
+  points caught in Round 3 investigation), `runHeuristics` prospect
+  exclusion, and the `action-items/route.ts` name-lookup fix
+  (prospect notes have NULL `client_profile_id` → silent join
+  failures without the fix).
+- Commit 4 of 4: Full feature surface — 5 new prospect CRUD endpoints,
+  frontend pages (list + detail + capture modal), `LifecycleStatusPill`
+  context-aware refactor, nav addition, new client-detail route by
+  `coach_clients.id` for the post-conversion-pre-invite state, and
+  the collapsed "Prospect history" block on Client detail pages.
+
+Production promotion of the Commit 1 schema migration remains deferred
+to a separate explicit step after Prospects v0.1 beta validation on
+dev (Commit 4 ships first).
