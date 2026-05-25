@@ -180,10 +180,18 @@ function computeProspectLastActivityAt(row: ProspectRow, latestNoteCreatedAt: st
   return candidates.reduce((a, b) => (a > b ? a : b))
 }
 
-function buildProspectCard(row: ProspectRow, lastActivityAt: string | null) {
+function buildProspectCard(
+  row: ProspectRow,
+  lastActivityAt: string | null,
+  resolvedName: string | null = null,
+) {
   return {
     id: row.id,
-    name: row.name,
+    // Coach-edited name (coach_clients.name) wins; resolvedName from
+    // client_profiles only fills in when coach_clients.name is NULL.
+    // Preserves coach edits made via the prospect detail page while
+    // still rescuing seed-fixture rows from rendering as "Unnamed".
+    name: row.name ?? resolvedName,
     invited_email: row.invited_email,
     source_category: row.source_category,
     source_detail: row.source_detail,
@@ -411,11 +419,38 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Batch client_profiles lookup for prospect rows with a linked
+    // client_profile_id. Same name-resolution pattern as
+    // /api/coach/prospects (list) and /[id] (detail).
+    const prospectProfileIds = Array.from(new Set(
+      (prospectRows || [])
+        .map((r: any) => r.client_profile_id as string | null)
+        .filter((id): id is string => !!id),
+    ))
+    const prospectProfileNameById = new Map<string, string>()
+    if (prospectProfileIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("client_profiles")
+        .select("id, name")
+        .in("id", prospectProfileIds)
+      for (const p of profs ?? []) {
+        if (typeof p.name === "string" && p.name.trim()) {
+          prospectProfileNameById.set(p.id as string, p.name)
+        }
+      }
+    }
+
     const prospectCards = (prospectRows || [])
       .map((row: any) => {
         const lastNote = latestNoteByProspect.get(row.id as string) ?? null
         const lastActivityAt = computeProspectLastActivityAt(row as ProspectRow, lastNote)
-        return { card: buildProspectCard(row as ProspectRow, lastActivityAt), lastActivityAt }
+        const resolvedName = row.client_profile_id
+          ? prospectProfileNameById.get(row.client_profile_id as string) ?? null
+          : null
+        return {
+          card: buildProspectCard(row as ProspectRow, lastActivityAt, resolvedName),
+          lastActivityAt,
+        }
       })
       .sort((a, b) => {
         // last_activity_at DESC NULLS LAST, then created_at DESC

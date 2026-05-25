@@ -167,10 +167,20 @@ function computeLastActivityAt(row: CoachClientRow, latestNoteCreatedAt: string 
   return candidates.reduce((a, b) => (a > b ? a : b))
 }
 
-function buildProspectListItem(row: CoachClientRow, lastActivityAt: string | null) {
+function buildProspectListItem(
+  row: CoachClientRow,
+  lastActivityAt: string | null,
+  resolvedName: string | null = null,
+) {
   return {
     id: row.id,
-    name: row.name,
+    // Coach-edited name (coach_clients.name) wins; resolvedName from
+    // client_profiles only fills in when coach_clients.name is NULL.
+    // This preserves coach edits made via the prospect detail page
+    // while still rescuing seed-fixture rows (where coach_clients.name
+    // is NULL but client_profile_id points at a real "Ryan Rosen"
+    // profile) from rendering as "Unnamed".
+    name: row.name ?? resolvedName,
     invited_email: row.invited_email,
     source_category: row.source_category as SourceCategory | null,
     source_detail: row.source_detail,
@@ -242,10 +252,33 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Batch profile lookup for rows with a linked client_profile_id.
+    // When coach_clients.name is NULL but the row points at a real
+    // client_profiles record (seed-fixture pattern), prefer the
+    // profile name over the empty coach_clients.name.
+    const profileIds = Array.from(new Set(
+      rows.map((r) => r.client_profile_id).filter((id): id is string => !!id),
+    ))
+    const profileNameById = new Map<string, string>()
+    if (profileIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("client_profiles")
+        .select("id, name")
+        .in("id", profileIds)
+      for (const p of profs ?? []) {
+        if (typeof p.name === "string" && p.name.trim()) {
+          profileNameById.set(p.id as string, p.name)
+        }
+      }
+    }
+
     const prospects = rows
       .map((row) => {
         const lastActivity = computeLastActivityAt(row, latestNoteByCoachClient.get(row.id) ?? null)
-        return buildProspectListItem(row, lastActivity)
+        const resolvedName = row.client_profile_id
+          ? profileNameById.get(row.client_profile_id) ?? null
+          : null
+        return buildProspectListItem(row, lastActivity, resolvedName)
       })
       .sort((a, b) => {
         // last_activity_at DESC NULLS LAST, then created_at DESC.
@@ -392,9 +425,13 @@ export async function POST(req: NextRequest) {
 
     const lastActivity = computeLastActivityAt(created, latestNoteAt)
 
+    // New prospects always have client_profile_id=NULL (Add Prospect
+    // modal never sets it). Pass `null` explicitly for resolvedName so
+    // the call is unambiguous; coach_clients.name (`name` var above)
+    // is the authoritative value here.
     return withCorsJson(req, {
       ok: true,
-      prospect: buildProspectListItem(created, lastActivity),
+      prospect: buildProspectListItem(created, lastActivity, null),
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)

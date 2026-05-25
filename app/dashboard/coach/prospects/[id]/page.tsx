@@ -1027,6 +1027,12 @@ export default function ProspectDetailPage() {
   const [converting, setConverting] = useState(false)
   const [archiveHover, setArchiveHover] = useState(false)
 
+  // Name edit (header strip click-to-edit, mirrors SourceSection pattern).
+  const [editingName, setEditingName] = useState(false)
+  const [draftName, setDraftName] = useState("")
+  const [savingName, setSavingName] = useState(false)
+  const [nameError, setNameError] = useState<string | null>(null)
+
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
       const silent = opts?.silent === true || hasLoadedOnceRef.current
@@ -1099,7 +1105,7 @@ export default function ProspectDetailPage() {
   }
 
   async function handleSourceUpdate(
-    updates: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null },
+    updates: { name?: string; source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null },
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     if (!prospect) return { ok: false, error: "No prospect loaded" }
     try {
@@ -1144,6 +1150,43 @@ export default function ProspectDetailPage() {
     } finally {
       setConverting(false)
     }
+  }
+
+  // Save edited name (header strip click-to-edit). PATCHes the same
+  // /api/coach/prospects/[id] endpoint via the shared handleSourceUpdate
+  // wrapper. Server enforces the 1-200 char + trimmed non-empty rules.
+  async function saveName() {
+    if (!prospect) return
+    const trimmed = draftName.trim()
+    if (!trimmed) {
+      setNameError("Name cannot be empty")
+      return
+    }
+    if (trimmed === (prospect.name ?? "")) {
+      setEditingName(false)
+      return
+    }
+    setSavingName(true)
+    setNameError(null)
+    const res = await handleSourceUpdate({ name: trimmed })
+    setSavingName(false)
+    if (!res.ok) {
+      setNameError(res.error)
+      return
+    }
+    setEditingName(false)
+  }
+
+  function startNameEdit() {
+    if (!prospect) return
+    setDraftName(prospect.name || "")
+    setNameError(null)
+    setEditingName(true)
+  }
+
+  function cancelNameEdit() {
+    setEditingName(false)
+    setNameError(null)
   }
 
   // Archive (soft-revoke, with confirm()).
@@ -1208,9 +1251,68 @@ export default function ProspectDetailPage() {
       {/* Header strip */}
       <div style={{ ...card, padding: 24, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
-            {prospect.name || "Unnamed prospect"}
-          </h1>
+          {editingName ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 auto", minWidth: 240 }}>
+              <input
+                type="text"
+                style={{ ...input, height: 40, fontSize: 18, fontWeight: 500, flex: 1, maxWidth: 400 }}
+                value={draftName}
+                onChange={(e) => { setDraftName(e.target.value); if (nameError) setNameError(null) }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); saveName() }
+                  if (e.key === "Escape") { e.preventDefault(); cancelNameEdit() }
+                }}
+                autoFocus
+                disabled={savingName}
+                maxLength={200}
+              />
+              <button
+                onClick={saveName}
+                disabled={savingName}
+                style={{
+                  ...btnPrimary,
+                  fontSize: 12,
+                  padding: "8px 14px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  opacity: savingName ? 0.5 : 1,
+                }}
+              >
+                {savingName && <SavingSpinner size={10} />}
+                {savingName ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={cancelNameEdit}
+                disabled={savingName}
+                style={{ ...btnSecondary, fontSize: 12, padding: "8px 12px" }}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <>
+              <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
+                {prospect.name || "Unnamed prospect"}
+              </h1>
+              <button
+                onClick={startNameEdit}
+                style={{
+                  background: "none",
+                  border: `1px solid ${T.BORDER_SOFT}`,
+                  color: T.MUTED,
+                  fontSize: 11,
+                  fontWeight: 900,
+                  borderRadius: 6,
+                  padding: "4px 12px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Edit
+              </button>
+            </>
+          )}
           <span
             style={{
               background: "#F4A261",
@@ -1271,6 +1373,21 @@ export default function ProspectDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Name save error (inline below the header, parallel to phaseError) */}
+      {nameError && (
+        <div
+          style={{
+            padding: 10,
+            background: "rgba(248,113,113,0.1)",
+            border: "1px solid rgba(248,113,113,0.3)",
+            borderRadius: 8,
+            marginBottom: 16,
+          }}
+        >
+          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{nameError}</span>
+        </div>
+      )}
 
       {/* Transient phase save error banner */}
       {phaseError && (

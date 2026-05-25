@@ -119,7 +119,11 @@ export default function MyClientsFullPage() {
     if (res.status === 403) { setForbidden(true); setLoading(false); return }
     if (res.ok) {
       const j = await res.json()
-      setClients(j.clients || [])
+      // TODO post-v0.1: backend should filter prospects from default
+      // /api/coach/home clients response. Current filter is a frontend
+      // safety net for the prospect-renders-in-my-clients case. Mirrors
+      // the Coach Home MyClientsSection filter from commit 4255f3a4.
+      setClients((j.clients || []).filter((c: any) => c.lifecycle_status !== "Prospect"))
     }
     setLoading(false)
   }, [filter])

@@ -191,10 +191,18 @@ function computeLastActivityAt(row: CoachClientRow, latestNoteCreatedAt: string 
   return candidates.reduce((a, b) => (a > b ? a : b))
 }
 
-function buildProspectListItem(row: CoachClientRow, lastActivityAt: string | null) {
+function buildProspectListItem(
+  row: CoachClientRow,
+  lastActivityAt: string | null,
+  resolvedName: string | null = null,
+) {
   return {
     id: row.id,
-    name: row.name,
+    // Coach-edited name (coach_clients.name) wins; resolvedName from
+    // client_profiles only fills in when coach_clients.name is NULL.
+    // Preserves coach edits made via the prospect detail page while
+    // still rescuing seed-fixture rows from rendering as "Unnamed".
+    name: row.name ?? resolvedName,
     invited_email: row.invited_email,
     source_category: row.source_category as SourceCategory | null,
     source_detail: row.source_detail,
@@ -255,10 +263,25 @@ export async function GET(
     const latestNoteAt = (notes[0]?.created_at as string | null) ?? null
     const lastActivity = computeLastActivityAt(row, latestNoteAt)
 
+    // Resolve display name from client_profiles when the prospect row
+    // is linked to a profile (seed-fixture or post-conversion case).
+    // Single-row lookup is fine for this single-prospect endpoint.
+    let resolvedName: string | null = null
+    if (row.client_profile_id) {
+      const { data: prof } = await supabase
+        .from("client_profiles")
+        .select("name")
+        .eq("id", row.client_profile_id)
+        .maybeSingle()
+      if (typeof prof?.name === "string" && prof.name.trim()) {
+        resolvedName = prof.name
+      }
+    }
+
     return withCorsJson(req, {
       ok: true,
       prospect: {
-        ...buildProspectListItem(row, lastActivity),
+        ...buildProspectListItem(row, lastActivity, resolvedName),
         notes,
       },
     })
@@ -458,10 +481,23 @@ export async function PATCH(
     const latestNoteAt = (notes[0]?.created_at as string | null) ?? null
     const lastActivity = computeLastActivityAt(updated, latestNoteAt)
 
+    // Same client_profiles name resolution as GET (single-row lookup).
+    let resolvedName: string | null = null
+    if (updated.client_profile_id) {
+      const { data: prof } = await supabase
+        .from("client_profiles")
+        .select("name")
+        .eq("id", updated.client_profile_id)
+        .maybeSingle()
+      if (typeof prof?.name === "string" && prof.name.trim()) {
+        resolvedName = prof.name
+      }
+    }
+
     return withCorsJson(req, {
       ok: true,
       prospect: {
-        ...buildProspectListItem(updated, lastActivity),
+        ...buildProspectListItem(updated, lastActivity, resolvedName),
         notes,
       },
     })
