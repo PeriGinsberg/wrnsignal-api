@@ -37,9 +37,11 @@ const COACH_NAV: NavGroup[] = [
     header: "COACHES CENTER",
     items: [
       { href: "/dashboard/coach", label: "Dashboard" },
-      { href: "/dashboard/coach/required-actions", label: "Required Actions" },
       // matchPrefix so /dashboard/coach/clients/[id] highlights "My Clients"
       { href: "/dashboard/coach/clients", label: "My Clients", matchPrefix: true },
+      // matchPrefix so /dashboard/coach/prospects/[id] highlights "My Prospects"
+      { href: "/dashboard/coach/prospects", label: "My Prospects", matchPrefix: true },
+      { href: "/dashboard/coach/required-actions", label: "Required Actions" },
     ],
   },
   {
