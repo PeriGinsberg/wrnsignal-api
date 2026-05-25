@@ -91,6 +91,7 @@ type FieldErrors = Partial<{
   name: string
   source_category: string
   invited_email: string
+  phone: string
   source_detail: string
   initial_note: string
 }>
@@ -99,6 +100,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
   const [name, setName] = useState("")
   const [sourceCategory, setSourceCategory] = useState<SourceCategory | "">("")
   const [invitedEmail, setInvitedEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [sourceDetail, setSourceDetail] = useState("")
   const [initialNote, setInitialNote] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -122,6 +124,8 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
       setErrors({ initial_note: serverMsg })
     } else if (/invited_email|email/i.test(serverMsg)) {
       setErrors({ invited_email: serverMsg })
+    } else if (/phone/i.test(serverMsg)) {
+      setErrors({ phone: serverMsg })
     } else {
       setGeneralError(serverMsg)
     }
@@ -139,6 +143,8 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
       }
       const trimmedEmail = invitedEmail.trim()
       if (trimmedEmail) body.invited_email = trimmedEmail
+      const trimmedPhone = phone.trim()
+      if (trimmedPhone) body.phone = trimmedPhone
       const trimmedDetail = sourceDetail.trim()
       if (trimmedDetail) body.source_detail = trimmedDetail
       const trimmedNote = initialNote.trim()
@@ -268,6 +274,24 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
             <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Used later when you send a SIGNAL invite</p>
             {errors.invited_email && (
               <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
+            )}
+          </div>
+
+          {/* Phone number (optional) */}
+          <div>
+            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+              PHONE NUMBER <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+            </span>
+            <input
+              type="tel"
+              style={input}
+              placeholder="(555) 555-5555"
+              value={phone}
+              onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors({ ...errors, phone: undefined }) }}
+            />
+            <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Optional</p>
+            {errors.phone && (
+              <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.phone}</div>
             )}
           </div>
 

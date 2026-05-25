@@ -140,6 +140,7 @@ type CoachClientRecord = {
   id: string
   name: string | null
   invited_email: string | null
+  phone: string | null
   source_category: SourceCategory | null
   source_detail: string | null
   phases: Record<PhaseKey, PhasePair>
@@ -984,6 +985,16 @@ export default function CoachClientPostConversionPage() {
             {record.invited_email && (
               <span style={{ fontSize: 13, color: T.MUTED }}>{record.invited_email}</span>
             )}
+            {record.phone && (
+              <a
+                href={`tel:${record.phone}`}
+                style={{ fontSize: 13, color: T.MUTED, textDecoration: "none" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline" }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none" }}
+              >
+                {record.phone}
+              </a>
+            )}
           </div>
           <span
             style={{
@@ -1153,6 +1164,21 @@ export default function CoachClientPostConversionPage() {
           )}
           {record.source_detail && <InfoRow label="SOURCE DETAIL" value={record.source_detail} />}
           {record.invited_email && <InfoRow label="EMAIL" value={record.invited_email} />}
+          {record.phone && (
+            <InfoRow
+              label="PHONE"
+              value={
+                <a
+                  href={`tel:${record.phone}`}
+                  style={{ color: T.TEXT, textDecoration: "none" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline" }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none" }}
+                >
+                  {record.phone}
+                </a>
+              }
+            />
+          )}
           {record.created_at && (
             <InfoRow label="ADDED AS PROSPECT" value={formatDate(record.created_at)} />
           )}

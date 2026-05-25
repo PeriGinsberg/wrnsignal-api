@@ -50,6 +50,7 @@ type CoachClientRow = {
   id: string
   name: string | null
   invited_email: string | null
+  phone: string | null
   source_category: string | null
   source_detail: string | null
   lifecycle_status: string
@@ -75,6 +76,7 @@ const PROSPECT_SELECT_COLS = [
   "id",
   "name",
   "invited_email",
+  "phone",
   "source_category",
   "source_detail",
   "lifecycle_status",
@@ -204,6 +206,7 @@ function buildProspectListItem(
     // still rescuing seed-fixture rows from rendering as "Unnamed".
     name: row.name ?? resolvedName,
     invited_email: row.invited_email,
+    phone: row.phone,
     source_category: row.source_category as SourceCategory | null,
     source_detail: row.source_detail,
     phases: {
@@ -361,6 +364,27 @@ export async function PATCH(
         }
       } else {
         return withCorsJson(req, { ok: false, error: "invited_email must be string or null" }, 400)
+      }
+    }
+
+    if ("phone" in body) {
+      if (body.phone === null) {
+        updates.phone = null
+      } else if (typeof body.phone === "string") {
+        const trimmed = body.phone.trim()
+        // Empty-after-trim → null (consistent with invited_email +
+        // source_detail). No format validation; phone formats vary
+        // and storing raw input keeps display flexibility.
+        if (!trimmed) {
+          updates.phone = null
+        } else {
+          if (trimmed.length > 50) {
+            return withCorsJson(req, { ok: false, error: "phone too long (max 50 chars)" }, 400)
+          }
+          updates.phone = trimmed
+        }
+      } else {
+        return withCorsJson(req, { ok: false, error: "phone must be string or null" }, 400)
       }
     }
 

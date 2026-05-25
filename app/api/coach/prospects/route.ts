@@ -46,6 +46,7 @@ type CoachClientRow = {
   id: string
   name: string | null
   invited_email: string | null
+  phone: string | null
   source_category: string | null
   source_detail: string | null
   lifecycle_status: string
@@ -71,6 +72,7 @@ const PROSPECT_SELECT_COLS = [
   "id",
   "name",
   "invited_email",
+  "phone",
   "source_category",
   "source_detail",
   "lifecycle_status",
@@ -182,6 +184,7 @@ function buildProspectListItem(
     // profile) from rendering as "Unnamed".
     name: row.name ?? resolvedName,
     invited_email: row.invited_email,
+    phone: row.phone,
     source_category: row.source_category as SourceCategory | null,
     source_detail: row.source_detail,
     phases: {
@@ -340,6 +343,16 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "Invalid invited_email format" }, 400)
     }
 
+    // phone: same empty-after-trim → null pattern. No format
+    // validation — phone formats vary (international, extension,
+    // formatting variants); storing raw input keeps display
+    // flexibility. tel: links in the UI work regardless of format.
+    const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : null
+    const phone = phoneRaw && phoneRaw.length > 0 ? phoneRaw : null
+    if (phone && phone.length > 50) {
+      return withCorsJson(req, { ok: false, error: "phone too long (max 50 chars)" }, 400)
+    }
+
     // source_detail: same empty-after-trim → null pattern.
     const sourceDetailRaw = typeof body.source_detail === "string"
       ? body.source_detail.trim()
@@ -373,6 +386,7 @@ export async function POST(req: NextRequest) {
         lifecycle_status: "Prospect",
         name,
         invited_email: invitedEmail,
+        phone,
         source_category: sourceCategory,
         source_detail: sourceDetail,
         // invite_token defaults via gen_random_uuid()

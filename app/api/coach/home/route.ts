@@ -119,6 +119,7 @@ const PROSPECT_SELECT_COLS = [
   "id",
   "name",
   "invited_email",
+  "phone",
   "source_category",
   "source_detail",
   "lifecycle_status",
@@ -144,6 +145,7 @@ type ProspectRow = {
   id: string
   name: string | null
   invited_email: string | null
+  phone: string | null
   source_category: string | null
   source_detail: string | null
   lifecycle_status: string
@@ -193,6 +195,7 @@ function buildProspectCard(
     // still rescuing seed-fixture rows from rendering as "Unnamed".
     name: row.name ?? resolvedName,
     invited_email: row.invited_email,
+    phone: row.phone,
     source_category: row.source_category,
     source_detail: row.source_detail,
     phases: {

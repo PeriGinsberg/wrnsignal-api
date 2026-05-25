@@ -146,6 +146,7 @@ type Prospect = {
   id: string
   name: string | null
   invited_email: string | null
+  phone: string | null
   source_category: SourceCategory | null
   source_detail: string | null
   phases: Record<PhaseKey, PhasePair>
@@ -261,17 +262,20 @@ function SourceSection({
   category,
   detail,
   invitedEmail,
+  phone,
   onSave,
 }: {
   category: SourceCategory | null
   detail: string | null
   invitedEmail: string | null
-  onSave: (next: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null }) => Promise<{ ok: true } | { ok: false; error: string }>
+  phone: string | null
+  onSave: (next: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null }) => Promise<{ ok: true } | { ok: false; error: string }>
 }) {
   const [editing, setEditing] = useState(false)
   const [editCategory, setEditCategory] = useState<SourceCategory | "">(category ?? "")
   const [editDetail, setEditDetail] = useState(detail ?? "")
   const [editEmail, setEditEmail] = useState(invitedEmail ?? "")
+  const [editPhone, setEditPhone] = useState(phone ?? "")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -279,6 +283,7 @@ function SourceSection({
     setEditCategory(category ?? "")
     setEditDetail(detail ?? "")
     setEditEmail(invitedEmail ?? "")
+    setEditPhone(phone ?? "")
     setError(null)
     setEditing(true)
   }
@@ -295,12 +300,14 @@ function SourceSection({
     }
     setSaving(true)
     setError(null)
-    const updates: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null } = {}
+    const updates: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null } = {}
     if (editCategory !== category) updates.source_category = editCategory
     const nextDetail = editDetail.trim() || null
     if (nextDetail !== detail) updates.source_detail = nextDetail
     const nextEmail = editEmail.trim() || null
     if (nextEmail !== invitedEmail) updates.invited_email = nextEmail
+    const nextPhone = editPhone.trim() || null
+    if (nextPhone !== phone) updates.phone = nextPhone
 
     if (Object.keys(updates).length === 0) {
       setEditing(false)
@@ -336,6 +343,23 @@ function SourceSection({
             <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>INVITED EMAIL</span>
             <div style={{ fontSize: 13, color: T.TEXT }}>
               {invitedEmail || <span style={{ color: T.DIM }}>—</span>}
+            </div>
+          </div>
+          <div>
+            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>PHONE</span>
+            <div style={{ fontSize: 13, color: T.TEXT }}>
+              {phone ? (
+                <a
+                  href={`tel:${phone}`}
+                  style={{ color: T.TEXT, textDecoration: "none" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline" }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none" }}
+                >
+                  {phone}
+                </a>
+              ) : (
+                <span style={{ color: T.DIM }}>—</span>
+              )}
             </div>
           </div>
         </div>
@@ -410,6 +434,16 @@ function SourceSection({
           value={editEmail}
           onChange={(e) => setEditEmail(e.target.value)}
           placeholder="prospect@example.com"
+        />
+      </div>
+      <div>
+        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>PHONE</span>
+        <input
+          type="tel"
+          style={input}
+          value={editPhone}
+          onChange={(e) => setEditPhone(e.target.value)}
+          placeholder="(555) 555-5555"
         />
       </div>
       {error && (
@@ -1105,7 +1139,7 @@ export default function ProspectDetailPage() {
   }
 
   async function handleSourceUpdate(
-    updates: { name?: string; source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null },
+    updates: { name?: string; source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null },
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     if (!prospect) return { ok: false, error: "No prospect loaded" }
     try {
@@ -1412,6 +1446,7 @@ export default function ProspectDetailPage() {
           category={prospect.source_category}
           detail={prospect.source_detail}
           invitedEmail={prospect.invited_email}
+          phone={prospect.phone}
           onSave={handleSourceUpdate}
         />
       </Section>
