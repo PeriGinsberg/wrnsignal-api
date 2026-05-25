@@ -360,6 +360,37 @@ export async function POST(
       }
     }
 
+    // ── Step 7: log a system note on the coach_clients record ─────
+    //
+    // NON-FATAL. Records "SIGNAL invite sent" as an audit-trail note
+    // so the timeline of coach actions on a client is reconstructable
+    // from the notes feed alone. type='other' (matches the FRD lock
+    // for non-action notes); priority must be NULL for 'other' type
+    // (table CHECK constraint). client_profile_id is denormalized
+    // for index-only filtered queries — by this point `profileId` is
+    // populated by the link UPDATE earlier in the flow.
+    //
+    // Wrapped in try/catch + console.warn so a note insert failure
+    // can never block the success response. The invite was already
+    // sent at this point; the note is background logging.
+    try {
+      const { error: noteErr } = await supabase
+        .from("coach_client_notes")
+        .insert({
+          coach_client_id: coachClientId,
+          coach_profile_id: coachProfileId,
+          client_profile_id: profileId,
+          type: "other",
+          body: "SIGNAL invite sent",
+          priority: null,
+        })
+      if (noteErr) {
+        console.warn("[send-invite] System note insert failed:", noteErr.message)
+      }
+    } catch (noteErr: any) {
+      console.warn("[send-invite] System note insert threw:", noteErr?.message)
+    }
+
     return withCorsJson(req, {
       ok: true,
       client_profile_id: profileId,
