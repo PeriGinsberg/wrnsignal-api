@@ -236,7 +236,7 @@ export async function GET(req: NextRequest) {
     // ── 1. Active coach-client relationships ──────────────────────────
     const { data: relRows, error: relErr } = await supabase
       .from("coach_clients")
-      .select("id, client_profile_id, invited_email, access_level, status, lifecycle_status, accepted_at, last_viewed_at, private_notes")
+      .select("id, client_profile_id, invited_email, access_level, status, lifecycle_status, accepted_at, last_viewed_at, private_notes, name")
       .eq("coach_profile_id", coachProfileId)
       .eq("status", "active")
     if (relErr) throw new Error(`Failed to fetch coach relationships: ${relErr.message}`)
@@ -355,7 +355,12 @@ export async function GET(req: NextRequest) {
         return {
           id: rel.id,
           client_profile_id: cpid,
-          name: profile?.name ?? null,
+          // Name precedence: client_profiles.name (post-onboarding
+          // canonical) wins; falls back to coach_clients.name for rows
+          // where the coach captured a prospect name but no SIGNAL
+          // profile is linked yet (Active-no-profile case). Same
+          // precedence as the /api/coach/prospects builder (bf8e31c6).
+          name: profile?.name ?? rel.name ?? null,
           email: profile?.email ?? rel.invited_email,
           status: rel.status,
           lifecycle_status: rel.lifecycle_status ?? "Active",
