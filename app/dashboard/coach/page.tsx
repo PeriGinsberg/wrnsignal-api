@@ -53,6 +53,7 @@ type CoachHome = {
     avgInterviewRate: number | null
   }
   clients: CoachClient[]
+  recentProspects: Prospect[]
   requiresAction: ActionItem[]
 }
 
@@ -91,6 +92,31 @@ type ActionItem = {
   days_elapsed: number
 }
 
+// Prospect list-item shape (mirrors /api/coach/prospects GET response;
+// `recentProspects` from /api/coach/home shares the same builder).
+type PhasePair = { checked: boolean; at: string | null }
+type PhaseKey =
+  | "initial_contact_made"
+  | "discovery_call_scheduled"
+  | "discovery_call_completed"
+  | "sow_sent"
+  | "sow_signed"
+  | "invoice_sent"
+  | "invoice_paid"
+
+type Prospect = {
+  id: string
+  name: string | null
+  invited_email: string | null
+  source_category: string | null
+  source_detail: string | null
+  phases: Record<PhaseKey, PhasePair>
+  lifecycle_status: string
+  client_profile_id: string | null
+  last_activity_at: string | null
+  created_at: string | null
+}
+
 // ──────────────────────────────────────────────────────────────
 // Constants
 // ──────────────────────────────────────────────────────────────
@@ -123,6 +149,16 @@ const AVATAR_PALETTE = [
 ] as const
 
 const COLLAPSED_LIMIT = 5
+
+const PHASE_KEYS: readonly PhaseKey[] = [
+  "initial_contact_made",
+  "discovery_call_scheduled",
+  "discovery_call_completed",
+  "sow_sent",
+  "sow_signed",
+  "invoice_sent",
+  "invoice_paid",
+] as const
 
 // ──────────────────────────────────────────────────────────────
 // Helpers
@@ -164,6 +200,24 @@ function initialsOf(name: string | null, fallback: string | null): string {
   const parts = src.split(/\s+/).filter(Boolean)
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return parts[0].slice(0, 2).toUpperCase()
+}
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return ""
+  const ms = Date.now() - new Date(iso).getTime()
+  if (ms < 0) return "Just now"
+  const d = Math.floor(ms / (24 * 60 * 60 * 1000))
+  if (d === 0) return "Today"
+  if (d === 1) return "Yesterday"
+  if (d < 7) return `${d}d ago`
+  if (d < 30) return `${Math.floor(d / 7)}w ago`
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+
+function countCheckedPhases(phases: Record<PhaseKey, PhasePair>): number {
+  let n = 0
+  for (const k of PHASE_KEYS) if (phases[k]?.checked) n++
+  return n
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -735,6 +789,154 @@ function MyClientsSection({
 }
 
 // ──────────────────────────────────────────────────────────────
+// Section F — My Prospects (collapsible single-row layout)
+// ──────────────────────────────────────────────────────────────
+
+function PhaseProgressChip({ phases }: { phases: Record<PhaseKey, PhasePair> }) {
+  const n = countCheckedPhases(phases)
+  const color = n > 0 ? T.WRN_BLUE : T.DIM
+  return (
+    <span style={{ fontSize: 11, color, fontWeight: 700, whiteSpace: "nowrap" }}>
+      {n} / 7 phases
+    </span>
+  )
+}
+
+function ProspectRow({
+  prospect,
+  onOpen,
+}: {
+  prospect: Prospect
+  onOpen: () => void
+}) {
+  return (
+    <div
+      onClick={onOpen}
+      onMouseEnter={onCoachRowEnter}
+      onMouseLeave={(e) => onCoachRowLeave(e)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "12px 14px",
+        background: COACH_ROW_DEFAULT_BG,
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 10,
+        cursor: "pointer",
+        transition: COACH_ROW_TRANSITION,
+      }}
+    >
+      <Avatar name={prospect.name} email={prospect.invited_email} />
+      <div style={{ minWidth: 0, flex: "1 1 200px" }}>
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: T.TEXT,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "block",
+            maxWidth: "100%",
+          }}
+        >
+          {prospect.name || "Unnamed"}
+        </span>
+      </div>
+      <div style={{ flexShrink: 0, minWidth: 100 }}>
+        <PhaseProgressChip phases={prospect.phases} />
+      </div>
+      <div style={{ flexShrink: 0, minWidth: 90, textAlign: "right", fontSize: 11, color: T.DIM }}>
+        {timeAgo(prospect.last_activity_at)}
+      </div>
+    </div>
+  )
+}
+
+function MyProspectsSection({
+  prospects,
+  totalCount,
+  onOpen,
+  onAdd,
+  onShowAll,
+}: {
+  prospects: Prospect[]
+  totalCount: number
+  onOpen: (prospectId: string) => void
+  onAdd: () => void
+  onShowAll: () => void
+}) {
+  const headerRight = (
+    <button
+      onClick={onAdd}
+      style={{
+        background: T.WRN_ORANGE,
+        color: "#04060F",
+        borderRadius: 10,
+        padding: "6px 14px",
+        fontSize: 12,
+        fontWeight: 800,
+        cursor: "pointer",
+        border: "none",
+        fontFamily: "inherit",
+      }}
+    >
+      + Add Prospect
+    </button>
+  )
+
+  // "Show all {N} →" appears only when there are more prospects than
+  // the slice currently rendered. Compare against the server-side
+  // total (metrics.activeProspects) so this stays accurate even if
+  // the recentProspects array is server-side-sliced.
+  const hasMore = totalCount > prospects.length
+
+  return (
+    <Section
+      icon={<IconUsers />}
+      title="My prospects"
+      titleHref="/dashboard/coach/prospects"
+      count={totalCount}
+      headerRight={headerRight}
+    >
+      {prospects.length === 0 ? (
+        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
+          No prospects yet. Click &ldquo;+ Add Prospect&rdquo; above to capture your first one.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {prospects.map((p) => (
+            <ProspectRow
+              key={p.id}
+              prospect={p}
+              onOpen={() => onOpen(p.id)}
+            />
+          ))}
+          {hasMore && (
+            <button
+              onClick={onShowAll}
+              style={{
+                background: "none",
+                border: "none",
+                color: T.WRN_ORANGE,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                padding: "8px 0 0",
+                textAlign: "left",
+                marginTop: 4,
+              }}
+            >
+              Show all {totalCount} →
+            </button>
+          )}
+        </div>
+      )}
+    </Section>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────
 // Page component
 // ──────────────────────────────────────────────────────────────
 
@@ -913,7 +1115,11 @@ export default function CoachHomePage() {
 
       <TodaysScheduleSection />
       <MyClientsSection
-        clients={data.clients}
+        // TODO post-v0.1: backend should filter prospects from default
+        // /api/coach/home clients response. Current filter is a frontend
+        // safety net for the prospect-renders-in-my-clients case. See
+        // Prospects v0.1 4d runlog entry.
+        clients={data.clients.filter((c) => c.lifecycle_status !== "Prospect")}
         onOpen={goToClient}
         onCreate={() => setShowCreateClient(true)}
         onInvite={() => { setInviteOpen(true); setInviteResult(null) }}
@@ -945,6 +1151,14 @@ export default function CoachHomePage() {
           })
           load()
         }}
+      />
+
+      <MyProspectsSection
+        prospects={data.recentProspects}
+        totalCount={data.metrics.activeProspects}
+        onOpen={(prospectId) => router.push(`/dashboard/coach/prospects/${prospectId}`)}
+        onAdd={() => router.push("/dashboard/coach/prospects")}
+        onShowAll={() => router.push("/dashboard/coach/prospects")}
       />
 
       {/* Invite modal — preserved from previous build */}

@@ -110,6 +110,99 @@ function windowThreshold(w: MetricsWindow): string | null {
   return null // "all" → no lower bound
 }
 
+// ── Prospect helpers (duplicated inline from /api/coach/prospects/route.ts
+//    per the established coach-route duplication pattern; keeps the home
+//    endpoint self-contained without a shared module). Used to build the
+//    `recentProspects` Coach Home My Prospects card data. ──
+
+const PROSPECT_SELECT_COLS = [
+  "id",
+  "name",
+  "invited_email",
+  "source_category",
+  "source_detail",
+  "lifecycle_status",
+  "invited_at",
+  "client_profile_id",
+  "phase_initial_contact_made",
+  "phase_initial_contact_made_at",
+  "phase_discovery_call_scheduled",
+  "phase_discovery_call_scheduled_at",
+  "phase_discovery_call_completed",
+  "phase_discovery_call_completed_at",
+  "phase_sow_sent",
+  "phase_sow_sent_at",
+  "phase_sow_signed",
+  "phase_sow_signed_at",
+  "phase_invoice_sent",
+  "phase_invoice_sent_at",
+  "phase_invoice_paid",
+  "phase_invoice_paid_at",
+].join(", ")
+
+type ProspectRow = {
+  id: string
+  name: string | null
+  invited_email: string | null
+  source_category: string | null
+  source_detail: string | null
+  lifecycle_status: string
+  invited_at: string
+  client_profile_id: string | null
+  phase_initial_contact_made: boolean
+  phase_initial_contact_made_at: string | null
+  phase_discovery_call_scheduled: boolean
+  phase_discovery_call_scheduled_at: string | null
+  phase_discovery_call_completed: boolean
+  phase_discovery_call_completed_at: string | null
+  phase_sow_sent: boolean
+  phase_sow_sent_at: string | null
+  phase_sow_signed: boolean
+  phase_sow_signed_at: string | null
+  phase_invoice_sent: boolean
+  phase_invoice_sent_at: string | null
+  phase_invoice_paid: boolean
+  phase_invoice_paid_at: string | null
+}
+
+function computeProspectLastActivityAt(row: ProspectRow, latestNoteCreatedAt: string | null): string | null {
+  const candidates = [
+    row.phase_initial_contact_made_at,
+    row.phase_discovery_call_scheduled_at,
+    row.phase_discovery_call_completed_at,
+    row.phase_sow_sent_at,
+    row.phase_sow_signed_at,
+    row.phase_invoice_sent_at,
+    row.phase_invoice_paid_at,
+    latestNoteCreatedAt,
+  ].filter((v): v is string => v !== null && v !== undefined)
+  if (candidates.length === 0) return null
+  return candidates.reduce((a, b) => (a > b ? a : b))
+}
+
+function buildProspectCard(row: ProspectRow, lastActivityAt: string | null) {
+  return {
+    id: row.id,
+    name: row.name,
+    invited_email: row.invited_email,
+    source_category: row.source_category,
+    source_detail: row.source_detail,
+    phases: {
+      initial_contact_made:     { checked: row.phase_initial_contact_made,     at: row.phase_initial_contact_made_at },
+      discovery_call_scheduled: { checked: row.phase_discovery_call_scheduled, at: row.phase_discovery_call_scheduled_at },
+      discovery_call_completed: { checked: row.phase_discovery_call_completed, at: row.phase_discovery_call_completed_at },
+      sow_sent:                 { checked: row.phase_sow_sent,                 at: row.phase_sow_sent_at },
+      sow_signed:               { checked: row.phase_sow_signed,               at: row.phase_sow_signed_at },
+      invoice_sent:             { checked: row.phase_invoice_sent,             at: row.phase_invoice_sent_at },
+      invoice_paid:             { checked: row.phase_invoice_paid,             at: row.phase_invoice_paid_at },
+    },
+    lifecycle_status: row.lifecycle_status,
+    client_profile_id: row.client_profile_id,
+    last_activity_at: lastActivityAt,
+    created_at: row.invited_at,
+  }
+}
+
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -277,6 +370,64 @@ export async function GET(req: NextRequest) {
         return a.attention_level === "medium" ? -1 : 1
       return (a.name || "").localeCompare(b.name || "")
     })
+
+    // ── 3.5 Prospect roster (Coach Home My Prospects section) ─────────
+    //
+    // Separate query rather than reusing clientCards because the prospect
+    // card needs phase + source fields that clientCards doesn't carry.
+    // Server-side slice to PROSPECT_CARD_LIMIT avoids overfetching for
+    // coaches with many prospects; same N as the frontend's
+    // COLLAPSED_LIMIT. Sort: last_activity_at DESC NULLS LAST, then
+    // invited_at DESC — matches /api/coach/prospects GET list.
+    const PROSPECT_CARD_LIMIT = 5
+
+    const { data: prospectRows, error: prospectErr } = await supabase
+      .from("coach_clients")
+      .select(PROSPECT_SELECT_COLS)
+      .eq("coach_profile_id", coachProfileId)
+      .eq("status", "active")
+      .eq("lifecycle_status", "Prospect")
+    if (prospectErr) {
+      throw new Error(`Failed to fetch prospects: ${prospectErr.message}`)
+    }
+
+    // Batch latest-note lookup (N+1 avoidance). One SELECT for all
+    // candidate prospect ids; group in-memory and pick the first
+    // (most recent) created_at per id.
+    const prospectIds = (prospectRows || []).map((r: any) => r.id as string)
+    const latestNoteByProspect = new Map<string, string>()
+    if (prospectIds.length > 0) {
+      const { data: notes } = await supabase
+        .from("coach_client_notes")
+        .select("coach_client_id, created_at")
+        .in("coach_client_id", prospectIds)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+      for (const n of notes || []) {
+        const cid = n.coach_client_id as string
+        if (!latestNoteByProspect.has(cid)) {
+          latestNoteByProspect.set(cid, n.created_at as string)
+        }
+      }
+    }
+
+    const prospectCards = (prospectRows || [])
+      .map((row: any) => {
+        const lastNote = latestNoteByProspect.get(row.id as string) ?? null
+        const lastActivityAt = computeProspectLastActivityAt(row as ProspectRow, lastNote)
+        return { card: buildProspectCard(row as ProspectRow, lastActivityAt), lastActivityAt }
+      })
+      .sort((a, b) => {
+        // last_activity_at DESC NULLS LAST, then created_at DESC
+        if (a.lastActivityAt === null && b.lastActivityAt === null) {
+          return (b.card.created_at ?? "").localeCompare(a.card.created_at ?? "")
+        }
+        if (a.lastActivityAt === null) return 1
+        if (b.lastActivityAt === null) return -1
+        return b.lastActivityAt.localeCompare(a.lastActivityAt)
+      })
+      .slice(0, PROSPECT_CARD_LIMIT)
+      .map((entry) => entry.card)
 
     // ── 4. Engagement signals (R1–R6) ─────────────────────────────────
     //
@@ -504,6 +655,7 @@ export async function GET(req: NextRequest) {
       // a chip without re-implementing the allowlist.
       appliedFilter: activeFilter,
       clients: cleanClients,
+      recentProspects: prospectCards,
       requiresAction,
     })
   } catch (err: any) {
