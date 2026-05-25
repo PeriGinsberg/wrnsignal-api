@@ -202,10 +202,17 @@ export default function MyClientsFullPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {sorted.map((c) => {
               const updates = c.updates_since_visit
+              // Active rows without a linked SIGNAL profile (converted
+              // from Prospect, not yet invited) route to the 4d
+              // /coach-clients/[id] surface keyed on coach_clients.id.
+              // SIGNAL-linked rows use the existing /clients/[client_profile_id].
+              const detailHref = c.client_profile_id
+                ? `/dashboard/coach/clients/${c.client_profile_id}`
+                : `/dashboard/coach/coach-clients/${c.id}`
               return (
                 <div
-                  key={c.client_profile_id}
-                  onClick={() => router.push(`/dashboard/coach/clients/${c.client_profile_id}`)}
+                  key={c.id}
+                  onClick={() => router.push(detailHref)}
                   onMouseEnter={onCoachRowEnter}
                   onMouseLeave={(e) => onCoachRowLeave(e)}
                   style={{
@@ -258,7 +265,7 @@ export default function MyClientsFullPage() {
                     )}
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/coach/clients/${c.client_profile_id}`) }}
+                    onClick={(e) => { e.stopPropagation(); router.push(detailHref) }}
                     style={{
                       ...btnSecondary,
                       fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,

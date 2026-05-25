@@ -1127,10 +1127,12 @@ export default function ProspectDetailPage() {
   }
 
   // Convert to Active (one-click, no confirm — per C2). PATCHes
-  // lifecycle then pushes to /coach-clients/[id]. The redirect
-  // useEffect above will also fire when setProspect lands the new
-  // lifecycle, but the explicit push gives the back button a clean
-  // history entry pointing back to /prospects.
+  // lifecycle then pushes to /coach-clients/[id] (the 4d
+  // post-conversion-pre-invite surface). A short delay gives the
+  // "Converting..." button state + transient banner time to register
+  // before the redirect. The lifecycle-mismatch useEffect above also
+  // fires once setProspect lands the new lifecycle, but the explicit
+  // push gives the back button a clean history entry.
   async function handleConvert() {
     if (!prospect) return
     setConverting(true)
@@ -1144,6 +1146,7 @@ export default function ProspectDetailPage() {
         alert(j?.error || "Couldn't convert — try again")
         return
       }
+      await new Promise((resolve) => setTimeout(resolve, 800))
       router.push(`/dashboard/coach/coach-clients/${prospect.id}`)
     } catch {
       alert("Network error — try again")

@@ -715,7 +715,11 @@ function MyClientsSection({
   clients, onOpen, onCreate, onInvite, onShowAll, onLifecycleStatusChange,
 }: {
   clients: CoachClient[]
-  onOpen: (clientId: string) => void
+  // Receives the full client so the caller can branch on whether
+  // client_profile_id is populated (routes to /clients/[id] for
+  // SIGNAL-linked rows, /coach-clients/[id] for converted-but-not-yet-
+  // invited rows per Prospects v0.1 4d).
+  onOpen: (client: CoachClient) => void
   onCreate: () => void
   onInvite: () => void
   onShowAll: () => void
@@ -764,9 +768,9 @@ function MyClientsSection({
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {visible.map((c) => (
             <ClientRow
-              key={c.client_profile_id}
+              key={c.id}
               client={c}
-              onOpen={() => onOpen(c.client_profile_id)}
+              onOpen={() => onOpen(c)}
               onLifecycleStatusChange={(next) => onLifecycleStatusChange(c.client_profile_id, next)}
             />
           ))}
@@ -1120,7 +1124,17 @@ export default function CoachHomePage() {
         // safety net for the prospect-renders-in-my-clients case. See
         // Prospects v0.1 4d runlog entry.
         clients={data.clients.filter((c) => c.lifecycle_status !== "Prospect")}
-        onOpen={goToClient}
+        onOpen={(client) => {
+          // Active clients with a linked SIGNAL profile go to the
+          // existing /clients/[client_profile_id] detail. Active
+          // clients without a linked profile (converted from Prospect,
+          // not yet invited) go to the new 4d post-conversion surface
+          // keyed on coach_clients.id.
+          const href = client.client_profile_id
+            ? `/dashboard/coach/clients/${client.client_profile_id}`
+            : `/dashboard/coach/coach-clients/${client.id}`
+          router.push(href)
+        }}
         onCreate={() => setShowCreateClient(true)}
         onInvite={() => { setInviteOpen(true); setInviteResult(null) }}
         onShowAll={() => router.push("/dashboard/coach/clients")}
