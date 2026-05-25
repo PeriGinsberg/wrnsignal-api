@@ -24,7 +24,10 @@ const FILTER_LABELS: Record<string, string> = {
 
 type CoachClient = {
   id: string
-  client_profile_id: string
+  // Nullable for Active rows that were converted from Prospect but
+  // haven't yet been linked to a SIGNAL profile via send-invite.
+  // Frontend type was previously `string`; backend always allowed null.
+  client_profile_id: string | null
   name: string | null
   email: string | null
   status: string | null
@@ -40,6 +43,17 @@ type CoachClient = {
   last_activity: string | null
   last_viewed_at: string | null
   updates_since_visit: number
+}
+
+// Static pill colors mirror LifecycleStatusPill's PILL_STYLES — used
+// for rows where client_profile_id is null (the interactive pill PATCHes
+// /api/coach/clients/[client_profile_id] which would 404; render a
+// non-interactive chip instead).
+const STATIC_PILL_COLORS: Record<LifecycleStatus, { bg: string; color: string }> = {
+  Prospect: { bg: "#F4A261", color: "#FFFFFF" },
+  Active: { bg: "#2CA58D", color: "#FFFFFF" },
+  Inactive: { bg: "#7DD3FC", color: "#333333" },
+  Archived: { bg: "#333333", color: "#FFFFFF" },
 }
 
 const AVATAR_PALETTE = [
@@ -109,6 +123,42 @@ export default function MyClientsFullPage() {
   const [clients, setClients] = useState<CoachClient[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
+
+  // Per-row invite state keyed on coach_clients.id. Tracks the
+  // optimistic UI transition for the "Invite to SIGNAL" button.
+  // Absent key = idle. No persistence — page refresh resets, but the
+  // underlying row's client_profile_id will be populated server-side
+  // after a successful send, so on refetch the button is hidden by
+  // the conditional render rather than relying on local state.
+  const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({})
+  const [inviteError, setInviteError] = useState<Record<string, string>>({})
+
+  async function sendInvite(coachClientId: string) {
+    if (inviteStatus[coachClientId] === "sending" || inviteStatus[coachClientId] === "sent") return
+    setInviteStatus((s) => ({ ...s, [coachClientId]: "sending" }))
+    setInviteError((e) => {
+      const next = { ...e }
+      delete next[coachClientId]
+      return next
+    })
+    try {
+      const res = await authFetch(`/api/coach/coach-clients/${coachClientId}/send-invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) {
+        setInviteStatus((s) => ({ ...s, [coachClientId]: "sent" }))
+      } else {
+        setInviteStatus((s) => ({ ...s, [coachClientId]: "error" }))
+        setInviteError((e) => ({ ...e, [coachClientId]: j?.error || "Couldn't send invite — try again" }))
+      }
+    } catch {
+      setInviteStatus((s) => ({ ...s, [coachClientId]: "error" }))
+      setInviteError((e) => ({ ...e, [coachClientId]: "Network error — try again" }))
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -209,72 +259,138 @@ export default function MyClientsFullPage() {
               const detailHref = c.client_profile_id
                 ? `/dashboard/coach/clients/${c.client_profile_id}`
                 : `/dashboard/coach/coach-clients/${c.id}`
+              const needsInvite = c.lifecycle_status === "Active" && c.client_profile_id == null
+              const ix = inviteStatus[c.id]
+              const inviteSending = ix === "sending"
+              const inviteSent = ix === "sent"
+              const inviteErr = inviteError[c.id]
               return (
-                <div
-                  key={c.id}
-                  onClick={() => router.push(detailHref)}
-                  onMouseEnter={onCoachRowEnter}
-                  onMouseLeave={(e) => onCoachRowLeave(e)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 14,
-                    padding: "12px 14px",
-                    background: COACH_ROW_DEFAULT_BG,
-                    border: `1px solid ${T.BORDER_SOFT}`,
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    transition: COACH_ROW_TRANSITION,
-                  }}
-                >
-                  <Avatar name={c.name} email={c.email} />
-                  <div style={{ minWidth: 0, flex: "1 1 180px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{
-                        fontSize: 14, fontWeight: 700, color: T.TEXT,
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                      }}>{c.name || "Unnamed"}</span>
-                      <LifecycleStatusPill
-                        value={c.lifecycle_status}
-                        getToken={getToken}
-                        clientProfileId={c.client_profile_id}
-                        onChange={(next) => {
-                          setClients((prev) =>
-                            prev
-                              ? prev.map((cc) =>
-                                  cc.client_profile_id === c.client_profile_id
-                                    ? { ...cc, lifecycle_status: next }
-                                    : cc,
-                                )
-                              : prev,
-                          )
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                    <MiniCell label="Apps"  value={c.stats.applications} />
-                    <MiniCell label="Intvw" value={c.stats.interviewing} color={c.stats.interviewing > 0 ? T.WRN_BLUE : undefined} />
-                    <MiniCell label="Rate"  value={`${c.stats.interview_rate}%`} />
-                    <MiniCell label="Rej"   value={c.stats.rejected} />
-                    <MiniCell label="Off"   value={c.stats.offers} color={c.stats.offers > 0 ? T.SUCCESS : undefined} />
-                  </div>
-                  <div style={{ flexShrink: 0, minWidth: 110, textAlign: "right" }}>
-                    {updates > 0 ? (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_ORANGE }}>{updates} new</span>
-                    ) : (
-                      <span style={{ fontSize: 11, color: T.DIM }}>No changes</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); router.push(detailHref) }}
+                <div key={c.id} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div
+                    onClick={() => router.push(detailHref)}
+                    onMouseEnter={onCoachRowEnter}
+                    onMouseLeave={(e) => onCoachRowLeave(e)}
                     style={{
-                      ...btnSecondary,
-                      fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,
-                      color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)",
-                      flexShrink: 0,
+                      display: "flex", alignItems: "center", gap: 14,
+                      padding: "12px 14px",
+                      background: COACH_ROW_DEFAULT_BG,
+                      border: `1px solid ${T.BORDER_SOFT}`,
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      transition: COACH_ROW_TRANSITION,
                     }}
                   >
-                    Open →
-                  </button>
+                    <Avatar name={c.name} email={c.email} />
+                    <div style={{ minWidth: 0, flex: "1 1 180px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{
+                          fontSize: 14, fontWeight: 700, color: T.TEXT,
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        }}>{c.name || "Unnamed"}</span>
+                        {c.client_profile_id ? (
+                          <LifecycleStatusPill
+                            value={c.lifecycle_status}
+                            getToken={getToken}
+                            clientProfileId={c.client_profile_id}
+                            onChange={(next) => {
+                              setClients((prev) =>
+                                prev
+                                  ? prev.map((cc) =>
+                                      cc.client_profile_id === c.client_profile_id
+                                        ? { ...cc, lifecycle_status: next }
+                                        : cc,
+                                    )
+                                  : prev,
+                              )
+                            }}
+                          />
+                        ) : (
+                          // Static lifecycle chip for rows without a SIGNAL
+                          // profile linked — the interactive pill PATCHes
+                          // /api/coach/clients/[client_profile_id] which
+                          // doesn't apply here. The Invite to SIGNAL button
+                          // (further right) is the canonical action for
+                          // these rows.
+                          <span
+                            style={{
+                              background: STATIC_PILL_COLORS[c.lifecycle_status].bg,
+                              color: STATIC_PILL_COLORS[c.lifecycle_status].color,
+                              fontSize: 11,
+                              fontWeight: 900,
+                              padding: "4px 10px",
+                              borderRadius: 999,
+                              whiteSpace: "nowrap",
+                              letterSpacing: 0.2,
+                            }}
+                          >
+                            {c.lifecycle_status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                      <MiniCell label="Apps"  value={c.stats.applications} />
+                      <MiniCell label="Intvw" value={c.stats.interviewing} color={c.stats.interviewing > 0 ? T.WRN_BLUE : undefined} />
+                      <MiniCell label="Rate"  value={`${c.stats.interview_rate}%`} />
+                      <MiniCell label="Rej"   value={c.stats.rejected} />
+                      <MiniCell label="Off"   value={c.stats.offers} color={c.stats.offers > 0 ? T.SUCCESS : undefined} />
+                    </div>
+                    <div style={{ flexShrink: 0, minWidth: 110, textAlign: "right" }}>
+                      {updates > 0 ? (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_ORANGE }}>{updates} new</span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: T.DIM }}>No changes</span>
+                      )}
+                    </div>
+                    {needsInvite && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); sendInvite(c.id) }}
+                        disabled={inviteSending || inviteSent}
+                        style={{
+                          background: inviteSent
+                            ? "rgba(74,222,128,0.15)"
+                            : "rgba(255,149,0,0.15)",
+                          border: `1px solid ${inviteSent ? "rgba(74,222,128,0.3)" : "rgba(255,149,0,0.3)"}`,
+                          color: inviteSent ? T.SUCCESS : "#FF9500",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          cursor: inviteSending || inviteSent ? "default" : "pointer",
+                          opacity: inviteSending ? 0.6 : 1,
+                          fontFamily: "inherit",
+                          flexShrink: 0,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {inviteSending ? "Sending..." : inviteSent ? "✓ Invited" : "Invite to SIGNAL"}
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); router.push(detailHref) }}
+                      style={{
+                        ...btnSecondary,
+                        fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,
+                        color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      Open →
+                    </button>
+                  </div>
+                  {inviteErr && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#f87171",
+                        fontWeight: 600,
+                        paddingLeft: 14,
+                        paddingRight: 14,
+                      }}
+                    >
+                      {inviteErr}
+                    </div>
+                  )}
                 </div>
               )
             })}
