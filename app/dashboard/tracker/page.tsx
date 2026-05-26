@@ -185,6 +185,31 @@ function scoreColor(score: number | null): string {
   return "#E87070"
 }
 
+// Thin fetch wrapper that surfaces non-OK responses as an errorMessage
+// instead of pretending they succeeded. Every save handler below uses
+// this so the "200 happy path" stays terse and the failure path is
+// always honored with a toast — no more silent fire-and-forget writes
+// like the one that hid the coach_annotations regression for 5 days.
+async function apiCall(
+  url: string,
+  init: RequestInit,
+): Promise<{ ok: boolean; data: any; errorMessage: string }> {
+  try {
+    const res = await fetch(url, init)
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      return {
+        ok: false,
+        data,
+        errorMessage: data?.error || `Request failed (${res.status})`,
+      }
+    }
+    return { ok: true, data, errorMessage: "" }
+  } catch (e: any) {
+    return { ok: false, data: null, errorMessage: e?.message || "Network error" }
+  }
+}
+
 // ── Main Component ──────────────────────────────────────────
 
 export default function TrackerPage() {
@@ -287,14 +312,21 @@ export default function TrackerPage() {
     const token = await getToken()
     if (!token) { setSaving(false); return }
     const { id, profile_id, created_at, signal_decision, signal_score, signal_run_at, jobfit_run_id, interview_count, persona_name, ...fields } = editingApp
-    await fetch(`/api/applications/${editingApp.id}`, {
+    const result = await apiCall(`/api/applications/${editingApp.id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(fields),
     })
+    setSaving(false)
+    if (!result.ok) {
+      setToast(`Save failed: ${result.errorMessage}`)
+      return
+    }
+    // Optimistic update fires ONLY on confirmed success. The edit form
+    // stays open on failure (collapseApp not called) so the user can
+    // retry or adjust their changes.
     const resolvedPersonaName = personas.find((p: any) => p.id === fields.persona_id)?.name || null
     setApplications((prev) => prev.map((a) => a.id === editingApp.id ? { ...a, ...fields, persona_name: resolvedPersonaName } : a))
-    setSaving(false)
     collapseApp()
     setToast("Changes saved")
   }
@@ -320,13 +352,17 @@ export default function TrackerPage() {
     const token = await getToken()
     if (!token) { setSaving(false); return }
     const { id, profile_id, application_id, created_at, signal_decision, signal_score, signal_applications, ...fields } = editingInterview
-    await fetch(`/api/interviews/${editingInterview.id}`, {
+    const result = await apiCall(`/api/interviews/${editingInterview.id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(fields),
     })
-    setInterviews((prev) => prev.map((i) => i.id === editingInterview.id ? { ...i, ...fields } : i))
     setSaving(false)
+    if (!result.ok) {
+      setToast(`Save failed: ${result.errorMessage}`)
+      return
+    }
+    setInterviews((prev) => prev.map((i) => i.id === editingInterview.id ? { ...i, ...fields } : i))
     collapseInterview()
     setToast("Changes saved")
   }
@@ -334,7 +370,11 @@ export default function TrackerPage() {
   async function deleteApp(id: string) {
     const token = await getToken()
     if (!token) return
-    await fetch(`/api/applications/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    const result = await apiCall(`/api/applications/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    if (!result.ok) {
+      setToast(`Couldn't delete: ${result.errorMessage}`)
+      return
+    }
     setApplications((prev) => prev.filter((a) => a.id !== id))
     setInterviews((prev) => prev.filter((i) => i.application_id !== id))
     setExpandedId(null)
@@ -344,61 +384,66 @@ export default function TrackerPage() {
   async function respondToRec(recId: string, appId: string, clientStatus: string) {
     const token = await getToken()
     if (!token) return
-    const res = await fetch(`/api/coach/my-recommendations/${recId}/respond`, {
+    const result = await apiCall(`/api/coach/my-recommendations/${recId}/respond`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ client_status: clientStatus }),
     })
-    if (res.ok) {
-      setCoachRecMap((prev) => {
-        const rec = prev[appId]
-        if (!rec) return prev
-        return { ...prev, [appId]: { ...rec, client_status: clientStatus } }
-      })
-      setCoachRecsRaw((prev) => prev.map((r) => r.id === recId ? { ...r, client_status: clientStatus } : r))
-      if (clientStatus === "applying") {
-        setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, application_status: "applied" } : a))
-      }
-      setToast(clientStatus === "applying" ? "Marked as applying" : clientStatus === "not_for_me" ? "Marked as pass" : "Updated")
+    if (!result.ok) {
+      setToast(`Couldn't update coach response: ${result.errorMessage}`)
+      return
     }
+    setCoachRecMap((prev) => {
+      const rec = prev[appId]
+      if (!rec) return prev
+      return { ...prev, [appId]: { ...rec, client_status: clientStatus } }
+    })
+    setCoachRecsRaw((prev) => prev.map((r) => r.id === recId ? { ...r, client_status: clientStatus } : r))
+    if (clientStatus === "applying") {
+      setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, application_status: "applied" } : a))
+    }
+    setToast(clientStatus === "applying" ? "Marked as applying" : clientStatus === "not_for_me" ? "Marked as pass" : "Updated")
   }
 
   async function markAllSeen() {
     const token = await getToken()
     if (!token) return
-    const res = await fetch("/api/coach/my-recommendations", {
+    const result = await apiCall("/api/coach/my-recommendations", {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ action: "mark_all_seen" }),
     })
-    if (res.ok) {
-      setCoachRecMap((prev) => {
-        const next = { ...prev }
-        for (const k of Object.keys(next)) {
-          if (next[k].client_status === "new") next[k] = { ...next[k], client_status: "interested" }
-        }
-        return next
-      })
-      setCoachRecsRaw((prev) => prev.map((r) => r.client_status === "new" ? { ...r, client_status: "interested" } : r))
-      setToast("All marked as seen")
+    if (!result.ok) {
+      setToast(`Couldn't mark all seen: ${result.errorMessage}`)
+      return
     }
+    setCoachRecMap((prev) => {
+      const next = { ...prev }
+      for (const k of Object.keys(next)) {
+        if (next[k].client_status === "new") next[k] = { ...next[k], client_status: "interested" }
+      }
+      return next
+    })
+    setCoachRecsRaw((prev) => prev.map((r) => r.client_status === "new" ? { ...r, client_status: "interested" } : r))
+    setToast("All marked as seen")
   }
 
   async function createApp() {
     const token = await getToken()
     if (!token || !newJob.company_name.trim() || !newJob.job_title.trim()) return
-    const res = await fetch("/api/applications", {
+    const result = await apiCall("/api/applications", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(newJob),
     })
-    if (res.ok) {
-      const j = await res.json()
-      setApplications((prev) => [j.application, ...prev])
-      setShowAddJob(false)
-      setNewJob({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "", persona_id: "" })
-      setToast("Job added")
+    if (!result.ok) {
+      setToast(`Couldn't add job: ${result.errorMessage}`)
+      return
     }
+    setApplications((prev) => [result.data.application, ...prev])
+    setShowAddJob(false)
+    setNewJob({ company_name: "", job_title: "", location: "", job_url: "", application_location: "", interest_level: 3, application_status: "saved", date_posted: "", notes: "", persona_id: "" })
+    setToast("Job added")
   }
 
   // ── Interview CRUD ────────────────────────────────────────
@@ -406,30 +451,35 @@ export default function TrackerPage() {
   async function createInterview() {
     const token = await getToken()
     if (!token || !newInterview.application_id || !newInterview.interview_stage) return
-    const res = await fetch("/api/interviews", {
+    const result = await apiCall("/api/interviews", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(newInterview),
     })
-    if (res.ok) {
-      const j = await res.json()
-      setInterviews((prev) => [j.interview, ...prev])
-      // Update app status optimistically
-      setApplications((prev) => prev.map((a) => a.id === newInterview.application_id && (a.application_status === "saved" || a.application_status === "applied") ? { ...a, application_status: "interviewing" } : a))
-      setShowAddInterview(false)
-      setNewInterview({ application_id: "", interview_stage: "phone", interviewer_names: "", interview_date: "", status: "scheduled", confidence_level: 3, notes: "" })
-      setToast("Interview logged")
+    if (!result.ok) {
+      setToast(`Couldn't log interview: ${result.errorMessage}`)
+      return
     }
+    setInterviews((prev) => [result.data.interview, ...prev])
+    // Update app status optimistically
+    setApplications((prev) => prev.map((a) => a.id === newInterview.application_id && (a.application_status === "saved" || a.application_status === "applied") ? { ...a, application_status: "interviewing" } : a))
+    setShowAddInterview(false)
+    setNewInterview({ application_id: "", interview_stage: "phone", interviewer_names: "", interview_date: "", status: "scheduled", confidence_level: 3, notes: "" })
+    setToast("Interview logged")
   }
 
   async function setThankYou(interviewId: string, val: boolean) {
     const token = await getToken()
     if (!token) return
-    await fetch(`/api/interviews/${interviewId}`, {
+    const result = await apiCall(`/api/interviews/${interviewId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ thank_you_sent: val }),
     })
+    if (!result.ok) {
+      setToast(`Couldn't update thank-you: ${result.errorMessage}`)
+      return
+    }
     setInterviews((prev) => prev.map((i) => i.id === interviewId ? { ...i, thank_you_sent: val } : i))
   }
 

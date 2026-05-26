@@ -97,7 +97,20 @@ export async function PUT(
       return withCorsJson(req, { error: "Invalid JSON body" }, 400)
     }
 
-    const { id, profile_id, application_id, created_at, ...updates } = body
+    // Allow-list mirroring the POST handler's optional[] list. Same
+    // rationale as PUT /api/applications/[id]: GET-side enrichment
+    // (signal_decision, signal_score from joined signal_applications)
+    // must not be writable back to this table — those columns don't
+    // exist on signal_interviews and would crash the update.
+    const ALLOWED_UPDATE_FIELDS = [
+      "interview_stage", "interviewer_names", "interview_date",
+      "thank_you_sent", "status", "confidence_level", "notes",
+    ] as const
+
+    const updates: Record<string, any> = {}
+    for (const key of ALLOWED_UPDATE_FIELDS) {
+      if (body[key] !== undefined) updates[key] = body[key]
+    }
     updates.updated_at = new Date().toISOString()
 
     const { data: updated, error: updateErr } = await supabase

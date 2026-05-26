@@ -99,8 +99,25 @@ export async function PUT(
       return withCorsJson(req, { error: "Invalid JSON body" }, 400)
     }
 
-    // Strip fields that should not be changed directly
-    const { id, profile_id, created_at, ...updates } = body
+    // Allow-list: only these user-editable columns are accepted. Anything
+    // else in the request body (e.g. GET-side enrichment fields like
+    // coach_annotations, interview_count, persona_name, signal_interviews)
+    // is silently ignored. Mirrors the POST handler's optional[] list and
+    // adds company_name + job_title which are editable via the edit form
+    // (users correct extraction garbage there). Adding a new editable
+    // field requires adding it here AND to the editor UI.
+    const ALLOWED_UPDATE_FIELDS = [
+      "company_name", "job_title",
+      "location", "job_url", "application_location",
+      "application_status", "applied_date", "date_posted",
+      "interest_level", "cover_letter_submitted", "referral",
+      "notes", "persona_id",
+    ] as const
+
+    const updates: Record<string, any> = {}
+    for (const key of ALLOWED_UPDATE_FIELDS) {
+      if (body[key] !== undefined) updates[key] = body[key]
+    }
     updates.updated_at = new Date().toISOString()
 
     const { data: updated, error: updateErr } = await supabase
