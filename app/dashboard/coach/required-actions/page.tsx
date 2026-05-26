@@ -21,6 +21,13 @@ import { BackToDashboard } from "../BackToDashboard"
 import { DismissSignalButton, useDismissSignal } from "../DismissSignalButton"
 import { LoadingShell } from "../LoadingShell"
 
+// Feature flag — set to true to restore the Engagement Signals section
+// below Action Items. When false, only Action Items renders. All data
+// fetch, dismiss wiring, EngagementSignalFullRow component, RULE_LABEL/
+// RULE_COLOR maps, and useDismissSignal hook stay in place; only the
+// render is gated. Restore is a one-line flip.
+const SHOW_ENGAGEMENT_SIGNALS = false
+
 type HeuristicItem = {
   id: string
   kind:
@@ -123,7 +130,7 @@ export default function RequiredActionsPage() {
           Required Actions
         </h1>
         <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8 }}>
-          Action Items from your notes · Engagement Signals from client activity
+          Action Items from your notes{SHOW_ENGAGEMENT_SIGNALS && " · Engagement Signals from client activity"}
         </p>
       </div>
 
@@ -149,48 +156,50 @@ export default function RequiredActionsPage() {
       {/* Section 2: Engagement Signals (heuristic — preserved v1
           content, renamed from "From Activity" 2026-05-09). 2px blue
           top accent matches the Coach Home pair treatment. */}
-      <section style={{ ...card, padding: 22, position: "relative" }}>
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 2,
-            background: T.WRN_BLUE, borderTopLeftRadius: 18, borderTopRightRadius: 18,
-          }}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+      {SHOW_ENGAGEMENT_SIGNALS && (
+        <section style={{ ...card, padding: 22, position: "relative" }}>
           <div
+            aria-hidden="true"
             style={{
-              fontSize: 10,
-              fontWeight: 900,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: T.WRN_BLUE,
+              position: "absolute", top: 0, left: 0, right: 0, height: 2,
+              background: T.WRN_BLUE, borderTopLeftRadius: 18, borderTopRightRadius: 18,
             }}
-          >
-            Engagement Signals
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 900,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: T.WRN_BLUE,
+              }}
+            >
+              Engagement Signals
+            </div>
+            {heuristicList.length > 0 && (
+              <span style={{ fontSize: 11, color: T.DIM }}>{heuristicList.length}</span>
+            )}
           </div>
-          {heuristicList.length > 0 && (
-            <span style={{ fontSize: 11, color: T.DIM }}>{heuristicList.length}</span>
-          )}
-        </div>
 
-        {heuristicList.length === 0 ? (
-          <p style={{ color: T.MUTED, fontSize: 13, fontStyle: "italic", margin: 0 }}>
-            Nothing flagged from activity right now.
-          </p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {heuristicList.map((item) => (
-              <EngagementSignalFullRow
-                key={item.id}
-                item={item}
-                onClick={() => router.push(`/dashboard/coach/clients/${item.client_profile_id}`)}
-                onDismiss={dismiss}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+          {heuristicList.length === 0 ? (
+            <p style={{ color: T.MUTED, fontSize: 13, fontStyle: "italic", margin: 0 }}>
+              Nothing flagged from activity right now.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {heuristicList.map((item) => (
+                <EngagementSignalFullRow
+                  key={item.id}
+                  item={item}
+                  onClick={() => router.push(`/dashboard/coach/clients/${item.client_profile_id}`)}
+                  onDismiss={dismiss}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       {toastNode}
     </div>
   )

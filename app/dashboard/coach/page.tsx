@@ -33,6 +33,13 @@ import { SavingSpinner } from "./SavingSpinner"
 import { LoadingShell } from "./LoadingShell"
 import { MetricsWindowToggle, useMetricsWindow, windowSubtitle } from "./MetricsWindowToggle"
 
+// Feature flag — set to true to restore the Engagement Signals card on Coach
+// Home (paired right column next to Action Items). When false, Action Items
+// expands to full row width via the grid template switch below. All Engagement
+// Signals data, component code, dismiss wiring, and helpers stay in place;
+// only the render is gated. Restore is a one-line flip.
+const SHOW_ENGAGEMENT_SIGNALS = false
+
 // ──────────────────────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────────────────────
@@ -1086,7 +1093,9 @@ export default function CoachHomePage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+          gridTemplateColumns: SHOW_ENGAGEMENT_SIGNALS
+            ? "repeat(auto-fit, minmax(360px, 1fr))"
+            : "1fr",
           gap: 20,
           alignItems: "start",
           marginBottom: 20,
@@ -1109,12 +1118,14 @@ export default function CoachHomePage() {
           />
         </Section>
 
-        <EngagementSignalsSection
-          items={data.requiresAction}
-          onItemClick={goToClient}
-          onShowAll={() => router.push("/dashboard/coach/required-actions")}
-          noBottomMargin
-        />
+        {SHOW_ENGAGEMENT_SIGNALS && (
+          <EngagementSignalsSection
+            items={data.requiresAction}
+            onItemClick={goToClient}
+            onShowAll={() => router.push("/dashboard/coach/required-actions")}
+            noBottomMargin
+          />
+        )}
       </div>
 
       <TodaysScheduleSection />
