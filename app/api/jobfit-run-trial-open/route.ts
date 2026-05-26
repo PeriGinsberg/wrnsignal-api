@@ -7,6 +7,9 @@
 //   - No credit gate (every request runs)
 //   - No DB cache (client persists last result in sessionStorage by jd_hash)
 //   - Soft per-IP rate limit (in-memory, best-effort) to bound abuse cost
+//   - Anonymous analytics insert (jobfit_anonymous_runs) — fire-and-forget,
+//     no PII, hashes only; never blocks the response; insert failures
+//     are console.error'd, never surfaced to the user
 //
 // Same as jobfit-run-trial:
 //   - Engine path: runJobFit + V5 bullet renderer
@@ -22,6 +25,7 @@
 
 import crypto from "crypto"
 import { NextRequest } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
@@ -123,6 +127,21 @@ function getClientIp(req: NextRequest): string {
     req.headers.get("cf-connecting-ip") ||
     ""
   )
+}
+
+// Service-role Supabase client. Used only for the fire-and-forget
+// anonymous analytics insert below. The open route has no other DB
+// interaction. Per-request instantiation mirrors the gated trial route
+// (jobfit-run-trial/route.ts:114-121); the helper throws synchronously
+// if env is unset so the analytics block's try/catch can swallow it
+// without surfacing 500 to the user.
+function getSupabase() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -322,6 +341,69 @@ export async function POST(req: NextRequest) {
         elapsed_ms: Date.now() - t0,
       },
     })
+
+    // ──────────────────────────────────────────────────────────────────
+    // Anonymous analytics. Fire-and-forget. Never blocks the response.
+    // No PII written. Errors are logged, never surfaced to the user.
+    // ──────────────────────────────────────────────────────────────────
+    try {
+      const supabase = getSupabase()
+      const resumeHash = crypto
+        .createHash("sha256")
+        .update(resumeText)
+        .digest("hex")
+
+      const v5FellBackToV4 = Boolean(raw?.debug?.v5_fell_back_to_v4)
+
+      const analyticsPayload = {
+        // session correlation
+        session_id: sessionId ?? null,
+
+        // attribution (already parsed from body earlier in the route)
+        utm_source: utmSource ?? null,
+        utm_medium: utmMedium ?? null,
+        utm_campaign: utmCampaign ?? null,
+        referrer: req.headers.get("referer") ?? null,
+        user_agent: req.headers.get("user-agent") ?? null,
+
+        // inputs (hashed only)
+        resume_hash: resumeHash,
+        jd_hash: jdHash, // already computed upstream in the route
+        resume_char_count: resumeText.length,
+        jd_char_count: jobText.length,
+
+        // engine outputs
+        score: typeof raw?.score === "number" ? raw.score : null,
+        decision: raw?.decision ?? null,
+        gate_triggered: raw?.gate_triggered?.type ?? null,
+        why_code_count: Array.isArray(raw?.why_codes) ? raw.why_codes.length : 0,
+        risk_code_count: Array.isArray(raw?.risk_codes) ? raw.risk_codes.length : 0,
+
+        // engine behavior
+        v5_fell_back_to_v4: v5FellBackToV4,
+
+        // performance
+        ms_elapsed: Date.now() - t0,
+      }
+
+      // No await. Response returns immediately.
+      supabase
+        .from("jobfit_anonymous_runs")
+        .insert(analyticsPayload)
+        .then(({ error }) => {
+          if (error) {
+            console.error("[anonymous_runs] insert_failed", {
+              message: error.message,
+              code: (error as any).code,
+            })
+          }
+        })
+    } catch (analyticsErr: any) {
+      console.error(
+        "[anonymous_runs] setup_failed",
+        analyticsErr?.message || String(analyticsErr)
+      )
+    }
 
     return withCorsJson(req, successResponse, 200)
   } catch (err: any) {
