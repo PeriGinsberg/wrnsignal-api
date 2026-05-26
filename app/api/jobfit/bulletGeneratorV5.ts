@@ -279,6 +279,56 @@ function isValidPositioningStrategy(s: any): s is PositioningStrategy {
   return true
 }
 
+// Bullet validators. Same purpose as the strategy validators above: gate
+// model output against the shape contract before it reaches the formatters,
+// where missing fields silently coerce to the string "undefined" and surface
+// in the UI as "-> undefined". Non-empty string check only — content
+// quality is the eval rubric's job, not a runtime guard.
+
+function isValidWhyBullet(b: any): b is WhyBullet {
+  if (b == null || typeof b !== "object") return false
+  if (typeof b.keyword !== "string" || b.keyword.length === 0) return false
+  if (typeof b.lead !== "string" || b.lead.length === 0) return false
+  if (typeof b.connection !== "string" || b.connection.length === 0) return false
+  if (typeof b.action !== "string" || b.action.length === 0) return false
+  return true
+}
+
+function isValidRiskBullet(b: any): b is RiskBullet {
+  if (b == null || typeof b !== "object") return false
+  if (typeof b.keyword !== "string" || b.keyword.length === 0) return false
+  if (typeof b.gap !== "string" || b.gap.length === 0) return false
+  // adjacent_evidence may be empty string per Risk v1 spec (the "no
+  // adjacent evidence" case), but must still be a string — not undefined,
+  // null, or any other type, since the formatter's short-circuit relies
+  // on `!b.adjacent_evidence` and the consumer reads .length.
+  if (typeof b.adjacent_evidence !== "string") return false
+  if (b.severity !== "low" && b.severity !== "medium" && b.severity !== "high") return false
+  return true
+}
+
+// Helpers used only at the drop-and-log site below. Pure inverse of the
+// validators — first field that fails the validator becomes the reason.
+// Order MUST match the validator order so the reason is accurate.
+
+function whyBulletInvalidReason(b: any): string {
+  if (b == null || typeof b !== "object") return "not_an_object"
+  if (typeof b.keyword !== "string" || b.keyword.length === 0) return "keyword_missing_or_empty"
+  if (typeof b.lead !== "string" || b.lead.length === 0) return "lead_missing_or_empty"
+  if (typeof b.connection !== "string" || b.connection.length === 0) return "connection_missing_or_empty"
+  if (typeof b.action !== "string" || b.action.length === 0) return "action_missing_or_empty"
+  return "unknown"
+}
+
+function riskBulletInvalidReason(b: any): string {
+  if (b == null || typeof b !== "object") return "not_an_object"
+  if (typeof b.keyword !== "string" || b.keyword.length === 0) return "keyword_missing_or_empty"
+  if (typeof b.gap !== "string" || b.gap.length === 0) return "gap_missing_or_empty"
+  if (typeof b.adjacent_evidence !== "string") return "adjacent_evidence_not_a_string"
+  if (b.severity !== "low" && b.severity !== "medium" && b.severity !== "high") return "severity_invalid"
+  return "unknown"
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
@@ -354,9 +404,40 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
     )
   }
 
-  const allWhyBullets = parsed.why_bullets ?? []
-  const whyBullets = isPass ? allWhyBullets.slice(0, 2) : allWhyBullets
-  const riskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
+  // Drop malformed bullets BEFORE the Pass-cap slice so an invalid bullet
+  // doesn't crowd out a valid one when capped at 2. The validators catch
+  // the "-> undefined" bug class at source (missing/empty/wrong-type
+  // fields) without touching content quality.
+  const rawWhyBullets = parsed.why_bullets ?? []
+  const validWhyBullets: WhyBullet[] = []
+  for (const b of rawWhyBullets) {
+    if (isValidWhyBullet(b)) {
+      validWhyBullets.push(b)
+    } else {
+      console.warn("[V5] dropped malformed why bullet", {
+        reason: whyBulletInvalidReason(b),
+        decision: out.decision,
+        score: out.score,
+        bullet: b,
+      })
+    }
+  }
+  const whyBullets = isPass ? validWhyBullets.slice(0, 2) : validWhyBullets
+
+  const rawRiskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
+  const riskBullets: RiskBullet[] = []
+  for (const b of rawRiskBullets) {
+    if (isValidRiskBullet(b)) {
+      riskBullets.push(b)
+    } else {
+      console.warn("[V5] dropped malformed risk bullet", {
+        reason: riskBulletInvalidReason(b),
+        decision: out.decision,
+        score: out.score,
+        bullet: b,
+      })
+    }
+  }
 
   // Strategy field guards. Belt-and-suspenders against model ignoring the
   // Pass-skip rule: force null for all three on Pass regardless of model

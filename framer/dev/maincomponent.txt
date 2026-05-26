@@ -2446,6 +2446,16 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             .map((s: string) => s.trim())
             .filter(Boolean)
 
+        // why_structured is the structured form of why bullets from V5.
+        // Used only for the keyword heading on each Why card — body text
+        // continues to come from the joined `why` string array above so
+        // the prose render path stays battle-tested. Per-index lookup at
+        // render time; indices align because both arrays are derived from
+        // the same `whyBullets` slice in bulletGeneratorV5.ts.
+        const whyStructured: any[] = Array.isArray(jobFitResult?.why_structured)
+            ? jobFitResult.why_structured
+            : []
+
         const renderedRisks: string[] = pickFirstArray(
             jobFitResult?.risk,
             jobFitResult?.risk_bullets,
@@ -2648,12 +2658,25 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 : "Your proof"
                             const actionText =
                                 whyActions[code?.code] ?? defaultAction
+                            // Keyword heading source — V5 why_structured. Falls back
+                            // to empty string → conditional below suppresses the
+                            // heading slot entirely when no keyword is available
+                            // (cached-pre-V5 results, malformed model output that
+                            // validators dropped before this code runs, etc.).
+                            const whyKeyword = String(
+                                whyStructured[i]?.keyword || ""
+                            ).trim()
 
                             return (
                                 <div key={i} style={jfWhyCard}>
                                     <div style={jfWhyCardInner}>
                                         <div style={jfWhyCardAccent} />
                                         <div style={{ flex: 1 }}>
+                                            {whyKeyword ? (
+                                                <div style={jfWhyHeading}>
+                                                    {whyKeyword}
+                                                </div>
+                                            ) : null}
                                             <div style={jfWhyBody}>
                                                 {bulletText}
                                             </div>
@@ -10831,6 +10854,21 @@ const jfWhyBody: React.CSSProperties = {
     lineHeight: "22px",
     color: "rgba(255,255,255,0.92)",
     flex: 1,
+}
+
+// Why bullet keyword heading. Green ALL-CAPS chip, mirrors the
+// trialjobfit.txt BulletRow keyword treatment (free-trial surface)
+// so the authed dashboard reads the same shape. Shape modeled on
+// jfRiskTitle (fontSize/fontWeight) with the free-trial accent color
+// (#4ade80) and the chip-style letter-spacing + uppercase.
+const jfWhyHeading: React.CSSProperties = {
+    padding: "12px 16px 0",
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: 1.4,
+    lineHeight: "14px",
+    color: "#4ade80",
+    textTransform: "uppercase" as const,
 }
 
 const jfWhyAction: React.CSSProperties = {
