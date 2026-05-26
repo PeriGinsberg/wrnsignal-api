@@ -1935,6 +1935,16 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             .map((s: string) => s.trim())
             .filter(Boolean)
 
+        // why_structured is the structured form of why bullets from V5.
+        // Used only for the keyword heading on each Why card — body text
+        // continues to come from the joined `why` string array above so
+        // the prose render path stays battle-tested. Per-index lookup at
+        // render time; indices align because both arrays are derived from
+        // the same `whyBullets` slice in bulletGeneratorV5.ts.
+        const whyStructured: any[] = Array.isArray(jobFitResult?.why_structured)
+            ? jobFitResult.why_structured
+            : []
+
         const renderedRisks: string[] = pickFirstArray(
             jobFitResult?.risk,
             jobFitResult?.risk_bullets,
@@ -2841,15 +2851,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     ) : (
                                         renderedBullets.map(
                                             (bullet: string, i: number) => {
-                                                // Extract full phrase between "this role relies on" and ", and you"
-                                                const mWhy = bullet.match(
-                                                    /this role relies on (.+?),\s+and you\b/i
-                                                )
-                                                const keyword = mWhy
-                                                    ? mWhy[1]
-                                                          .trim()
-                                                          .toUpperCase()
-                                                    : ""
+                                                // Keyword heading source — V5 why_structured[i].keyword.
+                                                // Replaces the legacy regex that matched a V4-era bullet
+                                                // template ("this role relies on X, and you …") which V5
+                                                // no longer emits, so the regex never matched and the
+                                                // heading silently disappeared from the authed dashboard.
+                                                // Pre-V5 cached results have no structured array; falls
+                                                // back to empty string → existing conditional render below
+                                                // suppresses the heading slot cleanly.
+                                                const keyword = String(
+                                                    whyStructured[i]?.keyword || ""
+                                                ).trim()
                                                 return (
                                                     <div
                                                         key={i}
