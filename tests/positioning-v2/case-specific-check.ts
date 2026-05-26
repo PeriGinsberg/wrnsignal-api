@@ -95,7 +95,7 @@ console.log("=== Happy path ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "x", gap: "", reframe: "", severity: "medium" },
+        { keyword: "x", gap: "", adjacent_evidence: "", severity: "medium" },
       ],
     }),
     "B" as Case,
@@ -112,7 +112,7 @@ console.log("=== Happy path ===")
         {
           keyword: "no_supervisory_experience",
           gap: "candidate has not managed direct reports",
-          reframe: "",
+          adjacent_evidence: "",
           severity: "high",
         },
       ],
@@ -159,9 +159,9 @@ console.log("=== Happy path ===")
     makeInputs({
       decision: "Pass",
       risk_structured: [
-        { keyword: "missing_credential_x", gap: "", reframe: "", severity: "high" },
-        { keyword: "missing_skill_y", gap: "", reframe: "", severity: "high" },
-        { keyword: "missing_skill_z", gap: "", reframe: "", severity: "high" },
+        { keyword: "missing_credential_x", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "missing_skill_y", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "missing_skill_z", gap: "", adjacent_evidence: "", severity: "high" },
       ],
       job_signals: { jobTitle: "Senior Counsel" },
     }),
@@ -182,8 +182,8 @@ console.log("=== Happy path ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "gap_a", gap: "", reframe: "", severity: "high" },
-        { keyword: "gap_b", gap: "", reframe: "", severity: "high" },
+        { keyword: "gap_a", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "gap_b", gap: "", adjacent_evidence: "", severity: "high" },
       ],
       job_signals: { jobTitle: "PM" },
     }),
@@ -251,7 +251,7 @@ console.log("\n=== Edge cases ===")
     makeInputs({
       decision: "Pass",
       risk_structured: [
-        { keyword: "x", gap: "", reframe: "", severity: "high" },
+        { keyword: "x", gap: "", adjacent_evidence: "", severity: "high" },
       ],
       // no job_signals
     }),
@@ -342,8 +342,8 @@ console.log("\n=== Edge cases ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "m1", gap: "", reframe: "", severity: "medium" },
-        { keyword: "l1", gap: "", reframe: "", severity: "low" },
+        { keyword: "m1", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "l1", gap: "", adjacent_evidence: "", severity: "low" },
       ],
       job_signals: { jobTitle: "Analyst" },
     }),
@@ -371,7 +371,7 @@ console.log("\n=== Pattern checks ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "x", gap: "", reframe: "", severity: "low" },
+        { keyword: "x", gap: "", adjacent_evidence: "", severity: "low" },
       ],
       why_structured: [
         { keyword: "y", lead: "", connection: "", action: "" },
@@ -416,7 +416,7 @@ console.log("\n=== Pattern checks ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "credential_gap", gap: "", reframe: "", severity: "high" },
+        { keyword: "credential_gap", gap: "", adjacent_evidence: "", severity: "high" },
       ],
       job_signals: { jobTitle: "Specialist" },
     }),
@@ -438,7 +438,7 @@ console.log("\n=== Pattern checks ===")
         {
           keyword: "skill_x",
           gap: "candidate lacks Python experience.",
-          reframe: "",
+          adjacent_evidence: "",
           severity: "high",
         },
       ],
@@ -484,8 +484,8 @@ console.log("\n=== Pattern checks ===")
     makeInputs({
       decision: "Pass",
       risk_structured: [
-        { keyword: "", gap: "something", reframe: "", severity: "high" },
-        { keyword: "   ", gap: "", reframe: "", severity: "high" },
+        { keyword: "", gap: "something", adjacent_evidence: "", severity: "high" },
+        { keyword: "   ", gap: "", adjacent_evidence: "", severity: "high" },
       ],
       job_signals: { jobTitle: "VP" },
     }),
@@ -514,8 +514,8 @@ console.log("\n=== small_refinements population ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "x", gap: "learn x", reframe: "", severity: "low" },
-        { keyword: "y", gap: "polish y", reframe: "", severity: "low" },
+        { keyword: "x", gap: "learn x", adjacent_evidence: "", severity: "low" },
+        { keyword: "y", gap: "polish y", adjacent_evidence: "", severity: "low" },
       ],
       why_structured: [
         { keyword: "kw1", lead: "", connection: "", action: "" },
@@ -550,9 +550,9 @@ console.log("\n=== small_refinements population ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "low_one", gap: "low gap", reframe: "", severity: "low" },
-        { keyword: "med_one", gap: "med gap", reframe: "", severity: "medium" },
-        { keyword: "high_one", gap: "high gap", reframe: "", severity: "high" },
+        { keyword: "low_one", gap: "low gap", adjacent_evidence: "", severity: "low" },
+        { keyword: "med_one", gap: "med gap", adjacent_evidence: "", severity: "medium" },
+        { keyword: "high_one", gap: "high gap", adjacent_evidence: "", severity: "high" },
       ],
       why_structured: [
         { keyword: "kw1", lead: "", connection: "", action: "" },
@@ -578,8 +578,8 @@ console.log("\n=== small_refinements population ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "", gap: "no keyword", reframe: "", severity: "low" },
-        { keyword: "   ", gap: "whitespace only", reframe: "", severity: "low" },
+        { keyword: "", gap: "no keyword", adjacent_evidence: "", severity: "low" },
+        { keyword: "   ", gap: "whitespace only", adjacent_evidence: "", severity: "low" },
       ],
       why_structured: [
         { keyword: "kw1", lead: "", connection: "", action: "" },
@@ -594,13 +594,13 @@ console.log("\n=== small_refinements population ===")
   )
 }
 
-// Test 19: Case A + low-severity risk with empty gap → description falls back to reframe
+// Test 19: Case A + low-severity risk with empty gap → description falls back to adjacent_evidence
 {
   const r = generateCaseSpecific(
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "x", gap: "", reframe: "do x better", severity: "low" },
+        { keyword: "x", gap: "", adjacent_evidence: "do x better", severity: "low" },
       ],
       why_structured: [
         { keyword: "kw1", lead: "", connection: "", action: "" },
@@ -609,7 +609,7 @@ console.log("\n=== small_refinements population ===")
     "A" as Case,
   )
   check(
-    "19: empty gap → description falls back to reframe",
+    "19: empty gap → description falls back to adjacent_evidence",
     r?.small_refinements?.[0]?.description === "do x better",
     JSON.stringify(r?.small_refinements?.[0]),
   )

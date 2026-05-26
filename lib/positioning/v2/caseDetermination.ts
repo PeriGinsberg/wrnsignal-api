@@ -108,7 +108,7 @@ export function extractRisks(jobfit: JobfitResultJson): RiskExtraction {
         items.push({
           keyword: item.keyword ?? "",
           gap: item.gap ?? "",
-          reframe: item.reframe ?? "",
+          adjacent_evidence: item.adjacent_evidence ?? "",
           severity,
         })
       } else {
@@ -116,7 +116,7 @@ export function extractRisks(jobfit: JobfitResultJson): RiskExtraction {
         items.push({
           keyword: item.keyword ?? "",
           gap: item.gap ?? "",
-          reframe: item.reframe ?? "",
+          adjacent_evidence: item.adjacent_evidence ?? "",
           severity: "medium",
         })
         hadMalformed = true
@@ -146,7 +146,7 @@ export function extractRisks(jobfit: JobfitResultJson): RiskExtraction {
     for (const raw of jobfit.risk_codes) {
       if (typeof raw === "string") {
         if (raw.length === 0) continue
-        items.push({ keyword: raw, gap: "", reframe: "", severity: "medium" })
+        items.push({ keyword: raw, gap: "", adjacent_evidence: "", severity: "medium" })
       } else if (raw && typeof raw === "object") {
         const obj = raw as { code?: unknown; severity?: unknown }
         const code = typeof obj.code === "string" ? obj.code : ""
@@ -157,7 +157,7 @@ export function extractRisks(jobfit: JobfitResultJson): RiskExtraction {
           obj.severity === "low"
             ? obj.severity
             : "medium"
-        items.push({ keyword: code, gap: "", reframe: "", severity })
+        items.push({ keyword: code, gap: "", adjacent_evidence: "", severity })
       }
     }
     return { items, dataQualityIssue: false, v4Fallback: true }

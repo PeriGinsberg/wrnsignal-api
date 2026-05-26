@@ -38,10 +38,11 @@ export type PositioningRunV2Status = "in_progress" | "completed" | "abandoned"
  * Cross-references Foundation DD-23: jobfit_runs result_json fields
  * are unreliable on historical garbage runs; defensive coding required.
  */
+// v5.1 — field rename, see bullet-quality-investigation.md §3.2
 export type RiskStructuredItem = {
   keyword: string
   gap: string
-  reframe: string
+  adjacent_evidence: string
   severity: Severity
 }
 

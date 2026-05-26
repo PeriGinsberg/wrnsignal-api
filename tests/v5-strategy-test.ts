@@ -126,8 +126,8 @@ async function runOne(c: CaseInput) {
   } else {
     for (const r of v5.risk_structured) {
       console.log(`  [${r.keyword}] (${r.severity})`)
-      console.log(`    gap:     ${r.gap}`)
-      console.log(`    reframe: ${r.reframe}`)
+      console.log(`    gap:              ${r.gap}`)
+      console.log(`    adjacent_evidence: ${r.adjacent_evidence}`)
     }
   }
 

@@ -125,7 +125,7 @@ function buildCaseAData(inputs: CaseInputs): CaseSpecificData {
       if (!kw) continue
       lowSeverityRefinements.push({
         id: kw,
-        description: (r.gap || r.reframe || kw).trim(),
+        description: (r.gap || r.adjacent_evidence || kw).trim(),
       })
     }
   }

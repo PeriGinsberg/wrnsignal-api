@@ -230,7 +230,7 @@ type WhyBullet = {
 type RiskBullet = {
     keyword: string
     gap: string
-    reframe: string
+    adjacent_evidence: string
     severity: "low" | "medium" | "high"
 }
 
@@ -1211,7 +1211,7 @@ function SuccessView(props: {
                                 accent={C.red}
                                 keyword={r.keyword}
                                 primary={r.gap}
-                                secondary={r.reframe}
+                                secondary={r.adjacent_evidence}
                             />
                         ))}
                     </SectionCard>

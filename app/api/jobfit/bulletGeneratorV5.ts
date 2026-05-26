@@ -23,10 +23,11 @@ export interface WhyBullet {
   action: string
 }
 
+// v5.1 — field rename, see bullet-quality-investigation.md §3.2
 export interface RiskBullet {
   keyword: string
-  gap: string
-  reframe: string
+  gap: string                // one sentence, named clearly without hedge
+  adjacent_evidence: string  // one or two sentences, secondary support; may be empty string if no adjacent evidence exists
   severity: "low" | "medium" | "high"
 }
 
@@ -129,7 +130,6 @@ ${out.decision} (score: ${out.score})
 
 ### On length (STRICT)
 - WHY bullets: one sentence per field, 20 words max per field.
-- RISK bullets: gap = one sentence. reframe = one to two sentences max. Tool risks = one sentence reframe only.
 - Cut every word that doesn't add specific information.
 
 ### On action instructions
@@ -137,15 +137,47 @@ ${out.decision} (score: ${out.score})
 - One specific instruction. Not "highlight this" — tell them exactly what to do, where, and how.
 - Never put quoted language in the action instruction. Tell them what to convey, not the exact words to use.
 
-### On risk reframes
-- CRITICAL: Only generate risk bullets for risk_codes that are explicitly provided. If risk_codes is an empty array, return an empty risk_bullets array. Never invent risks that aren't in the risk_codes input. 
-- Don't just name the gap — reframe it.
-- CRITICAL: The reframe must cite only evidence that actually appears in the profile text. 
-  Never say "you likely did X" or "you probably Y" — only reference what is explicitly stated.
-  If there is no adjacent evidence in the profile, say so plainly and give one action instruction only.
-- Show the student what adjacent experience they have that partially bridges it.
-- TOOL RISKS: gap = one sentence. reframe = one sentence naming adjacent evidence + one action. No quoted language.
-- ALL OTHER RISKS: gap = one sentence. reframe = two sentences max. No quoted language.
+### On risk bullets
+- CRITICAL: Only generate risk bullets for risk_codes that are explicitly provided. If risk_codes is an empty array, return an empty risk_bullets array. Never invent risks that aren't in the risk_codes input.
+- The gap is the point. Name the gap clearly in one sentence. State it as a direct concern, not as setup for a bridge. Do not soften with hedge words ("a bit," "somewhat," "may be challenging"). Do not bury it inside a long sentence describing evidence.
+- After naming the gap, give adjacent evidence as secondary support. One or two sentences. This is context the student can use when deciding whether to apply and how to address the gap — it is not a rebuttal of the gap.
+- CRITICAL: adjacent_evidence must cite only evidence that actually appears in the profile text. Never say "you likely did X" or "you probably Y" — only reference what is explicitly stated. Never interpret biographical facts as proof of disposition (e.g. do not interpret a study abroad semester as "geographic flexibility").
+- If there is no adjacent evidence in the profile, set adjacent_evidence to an empty string. Do not pad with general competence claims or generic encouragement.
+- Word limits: gap = max 25 words. adjacent_evidence = max 50 words.
+- Do not use the phrases "however," "that said," "still," or "but" as the first word of adjacent_evidence. The space-join already provides separation; explicit connectors signal rebuttal and undermine the diagnostic frame.
+
+### Examples (Risk bullets in the target voice)
+
+GOOD — hard skill gap:
+{
+  "keyword": "NO PROGRAMMING EXPERIENCE",
+  "gap": "This role requires Python, Java, C++, or Scala, and your profile shows no coding projects or technical coursework.",
+  "adjacent_evidence": "Your AI Academy enrollment shows openness to technical learning, but it does not substitute for hands-on programming experience.",
+  "severity": "high"
+}
+
+GOOD — soft fit concern:
+{
+  "keyword": "VALUES MISALIGNMENT",
+  "gap": "This company is heavily profit-driven, which may not align with the values your work history suggests.",
+  "adjacent_evidence": "You have spent years on nonprofit and advocacy-focused work, including unpaid volunteer experience — a pattern, not a coincidence.",
+  "severity": "medium"
+}
+
+GOOD — no adjacent evidence:
+{
+  "keyword": "CLOUD ENGINEERING GAP",
+  "gap": "This role requires specialized GCP cloud engineering knowledge, which is absent from your profile.",
+  "adjacent_evidence": "",
+  "severity": "high"
+}
+
+BAD — gap buried (do not do this):
+{
+  "gap": "Your work history shows a strong nonprofit and advocacy focus, including sustained volunteer commitment.",
+  "adjacent_evidence": "If this company is profit-driven, the cultural fit may not be ideal."
+}
+(The gap field describes evidence, not the gap. The gap is in adjacent_evidence. This is the inversion the v1 fix exists to eliminate.)
 
 ### On voice and tone
 - Write like a sharp advisor talking directly to the student, not like a bot generating output.
@@ -183,8 +215,8 @@ CRITICAL: If the DECISION is "Pass", you MUST return null for ALL THREE: cover_l
   "risk_bullets": [
     {
       "keyword": "3-5 WORD ALL-CAPS LABEL",
-      "gap": "One sentence naming the specific gap clearly and without sugar-coating.",
-      "reframe": "One to two sentences: the adjacent evidence that bridges it. No quoted language.",
+      "gap": "One sentence naming the gap directly. The gap is the point of this bullet.",
+      "adjacent_evidence": "Zero to two sentences of secondary support from the profile. Empty string if no adjacent evidence exists.",
       "severity": "low | medium | high"
     }
   ],
@@ -213,7 +245,8 @@ function formatWhyBullet(b: WhyBullet): string {
 }
 
 function formatRiskBullet(b: RiskBullet): string {
-  return b.gap + " " + b.reframe
+  if (!b.adjacent_evidence) return b.gap
+  return b.gap + " " + b.adjacent_evidence
 }
 
 // ─── Validators for nullable strategy fields ─────────────────────────────────

@@ -90,8 +90,8 @@ console.log("=== Happy path ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "gap_alpha", gap: "", reframe: "", severity: "medium" },
-        { keyword: "gap_beta", gap: "", reframe: "", severity: "low" },
+        { keyword: "gap_alpha", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "gap_beta", gap: "", adjacent_evidence: "", severity: "low" },
       ],
     }),
     "B" as Case,
@@ -123,11 +123,11 @@ console.log("=== Happy path ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "k1_low", gap: "", reframe: "", severity: "low" },
-        { keyword: "k2_high", gap: "", reframe: "", severity: "high" },
-        { keyword: "k3_medium", gap: "", reframe: "", severity: "medium" },
-        { keyword: "k4_high", gap: "", reframe: "", severity: "high" },
-        { keyword: "k5_medium", gap: "", reframe: "", severity: "medium" },
+        { keyword: "k1_low", gap: "", adjacent_evidence: "", severity: "low" },
+        { keyword: "k2_high", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "k3_medium", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "k4_high", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "k5_medium", gap: "", adjacent_evidence: "", severity: "medium" },
       ],
     }),
     "C" as Case,
@@ -162,11 +162,11 @@ console.log("\n=== Sorting ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "m1", gap: "", reframe: "", severity: "medium" },
-        { keyword: "m2", gap: "", reframe: "", severity: "medium" },
-        { keyword: "h1", gap: "", reframe: "", severity: "high" },
-        { keyword: "h2", gap: "", reframe: "", severity: "high" },
-        { keyword: "l1", gap: "", reframe: "", severity: "low" },
+        { keyword: "m1", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "m2", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "h1", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "h2", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "l1", gap: "", adjacent_evidence: "", severity: "low" },
       ],
     }),
     "C" as Case,
@@ -184,9 +184,9 @@ console.log("\n=== Sorting ===")
     makeInputs({
       decision: "Review",
       risk_structured: [
-        { keyword: "first_medium", gap: "", reframe: "", severity: "medium" },
-        { keyword: "second_medium", gap: "", reframe: "", severity: "medium" },
-        { keyword: "third_medium", gap: "", reframe: "", severity: "medium" },
+        { keyword: "first_medium", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "second_medium", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "third_medium", gap: "", adjacent_evidence: "", severity: "medium" },
       ],
     }),
     "B" as Case,
@@ -248,7 +248,7 @@ console.log("\n=== Edge cases ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "only_one", gap: "", reframe: "", severity: "high" },
+        { keyword: "only_one", gap: "", adjacent_evidence: "", severity: "high" },
       ],
     }),
     "B" as Case,
@@ -284,8 +284,8 @@ console.log("\n=== Edge cases ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "weird_a", gap: "", reframe: "", severity: "medium" },
-        { keyword: "weird_b", gap: "", reframe: "", severity: "low" },
+        { keyword: "weird_a", gap: "", adjacent_evidence: "", severity: "medium" },
+        { keyword: "weird_b", gap: "", adjacent_evidence: "", severity: "low" },
       ],
     }),
     "A" as Case, // inconsistent with risk count, but defensive
@@ -343,8 +343,8 @@ console.log("\n=== Edge cases ===")
     makeInputs({
       decision: "Apply",
       risk_structured: [
-        { keyword: "", gap: "", reframe: "", severity: "high" },
-        { keyword: "real_keyword", gap: "", reframe: "", severity: "medium" },
+        { keyword: "", gap: "", adjacent_evidence: "", severity: "high" },
+        { keyword: "real_keyword", gap: "", adjacent_evidence: "", severity: "medium" },
       ],
     }),
     "B" as Case,
