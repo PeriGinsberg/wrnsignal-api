@@ -1013,7 +1013,8 @@ export default function CoachHomePage() {
   //   Row 2: Total Interviewing | Total Offers     | Avg Interview Rate
   //
   // Phase 2 Item 12 (revised) — click destinations:
-  //   - Client-count tiles (Prospects/Clients) → filtered My Clients roster
+  //   - Active Prospects tile → dedicated /dashboard/coach/prospects page
+  //   - Active Clients tile → filtered My Clients roster (lifecycle_status='Active')
   //   - Application-count tiles (Apps/Interviewing/Offers) → cross-client
   //     applications-recent surface (different mental model: apps, not
   //     clients)
@@ -1027,7 +1028,7 @@ export default function CoachHomePage() {
     const sub = windowSubtitle(metricsWindow)
     return [
       { label: "Active prospects", value: m.activeProspects, color: "#F4A261",
-        href: "/dashboard/coach/clients?filter=prospect" },
+        href: "/dashboard/coach/prospects" },
       { label: "Active clients", value: m.activeClients, color: "#2CA58D",
         href: "/dashboard/coach/clients?filter=active" },
       { label: "Total applications", value: m.totalApplications, subtitle: sub,
