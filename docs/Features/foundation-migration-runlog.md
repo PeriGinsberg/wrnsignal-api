@@ -19,13 +19,15 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | Phase 1 deliverable 6. Creates `positioning_runs_v2` table + 5 indexes + 1 `set_updated_at` trigger. |
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation. |
 | `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-16 | dev | Supabase SQL Editor | Peri | New table. Phase 2 Stage 2a. Includes ai_cost_cents column (FRD §6.12) in initial schema vs. separate step per §7. Manual apply per Risk 6 (schema_migrations drift on dev). |
-| `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation + Phase 2a skeletons land. |
+| `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync — closed 5-migration drift gap surfaced by Coaches Dashboard 500. See entry below. |
 | `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | 2026-05-21 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 1, Commit 1.4). Adds coach-managed `lifecycle_status` column to `coach_clients` (Prospect/Active/Inactive/Archived), distinct from system-owned `status`. Default 'Active' so existing rows defaulted in. Sanity: SELECT confirmed all rows defaulted; CHECK constraint rejected 'Bogus' negative test. |
-| `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply after Phase 1 ship-out, separate explicit promotion step. |
+| `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
 | `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | 2026-05-22 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 3, Commit 3.2). New table holding (coach_profile_id, signal_key) dismissal pairs for R1-R6 engagement signals. signal_key = engine-emitted `id` directly (locked Phase 3.0). UNIQUE constraint + index on coach_profile_id support ON CONFLICT DO NOTHING idempotency. Sanity: COUNT = 0 confirmed fresh. ON CONFLICT path will be exercised by real dismissal smoke (TC-661). |
-| `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Apply post-pitch, separate explicit promotion step. |
+| `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
 | `supabase/migrations/20260523_prospects_v0_1.sql` | 2026-05-22 | 2026-05-22 | dev | Supabase SQL Editor | Peri | New columns on coach_clients (3 capture + 14 phase) + DROP NOT NULL on invited_email and coach_client_notes.client_profile_id + partial index. Coaches Center Prospects v0.1 feature, Commit 1 of 4. Manual apply per Risk 6. Filename bumped from 20260522 (collision with engagement-signal-dismissals migration). |
-| `supabase/migrations/20260523_prospects_v0_1.sql` | 2026-05-22 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after Prospects v0.1 beta validation on dev. |
+| `supabase/migrations/20260523_prospects_v0_1.sql` | 2026-05-22 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
+| `supabase/migrations/20260509_coach_client_notes_typed.sql` | 2026-05-09 | (dev — not previously tracked in this runlog) | dev | Supabase SQL Editor | Peri | Coaches Center scope. Retroactively added to this table 2026-05-25 because prod sync surfaced it was untracked here. |
+| `supabase/migrations/20260509_coach_client_notes_typed.sql` | 2026-05-09 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
 
 ---
 
@@ -1628,3 +1630,140 @@ Commit 4d — integration touchpoints:
 Production promotion of the Commit 1 schema migration remains
 deferred to a separate explicit step after Commit 4 ships and beta
 validation on dev.
+
+---
+
+### 2026-05-25 — Risk v1 bullet fix shipped + prod Supabase schema gap closed
+
+Two events from today's session.
+
+**Event 1: Risk v1 (JobFit Risk bullet diagnostic schema)**
+
+Opened the long-deferred bullet quality concern (previously flagged in runlog entries 2026-05-14, 2026-05-15, and the 2026-05-16 case_determination tuning closeout — all referenced bullet quality as work for a "dedicated session"). This was that session.
+
+Inputs: Maleri's 45-bullet rated review (`SIGNAL_Bullet_Quality_Review_Maleri.csv`) plus full read of `app/api/jobfit/bulletGeneratorV5.ts`. Diagnostic surfaced three failure modes; v1 addressed the highest-leverage one — Risk bullets bury the gap inside the reframe, forcing users to re-read to extract the actual concern.
+
+**Design locked (v1 scope):**
+
+- Risk bullets restructured to lead with the gap as a clearly-named diagnostic statement; adjacent evidence is secondary support, not rebuttal
+- `RiskBullet.reframe` field renamed to `adjacent_evidence` to signal the new semantic at the type layer
+- Tool risk special-case unified under the new structure (no separate length cap)
+- Empty-string `adjacent_evidence` allowed when no adjacent evidence exists in profile — model explicitly instructed not to fabricate support
+- Formatter remains dumb space-join with empty-evidence short-circuit; no server-side connectors
+
+**Docs filed at `docs/Features/`:**
+
+- `bullet-quality-investigation.md` — diagnostic, Risk v1 spec, eval rubric, A/B design (Pass 1 + Pass 2 with Maleri as sole rater)
+- `bullet-quality-consumer-audit.md` — line-scoped implementation tables (10 files total: 1 V5 source + 3 positioning v2 + 4 Framer + 3 tests; mobile audited clean)
+- `cc-implementation-prompt-risk-v1.md` — paste-ready CC kickoff for future bullet-quality work
+
+**Commits:**
+
+- `94d56837` — feat(jobfit): Risk v1 — diagnostic schema, rename reframe→adjacent_evidence (9 files, +105/-71)
+- `420aa9a5` — feat(jobfit): Risk v1 — mirror reframe→adjacent_evidence rename to framer/prod (2 files, +3/-3)
+
+**Validation:**
+
+- tsc clean, npm build clean, regression-check no drift (the 21 baseline-missing entries are pre-existing per DD-24)
+- positioning-v2 unit suites: case-determination-check, case-specific-check, workflow-preview-check all PASS
+- Live staging smoke (peri+test100, persona `f283397c-f26d-43bc-9095-0f77c7d9cea9`, Software Engineering JD) returned three diagnostic-shape Risk bullets with `adjacent_evidence` populated; empty-evidence short-circuit verified working (Bullet 2 returned `adjacent_evidence: ""`)
+
+**Shipped to prod 2026-05-25.** Framer Studio publish verified Risk cards rendering correctly post-rename.
+
+**Critical design notes captured for v2 work:**
+
+- `bulletGeneratorV5.ts` contains TWO independent `.reframe` fields. `RiskBullet.reframe` was the v1 rename target; `PositioningStrategy.reframe` is a separate concept and was deliberately NOT renamed. Any future bullet-quality work must scope edits to specific lines per the consumer audit, not do repo-wide renames.
+- The V5 prompt's "On length (STRICT)" section had a parallel risk-length rule at line 132 that was dropped in v1 (Option A per the implementation prompt). v2 should remember the §3.4 unified-tool-risk decision is now in effect.
+
+**Remaining work in this thread:**
+
+- A/B eval with Maleri (Pass 1 = 14 bullets × 3 arms = 42 ratings; Pass 2 = 25% re-rate 7+ days later for within-rater consistency)
+- Decision rule per spec §5.5: ship if (a) re-read flag improves to ≥70% No, (b) Worst-Failure-Tone reduces on Risk bullets, (c) Believability doesn't regress >0.3 from prod baseline
+- Why bullet fixes (Mode 2 from diagnostic — "directly mirrors X" stock-phrase tic) and interpretive-reach guard (Mode 3 — "Florence + Ohio = geographic flexibility" pattern) are deferred to v2
+
+**Event 2: Prod Supabase schema gap closed**
+
+Surfaced when Coaches Dashboard 500'd on prod after the Risk v1 ship. Investigation found the prod schema was 5 migrations behind dev. **Cause was the schema drift, not Risk v1.**
+
+Migrations missing on prod before 2026-05-25:
+
+| Migration | Status pre-2026-05-25 | Notes |
+|---|---|---|
+| `20260509_coach_client_notes_typed.sql` | ✗ MISSING on prod | Also not previously tracked in this runlog's schema table |
+| `20260516_phase2_runs.sql` | ✗ MISSING on prod | Was in this runlog's schema table as `⏸ pending` |
+| `20260521_coach_client_lifecycle_status.sql` | ✗ MISSING on prod | Was `⏸ pending` |
+| `20260522_coach_engagement_signal_dismissals.sql` | ✗ MISSING on prod | Was `⏸ pending` |
+| `20260523_prospects_v0_1.sql` | ✗ MISSING on prod | Was `⏸ pending` |
+
+All 5 applied to prod via Supabase SQL Editor on 2026-05-25 to close the gap. Coaches Dashboard restored to working order. Schema migrations table at the top of this runlog updated accordingly (4 rows flipped from `⏸ pending` to `2026-05-25`; 1 row added for the previously-untracked `20260509_coach_client_notes_typed`).
+
+**Why this surfaced now (timing):** Prior prod deploy `wrnsignal-fs7vsg3p2-...` was 14h old at time of investigation and already contained the column-reading code that depended on the missing schema. The bug was latent for ~14h before the Risk v1 promote rebuilt the deployment and made it visible. Rolling back to the prior prod would not have fixed the issue — same code reading the same missing columns. CC verified this via direct DB probe rather than inference.
+
+**Root cause pattern (same as Foundation Risk 6):** dev migrations applied via Supabase SQL Editor workaround (per Risk 6 dev schema_migrations drift) and the prod-side promotion step queued as `⏸ pending` but not actioned. Five migrations accumulated in pending state across May 2026 before the latent reads of missing columns surfaced the gap.
+
+**Discipline reminder (logged by Peri):** "I will resume making only dev changes going forward. Prod promotion stays as a separate explicit step per feedback_deploy_strategy." Risk v1 prod promote was an exception that surfaced the latent schema drift — useful as a forcing function, not a precedent.
+
+**Operational implication:** the `⏸ pending` rows in the schema migrations table are not a benign queue — they accumulate latent prod-side risk every time dev-side code lands that depends on the pending migration. Two options worth considering for future runlog hygiene:
+
+1. **Promote-with-dev pattern.** When a migration applies to dev, prod promotion happens within the same week unless deliberately deferred for a documented reason. The default becomes "ship to both" rather than "ship to dev and queue prod."
+2. **Pending-watch column.** Add a "dev code shipped that depends on this" flag to the schema migrations table. When checked, escalate the pending-prod-migration urgency. Easy way to surface latent-drift risk.
+
+Neither is implemented today. Logged for future consideration.
+
+
+
+---
+
+### 2026-05-26 — Cover letter header v1 backend fix + bullet-quality audit correction
+
+Two related items: a small v1 fix to the cover letter generator route, and a correction to a claim made in the 2026-05-25 bullet-quality consumer audit.
+
+**Event 1: Cover letter header v1 backend fix**
+
+User reported that the cover letter header (Name / Phone / Email block at the top of the rendered letter) does not always prepopulate. Investigation in `docs/Features/cover-letter-header-investigation.md` (filed 2026-05-26) traced the cause: `app/api/coverletter/route.ts` was extracting all three contact fields via regex on `profileText`, ignoring the `client_profiles.name` and `client_profiles.email` columns that already exist and are populated through intake.
+
+**Locked v1 scope (deliberately narrow):**
+
+- Name: prefer `client_profiles.name`, fall back to regex (existing behavior preserved as layer 2)
+- Email: read from `client_profiles.email` only; **email regex fallback removed** (auth email is the canonical source; the Framer/mobile client-side `authedEmail` safety net handles legacy NULL rows)
+- Phone: **unchanged** — full phone fix tracked separately as Tier 2 work
+- `clName` client-side override (Framer + mobile React state) is layer 1 of the overall name chain and is unaffected by this fix
+
+**Commit:**
+
+- `a2b10e1b` — fix(coverletter): read name/email from client_profiles columns before regex fallback (1 file, +19/-1)
+
+**Validation:**
+
+- tsc clean, npm build clean
+- SHA verified on preview build `https://wrnsignal-genxec52v-peri-ginsbergs-projects.vercel.app` (env=preview, `git_sha=a2b10e1b...`)
+- No new tests required: the change is a behavior-preserving precedence reorder behind the same `contact` response shape
+
+**Cache behavior — verified safe, no invalidation needed:** the `contact` object is computed fresh on every request at the route entry, then overlays any cached `result_json.contact` on cache hits. So the new resolution logic takes effect immediately for all users (cached or fresh) without busting the `coverletter_runs` cache.
+
+**Acknowledged pre-existing edge case (not introduced by this fix):** if the LLM-generated cover letter *body* contains the user's name in prose (e.g., "I am Jane Smith, a senior at FSU..."), the cached letter body still reads "Jane Smith" after a name update on `client_profiles.name`, while the rendered header now correctly reads the new name. This is body-text staleness in `coverletter_runs.result_json.letter`, distinct from the header staleness this fix addresses. Knowingly deferred — out of scope for v1.
+
+**Tier 2 work (tracked, not in this session):**
+
+- `client_profiles.phone TEXT` column migration (dev → prod)
+- Resume-upload hook for one-time phone extraction into the new column (backfill path for existing users without re-typing)
+- Framer intake form: optional Phone field at account setup (`framer/dev/intakeformcomponent.txt` + prod mirror)
+- Mobile intake parity (`signal-mobile/app/intake.tsx` or equivalent)
+- Optional 122-row backfill script for legacy `client_profiles` rows where regex would have extracted phone from `profile_text`
+- Account settings UI for phone view/edit (Framer + mobile)
+- Cover letter UI: optional editable Phone + Email override fields (Framer + mobile) so users can correct stale values inline without round-tripping through account settings
+
+**Event 2: Bullet-quality consumer audit correction**
+
+The 2026-05-25 bullet-quality consumer audit (`docs/Features/bullet-quality-consumer-audit.md`, §F and Headline Findings line 15) stated:
+
+> "No cover letter generator route exists yet."
+
+This claim was **incorrect**. `app/api/coverletter/route.ts` has existed since at least the V5 era — it consumes `cover_letter_strategy` from V5 result_json, is actively called by the Framer dashboard cover letter tab and `signal-mobile/app/(tabs)/coverletter.tsx`, and writes to the `coverletter_runs` table on every fresh run.
+
+**Likely cause of the audit miss:** the audit's grep patterns (`cover-letter`, `coverLetter`, `cover_letter`) did not match the route file path because it is named `coverletter` — no hyphen, no underscore, no camelCase boundary. The file would only have surfaced under a `cover.?letter` pattern with the optional separator. The audit's consumer findings section (Phase 2 itemPopulator, mobile, Framer) is otherwise sound; only the "no route exists" claim was wrong.
+
+**Future audit discipline reminder:** when grepping for feature consumers, include the `cover.?letter` pattern variant (regex with optional separator) to catch concatenated naming. This investigation surfaced `app/api/coverletter/route.ts`, `framer/dev/maincomponent.txt` (consumer), `signal-mobile/app/(tabs)/coverletter.tsx` (consumer), and the active `coverletter_runs` table — none of which appeared in the prior audit because of the same naming-pattern miss.
+
+See `docs/Features/cover-letter-header-investigation.md` for the full investigation that surfaced both the fix and the correction.
+
