@@ -372,7 +372,6 @@ export async function POST(req: Request) {
       resumeText,
       activePersonaId,
     } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
-    const contact = extractContactFromProfileText(profileText)
 
     // Accept jobfit_result from the frontend (sent alongside job)
     const jobfitResult = body?.jobfit_result ?? null
@@ -383,7 +382,12 @@ export async function POST(req: Request) {
     // Extract the V5 cover letter strategy block (empty string if not present)
     const coverLetterStrategyBlock = extractCoverLetterStrategy(jobfitResult)
 
+    // Defaults match the writingSample pattern: empty string survives the
+    // catch path so downstream contact resolution doesn't have to guard
+    // against undefined.
     let writingSample = ""
+    let profileName = ""
+    let profileEmail = ""
     try {
       const { data: profileRow, error: profileLookupErr } = await supabaseAdmin
         .from("client_profiles")
@@ -395,12 +399,26 @@ export async function POST(req: Request) {
         console.warn("client_profiles lookup failed in coverletter:", profileLookupErr.message)
       } else {
         writingSample = extractWritingSample(profileRow)
+        profileName = typeof profileRow?.name === "string" ? profileRow.name.trim() : ""
+        profileEmail = typeof profileRow?.email === "string" ? profileRow.email.trim() : ""
       }
     } catch (profileErr: any) {
       console.warn(
         "client_profiles select threw in coverletter:",
         profileErr?.message || String(profileErr)
       )
+    }
+
+    // Contact resolution. DB column wins over regex for name; DB column
+    // is the only server source for email (regex fallback removed per
+    // docs/Features/cover-letter-header-investigation.md — auth email
+    // serves as a client-side safety net in Framer/mobile, not here).
+    // Phone preserved as regex-only — full phone fix tracked separately.
+    const regexContact = extractContactFromProfileText(profileText)
+    const contact = {
+      full_name: profileName || regexContact.full_name,
+      email: profileEmail || "",
+      phone: regexContact.phone,
     }
 
     const fingerprintPayload = {
