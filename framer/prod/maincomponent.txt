@@ -3010,7 +3010,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     {(jobFitResult?.risk_structured?.length > 0
                                         ? jobFitResult.risk_structured.map(
                                               (r: any) => ({
-                                                  risk: r.reframe,
+                                                  risk: r.adjacent_evidence,
                                                   job_fact: r.keyword,
                                                   code: r.keyword,
                                               })
