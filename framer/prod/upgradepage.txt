@@ -860,6 +860,12 @@ export default function SignalUpgradePage(props: { style?: React.CSSProperties }
                 body: JSON.stringify({
                     email: trimmed,
                     source,
+                    // Correlation key back to the original anonymous trial scan,
+                    // captured server-side into unlock_email_captures.session_id
+                    // so the funnel scan→unlock→purchase chain is joinable.
+                    // Stashed in localStorage by /api/jobfit-run-trial-open.
+                    session_id:
+                        localStorage.getItem("jobfit_session_id") || undefined,
                     ...getAttributionSnapshot(),
                 }),
             })

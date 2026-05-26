@@ -5,6 +5,7 @@
 
 import { type NextRequest } from "next/server"
 import Stripe from "stripe"
+import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getAppUrl } from "@/lib/urls"
 
@@ -15,6 +16,20 @@ function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
   if (!key) throw new Error("Missing STRIPE_SECRET_KEY")
   return new Stripe(key)
+}
+
+// Service-role Supabase client. Used only for the fire-and-forget
+// unlock_email_captures INSERT + chained UPDATE below. Mirrors the
+// jobfit-run-trial-open per-request instantiation pattern; throws
+// synchronously if env is unset so the capture block's try/catch can
+// swallow it without surfacing 500 to the user.
+function getSupabase() {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
 
 // Sanitize any optional string from the request body. Stripe metadata values
@@ -109,6 +124,68 @@ export async function POST(req: NextRequest) {
 
     const hasMetadata = Object.keys(sharedMetadata).length > 0
 
+    // ──────────────────────────────────────────────────────────────────
+    // Unlock email capture — fire-and-forget INSERT.
+    //
+    // Runs in parallel with the Stripe API call below. Never blocks the
+    // response. If the user abandons Stripe checkout, the row remains
+    // (that's a feature — enables abandoned-checkout email recovery).
+    // The promise is captured so the UPDATE below can chain on the
+    // inserted row's id (race-free: UPDATE waits for INSERT to resolve).
+    //
+    // Errors are logged, never surfaced to the user. Synchronous throws
+    // from getSupabase() (env unset) are caught by the outer try/catch
+    // here so the route still completes the Stripe call.
+    // ──────────────────────────────────────────────────────────────────
+    // Async IIFE returns a real Promise<string | null> (Supabase's chain
+    // returns PromiseLike, which doesn't have .catch — wrapping in an
+    // async function gives us a true Promise we can chain UPDATE on below.
+    // All errors (sync throws from getSupabase, async Supabase errors)
+    // are caught inside; the returned promise never rejects.
+    const captureInsertPromise: Promise<string | null> = (async () => {
+      try {
+        const supabase = getSupabase()
+        const sessionIdFromBody =
+          typeof body?.session_id === "string" && body.session_id.trim()
+            ? body.session_id.trim().slice(0, 200)
+            : null
+        const { data, error } = await supabase
+          .from("unlock_email_captures")
+          .insert({
+            email,
+            source: source || null,
+            session_id: sessionIdFromBody,
+            utm_source: sanitize(body?.utm_source) || null,
+            utm_medium: sanitize(body?.utm_medium) || null,
+            utm_campaign: sanitize(body?.utm_campaign) || null,
+            landing_page: sanitize(body?.landing_page) || null,
+            referrer: sanitize(body?.referrer) || null,
+            fbclid: sanitize(body?.fbclid) || null,
+            ttclid: sanitize(body?.ttclid) || null,
+            gclid: sanitize(body?.gclid) || null,
+            fbp: sanitize(body?.fbp) || null,
+            fbc: sanitize(body?.fbc) || null,
+            ttp: sanitize(body?.ttp) || null,
+          })
+          .select("id")
+          .single()
+        if (error) {
+          console.error("[unlock_capture] insert_failed", {
+            message: error.message,
+            code: (error as any).code,
+          })
+          return null
+        }
+        return (data?.id as string | undefined) ?? null
+      } catch (err: any) {
+        console.error(
+          "[unlock_capture] setup_failed",
+          err?.message || String(err)
+        )
+        return null
+      }
+    })()
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: email,
@@ -125,6 +202,45 @@ export async function POST(req: NextRequest) {
         ? { metadata: sharedMetadata }
         : undefined,
     })
+
+    // ──────────────────────────────────────────────────────────────────
+    // Unlock email capture — fire-and-forget UPDATE.
+    //
+    // Chains on the INSERT promise so this never fires before the row
+    // exists. If INSERT failed (returned null) this is a no-op. UPDATE
+    // failures are logged but never surfaced. The webhook backfill
+    // (separate commit) will fill purchase_id keyed on stripe_session_id.
+    // ──────────────────────────────────────────────────────────────────
+    captureInsertPromise
+      .then(async (insertedId) => {
+        if (!insertedId) return
+        try {
+          const supabase = getSupabase()
+          const { error } = await supabase
+            .from("unlock_email_captures")
+            .update({ stripe_session_id: session.id })
+            .eq("id", insertedId)
+          if (error) {
+            console.error("[unlock_capture] update_failed", {
+              message: error.message,
+              code: (error as any).code,
+            })
+          }
+        } catch (err: any) {
+          console.error(
+            "[unlock_capture] update_setup_failed",
+            err?.message || String(err)
+          )
+        }
+      })
+      .catch((err) => {
+        // Defensive: the inner try/catch should cover everything, but if
+        // the .then callback ever rejects synchronously, log and swallow.
+        console.error(
+          "[unlock_capture] update_chain_failed",
+          err?.message || String(err)
+        )
+      })
 
     return withCorsJson(req, { url: session.url })
   } catch (err: any) {
