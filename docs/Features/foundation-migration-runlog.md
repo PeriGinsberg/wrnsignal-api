@@ -191,6 +191,8 @@ When KI-01 is finally addressed, both contributors should change in lockstep (th
 
 **Trigger to un-defer:** A future cleanup pass (not tied to a beta milestone). Replace AddNotePanel's inline backdrop/panel with `<SlideInPanel title="Add a note">`, keeping its form body + footer. Before/after, verify the Notes tab still opens/closes (backdrop + Esc), saves, and dims-on-save exactly as today.
 
+- **KI-09 (2026-05-27): route.ts:18-19 has stale "populateItems — stub in v0.1; returns []" comment. False since v1 build completed (~05-19). Cleanup candidate. Out of Q4 scope.**
+
 ### KI-05 — 12-value lane CHECK list repeated three times in candidate_targeting
 
 **Source:** Stage 1a `candidate_targeting` migration.
@@ -1908,4 +1910,37 @@ Next: Phase 5 — end-to-end testing + cleanup of leftover dev
 `beta_feedback` smoke rows (6 rows from Phases 2-4, + 6 corresponding
 support@ emails already verified) + production schema promotion +
 prod `POSTMARK_FEEDBACK_FROM_EMAIL` env var addition.
+
+### 2026-05-27 — Positioning Phase 2 Q4 (caseSpecific cleanup) shipped
+
+Q4 of the Phase 2 state-check session: removed the always-null
+caseSpecific plumbing from Phase 2. The /start route no longer
+makes the two upstream DB calls (getCandidateTargeting +
+resolveCareerStage) whose sole purpose was feeding the
+generateCaseSpecific call — recovering 2 DB round-trips per /start.
+
+Three files touched:
+- lib/positioning/v2/phase2/itemPopulator.ts: caseSpecific param
+  removed from populateItems
+- app/api/positioning/v2/phase2/start/route.ts: caseSpecific block
+  + getCandidateTargeting + resolveCareerStage deleted (~lines
+  243-261); param removal at populateItems call site
+- tests/positioning-v2/phase2/item-populator-check.ts: populate()
+  helper + call sites updated to match new signature
+
+Phase 1 caseSpecific consumption (generateCaseSpecific, the
+CaseSpecificData/CaseInputs types, the Phase 1 /start route)
+untouched — those remain for Case A/C v0.2 work.
+
+Re-add planned for v0.2: when Cases A/C ship, the consumer shape
+will be different (small_refinements / high_severity_gap_summary),
+not the headline_recommendation field the FRD originally imagined.
+Re-adding param + two lookups is trivial in v0.2 context.
+
+Tests: full Phase 2 suite passes (17/17). Phase 1 suite untouched
+(re-ran: 8/8). tsc + build clean.
+
+State check: docs/positioning-phase2-state-check-2026-05-27.md Q4
+SHA: bd64476c (state-check correction)
+Next: Q1 (empty pre-fill + FRD §6.9.1 update)
 

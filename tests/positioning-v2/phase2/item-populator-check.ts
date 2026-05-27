@@ -14,7 +14,6 @@ import {
 } from "@/lib/positioning/v2/phase2/itemPopulator"
 import type {
   Case,
-  CaseSpecificData,
   JobfitResultJson,
   PositioningRunV2Row,
 } from "@/lib/positioning/v2/types"
@@ -78,13 +77,11 @@ const noopClassifyShape: ClassifyGapShapeImpl = async () => ({
 async function populate(
   run: PositioningRunV2Row,
   jobfit: JobfitResultJson,
-  caseSpecific: CaseSpecificData | null,
   resumeText: string,
 ): Promise<PhaseTwoItem[]> {
   const { items } = await populateItems(
     run,
     jobfit,
-    caseSpecific,
     resumeText,
     noopSuggestBullets,
     noopClassifyShape,
@@ -138,7 +135,6 @@ console.log("=== Happy path (Catherine v3 real resume, Case B, replace headline)
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_TEXT,
   )
 
@@ -288,7 +284,6 @@ console.log("\n=== Verbatim invariant (permanent) ===")
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_TEXT,
   )
   const bullets = items.filter(
@@ -339,7 +334,6 @@ console.log("\n=== Case gate — Case A ===")
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_SLICE,
   )
   check(
@@ -360,7 +354,6 @@ console.log("\n=== Case gate — Case C ===")
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_SLICE,
   )
   check(
@@ -391,7 +384,7 @@ console.log("\n=== Caps enforcement ===")
   } as JobfitResultJson
   const resume = "alpha beta gamma delta echo content here"
   const run = makePositioningRun("B")
-  const items = await populate(run, jobfit, null, resume)
+  const items = await populate(run, jobfit, resume)
   const bullets = items.filter((i) => i.type === "bullet")
   check(
     "5: 5 anchorable reframe-flavored whys → exactly 3 bullet items (cap)",
@@ -426,7 +419,7 @@ console.log("\n=== Caps enforcement ===")
   } as unknown as JobfitResultJson
   const resume = "completely unrelated short resume"
   const run = makePositioningRun("B")
-  const items = await populate(run, jobfit, null, resume)
+  const items = await populate(run, jobfit, resume)
   const gaps = items.filter((i) => i.type === "gap")
   check(
     "5b: 5 unrepresented core requirements → exactly 3 gap items (cap)",
@@ -453,7 +446,6 @@ console.log("\n=== Canonical ordering ===")
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_SLICE,
   )
   // Build a "kind" sequence and verify it's headline → bullets → gaps.
@@ -504,7 +496,7 @@ console.log("\n=== Zero-items edge cases ===")
     ],
   } as unknown as JobfitResultJson
   const run = makePositioningRun("B")
-  const items = await populate(run, jobfit, null, "alpha beta gamma")
+  const items = await populate(run, jobfit, "alpha beta gamma")
   check(
     "7a: only-jobTitle + family mismatch (no bullets, no gaps) → [headlineItem]",
     items.length === 1 && items[0].type === "headline",
@@ -541,7 +533,7 @@ console.log("\n=== Zero-items edge cases ===")
     // no risk_codes
   }
   const run = makePositioningRun("B")
-  const items = await populate(run, jobfit, null, "alpha beta gamma")
+  const items = await populate(run, jobfit, "alpha beta gamma")
   check(
     "7b: only-jobTitle + NO family mismatch + no anchorable content → []",
     items.length === 0,
@@ -563,7 +555,7 @@ console.log("\n=== Zero-items edge cases ===")
     ],
   }
   const run = makePositioningRun("B")
-  const items = await populate(run, jobfit, null, "alpha beta gamma")
+  const items = await populate(run, jobfit, "alpha beta gamma")
   check(
     "8: no jobTitle, no anchorable whys, no core requirements → []",
     items.length === 0,
@@ -585,7 +577,6 @@ console.log("\n=== Synthesize-path headline (no headline in resume + family mism
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_NO_HEADLINE,
   )
   const headlines = items.filter(
@@ -650,7 +641,6 @@ console.log("\n=== Null emission (no headline + no family mismatch → no headli
   const items = await populate(
     run,
     jobfitNoMismatchWithUnits,
-    null,
     CATHERINE_RESUME_NO_HEADLINE,
   )
   const headlines = items.filter((i) => i.type === "headline")
@@ -714,7 +704,7 @@ console.log("\n=== A2 gap-item default fields (every emitted gap) ===")
   } as unknown as JobfitResultJson
   const resume = "completely unrelated short resume"
   const run = makePositioningRun("B")
-  const items = await populate(run, jobfit, null, resume)
+  const items = await populate(run, jobfit, resume)
   const gaps = items.filter(
     (i): i is PhaseTwoGapItem => i.type === "gap",
   )
@@ -854,7 +844,6 @@ console.log("\n=== Defensive ===")
   const items = await populate(
     run,
     null as unknown as JobfitResultJson,
-    null,
     CATHERINE_RESUME_SLICE,
   )
   check(
@@ -870,7 +859,7 @@ console.log("\n=== Defensive ===")
   // extractGapCandidates emits everything (no content to check against).
   // The fixture has 1 core requirement, so total = 1 headline + 1 gap = 2.
   const run = makePositioningRun("B")
-  const items = await populate(run, CATHERINE_JOBFIT_WITH_UNITS, null, "")
+  const items = await populate(run, CATHERINE_JOBFIT_WITH_UNITS, "")
   const headlines = items.filter((i): i is PhaseTwoHeadlineItem => i.type === "headline")
   const bullets = items.filter((i) => i.type === "bullet")
   const gaps = items.filter((i) => i.type === "gap")
@@ -906,7 +895,6 @@ console.log("\n=== Defensive ===")
   const items = await populate(
     run,
     CATHERINE_JOBFIT_WITH_UNITS,
-    null,
     CATHERINE_RESUME_SLICE,
   )
   check(
@@ -974,7 +962,6 @@ console.log("\n=== A3: AI bullet suggestions populate gap items ===")
   const result = await populateItems(
     run,
     jobfit,
-    null,
     CATHERINE_RESUME_TEXT,
     mock,
     noopClassifyShape,
@@ -1070,7 +1057,6 @@ console.log("\n=== A3: cost-cap mid-populate exhaustion ===")
   const result = await populateItems(
     run,
     jobfit,
-    null,
     CATHERINE_RESUME_TEXT,
     heavyMock,
     noopClassifyShape,
@@ -1147,7 +1133,6 @@ console.log("\n=== A3: retry-once on empty first-attempt suggestions ===")
   const result = await populateItems(
     run,
     jobfit,
-    null,
     CATHERINE_RESUME_TEXT,
     retryMock,
     noopClassifyShape,
@@ -1205,7 +1190,6 @@ console.log("\n=== A3: error swallowing on AI call failure ===")
   const result = await populateItems(
     run,
     jobfit,
-    null,
     CATHERINE_RESUME_TEXT,
     throwingMock,
     noopClassifyShape,
@@ -1306,7 +1290,6 @@ console.log("\n=== G1: multi-shape end-to-end populator ===")
   const result = await populateItems(
     run,
     jobfit,
-    null,
     CATHERINE_RESUME_TEXT,
     noopSuggestBullets,
     mockClassifyShape,
@@ -1386,7 +1369,6 @@ console.log("\n=== G1: error swallowing on classifier failure ===")
   const result = await populateItems(
     run,
     jobfit,
-    null,
     CATHERINE_RESUME_TEXT,
     noopSuggestBullets,
     throwingClassifier,

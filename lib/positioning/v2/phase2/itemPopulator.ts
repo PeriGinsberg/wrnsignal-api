@@ -11,7 +11,7 @@
 //   §6.10 — resumeComposer locate-and-replace (depends on bullet verbatim invariant)
 // Types: ./types.ts (PhaseTwoItem discriminated union)
 // Parent types: @/lib/positioning/v2/types (PositioningRunV2Row,
-//               JobfitResultJson, CaseSpecificData)
+//               JobfitResultJson)
 // Helpers: ./itemPopulatorParts/* (Stage 2b Commit 1 — 4000af9d)
 //
 // Behavior (Stage 2b Commit 2):
@@ -34,7 +34,6 @@
 //   modify candidate.original_bullet before assigning it to the item.
 
 import type {
-  CaseSpecificData,
   JobfitResultJson,
   PositioningRunV2Row,
 } from "@/lib/positioning/v2/types"
@@ -143,9 +142,6 @@ export type ClassifyGapShapeImpl = (input: {
  *               Source of why_structured (bullet candidates) +
  *               job_signals.requirement_units (gap candidates) +
  *               job_signals.jobTitle/jobFamily (headline candidate).
- * @param caseSpecific Case-specific data computed at Phase 1 /start time.
- *                     Reserved for forward compat (future
- *                     headline_recommendation field). Currently unused.
  * @param resumeText Verbatim persona.resume_text. anchorBullet returns
  *                   substrings of this verbatim — invariant downstream.
  * @returns Ordered array of PhaseTwoItem ready to seed phase2_runs.state.items.
@@ -154,7 +150,6 @@ export type ClassifyGapShapeImpl = (input: {
 export async function populateItems(
   positioningRun: PositioningRunV2Row,
   jobfit: JobfitResultJson,
-  caseSpecific: CaseSpecificData | null,
   resumeText: string,
   /**
    * Test-only: inject a mock suggestBulletsForGap to avoid live Anthropic
@@ -170,10 +165,6 @@ export async function populateItems(
    */
   classifyGapShapeImpl?: ClassifyGapShapeImpl,
 ): Promise<PopulateItemsResult> {
-  // caseSpecific is wired through for forward-compat (FRD §6.2 future
-  // headline_recommendation field). Currently unused — silence the lint.
-  void caseSpecific
-
   // ── Case gate ─────────────────────────────────────────────────────────
   if (positioningRun.case_assigned !== "B") {
     console.log(

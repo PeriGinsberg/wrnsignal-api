@@ -18,10 +18,6 @@
 //   - lib/positioning/v2/phase2/itemPopulator.ts (populateItems — stub in
 //     v0.1; returns [])
 //   - lib/positioning/v2/jobfitLookup.ts (getJobfitRunById)
-//   - lib/positioning/v2/caseSpecific.ts (generateCaseSpecific — regenerated
-//     per Phase 1 cache_hit pattern; case_specific is not stored on the
-//     positioning_run row)
-//   - lib/candidateTargeting.ts (getCandidateTargeting, resolveCareerStage)
 //
 // Failure-mode policy (matches Phase 1):
 //   - INSERT failure → 500 (no row, can't recover)
@@ -44,16 +40,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../../../../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 
-import {
-  getCandidateTargeting,
-  resolveCareerStage,
-} from "@/lib/candidateTargeting"
-
 import { getJobfitRunById } from "@/lib/positioning/v2/jobfitLookup"
-import { generateCaseSpecific } from "@/lib/positioning/v2/caseSpecific"
 import type {
   Case,
-  CaseInputs,
   PositioningRunV2Row,
 } from "@/lib/positioning/v2/types"
 
@@ -212,7 +201,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // ── 6. Fetch jobfit + Foundation dependencies for case_specific ─────────
+  // ── 6. Fetch jobfit (source of Phase 2 items) ──────────────────────────
   if (!posRow.jobfit_run_id) {
     return withCorsJson(
       request,
@@ -240,27 +229,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { row: targeting } = await getCandidateTargeting(
-    supabaseAdmin,
-    profileId,
-  )
-  const careerStage = await resolveCareerStage(profileId, supabaseAdmin)
-
-  // ── 7. Regenerate case_specific (not stored on row; matches Phase 1
-  //      cache_hit fallback path) ─────────────────────────────────────────
-  const caseInputs: CaseInputs = {
-    jobfit: jf.row.result_json,
-    targeting: targeting
-      ? {
-          primary_lane: targeting.primary_lane,
-          primary_sublane: targeting.primary_sublane,
-        }
-      : null,
-    careerStage,
-  }
-  const caseSpecific = generateCaseSpecific(caseInputs, caseAssigned)
-
-  // ── 7.5. Fetch persona resume_text (Stage 2b Commit 2 — required by
+  // ── 7. Fetch persona resume_text (Stage 2b Commit 2 — required by
   //         itemPopulator's anchorBullet for verbatim bullet anchoring).
   //         Defensive profile_id filter belts the implicit binding via
   //         positioning_run ownership. Two error codes distinguish the
@@ -312,7 +281,6 @@ export async function POST(request: NextRequest) {
   const { items, aiCostCents } = await populateItems(
     posRow,
     jf.row.result_json,
-    caseSpecific,
     personaResumeText,
   )
 
