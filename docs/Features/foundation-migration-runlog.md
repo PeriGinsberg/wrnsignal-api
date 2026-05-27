@@ -1804,3 +1804,33 @@ complete and end-to-end validation passes.
 Next: Phase 2 — POST `/api/feedback` endpoint with auth, validation,
 DB insert, and Postmark email-on-insert wiring.
 
+### 2026-05-27 — Beta Feedback v0.1 Phase 2 (POST /api/feedback) shipped
+
+Phase 2 of the beta-feedback v0.1 feature shipped to dev. New
+`POST /api/feedback` endpoint at `app/api/feedback/route.ts` with
+inline auth (getAuthedUser + profile lookup), is_coach gate,
+input validation across 5 type values + conditional severity,
+body length bounds (10-5000 chars), and sensitive query param
+stripping on page_url. On valid submission: INSERT to
+`beta_feedback`, compute active client count (matches Coach Home
+tile filter — `status='active' AND lifecycle_status='Active'`), fire
+notification email via new `lib/email/sendFeedbackNotification.ts`
+utility, best-effort writeback of `email_sent_at` / `email_send_error`
+to the row.
+
+Email failure is non-fatal — row commits before send is attempted;
+caller sees success regardless. Reply-To set to coach email when
+reply_ok=true, omitted when reply_ok=false (replies loop back to
+support@ inbox via From).
+
+Postmark utility models the sendClientInvite pattern (same
+`postmarkClient` + `MESSAGE_STREAM`), but sends From/To
+`support@stopapplyingblind.com` rather than the WRN-branded
+`POSTMARK_FROM_EMAIL`. New env var `POSTMARK_FEEDBACK_FROM_EMAIL`
+added to local dev env (gitignored, not committed); defaults to
+`support@stopapplyingblind.com` if unset. Inline template (no
+Postmark template ID) for iteration speed during early beta.
+
+Next: Phase 3 — frontend slide-in component
+(`components/ui/SlideInPanel.tsx` + form + confirmation states).
+
