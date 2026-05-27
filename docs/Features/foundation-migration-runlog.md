@@ -2084,3 +2084,57 @@ passes persona_id; prod's does not. Tracked as KI-12.
 Source: docs/positioning-coverletter-current-state-investigation-2026-05-27.md (Finding 3)
 Prior SHA: 83e79739 (dev-flip prerequisite)
 
+### 2026-05-27 — Positioning v1 bullet eval: substantive JobFit-informed rewrites (Flavor 2, Commit 1 — backend)
+
+Enhanced the production v1 positioning route (app/api/positioning/route.ts) to
+produce substantive, diff-based bullet rewrites informed by JobFit signal,
+replacing the keyword-injection behavior — but only when a JobFit signal is
+supplied. Architectural call: enhance-v1 in place (per
+docs/positioning-v2-phase1-readiness-2026-05-27.md); v2 Phase 1/2 stay dev-only.
+
+Design (locked with Peri):
+- Grounding = option (iv) diff-based: the rewrite is a TRANSFORMATION of the
+  original bullet (same facts, restructured), not fresh content. Structural
+  grounding inherits from normalizeBulletEdits' verbatim-before invariant,
+  which is UNCHANGED.
+- JobFit signal consumed: risk_structured (gaps) + positioning_strategy.reframe
+  — the orphaned field purpose-built for positioning, finally consumed.
+- Output shape unchanged (resume_bullet_edits {job_title, before, after, why,
+  evidence}); cover-letter integration (0af46843) stays compatible.
+
+What changed in route.ts:
+- Optional jobfit_result on the request body; defensive signal extraction.
+  jobfitSignalPresent (risk_structured non-empty OR positioning reframe present)
+  gates the path.
+- Conditional prompt assembly: JobFit path swaps the bullet-rules block (GAPS TO
+  PROBE framing), adds a JOBFIT ANALYSIS block (gaps + positioning direction;
+  severity shown as context, no prioritization rules), and a substantive-reframe
+  task 5. Fallback path (no signal) = today's keyword-injection prompt VERBATIM
+  (byte-identical).
+- Fingerprint cache: added system.bullet_eval_mode + jobfit_signal (consumed
+  signal, or MISSING) so a re-run after JobFit can't serve a stale pre-JobFit
+  cached result and the two prompt paths never share a cache entry.
+  POSITIONING_PROMPT_VERSION bumped to positioning_v2_2026_05_27_jobfit_reframe
+  (one-time harmless recompute).
+- Console log when signal absent (fallback fired).
+
+Invariants held: normalizeBulletEdits NOT modified; response shape NOT changed;
+WHY-THIS-MATTERS / WORDING CONSTRAINT / role_angle / arrange_resume / summary
+logic untouched. tsc + build clean.
+
+Two-commit arc: Commit 1 (this) enables the backend behavior but it is INERT
+until Commit 2 wires the frontend to pass jobfit_result. Every current caller
+hits the fallback (byte-identical), so this deploy is a behavioral no-op for
+live users — which is why deploy-then-smoke is safe (Option A).
+
+Smoke gate (PENDING — runs on staging after this push, not yet verified):
+Smoke 2 = fallback path returns correct shape, fingerprint cache handles the new
+payload without crashing, fallback console log fires, second run hits cache.
+Revert-on-failure (clean one-commit rollback). Smokes 1+3 (new behavior +
+cover-letter chain) run via the UI after Commit 2.
+
+Source: docs/positioning-coverletter-current-state-investigation-2026-05-27.md
+Architectural call: docs/positioning-v2-phase1-readiness-2026-05-27.md (enhance-v1)
+Prior SHA: 0af46843
+Next: Commit 2 (frontend pass-through, 3 client surfaces) after Smoke 2 passes.
+

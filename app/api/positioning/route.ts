@@ -95,7 +95,7 @@ export const dynamic = "force-dynamic"
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MISSING = "__MISSING__"
-const POSITIONING_PROMPT_VERSION = "positioning_v1_2026_02_07"
+const POSITIONING_PROMPT_VERSION = "positioning_v2_2026_05_27_jobfit_reframe"
 const MODEL_ID = "current"
 
 // Supabase
@@ -336,6 +336,23 @@ export async function POST(req: Request) {
         ? body.persona_id.trim()
         : null
 
+    // JobFit signal (Flavor 2 bullet eval). Optional in the request body.
+    // When present we switch bullet eval to substantive JobFit-informed
+    // reframes; when absent we fall back to keyword injection (today's
+    // behavior). Defensive: jobfit_result may be null, a V4 result without
+    // these fields, or partial — extract what's there, decide on presence.
+    const jobfitResult =
+      (body && typeof body === "object" ? body.jobfit_result : null) ?? null
+    const riskStructured: any[] = Array.isArray(jobfitResult?.risk_structured)
+      ? jobfitResult.risk_structured
+      : []
+    const positioningReframe =
+      typeof jobfitResult?.positioning_strategy?.reframe === "string"
+        ? jobfitResult.positioning_strategy.reframe.trim()
+        : ""
+    const jobfitSignalPresent =
+      riskStructured.length > 0 || positioningReframe.length > 0
+
     if (!jobText) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
@@ -398,11 +415,22 @@ export async function POST(req: Request) {
       system: {
         positioning_prompt_version: POSITIONING_PROMPT_VERSION,
         model_id: MODEL_ID,
+        // Distinguishes the JobFit-informed prompt path from the keyword-
+        // injection fallback so the two never serve each other's cache.
+        bullet_eval_mode: jobfitSignalPresent
+          ? "jobfit_reframe"
+          : "keyword_injection",
       },
       keyword_logic: {
         max_keywords: 30,
         missing_top_n: 8,
       },
+      // The exact JobFit signal consumed drives the bullet output, so it must
+      // drive the cache key — otherwise a positioning re-run after JobFit could
+      // serve a stale pre-JobFit cached result. MISSING when no signal.
+      jobfit_signal: jobfitSignalPresent
+        ? { risk_structured: riskStructured, positioning_reframe: positioningReframe }
+        : MISSING,
     }
 
     const { fingerprint_hash, fingerprint_code } = buildPositioningFingerprint(fingerprintPayload)
@@ -431,6 +459,97 @@ export async function POST(req: Request) {
         200
       )
     }
+
+    // ── Flavor 2 (jobfit-reframe): conditional bullet-eval prompt assembly ──
+    // JobFit signal present → substantive reframe rules + a JobFit-analysis
+    // block + a reframe task. Absent → today's keyword-injection prompt
+    // verbatim (fallback). Shared sections (role angle, arrange, summary, the
+    // JSON output shape, WHY-THIS-MATTERS, WORDING CONSTRAINT) are identical
+    // in both paths. normalizeBulletEdits' verbatim-before invariant grounds
+    // both paths and is unchanged.
+    if (!jobfitSignalPresent) {
+      console.log(
+        "[positioning] no JobFit signal in request — keyword-injection fallback path",
+        { profileId: profileId || "", fingerprintCode: fingerprint_code }
+      )
+    }
+
+    const bulletEditRules = jobfitSignalPresent
+      ? `BULLET EDIT RULE — SUBSTANTIVE REFRAME (JobFit signal provided):
+Rewrite each chosen bullet as a TRANSFORMATION of the original — the same bullet restructured. Same facts, same scope, different framing and emphasis. You are editing the sentence, not appending keywords to it.
+
+GROUNDING (ABSOLUTE):
+- "before" MUST be a verbatim copy of a bullet from the RESUME.
+- "after" may use ONLY facts already present in that "before" bullet — its own actions, tools, metrics, scope, and outcomes. Do NOT introduce a metric, technology, employer, responsibility, or result the original bullet does not state. Reframing is re-emphasis, never addition.
+- If a bullet cannot be improved without inventing something, return no edit for it.
+
+USE THE JOBFIT SIGNAL TO DECIDE WHAT TO REFRAME:
+- GAPS TO PROBE: each gap is a JD requirement the resume under-signals. For each bullet, ask: do this bullet's OWN facts (actions, tools, metrics, outcomes already present) genuinely speak to any gap? If yes, reframe the bullet to surface that relevance explicitly and lead with it. If no, the gap does NOT apply to this bullet — leave it alone. Never imply a gap is covered if the bullet's own content does not support it.
+- POSITIONING DIRECTION: when provided and it fits a bullet, reframe toward that angle.
+- If neither a gap nor the positioning direction applies to a bullet, do NOT rewrite it — leave it out of the edits. Do not force reframes without signal.
+
+GOOD vs BAD:
+- GOOD: re-leads with the most role-relevant action/outcome already in the bullet; promotes a concrete result that was buried; reads as the same accomplishment told for THIS role.
+- BAD: appending a JD keyword to an unchanged sentence; adding vague language ("stakeholders," "cross-functional," "effective"); inflating scope; inventing specifics.`
+      : `BULLET EDIT RULE (NON-NEGOTIABLE):
+Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
+Do not add new facts. Do not invent tools, metrics, or outcomes.
+
+KEYWORD STRICTNESS RULE:
+- Bullet edits must introduce or emphasize a SPECIFIC noun or tool (e.g., research, reports, analysis, dashboards, Excel, client deliverables).
+- Do NOT rewrite bullets to add vague business language such as:
+  “effective,” “support,” “requirements,” “customers,” “stakeholders,” or similar.
+- If only vague wording can be added, return no edit.
+
+REDUNDANCY RULE (CONDITIONAL):
+- Do NOT rewrite a bullet if the change only restates what the bullet already clearly communicates.
+- An exception is allowed ONLY when the rewrite introduces an exact, job-relevant keyword or phrase that appears in the job description.
+- If the added wording does not improve keyword visibility or introduce a concrete noun, return no edit.
+- When in doubt, return no edit.`
+
+    // Per-risk lines for the JobFit-analysis block (severity shown as context,
+    // no prioritization rules — model infers). Defensive against malformed
+    // risk items; drops fully-empty ones.
+    const riskLines = riskStructured
+      .map((r: any) => {
+        const kw = typeof r?.keyword === "string" ? r.keyword.trim() : ""
+        const sev = typeof r?.severity === "string" ? r.severity.trim() : ""
+        const gap = typeof r?.gap === "string" ? r.gap.trim() : ""
+        const adj =
+          typeof r?.adjacent_evidence === "string"
+            ? r.adjacent_evidence.trim()
+            : ""
+        const head = `- ${kw}${sev ? ` (${sev})` : ""}: ${gap}`
+        return adj ? `${head}\n  (adjacent evidence: ${adj})` : head
+      })
+      .filter((line: string) => line.trim() !== "- :")
+      .join("\n")
+
+    const jobfitAnalysisBlock = jobfitSignalPresent
+      ? `JOBFIT ANALYSIS (from the SIGNAL JobFit run — use this to choose which bullets to reframe and how):
+
+Gaps to address (JD requirements your resume under-signals — reframe a bullet only when its own facts genuinely speak to the gap):
+${riskLines || "- (none surfaced)"}
+
+Positioning direction (lead with this angle where a bullet fits it):
+${positioningReframe || "None provided."}
+
+`
+      : ""
+
+    const bulletEditTask = jobfitSignalPresent
+      ? `5) Resume Bullet Edits (SUBSTANTIVE REFRAME — follow the BULLET EDIT RULE):
+   - "before" = a verbatim bullet from the RESUME above. "after" = that SAME bullet restructured, using ONLY facts already in it.
+   - Reframe a bullet ONLY when its own facts are genuinely relevant to a listed gap or to the positioning direction. Skip bullets where no signal applies.
+   - Do NOT add metrics, tools, employers, or outcomes not in the original bullet.
+   - Return 0–6 edits. Do not pad. If no bullet has grounded, reframe-worthy relevance, return an empty array.`
+      : `5) Resume Bullet Edits:
+   - BEFORE field rule: BEFORE must be a verbatim copy of an existing bullet from the RESUME text above. Do NOT paraphrase or copy from the JOB DESCRIPTION. If no resume bullet is a strong candidate for a missing keyword, omit that edit entirely.
+   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim) in the AFTER field.
+   - Only do this if the resume facts already support it. Do not add new facts.
+   - Do not use generic substitutes like “execution,” “support,” “cross-team,” or “stakeholder” unless they appear verbatim in the job keywords list.
+   - Return 0–6 edits. Do not pad.
+   - If you cannot truthfully include any of the listed keywords in a bullet, return an empty array.`
 
     const system = `
 You are WRNSignal by Workforce Ready Now (Positioning module).
@@ -480,21 +599,7 @@ SUMMARY STATEMENT LOGIC:
 - recommended_summary must be factual (use only resume facts), one sentence,
   null only when the token is [aligned].
 
-BULLET EDIT RULE (NON-NEGOTIABLE):
-Only rewrite bullets to clearly highlight missing high-priority job keywords that your resume already supports.
-Do not add new facts. Do not invent tools, metrics, or outcomes.
-
-KEYWORD STRICTNESS RULE:
-- Bullet edits must introduce or emphasize a SPECIFIC noun or tool (e.g., research, reports, analysis, dashboards, Excel, client deliverables).
-- Do NOT rewrite bullets to add vague business language such as:
-  “effective,” “support,” “requirements,” “customers,” “stakeholders,” or similar.
-- If only vague wording can be added, return no edit.
-
-REDUNDANCY RULE (CONDITIONAL):
-- Do NOT rewrite a bullet if the change only restates what the bullet already clearly communicates.
-- An exception is allowed ONLY when the rewrite introduces an exact, job-relevant keyword or phrase that appears in the job description.
-- If the added wording does not improve keyword visibility or introduce a concrete noun, return no edit.
-- When in doubt, return no edit.
+${bulletEditRules}
 
 WHY THIS MATTERS RULE:
 - Write exactly ONE short sentence.
@@ -578,7 +683,7 @@ HIGH-PRIORITY JOB KEYWORDS (SYSTEM-DETERMINED):
 These are important keywords/phrases from the job description that are currently missing or underrepresented in your resume bullets:
 ${missingHighPriorityKeywordsText}
 
-${summaryDetectionBlock}
+${jobfitAnalysisBlock}${summaryDetectionBlock}
 
 TASK (do in order):
 1) ROLE ANGLE (DETERMINISTIC):
@@ -612,13 +717,7 @@ TASK (do in order):
    presence. The why field MUST start with one of [missing], [misaligned],
    or [aligned] — exact tokens, including brackets. need_summary,
    recommended_summary, and evidence must be consistent with the chosen token.
-5) Resume Bullet Edits:
-   - BEFORE field rule: BEFORE must be a verbatim copy of an existing bullet from the RESUME text above. Do NOT paraphrase or copy from the JOB DESCRIPTION. If no resume bullet is a strong candidate for a missing keyword, omit that edit entirely.
-   - Each edit MUST include at least ONE exact phrase from the HIGH-PRIORITY JOB KEYWORDS list above (copy it verbatim) in the AFTER field.
-   - Only do this if the resume facts already support it. Do not add new facts.
-   - Do not use generic substitutes like “execution,” “support,” “cross-team,” or “stakeholder” unless they appear verbatim in the job keywords list.
-   - Return 0–6 edits. Do not pad.
-   - If you cannot truthfully include any of the listed keywords in a bullet, return an empty array.
+${bulletEditTask}
 
 Return JSON only. No markdown. No extra text.
     `.trim()
