@@ -28,6 +28,8 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260523_prospects_v0_1.sql` | 2026-05-22 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
 | `supabase/migrations/20260509_coach_client_notes_typed.sql` | 2026-05-09 | (dev — not previously tracked in this runlog) | dev | Supabase SQL Editor | Peri | Coaches Center scope. Retroactively added to this table 2026-05-25 because prod sync surfaced it was untracked here. |
 | `supabase/migrations/20260509_coach_client_notes_typed.sql` | 2026-05-09 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
+| `supabase/migrations/20260527_beta_feedback.sql` | 2026-05-27 | 2026-05-27 | dev | psql (dev session pooler) | Peri (Claude-applied) | New table for coach-submitted beta feedback. Beta-feedback v0.1 Phase 1. Manual direct-SQL apply per Risk 6 — CLI is linked to prod, so dev reached via `SUPABASE_DB_URL` session-pooler string (equivalent to the SQL Editor workaround). 15 columns + 3 indexes + `set_updated_at` trigger. Production promotion deferred per FRD §11. |
+| `supabase/migrations/20260527_beta_feedback.sql` | 2026-05-27 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation + Phase 2-5 build completes. |
 
 ---
 
@@ -1766,4 +1768,39 @@ This claim was **incorrect**. `app/api/coverletter/route.ts` has existed since a
 **Future audit discipline reminder:** when grepping for feature consumers, include the `cover.?letter` pattern variant (regex with optional separator) to catch concatenated naming. This investigation surfaced `app/api/coverletter/route.ts`, `framer/dev/maincomponent.txt` (consumer), `signal-mobile/app/(tabs)/coverletter.tsx` (consumer), and the active `coverletter_runs` table — none of which appeared in the prior audit because of the same naming-pattern miss.
 
 See `docs/Features/cover-letter-header-investigation.md` for the full investigation that surfaced both the fix and the correction.
+
+### 2026-05-27 — Beta Feedback v0.1 Phase 1 (schema) shipped
+
+Phase 1 of the beta-feedback v0.1 feature shipped to dev. New
+`beta_feedback` table created per FRD §6.1
+(`docs/Features/beta-feedback-frd.md`). 15 columns covering coach
+submission (`type`, `severity`, `body`, `reply_ok`), auto-captured
+context (`page_url`, `user_agent`), notification tracking
+(`email_sent_at`, `email_send_error`), and reserved status fields
+(`status`, `status_updated_at`, `status_updated_by`) for the v0.2
+admin UI — plus `id`, `coach_profile_id`, `created_at`, and
+`updated_at`. (FRD verification text said "14 columns"; the verbatim
+§6.1 CREATE TABLE actually defines 15 — the migration matches §6.1, so
+15 is correct.)
+
+Three indexes added: `coach_profile_id`, `status`, `created_at DESC`.
+The `set_updated_at` trigger attached for `updated_at` maintenance.
+
+CHECK constraints verified firing on dev: invalid `type` rejected
+(`beta_feedback_type_check`); body shorter than 10 chars rejected
+(`beta_feedback_body_check`). Trigger verified firing on UPDATE —
+`updated_at` advanced (14:24:18Z) past the held `created_at`
+(14:24:17Z). Test row deleted afterward; table left at 0 rows.
+
+Apply method (Risk 6, manual direct-SQL): the Supabase CLI is
+currently linked to **prod** (`ejhnokcnahauvrcbcmic`), so dev
+(`zydrqckpwidipwbhrfgd`) was reached via a session-pooler connection
+string stored as `SUPABASE_DB_URL` in `.env.development.local`
+(gitignored) and run through `psql` — functionally equivalent to the
+SQL Editor workaround, applied with the dev identity verified before
+every statement. Production promotion deferred until Phases 2-5
+complete and end-to-end validation passes.
+
+Next: Phase 2 — POST `/api/feedback` endpoint with auth, validation,
+DB insert, and Postmark email-on-insert wiring.
 
