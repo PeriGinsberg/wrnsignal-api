@@ -195,6 +195,8 @@ When KI-01 is finally addressed, both contributors should change in lockstep (th
 
 - **KI-11 (2026-05-27): groundingValidator.ts Rule 3 over-strictness — false-reject rate ~100% on realistic Pattern B output per Q3.1 baseline. Validator rejects ordinary English (connectives, prepositions, paraphrase verbs, numeric format variants) as "ungrounded." Production methodology integrity change — needs focused design session, not a tune. Reference: tests/positioning-v2/phase2/snapshots/pattern-b-eval-baseline-2026-05-27.json**
 
+- **KI-12 (2026-05-27): Framer dev vs prod cover-letter call divergence on persona_id field — dev passes it, prod does not. Pre-existing drift, out of scope for the positioning wiring fix. Worth tracking for future Framer-bundle alignment work.**
+
 ### KI-05 — 12-value lane CHECK list repeated three times in candidate_targeting
 
 **Source:** Stage 1a `candidate_targeting` migration.
@@ -2038,4 +2040,47 @@ State check: docs/positioning-phase2-state-check-2026-05-27.md (Q3.1 + Q2 deferr
 Prior SHA: 85a8805a
 Session end: positioning state-check session complete (WS0 correction
 + Q4 + Q1 + Q3.1). Next focused session scopes KI-11 (validator design).
+
+### 2026-05-27 — Cover Letter consumes Positioning (cross-client wiring)
+
+Wired the Positioning → Cover Letter signal line. The cover-letter
+backend (app/api/coverletter/route.ts) already consumed `positioning`
+via summarizePositioning (and jobfit_result via cover_letter_strategy
++ why/risk summary); the gap was that no client passed `positioning`
+in the /api/coverletter request body. Now the clients do.
+
+Client surfaces updated (call sites differ per platform):
+- framer/dev/maincomponent.txt — runCoverLetter payload + positioning
+- framer/prod/maincomponent.txt — runCoverLetter payload + positioning
+- signal-mobile/lib/api.ts — runCoverLetter gains a `positioning` param
+- signal-mobile/app/(tabs)/coverletter.tsx — passes positioningResult
+  from useJob()
+
+Commit split (repo reality): signal-mobile/ is gitignored, so the two
+mobile files ship via the mobile pipeline (EAS) separately, NOT in this
+repo commit. This commit carries only the two tracked Framer bundles +
+this runlog. The mobile edits are on disk and type-clean (no new tsc
+errors in the edited files; the mobile project's pre-existing tsc
+errors are unrelated).
+
+Prerequisite landed first (SHA 83e79739): dev had been dispatching the
+Positioning tab to v2 (renderPositioningV2), so v1 never ran and
+positioningResult was null — this wiring was INERT on dev. The dev-flip
+restored dev/prod parity (v1 dispatch + v2 auto-fire disabled), which
+made an honest end-to-end smoke possible.
+
+Manual smoke (dev, web): JobFit → Run Positioning (v1) → Cover Letter.
+The letter demonstrably consumes v1 positioning beyond what JobFit
+alone produces — v1 bullet edits surface in the letter (an edited FHIA
+bullet appeared near-verbatim), v1 summary themes shape the opening,
+and JobFit's cover_letter_strategy risks are addressed (a "new to me"
+paragraph mapped directly to a JobFit risk). The chain
+JobFit-identifies → Positioning-rewrites → Cover-Letter-consumes is
+functioning.
+
+Pre-existing divergence noted (not fixed here): dev's cover-letter call
+passes persona_id; prod's does not. Tracked as KI-12.
+
+Source: docs/positioning-coverletter-current-state-investigation-2026-05-27.md (Finding 3)
+Prior SHA: 83e79739 (dev-flip prerequisite)
 

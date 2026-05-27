@@ -2378,6 +2378,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 {
                     job: job.trim(),
                     jobfit_result: jobFitResult ?? null,
+                    positioning: positioningResult ?? null,
                     ...(selectedPersonaId
                         ? { persona_id: selectedPersonaId }
                         : {}),

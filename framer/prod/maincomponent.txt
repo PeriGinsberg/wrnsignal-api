@@ -1863,7 +1863,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
             const data = await postJsonWithDebug(
                 `${API_BASE}/api/coverletter`,
-                { job: job.trim(), jobfit_result: jobFitResult ?? null },
+                { job: job.trim(), jobfit_result: jobFitResult ?? null, positioning: positioningResult ?? null },
                 setDebug,
                 accessToken
             )
