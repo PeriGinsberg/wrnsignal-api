@@ -721,7 +721,7 @@ When validation fails after the retry budget:
 
 1. The section UI transitions into manual-entry mode (no error toast, no "try again" affordance)
 2. Copy: "We couldn't draft this one for you with the evidence available. Write your own — you know your experience best."
-3. A free-text input is displayed in the section's draft area, pre-populated with the original bullet (for Pattern B) or empty (for Patterns A and C)
+3. A free-text input is displayed in the section's draft area, pre-filled empty for all patterns. Forces genuine manual entry; avoids the user accepting a pre-populated value verbatim. (Deliberate v0.1 override of the original spec, which pre-filled Pattern B with the original bullet — see Q1 resolution in `docs/positioning-phase2-state-check-2026-05-27.md`.)
 4. The user types their own draft and clicks Accept
 5. User-typed content bypasses grounding validation entirely — the user is personally vouching for it (this is the §4.4 manual-override principle made concrete)
 6. The accepted content flows into revised_resume_text via the same §6.10 composition path

@@ -226,7 +226,7 @@ export default function Phase2ItemPage({
         // Grounding failed — enter manual-entry mode per FRD §6.9.1
         setManualEntryMode(true)
         if (item.type === "bullet") {
-          setOverrideText(item.original_bullet)
+          setOverrideText("")
         } else {
           setOverrideText("")
         }

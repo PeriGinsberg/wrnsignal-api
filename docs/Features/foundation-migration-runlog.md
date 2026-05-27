@@ -1944,3 +1944,43 @@ State check: docs/positioning-phase2-state-check-2026-05-27.md Q4
 SHA: bd64476c (state-check correction)
 Next: Q1 (empty pre-fill + FRD §6.9.1 update)
 
+### 2026-05-27 — Positioning Phase 2 Q1 (empty pre-fill) shipped
+
+Q1 of the Phase 2 state-check session: Pattern B manual-entry
+textarea now pre-fills empty instead of the original bullet
+(app/positioning/phase2/[id]/items/[itemId]/page.tsx, the 422
+manual-entry branch). Unifies all three patterns around empty
+pre-fill — Pattern A/C already pre-filled empty, so the else
+branch is unchanged.
+
+Forces genuine manual reframing when the user falls into manual-
+entry mode (only reachable via the 422 grounding-failure path);
+avoids the "accept the original bullet verbatim" path that defeats
+the reframe.
+
+Deliberate v0.1 override of the original FRD §6.9.1 spec, not a
+regression fix. FRD §6.9.1 step 3 updated in the same commit with
+a note explaining the override + state-check reference.
+
+Files: app/positioning/phase2/[id]/items/[itemId]/page.tsx (1 line)
++ docs/Features/positioning-phase2-frd.md (§6.9.1 step 3).
+
+Manual smoke (dev, run e84dcbb6, peri+test100 account): triggered
+the Pattern B 422 grounding-failure path (irrelevant response →
+Generate → grounding fail → manual-entry mode). Confirmed the
+manual-entry textarea opens EMPTY (pre-change it pre-filled the
+original bullet). Scope of what was verified: the 422 path only —
+manual entry is 422-only; the optional Pattern A/C and input-
+persistence cross-checks were not separately exercised (the A/C
+else branch is unchanged by this diff).
+
+Known nit: the if/else now has both branches doing
+setOverrideText("") — left intact per one-line-change scope;
+trivial collapse candidate for a future cleanup.
+
+tsc + build clean. Phase 2 suite 17/17.
+
+State check: docs/positioning-phase2-state-check-2026-05-27.md Q1
+Prior SHA: 1e1b1b37
+Next: Q3.1 (Pattern B eval harness)
+
