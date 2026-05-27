@@ -336,29 +336,34 @@ chase its tail.
      **(b)** ✅ empty pre-fill ·
      **(c)** pre-fill the user's typed response.
 
-2. ~~**Pattern B prompt direction — the FRD documented the failure mode but
-   never locked a fix.**~~
-   **RESOLVED 2026-05-27 (Peri): Option (c) — data-driven.** Tune both the
-   prompt and the validator with measured feedback from an eval harness, not
-   intuition. The eval-harness build folds into Q3's verification scope, so
-   this resolves with **no additional cost beyond what Q3 already commits to.**
+2. ~~**Pattern B prompt direction**~~
+   **RESOLVED (deferred) 2026-05-27 (Peri): direction (c) — defer to a focused
+   session.**
 
-   Reasoning (for the record): the corporate-paraphrase failure mode is
-   currently unmeasured (no telemetry, dev-only). Prompt-only is guessing;
-   validator-only risks letting ungrounded claims through. The lever is split
-   between the prompt (stop generating corporate-ese) and the validator's
-   `COMPETENCE_WORDS` / 3-rule heuristic (decide which general-competence words
-   are allowed) — tuning one without the other chases its tail. A measured
-   rejection rate from a fixture corpus is the only honest way to tune.
+   The Q3.1 eval-harness baseline (**0/9 accept rate** — see
+   `tests/positioning-v2/phase2/snapshots/pattern-b-eval-baseline-2026-05-27.json`)
+   revealed the dominant failure mode is **validator over-strictness on ordinary
+   English** (connectives, prepositions, paraphrase verbs, numeric-format
+   variants — e.g. a draft rejected solely on the word "per"; another on
+   "$5,000" vs source "5,000 dollar"), **NOT** prompt corporate-paraphrase
+   issues (only 2/9). The original Q2 framing — "tune the prompt to stop
+   corporate paraphrases" — was based on incomplete information.
 
-   **Pending build work** (NOT done in this read-only check):
-   - Build the eval harness as part of Q3 verification work (shared scope).
-   - Generate test data covering Pattern B failure modes (synthetic
-     bullet+response pairs that provoke corporate paraphrase).
-   - Tune both prompt + validator with measured signal, not intuition.
-   - Options for the record: **(a)** prompt-only ·
-     **(b)** validator-only ·
-     **(c)** ✅ both, data-driven.
+   Validator-first tuning is the correct technical direction per the data, but
+   the work is a **production-grade integrity change**: `groundingValidator.ts`
+   guards against ungrounded claims — the methodology's load-bearing guarantee.
+   Loosening it requires explicit design for what's safe to allow vs. what stays
+   guarded, plus test coverage of the inverse failure mode (false-accepts). That
+   deserves an FRD-level design pass, not a tail-end tune under time pressure.
+   Deferring doesn't worsen Pattern B — it's already in this state in production
+   today, beta hasn't started, and no urgency overrides designing it carefully.
+   Tracked as **KI-11** in the runlog.
+
+   Original options for the record:
+   **(a)** validator-first — ✅ correct direction per data; deferred to focused
+   session ·
+   **(b)** prompt-first — ✗ wrong fix per data (addresses ≤2/9, degrades drafts) ·
+   **(c)** ✅ defer — chosen.
 
 3. ~~**Is "v1 ships" actually shippable, or code-complete-but-unverified?**~~
    **RESOLVED 2026-05-27 (Peri): Option (c) — middle ground.** A **minimum

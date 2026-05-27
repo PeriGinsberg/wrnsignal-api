@@ -193,6 +193,8 @@ When KI-01 is finally addressed, both contributors should change in lockstep (th
 
 - **KI-09 (2026-05-27): route.ts:18-19 has stale "populateItems — stub in v0.1; returns []" comment. False since v1 build completed (~05-19). Cleanup candidate. Out of Q4 scope.**
 
+- **KI-11 (2026-05-27): groundingValidator.ts Rule 3 over-strictness — false-reject rate ~100% on realistic Pattern B output per Q3.1 baseline. Validator rejects ordinary English (connectives, prepositions, paraphrase verbs, numeric format variants) as "ungrounded." Production methodology integrity change — needs focused design session, not a tune. Reference: tests/positioning-v2/phase2/snapshots/pattern-b-eval-baseline-2026-05-27.json**
+
 ### KI-05 — 12-value lane CHECK list repeated three times in candidate_targeting
 
 **Source:** Stage 1a `candidate_targeting` migration.
@@ -1983,4 +1985,57 @@ tsc + build clean. Phase 2 suite 17/17.
 State check: docs/positioning-phase2-state-check-2026-05-27.md Q1
 Prior SHA: 1e1b1b37
 Next: Q3.1 (Pattern B eval harness)
+
+### 2026-05-27 — Positioning Phase 2 Q3.1 (Pattern B eval harness) shipped
+
+Q3.1 of the Phase 2 state-check session: built the Pattern B eval
+harness — the one truly-new piece of verification work after the
+suite audit (correction commit bd64476c) showed §8 coverage already
+exists and passes.
+
+The harness exercises the LIVE production Pattern B path
+(aiClient.generateBulletReframe → invokeClaude → Haiku 4.5) through
+the real validator (isAcceptableAiResult) across 9 scenarios (4
+Catherine-fixture-grounded + 5 synthetic). Single first-attempt per
+scenario (temp 0.7); validator allowed-sources = [original_bullet,
+user_response] (matches the /draft route). Durable JSON snapshot at
+tests/positioning-v2/phase2/snapshots/pattern-b-eval-baseline-2026-05-27.json.
+
+Baseline (dev, Haiku 4.5): 0/9 accepted, 9/9 rejected. Breakdown:
+6 ungrounded_other, 2 corporate_paraphrase, 1 insufficient_evidence.
+Cost $0.0093, avg latency 1254ms.
+
+FINDING — this is the reason the harness mattered: the dominant
+failure mode is VALIDATOR OVER-STRICTNESS, not prompt issues. The
+drafts are accurate and grounded in the user's own words; the
+validator rejects them for using ordinary English — connectives,
+prepositions, paraphrase verbs, and numeric-format variants.
+Concrete cases: one draft rejected solely on the word "per" ("six
+events per semester" vs source "a semester"); another on "$5,000"
+(source said "5,000 dollar" — a format mismatch, not invention);
+others on "Conducted / synthesized / using / across / during /
+including". Only 1/9 was a correct reject (thin chess response →
+insufficient_evidence). The documented "corporate paraphrase" mode
+(stakeholders / optimized) is real but minor: 2/9.
+
+This is the FRD §9 false-reject-rate risk realized — measured at
+~100%, 5x past the §11 ">20%" threshold. In production this means
+Pattern B currently routes nearly every user into manual-entry mode.
+
+Q2 consequence: scope SHIFTS from prompt tuning to validator design
+and DEFERS to a focused session (direction c). groundingValidator.ts
+is production integrity logic (guards against ungrounded claims —
+the methodology's load-bearing guarantee); loosening it needs
+explicit design + false-accept test coverage, not a tail-end tune.
+Tracked as KI-11. Deferring doesn't worsen Pattern B — it's already
+in this state today; beta hasn't started.
+
+Harness is a measurement tool, not a pass/fail gate; kept out of CI
+(live API cost). Re-run pre/post any future validator change to
+measure improvement.
+
+State check: docs/positioning-phase2-state-check-2026-05-27.md (Q3.1 + Q2 deferral)
+Prior SHA: 85a8805a
+Session end: positioning state-check session complete (WS0 correction
++ Q4 + Q1 + Q3.1). Next focused session scopes KI-11 (validator design).
 

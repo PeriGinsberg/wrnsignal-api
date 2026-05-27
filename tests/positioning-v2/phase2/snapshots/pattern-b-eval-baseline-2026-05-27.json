@@ -1,0 +1,265 @@
+{
+  "run_at": "2026-05-27T17:40:03.059Z",
+  "model": "claude-haiku-4-5-20251001",
+  "measurement": "single-first-attempt-per-scenario (temp 0.7); validator allowed-sources = [original_bullet, user_response]",
+  "scenario_count": 9,
+  "results": {
+    "accepted": 0,
+    "rejected": 9,
+    "errors": 0,
+    "accept_rate": 0,
+    "rejection_breakdown": {
+      "ungrounded_other": 6,
+      "corporate_paraphrase": 2,
+      "insufficient_evidence": 1
+    },
+    "avg_timing_ms": 1254,
+    "total_cost_usd": 0.0093
+  },
+  "per_scenario": [
+    {
+      "input_id": "catherine-swot-analysis",
+      "source": "catherine_fixture",
+      "original_bullet": "Performed industry, audience, and SWOT analyses to assess positioning and identify growth opportunities",
+      "user_response": "I gathered competitor data and market trends in a spreadsheet, ran a SWOT framework, and summarized the findings into recommendations the team used to choose a positioning angle.",
+      "gap_context": {
+        "gap_shape": "experience",
+        "severity": "high",
+        "bullet_shape": "responsibility-heavy"
+      },
+      "ai_draft": "Conducted industry, audience, and SWOT analyses using structured data collection and frameworks to assess positioning; synthesized findings into strategic recommendations that informed team decision-making.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "ungrounded_other",
+      "ungrounded_entities": [
+        "Conducted",
+        "using",
+        "structured",
+        "collection",
+        "synthesized",
+        "informed",
+        "decision-making"
+      ],
+      "timing_ms": 1555,
+      "usage": {
+        "input_tokens": 1310,
+        "output_tokens": 48
+      },
+      "cost_usd": 0.00155,
+      "error": null
+    },
+    {
+      "input_id": "catherine-client-deck",
+      "source": "catherine_fixture",
+      "original_bullet": "Presented findings through a professional client deck and written report",
+      "user_response": "I built a 15-slide deck and a written report, walked the client through the recommendations in a live presentation, and answered their questions.",
+      "gap_context": {
+        "gap_shape": "experience",
+        "severity": "medium",
+        "bullet_shape": "achievement-heavy"
+      },
+      "ai_draft": "Communicated findings to stakeholders through a professional client deck and written report, delivering recommendations in a live presentation and addressing client questions.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "corporate_paraphrase",
+      "ungrounded_entities": [
+        "stakeholders",
+        "addressing"
+      ],
+      "timing_ms": 1123,
+      "usage": {
+        "input_tokens": 1283,
+        "output_tokens": 41
+      },
+      "cost_usd": 0.001488,
+      "error": null
+    },
+    {
+      "input_id": "catherine-photo-client-mgmt",
+      "source": "catherine_fixture",
+      "original_bullet": "Delivered photography for 30+ client events, managing creative execution and client communication",
+      "user_response": "I managed bookings and timelines for more than 30 events, coordinated directly with each client on deliverables, and handled all communication from the first quote to final delivery.",
+      "gap_context": {
+        "gap_shape": "experience",
+        "severity": "medium",
+        "bullet_shape": "hybrid"
+      },
+      "ai_draft": "Managed bookings, timelines, and client communication for 30+ events from initial quote through final delivery, coordinating deliverables and creative execution across concurrent projects.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "ungrounded_other",
+      "ungrounded_entities": [
+        "initial",
+        "across",
+        "concurrent"
+      ],
+      "timing_ms": 1156,
+      "usage": {
+        "input_tokens": 1298,
+        "output_tokens": 49
+      },
+      "cost_usd": 0.0015429999999999999,
+      "error": null
+    },
+    {
+      "input_id": "catherine-bpad-ops",
+      "source": "catherine_fixture",
+      "original_bullet": "Coordinated sponsorship, networking, and professional development events",
+      "user_response": "I planned logistics for about six events a semester, secured three corporate sponsors, and coordinated schedules across a 24-person team.",
+      "gap_context": {
+        "gap_shape": "experience",
+        "severity": "low",
+        "bullet_shape": "responsibility-heavy"
+      },
+      "ai_draft": "Executed logistics and scheduling for six events per semester while managing coordination across a 24-person team and securing corporate sponsorships.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "ungrounded_other",
+      "ungrounded_entities": [
+        "per"
+      ],
+      "timing_ms": 1199,
+      "usage": {
+        "input_tokens": 1281,
+        "output_tokens": 41
+      },
+      "cost_usd": 0.0014860000000000001,
+      "error": null
+    },
+    {
+      "input_id": "syn-hackathon-clean",
+      "source": "synthetic",
+      "original_bullet": "Helped organize a campus hackathon",
+      "user_response": "I recruited eight sponsors, managed a 5,000 dollar budget, and coordinated 120 participants over a weekend event.",
+      "gap_context": {
+        "gap_shape": "experience",
+        "severity": "high",
+        "bullet_shape": "achievement-heavy"
+      },
+      "ai_draft": "Organized campus hackathon event operations, managing $5,000 budget and coordinating 120 participants while recruiting eight sponsors.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "ungrounded_other",
+      "ungrounded_entities": [
+        "operations",
+        "$5,000"
+      ],
+      "timing_ms": 1055,
+      "usage": {
+        "input_tokens": 421,
+        "output_tokens": 42
+      },
+      "cost_usd": 0.000631,
+      "error": null
+    },
+    {
+      "input_id": "syn-barista-domain-mismatch",
+      "source": "synthetic",
+      "original_bullet": "Worked part-time as a barista at a campus coffee shop",
+      "user_response": "I handled cash, trained two new hires, and kept the morning rush organized.",
+      "gap_context": {
+        "gap_shape": "domain",
+        "severity": "high",
+        "bullet_shape": "responsibility-heavy"
+      },
+      "ai_draft": "Managed cash handling and coordinated team operations during high-volume periods; trained new staff to maintain service standards.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "ungrounded_other",
+      "ungrounded_entities": [
+        "operations",
+        "during",
+        "high-volume",
+        "periods",
+        "staff",
+        "maintain",
+        "service",
+        "standards"
+      ],
+      "timing_ms": 1172,
+      "usage": {
+        "input_tokens": 423,
+        "output_tokens": 37
+      },
+      "cost_usd": 0.000608,
+      "error": null
+    },
+    {
+      "input_id": "syn-social-analytics",
+      "source": "synthetic",
+      "original_bullet": "Created social media posts for the photography club",
+      "user_response": "I planned a content calendar, wrote captions, and tracked likes and follower growth week over week.",
+      "gap_context": {
+        "gap_shape": "skill",
+        "severity": "medium",
+        "bullet_shape": "responsibility-heavy"
+      },
+      "ai_draft": "Planned content calendar and wrote social media posts for photography club; tracked weekly engagement metrics including likes and follower growth.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "ungrounded_other",
+      "ungrounded_entities": [
+        "weekly",
+        "engagement",
+        "metrics",
+        "including"
+      ],
+      "timing_ms": 1138,
+      "usage": {
+        "input_tokens": 407,
+        "output_tokens": 38
+      },
+      "cost_usd": 0.000597,
+      "error": null
+    },
+    {
+      "input_id": "syn-foodbank-ops",
+      "source": "synthetic",
+      "original_bullet": "Volunteered at a local food bank",
+      "user_response": "I scheduled fifteen volunteers per shift, tracked inventory in a spreadsheet, and cut waste by reorganizing the storage area.",
+      "gap_context": {
+        "gap_shape": "experience",
+        "severity": "high",
+        "bullet_shape": "responsibility-heavy"
+      },
+      "ai_draft": "Coordinated volunteer scheduling and inventory tracking; optimized storage organization to reduce waste.",
+      "validator_result": "rejected",
+      "validator_reason": "ungrounded",
+      "rejection_category": "corporate_paraphrase",
+      "ungrounded_entities": [
+        "optimized",
+        "reduce"
+      ],
+      "timing_ms": 1279,
+      "usage": {
+        "input_tokens": 415,
+        "output_tokens": 31
+      },
+      "cost_usd": 0.00057,
+      "error": null
+    },
+    {
+      "input_id": "syn-chess-thin-response",
+      "source": "synthetic",
+      "original_bullet": "Member of the chess club",
+      "user_response": "I played chess sometimes with friends.",
+      "gap_context": {
+        "gap_shape": "domain",
+        "severity": "high",
+        "bullet_shape": "responsibility-heavy"
+      },
+      "ai_draft": null,
+      "validator_result": "rejected",
+      "validator_reason": "empty_drafts",
+      "rejection_category": "insufficient_evidence",
+      "ungrounded_entities": [],
+      "timing_ms": 1606,
+      "usage": {
+        "input_tokens": 394,
+        "output_tokens": 96
+      },
+      "cost_usd": 0.000874,
+      "error": null
+    }
+  ]
+}
