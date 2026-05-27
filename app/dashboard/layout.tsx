@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
 import { FRAMER_URL } from "../../lib/urls"
+import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
 
 // Sprint 3 (2026-05-08): conditional nav rendering by is_coach.
 //   • D2C: My Account (renamed from Overview), Job Tracker, ResumeRx
@@ -134,6 +135,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sending, setSending] = useState(false)
   const [fromFramer, setFromFramer] = useState(false)
   const [isCoach, setIsCoach] = useState(false)
+  // Beta-feedback slide-in (Phase 3). Mounted at layout level so it's
+  // reachable from any coach page; nav trigger wired in Phase 4.
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [authToken, setAuthToken] = useState<string | null>(null)
   // Dev-only password sign-in. Gated on NEXT_PUBLIC_DEV_AUTH=true (set in
   // .env.development.local; absent in prod .env.local). Without that env
   // var, the password field doesn't render and this state is unused.
@@ -232,6 +237,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token || sessionStorage.getItem("signal_handoff_token")
         if (!token) return
+        setAuthToken(token)
         const res = await fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) return
         const j = await res.json()
@@ -483,6 +489,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+      {/* Beta-feedback slide-in — coaches only. Trigger wired into the nav
+          in Phase 4; mounted here so it's reachable from any coach page. */}
+      {isCoach && (
+        <FeedbackSlideIn
+          open={feedbackOpen}
+          onClose={() => setFeedbackOpen(false)}
+          authToken={authToken ?? ""}
+        />
+      )}
     </div>
   )
 }

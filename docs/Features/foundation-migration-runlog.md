@@ -181,6 +181,16 @@ When KI-01 is finally addressed, both contributors should change in lockstep (th
 
 **Trigger to un-defer:** Easy win — call `findOrCreateSignalApplication` from the cache-hit branch with `jobfitRunId` omitted (no run_id to link on a cache hit). Behavior-equivalent. Worth doing as a follow-up clean-up ticket; small diff, removes ~60 lines of duplication. Watch out: cache-hit branch currently does NOT update existing rows' `signal_decision/score` — the refactor must preserve that (utility call with no FK + no JobFit-fields patch on the existing-found path).
 
+### KI-08 — Refactor AddNotePanel to use the generic SlideInPanel
+
+**Source:** Beta Feedback v0.1 Phase 3 — new generic `components/ui/SlideInPanel.tsx`.
+
+**Issue:** `app/dashboard/coach/clients/[clientId]/AddNotePanel.tsx` predates the generic slide-in shell and hardcodes its own backdrop + panel markup. Phase 3 introduced `SlideInPanel` (modeled visually + behaviorally on AddNotePanel) but deliberately left AddNotePanel untouched per FRD §6.5.0, so two slide-in implementations now coexist.
+
+**Why deferred:** Per FRD §6.5.0, refactoring AddNotePanel onto the shared shell was out of v0.1 scope — it would touch a working, beta-critical Notes surface and add regression risk to a feature-delivery phase. Short-term duplication accepted for zero-regression risk.
+
+**Trigger to un-defer:** A future cleanup pass (not tied to a beta milestone). Replace AddNotePanel's inline backdrop/panel with `<SlideInPanel title="Add a note">`, keeping its form body + footer. Before/after, verify the Notes tab still opens/closes (backdrop + Esc), saves, and dims-on-save exactly as today.
+
 ### KI-05 — 12-value lane CHECK list repeated three times in candidate_targeting
 
 **Source:** Stage 1a `candidate_targeting` migration.
@@ -1833,4 +1843,35 @@ Postmark template ID) for iteration speed during early beta.
 
 Next: Phase 3 — frontend slide-in component
 (`components/ui/SlideInPanel.tsx` + form + confirmation states).
+
+### 2026-05-27 — Beta Feedback v0.1 Phase 3 (frontend slide-in) shipped
+
+Phase 3 of the beta-feedback v0.1 feature shipped to dev. New
+generic `SlideInPanel` component (`components/ui/SlideInPanel.tsx`)
+modeled visually + behaviorally on the existing `AddNotePanel.tsx`
+(left untouched per FRD §6.5.0). Feedback-specific composition
+in `FeedbackSlideIn.tsx` + `FeedbackForm.tsx` handles the form
+state machine (form → submitting → confirmation/error), client-side
+validation matching server-side rules, and POST to the Phase 2
+endpoint.
+
+Mounted at the global dashboard layout level
+(`app/dashboard/layout.tsx`), gated on `isCoach`. Accessible from
+any coach page once Phase 4 wires the nav trigger; `feedbackOpen`
+state + `authToken` capture added to the layout in this phase.
+
+Smoke tests passed: 8 cases covering open/close (backdrop + Esc),
+conditional severity rendering (no stale selection), valid
+submissions of both issue_bug + enhancement variants (with
+reply_ok=true and false — row + email + missing Reply-To verified),
+client-side validation disabling Submit (short body; bug without
+severity), and the server-error banner path. A temporary smoke-test
+trigger in the layout was used during testing and removed before
+commit.
+
+Cleanup ticket filed (KI-08): refactor `AddNotePanel.tsx` to use
+the new `SlideInPanel` in a future cleanup pass.
+
+Next: Phase 4 — sidebar nav integration (add Feedback item to
+COACHES CENTER nav group, wire to setFeedbackOpen).
 
