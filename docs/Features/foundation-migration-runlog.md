@@ -1875,3 +1875,37 @@ the new `SlideInPanel` in a future cleanup pass.
 Next: Phase 4 — sidebar nav integration (add Feedback item to
 COACHES CENTER nav group, wire to setFeedbackOpen).
 
+### 2026-05-27 — Beta Feedback v0.1 Phase 4 (sidebar nav integration) shipped
+
+Phase 4 of the beta-feedback v0.1 feature shipped to dev. New
+"Feedback" item added to the bottom of the COACHES CENTER sidebar
+nav group. Structurally different from other nav items — rendered
+as `<button>` instead of `<a href>` per FRD §6.4 implementation note,
+since clicking opens the SlideInPanel from Phase 3 rather than
+navigating to a new route.
+
+Implemented via the existing config-driven nav (the nav lives inline
+in `app/dashboard/layout.tsx`, not a separate component): `NavItem`
+gained an optional `action` field; the renderer branches action items
+to a `<button>` that shares the exact link `itemStyle` (button
+defaults reset) so it's visually indistinguishable from the link
+items. No props plumbing was needed — `setFeedbackOpen` was already
+in layout scope from Phase 3.
+
+Nav item visible only to coaches (rendered from `COACH_NAV`, which is
+only used when `isCoach`). Click handler fires `setFeedbackOpen(true)`
+on the layout state established in Phase 3.
+
+Smoke tests passed (7 cases): Feedback item visible in COACHES CENTER
+below Required Actions, pixel-matched to other items; click opens the
+slide-in with no navigation or console errors; verified from Coach
+Home, My Clients, and an individual client view (present on every
+coach page by virtue of the shared layout mount); 3× open/close
+cycles reset cleanly; full submission lands end-to-end; non-coach
+visibility gate holds.
+
+Next: Phase 5 — end-to-end testing + cleanup of leftover dev
+`beta_feedback` smoke rows (6 rows from Phases 2-4, + 6 corresponding
+support@ emails already verified) + production schema promotion +
+prod `POSTMARK_FEEDBACK_FROM_EMAIL` env var addition.
+

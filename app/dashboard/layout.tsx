@@ -14,11 +14,14 @@ import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
 //     ResumeRx hidden from coach nav.
 
 type NavItem = {
-  href: string
+  // Optional: action items (e.g. Feedback) render as a <button> with no href.
+  href?: string
   label: string
   external?: boolean
   /** When true, also marks active for descendants (e.g. /clients/[id]) */
   matchPrefix?: boolean
+  /** Action items render as a <button> instead of an <a>; no navigation. */
+  action?: "feedback"
 }
 type NavGroup = { header: string; items: NavItem[] }
 
@@ -43,6 +46,9 @@ const COACH_NAV: NavGroup[] = [
       // matchPrefix so /dashboard/coach/prospects/[id] highlights "My Prospects"
       { href: "/dashboard/coach/prospects", label: "My Prospects", matchPrefix: true },
       { href: "/dashboard/coach/required-actions", label: "Required Actions" },
+      // Action item: opens the beta-feedback slide-in (Phase 4). Renders as a
+      // <button>, not an <a> — no navigation.
+      { label: "Feedback", action: "feedback" },
     ],
   },
   {
@@ -60,6 +66,7 @@ const EXTERNAL_NAV_ITEM: NavItem = {
 }
 
 function isItemActive(item: NavItem, pathname: string): boolean {
+  if (!item.href) return false
   if (pathname === item.href) return true
   if (item.matchPrefix && pathname.startsWith(item.href + "/")) return true
   return false
@@ -428,23 +435,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                   {group.items.map((item) => {
                     const active = isItemActive(item, pathname)
+                    const itemStyle: React.CSSProperties = {
+                      display: "block",
+                      padding: "10px 12px",
+                      marginBottom: 4,
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 900,
+                      textDecoration: "none",
+                      border: active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
+                      background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
+                      color: active ? T.WRN_ORANGE : T.TEXT,
+                    }
+                    // Action items (Feedback) open the slide-in instead of
+                    // navigating. Same nav-item style as links — just a <button>
+                    // with the button defaults reset to match an <a>.
+                    if (item.action === "feedback") {
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => setFeedbackOpen(true)}
+                          style={{
+                            ...itemStyle,
+                            width: "100%",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      )
+                    }
                     return (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        style={{
-                          display: "block",
-                          padding: "10px 12px",
-                          marginBottom: 4,
-                          borderRadius: 10,
-                          fontSize: 13,
-                          fontWeight: 900,
-                          textDecoration: "none",
-                          border: active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
-                          background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
-                          color: active ? T.WRN_ORANGE : T.TEXT,
-                        }}
-                      >
+                      <a key={item.href} href={item.href} style={itemStyle}>
                         {item.label}
                       </a>
                     )
