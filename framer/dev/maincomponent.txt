@@ -1575,7 +1575,14 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         if (!jrid) return
         if (positioningV2Loading) return
         if (positioningV2Result) return
-        runPositioningV2(jrid)
+        // DEV PARITY (2026-05-27): v2 auto-fire DISABLED so dev doesn't make
+        // background /api/positioning/v2/start calls that prod never makes.
+        // The dev Positioning tab dispatches to v1 (renderPositioning) — see
+        // framer/dev maincomponent.txt renderMainOutput. To re-enable v2:
+        // uncomment the next line AND flip the dispatcher back to
+        // renderPositioningV2(). See
+        // docs/dev-positioning-routing-investigation-2026-05-27.md
+        // runPositioningV2(jrid)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab, loadingJobFit, (jobFitResult as any)?.jobfit_run_id])
 
@@ -8467,7 +8474,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
     const renderMainOutput = () => {
         if (tab === "jobfit") return renderJobFit()
-        if (tab === "positioning") return renderPositioningV2()
+        if (tab === "positioning") return renderPositioning()
         if (tab === "coverletter") return renderCoverLetter()
         return renderNetworking()
     }
