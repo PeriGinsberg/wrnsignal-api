@@ -197,6 +197,8 @@ When KI-01 is finally addressed, both contributors should change in lockstep (th
 
 - **KI-12 (2026-05-27): Framer dev vs prod cover-letter call divergence on persona_id field — dev passes it, prod does not. Pre-existing drift, out of scope for the positioning wiring fix. Worth tracking for future Framer-bundle alignment work.**
 
+- **KI-13 (2026-05-28): JobFit V5 positioning_strategy field never emitted to result_json on prod. 0/200 recent runs have it populated. Prompt asks for it (lines 189-192, 229), parser validates it (line 459), assignment sets it (line 484) — yet always missing. Means Flavor 2 bullet eval only fires when risk_structured is non-empty, so Apply/Priority Apply verdicts fall back to keyword injection. Methodology integrity issue: better JobFit verdicts currently produce worse positioning quality. Needs focused diagnosis + fix in next session. Surface area: app/api/jobfit/bulletGeneratorV5.ts lines 459-463 and 484. Diagnostic findings: docs/positioning-prod-diagnostic-2026-05-28.md.**
+
 ### KI-05 — 12-value lane CHECK list repeated three times in candidate_targeting
 
 **Source:** Stage 1a `candidate_targeting` migration.
