@@ -1,18 +1,25 @@
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
-import OpenAI from "openai"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getCandidateTargeting } from "@/lib/candidateTargeting"
+import { invokeClaude } from "@/lib/positioning/v2/phase2/anthropicClient"
+import { centsForUsage } from "@/lib/positioning/v2/phase2/costPolicy"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
 const MISSING = "__MISSING__"
-const NETWORKING_PROMPT_VERSION = "networking_v5_context_plumbing_2026_05_27"
-const MODEL_ID = "gpt-4.1-mini"
+const NETWORKING_PROMPT_VERSION = "networking_v6_haiku_2026_05_28"
+const MODEL_ID = "claude-haiku-4-5-20251001"
+// Output is 3 full moves × messages/emails/openers/queries — empirical
+// worst case ≈ 3500-4000 output tokens. 6000 gives comfortable headroom
+// well under Haiku 4.5's 8192 cap.
+const MAX_TOKENS_GENERATION = 6000
+// Low temp for structured-JSON adherence; some warmth retained for message tone.
+const TEMPERATURE_MAIN = 0.5
+// Repair is a deterministic schema-rewrite — greedy decoding.
+const TEMPERATURE_REPAIR = 0.0
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -58,32 +65,6 @@ function safeJsonParse(raw: string) {
   } catch {
     return null
   }
-}
-
-function extractOutputText(resp: any): string {
-  if (typeof resp?.output_text === "string" && resp.output_text.trim()) {
-    return resp.output_text
-  }
-
-  const output = resp?.output
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      const content = item?.content
-      if (Array.isArray(content)) {
-        for (const c of content) {
-          if (
-            c?.type === "output_text" &&
-            typeof c?.text === "string" &&
-            c.text.trim()
-          ) {
-            return c.text
-          }
-        }
-      }
-    }
-  }
-
-  return ""
 }
 
 function normalize(value: any): any {
@@ -414,16 +395,18 @@ RAW:
 ${raw}
   `.trim()
 
-  const resp = await client.responses.create({
-    model: MODEL_ID,
-    input: [
-      { role: "system", content: repairSystem },
-      { role: "user", content: repairUser },
-    ],
+  const repairResult = await invokeClaude({
+    systemPrompt: repairSystem,
+    userPrompt: repairUser,
+    maxTokens: MAX_TOKENS_GENERATION,
+    temperature: TEMPERATURE_REPAIR,
   })
 
-  const repairedText = extractOutputText(resp)
-  return safeJsonParse(repairedText)
+  console.log(
+    `[networking] repair generation cost cents=${centsForUsage(repairResult.usage)} input_tokens=${repairResult.usage.input_tokens} output_tokens=${repairResult.usage.output_tokens} latency_ms=${repairResult.latencyMs}`
+  )
+
+  return safeJsonParse(repairResult.text)
 }
 
 export async function OPTIONS(req: Request) {
@@ -1025,15 +1008,18 @@ Exactly 3 moves.
 Make the messages feel specifically grounded in this user and this role.
     `.trim()
 
-    const resp = await client.responses.create({
-      model: MODEL_ID,
-      input: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
+    const aiResult = await invokeClaude({
+      systemPrompt: system,
+      userPrompt: user,
+      maxTokens: MAX_TOKENS_GENERATION,
+      temperature: TEMPERATURE_MAIN,
     })
 
-    const raw = extractOutputText(resp)
+    console.log(
+      `[networking] generation cost cents=${centsForUsage(aiResult.usage)} input_tokens=${aiResult.usage.input_tokens} output_tokens=${aiResult.usage.output_tokens} latency_ms=${aiResult.latencyMs}`
+    )
+
+    const raw = aiResult.text
     let parsed = safeJsonParse(raw)
 
     if (!parsed) {
