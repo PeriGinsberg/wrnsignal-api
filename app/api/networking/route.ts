@@ -5,12 +5,13 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getCandidateTargeting } from "@/lib/candidateTargeting"
 import { invokeClaude } from "@/lib/positioning/v2/phase2/anthropicClient"
 import { centsForUsage } from "@/lib/positioning/v2/phase2/costPolicy"
+import { validatePlan } from "@/lib/networking/voiceValidator"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const MISSING = "__MISSING__"
-const NETWORKING_PROMPT_VERSION = "networking_v7_lean_voice_2026_05_28"
+const NETWORKING_PROMPT_VERSION = "networking_v8_validated_2026_05_28"
 const MODEL_ID = "claude-haiku-4-5-20251001"
 // Output is 3 full moves × messages/emails/openers/queries — empirical
 // worst case ≈ 3500-4000 output tokens. 6000 gives comfortable headroom
@@ -18,6 +19,8 @@ const MODEL_ID = "claude-haiku-4-5-20251001"
 const MAX_TOKENS_GENERATION = 6000
 // Low temp for structured-JSON adherence; some warmth retained for message tone.
 const TEMPERATURE_MAIN = 0.5
+// Higher temp on validator-triggered regenerate — matches Phase 2 retry pattern.
+const TEMPERATURE_MAIN_RETRY = 0.7
 // Repair is a deterministic schema-rewrite — greedy decoding.
 const TEMPERATURE_REPAIR = 0.0
 
@@ -791,7 +794,55 @@ Make the messages feel specifically grounded in this user and this role.
       parsed = await repairToJson(raw, applicationState)
     }
 
-    const plan = normalizePlan(parsed, applicationState)
+    let plan = normalizePlan(parsed, applicationState)
+
+    // ── Shape-and-voice validation (v8) ───────────────────────────────
+    // On validation failure: regenerate ONCE at higher temperature, parse +
+    // normalize the retry, validate again. If the retry still fails we
+    // accept it as best-effort (never block the user) and log a structured
+    // violation marker per failed check so we can monitor cap drift.
+    let validation = validatePlan(plan)
+    if (!validation.ok) {
+      console.log(
+        `[networking] validation failed attempt=1 violations=${validation.violations.length}`
+      )
+      for (const v of validation.violations) {
+        console.log(
+          `[networking] validation_violation attempt=1 move=${v.move_id} field=${v.field} reason=${v.reason} detail="${v.detail}"`
+        )
+      }
+
+      const retryResult = await invokeClaude({
+        systemPrompt: system,
+        userPrompt: user,
+        maxTokens: MAX_TOKENS_GENERATION,
+        temperature: TEMPERATURE_MAIN_RETRY,
+      })
+
+      console.log(
+        `[networking] retry generation cost cents=${centsForUsage(retryResult.usage)} input_tokens=${retryResult.usage.input_tokens} output_tokens=${retryResult.usage.output_tokens} latency_ms=${retryResult.latencyMs}`
+      )
+
+      const retryRaw = retryResult.text
+      let retryParsed = safeJsonParse(retryRaw)
+      if (!retryParsed) {
+        retryParsed = await repairToJson(retryRaw, applicationState)
+      }
+      plan = normalizePlan(retryParsed, applicationState)
+
+      validation = validatePlan(plan)
+      if (validation.ok) {
+        console.log(`[networking] retry validation passed`)
+      } else {
+        // Best-effort accept. Per task spec: never block the user; log so
+        // we can monitor cap drift in production.
+        for (const v of validation.violations) {
+          console.log(
+            `[networking] validation_failed_after_retry move=${v.move_id} field=${v.field} reason=${v.reason} detail="${v.detail}"`
+          )
+        }
+      }
+    }
 
     const { error: insertErr } = await supabaseAdmin
       .from("networking_runs")
