@@ -2138,3 +2138,44 @@ Architectural call: docs/positioning-v2-phase1-readiness-2026-05-27.md (enhance-
 Prior SHA: 0af46843
 Next: Commit 2 (frontend pass-through, 3 client surfaces) after Smoke 2 passes.
 
+### 2026-05-27 — Positioning v1 bullet eval: frontend pass-through (Flavor 2, Commit 2 — wiring)
+
+Wired jobfit_result through to /api/positioning across the client surfaces,
+activating Commit 1's (d0bbfb13) JobFit-informed bullet eval. The frontend
+already held jobFitResult in state (used for the cover letter); this threads it
+to the positioning call — same pattern as 0af46843 (cover-letter wiring).
+
+Client surfaces updated:
+- framer/dev/maincomponent.txt — runPositioning body + jobfit_result (this commit)
+- framer/prod/maincomponent.txt — runPositioning body + jobfit_result (this commit)
+- signal-mobile/lib/api.ts — runPositioning gains a jobfit_result param
+- signal-mobile/app/(tabs)/positioning.tsx — pulls jobFitResult from useJob(),
+  passes it, adds to deps
+
+Commit split (repo reality): signal-mobile/ is gitignored, so the two mobile
+files ship via the mobile pipeline (EAS) separately, NOT in this repo commit.
+This commit carries the two tracked Framer bundles + this runlog. Mobile edits
+are on disk and type-clean (no new tsc errors in the edited files).
+
+Full chain VERIFIED end-to-end (Smoke 1 + Smoke 3 on dev: Framer-dev paste →
+staging backend d0bbfb13):
+- Smoke 1 (JobFit → Positioning) on the Serve Robotics Operations Coordinator
+  JD: 1 substantive bullet edit (FHIA job-costing → outcome-led "70%+ efficiency"
+  reframe). Sentence-level transformation, fully grounded in the original bullet;
+  led with the outcome JobFit recommended + the "real bottleneck" framing from
+  positioning_strategy.reframe. Skip behavior worked — only the bullet with
+  genuine JobFit relevance was rewritten, others left alone. (One data point on
+  edit count for the new skip behavior — within expected range, not a trend yet.)
+- Smoke 3 (→ Cover Letter): consumed the new substantive bullet cleanly; opened
+  with the strongest JobFit strength (Metrics Reporting → COO A/R report),
+  addressed the Location Mismatch risk via cover_letter_strategy; quality at
+  least equivalent to prior baselines.
+
+This completes the bullet eval enhancement (Flavor 2): production v1 positioning
+now produces substantive, JobFit-informed, grounded bullet rewrites when a JobFit
+signal is present, falling back to keyword injection otherwise. The orphaned
+positioning_strategy field is finally consumed end-to-end.
+
+Source: docs/positioning-coverletter-current-state-investigation-2026-05-27.md
+Prior SHA: d0bbfb13 (Commit 1 — backend)
+
