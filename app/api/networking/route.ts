@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import OpenAI from "openai"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { getCandidateTargeting } from "@/lib/candidateTargeting"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic"
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MISSING = "__MISSING__"
-const NETWORKING_PROMPT_VERSION = "networking_v4_2026_03_16"
+const NETWORKING_PROMPT_VERSION = "networking_v5_context_plumbing_2026_05_27"
 const MODEL_ID = "gpt-4.1-mini"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -436,6 +437,7 @@ export async function POST(req: Request) {
 
     let profileId = ""
     let profileText = ""
+    let resumeText = ""
 
     if (bypass) {
       profileText = String(body?.profileText || body?.profile || "").trim()
@@ -456,27 +458,158 @@ export async function POST(req: Request) {
       const authed = await getAuthedProfileText(req)
       profileId = authed.profileId
       profileText = authed.profileText
+      resumeText = authed.resumeText || ""
     }
 
     const profile = profileText
     const job = String(body?.job || "").trim()
     const applicationState = detectApplicationState(body?.application_state)
 
-    const jobfitContext = body?.jobfit_context ?? {}
-    const positioningContext = body?.positioning_context ?? {}
+    // networkingContext is not yet plumbed from any client; preserved as {}.
     const networkingContext = body?.networking_context ?? {}
 
     if (!job) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
+    // ── Context plumbing (networking_v5) ─────────────────────────────────
+    // Replaces the always-{} jobfit/positioning context with real data
+    // looked up by this profile + this JD. PROMPT INSTRUCTIONS unchanged in
+    // this commit — we only feed the existing JOBFIT/POSITIONING context
+    // slots and add RESUME + CANDIDATE TARGETING blocks. Match rules:
+    //   - jobfit_runs / positioning_runs_v2: exact job_description text match
+    //     (both store the trimmed JD; `job` is trimmed above). No recency
+    //     fallback for these — a miss passes {}.
+    //   - positioning_runs (v1): has no job_description column, so latest
+    //     within the last 24h only (tight window to limit wrong-JD matches).
+    // All scoped to this profile, newest first, limit 1.
+
+    // JobFit context — exact JD match on jobfit_runs.
+    let jobfitContext: any = {}
+    {
+      const { data: jfRow } = await supabaseAdmin
+        .from("jobfit_runs")
+        .select("id, verdict, result_json, created_at")
+        .eq("client_profile_id", profileId)
+        .eq("job_description", job)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (jfRow?.result_json) {
+        const rj: any = jfRow.result_json
+        const js: any = rj?.job_signals ?? {}
+        jobfitContext = {
+          verdict:
+            typeof rj?.decision === "string" && rj.decision.trim()
+              ? rj.decision.trim()
+              : asTrimmedString(jfRow.verdict),
+          score: typeof rj?.score === "number" ? rj.score : null,
+          risks: Array.isArray(rj?.risk_structured)
+            ? rj.risk_structured
+            : Array.isArray(rj?.risk)
+              ? rj.risk
+              : rj?.risks ?? [],
+          why: Array.isArray(rj?.why_structured)
+            ? rj.why_structured
+            : Array.isArray(rj?.why)
+              ? rj.why
+              : rj?.whys ?? [],
+          job_signals: {
+            companyName: asTrimmedString(js?.companyName),
+            jobTitle: asTrimmedString(js?.jobTitle),
+            jobFamily: asTrimmedString(js?.jobFamily),
+          },
+        }
+      } else {
+        console.log(
+          `[networking] no jobfit context found for profileId=${profileId} (no jobfit_runs row matching this JD)`
+        )
+      }
+    }
+
+    // Positioning context — v2 first (exact JD match), else v1 (24h recency).
+    let positioningContext: any = {}
+    {
+      const { data: v2Row } = await supabaseAdmin
+        .from("positioning_runs_v2")
+        .select("case_assigned, case_reasoning, result_json, created_at")
+        .eq("profile_id", profileId)
+        .eq("job_description", job)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (v2Row) {
+        const rj: any = (v2Row as any).result_json ?? {}
+        positioningContext = {
+          source: "v2",
+          case_assigned: asTrimmedString((v2Row as any).case_assigned),
+          case_reasoning: asTrimmedString((v2Row as any).case_reasoning),
+          case_specific: rj?.case_specific ?? null,
+          workflow_preview: rj?.workflow_preview ?? null,
+        }
+      } else {
+        const cutoffIso = new Date(
+          Date.now() - 24 * 60 * 60 * 1000
+        ).toISOString()
+        const { data: v1Row } = await supabaseAdmin
+          .from("positioning_runs")
+          .select("result_json, created_at")
+          .eq("client_profile_id", profileId)
+          .gte("created_at", cutoffIso)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if ((v1Row as any)?.result_json) {
+          const rj: any = (v1Row as any).result_json
+          positioningContext = {
+            source: "v1",
+            role_angle: rj?.role_angle ?? null,
+            summary_statement: rj?.summary_statement ?? null,
+            keyword_analysis: rj?.keyword_analysis ?? null,
+          }
+          console.log(
+            `[networking] v1 positioning recency-fallback used, profileId=${profileId}; possible wrong-JD match if user ran multiple JDs today`
+          )
+        } else {
+          console.log(
+            `[networking] no positioning context found for profileId=${profileId}`
+          )
+        }
+      }
+    }
+
+    // Candidate targeting — by profile_id (UNIQUE → at most one row).
+    let candidateTargeting: any = {}
+    {
+      const { row: ct } = await getCandidateTargeting(supabaseAdmin, profileId)
+      if (ct) {
+        candidateTargeting = {
+          primary_lane: ct.primary_lane ?? null,
+          primary_sublane: ct.primary_sublane ?? null,
+          secondary_lane_1: ct.secondary_lane_1 ?? null,
+          secondary_lane_2: ct.secondary_lane_2 ?? null,
+          career_stage: ct.career_stage ?? null,
+          primary_other_description: ct.primary_other_description ?? null,
+        }
+      } else {
+        console.log(
+          `[networking] no candidate_targeting found for profileId=${profileId}`
+        )
+      }
+    }
+
     const fingerprintPayload = {
       job: { text: job || MISSING },
-      profile: { id: profileId || MISSING, text: profileText || MISSING },
+      profile: {
+        id: profileId || MISSING,
+        text: profileText || MISSING,
+        resume: resumeText || MISSING,
+      },
       application_state: applicationState || MISSING,
       jobfit_context: jobfitContext || MISSING,
       positioning_context: positioningContext || MISSING,
       networking_context: networkingContext || MISSING,
+      candidate_targeting: candidateTargeting || MISSING,
       system: {
         networking_prompt_version: NETWORKING_PROMPT_VERSION,
         model_id: MODEL_ID,
@@ -864,6 +997,9 @@ OUTPUT QUALITY BAR:
 CLIENT PROFILE:
 ${profile}
 
+RESUME:
+${resumeText || "(no resume on file for this user)"}
+
 JOB DESCRIPTION:
 ${job}
 
@@ -875,6 +1011,9 @@ ${JSON.stringify(jobfitContext, null, 2)}
 
 POSITIONING CONTEXT:
 ${JSON.stringify(positioningContext, null, 2)}
+
+CANDIDATE TARGETING:
+${JSON.stringify(candidateTargeting, null, 2)}
 
 NETWORKING CONTEXT:
 ${JSON.stringify(networkingContext, null, 2)}
