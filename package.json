@@ -7,7 +7,8 @@
     "build": "node ./node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "eslint",
-    "jobfit:regress": "npx tsx scripts/jobfit-regress.ts"
+    "jobfit:regress": "npx tsx scripts/jobfit-regress.ts",
+    "calendar:verify": "npx tsx scripts/verify-microsoft-graph.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
