@@ -4,6 +4,10 @@ import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { getCandidateTargeting } from "@/lib/candidateTargeting"
+import { extractGraduationDate } from "@/lib/resume/extractGraduationDate"
+import { computeStatus, type CandidateStatus } from "@/lib/profile/computeStatus"
+import { centsForUsage } from "@/lib/positioning/v2/phase2/costPolicy"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -11,7 +15,10 @@ export const dynamic = "force-dynamic"
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MISSING = "__MISSING__"
-const COVERLETTER_PROMPT_VERSION = "coverletter_v4b_2026_04_strategy_as_topic"
+// Bumped 2026-05-29 — wrong-status fix. The version bump alone busts
+// every existing v4b cache entry so the next call exercises the new
+// CANDIDATE STATUS branching path.
+const COVERLETTER_PROMPT_VERSION = "coverletter_v5_status_verdict_2026_05_29"
 const MODEL_ID = "current"
 
 // Supabase (service role)
@@ -312,6 +319,29 @@ function summarizePositioning(positioning: any) {
   return { role_angle, summary_statement, resume_bullet_edits: edits, keyword_analysis }
 }
 
+// ── Wrong-status fix (2026-05-29): the CANDIDATE STATUS verdict block ───────
+// injected into the user prompt. Keep this TIGHT — verdict + the
+// load-bearing banned/required framings. Full rule enumeration lives in
+// the system prompt's CANDIDATE STATUS BRANCHING section. The user-prompt
+// block is the per-call hard fact; the system prompt is the generic
+// branch logic.
+function buildCandidateStatusBlock(status: CandidateStatus): string {
+  if (status === "graduated") {
+    return `CANDIDATE STATUS: graduated (authoritative — code-computed from grad date; do not reason about dates yourself).
+FORBIDDEN throughout the letter: "student" (self-description), "senior at", "junior at", "studying X at" (present-tense), "graduating in", "graduating from", "expecting to graduate"; plus any present-tense or future use of "graduate" as a verb ("graduating", "about to graduate", "will graduate" — past-tense "graduated" is required).
+REQUIRED: past-tense framing — "recent graduate from [school]", "graduated", "completed my [degree]", "earned my [degree]".
+See system prompt CANDIDATE STATUS BRANCHING for full rules.`
+  }
+  if (status === "student") {
+    return `CANDIDATE STATUS: student (authoritative — code-computed from grad date; do not reason about dates yourself).
+Present-tense student framing is appropriate. Position the candidate as a current student of [degree] at [university] in the opener.
+See system prompt CANDIDATE STATUS BRANCHING for full rules.`
+  }
+  return `CANDIDATE STATUS: unknown (no structured signal extracted; the grad date could not be parsed and no career_stage was on file).
+Infer the lifecycle position from resume dates and degree language. Default to past-tense framing if the most recent graduation date is in the past relative to today.
+See system prompt CANDIDATE STATUS BRANCHING for full rules.`
+}
+
 // ── NEW: extract cover_letter_strategy from V5 jobfit result ─────────────────
 function extractCoverLetterStrategy(jobfitResult: any): string {
   const s = jobfitResult?.cover_letter_strategy
@@ -327,7 +357,7 @@ function extractCoverLetterStrategy(jobfitResult: any): string {
       `  → This is the TOPIC for your opening paragraph, not the literal first sentence.`
     )
     parts.push(
-      `  → First: briefly position who the candidate is (student graduating, early-career professional, etc.) and name the role/company. THEN weave in this topic as the connection point.`
+      `  → First: position who the candidate is per CANDIDATE STATUS above (CANDIDATE STATUS is the only source of truth on lifecycle position) and name the role/company. THEN weave in this topic as the connection point.`
     )
     parts.push(
       `  → Do NOT start the letter with a raw experience statement. Start with context, then connect.`
@@ -372,6 +402,27 @@ export async function POST(req: Request) {
       resumeText,
       activePersonaId,
     } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
+
+    // Wrong-status fix (2026-05-29): compute student-vs-graduated verdict
+    // from gradDate (extractor → Haiku) + candidate_targeting.career_stage
+    // fallback. Layer 1 (gradDate) wins over Layer 2 (career_stage), so a
+    // stale "mid_career" career_stage on a current student/recent grad is
+    // overridden by the real date in the resume. The verdict is injected
+    // into the user prompt as an authoritative hard fact; the system
+    // prompt's CANDIDATE STATUS BRANCHING does the framing.
+    const [extractionResult, targetingResult] = await Promise.all([
+      extractGraduationDate({ resumeText }),
+      getCandidateTargeting(supabaseAdmin, profileId),
+    ])
+
+    const candidateStatus: CandidateStatus = computeStatus({
+      gradDate: extractionResult.result,
+      careerStage: targetingResult.row?.career_stage ?? null,
+    })
+
+    console.log(
+      `[coverletter] grad date extraction cost cents=${centsForUsage(extractionResult.usage)} input_tokens=${extractionResult.usage.input_tokens} output_tokens=${extractionResult.usage.output_tokens} latency_ms=${extractionResult.latencyMs} extracted_raw=${JSON.stringify(extractionResult.result?.raw ?? null)} computed_status=${candidateStatus} career_stage=${targetingResult.row?.career_stage ?? "null"}`
+    )
 
     // Accept jobfit_result from the frontend (sent alongside job)
     const jobfitResult = body?.jobfit_result ?? null
@@ -438,6 +489,15 @@ export async function POST(req: Request) {
         // Include strategy in fingerprint so a re-run with V5 data isn't cached from a V4 run
         cover_letter_strategy: jobfitResult?.cover_letter_strategy || MISSING,
       },
+      // Wrong-status fix: computed verdict + the fallback signal. Edits to
+      // the resume that change the extracted grad date bust the cache; a
+      // change to candidate_targeting.career_stage busts the cache. The
+      // version bump alone (COVERLETTER_PROMPT_VERSION) busts every
+      // existing v4b entry.
+      candidate_status: candidateStatus,
+      candidate_targeting: {
+        career_stage: targetingResult.row?.career_stage ?? MISSING,
+      },
       system: {
         coverletter_prompt_version: COVERLETTER_PROMPT_VERSION,
         model_id: MODEL_ID,
@@ -484,9 +544,39 @@ STYLE RULES (DEFAULT):
 - 220-320 words max.
 - Build ONE clear job-specific story. Do not wander.
 
+CANDIDATE STATUS BRANCHING (HARD — applies to the WHOLE letter, not just the opener):
+
+A CANDIDATE STATUS value is provided in the user prompt with one of three values: "student", "graduated", or "unknown". This value is computed by code from the candidate's graduation date and is AUTHORITATIVE — do not reason about dates yourself; CANDIDATE STATUS is the only source of truth on lifecycle position. The candidate's lifecycle position must match this value in every paragraph of the letter, not just the opener.
+
+If CANDIDATE STATUS = "student":
+- The candidate is currently enrolled. Present-tense student framing is appropriate.
+- Position them as a current student of [degree] at [university] in the opener and maintain that frame across the letter.
+- Acceptable framings: "current [year-level] at [university] studying [major]", "as a [major] student at [university]", "studying [X] at [university]".
+
+If CANDIDATE STATUS = "graduated":
+- The candidate has ALREADY completed their degree. Past-tense framing is REQUIRED across the entire letter.
+- FORBIDDEN ANYWHERE IN THE LETTER (not just the opener):
+  * "student" as a self-description of the candidate
+  * "senior at [school]", "junior at [school]", "sophomore at [school]", "freshman at [school]"
+  * "currently studying", "currently a [year] at [school]"
+  * "studying [X] at [school]" in present tense
+  * "graduating in", "graduating from", "graduating this [month/year]", "expecting to graduate", "will graduate"
+  * any future-tense or present-progressive use of "graduate" as a verb referring to the candidate (e.g. "graduating", "about to graduate", "set to graduate", "soon to graduate", "will graduate"). Past-tense use ("graduated", "having graduated", "after graduating") is required and remains acceptable.
+  * any present-continuous verb construction implying ongoing study (e.g. "while completing my degree", "as I finish my [X]")
+- REQUIRED framings — use one in the opener and maintain past-tense register throughout the letter:
+  * "As a recent [degree] graduate from [university]"
+  * "As a recent graduate from [university] with [degree/honors]"
+  * "After completing my [degree] at [university]"
+  * "Having recently graduated from [university] with [degree]"
+  * "I recently earned my [degree] from [university]"
+  * Past-tense verbs only when referring to the candidate's education: "graduated", "completed", "earned", "received my [degree]"
+
+If CANDIDATE STATUS = "unknown":
+- No structured signal was extractable for this candidate. Read the resume carefully and infer their lifecycle position from dates and degree language.
+- If the most recent graduation date appears to be in the past relative to today, default to the "graduated" framing rules above. If a current or future grad date appears with no degree-completion language, default to "student".
+
 OPENING RULE (HARD):
-- The first paragraph establishes WHO the person is in relation to THIS role, then connects to WHY this specific company/role matters to them.
-- For students or recent grads: lead with their context (e.g. "As a senior at NYU studying finance with a concentration in real estate...") then connect to the role.
+- The first paragraph establishes WHO the person is in relation to THIS role (per CANDIDATE STATUS BRANCHING above), then connects to WHY this specific company/role matters to them.
 - For career changers: briefly establish the pivot context before connecting to the role.
 - For experienced professionals applying in their field: lead directly with the connection to the role/company/mission — no self-introduction needed.
 - The role, company, or function MUST appear within the first two sentences. Do not bury what job this is for.
@@ -536,6 +626,8 @@ Return VALID JSON ONLY:
     const user = `
 CANDIDATE INTAKE (verbatim — target roles, locations, timeline, etc.):
 ${profileText}
+
+${buildCandidateStatusBlock(candidateStatus)}
 
 RESUME (verbatim):
 ${resumeText}
