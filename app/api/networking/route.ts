@@ -6,12 +6,20 @@ import { getCandidateTargeting } from "@/lib/candidateTargeting"
 import { invokeClaude } from "@/lib/positioning/v2/phase2/anthropicClient"
 import { centsForUsage } from "@/lib/positioning/v2/phase2/costPolicy"
 import { validatePlan } from "@/lib/networking/voiceValidator"
+import { extractGraduationDate } from "@/lib/resume/extractGraduationDate"
+import { computeStatus, type CandidateStatus } from "@/lib/profile/computeStatus"
+import type { CareerStage } from "@/lib/laneTaxonomy"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const MISSING = "__MISSING__"
-const NETWORKING_PROMPT_VERSION = "networking_v8_validated_2026_05_28"
+// Bumped 2026-05-29 — wrong-status fix. CANDIDATE STATUS verdict is now
+// injected into framing/strategy via a code-computed grad-date result;
+// the v8 voiceValidator surface is unchanged (validator inspects only
+// user-facing message fields, not framing/strategy). The version bump
+// alone busts every existing v8 cache entry.
+const NETWORKING_PROMPT_VERSION = "networking_v9_status_verdict_2026_05_29"
 const MODEL_ID = "claude-haiku-4-5-20251001"
 // Output is 3 full moves × messages/emails/openers/queries — empirical
 // worst case ≈ 3500-4000 output tokens. 6000 gives comfortable headroom
@@ -412,6 +420,36 @@ ${raw}
   return safeJsonParse(repairResult.text)
 }
 
+// ── Wrong-status fix (2026-05-29): the CANDIDATE STATUS verdict block ───────
+// injected into the user prompt. Mirrors the cover letter helper pattern
+// (Commit 3) but adapted for networking's JSON output — the load-bearing
+// fields where status leaks are framing, strategy, why_this_target. The
+// v8 voiceValidator does not inspect these fields, so the prompt rule is
+// the only enforcement. Message fields (linkedin_message, email_body,
+// connection_request, follow_up_message) follow the v8 exemplar shape
+// and don't naturally assert status; the FORBIDDEN scope here is
+// defense-in-depth.
+//
+// Copy-pasted (not imported) from coverletter/route.ts because cross-route
+// imports between Next.js App Router files are architecturally awkward
+// and the cover letter helper has prose-oriented wording ("throughout
+// the letter") that doesn't fit networking. Shared-lib refactor is
+// deferred — separate hardening, not this commit.
+function buildCandidateStatusBlock(status: CandidateStatus): string {
+  if (status === "graduated") {
+    return `CANDIDATE STATUS: graduated (authoritative — code-computed from grad date; do not reason about dates yourself).
+Use this for framing and strategy.
+FORBIDDEN anywhere in the output (framing, strategy, why_this_target, conversation_openers, or message fields): "student" (self-description), "senior at", "junior at", "studying X at" (present-tense), "graduating in", "graduating from", "expecting to graduate"; plus any present-tense or future use of "graduate" as a verb ("graduating", "about to graduate", "set to graduate", "soon to graduate", "will graduate" — past-tense "graduated" is required).
+REQUIRED past-tense framing when referring to the candidate's education: "recent graduate from [school]", "graduated", "completed my [degree]", "earned my [degree]".`
+  }
+  if (status === "student") {
+    return `CANDIDATE STATUS: student (authoritative — code-computed from grad date; do not reason about dates yourself).
+Use this for framing and strategy. Present-tense student framing is appropriate ("current [year-level] at [university] studying [major]").`
+  }
+  return `CANDIDATE STATUS: unknown (no structured signal extracted; the grad date could not be parsed and no career_stage was on file).
+Infer the lifecycle position from resume dates and degree language. Default to past-tense framing if the most recent grad date is in the past relative to today.`
+}
+
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -566,6 +604,7 @@ export async function POST(req: Request) {
 
     // Candidate targeting — by profile_id (UNIQUE → at most one row).
     let candidateTargeting: any = {}
+    let candidateCareerStage: CareerStage | null = null
     {
       const { row: ct } = await getCandidateTargeting(supabaseAdmin, profileId)
       if (ct) {
@@ -577,12 +616,30 @@ export async function POST(req: Request) {
           career_stage: ct.career_stage ?? null,
           primary_other_description: ct.primary_other_description ?? null,
         }
+        candidateCareerStage = ct.career_stage
       } else {
         console.log(
           `[networking] no candidate_targeting found for profileId=${profileId}`
         )
       }
     }
+
+    // Wrong-status fix (2026-05-29): compute student-vs-graduated verdict
+    // from gradDate (extractor → Haiku) + candidate_targeting.career_stage
+    // fallback. Layer 1 (gradDate) wins over Layer 2 (career_stage), so a
+    // stale "mid_career" is overridden by the real date in the resume.
+    // The verdict is injected into the user prompt; the system prompt's
+    // USE CONTEXT FOR STRATEGY section tells the model it's authoritative
+    // for framing / strategy.
+    const extractionResult = await extractGraduationDate({ resumeText })
+    const candidateStatus: CandidateStatus = computeStatus({
+      gradDate: extractionResult.result,
+      careerStage: candidateCareerStage,
+    })
+
+    console.log(
+      `[networking] grad date extraction cost cents=${centsForUsage(extractionResult.usage)} input_tokens=${extractionResult.usage.input_tokens} output_tokens=${extractionResult.usage.output_tokens} latency_ms=${extractionResult.latencyMs} extracted_raw=${JSON.stringify(extractionResult.result?.raw ?? null)} computed_status=${candidateStatus} career_stage=${candidateCareerStage ?? "null"}`
+    )
 
     const fingerprintPayload = {
       job: { text: job || MISSING },
@@ -596,6 +653,10 @@ export async function POST(req: Request) {
       positioning_context: positioningContext || MISSING,
       networking_context: networkingContext || MISSING,
       candidate_targeting: candidateTargeting || MISSING,
+      // Wrong-status fix: computed verdict in the fingerprint so resume
+      // edits that change the extracted grad date or a career_stage
+      // change bust the cache. Version bump alone busts every v8 entry.
+      candidate_status: candidateStatus,
       system: {
         networking_prompt_version: NETWORKING_PROMPT_VERSION,
         model_id: MODEL_ID,
@@ -711,6 +772,8 @@ The provided CLIENT PROFILE, RESUME, JOBFIT CONTEXT, POSITIONING CONTEXT, and CA
 
 They do NOT exist to populate the cold message body. The cold message stays in the exemplar shape.
 
+When CANDIDATE STATUS is provided in the user prompt, treat it as authoritative for framing, strategy, and any field that asserts the candidate's lifecycle position — do not infer student vs graduated from the resume. The forbidden/required framings are listed in the CANDIDATE STATUS block of the user prompt.
+
 YOU MUST RETURN JSON ONLY:
 {
   "framing": string,
@@ -747,6 +810,8 @@ OUTPUT QUALITY BAR: the student should read each message and think "I would actu
     const user = `
 CLIENT PROFILE:
 ${profile}
+
+${buildCandidateStatusBlock(candidateStatus)}
 
 RESUME:
 ${resumeText || "(no resume on file for this user)"}
