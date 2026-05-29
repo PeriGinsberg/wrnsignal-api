@@ -34,7 +34,6 @@ const VALID_CATEGORIES = [
 
 type FeedbackPayload = {
   jobfit_run_id: string;
-  profile_id: string;
   rating: Rating;
   categories?: string[];
   feedback_text?: string;
@@ -66,12 +65,6 @@ export async function POST(req: NextRequest) {
   if (!body.jobfit_run_id || typeof body.jobfit_run_id !== 'string') {
     return NextResponse.json(
       { error: 'missing_jobfit_run_id' },
-      { status: 400 }
-    );
-  }
-  if (!body.profile_id || typeof body.profile_id !== 'string') {
-    return NextResponse.json(
-      { error: 'missing_profile_id' },
       { status: 400 }
     );
   }
@@ -109,11 +102,42 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Resolve the owning profile from the run row. The client never sends
+  // profile_id — the Framer surfaces don't expose client_profiles.id by
+  // design — so we derive it from jobfit_runs.client_profile_id. The link
+  // only needs ?run_id=.
+  const { data: runRow, error: runErr } = await supabase
+    .from('jobfit_runs')
+    .select('client_profile_id')
+    .eq('id', body.jobfit_run_id)
+    .maybeSingle();
+
+  if (runErr) {
+    // Most commonly an invalid UUID (pg 22P02) — treat as bad input.
+    return NextResponse.json(
+      { error: 'run_lookup_failed', message: runErr.message },
+      { status: 400 }
+    );
+  }
+  if (!runRow) {
+    return NextResponse.json(
+      { error: 'run_not_found', message: 'No jobfit_runs row for that run_id.' },
+      { status: 404 }
+    );
+  }
+  const profileId = runRow.client_profile_id as string | null;
+  if (!profileId) {
+    return NextResponse.json(
+      { error: 'run_missing_profile', message: 'Run has no associated profile.' },
+      { status: 422 }
+    );
+  }
+
   const { data, error } = await supabase
     .from('jobfit_feedback')
     .insert({
       jobfit_run_id: body.jobfit_run_id,
-      profile_id: body.profile_id,
+      profile_id: profileId,
       rating: body.rating,
       categories,
       feedback_text: feedbackText,
@@ -124,7 +148,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[feedback/jobfit] insert failed', {
       jobfit_run_id: body.jobfit_run_id,
-      profile_id: body.profile_id,
+      profile_id: profileId,
       pg_code: error.code,
       pg_message: error.message,
     });

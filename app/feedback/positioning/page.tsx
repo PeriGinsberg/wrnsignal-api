@@ -1,12 +1,16 @@
 /**
  * DEV-ONLY: Positioning v2 feedback page.
  *
- * Standalone dev-only route. A tester opens it with the run + profile in
- * the query string:
+ * Standalone dev-only route. A tester opens it with just the run in the
+ * query string:
  *
- *   /feedback/positioning?run_id=<positioning_runs_v2.id>&profile_id=<client_profiles.id>
+ *   /feedback/positioning?run_id=<positioning_runs_v2.id>
  *
- * Renders the shared FeedbackForm wired to /api/feedback/positioning. This
+ * The owning profile_id is resolved server-side from the run row in
+ * /api/feedback/positioning (the Framer surfaces don't expose
+ * client_profiles.id), so the link only carries run_id.
+ *
+ * Renders the shared DevFeedbackForm wired to /api/feedback/positioning. This
  * page IS the frontend dev fence: when isDevEnvironment() is false it 404s
  * (notFound), so the route disappears entirely outside dev. See
  * lib/devOnly.ts; the positioning_feedback migration is marked ❌ never on prod.
@@ -29,26 +33,23 @@ const POSITIONING_CATEGORIES: FeedbackCategory[] = [
 export default async function PositioningFeedbackPage({
   searchParams,
 }: {
-  searchParams: Promise<{ run_id?: string; profile_id?: string }>;
+  searchParams: Promise<{ run_id?: string }>;
 }) {
   // Page-level dev fence — route 404s outside dev. See lib/devOnly.ts.
   if (!isDevEnvironment()) notFound();
 
   const sp = await searchParams;
   const runId = typeof sp.run_id === 'string' ? sp.run_id : '';
-  const profileId = typeof sp.profile_id === 'string' ? sp.profile_id : '';
 
-  if (!runId || !profileId) {
+  if (!runId) {
     return (
       <div style={messageStyle}>
-        <h1 style={messageHeadingStyle}>Missing query parameters</h1>
+        <h1 style={messageHeadingStyle}>Missing query parameter</h1>
         <p>
-          This dev-only feedback page needs <code>run_id</code> and{' '}
-          <code>profile_id</code> in the URL.
+          This dev-only feedback page needs <code>run_id</code> in the URL.
         </p>
         <p style={{ fontSize: 13, color: '#6b7280' }}>
-          Example:{' '}
-          <code>/feedback/positioning?run_id=&lt;positioning_runs_v2.id&gt;&amp;profile_id=&lt;client_profiles.id&gt;</code>
+          Example: <code>/feedback/positioning?run_id=&lt;positioning_runs_v2.id&gt;</code>
         </p>
       </div>
     );
@@ -58,7 +59,7 @@ export default async function PositioningFeedbackPage({
     <DevFeedbackForm
       endpoint="/api/feedback/positioning"
       categories={POSITIONING_CATEGORIES}
-      payloadExtras={{ positioning_run_id: runId, profile_id: profileId }}
+      payloadExtras={{ positioning_run_id: runId }}
       surfaceLabel="Positioning"
     />
   );

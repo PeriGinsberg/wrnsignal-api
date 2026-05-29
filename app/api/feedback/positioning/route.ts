@@ -25,7 +25,6 @@ const VALID_CATEGORIES = [
 
 type FeedbackPayload = {
   positioning_run_id: string;
-  profile_id: string;
   rating: Rating;
   categories?: string[];
   feedback_text?: string;
@@ -55,12 +54,6 @@ export async function POST(req: NextRequest) {
   if (!body.positioning_run_id || typeof body.positioning_run_id !== 'string') {
     return NextResponse.json(
       { error: 'missing_positioning_run_id' },
-      { status: 400 }
-    );
-  }
-  if (!body.profile_id || typeof body.profile_id !== 'string') {
-    return NextResponse.json(
-      { error: 'missing_profile_id' },
       { status: 400 }
     );
   }
@@ -95,11 +88,42 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Resolve the owning profile from the run row. The client never sends
+  // profile_id — the Framer surfaces don't expose client_profiles.id by
+  // design — so we derive it from positioning_runs_v2.profile_id. The link
+  // only needs ?run_id=.
+  const { data: runRow, error: runErr } = await supabase
+    .from('positioning_runs_v2')
+    .select('profile_id')
+    .eq('id', body.positioning_run_id)
+    .maybeSingle();
+
+  if (runErr) {
+    // Most commonly an invalid UUID (pg 22P02) — treat as bad input.
+    return NextResponse.json(
+      { error: 'run_lookup_failed', message: runErr.message },
+      { status: 400 }
+    );
+  }
+  if (!runRow) {
+    return NextResponse.json(
+      { error: 'run_not_found', message: 'No positioning_runs_v2 row for that run_id.' },
+      { status: 404 }
+    );
+  }
+  const profileId = runRow.profile_id as string | null;
+  if (!profileId) {
+    return NextResponse.json(
+      { error: 'run_missing_profile', message: 'Run has no associated profile.' },
+      { status: 422 }
+    );
+  }
+
   const { data, error } = await supabase
     .from('positioning_feedback')
     .insert({
       positioning_run_id: body.positioning_run_id,
-      profile_id: body.profile_id,
+      profile_id: profileId,
       rating: body.rating,
       categories,
       feedback_text: feedbackText,
@@ -110,7 +134,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[feedback/positioning] insert failed', {
       positioning_run_id: body.positioning_run_id,
-      profile_id: body.profile_id,
+      profile_id: profileId,
       pg_code: error.code,
       pg_message: error.message,
     });

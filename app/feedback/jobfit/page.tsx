@@ -1,12 +1,16 @@
 /**
  * DEV-ONLY: JobFit feedback page.
  *
- * Standalone dev-only route. A tester opens it with the run + profile in
- * the query string:
+ * Standalone dev-only route. A tester opens it with just the run in the
+ * query string:
  *
- *   /feedback/jobfit?run_id=<jobfit_runs.id>&profile_id=<client_profiles.id>
+ *   /feedback/jobfit?run_id=<jobfit_runs.id>
  *
- * Renders the shared FeedbackForm wired to /api/feedback/jobfit. This page
+ * The owning profile_id is resolved server-side from the run row in
+ * /api/feedback/jobfit (the Framer surfaces don't expose client_profiles.id),
+ * so the link only carries run_id.
+ *
+ * Renders the shared DevFeedbackForm wired to /api/feedback/jobfit. This page
  * IS the frontend dev fence: when isDevEnvironment() is false it 404s
  * (notFound), so the route disappears entirely outside dev. See
  * lib/devOnly.ts; the jobfit_feedback migration is marked ❌ never on prod.
@@ -30,26 +34,23 @@ const JOBFIT_CATEGORIES: FeedbackCategory[] = [
 export default async function JobfitFeedbackPage({
   searchParams,
 }: {
-  searchParams: Promise<{ run_id?: string; profile_id?: string }>;
+  searchParams: Promise<{ run_id?: string }>;
 }) {
   // Page-level dev fence — route 404s outside dev. See lib/devOnly.ts.
   if (!isDevEnvironment()) notFound();
 
   const sp = await searchParams;
   const runId = typeof sp.run_id === 'string' ? sp.run_id : '';
-  const profileId = typeof sp.profile_id === 'string' ? sp.profile_id : '';
 
-  if (!runId || !profileId) {
+  if (!runId) {
     return (
       <div style={messageStyle}>
-        <h1 style={messageHeadingStyle}>Missing query parameters</h1>
+        <h1 style={messageHeadingStyle}>Missing query parameter</h1>
         <p>
-          This dev-only feedback page needs <code>run_id</code> and{' '}
-          <code>profile_id</code> in the URL.
+          This dev-only feedback page needs <code>run_id</code> in the URL.
         </p>
         <p style={{ fontSize: 13, color: '#6b7280' }}>
-          Example:{' '}
-          <code>/feedback/jobfit?run_id=&lt;jobfit_runs.id&gt;&amp;profile_id=&lt;client_profiles.id&gt;</code>
+          Example: <code>/feedback/jobfit?run_id=&lt;jobfit_runs.id&gt;</code>
         </p>
       </div>
     );
@@ -59,7 +60,7 @@ export default async function JobfitFeedbackPage({
     <DevFeedbackForm
       endpoint="/api/feedback/jobfit"
       categories={JOBFIT_CATEGORIES}
-      payloadExtras={{ jobfit_run_id: runId, profile_id: profileId }}
+      payloadExtras={{ jobfit_run_id: runId }}
       surfaceLabel="JobFit"
     />
   );

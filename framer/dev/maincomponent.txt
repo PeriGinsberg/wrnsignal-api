@@ -3744,6 +3744,26 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         )}
                     </div>
                 )}
+                {/* DEV-ONLY (dev Framer bundle only — absent from framer/prod):
+                     QA feedback link. Opens the dev-only rating page in a new
+                     tab with the current JobFit run id. The page resolves the
+                     owning profile server-side and 404s in prod. */}
+                {(jobFitResult as any)?.jobfit_run_id ? (
+                    <a
+                        href={`https://wrnsignal-api-staging.vercel.app/feedback/jobfit?run_id=${encodeURIComponent((jobFitResult as any).jobfit_run_id)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            display: "block",
+                            marginTop: 12,
+                            fontSize: 11,
+                            color: "rgba(255,255,255,0.45)",
+                            textDecoration: "underline",
+                        }}
+                    >
+                        📝 Rate this in dev
+                    </a>
+                ) : null}
             </>
         )
     }
