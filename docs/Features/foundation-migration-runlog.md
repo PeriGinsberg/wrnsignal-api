@@ -30,6 +30,8 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260509_coach_client_notes_typed.sql` | 2026-05-09 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
 | `supabase/migrations/20260527_beta_feedback.sql` | 2026-05-27 | 2026-05-27 | dev | psql (dev session pooler) | Peri (Claude-applied) | New table for coach-submitted beta feedback. Beta-feedback v0.1 Phase 1. Manual direct-SQL apply per Risk 6 — CLI is linked to prod, so dev reached via `SUPABASE_DB_URL` session-pooler string (equivalent to the SQL Editor workaround). 15 columns + 3 indexes + `set_updated_at` trigger. Production promotion deferred per FRD §11. |
 | `supabase/migrations/20260527_beta_feedback.sql` | 2026-05-27 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation + Phase 2-5 build completes. |
+| `supabase/migrations/20260529_coach_calendar_connections.sql` | 2026-05-29 | 2026-05-29 | dev | Supabase SQL Editor | Peri | New table. Calendar Integration Phase 1b. Coach-scoped OAuth token storage. RLS mirrors coach_client_notes. set_updated_at trigger per DD-07. Manual apply per Risk 6. |
+| `supabase/migrations/20260529_coach_calendar_connections.sql` | 2026-05-29 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step. |
 
 ---
 
@@ -2180,4 +2182,32 @@ positioning_strategy field is finally consumed end-to-end.
 
 Source: docs/positioning-coverletter-current-state-investigation-2026-05-27.md
 Prior SHA: d0bbfb13 (Commit 1 — backend)
+
+---
+
+### 2026-05-29 — Coach Calendar Integration Phase 1b shipped (schema)
+
+First commit of the Coach Calendar Integration v0.1 build (FRD:
+docs/Features/coach-calendar-integration-v0-1-frd.md, dated 2026-05-29).
+
+Shipped:
+- supabase/migrations/20260529_coach_calendar_connections.sql applied to
+  dev (Peri, SQL Editor). Table + UNIQUE constraint + RLS + policy +
+  trigger all verified clean per 5-statement verification block from
+  FRD §6.1.
+- Commit bfcba96f feat(calendar): coach_calendar_connections schema
+  (Phase 1b)
+
+Not yet shipped (Phase 1b is just schema — Phase 1c is the next
+substantive step):
+- lib/coach/microsoftGraph.ts (Phase 1c — Microsoft Graph client library)
+- API routes (/connect, /callback, /today, /disconnect — Phase 1d)
+- Frontend component (TodaysSchedule — Phase 1e)
+
+Phase 1a (Azure app registration + env vars) was completed by Peri prior
+to this commit; not represented in git but logged in the FRD §11 and the
+Azure portal directly.
+
+Production promotion of the schema deferred until full v0.1 ship +
+second-coach validation per FRD §11.
 
