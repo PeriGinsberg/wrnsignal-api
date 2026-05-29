@@ -19,7 +19,7 @@ All migrations target the **dev environment only** until Peri explicitly approve
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | 2026-05-12 | dev | Supabase SQL Editor | Peri | Phase 1 deliverable 6. Creates `positioning_runs_v2` table + 5 indexes + 1 `set_updated_at` trigger. |
 | `supabase/migrations/20260512_positioning_runs_v2.sql` | 2026-05-12 | ⏸ pending | **prod** | Supabase SQL Editor | — | Same SQL. Separate explicit promotion step after dev validation. |
 | `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-16 | dev | Supabase SQL Editor | Peri | New table. Phase 2 Stage 2a. Includes ai_cost_cents column (FRD §6.12) in initial schema vs. separate step per §7. Manual apply per Risk 6 (schema_migrations drift on dev). |
-| `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync — closed 5-migration drift gap surfaced by Coaches Dashboard 500. See entry below. |
+| `supabase/migrations/20260516_phase2_runs.sql` | 2026-05-16 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied to prod 2026-05-25 as collateral in the 5-migration drift-repair sync (Coaches Dashboard 500), NOT an intentional Phase 2 promotion. Phase 2 parked 2026-05-29 — table is orphaned/unused on prod (no route writes to it). Left in place; not dropped. See 2026-05-29 runlog entry. |
 | `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | 2026-05-21 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 1, Commit 1.4). Adds coach-managed `lifecycle_status` column to `coach_clients` (Prospect/Active/Inactive/Archived), distinct from system-owned `status`. Default 'Active' so existing rows defaulted in. Sanity: SELECT confirmed all rows defaulted; CHECK constraint rejected 'Bogus' negative test. |
 | `supabase/migrations/20260521_coach_client_lifecycle_status.sql` | 2026-05-21 | 2026-05-25 | **prod** | Supabase SQL Editor | Peri | Applied as part of 2026-05-25 prod schema sync. See entry below. |
 | `supabase/migrations/20260522_coach_engagement_signal_dismissals.sql` | 2026-05-22 | 2026-05-22 | dev | Supabase SQL Editor | Peri | Coaches Center scope (Beta-pitch Phase 3, Commit 3.2). New table holding (coach_profile_id, signal_key) dismissal pairs for R1-R6 engagement signals. signal_key = engine-emitted `id` directly (locked Phase 3.0). UNIQUE constraint + index on coach_profile_id support ON CONFLICT DO NOTHING idempotency. Sanity: COUNT = 0 confirmed fresh. ON CONFLICT path will be exercised by real dismissal smoke (TC-661). |
@@ -2277,4 +2277,24 @@ prior to any code commits; logged in the FRD §11 + Azure portal.
 
 Production promotion deferred until full v0.1 ship + second-coach 
 validation per FRD §11.
+
+---
+
+### 2026-05-29 — Phase 2 parked; Positioning v2 is the current production surface
+
+Phase 2 (Resume Reframing Workflow) parked as of today. No active development on Phase 2 endpoints, frontend prototype, itemPopulator, or related infrastructure. The Stage 2b real itemPopulator work that was previously framed as Tier 1 / beta-blocking is canned, not deferred — there is no sprint plan that resumes Phase 2 build at a future date.
+
+What this means concretely:
+
+- The five Phase 2 backend endpoints (`/start`, `/[id]` GET, `/decide`, `/draft`, `/complete`) remain in the codebase as built. Routes are still wired and would respond if hit, but with `itemPopulator` returning `[]` no real user can exercise the workflow end-to-end. The previously-noted SQL-injection-of-test-fixtures path is the only way to populate `state.items` for any future ad-hoc testing.
+- The Phase 2 frontend prototype remains in the codebase. Dev-only entry points still render but resolve to empty selection screens against real positioning runs.
+- The `phase2_runs` table exists on BOTH dev and prod Supabase. It was applied to prod on 2026-05-25 as collateral in the 5-migration drift-repair sync (the one that closed the Coaches Dashboard 500 drift gap), NOT an intentional Phase 2 promotion. With Phase 2 parked, the prod table is orphaned and unused — no route writes to it on prod. Left in place as a harmless unused table; not dropped. See the `20260516_phase2_runs.sql` row in the schema migrations table above.
+- The Phase 2 FRD (`docs/Features/positioning-phase2-frd.md`) is preserved as-is. It describes the intended v0.1 design and remains accurate as a forward-looking spec if Phase 2 is ever resumed. It is not authoritative for current product behavior.
+- All Phase 2 work captured in the runlog above (Stage 2a schema, Stage 2c real AI integration, prototype frontend, validator, cost tracking) is the durable record of what was built. No retroactive deletion or revision.
+
+Current production-grade surface is Positioning v2 (Phase 1 + case_determination + bullet rendering as of the 2026-05-16 case_determination tuning session). That surface works well per Peri's evaluation and is what Maleri is testing against in dev.
+
+No scoped product work follows Phase 2 parking at this time. The next conversation-scoped piece of work is operational tooling — a dev-only structured feedback capture widget for JobFit and Positioning results, to support Maleri's testing of those surfaces. That widget is NOT Phase 2 scope and is NOT a precursor to resuming Phase 2; it is independent QA tooling against the production-grade Positioning v2 surface. It will have its own runlog entry when shipped.
+
+Schema migrations table update: the `20260516_phase2_runs.sql` prod-row note was rewritten to record that the table is orphaned/unused on prod following Phase 2 parking. The prod application date (2026-05-25) is unchanged — the table was already live on prod at parking time, so it was NOT flipped to `❌ never`.
 
