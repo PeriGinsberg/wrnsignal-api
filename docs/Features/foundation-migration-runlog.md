@@ -2211,3 +2211,70 @@ Azure portal directly.
 Production promotion of the schema deferred until full v0.1 ship +
 second-coach validation per FRD §11.
 
+---
+
+### 2026-05-29 — Coach Calendar Integration Phase 1c shipped (Microsoft Graph client library)
+
+Second milestone of the Coach Calendar Integration v0.1 build (FRD:
+docs/Features/coach-calendar-integration-v0-1-frd.md §6.6, §6.7, §6.10).
+Pure module shipped with verification coverage; no routes, no UI, no DB
+writes — those are Phase 1d / 1e.
+
+Shipped:
+- Commit 13fa628a feat(calendar): Microsoft Graph client library (Phase 1c)
+  - lib/coach/microsoftGraph.ts — 553 lines, 6 exported functions:
+    getMicrosoftOAuthConfig, buildAuthorizeUrl, exchangeCodeForTokens,
+    refreshAccessToken, getCallerIdentity, fetchTodaysEvents
+  - MicrosoftGraphError class with typed error codes (invalid_grant,
+    invalid_client, rate_limited, unauthorized, server_error,
+    network_error) for caller branching
+  - .env.example updated with MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET,
+    CALENDAR_BETA_PROFILE_IDS
+- Commit 20bbafee test(calendar): verification script for Microsoft Graph
+  client (Phase 1c)
+  - scripts/verify-microsoft-graph.ts — 22 tests across 6 groups, all
+    paths mocked (no live Microsoft endpoints)
+  - Coverage: happy paths + every named error code in FRD §6.7 error
+    table; OData $ literal preservation; Prefer:outlook.timezone header;
+    refresh token rotation; attendee_count dedupe; mail vs
+    userPrincipalName fallback
+  - package.json: adds `calendar:verify` script
+
+Architectural decisions captured during build:
+
+- **Module boundary: caller owns 401/refresh orchestration.** 
+  getCallerIdentity + fetchTodaysEvents surface `unauthorized` rather 
+  than auto-refreshing. The module doesn't know which token to refresh 
+  with (would require importing connection-row types); Phase 1d routes 
+  will handle refresh+retry at the route layer. Right boundary per FRD 
+  §6.6.
+- **Module boundary: refreshAccessToken takes {refreshToken}, not 
+  (connection).** FRD §6.7 shorthand wrote `refreshAccessToken(connection)` 
+  but the pure module shouldn't take a DB row. Route adapts 
+  connection.refresh_token → { refreshToken } and persists the result.
+- **OData $ literal preservation.** Manual query string construction for 
+  fetchTodaysEvents — `$orderby` and `$top` stay literal while timestamps 
+  are encodeURIComponent-encoded. Building via URLSearchParams would have 
+  percent-encoded the `$` and broken OData. Verified in test 6.2.
+- **attendee_count dedupe.** Graph's `attendees` array normally excludes 
+  the organizer ("in most cases" per Graph docs — the hedging matters). 
+  Module adds 1 for the organizer but dedupes by email first so meetings 
+  where the organizer is also explicitly listed don't double-count. 
+  Verified in test 6.1.
+- **PII logging deferred.** IDENTITY_FETCHED logs full email rather than 
+  truncated. Acceptable for v0.1 — email is visible in consent flow + 
+  Coach Home UI. Revisit in the broader privacy session per FRD §11.
+
+Not yet shipped (Phase 1c was just the module — Phase 1d is the next 
+substantive step):
+- API routes (/connect, /callback, /today, /disconnect — Phase 1d)
+- Frontend component (TodaysSchedule — Phase 1e)
+- End-to-end manual smoke (Phase 1f)
+- Coach-facing doc (Phase 1g)
+
+Phase 1a (Azure app registration + env vars) was completed 2026-05-29 
+prior to any code commits; logged in the FRD §11 + Azure portal.
+
+Production promotion deferred until full v0.1 ship + second-coach 
+validation per FRD §11.
+
