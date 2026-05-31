@@ -2439,3 +2439,114 @@ Not yet shipped (Phase 1d completed backend; UI + smoke + doc still pending):
 Production promotion of routes + schema deferred until full v0.1 ship +
 second-coach validation per FRD §11.
 
+---
+
+### 2026-05-29 — Coach Calendar Integration Phase 1e shipped (frontend + precondition)
+
+Fourth milestone of the Coach Calendar Integration v0.1 build (FRD:
+docs/Features/coach-calendar-integration-v0-1-frd.md §5, §6.8). UI
+component live on staging; the full v0.1 stack (schema + module +
+tests + 4 routes + 1 frontend component) is now deployed end-to-end.
+Phase 1f (manual OAuth round trip against real Microsoft) is the
+final ship gate — by Peri, not by CC.
+
+Shipped:
+- Commit 66159d8f feat(calendar): /connect returns JSON when Accept:
+  application/json (Phase 1e precondition)
+  - app/api/coach/calendar/connect/route.ts — added JSON response
+    branch returning {authorize_url} with the state cookie attached;
+    default 302 redirect preserved for curl testability and
+    non-fetch use cases
+  - Necessary because plain <a href> navigation can't attach the
+    Authorization: Bearer header that /connect requires
+- Commit 4a2b238a feat(calendar): TodaysSchedule component on Coach
+  Home (Phase 1e)
+  - app/dashboard/coach/_TodaysSchedule/TodaysSchedule.tsx — new
+    extracted component (precedent: _action-items/, CreateClientModal,
+    MetricsWindowToggle)
+  - app/dashboard/coach/page.tsx — replaced TodaysScheduleSection
+    placeholder (lines 499-518) with <TodaysSchedule
+    isCalendarBetaEnabled={data.calendar_beta_enabled} />; removed
+    dead IconCalendar import
+  - app/api/coach/home/route.ts — surgical addition of
+    calendar_beta_enabled boolean to the response, computed from
+    CALENDAR_BETA_PROFILE_IDS env var + authenticated coach's
+    profile_id
+
+### Architectural decisions captured during Phase 1e
+
+- **Component location: extracted (not inline).** Coach Home subcomponents
+  with real state-machine complexity (CreateClientModal, _action-items/,
+  MetricsWindowToggle, etc.) are extracted from page.tsx in this
+  codebase. TodaysSchedule has a 9-state machine + fetch logic + mount
+  effect; the inline pattern from TodaysScheduleSection (a 19-line
+  static placeholder) doesn't scale to it.
+
+- **Beta-gate via /api/coach/home response, not server-rendered prop.**
+  FRD §6.8 originally specified a "server-derived isCalendarBetaEnabled
+  prop." Discovered during build that page.tsx is a client component
+  ("use client") — it cannot read the CALENDAR_BETA_PROFILE_IDS env
+  var directly. Two options considered: (1) new /api/coach/calendar/status
+  endpoint, (2) fold calendar_beta_enabled into the existing
+  /api/coach/home response. Chose (2):
+  - One round trip on Coach Home load instead of two
+  - Preserves the FRD §6.8 prop contract literally (page.tsx passes the
+    boolean as the prop, just sources it from the API response rather
+    than server-rendered context)
+  - Surgical change to a hot route: one new boolean, purely additive,
+    no existing field shape touched
+  
+  FRD §6.8 prose did not need amending — the implementation matches
+  the prop contract; only the SOURCE of the prop value differs from
+  the literal "server-derived" wording.
+
+- **Time formatting: naive datetime + browser-tz toLocaleTimeString.**
+  Microsoft Graph returns wall-clock datetimes in the timezone we
+  requested via Prefer: outlook.timezone (BROWSER_TZ from
+  Intl.DateTimeFormat). new Date(iso) + toLocaleTimeString without
+  an explicit timeZone option uses the browser's timezone — which
+  IS the same BROWSER_TZ we requested. They align. Acceptable
+  v0.1 trade-off: a coach who changes browser timezone mid-day
+  (rare) would see skewed times until the next fetch. Future
+  v0.2+ could read mailboxSettings.timeZone from Graph for a
+  canonical tz; not v0.1 scope.
+
+- **Connect-button auth pattern: fetch + window.location.href.**
+  The precondition commit modified /connect to support
+  Accept: application/json → return {authorize_url} JSON.
+  Frontend fetches with Bearer token, reads authorize_url, sets
+  window.location.href. State cookie set by the fetch response
+  persists across the navigation (normal browser cookie behavior).
+  This is the cleanest way to attach Bearer auth to what is
+  ultimately a browser navigation. The default 302 redirect
+  behavior remains for curl/direct-navigation use cases.
+
+- **Component is self-contained except for the boolean prop.**
+  All other state (events, connection metadata, error state,
+  loading state, retry-after) is owned by the component. Page.tsx
+  passes only isCalendarBetaEnabled and never receives data back.
+  Clean separation; reusable for future surfaces if needed.
+
+- **disconnect uses window.confirm, not a custom modal.** v0.1
+  scope discipline. A custom confirm modal is polish that doesn't
+  affect the live-on-dev gate.
+
+- **Bearer-token helper replicated, not imported.** page.tsx's
+  getToken() and authFetch() helpers aren't exported. Following
+  the CreateClientModal precedent, TodaysSchedule replicates the
+  small getToken() pattern inline (Supabase session.access_token
+  with sessionStorage handoff-token fallback). Same pattern,
+  separate code. The shared-helpers extraction is still deferred
+  per FRD §2 non-goals.
+
+Not yet shipped (final ship gate is Peri's manual round trip):
+- Phase 1f manual end-to-end OAuth round trip against real Microsoft
+  (Peri signs in to staging as peri+devcoach1@workforcereadynow.com,
+  clicks Connect Outlook, grants Microsoft consent, sees today's
+  real events render in the Today's Schedule slot)
+- Phase 1g coach-facing doc 
+  (docs/coaches-center/calendar-integration-coach-guide.md)
+
+Production promotion of routes + schema deferred until full v0.1
+ship completes + second-coach validation per FRD §11.
+
