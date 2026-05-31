@@ -2298,3 +2298,144 @@ No scoped product work follows Phase 2 parking at this time. The next conversati
 
 Schema migrations table update: the `20260516_phase2_runs.sql` prod-row note was rewritten to record that the table is orphaned/unused on prod following Phase 2 parking. The prod application date (2026-05-25) is unchanged — the table was already live on prod at parking time, so it was NOT flipped to `❌ never`.
 
+---
+
+### 2026-05-29 — Coach Calendar Integration Phase 1d shipped (API routes)
+
+Third milestone of the Coach Calendar Integration v0.1 build (FRD:
+docs/Features/coach-calendar-integration-v0-1-frd.md §6.4). All four
+API routes shipped under /api/coach/calendar/*. Backend is now 100%
+complete for v0.1; Phase 1e (frontend), Phase 1f (manual end-to-end
+smoke), and Phase 1g (coach-facing doc) remain.
+
+Shipped:
+- Commit e2a606cf feat(calendar): OAuth flow routes (Phase 1d Commit 1)
+  - app/api/coach/calendar/connect/route.ts — Bearer auth + beta gate
+    + cryptographically-random state + HTTP-only state cookie + 302
+    redirect to Microsoft authorize endpoint
+  - app/api/coach/calendar/callback/route.ts — CSRF state verification
+    + Microsoft consent error handling + code-for-tokens exchange +
+    identity fetch via /me + connection upsert
+- Commit 8455571a feat(calendar): data routes /today + /disconnect
+  (Phase 1d Commit 2)
+  - app/api/coach/calendar/today/route.ts — proactive 60s-prior token
+    refresh + Microsoft Graph fetch with strict one-retry on 401 +
+    dependency-free timezone-aware day window
+  - app/api/coach/calendar/disconnect/route.ts — DELETE by
+    coach_profile_id, returns disconnected boolean
+
+### FRD §6.4.2 deviation — callback identity from state cookie
+
+The FRD §6.4.2 prose specified the four-step Bearer auth pattern on
+/callback. Implementation deviates: /callback derives identity from
+the state cookie, not from a re-authenticated Bearer token.
+
+Reason: discovered during Phase 1d Commit 1 build. /callback is hit
+by the BROWSER returning from Microsoft's redirect. The browser
+carries:
+- NO Authorization: Bearer header (Microsoft doesn't echo it; we
+  can't put it in a 302 response from our authorize redirect)
+- NO Supabase session cookie (the SIGNAL Supabase session lives in
+  localStorage per lib/supabase-browser.ts — confirmed during CC's
+  auth-pattern discovery: no @supabase/ssr, no createServerClient,
+  no cookies-based helper anywhere in the codebase)
+
+Three options were considered:
+1. State cookie carries identity (chosen) — bind profile_id into the
+   HTTP-only state cookie issued by /connect; /callback trusts the
+   cookie for the 10-minute window. Standard OAuth pattern.
+2. Adopt @supabase/ssr and migrate the whole codebase to cookie-stored
+   Supabase sessions. Rejected — global auth-model migration far
+   beyond calendar scope.
+3. Pause and amend the FRD before implementing. Rejected — the
+   cookie-carries-identity approach is architecturally correct and
+   doesn't require FRD discussion before implementation; just docs
+   cleanup after.
+
+Implementation details locked:
+- State cookie value format: `<random_token>.<profile_id>`
+- random_token = crypto.randomBytes(32).toString('base64url')
+  (256 bits of entropy)
+- Only random_token is echoed to Microsoft as the `state` query
+  param. profile_id never leaves SIGNAL's HTTP-only cookie.
+- Rightmost-dot split works unambiguously: base64url alphabet
+  (A-Z, a-z, 0-9, -, _) and UUID format (hex + -) both exclude '.'.
+- /callback verifies: cookie_token === query_state (CSRF protection)
+  AND cookie_profile_id matches UUID regex (shape check). If either
+  fails, redirect to /dashboard/coach?calendar_error=state_mismatch
+  and clear the cookie.
+- /callback intentionally does NOT re-run verifyCoach. /connect already
+  verified is_coach=true before issuing the cookie. The cookie is
+  the authority for the 10-minute window. Re-checking would add a
+  DB round-trip without strengthening the security model.
+
+Security model:
+- The 10-minute cookie window IS the security perimeter.
+- If the user's session terminates between /connect and /callback
+  (e.g., logout, session expiry), the cookie still works during the
+  window — we WANT the flow to complete since the user is returning
+  from Microsoft mid-flow.
+- After the OAuth flow completes (or the cookie expires), normal
+  Bearer auth resumes for all subsequent routes.
+
+FRD cleanup committed for a future commit: FRD §6.4.2 step 3+4
+prose needs amending to match this implementation. Deliberately
+deferred from Phase 1d to keep this commit focused on shipping.
+Captured here as authoritative.
+
+### Other architectural decisions captured during Phase 1d
+
+- **Refresh-token threading through one-retry path (Commit 2 /today).**
+  When proactive refresh in step 4 rotates the refresh_token, the
+  reactive retry in step 5 MUST use the rotated token. Using the
+  original DB refresh_token in the retry would cause the second
+  refresh to hit `invalid_grant` for reusing a consumed token —
+  incorrectly bouncing the user to reconnect_required despite a
+  valid (rotated) refresh token sitting in the connection row.
+  /today threads the latest refresh token through the retry path.
+
+- **Strict one-retry, never loops (Commit 2 /today).** The reactive
+  refresh+retry on Microsoft 401 caps at one attempt. After one
+  retry, if Microsoft still 401s, we fail to reconnect_required.
+  This guards against a buggy module + buggy refresh creating an
+  infinite refresh-retry-refresh-retry loop.
+
+- **No beta gate on /today or /disconnect (Commit 2).** The
+  CALENDAR_BETA_PROFILE_IDS env-allowlist gates only the Connect
+  button visibility on /connect. Once a coach has a connection row,
+  they can always read it and disconnect, even if later removed
+  from the allowlist. Rationale: removing a coach from the beta
+  shouldn't strand their connection.
+
+- **Persist-refresh failure is non-fatal (Commit 2 /today).** If
+  refresh succeeds with Microsoft but the DB UPDATE fails, the
+  request continues with the in-memory access token. User gets
+  their events; next request re-refreshes or surfaces
+  reconnect_required. Failing the request over an analytics-class
+  DB write when we have valid data would be wrong.
+
+- **Inline auth helpers, third copy (Commit 2).** The four-step
+  Bearer auth pattern (getBearerToken / getAuthedUser / getProfileId
+  / verifyCoach) is now inlined in three calendar route files
+  (/connect, /today, /disconnect) in addition to the existing copies
+  across ~24-33 coach routes. The app/api/_lib/coachAuth.ts
+  extraction remains deliberately deferred per FRD §2 non-goals.
+
+- **Disconnect does NOT revoke Microsoft tokens.** DELETE from the
+  connection row removes SIGNAL's stored tokens, but the
+  access_token remains valid in Microsoft's infra until natural
+  expiry (~1 hour). Full revocation requires the coach to remove
+  the SIGNAL app from their Microsoft account settings. Documented
+  in FRD §5.6 and to be covered in the Phase 1g coach-facing guide.
+
+Not yet shipped (Phase 1d completed backend; UI + smoke + doc still pending):
+- app/dashboard/coach/_TodaysSchedule/TodaysSchedule.tsx and Coach Home
+  integration (Phase 1e)
+- End-to-end manual OAuth round trip against real Microsoft (Phase 1f)
+- docs/coaches-center/calendar-integration-coach-guide.md (Phase 1g)
+- FRD §6.4.2 prose cleanup matching the cookie-carries-identity
+  implementation (separate cleanup commit, after v0.1 ships)
+
+Production promotion of routes + schema deferred until full v0.1 ship +
+second-coach validation per FRD §11.
+
