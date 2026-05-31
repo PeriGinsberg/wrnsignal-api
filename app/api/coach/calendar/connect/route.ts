@@ -149,26 +149,44 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // 3-8. State token, cookie, redirect to Microsoft.
+  // 3-8. State token, cookie, response (JSON for frontend fetch, else 302).
   try {
     const randomToken = randomBytes(32).toString("base64url")
     const redirectUri = `${getAppUrl(req)}/api/coach/calendar/callback`
     const authorizeUrl = buildAuthorizeUrl({ state: randomToken, redirectUri })
 
+    // Cookie value binds the CSRF token to the authenticated coach. Only the
+    // token is echoed to Microsoft as `state`; profile_id never leaves our cookie.
+    // Both response branches attach this identical cookie.
+    const cookieValue = `${randomToken}.${profileId}`
+    const cookieOpts = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const, // MUST be lax to survive Microsoft's cross-site redirect back.
+      maxAge: 600, // 10 minutes
+      path: "/",
+    }
+
+    const wantsJson = (req.headers.get("accept") || "").includes("application/json")
+    if (wantsJson) {
+      // Frontend-initiated: return the authorize URL as JSON so the client can
+      // do window.location.href = authorize_url. The state cookie set here
+      // persists across that navigation (normal browser cookie behavior).
+      console.log(
+        `[coach-calendar/connect] AUTH_REDIRECT_JSON coachProfileId=${profileId} state=${randomToken.slice(0, 8)}`,
+      )
+      const res = NextResponse.json({ authorize_url: authorizeUrl }, { status: 200 })
+      res.cookies.set(STATE_COOKIE, cookieValue, cookieOpts)
+      return res
+    }
+
+    // Default: 302 redirect (existing behavior). Preserves curl testability and
+    // the FRD-specified behavior for any non-fetch / direct-navigation use case.
     console.log(
       `[coach-calendar/connect] AUTH_REDIRECT coachProfileId=${profileId} state=${randomToken.slice(0, 8)}`,
     )
-
     const res = NextResponse.redirect(authorizeUrl, 302)
-    // Cookie value binds the CSRF token to the authenticated coach. Only the
-    // token is echoed to Microsoft as `state`; profile_id never leaves our cookie.
-    res.cookies.set(STATE_COOKIE, `${randomToken}.${profileId}`, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", // MUST be lax to survive Microsoft's cross-site redirect back.
-      maxAge: 600, // 10 minutes
-      path: "/",
-    })
+    res.cookies.set(STATE_COOKIE, cookieValue, cookieOpts)
     return res
   } catch (err) {
     console.error(
