@@ -32,6 +32,7 @@ import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
 import { SavingSpinner } from "./SavingSpinner"
 import { LoadingShell } from "./LoadingShell"
 import { MetricsWindowToggle, useMetricsWindow, windowSubtitle } from "./MetricsWindowToggle"
+import { TodaysSchedule } from "./_TodaysSchedule/TodaysSchedule"
 
 // Feature flag — set to true to restore the Engagement Signals card on Coach
 // Home (paired right column next to Action Items). When false, Action Items
@@ -62,6 +63,10 @@ type CoachHome = {
   clients: CoachClient[]
   recentProspects: Prospect[]
   requiresAction: ActionItem[]
+  // Phase 1e (Coach Calendar Integration): server-derived beta gate. Coach Home
+  // is client-rendered, so CALENDAR_BETA_PROFILE_IDS is parsed in the route and
+  // surfaced as this boolean for the TodaysSchedule component.
+  calendar_beta_enabled: boolean
 }
 
 type CoachClient = {
@@ -244,17 +249,6 @@ const IconUsers = () => (
     <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
-  </svg>
-)
-
-const IconCalendar = () => (
-  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
-    <path d="M16 3v4" />
-    <path d="M8 3v4" />
-    <path d="M4 11h16" />
-    <path d="M11 15h1" />
-    <path d="M12 15v3" />
   </svg>
 )
 
@@ -489,31 +483,6 @@ function MetricsBar({ tiles }: { tiles: Tile[] }) {
     }}>
       {tiles.map((t) => <MetricTile key={t.label} tile={t} />)}
     </div>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────
-// Section C — Today's schedule (placeholder)
-// ──────────────────────────────────────────────────────────────
-
-function TodaysScheduleSection() {
-  return (
-    <Section icon={<IconCalendar />} title="Today's schedule">
-      <div style={{
-        padding: 20,
-        background: "rgba(255,255,255,0.03)",
-        border: `1px dashed ${T.BORDER_SOFT}`,
-        borderRadius: 10,
-        textAlign: "center",
-      }}>
-        <p style={{ fontSize: 13, color: T.MUTED, fontStyle: "italic", margin: 0 }}>
-          Calendar integration coming soon
-        </p>
-        <p style={{ fontSize: 12, color: T.DIM, marginTop: 6, marginBottom: 0 }}>
-          Sessions, prep blocks, and mock interviews will appear here
-        </p>
-      </div>
-    </Section>
   )
 }
 
@@ -1129,7 +1098,7 @@ export default function CoachHomePage() {
         )}
       </div>
 
-      <TodaysScheduleSection />
+      <TodaysSchedule isCalendarBetaEnabled={data.calendar_beta_enabled} />
       <MyClientsSection
         // TODO post-v0.1: backend should filter prospects from default
         // /api/coach/home clients response. Current filter is a frontend

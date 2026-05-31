@@ -223,6 +223,19 @@ export async function OPTIONS(req: NextRequest) {
 // just a re-alias so the response shape stays stable for the client.
 type ActionItem = EngagementSignal
 
+// Phase 1e (Coach Calendar Integration): parse CALENDAR_BETA_PROFILE_IDS into a
+// UUID allowlist — same parsing as /api/coach/calendar/connect. Empty/unset =
+// empty allowlist = fail-closed. Inline per the no-shared-helper convention.
+const CALENDAR_BETA_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function calendarBetaAllowlist(): string[] {
+  return (process.env.CALENDAR_BETA_PROFILE_IDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((s) => CALENDAR_BETA_UUID_RE.test(s))
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { userId, email } = await getAuthedUser(req)
@@ -700,6 +713,8 @@ export async function GET(req: NextRequest) {
       clients: cleanClients,
       recentProspects: prospectCards,
       requiresAction,
+      // Phase 1e: client-side beta gate for the TodaysSchedule component.
+      calendar_beta_enabled: calendarBetaAllowlist().includes(coachProfileId),
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
