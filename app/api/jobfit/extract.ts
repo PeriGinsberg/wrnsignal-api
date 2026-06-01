@@ -2700,6 +2700,26 @@ function inferProfileGradYear(text: string): number | null {
     if (Number.isFinite(y) && y >= 2000 && y <= 2035) return y
   }
 
+  // Pattern D: a single line carrying a real DEGREE token AND a year. Catches
+  // "GPA 3.8 · May 2026" / "B.S. Management ... 2026" where no explicit
+  // "class of"/"expected" keyword is present — the student over-count case.
+  // Line-bounded (no \n) so a bare work-history year cannot match. Degree
+  // token only — deliberately excludes university/college/gpa, which appear
+  // on work-history client lines (e.g. a recruiter's "University of Florida,
+  // 2025") and would feed a false student clamp.
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line) continue
+    const hasDegree =
+      /\b(bachelor'?s?|master'?s?|mba|ph\.?\s*d|associate'?s?|b\.?\s*a\.?|b\.?\s*s\.?|m\.?\s*a\.?|m\.?\s*s\.?|j\.?\s*d\.?)\b/i.test(line)
+    if (!hasDegree) continue
+    const yr = line.match(/\b(20\d{2})\b/)
+    if (yr) {
+      const y = parseInt(yr[1], 10)
+      if (Number.isFinite(y) && y >= 2000 && y <= 2035) return y
+    }
+  }
+
   return null
 }
 
@@ -2800,6 +2820,81 @@ function extractProfessionalExperienceText(profileText: string): string {
   return joined.length > 20 ? joined : profileText
 }
 
+// Detects current-student / recent-grad resumes for the STUDENT_EXPERIENCE_CLAMP
+// in inferYearsExperienceApprox. The date-span tier over-counts students whose
+// EXPERIENCE section mixes degree-spanning research, extracurricular, and gig
+// dates with one real role (e.g. a recent grad reading as 4 years).
+//
+// Five signals; ANY fires. Validated against real mid-career resumes (none
+// fire — span preserved) and student personas (all clamp). The detector is
+// intentionally asymmetric: missing a real student (→ possible over-score that
+// surfaces via the feedback widget) is far safer than flattening a real
+// professional's tenure to 1.
+//
+// `spanYears` is the Tier-2/3 date-span estimate, used only by signal (d).
+function isStudentOrRecentGrad(profileText: string, spanYears: number): boolean {
+  const text = profileText || ""
+  const CUR_YEAR = new Date().getFullYear()
+
+  // (a) a year >= current year within 60 chars of a degree/GPA/education token.
+  const eduRx =
+    /\b(b\.?\s*[as]\.?|bachelor'?s?|m\.?\s*[as]\.?|master'?s?|mba|ph\.?d|gpa|university|college|degree)\b/gi
+  const eduIdx: number[] = []
+  let em: RegExpExecArray | null
+  while ((em = eduRx.exec(text))) eduIdx.push(em.index)
+  const yrRx = /\b(20\d{2}|19\d{2})\b/g
+  const futIdx: number[] = []
+  let ym: RegExpExecArray | null
+  while ((ym = yrRx.exec(text))) {
+    if (parseInt(ym[1], 10) >= CUR_YEAR) futIdx.push(ym.index)
+  }
+  let a = false
+  for (const gy of futIdx) {
+    for (const ei of eduIdx) {
+      if (Math.abs(gy - ei) <= 60) { a = true; break }
+    }
+    if (a) break
+  }
+
+  // (c) degree-in-progress language adjacent (same-line, <=40 chars) to a degree token.
+  const c =
+    /\b(expected|anticipated|candidate|pursuing|in progress)\b[^\n]{0,40}\b(b\.?\s*[as]\.?|bachelor'?s?|master'?s?|mba|ph\.?d|degree|university|college)\b|\b(b\.?\s*[as]\.?|bachelor'?s?|master'?s?|mba|ph\.?d|degree)\b[^\n]{0,40}\b(expected|anticipated|in progress|candidate|pursuing)\b/i.test(text)
+
+  // (b) GPA present AND corroboration (a or c). GPA alone does NOT fire — a
+  // long-tenured professional who kept a GPA line should not be clamped.
+  const b = /\bgpa\b/i.test(text) && (a || c)
+
+  // (d) a detected GRADUATION year >= current-1 (via inferProfileGradYear, which
+  // is line-bounded) AND span tenure >= 3. A bare work-date year cannot satisfy
+  // this — only a year on a degree line. Catches the self-contradiction of a
+  // fresh grad date paired with an inflated multi-year span.
+  const gradYear = inferProfileGradYear(text)
+  const d = gradYear !== null && gradYear >= CUR_YEAR - 1 && spanYears >= 3
+
+  // (e) standalone enrollment phrases no working professional writes. Self-
+  // contained — does NOT widen the shared edu vocab above, so a bare "law"
+  // token cannot create a false-positive surface on legal professionals.
+  const MONTHS = "(?:jan|feb|mar|apr|may|jun|jul|aug|sept|sep|oct|nov|dec)[a-z]*\\.?"
+  const eCandidateFor =
+    /\bcandidate for\b[^\n]{0,40}\b(juris doctor|j\.?\s*d\.?|jd|b\.?\s*[as]\.?|bachelor'?s?|m\.?\s*[as]\.?|master'?s?|mba|ph\.?\s*d|m\.?\s*d\.?|degree|law)\b/i.test(text)
+  const eDegreeCandidate =
+    /\b(juris doctor|j\.?\s*d\.?|jd|mba|ph\.?\s*d|m\.?\s*[as]\.?|master'?s?|b\.?\s*[as]\.?|bachelor'?s?)\s+candidate\b/i.test(text)
+  let eExpected = false
+  const expMatch = text.match(
+    new RegExp(`\\b(expected|anticipated)\\b[^\\n]{0,20}${MONTHS}?\\s*\\b(20\\d{2})\\b`, "i")
+  )
+  if (expMatch) {
+    const y = parseInt(expMatch[expMatch.length - 1], 10)
+    if (y >= CUR_YEAR - 1) eExpected = true
+  }
+  const eLawSchool = /\blaw school\b/i.test(text)
+  const eInProgressDegree =
+    /\bin progress\b[^\n]{0,30}\b(degree|b\.?\s*[as]\.?|bachelor'?s?|master'?s?|mba|ph\.?\s*d|juris doctor|jd)\b|\b(degree|bachelor'?s?|master'?s?|mba|juris doctor|jd)\b[^\n]{0,30}\bin progress\b/i.test(text)
+  const e = eCandidateFor || eDegreeCandidate || eExpected || eLawSchool || eInProgressDegree
+
+  return a || b || c || d || e
+}
+
 function inferYearsExperienceApprox(profileText: string): number | null {
   if (!profileText || profileText.trim().length === 0) return null
 
@@ -2887,7 +2982,27 @@ function inferYearsExperienceApprox(profileText: string): number | null {
     }
     totalMonths += curEnd - curStart
     const years = Math.round(totalMonths / 12)
-    if (years >= 0 && years <= 50) return years
+    if (years >= 0 && years <= 50) {
+      // STUDENT_EXPERIENCE_CLAMP: the date-span tier over-counts students whose
+      // EXPERIENCE section mixes degree-spanning / extracurricular / gig dates
+      // with one real role. When the resume reads as a current student or
+      // recent grad, clamp the span estimate to 1. Tier 4 (role-signal) already
+      // caps at 2 and is left untouched; this guards only the unbounded span tier.
+      if (isStudentOrRecentGrad(profileText, years)) {
+        // No profile_id / persona_id is in scope here (inferYearsExperienceApprox
+        // takes only profileText), so the tripwire logs the operands plus a
+        // length + 24-char prefix fingerprint to trace a wrong clamp back to a
+        // resume without a signature refactor.
+        const fp = profileText.replace(/\s+/g, " ").trim().slice(0, 24)
+        console.log(
+          `[extract] STUDENT_EXPERIENCE_CLAMP spanYears=${years} -> 1 ` +
+          `gradYear=${inferProfileGradYear(profileText) ?? "null"} ` +
+          `resumeChars=${profileText.length} resumePrefix=${JSON.stringify(fp)}`
+        )
+        return Math.min(years, 1)
+      }
+      return years
+    }
   }
 
   // ── 4. Role-signal fallback for resumes without parseable dates ─────────

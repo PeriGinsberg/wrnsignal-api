@@ -41,3 +41,5 @@ Thumbs.db
 Apple/
 **/AuthKey_*.p8
 *.pem
+# Real client resumes — used as local test fixtures, never commit
+Resumes/
