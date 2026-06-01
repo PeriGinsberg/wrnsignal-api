@@ -2940,6 +2940,10 @@ function inferYearsExperienceApprox(profileText: string): number | null {
       const endM = monthMap[m[3].toLowerCase()] ?? 0
       const endY = parseInt(m[4], 10)
       if (!Number.isFinite(endY) || endY < 1970 || endY > 2100) continue
+      // Future-date backstop: a range ending after this calendar year is an
+      // education/enrollment date (e.g. "Aug 2025 – May 2026" for a degree in
+      // progress), not elapsed professional tenure — drop it.
+      if (endY > now.getUTCFullYear()) continue
       endAbs = endY * 12 + endM
     } else {
       endAbs = currentMonthsAbs
@@ -2959,6 +2963,9 @@ function inferYearsExperienceApprox(profileText: string): number | null {
     if (m[2]) {
       const endY = parseInt(m[2], 10)
       if (!Number.isFinite(endY)) continue
+      // Future-date backstop (see month-range collector above): drop ranges
+      // ending after this calendar year — enrollment dates, not tenure.
+      if (endY > now.getUTCFullYear()) continue
       endAbs = endY * 12 + 11
     } else {
       endAbs = currentMonthsAbs
