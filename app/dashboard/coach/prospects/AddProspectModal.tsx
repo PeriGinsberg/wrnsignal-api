@@ -51,6 +51,14 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
   other: "Other",
 }
 
+// Education status (v0.2). University + Grad date reveal only for in_school /
+// graduated (not for "na"). Values match the coach_clients CHECK enum.
+const EDUCATION_OPTIONS: { value: "in_school" | "graduated" | "na"; label: string }[] = [
+  { value: "in_school", label: "In school" },
+  { value: "graduated", label: "Graduated" },
+  { value: "na", label: "Not applicable" },
+]
+
 // Q11 palette: blue / purple / teal / green / dim.
 // personal_contact uses T.SUCCESS green to avoid CTA-collision with
 // T.WRN_ORANGE; "personal warmth" semantics fit a green tone.
@@ -94,6 +102,11 @@ type FieldErrors = Partial<{
   phone: string
   source_detail: string
   initial_note: string
+  linkedin_url: string
+  target_roles: string
+  education_status: string
+  university: string
+  grad_date: string
 }>
 
 export default function AddProspectModal({ onClose, onSuccess }: Props) {
@@ -103,9 +116,19 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
   const [phone, setPhone] = useState("")
   const [sourceDetail, setSourceDetail] = useState("")
   const [initialNote, setInitialNote] = useState("")
+  // v0.2 "add details" expander fields.
+  const [expanded, setExpanded] = useState(false)
+  const [linkedinUrl, setLinkedinUrl] = useState("")
+  const [targetRoles, setTargetRoles] = useState("")
+  const [educationStatus, setEducationStatus] = useState<"" | "in_school" | "graduated" | "na">("")
+  const [university, setUniversity] = useState("")
+  const [gradDate, setGradDate] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
+
+  // University + Grad date only matter when the prospect is in school / a grad.
+  const showEducationDetails = educationStatus === "in_school" || educationStatus === "graduated"
 
   const nameValid = name.trim().length > 0
   const sourceCategoryValid = sourceCategory !== ""
@@ -126,6 +149,16 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
       setErrors({ invited_email: serverMsg })
     } else if (/phone/i.test(serverMsg)) {
       setErrors({ phone: serverMsg })
+    } else if (/linkedin_url/i.test(serverMsg)) {
+      setErrors({ linkedin_url: serverMsg })
+    } else if (/target_roles/i.test(serverMsg)) {
+      setErrors({ target_roles: serverMsg })
+    } else if (/education_status/i.test(serverMsg)) {
+      setErrors({ education_status: serverMsg })
+    } else if (/grad_date/i.test(serverMsg)) {
+      setErrors({ grad_date: serverMsg })
+    } else if (/university/i.test(serverMsg)) {
+      setErrors({ university: serverMsg })
     } else {
       setGeneralError(serverMsg)
     }
@@ -149,6 +182,18 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
       if (trimmedDetail) body.source_detail = trimmedDetail
       const trimmedNote = initialNote.trim()
       if (trimmedNote) body.initial_note = trimmedNote
+      // v0.2 expander fields (only sent when filled).
+      const trimmedLinkedin = linkedinUrl.trim()
+      if (trimmedLinkedin) body.linkedin_url = trimmedLinkedin
+      const trimmedTargetRoles = targetRoles.trim()
+      if (trimmedTargetRoles) body.target_roles = trimmedTargetRoles
+      if (educationStatus) body.education_status = educationStatus
+      // University + grad date only carry meaning with an education status.
+      if (showEducationDetails) {
+        const trimmedUni = university.trim()
+        if (trimmedUni) body.university = trimmedUni
+        if (gradDate) body.grad_date = gradDate
+      }
 
       const res = await authFetch("/api/coach/prospects", {
         method: "POST",
@@ -259,75 +304,189 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
             )}
           </div>
 
-          {/* Invited email (optional) */}
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
-              INVITED EMAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-            </span>
-            <input
-              type="email"
-              style={input}
-              placeholder="prospect@example.com"
-              value={invitedEmail}
-              onChange={(e) => { setInvitedEmail(e.target.value); if (errors.invited_email) setErrors({ ...errors, invited_email: undefined }) }}
-            />
-            <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Used later when you send a SIGNAL invite</p>
-            {errors.invited_email && (
-              <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
-            )}
-          </div>
+          {/* "Add details" expander toggle. Required floor stays Name + Source;
+              everything else is optional and tucked behind this. */}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            style={{
+              alignSelf: "flex-start",
+              background: "none",
+              border: "none",
+              color: T.WRN_BLUE,
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              padding: 0,
+            }}
+          >
+            {expanded ? "− Hide details" : "+ Add details"}
+          </button>
 
-          {/* Phone number (optional) */}
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
-              PHONE NUMBER <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-            </span>
-            <input
-              type="tel"
-              style={input}
-              placeholder="(555) 555-5555"
-              value={phone}
-              onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors({ ...errors, phone: undefined }) }}
-            />
-            <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Optional</p>
-            {errors.phone && (
-              <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.phone}</div>
-            )}
-          </div>
+          {expanded && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {/* Invited email (optional) */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  INVITED EMAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <input
+                  type="email"
+                  style={input}
+                  placeholder="prospect@example.com"
+                  value={invitedEmail}
+                  onChange={(e) => { setInvitedEmail(e.target.value); if (errors.invited_email) setErrors({ ...errors, invited_email: undefined }) }}
+                />
+                <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Used later when you send a SIGNAL invite</p>
+                {errors.invited_email && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
+                )}
+              </div>
 
-          {/* Source detail (optional) */}
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
-              SOURCE DETAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-            </span>
-            <textarea
-              style={{ ...textarea, minHeight: 60 }}
-              placeholder="e.g. Met at conference, intro from Sarah"
-              value={sourceDetail}
-              onChange={(e) => { setSourceDetail(e.target.value); if (errors.source_detail) setErrors({ ...errors, source_detail: undefined }) }}
-              maxLength={500}
-            />
-            {errors.source_detail && (
-              <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.source_detail}</div>
-            )}
-          </div>
+              {/* Phone number (optional) */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  PHONE NUMBER <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <input
+                  type="tel"
+                  style={input}
+                  placeholder="(555) 555-5555"
+                  value={phone}
+                  onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors({ ...errors, phone: undefined }) }}
+                />
+                {errors.phone && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.phone}</div>
+                )}
+              </div>
 
-          {/* Initial note (optional) */}
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
-              INITIAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-            </span>
-            <textarea
-              style={{ ...textarea, minHeight: 100 }}
-              placeholder="Anything to remember about this prospect..."
-              value={initialNote}
-              onChange={(e) => { setInitialNote(e.target.value); if (errors.initial_note) setErrors({ ...errors, initial_note: undefined }) }}
-              maxLength={5000}
-            />
-            {errors.initial_note && (
-              <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.initial_note}</div>
-            )}
-          </div>
+              {/* LinkedIn (optional) */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  LINKEDIN <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <input
+                  type="url"
+                  style={input}
+                  placeholder="https://linkedin.com/in/..."
+                  value={linkedinUrl}
+                  onChange={(e) => { setLinkedinUrl(e.target.value); if (errors.linkedin_url) setErrors({ ...errors, linkedin_url: undefined }) }}
+                />
+                {errors.linkedin_url && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.linkedin_url}</div>
+                )}
+              </div>
+
+              {/* Target roles (optional) */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  TARGET ROLES <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <input
+                  type="text"
+                  style={input}
+                  placeholder="e.g. Product Manager, Strategy"
+                  value={targetRoles}
+                  onChange={(e) => { setTargetRoles(e.target.value); if (errors.target_roles) setErrors({ ...errors, target_roles: undefined }) }}
+                />
+                {errors.target_roles && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.target_roles}</div>
+                )}
+              </div>
+
+              {/* Education status (optional) → conditionally reveals University + Grad date */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  EDUCATION STATUS <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <select
+                  style={{ ...input, cursor: "pointer", colorScheme: "dark" }}
+                  value={educationStatus}
+                  onChange={(e) => { setEducationStatus(e.target.value as typeof educationStatus); if (errors.education_status) setErrors({ ...errors, education_status: undefined }) }}
+                >
+                  <option value="">Select…</option>
+                  {EDUCATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                {errors.education_status && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.education_status}</div>
+                )}
+              </div>
+
+              {showEducationDetails && (
+                <>
+                  {/* University (optional) */}
+                  <div>
+                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                      UNIVERSITY <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                    </span>
+                    <input
+                      type="text"
+                      style={input}
+                      placeholder="e.g. State University"
+                      value={university}
+                      onChange={(e) => { setUniversity(e.target.value); if (errors.university) setErrors({ ...errors, university: undefined }) }}
+                    />
+                    {errors.university && (
+                      <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.university}</div>
+                    )}
+                  </div>
+
+                  {/* Grad date (optional) — native date input handles empty/partial */}
+                  <div>
+                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                      GRAD DATE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                    </span>
+                    <input
+                      type="date"
+                      style={{ ...input, cursor: "pointer", colorScheme: "dark" }}
+                      value={gradDate}
+                      onChange={(e) => { setGradDate(e.target.value); if (errors.grad_date) setErrors({ ...errors, grad_date: undefined }) }}
+                    />
+                    {errors.grad_date && (
+                      <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.grad_date}</div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Source detail (optional) */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  SOURCE DETAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <textarea
+                  style={{ ...textarea, minHeight: 60 }}
+                  placeholder="e.g. Met at conference, intro from Sarah"
+                  value={sourceDetail}
+                  onChange={(e) => { setSourceDetail(e.target.value); if (errors.source_detail) setErrors({ ...errors, source_detail: undefined }) }}
+                  maxLength={500}
+                />
+                {errors.source_detail && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.source_detail}</div>
+                )}
+              </div>
+
+              {/* Initial note (optional) */}
+              <div>
+                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                  INITIAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+                </span>
+                <textarea
+                  style={{ ...textarea, minHeight: 100 }}
+                  placeholder="Anything to remember about this prospect..."
+                  value={initialNote}
+                  onChange={(e) => { setInitialNote(e.target.value); if (errors.initial_note) setErrors({ ...errors, initial_note: undefined }) }}
+                  maxLength={5000}
+                />
+                {errors.initial_note && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.initial_note}</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {generalError && (

@@ -60,6 +60,22 @@ type CoachClientRow = {
   // sub-status. Both nullable (added by the pipeline migration).
   current_stage_key: string | null
   prospect_status: string | null
+  // v0.2 capture fields (all nullable).
+  linkedin_url: string | null
+  current_title: string | null
+  current_company: string | null
+  location: string | null
+  education_status: string | null
+  university: string | null
+  field_of_study: string | null
+  grad_date: string | null
+  years_experience_approx: number | null
+  job_type: string | null
+  target_roles: string | null
+  target_locations: string | null
+  preferred_locations: string | null
+  timeline: string | null
+  tags: string | null
   phase_initial_contact_made: boolean
   phase_initial_contact_made_at: string | null
   phase_discovery_call_scheduled: boolean
@@ -88,6 +104,21 @@ const PROSPECT_SELECT_COLS = [
   "client_profile_id",
   "current_stage_key",
   "prospect_status",
+  "linkedin_url",
+  "current_title",
+  "current_company",
+  "location",
+  "education_status",
+  "university",
+  "field_of_study",
+  "grad_date",
+  "years_experience_approx",
+  "job_type",
+  "target_roles",
+  "target_locations",
+  "preferred_locations",
+  "timeline",
+  "tags",
   "phase_initial_contact_made",
   "phase_initial_contact_made_at",
   "phase_discovery_call_scheduled",
@@ -103,6 +134,61 @@ const PROSPECT_SELECT_COLS = [
   "phase_invoice_paid",
   "phase_invoice_paid_at",
 ].join(", ")
+
+// ── Capture-field constants + validators (Prospects v0.2) ──
+// Same shape as the sibling list/POST route. Each returns { value } or
+// { error } (a 400 message); empty input normalizes to null.
+const EDUCATION_STATUSES = ["in_school", "graduated", "na"] as const
+const JOB_TYPES = ["Full Time Role", "Internship", "Both"] as const
+
+type FieldResult<T> = { value: T } | { error: string }
+
+function optText(raw: unknown, field: string, max: number): FieldResult<string | null> {
+  if (raw === undefined || raw === null) return { value: null }
+  if (typeof raw !== "string") return { error: `${field} must be a string` }
+  const t = raw.trim()
+  if (!t) return { value: null }
+  if (t.length > max) return { error: `${field} too long (max ${max} chars)` }
+  return { value: t }
+}
+
+function optEnum(raw: unknown, field: string, allowed: readonly string[]): FieldResult<string | null> {
+  if (raw === undefined || raw === null || raw === "") return { value: null }
+  if (typeof raw !== "string" || !allowed.includes(raw)) {
+    return { error: `${field} must be one of: ${allowed.join(", ")}` }
+  }
+  return { value: raw }
+}
+
+// Non-negative whole number; empty → null; non-numeric rejected with a 400
+// (never reaches the int column to throw).
+function optInt(raw: unknown, field: string): FieldResult<number | null> {
+  if (raw === undefined || raw === null || raw === "") return { value: null }
+  if (typeof raw === "number") {
+    if (!Number.isInteger(raw) || raw < 0) return { error: `${field} must be a whole number (0 or more)` }
+    return { value: raw }
+  }
+  if (typeof raw === "string") {
+    const t = raw.trim()
+    if (!t) return { value: null }
+    if (!/^\d+$/.test(t)) return { error: `${field} must be a whole number (0 or more)` }
+    return { value: parseInt(t, 10) }
+  }
+  return { error: `${field} must be a whole number (0 or more)` }
+}
+
+// Date YYYY-MM-DD; empty → null; partial/invalid rejected with a 400 so a bad
+// string never reaches the date column and throws.
+function optDate(raw: unknown, field: string): FieldResult<string | null> {
+  if (raw === undefined || raw === null || raw === "") return { value: null }
+  if (typeof raw !== "string") return { error: `${field} must be a date (YYYY-MM-DD)` }
+  const t = raw.trim()
+  if (!t) return { value: null }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || Number.isNaN(Date.parse(t))) {
+    return { error: `${field} must be a valid date (YYYY-MM-DD)` }
+  }
+  return { value: t }
+}
 
 // ── Auth helpers (inline; same shape as 2c send-invite + sibling route.ts) ──
 
@@ -228,6 +314,22 @@ function buildProspectListItem(
     client_profile_id: row.client_profile_id,
     current_stage_key: row.current_stage_key,
     prospect_status: row.prospect_status,
+    // v0.2 capture fields.
+    linkedin_url: row.linkedin_url,
+    current_title: row.current_title,
+    current_company: row.current_company,
+    location: row.location,
+    education_status: row.education_status,
+    university: row.university,
+    field_of_study: row.field_of_study,
+    grad_date: row.grad_date,
+    years_experience_approx: row.years_experience_approx,
+    job_type: row.job_type,
+    target_roles: row.target_roles,
+    target_locations: row.target_locations,
+    preferred_locations: row.preferred_locations,
+    timeline: row.timeline,
+    tags: row.tags,
     last_activity_at: lastActivityAt,
     created_at: row.invited_at,
   }
@@ -456,6 +558,50 @@ export async function PATCH(
         }, 400)
       }
       updates.lifecycle_status = body.lifecycle_status
+    }
+
+    // ── v0.2 capture fields (allow-listed; omitted = unchanged, null/empty =
+    //    clear). Typed fields (years_experience_approx, grad_date) are
+    //    validated so bad input 400s rather than reaching the column. ──
+    const textCaptureFields: [string, number][] = [
+      ["linkedin_url", 500],
+      ["current_title", 200],
+      ["current_company", 200],
+      ["location", 200],
+      ["university", 200],
+      ["field_of_study", 200],
+      ["target_roles", 1000],
+      ["target_locations", 1000],
+      ["preferred_locations", 1000],
+      ["timeline", 200],
+      ["tags", 500],
+    ]
+    for (const [f, max] of textCaptureFields) {
+      if (f in body) {
+        const r = optText((body as any)[f], f, max)
+        if ("error" in r) return withCorsJson(req, { ok: false, error: r.error }, 400)
+        updates[f] = r.value
+      }
+    }
+    if ("education_status" in body) {
+      const r = optEnum(body.education_status, "education_status", EDUCATION_STATUSES)
+      if ("error" in r) return withCorsJson(req, { ok: false, error: r.error }, 400)
+      updates.education_status = r.value
+    }
+    if ("job_type" in body) {
+      const r = optEnum(body.job_type, "job_type", JOB_TYPES)
+      if ("error" in r) return withCorsJson(req, { ok: false, error: r.error }, 400)
+      updates.job_type = r.value
+    }
+    if ("years_experience_approx" in body) {
+      const r = optInt(body.years_experience_approx, "years_experience_approx")
+      if ("error" in r) return withCorsJson(req, { ok: false, error: r.error }, 400)
+      updates.years_experience_approx = r.value
+    }
+    if ("grad_date" in body) {
+      const r = optDate(body.grad_date, "grad_date")
+      if ("error" in r) return withCorsJson(req, { ok: false, error: r.error }, 400)
+      updates.grad_date = r.value
     }
 
     // PATCH phase logic uses SELECT-then-UPDATE rather than a

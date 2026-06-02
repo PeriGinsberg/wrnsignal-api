@@ -40,6 +40,64 @@ const PHASE_KEYS = [
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// ── Capture-field constants + validators (Prospects v0.2) ──
+// Shared shape with the PATCH route ([id]/route.ts) — each returns { value }
+// on success or { error } (a 400 message). All fields are optional; empty
+// input normalizes to null rather than empty string.
+const EDUCATION_STATUSES = ["in_school", "graduated", "na"] as const
+const JOB_TYPES = ["Full Time Role", "Internship", "Both"] as const
+
+type FieldResult<T> = { value: T } | { error: string }
+
+function optText(raw: unknown, field: string, max: number): FieldResult<string | null> {
+  if (raw === undefined || raw === null) return { value: null }
+  if (typeof raw !== "string") return { error: `${field} must be a string` }
+  const t = raw.trim()
+  if (!t) return { value: null }
+  if (t.length > max) return { error: `${field} too long (max ${max} chars)` }
+  return { value: t }
+}
+
+function optEnum(raw: unknown, field: string, allowed: readonly string[]): FieldResult<string | null> {
+  if (raw === undefined || raw === null || raw === "") return { value: null }
+  if (typeof raw !== "string" || !allowed.includes(raw)) {
+    return { error: `${field} must be one of: ${allowed.join(", ")}` }
+  }
+  return { value: raw }
+}
+
+// Non-negative whole number. Accepts a number or numeric string; empty → null;
+// anything non-numeric is rejected with a 400 (never reaches the int column to
+// throw). This is one of the two fields where capture historically breaks.
+function optInt(raw: unknown, field: string): FieldResult<number | null> {
+  if (raw === undefined || raw === null || raw === "") return { value: null }
+  if (typeof raw === "number") {
+    if (!Number.isInteger(raw) || raw < 0) return { error: `${field} must be a whole number (0 or more)` }
+    return { value: raw }
+  }
+  if (typeof raw === "string") {
+    const t = raw.trim()
+    if (!t) return { value: null }
+    if (!/^\d+$/.test(t)) return { error: `${field} must be a whole number (0 or more)` }
+    return { value: parseInt(t, 10) }
+  }
+  return { error: `${field} must be a whole number (0 or more)` }
+}
+
+// Date as YYYY-MM-DD. Empty → null; partial/invalid rejected with a 400 so a
+// bad string never reaches the date column and throws. The other field where
+// capture historically breaks.
+function optDate(raw: unknown, field: string): FieldResult<string | null> {
+  if (raw === undefined || raw === null || raw === "") return { value: null }
+  if (typeof raw !== "string") return { error: `${field} must be a date (YYYY-MM-DD)` }
+  const t = raw.trim()
+  if (!t) return { value: null }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || Number.isNaN(Date.parse(t))) {
+    return { error: `${field} must be a valid date (YYYY-MM-DD)` }
+  }
+  return { value: t }
+}
+
 // Raw shape of a coach_clients row after SELECT-ing the 18 columns we
 // need. Used by helpers below.
 type CoachClientRow = {
@@ -378,6 +436,19 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "initial_note too long (max 5000 chars)" }, 400)
     }
 
+    // ── Modal-captured optional fields (v0.2 "add details" expander) ──
+    // The rest of the v0.2 field set is detail-page-only (PATCH /[id]).
+    const linkedin = optText(body.linkedin_url, "linkedin_url", 500)
+    if ("error" in linkedin) return withCorsJson(req, { ok: false, error: linkedin.error }, 400)
+    const targetRoles = optText(body.target_roles, "target_roles", 1000)
+    if ("error" in targetRoles) return withCorsJson(req, { ok: false, error: targetRoles.error }, 400)
+    const educationStatus = optEnum(body.education_status, "education_status", EDUCATION_STATUSES)
+    if ("error" in educationStatus) return withCorsJson(req, { ok: false, error: educationStatus.error }, 400)
+    const university = optText(body.university, "university", 200)
+    if ("error" in university) return withCorsJson(req, { ok: false, error: university.error }, 400)
+    const gradDate = optDate(body.grad_date, "grad_date")
+    if ("error" in gradDate) return withCorsJson(req, { ok: false, error: gradDate.error }, 400)
+
     // ── Side effects ──
 
     const supabase = getSupabaseAdmin()
@@ -397,6 +468,12 @@ export async function POST(req: NextRequest) {
         phone,
         source_category: sourceCategory,
         source_detail: sourceDetail,
+        // v0.2 modal-captured optionals (null when not provided).
+        linkedin_url: linkedin.value,
+        target_roles: targetRoles.value,
+        education_status: educationStatus.value,
+        university: university.value,
+        grad_date: gradDate.value,
         // invite_token defaults via gen_random_uuid()
         // invited_at defaults via now()
         // 14 phase columns default per schema (booleans false, _at null)

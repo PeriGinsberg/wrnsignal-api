@@ -184,10 +184,45 @@ type Prospect = {
   current_stage_key: string | null
   prospect_status: ProspectStatus | null
   stage_progress: StageProgress[]
+  // v0.2 capture fields (all nullable).
+  linkedin_url: string | null
+  current_title: string | null
+  current_company: string | null
+  location: string | null
+  education_status: string | null
+  university: string | null
+  field_of_study: string | null
+  grad_date: string | null
+  years_experience_approx: number | null
+  job_type: string | null
+  target_roles: string | null
+  target_locations: string | null
+  preferred_locations: string | null
+  timeline: string | null
+  tags: string | null
   last_activity_at: string | null
   created_at: string | null
   notes: ProspectNote[]
 }
+
+// v0.2 capture enums for the detail edit selects.
+const EDUCATION_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "—" },
+  { value: "in_school", label: "In school" },
+  { value: "graduated", label: "Graduated" },
+  { value: "na", label: "Not applicable" },
+]
+const EDUCATION_LABEL: Record<string, string> = {
+  in_school: "In school",
+  graduated: "Graduated",
+  na: "Not applicable",
+}
+const JOB_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "—" },
+  { value: "Full Time Role", label: "Full Time Role" },
+  { value: "Internship", label: "Internship" },
+  { value: "Both", label: "Both" },
+]
 
 // ── Auth helpers (inline) ──
 
@@ -509,139 +544,189 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
 }
 
+type ProspectUpdate = Record<string, string | null>
+
+type Draft = {
+  source_category: SourceCategory | ""
+  source_detail: string
+  invited_email: string
+  phone: string
+  linkedin_url: string
+  current_title: string
+  current_company: string
+  location: string
+  education_status: string
+  university: string
+  field_of_study: string
+  grad_date: string
+  years_experience_approx: string
+  job_type: string
+  target_roles: string
+  target_locations: string
+  preferred_locations: string
+  timeline: string
+  tags: string
+}
+
+function draftFromProspect(p: Prospect): Draft {
+  return {
+    source_category: (p.source_category ?? "") as SourceCategory | "",
+    source_detail: p.source_detail ?? "",
+    invited_email: p.invited_email ?? "",
+    phone: p.phone ?? "",
+    linkedin_url: p.linkedin_url ?? "",
+    current_title: p.current_title ?? "",
+    current_company: p.current_company ?? "",
+    location: p.location ?? "",
+    education_status: p.education_status ?? "",
+    university: p.university ?? "",
+    field_of_study: p.field_of_study ?? "",
+    grad_date: p.grad_date ?? "",
+    years_experience_approx: p.years_experience_approx != null ? String(p.years_experience_approx) : "",
+    job_type: p.job_type ?? "",
+    target_roles: p.target_roles ?? "",
+    target_locations: p.target_locations ?? "",
+    preferred_locations: p.preferred_locations ?? "",
+    timeline: p.timeline ?? "",
+    tags: p.tags ?? "",
+  }
+}
+
+// Prospect Information block — labeled-columns view (matches the post-conversion
+// Client Information block) + a full editable form. Capture-only: editing here
+// fills in the v0.2 fields after first contact.
 function SourceSection({
-  category,
-  detail,
-  invitedEmail,
-  phone,
-  createdAt,
-  lastActivityAt,
+  prospect,
   onSave,
 }: {
-  category: SourceCategory | null
-  detail: string | null
-  invitedEmail: string | null
-  phone: string | null
-  createdAt: string | null
-  lastActivityAt: string | null
-  onSave: (next: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null }) => Promise<{ ok: true } | { ok: false; error: string }>
+  prospect: Prospect
+  onSave: (next: ProspectUpdate) => Promise<{ ok: true } | { ok: false; error: string }>
 }) {
   const [editing, setEditing] = useState(false)
-  const [editCategory, setEditCategory] = useState<SourceCategory | "">(category ?? "")
-  const [editDetail, setEditDetail] = useState(detail ?? "")
-  const [editEmail, setEditEmail] = useState(invitedEmail ?? "")
-  const [editPhone, setEditPhone] = useState(phone ?? "")
+  const [draft, setDraft] = useState<Draft>(() => draftFromProspect(prospect))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function startEdit() {
-    setEditCategory(category ?? "")
-    setEditDetail(detail ?? "")
-    setEditEmail(invitedEmail ?? "")
-    setEditPhone(phone ?? "")
-    setError(null)
-    setEditing(true)
-  }
-
-  function cancelEdit() {
-    setEditing(false)
-    setError(null)
-  }
+  function startEdit() { setDraft(draftFromProspect(prospect)); setError(null); setEditing(true) }
+  function cancelEdit() { setEditing(false); setError(null) }
+  function set(k: keyof Draft, v: string) { setDraft((d) => ({ ...d, [k]: v })) }
 
   async function handleSave() {
-    if (!editCategory) {
-      setError("Source category is required")
-      return
-    }
+    if (!draft.source_category) { setError("Source category is required"); return }
     setSaving(true)
     setError(null)
-    const updates: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null } = {}
-    if (editCategory !== category) updates.source_category = editCategory
-    const nextDetail = editDetail.trim() || null
-    if (nextDetail !== detail) updates.source_detail = nextDetail
-    const nextEmail = editEmail.trim() || null
-    if (nextEmail !== invitedEmail) updates.invited_email = nextEmail
-    const nextPhone = editPhone.trim() || null
-    if (nextPhone !== phone) updates.phone = nextPhone
-
-    if (Object.keys(updates).length === 0) {
-      setEditing(false)
-      setSaving(false)
-      return
+    const base = draftFromProspect(prospect)
+    const updates: ProspectUpdate = {}
+    // source_category is a chip (always valid here); send the value on change.
+    if (draft.source_category !== base.source_category) updates.source_category = draft.source_category
+    // All other fields: send trimmed value on change ("" clears server-side).
+    const keys: (keyof Draft)[] = [
+      "source_detail", "invited_email", "phone", "linkedin_url",
+      "current_title", "current_company", "location", "education_status",
+      "university", "field_of_study", "grad_date", "years_experience_approx",
+      "job_type", "target_roles", "target_locations", "preferred_locations",
+      "timeline", "tags",
+    ]
+    for (const k of keys) {
+      const next = draft[k].trim()
+      if (next !== (base[k] as string)) updates[k] = next
     }
+    if (Object.keys(updates).length === 0) { setEditing(false); setSaving(false); return }
     const res = await onSave(updates)
     setSaving(false)
-    if (!res.ok) {
-      setError(res.error)
-      return
-    }
+    if (!res.ok) { setError(res.error); return }
     setEditing(false)
   }
 
+  // ── View mode ──
   if (!editing) {
+    const dash = <span style={{ color: T.DIM }}>—</span>
+    const sourceBadge = prospect.source_category ? (
+      <span
+        style={{
+          display: "inline-block",
+          background: SOURCE_STYLE[prospect.source_category].bg,
+          color: SOURCE_STYLE[prospect.source_category].color,
+          fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
+          padding: "3px 10px", borderRadius: 999,
+        }}
+      >
+        {SOURCE_LABEL[prospect.source_category]}
+      </span>
+    ) : dash
+    const phoneVal = prospect.phone ? (
+      <a
+        href={`tel:${prospect.phone}`}
+        style={{ color: T.TEXT, textDecoration: "none" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline" }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none" }}
+      >
+        {prospect.phone}
+      </a>
+    ) : dash
+    const linkedinVal = prospect.linkedin_url ? (
+      <a href={prospect.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "none" }}>
+        {prospect.linkedin_url}
+      </a>
+    ) : dash
+
+    // Each group renders only its populated rows (plus the always-on contact
+    // row). Keeps a fresh prospect compact; Edit reveals every field.
+    const group = (title: string | null, rows: { label: string; value: React.ReactNode; show: boolean }[]) => {
+      const shown = rows.filter((r) => r.show)
+      if (shown.length === 0) return null
+      return (
+        <div style={{ marginTop: title ? 18 : 0 }}>
+          {title && <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 10 }}>{title}</div>}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+            {shown.map((r) => <InfoRow key={r.label} label={r.label} value={r.value} />)}
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div>
-        {/* Labeled-columns grid — matches the post-conversion Client
-            Information block (coach-clients/[id]). */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-          <InfoRow
-            label="SOURCE"
-            value={
-              category ? (
-                <span
-                  style={{
-                    display: "inline-block",
-                    background: SOURCE_STYLE[category].bg,
-                    color: SOURCE_STYLE[category].color,
-                    fontSize: 11,
-                    fontWeight: 900,
-                    letterSpacing: 0.8,
-                    textTransform: "uppercase",
-                    padding: "3px 10px",
-                    borderRadius: 999,
-                  }}
-                >
-                  {SOURCE_LABEL[category]}
-                </span>
-              ) : (
-                <span style={{ color: T.DIM }}>—</span>
-              )
-            }
-          />
-          <InfoRow label="SOURCE DETAIL" value={detail || <span style={{ color: T.DIM }}>—</span>} />
-          <InfoRow label="EMAIL" value={invitedEmail || <span style={{ color: T.DIM }}>—</span>} />
-          <InfoRow
-            label="PHONE"
-            value={
-              phone ? (
-                <a
-                  href={`tel:${phone}`}
-                  style={{ color: T.TEXT, textDecoration: "none" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline" }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none" }}
-                >
-                  {phone}
-                </a>
-              ) : (
-                <span style={{ color: T.DIM }}>—</span>
-              )
-            }
-          />
-          {createdAt && <InfoRow label="ADDED AS PROSPECT" value={formatDate(createdAt)} />}
-          {lastActivityAt && <InfoRow label="LAST ACTIVITY" value={timeAgo(lastActivityAt)} />}
-        </div>
+        {group(null, [
+          { label: "SOURCE", value: sourceBadge, show: true },
+          { label: "SOURCE DETAIL", value: prospect.source_detail || dash, show: !!prospect.source_detail },
+          { label: "EMAIL", value: prospect.invited_email || dash, show: true },
+          { label: "PHONE", value: phoneVal, show: true },
+          { label: "LINKEDIN", value: linkedinVal, show: !!prospect.linkedin_url },
+        ])}
+        {group("CURRENT ROLE", [
+          { label: "TITLE", value: prospect.current_title, show: !!prospect.current_title },
+          { label: "COMPANY", value: prospect.current_company, show: !!prospect.current_company },
+          { label: "LOCATION", value: prospect.location, show: !!prospect.location },
+          { label: "YEARS EXPERIENCE", value: prospect.years_experience_approx != null ? String(prospect.years_experience_approx) : null, show: prospect.years_experience_approx != null },
+          { label: "JOB TYPE", value: prospect.job_type, show: !!prospect.job_type },
+        ])}
+        {group("EDUCATION", [
+          { label: "STATUS", value: prospect.education_status ? (EDUCATION_LABEL[prospect.education_status] ?? prospect.education_status) : null, show: !!prospect.education_status },
+          { label: "UNIVERSITY", value: prospect.university, show: !!prospect.university },
+          { label: "FIELD OF STUDY", value: prospect.field_of_study, show: !!prospect.field_of_study },
+          { label: "GRAD DATE", value: prospect.grad_date ? formatDate(prospect.grad_date) : null, show: !!prospect.grad_date },
+        ])}
+        {group("TARGETING", [
+          { label: "TARGET ROLES", value: prospect.target_roles, show: !!prospect.target_roles },
+          { label: "TARGET LOCATIONS", value: prospect.target_locations, show: !!prospect.target_locations },
+          { label: "PREFERRED LOCATIONS", value: prospect.preferred_locations, show: !!prospect.preferred_locations },
+          { label: "TIMELINE", value: prospect.timeline, show: !!prospect.timeline },
+        ])}
+        {group("OTHER", [
+          { label: "TAGS", value: prospect.tags, show: !!prospect.tags },
+          { label: "ADDED AS PROSPECT", value: prospect.created_at ? formatDate(prospect.created_at) : null, show: !!prospect.created_at },
+          { label: "LAST ACTIVITY", value: prospect.last_activity_at ? timeAgo(prospect.last_activity_at) : null, show: !!prospect.last_activity_at },
+        ])}
+
         <button
           onClick={startEdit}
           style={{
             background: "none",
             border: `1px solid ${T.BORDER_SOFT}`,
             color: T.MUTED,
-            fontSize: 11,
-            fontWeight: 900,
-            borderRadius: 6,
-            padding: "4px 12px",
-            cursor: "pointer",
-            marginTop: 16,
+            fontSize: 11, fontWeight: 900, borderRadius: 6,
+            padding: "4px 12px", cursor: "pointer", marginTop: 18,
           }}
         >
           Edit
@@ -650,31 +735,40 @@ function SourceSection({
     )
   }
 
+  // ── Edit mode ──
+  // NOTE: `field` is a render FUNCTION called inline ({field(...)}), NOT a
+  // <Component/>. Defining a component inside render and mounting it would give
+  // it a new identity each keystroke → remount → input focus loss. Calling it
+  // as a function returns the elements directly, so React reconciles in place.
+  const field = (k: keyof Draft, labelText: string, opts?: { placeholder?: string; type?: string }) => (
+    <div>
+      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>{labelText}</span>
+      <input type={opts?.type ?? "text"} style={input} value={draft[k]} onChange={(e) => set(k, e.target.value)} placeholder={opts?.placeholder} />
+    </div>
+  )
+  const editGroupStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }
+  const groupHdr: React.CSSProperties = { ...eyebrow, fontSize: 9, color: T.DIM, marginTop: 6 }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, opacity: saving ? 0.5 : 1, pointerEvents: saving ? "none" : "auto", transition: "opacity 120ms ease" }}>
+      {/* Source */}
       <div>
-        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>CATEGORY</span>
+        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>SOURCE</span>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {SOURCE_CATEGORIES.map((cat) => {
-            const active = editCategory === cat
+            const active = draft.source_category === cat
             const s = SOURCE_STYLE[cat]
             return (
               <button
                 key={cat}
                 type="button"
-                onClick={() => setEditCategory(cat)}
+                onClick={() => set("source_category", cat)}
                 style={{
-                  fontSize: 11,
-                  fontWeight: 900,
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.6,
+                  fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8,
+                  cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.6,
                   border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
                   background: active ? s.bg : "rgba(255,255,255,0.04)",
-                  color: active ? s.color : T.DIM,
-                  fontFamily: "inherit",
+                  color: active ? s.color : T.DIM, fontFamily: "inherit",
                 }}
               >
                 {SOURCE_LABEL[cat]}
@@ -684,35 +778,61 @@ function SourceSection({
         </div>
       </div>
       <div>
-        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>DETAIL</span>
-        <textarea
-          style={{ ...textarea, minHeight: 60 }}
-          value={editDetail}
-          onChange={(e) => setEditDetail(e.target.value)}
-          placeholder="e.g. Met at conference, intro from Sarah"
-          maxLength={500}
-        />
+        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>SOURCE DETAIL</span>
+        <textarea style={{ ...textarea, minHeight: 60 }} value={draft.source_detail} onChange={(e) => set("source_detail", e.target.value)} placeholder="e.g. Met at conference, intro from Sarah" maxLength={500} />
       </div>
-      <div>
-        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>INVITED EMAIL</span>
-        <input
-          type="email"
-          style={input}
-          value={editEmail}
-          onChange={(e) => setEditEmail(e.target.value)}
-          placeholder="prospect@example.com"
-        />
+
+      {/* Contact */}
+      <div style={editGroupStyle}>
+        {field("invited_email", "EMAIL", { type: "email", placeholder: "prospect@example.com" })}
+        {field("phone", "PHONE", { type: "tel", placeholder: "(555) 555-5555" })}
+        {field("linkedin_url", "LINKEDIN", { type: "url", placeholder: "https://linkedin.com/in/..." })}
       </div>
-      <div>
-        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>PHONE</span>
-        <input
-          type="tel"
-          style={input}
-          value={editPhone}
-          onChange={(e) => setEditPhone(e.target.value)}
-          placeholder="(555) 555-5555"
-        />
+
+      {/* Current role */}
+      <div style={groupHdr}>CURRENT ROLE</div>
+      <div style={editGroupStyle}>
+        {field("current_title", "TITLE", { placeholder: "e.g. Analyst" })}
+        {field("current_company", "COMPANY")}
+        {field("location", "LOCATION")}
+        {field("years_experience_approx", "YEARS EXPERIENCE", { type: "number", placeholder: "e.g. 5" })}
+        <div>
+          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>JOB TYPE</span>
+          <select style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.job_type} onChange={(e) => set("job_type", e.target.value)}>
+            {JOB_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
       </div>
+
+      {/* Education */}
+      <div style={groupHdr}>EDUCATION</div>
+      <div style={editGroupStyle}>
+        <div>
+          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>STATUS</span>
+          <select style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.education_status} onChange={(e) => set("education_status", e.target.value)}>
+            {EDUCATION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        {field("university", "UNIVERSITY")}
+        {field("field_of_study", "FIELD OF STUDY")}
+        <div>
+          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>GRAD DATE</span>
+          <input type="date" style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.grad_date} onChange={(e) => set("grad_date", e.target.value)} />
+        </div>
+      </div>
+
+      {/* Targeting */}
+      <div style={groupHdr}>TARGETING</div>
+      <div style={editGroupStyle}>
+        {field("target_roles", "TARGET ROLES", { placeholder: "e.g. Product Manager" })}
+        {field("target_locations", "TARGET LOCATIONS")}
+        {field("preferred_locations", "PREFERRED LOCATIONS")}
+        {field("timeline", "TIMELINE", { placeholder: "e.g. 3-6 months" })}
+      </div>
+
+      {/* Other */}
+      {field("tags", "TAGS", { placeholder: "comma, separated, tags" })}
+
       {error && (
         <div style={{ padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
           <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{error}</span>
@@ -722,15 +842,7 @@ function SourceSection({
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{
-            ...btnPrimary,
-            fontSize: 12,
-            padding: "8px 16px",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            opacity: saving ? 0.5 : 1,
-          }}
+          style={{ ...btnPrimary, fontSize: 12, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6, opacity: saving ? 0.5 : 1 }}
         >
           {saving && <SavingSpinner size={10} />}
           {saving ? "Saving..." : "Save"}
@@ -1491,7 +1603,7 @@ export default function ProspectDetailPage() {
   }
 
   async function handleSourceUpdate(
-    updates: { name?: string; source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null },
+    updates: Record<string, string | null>,
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     if (!prospect) return { ok: false, error: "No prospect loaded" }
     try {
@@ -1771,15 +1883,7 @@ export default function ProspectDetailPage() {
       )}
 
       <Section title="Prospect Information">
-        <SourceSection
-          category={prospect.source_category}
-          detail={prospect.source_detail}
-          invitedEmail={prospect.invited_email}
-          phone={prospect.phone}
-          createdAt={prospect.created_at}
-          lastActivityAt={prospect.last_activity_at}
-          onSave={handleSourceUpdate}
-        />
+        <SourceSection prospect={prospect} onSave={handleSourceUpdate} />
       </Section>
 
       <Section title="Pipeline">
