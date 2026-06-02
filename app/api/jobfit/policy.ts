@@ -438,6 +438,16 @@ export const POLICY: JobFitPolicy = {
         /(\d+)\+\s*(years?|yrs)\s*of\s*(experience|exp)/i,
         // Plain "N years of experience" — only if no range present
         /(\d+)\s*(years?|yrs)\s*of\s*(experience|exp)/i,
+        // Qualifier-tolerant "N years of [adjective(s)] experience" — catches
+        // prose phrasings like "two years of appropriate experience",
+        // "3 years of relevant experience" where 1-3 qualifier words sit between
+        // "of" and "experience". The lookbehind (?<!\d\s?[-–]\s?) is MANDATORY:
+        // it stops this from matching the MAX of an entry-level range
+        // ("0-2 years of sales experience" must NOT become a 2-year requirement
+        // — the range patterns above correctly read min=0 → null). Requires the
+        // literal "experience" token, so "two years of college" / "years of
+        // growth" do not match.
+        /(?<!\d\s?[-–]\s?)(\d+)\s*(years?|yrs)\s*of\s+(?:[a-z][a-z-]+\s+){0,3}(experience|exp)\b/i,
       ],
     },
 

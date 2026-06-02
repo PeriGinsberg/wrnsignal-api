@@ -3814,7 +3814,17 @@ export function extractJobSignals(
     /\bdegree\s+required/i.test(jobTextRaw) ||
     /\beducation[:\s]+bachelor/i.test(jobTextRaw) ||
     /\bminimum\s+[^.]{0,30}bachelor/i.test(jobTextRaw) ||
-    /\bbachelor'?s?\s+(or\s+(higher|above|equivalent))/i.test(jobTextRaw)
+    /\bbachelor'?s?\s+(or\s+(higher|above|equivalent))/i.test(jobTextRaw) ||
+    // Non-adjacent prose: "bachelor's degree … [≤160 chars, same sentence] …
+    // required". Catches "Minimum Qualifications" sentences where the degree
+    // and "required" are separated by qualifying clauses (e.g. FAU: "…or a
+    // bachelor's degree from an accredited institution … and two years of
+    // appropriate experience required."). The [^.?!] bound keeps the match
+    // within one sentence so a stray "required" elsewhere can't false-fire.
+    /\bbachelor'?s?\s+degree\b[^.?!]{0,160}\brequired\b/i.test(jobTextRaw) ||
+    // Alternative-degree structure: "master's degree … or … bachelor's degree"
+    // — a bachelor's listed as an acceptable minimum alternative.
+    /\b(master'?s?|bachelor'?s?)\s+degree\b[^.?!]{0,80}\bor\s+a?\s*bachelor'?s?\s+degree\b/i.test(jobTextRaw)
   const bachelorPreferred =
     !bachelorRequired &&
     /\bbachelor'?s?\s*(degree)?\s*preferred/i.test(jobTextRaw)
