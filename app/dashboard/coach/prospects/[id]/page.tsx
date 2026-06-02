@@ -524,21 +524,11 @@ function StageTracker({
 }
 
 // ── Prospect Information block (click-to-edit) ──
-// View mode matches the post-conversion "Client Information" block on
-// coach-clients/[id] (labeled-columns grid via InfoRow + formatDate). The Edit
-// button reveals the existing editable form — editing is preserved.
+// View mode is a dense profile card: grouped, contained blocks of label/value
+// rows (only populated fields shown). The Edit button reveals the full editable
+// form — editing is preserved.
 
-// Labeled column, matching coach-clients/[id]'s InfoRow.
-function InfoRow({ label: rowLabel, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ ...label, color: T.WRN_BLUE, fontSize: 10 }}>{rowLabel}</span>
-      <span style={{ fontSize: 13, color: T.TEXT }}>{value}</span>
-    </div>
-  )
-}
-
-// Long-form date, matching coach-clients/[id]'s formatDate ("ADDED AS PROSPECT").
+// Long-form date ("ADDED" / grad date), matching coach-clients/[id]'s formatDate.
 function formatDate(iso: string | null): string {
   if (!iso) return ""
   return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -670,16 +660,43 @@ function SourceSection({
       </a>
     ) : dash
 
-    // Each group renders only its populated rows (plus the always-on contact
-    // row). Keeps a fresh prospect compact; Edit reveals every field.
-    const group = (title: string | null, rows: { label: string; value: React.ReactNode; show: boolean }[]) => {
+    // Each group is a tight, contained block of label/value rows (only
+    // populated rows shown). Groups flow in a responsive multi-column grid so a
+    // populated prospect reads as a dense profile card and a sparse one shows
+    // just a couple of compact blocks — no acres of empty grid.
+    const group = (title: string, rows: { label: string; value: React.ReactNode; show: boolean }[]) => {
       const shown = rows.filter((r) => r.show)
       if (shown.length === 0) return null
       return (
-        <div style={{ marginTop: title ? 18 : 0 }}>
-          {title && <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 10 }}>{title}</div>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-            {shown.map((r) => <InfoRow key={r.label} label={r.label} value={r.value} />)}
+        <div
+          style={{
+            background: "rgba(255,255,255,0.02)",
+            border: `1px solid ${T.BORDER_SOFT}`,
+            borderRadius: 12,
+            padding: "12px 14px",
+          }}
+        >
+          <div style={{ ...eyebrow, fontSize: 9, color: T.WRN_BLUE, marginBottom: 8 }}>{title}</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {shown.map((r, i) => (
+              <div
+                key={r.label}
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "5px 0",
+                  alignItems: "baseline",
+                  borderTop: i > 0 ? `1px solid ${T.BORDER_SOFT}` : "none",
+                }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.4, color: T.DIM, textTransform: "uppercase", width: 92, flexShrink: 0, lineHeight: "16px" }}>
+                  {r.label}
+                </span>
+                <span style={{ fontSize: 13, color: T.TEXT, minWidth: 0, overflowWrap: "anywhere", lineHeight: "18px" }}>
+                  {r.value}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )
@@ -687,37 +704,39 @@ function SourceSection({
 
     return (
       <div>
-        {group(null, [
-          { label: "SOURCE", value: sourceBadge, show: true },
-          { label: "SOURCE DETAIL", value: prospect.source_detail || dash, show: !!prospect.source_detail },
-          { label: "EMAIL", value: prospect.invited_email || dash, show: true },
-          { label: "PHONE", value: phoneVal, show: true },
-          { label: "LINKEDIN", value: linkedinVal, show: !!prospect.linkedin_url },
-        ])}
-        {group("CURRENT ROLE", [
-          { label: "TITLE", value: prospect.current_title, show: !!prospect.current_title },
-          { label: "COMPANY", value: prospect.current_company, show: !!prospect.current_company },
-          { label: "LOCATION", value: prospect.location, show: !!prospect.location },
-          { label: "YEARS EXPERIENCE", value: prospect.years_experience_approx != null ? String(prospect.years_experience_approx) : null, show: prospect.years_experience_approx != null },
-          { label: "JOB TYPE", value: prospect.job_type, show: !!prospect.job_type },
-        ])}
-        {group("EDUCATION", [
-          { label: "STATUS", value: prospect.education_status ? (EDUCATION_LABEL[prospect.education_status] ?? prospect.education_status) : null, show: !!prospect.education_status },
-          { label: "UNIVERSITY", value: prospect.university, show: !!prospect.university },
-          { label: "FIELD OF STUDY", value: prospect.field_of_study, show: !!prospect.field_of_study },
-          { label: "GRAD DATE", value: prospect.grad_date ? formatDate(prospect.grad_date) : null, show: !!prospect.grad_date },
-        ])}
-        {group("TARGETING", [
-          { label: "TARGET ROLES", value: prospect.target_roles, show: !!prospect.target_roles },
-          { label: "TARGET LOCATIONS", value: prospect.target_locations, show: !!prospect.target_locations },
-          { label: "PREFERRED LOCATIONS", value: prospect.preferred_locations, show: !!prospect.preferred_locations },
-          { label: "TIMELINE", value: prospect.timeline, show: !!prospect.timeline },
-        ])}
-        {group("OTHER", [
-          { label: "TAGS", value: prospect.tags, show: !!prospect.tags },
-          { label: "ADDED AS PROSPECT", value: prospect.created_at ? formatDate(prospect.created_at) : null, show: !!prospect.created_at },
-          { label: "LAST ACTIVITY", value: prospect.last_activity_at ? timeAgo(prospect.last_activity_at) : null, show: !!prospect.last_activity_at },
-        ])}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, alignItems: "start" }}>
+          {group("CONTACT", [
+            { label: "SOURCE", value: sourceBadge, show: true },
+            { label: "DETAIL", value: prospect.source_detail || dash, show: !!prospect.source_detail },
+            { label: "EMAIL", value: prospect.invited_email || dash, show: true },
+            { label: "PHONE", value: phoneVal, show: true },
+            { label: "LINKEDIN", value: linkedinVal, show: !!prospect.linkedin_url },
+          ])}
+          {group("CURRENT ROLE", [
+            { label: "TITLE", value: prospect.current_title, show: !!prospect.current_title },
+            { label: "COMPANY", value: prospect.current_company, show: !!prospect.current_company },
+            { label: "LOCATION", value: prospect.location, show: !!prospect.location },
+            { label: "EXPERIENCE", value: prospect.years_experience_approx != null ? `${prospect.years_experience_approx} yrs` : null, show: prospect.years_experience_approx != null },
+            { label: "JOB TYPE", value: prospect.job_type, show: !!prospect.job_type },
+          ])}
+          {group("EDUCATION", [
+            { label: "STATUS", value: prospect.education_status ? (EDUCATION_LABEL[prospect.education_status] ?? prospect.education_status) : null, show: !!prospect.education_status },
+            { label: "UNIVERSITY", value: prospect.university, show: !!prospect.university },
+            { label: "FIELD", value: prospect.field_of_study, show: !!prospect.field_of_study },
+            { label: "GRAD DATE", value: prospect.grad_date ? formatDate(prospect.grad_date) : null, show: !!prospect.grad_date },
+          ])}
+          {group("TARGETING", [
+            { label: "ROLES", value: prospect.target_roles, show: !!prospect.target_roles },
+            { label: "LOCATIONS", value: prospect.target_locations, show: !!prospect.target_locations },
+            { label: "PREFERRED", value: prospect.preferred_locations, show: !!prospect.preferred_locations },
+            { label: "TIMELINE", value: prospect.timeline, show: !!prospect.timeline },
+          ])}
+          {group("OTHER", [
+            { label: "TAGS", value: prospect.tags, show: !!prospect.tags },
+            { label: "ADDED", value: prospect.created_at ? formatDate(prospect.created_at) : null, show: !!prospect.created_at },
+            { label: "ACTIVITY", value: prospect.last_activity_at ? timeAgo(prospect.last_activity_at) : null, show: !!prospect.last_activity_at },
+          ])}
+        </div>
 
         <button
           onClick={startEdit}
@@ -726,7 +745,7 @@ function SourceSection({
             border: `1px solid ${T.BORDER_SOFT}`,
             color: T.MUTED,
             fontSize: 11, fontWeight: 900, borderRadius: 6,
-            padding: "4px 12px", cursor: "pointer", marginTop: 18,
+            padding: "4px 12px", cursor: "pointer", marginTop: 16,
           }}
         >
           Edit
@@ -799,7 +818,7 @@ function SourceSection({
         <div>
           <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>JOB TYPE</span>
           <select style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.job_type} onChange={(e) => set("job_type", e.target.value)}>
-            {JOB_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {JOB_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value} style={{ background: T.CARD, color: T.TEXT }}>{o.label}</option>)}
           </select>
         </div>
       </div>
@@ -810,7 +829,7 @@ function SourceSection({
         <div>
           <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>STATUS</span>
           <select style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.education_status} onChange={(e) => set("education_status", e.target.value)}>
-            {EDUCATION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {EDUCATION_OPTIONS.map((o) => <option key={o.value} value={o.value} style={{ background: T.CARD, color: T.TEXT }}>{o.label}</option>)}
           </select>
         </div>
         {field("university", "UNIVERSITY")}
