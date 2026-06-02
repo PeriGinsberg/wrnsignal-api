@@ -20,7 +20,7 @@
 // interactive. The LifecycleStatusPill refactor for general
 // lifecycle editing lands in Commit 4d.
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import {
@@ -264,20 +264,27 @@ function ProspectStatusControl({
   // NULL prospect_status renders as the implicit "active" default — consistent
   // with the prospects list, so list and detail agree (no DB/API default).
   const effective: ProspectStatus = status ?? "active"
+  // Hover affordance so the non-selected pills read as interactive (they're a
+  // clickable toggle group). Inline styles can't use :hover, so track it in
+  // state (same onMouseEnter/Leave pattern used elsewhere on this page).
+  const [hovered, setHovered] = useState<ProspectStatus | null>(null)
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       {PROSPECT_STATUSES.map((s) => {
         const active = effective === s
+        const isHover = hovered === s && !active && !busy
         const st = PROSPECT_STATUS_STYLE[s]
         return (
           <button
             key={s}
             onClick={() => { if (!active && !busy) onSet(s) }}
+            onMouseEnter={() => { if (!busy) setHovered(s) }}
+            onMouseLeave={() => setHovered(null)}
             disabled={busy}
             style={{
-              background: active ? st.bg : T.NAV_DEFAULT_BG,
-              border: `1px solid ${active ? st.border : T.BORDER_SOFT}`,
-              color: active ? st.color : T.MUTED,
+              background: active ? st.bg : isHover ? T.GLASS : T.NAV_DEFAULT_BG,
+              border: `1px solid ${active ? st.border : isHover ? T.BORDER : T.BORDER_SOFT}`,
+              color: active ? st.color : isHover ? T.TEXT : T.MUTED,
               borderRadius: 999,
               padding: "5px 12px",
               fontSize: 11,
@@ -285,6 +292,7 @@ function ProspectStatusControl({
               cursor: active || busy ? "default" : "pointer",
               fontFamily: "inherit",
               opacity: busy ? 0.6 : 1,
+              transition: "all 120ms ease",
             }}
           >
             {PROSPECT_STATUS_LABEL[s]}
@@ -321,66 +329,99 @@ function StageTracker({
   const terminal = stages.find((s) => s.is_terminal)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {working.map((s) => {
-        const reached = s.stage_key in reachedMap
-        const isCurrent = currentStageKey === s.stage_key
-        const reachedAt = reachedMap[s.stage_key] ?? null
-        const busy = busyKey === s.stage_key
-        return (
-          <button
-            key={s.stage_key}
-            onClick={() => { if (!reached && !busy) onAdvance(s.stage_key) }}
-            disabled={busy || reached}
-            title={reached ? "Already reached" : `Advance to ${s.label}`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 12px",
-              borderRadius: 12,
-              textAlign: "left",
-              fontFamily: "inherit",
-              border: `1px solid ${isCurrent ? T.NAV_ACTIVE_BORDER : T.BORDER_SOFT}`,
-              background: isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.06)" : T.GLASS,
-              color: T.TEXT,
-              cursor: reached || busy ? "default" : "pointer",
-            }}
-          >
-            <span
-              aria-hidden
-              style={{
-                width: 18, height: 18, borderRadius: 999, flexShrink: 0,
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 900,
-                border: `1px solid ${reached ? "rgba(74,222,128,0.5)" : T.BORDER}`,
-                background: reached ? "rgba(74,222,128,0.18)" : "transparent",
-                color: reached ? T.SUCCESS : T.DIM,
-              }}
-            >
-              {reached ? "✓" : ""}
-            </span>
-            <span style={{ fontSize: 13, fontWeight: reached ? 700 : 500, color: isCurrent ? T.WRN_ORANGE : T.TEXT }}>
-              {s.label}
-            </span>
-            {s.is_custom && (
-              <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_BLUE, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 6, padding: "1px 5px" }}>
-                custom
-              </span>
-            )}
-            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {busy && <SavingSpinner size={10} />}
-              {reached && reachedAt && <span style={{ fontSize: 11, color: T.DIM }}>{timeAgo(reachedAt)}</span>}
-            </span>
-          </button>
-        )
-      })}
+    <div>
+      {/* Horizontal stepper band. APPROACH: overflow-x scroll keeps the
+          connected stepper as one continuous row with clean connectors; on
+          narrow viewports (and with ~15 stages) it scrolls sideways rather
+          than wrapping, so connectors never break and nodes never squash.
+          minWidth:min-content prevents the band from compressing. */}
+      <div style={{ overflowX: "auto", paddingBottom: 6, marginBottom: terminal ? 14 : 0 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", minWidth: "min-content" }}>
+          {working.map((s, i) => {
+            const reached = s.stage_key in reachedMap
+            const isCurrent = currentStageKey === s.stage_key
+            const reachedAt = reachedMap[s.stage_key] ?? null
+            const busy = busyKey === s.stage_key
+            // Current is always reached (furthest-reached pointer); highlight it
+            // in orange, other reached nodes in green, unreached muted.
+            const circleColor = isCurrent ? T.WRN_ORANGE : reached ? T.SUCCESS : T.DIM
+            const circleBorder = isCurrent ? T.WRN_ORANGE : reached ? "rgba(74,222,128,0.5)" : T.BORDER
+            const circleBg = isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.18)" : "transparent"
+            return (
+              <Fragment key={s.stage_key}>
+                {/* Connector to the previous node — filled green once this node
+                    is reached (the path up to here is complete). */}
+                {i > 0 && (
+                  <div
+                    aria-hidden
+                    style={{
+                      flex: "0 0 28px",
+                      height: 2,
+                      marginTop: 13,
+                      background: reached ? "rgba(74,222,128,0.5)" : T.BORDER_SOFT,
+                    }}
+                  />
+                )}
+                <button
+                  onClick={() => { if (!reached && !busy) onAdvance(s.stage_key) }}
+                  disabled={busy || reached}
+                  title={reached ? (reachedAt ? `Reached ${timeAgo(reachedAt)}` : "Reached") : `Advance to ${s.label}`}
+                  style={{
+                    flex: "0 0 auto",
+                    width: 92,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "transparent",
+                    border: "none",
+                    padding: "0 4px",
+                    fontFamily: "inherit",
+                    cursor: reached || busy ? "default" : "pointer",
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, fontWeight: 900,
+                      border: `1px solid ${circleBorder}`,
+                      background: circleBg,
+                      color: circleColor,
+                    }}
+                  >
+                    {busy ? <SavingSpinner size={10} /> : reached ? "✓" : i + 1}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11, lineHeight: "14px", textAlign: "center",
+                      color: isCurrent ? T.WRN_ORANGE : reached ? T.TEXT : T.MUTED,
+                      fontWeight: isCurrent ? 800 : reached ? 700 : 500,
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                  {s.is_custom && (
+                    <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_BLUE, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 5, padding: "0 4px" }}>
+                      custom
+                    </span>
+                  )}
+                  {reached && reachedAt && (
+                    <span style={{ fontSize: 9, color: T.DIM }}>{timeAgo(reachedAt)}</span>
+                  )}
+                </button>
+              </Fragment>
+            )
+          })}
+        </div>
+      </div>
 
-      {/* Terminal Convert — distinct, button-with-confirmation (not a silent click) */}
+      {/* Terminal Convert — distinct final action (button-with-confirmation),
+          set apart below the stepper, NOT a plain node. Behavior unchanged. */}
       {terminal && (
         <div
           style={{
-            marginTop: 6,
             padding: "14px 14px",
             borderRadius: 12,
             border: `1px solid ${T.NAV_ACTIVE_BORDER}`,
