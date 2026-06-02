@@ -163,6 +163,45 @@ export function inferTargetFamilies(
     out.push("Other")
   }
 
+  // ── Operations (IC / coordinator / supply-chain / logistics) ────────────
+  // Mirrors the JD-side jobTitleIsOperations vocabulary (extract.ts:3673) so a
+  // candidate targeting "operations coordinator" / "supply chain analyst"
+  // matches a JD that classifies as the Operations family. The senior/strategic
+  // ops phrases ("operations manager", "business operations", "director of
+  // operations") continue to route to Consulting above; this branch covers the
+  // IC / coordinator level that the Consulting list omits — those candidates
+  // otherwise fell through to ["Other"] and took a RISK_FAMILY_MISMATCH penalty
+  // against an Operations JD that was, in fact, their stated target field.
+  //
+  // The trailing freeform /\boperations\b/ catches messy intake phrasings like
+  // "anything to do with operations". It can also fire on "operations manager"
+  // / "business operations" — but those also push Consulting above, so such
+  // candidates correctly get BOTH families (the JD side splits manager-ops
+  // between Consulting and Operations). Over-inclusion here is the safe
+  // direction: adding a family is an OR-membership test that can only prevent a
+  // mismatch penalty, never create one.
+  if (
+    roles.includes("operations coordinator") ||
+    roles.includes("operations analyst") ||
+    roles.includes("operations associate") ||
+    roles.includes("operations specialist") ||
+    roles.includes("ops analyst") ||
+    roles.includes("ops associate") ||
+    roles.includes("supply chain") ||
+    roles.includes("logistics") ||
+    roles.includes("procurement") ||
+    roles.includes("inventory") ||
+    roles.includes("fulfillment") ||
+    roles.includes("warehouse operations") ||
+    roles.includes("process improvement") ||
+    roles.includes("process analyst") ||
+    /\bproject coordinator\b/.test(roles) ||
+    /\bprogram coordinator\b/.test(roles) ||
+    /\boperations\b/.test(roles)
+  ) {
+    out.push("Operations")
+  }
+
   // ── Marketing ──────────────────────────────────────────────────────────
   if (
     roles.includes("marketing") ||
