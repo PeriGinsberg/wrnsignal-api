@@ -5,7 +5,8 @@
 // (last_activity_at DESC NULLS LAST, then created_at DESC).
 //
 // Row shape:
-//   Avatar | name | SourceCategoryBadge | "{n} / 7 phases" | invited_email | timeAgo(last_activity_at) | Open →
+//   Avatar | name | SourceCategoryBadge | current stage label | status pill |
+//   invited_email | timeAgo(last_activity_at) | Open →
 //
 // "+ Add Prospect" button in header opens AddProspectModal.
 // On success, modal closes + list reloads.
@@ -26,16 +27,23 @@ import AddProspectModal from "./AddProspectModal"
 
 // ── Constants (duplicated per inline pattern) ──
 
-const PHASE_KEYS = [
-  "initial_contact_made",
-  "discovery_call_scheduled",
-  "discovery_call_completed",
-  "sow_sent",
-  "sow_signed",
-  "invoice_sent",
-  "invoice_paid",
-] as const
-type PhaseKey = (typeof PHASE_KEYS)[number]
+// Prospect sub-status pill (matches the detail page treatment). 'won' is
+// included for completeness, though won prospects convert to Active lifecycle
+// and leave this list (filtered lifecycle=Prospect). A NULL prospect_status is
+// treated as the implicit "active" default (the create path doesn't set it).
+type ProspectStatus = "active" | "inactive" | "lost" | "won"
+const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
+  active: "Active",
+  inactive: "Inactive",
+  lost: "Lost",
+  won: "Won",
+}
+const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
+  active:   { bg: "rgba(74,222,128,0.15)",  color: "#4ade80", border: "rgba(74,222,128,0.40)" },
+  inactive: { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
+  lost:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.40)" },
+  won:      { bg: "rgba(45,165,141,0.18)",  color: "#2CA58D", border: "rgba(45,165,141,0.45)" },
+}
 
 const SOURCE_CATEGORIES = [
   "referral",
@@ -72,16 +80,15 @@ const AVATAR_PALETTE = [
 
 // ── Types ──
 
-type PhasePair = { checked: boolean; at: string | null }
-
 type Prospect = {
   id: string
   name: string | null
   invited_email: string | null
   source_category: SourceCategory | null
   source_detail: string | null
-  phases: Record<PhaseKey, PhasePair>
   lifecycle_status: string
+  current_stage_key: string | null
+  prospect_status: ProspectStatus | null
   last_activity_at: string | null
   created_at: string | null
 }
@@ -133,12 +140,6 @@ function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-function countCheckedPhases(phases: Record<PhaseKey, PhasePair>): number {
-  let n = 0
-  for (const k of PHASE_KEYS) if (phases[k]?.checked) n++
-  return n
-}
-
 // ── Inline atoms ──
 
 function Avatar({ name, email }: { name: string | null; email: string | null }) {
@@ -188,21 +189,49 @@ function SourceCategoryBadge({ category }: { category: SourceCategory | null }) 
   )
 }
 
-function PhaseProgressChip({ phases }: { phases: Record<PhaseKey, PhasePair> }) {
-  const n = countCheckedPhases(phases)
-  const color = n > 0 ? T.WRN_BLUE : T.DIM
+// Current stage label, resolved from the coach's pipeline (key→label map built
+// once on the page). "Not started" when no stage has been reached yet.
+function StageLabel({ stageKey, labelByKey }: { stageKey: string | null; labelByKey: Record<string, string> }) {
+  const text = (stageKey && labelByKey[stageKey]) || "Not started"
+  const started = !!stageKey && !!labelByKey[stageKey]
   return (
-    <span style={{ fontSize: 11, color, fontWeight: 700, whiteSpace: "nowrap" }}>
-      {n} / 7 phases
+    <span style={{ fontSize: 12, color: started ? T.TEXT : T.DIM, fontWeight: started ? 700 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
+      {text}
+    </span>
+  )
+}
+
+// Read-only prospect-status pill (matches the detail page treatment). NULL is
+// shown as the implicit "Active" default.
+function StatusPill({ status }: { status: ProspectStatus | null }) {
+  const s: ProspectStatus = status ?? "active"
+  const st = PROSPECT_STATUS_STYLE[s]
+  return (
+    <span
+      style={{
+        background: st.bg,
+        color: st.color,
+        border: `1px solid ${st.border}`,
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: 0.3,
+        padding: "3px 10px",
+        borderRadius: 999,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {PROSPECT_STATUS_LABEL[s]}
     </span>
   )
 }
 
 function ProspectRow({
   prospect,
+  labelByKey,
   onOpen,
 }: {
   prospect: Prospect
+  labelByKey: Record<string, string>
   onOpen: () => void
 }) {
   return (
@@ -243,8 +272,13 @@ function ProspectRow({
         </div>
       </div>
 
-      <div style={{ flexShrink: 0, minWidth: 100 }}>
-        <PhaseProgressChip phases={prospect.phases} />
+      {/* Current stage label + status pill (replaces the old N/7 phases chip) */}
+      <div style={{ flexShrink: 0, minWidth: 140, maxWidth: 180 }}>
+        <StageLabel stageKey={prospect.current_stage_key} labelByKey={labelByKey} />
+      </div>
+
+      <div style={{ flexShrink: 0, minWidth: 84 }}>
+        <StatusPill status={prospect.prospect_status} />
       </div>
 
       <div style={{ flexShrink: 0, minWidth: 160, fontSize: 12, color: T.DIM, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -279,6 +313,9 @@ function ProspectRow({
 export default function ProspectsListPage() {
   const router = useRouter()
   const [prospects, setProspects] = useState<Prospect[] | null>(null)
+  // Coach pipeline stage_key → label map, fetched ONCE for the page (not per
+  // row), so list rows can resolve current_stage_key to a human label.
+  const [labelByKey, setLabelByKey] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
@@ -302,6 +339,25 @@ export default function ProspectsListPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  // Fetch the coach's pipeline once; build a stage_key → label map for the rows.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authFetch("/api/coach/pipeline")
+        if (!res.ok) return
+        const j = await res.json()
+        if (cancelled || !j?.ok) return
+        const map: Record<string, string> = {}
+        for (const s of (j.stages || []) as Array<{ stage_key: string; label: string }>) {
+          map[s.stage_key] = s.label
+        }
+        setLabelByKey(map)
+      } catch {}
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   // Server sort is authoritative; no client re-sort.
   const list = useMemo(() => prospects || [], [prospects])
@@ -360,6 +416,7 @@ export default function ProspectsListPage() {
               <ProspectRow
                 key={p.id}
                 prospect={p}
+                labelByKey={labelByKey}
                 onOpen={() => router.push(`/dashboard/coach/prospects/${p.id}`)}
               />
             ))}

@@ -261,10 +261,13 @@ function ProspectStatusControl({
   busy: boolean
   onSet: (next: ProspectStatus) => void
 }) {
+  // NULL prospect_status renders as the implicit "active" default — consistent
+  // with the prospects list, so list and detail agree (no DB/API default).
+  const effective: ProspectStatus = status ?? "active"
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       {PROSPECT_STATUSES.map((s) => {
-        const active = status === s
+        const active = effective === s
         const st = PROSPECT_STATUS_STYLE[s]
         return (
           <button
@@ -422,19 +425,42 @@ function StageTracker({
   )
 }
 
-// ── Source section (click-to-edit) ──
+// ── Prospect Information block (click-to-edit) ──
+// View mode matches the post-conversion "Client Information" block on
+// coach-clients/[id] (labeled-columns grid via InfoRow + formatDate). The Edit
+// button reveals the existing editable form — editing is preserved.
+
+// Labeled column, matching coach-clients/[id]'s InfoRow.
+function InfoRow({ label: rowLabel, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ ...label, color: T.WRN_BLUE, fontSize: 10 }}>{rowLabel}</span>
+      <span style={{ fontSize: 13, color: T.TEXT }}>{value}</span>
+    </div>
+  )
+}
+
+// Long-form date, matching coach-clients/[id]'s formatDate ("ADDED AS PROSPECT").
+function formatDate(iso: string | null): string {
+  if (!iso) return ""
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+}
 
 function SourceSection({
   category,
   detail,
   invitedEmail,
   phone,
+  createdAt,
+  lastActivityAt,
   onSave,
 }: {
   category: SourceCategory | null
   detail: string | null
   invitedEmail: string | null
   phone: string | null
+  createdAt: string | null
+  lastActivityAt: string | null
   onSave: (next: { source_category?: SourceCategory; source_detail?: string | null; invited_email?: string | null; phone?: string | null }) => Promise<{ ok: true } | { ok: false; error: string }>
 }) {
   const [editing, setEditing] = useState(false)
@@ -492,29 +518,39 @@ function SourceSection({
   if (!editing) {
     return (
       <div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>CATEGORY</span>
-            <div style={{ fontSize: 13, color: T.TEXT }}>
-              {category ? SOURCE_LABEL[category] : <span style={{ color: T.DIM }}>—</span>}
-            </div>
-          </div>
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>DETAIL</span>
-            <div style={{ fontSize: 13, color: T.TEXT, lineHeight: "20px", whiteSpace: "pre-wrap" }}>
-              {detail || <span style={{ color: T.DIM }}>—</span>}
-            </div>
-          </div>
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>INVITED EMAIL</span>
-            <div style={{ fontSize: 13, color: T.TEXT }}>
-              {invitedEmail || <span style={{ color: T.DIM }}>—</span>}
-            </div>
-          </div>
-          <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4 }}>PHONE</span>
-            <div style={{ fontSize: 13, color: T.TEXT }}>
-              {phone ? (
+        {/* Labeled-columns grid — matches the post-conversion Client
+            Information block (coach-clients/[id]). */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+          <InfoRow
+            label="SOURCE"
+            value={
+              category ? (
+                <span
+                  style={{
+                    display: "inline-block",
+                    background: SOURCE_STYLE[category].bg,
+                    color: SOURCE_STYLE[category].color,
+                    fontSize: 11,
+                    fontWeight: 900,
+                    letterSpacing: 0.8,
+                    textTransform: "uppercase",
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {SOURCE_LABEL[category]}
+                </span>
+              ) : (
+                <span style={{ color: T.DIM }}>—</span>
+              )
+            }
+          />
+          <InfoRow label="SOURCE DETAIL" value={detail || <span style={{ color: T.DIM }}>—</span>} />
+          <InfoRow label="EMAIL" value={invitedEmail || <span style={{ color: T.DIM }}>—</span>} />
+          <InfoRow
+            label="PHONE"
+            value={
+              phone ? (
                 <a
                   href={`tel:${phone}`}
                   style={{ color: T.TEXT, textDecoration: "none" }}
@@ -525,9 +561,11 @@ function SourceSection({
                 </a>
               ) : (
                 <span style={{ color: T.DIM }}>—</span>
-              )}
-            </div>
-          </div>
+              )
+            }
+          />
+          {createdAt && <InfoRow label="ADDED AS PROSPECT" value={formatDate(createdAt)} />}
+          {lastActivityAt && <InfoRow label="LAST ACTIVITY" value={timeAgo(lastActivityAt)} />}
         </div>
         <button
           onClick={startEdit}
@@ -540,7 +578,7 @@ function SourceSection({
             borderRadius: 6,
             padding: "4px 12px",
             cursor: "pointer",
-            marginTop: 14,
+            marginTop: 16,
           }}
         >
           Edit
@@ -1575,24 +1613,43 @@ export default function ProspectDetailPage() {
               </button>
             </>
           )}
+          {/* Static record-type label — quiet (states what this record IS).
+              Differentiated in KIND from the interactive status control beside
+              it: muted, outlined, not a colored fill. */}
           <span
             style={{
-              background: "#F4A261",
-              color: "#FFFFFF",
-              fontSize: 12,
-              fontWeight: 900,
-              padding: "6px 14px",
-              borderRadius: 999,
+              background: T.GLASS,
+              color: T.MUTED,
+              border: `1px solid ${T.BORDER_SOFT}`,
+              fontSize: 11,
+              fontWeight: 800,
+              padding: "5px 12px",
+              borderRadius: 8,
               whiteSpace: "nowrap",
-              letterSpacing: 0.2,
+              letterSpacing: 0.6,
+              textTransform: "uppercase",
               display: "inline-block",
             }}
           >
             Prospect
           </span>
-          {/* Prospect sub-status (Active / Inactive / Lost). Won is automatic on
-              convert (§4) and is never offered here. */}
-          <ProspectStatusControl status={prospect.prospect_status} busy={statusBusy} onSet={setProspectStatus} />
+
+          {/* Interactive status control — visually separated from the static
+              label (left divider + "STATUS" caption) so the two don't read as
+              one set. Active/Inactive/Lost; Won is automatic on convert (§4). */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginLeft: 4,
+              paddingLeft: 16,
+              borderLeft: `1px solid ${T.BORDER_SOFT}`,
+            }}
+          >
+            <span style={{ ...eyebrow, fontSize: 9, color: T.DIM }}>STATUS</span>
+            <ProspectStatusControl status={prospect.prospect_status} busy={statusBusy} onSet={setProspectStatus} />
+          </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
             {/* The standalone "Convert to Active" button is removed — conversion
                 now happens via the stage tracker's terminal Convert button
@@ -1650,12 +1707,14 @@ export default function ProspectDetailPage() {
         </div>
       )}
 
-      <Section title="Source">
+      <Section title="Prospect Information">
         <SourceSection
           category={prospect.source_category}
           detail={prospect.source_detail}
           invitedEmail={prospect.invited_email}
           phone={prospect.phone}
+          createdAt={prospect.created_at}
+          lastActivityAt={prospect.last_activity_at}
           onSave={handleSourceUpdate}
         />
       </Section>

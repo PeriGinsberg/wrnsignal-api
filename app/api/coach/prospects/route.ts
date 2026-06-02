@@ -52,6 +52,10 @@ type CoachClientRow = {
   lifecycle_status: string
   invited_at: string
   client_profile_id: string | null
+  // Configurable pipeline: denormalized current stage + prospect sub-status
+  // (Polish B — surfaced on the list rows). Both nullable.
+  current_stage_key: string | null
+  prospect_status: string | null
   phase_initial_contact_made: boolean
   phase_initial_contact_made_at: string | null
   phase_discovery_call_scheduled: boolean
@@ -78,6 +82,8 @@ const PROSPECT_SELECT_COLS = [
   "lifecycle_status",
   "invited_at",
   "client_profile_id",
+  "current_stage_key",
+  "prospect_status",
   "phase_initial_contact_made",
   "phase_initial_contact_made_at",
   "phase_discovery_call_scheduled",
@@ -198,6 +204,8 @@ function buildProspectListItem(
     },
     lifecycle_status: row.lifecycle_status as LifecycleStatus,
     client_profile_id: row.client_profile_id,
+    current_stage_key: row.current_stage_key,
+    prospect_status: row.prospect_status,
     last_activity_at: lastActivityAt,
     // Schema has no created_at on coach_clients; invited_at is the
     // temporal anchor (DEFAULT now() at INSERT). Aliased here so the
