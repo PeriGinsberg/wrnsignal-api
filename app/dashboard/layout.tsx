@@ -21,7 +21,7 @@ type NavItem = {
   /** When true, also marks active for descendants (e.g. /clients/[id]) */
   matchPrefix?: boolean
   /** Action items render as a <button> instead of an <a>; no navigation. */
-  action?: "feedback"
+  action?: "feedback" | "logout"
 }
 type NavGroup = { header: string; items: NavItem[] }
 
@@ -60,6 +60,9 @@ const COACH_NAV: NavGroup[] = [
       // Settings. The /dashboard page and the job-seeker product are
       // unchanged — only the coach nav links to them are gone. (Spec §0.2.)
       { href: "/dashboard/coach/settings", label: "My Settings" },
+      // Sign out. Renders as a <button> (action item); full session teardown
+      // in handleLogout below. Coaches otherwise have no way to log out.
+      { label: "Log out", action: "logout" },
     ],
   },
 ]
@@ -328,6 +331,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }
 
+  // Full sign-out teardown. The session lives in two places (no @supabase/ssr):
+  //   1. Supabase session in localStorage (sb-<ref>-auth-token) — cleared by
+  //      auth.signOut().
+  //   2. signal_handoff_token in sessionStorage — the Framer-handoff fallback
+  //      bearer (used by getToken across pages and the coach check above).
+  // Both must be cleared or the next load auto-restores the session. We also
+  // drop the signal_from_framer UI flag so the login screen is clean. A full
+  // navigation (window.location) — not router.push — guarantees the layout
+  // re-initializes from scratch in the unauthenticated state.
+  async function handleLogout() {
+    try {
+      await getSupabaseBrowser().auth.signOut()
+    } catch {
+      // ignore — we redirect regardless; the storage clears below still run
+    }
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("signal_handoff_token")
+      sessionStorage.removeItem("signal_from_framer")
+      window.location.href = "/dashboard"
+    }
+  }
+
   if (status === "loading") {
     return (
       <div style={{ minHeight: "100vh", background: T.BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -452,15 +477,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
                       color: active ? T.WRN_ORANGE : T.TEXT,
                     }
-                    // Action items (Feedback) open the slide-in instead of
-                    // navigating. Same nav-item style as links — just a <button>
-                    // with the button defaults reset to match an <a>.
-                    if (item.action === "feedback") {
+                    // Action items render as a <button> instead of navigating —
+                    // Feedback opens the slide-in, Log out tears down the
+                    // session. Same nav-item style as links, button defaults
+                    // reset to match an <a>.
+                    if (item.action) {
+                      const onClick = item.action === "feedback" ? () => setFeedbackOpen(true) : handleLogout
                       return (
                         <button
                           key={item.label}
                           type="button"
-                          onClick={() => setFeedbackOpen(true)}
+                          onClick={onClick}
                           style={{
                             ...itemStyle,
                             width: "100%",
