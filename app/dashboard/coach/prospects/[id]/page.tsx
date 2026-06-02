@@ -161,10 +161,14 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
   inactive: "Inactive",
   lost: "Lost",
 }
+// Distinct, obvious SELECTED colors per status (a glance tells the state):
+// Active = green (T.SUCCESS), Inactive = amber "on hold" (T.WRN_ORANGE),
+// Lost = red (the file's error red #f87171 / T.ERROR family). These are the
+// selected-fill styles; non-selected pills render muted (see the control).
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
-  active:   { bg: "rgba(74,222,128,0.15)",  color: "#4ade80", border: "rgba(74,222,128,0.40)" },
-  inactive: { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
-  lost:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.40)" },
+  active:   { bg: "rgba(74,222,128,0.18)",  color: "#4ade80", border: "rgba(74,222,128,0.50)" },
+  inactive: { bg: "rgba(254,176,106,0.18)", color: "#FEB06A", border: "rgba(254,176,106,0.50)" },
+  lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
 }
 
 type Prospect = {
@@ -327,9 +331,19 @@ function StageTracker({
 }) {
   const working = stages.filter((s) => !s.is_terminal)
   const terminal = stages.find((s) => s.is_terminal)
+  // Hover affordance for the CLICKABLE (unreached) nodes only — signals the
+  // band is a control, not a static display. Reached nodes are no-op (backward
+  // not supported), so they never get the hover cue.
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const hasUnreached = working.some((s) => !(s.stage_key in reachedMap))
 
   return (
     <div>
+      {hasUnreached && (
+        <p style={{ fontSize: 11, color: T.DIM, margin: "0 0 12px" }}>
+          Click a stage to advance — the path fills automatically.
+        </p>
+      )}
       {/* Horizontal stepper band. APPROACH: overflow-x scroll keeps the
           connected stepper as one continuous row with clean connectors; on
           narrow viewports (and with ~15 stages) it scrolls sideways rather
@@ -342,11 +356,15 @@ function StageTracker({
             const isCurrent = currentStageKey === s.stage_key
             const reachedAt = reachedMap[s.stage_key] ?? null
             const busy = busyKey === s.stage_key
+            // Hover only applies to clickable (unreached, not-busy) nodes.
+            const isHover = hoveredKey === s.stage_key && !reached && !busy
             // Current is always reached (furthest-reached pointer); highlight it
-            // in orange, other reached nodes in green, unreached muted.
-            const circleColor = isCurrent ? T.WRN_ORANGE : reached ? T.SUCCESS : T.DIM
-            const circleBorder = isCurrent ? T.WRN_ORANGE : reached ? "rgba(74,222,128,0.5)" : T.BORDER
-            const circleBg = isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.18)" : "transparent"
+            // in orange, other reached nodes in green, unreached muted — and an
+            // unreached node brightens on hover to signal it's clickable.
+            const circleColor = isCurrent ? T.WRN_ORANGE : reached ? T.SUCCESS : isHover ? T.TEXT : T.DIM
+            const circleBorder = isCurrent ? T.WRN_ORANGE : reached ? "rgba(74,222,128,0.5)" : isHover ? T.MUTED : T.BORDER
+            const circleBg = isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.18)" : isHover ? T.GLASS : "transparent"
+            const labelColor = isCurrent ? T.WRN_ORANGE : reached ? T.TEXT : isHover ? T.TEXT : T.MUTED
             return (
               <Fragment key={s.stage_key}>
                 {/* Connector to the previous node — filled green once this node
@@ -364,6 +382,8 @@ function StageTracker({
                 )}
                 <button
                   onClick={() => { if (!reached && !busy) onAdvance(s.stage_key) }}
+                  onMouseEnter={() => { if (!reached && !busy) setHoveredKey(s.stage_key) }}
+                  onMouseLeave={() => setHoveredKey(null)}
                   disabled={busy || reached}
                   title={reached ? (reachedAt ? `Reached ${timeAgo(reachedAt)}` : "Reached") : `Advance to ${s.label}`}
                   style={{
@@ -389,6 +409,7 @@ function StageTracker({
                       border: `1px solid ${circleBorder}`,
                       background: circleBg,
                       color: circleColor,
+                      transition: "all 120ms ease",
                     }}
                   >
                     {busy ? <SavingSpinner size={10} /> : reached ? "✓" : i + 1}
@@ -396,8 +417,9 @@ function StageTracker({
                   <span
                     style={{
                       fontSize: 11, lineHeight: "14px", textAlign: "center",
-                      color: isCurrent ? T.WRN_ORANGE : reached ? T.TEXT : T.MUTED,
+                      color: labelColor,
                       fontWeight: isCurrent ? 800 : reached ? 700 : 500,
+                      transition: "color 120ms ease",
                     }}
                   >
                     {s.label}
