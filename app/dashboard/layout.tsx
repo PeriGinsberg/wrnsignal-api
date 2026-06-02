@@ -54,7 +54,12 @@ const COACH_NAV: NavGroup[] = [
   {
     header: "ACCOUNT",
     items: [
-      { href: "/dashboard", label: "My Account" },
+      // Coaches operate only as coaches. The old "My Account" → /dashboard
+      // (the D2C account page) and the external "Back to SIGNAL" JobFit link
+      // are removed from the coach nav; coach configuration now lives in My
+      // Settings. The /dashboard page and the job-seeker product are
+      // unchanged — only the coach nav links to them are gone. (Spec §0.2.)
+      { href: "/dashboard/coach/settings", label: "My Settings" },
     ],
   },
 ]
@@ -479,7 +484,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )
             })}
 
-            {/* Back to SIGNAL — external context switch, both contexts */}
+            {/* Back to SIGNAL — external job-seeker product. D2C only:
+                coaches operate strictly as coaches (separate account for
+                job-seeking), so this context switch is hidden in coach nav.
+                Spec §0.2. */}
+            {!isCoach && (
             <a
               key={EXTERNAL_NAV_ITEM.href}
               href={EXTERNAL_NAV_ITEM.href}
@@ -509,6 +518,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               {EXTERNAL_NAV_ITEM.label}
             </a>
+            )}
           </div>
         </nav>
         <main style={{ flex: 1, padding: "32px 40px 60px 36px", overflowY: "auto" }}>
