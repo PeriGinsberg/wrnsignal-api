@@ -936,5 +936,19 @@
     "salesSubFamily": "saas_tech",
     "financeSubFamily": "asset_management",
     "gateType": "none"
+  },
+  "synthetic-0410-senior-mgr": {
+    "id": "synthetic-0410-senior-mgr",
+    "label": "[synthetic] 0410-senior-mgr — Jamie Rivera / Operations Manager",
+    "decision": "Apply",
+    "score": 79,
+    "whyCount": 1,
+    "directWhyCount": 1,
+    "riskCount": 3,
+    "highRiskCount": 0,
+    "jobFamily": "Consulting",
+    "salesSubFamily": null,
+    "financeSubFamily": null,
+    "gateType": "none"
   }
 }

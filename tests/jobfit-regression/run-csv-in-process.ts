@@ -50,6 +50,11 @@ const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> 
   "40926s": { jobTitle: "Early Career Software Engineer", companyName: "Notion" },
   "40926t": { jobTitle: "Cyber Security Associate", companyName: "(Unknown)" },
   "40926u": { jobTitle: "Cyber Intelligence Analyst", companyName: "RightClick (client unnamed)" },
+  // Positive-coverage fixture for the isSeniorRole title-fix: a senior-titled
+  // role ("Operations Manager") faced by a ~1.5yr coordinator. Exercises the
+  // seniority penalty path (scoring.ts:1096) that the rest of the suite leaves
+  // inert (no other live case carries a senior user title).
+  "0410-senior-mgr": { jobTitle: "Operations Manager", companyName: "Meridian Distribution" },
 }
 
 // ── Minimal CSV parser (handles quoted fields with embedded newlines/commas/quotes)

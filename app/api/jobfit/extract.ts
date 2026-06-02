@@ -3678,12 +3678,22 @@ export function extractJobSignals(
   const jobTitleIsConsulting =
     /\b(consultant|consulting analyst|management consultant|strategy consultant|associate consultant|business consultant|advisory analyst|advisory associate|strategy analyst|strategy associate|transformation analyst|change management|process consultant|implementation consultant)\b/i.test(jobTitleSlice)
 
-  // Seniority detection — check the first 300 chars (title line).
-  // Manager/Director/Senior/Lead/VP in the title signals a level above early-career.
+  // Seniority detection — Manager/Director/Senior/Lead/VP signals a level above
+  // early-career. Test the clean user-provided title (userTitleNorm) AND the
+  // JD-body opening. Title-first matters: real titles like "Marketing Manager" /
+  // "Business Operations Manager" frequently don't repeat a senior keyword in
+  // the JD body's first 300 chars, so a body-only test silently missed them
+  // (the manager-titles-not-senior bug). userTitleNorm is "" when no title is
+  // passed, so the title clause is inert in title-less paths.
+  //
+  // Bare "manager" intentionally counts as senior: the penalty it feeds is
+  // gated on yearsExperienceApprox <= 2, so the only effect is flagging a
+  // junior candidate applying to a manager-level role — the safe over-flag
+  // direction. (Decision: ship full keyword set, 2026-06.)
+  const SENIOR_ROLE_RX =
+    /\b(senior|lead|manager|director|vp|vice president|head of|principal|associate director|associate manager)\b/i
   const isSeniorRole =
-    /\b(senior|lead|manager|director|vp|vice president|head of|principal|associate director|associate manager)\b/i.test(
-      normalized.slice(0, 300)
-    )
+    SENIOR_ROLE_RX.test(userTitleNorm) || SENIOR_ROLE_RX.test(normalized.slice(0, 300))
 
   // Inject default finance units when title signals Finance but body extracted nothing finance-related
   if (jobTitleIsFinance) {
