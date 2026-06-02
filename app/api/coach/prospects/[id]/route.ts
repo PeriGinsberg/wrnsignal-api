@@ -56,6 +56,10 @@ type CoachClientRow = {
   lifecycle_status: string
   invited_at: string
   client_profile_id: string | null
+  // Configurable pipeline (Step 5): denormalized current stage + prospect
+  // sub-status. Both nullable (added by the pipeline migration).
+  current_stage_key: string | null
+  prospect_status: string | null
   phase_initial_contact_made: boolean
   phase_initial_contact_made_at: string | null
   phase_discovery_call_scheduled: boolean
@@ -82,6 +86,8 @@ const PROSPECT_SELECT_COLS = [
   "lifecycle_status",
   "invited_at",
   "client_profile_id",
+  "current_stage_key",
+  "prospect_status",
   "phase_initial_contact_made",
   "phase_initial_contact_made_at",
   "phase_discovery_call_scheduled",
@@ -220,9 +226,22 @@ function buildProspectListItem(
     },
     lifecycle_status: row.lifecycle_status as LifecycleStatus,
     client_profile_id: row.client_profile_id,
+    current_stage_key: row.current_stage_key,
+    prospect_status: row.prospect_status,
     last_activity_at: lastActivityAt,
     created_at: row.invited_at,
   }
+}
+
+// Per-prospect stage progress (Step 5). Returns [{ stage_key, reached_at }]
+// for the stage tracker; ordering is by the coach's pipeline on the client, so
+// no order is imposed here.
+async function fetchStageProgress(supabase: any, coachClientId: string) {
+  const { data } = await supabase
+    .from("prospect_stage_progress")
+    .select("stage_key, reached_at")
+    .eq("coach_client_id", coachClientId)
+  return (data ?? []) as { stage_key: string; reached_at: string | null }[]
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -281,10 +300,13 @@ export async function GET(
       }
     }
 
+    const stageProgress = await fetchStageProgress(supabase, id)
+
     return withCorsJson(req, {
       ok: true,
       prospect: {
         ...buildProspectListItem(row, lastActivity, resolvedName),
+        stage_progress: stageProgress,
         notes,
       },
     })
@@ -518,10 +540,13 @@ export async function PATCH(
       }
     }
 
+    const stageProgress = await fetchStageProgress(supabase, id)
+
     return withCorsJson(req, {
       ok: true,
       prospect: {
         ...buildProspectListItem(updated, lastActivity, resolvedName),
+        stage_progress: stageProgress,
         notes,
       },
     })

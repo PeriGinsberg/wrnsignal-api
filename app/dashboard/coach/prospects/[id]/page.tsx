@@ -142,6 +142,31 @@ type ProspectNote = {
   updated_at: string
 }
 
+// Configurable pipeline (Step 5).
+type PipelineStage = {
+  id: string
+  stage_key: string
+  label: string
+  sort_order: number
+  is_custom: boolean
+  is_terminal: boolean
+  active: boolean
+}
+type StageProgress = { stage_key: string; reached_at: string | null }
+
+const PROSPECT_STATUSES = ["active", "inactive", "lost"] as const
+type ProspectStatus = (typeof PROSPECT_STATUSES)[number]
+const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
+  active: "Active",
+  inactive: "Inactive",
+  lost: "Lost",
+}
+const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
+  active:   { bg: "rgba(74,222,128,0.15)",  color: "#4ade80", border: "rgba(74,222,128,0.40)" },
+  inactive: { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
+  lost:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.40)" },
+}
+
 type Prospect = {
   id: string
   name: string | null
@@ -152,6 +177,9 @@ type Prospect = {
   phases: Record<PhaseKey, PhasePair>
   lifecycle_status: string
   client_profile_id: string | null
+  current_stage_key: string | null
+  prospect_status: ProspectStatus | null
+  stage_progress: StageProgress[]
   last_activity_at: string | null
   created_at: string | null
   notes: ProspectNote[]
@@ -191,12 +219,6 @@ function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-function countCheckedPhases(phases: Record<PhaseKey, PhasePair>): number {
-  let n = 0
-  for (const k of PHASE_KEYS) if (phases[k]?.checked) n++
-  return n
-}
-
 // ── Section wrapper ──
 
 function Section({
@@ -226,31 +248,175 @@ function Section({
   )
 }
 
-// ── Phase row ──
-
-function PhaseRow({
-  phaseKey,
-  pair,
-  onToggle,
+// ── Prospect status control (Active / Inactive / Lost) ──
+// Won is NEVER offered here — it is automatic on convert (§4). If the prospect
+// somehow carries 'won' (shouldn't on a lifecycle=Prospect row), it renders as
+// a read-only chip.
+function ProspectStatusControl({
+  status,
+  busy,
+  onSet,
 }: {
-  phaseKey: PhaseKey
-  pair: PhasePair
-  onToggle: (key: PhaseKey, next: boolean) => void
+  status: ProspectStatus | null
+  busy: boolean
+  onSet: (next: ProspectStatus) => void
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
-      <input
-        type="checkbox"
-        checked={pair.checked}
-        onChange={(e) => onToggle(phaseKey, e.target.checked)}
-        style={{ accentColor: T.WRN_ORANGE, width: 16, height: 16, cursor: "pointer" }}
-        aria-label={`${PHASE_LABEL[phaseKey]} ${pair.checked ? "(checked)" : "(unchecked)"}`}
-      />
-      <span style={{ fontSize: 13, color: T.TEXT, fontWeight: pair.checked ? 700 : 400 }}>
-        {PHASE_LABEL[phaseKey]}
-      </span>
-      {pair.checked && pair.at && (
-        <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>{timeAgo(pair.at)}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      {PROSPECT_STATUSES.map((s) => {
+        const active = status === s
+        const st = PROSPECT_STATUS_STYLE[s]
+        return (
+          <button
+            key={s}
+            onClick={() => { if (!active && !busy) onSet(s) }}
+            disabled={busy}
+            style={{
+              background: active ? st.bg : T.NAV_DEFAULT_BG,
+              border: `1px solid ${active ? st.border : T.BORDER_SOFT}`,
+              color: active ? st.color : T.MUTED,
+              borderRadius: 999,
+              padding: "5px 12px",
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: active || busy ? "default" : "pointer",
+              fontFamily: "inherit",
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            {PROSPECT_STATUS_LABEL[s]}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Stage tracker (configurable pipeline, §8.2) ──
+// Renders the coach's ACTIVE stages in order. A stage is "reached" when it has
+// a progress row. Clicking an unreached stage advances TO it (fills the path:
+// every earlier unreached stage is marked too). The terminal Convert stage
+// renders distinct at the end as a button-with-confirmation, not a silent click.
+function StageTracker({
+  stages,
+  reachedMap,
+  currentStageKey,
+  busyKey,
+  converting,
+  onAdvance,
+  onConvert,
+}: {
+  stages: PipelineStage[]
+  reachedMap: Record<string, string | null>
+  currentStageKey: string | null
+  busyKey: string | null
+  converting: boolean
+  onAdvance: (stageKey: string) => void
+  onConvert: () => void
+}) {
+  const working = stages.filter((s) => !s.is_terminal)
+  const terminal = stages.find((s) => s.is_terminal)
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {working.map((s) => {
+        const reached = s.stage_key in reachedMap
+        const isCurrent = currentStageKey === s.stage_key
+        const reachedAt = reachedMap[s.stage_key] ?? null
+        const busy = busyKey === s.stage_key
+        return (
+          <button
+            key={s.stage_key}
+            onClick={() => { if (!reached && !busy) onAdvance(s.stage_key) }}
+            disabled={busy || reached}
+            title={reached ? "Already reached" : `Advance to ${s.label}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 12px",
+              borderRadius: 12,
+              textAlign: "left",
+              fontFamily: "inherit",
+              border: `1px solid ${isCurrent ? T.NAV_ACTIVE_BORDER : T.BORDER_SOFT}`,
+              background: isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.06)" : T.GLASS,
+              color: T.TEXT,
+              cursor: reached || busy ? "default" : "pointer",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 18, height: 18, borderRadius: 999, flexShrink: 0,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 900,
+                border: `1px solid ${reached ? "rgba(74,222,128,0.5)" : T.BORDER}`,
+                background: reached ? "rgba(74,222,128,0.18)" : "transparent",
+                color: reached ? T.SUCCESS : T.DIM,
+              }}
+            >
+              {reached ? "✓" : ""}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: reached ? 700 : 500, color: isCurrent ? T.WRN_ORANGE : T.TEXT }}>
+              {s.label}
+            </span>
+            {s.is_custom && (
+              <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_BLUE, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 6, padding: "1px 5px" }}>
+                custom
+              </span>
+            )}
+            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
+              {busy && <SavingSpinner size={10} />}
+              {reached && reachedAt && <span style={{ fontSize: 11, color: T.DIM }}>{timeAgo(reachedAt)}</span>}
+            </span>
+          </button>
+        )
+      })}
+
+      {/* Terminal Convert — distinct, button-with-confirmation (not a silent click) */}
+      {terminal && (
+        <div
+          style={{
+            marginTop: 6,
+            padding: "14px 14px",
+            borderRadius: 12,
+            border: `1px solid ${T.NAV_ACTIVE_BORDER}`,
+            background: "rgba(33,140,140,0.10)",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.TEXT }}>{terminal.label}</div>
+            <div style={{ fontSize: 11, color: T.MUTED, marginTop: 2 }}>
+              Creates the client account and moves them out of prospects.
+            </div>
+          </div>
+          <button
+            onClick={onConvert}
+            disabled={converting}
+            style={{
+              background: T.GRAD_PRIMARY,
+              color: "#04060F",
+              borderRadius: 10,
+              padding: "9px 16px",
+              fontSize: 13,
+              fontWeight: 800,
+              border: "none",
+              fontFamily: "inherit",
+              cursor: converting ? "wait" : "pointer",
+              opacity: converting ? 0.5 : 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {converting && <SavingSpinner size={10} />}
+            {converting ? "Converting…" : `${terminal.label} →`}
+          </button>
+        </div>
       )}
     </div>
   )
@@ -1054,9 +1220,12 @@ export default function ProspectDetailPage() {
 
   const hasLoadedOnceRef = useRef(false)
   const [prospect, setProspect] = useState<Prospect | null>(null)
+  const [pipeline, setPipeline] = useState<PipelineStage[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [accessDenied, setAccessDenied] = useState(false)
-  const [phaseError, setPhaseError] = useState<string | null>(null)
+  const [stageError, setStageError] = useState<string | null>(null)
+  const [stageBusyKey, setStageBusyKey] = useState<string | null>(null)
+  const [statusBusy, setStatusBusy] = useState(false)
   const [archiving, setArchiving] = useState(false)
   const [converting, setConverting] = useState(false)
   const [archiveHover, setArchiveHover] = useState(false)
@@ -1089,6 +1258,21 @@ export default function ProspectDetailPage() {
 
   useEffect(() => { load() }, [load])
 
+  // Load the coach's pipeline once (coach-level, stable across this prospect).
+  // Drives the stage tracker; GET lazy-seeds for a brand-new coach.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authFetch("/api/coach/pipeline")
+        if (!res.ok) return
+        const j = await res.json()
+        if (!cancelled && j?.ok) setPipeline((j.stages || []) as PipelineStage[])
+      } catch {}
+    })()
+    return () => { cancelled = true }
+  }, [])
+
   // Redirect-away for any non-Prospect lifecycle. The prospect detail
   // page only handles State A (lifecycle='Prospect') in 4c; the
   // post-conversion surface (Active without client_profile_id, or
@@ -1100,41 +1284,108 @@ export default function ProspectDetailPage() {
     }
   }, [prospect, router])
 
-  // ── Phase toggle (optimistic + revert on failure) ──
-  async function togglePhase(key: PhaseKey, nextChecked: boolean) {
-    if (!prospect) return
-    const prev = prospect
-    setProspect({
-      ...prospect,
-      phases: {
-        ...prospect.phases,
-        [key]: { checked: nextChecked, at: nextChecked ? new Date().toISOString() : null },
-      },
-    })
-    setPhaseError(null)
+  // ── Stage advance (fill the path) ──
+  // Clicking a stage advances TO it: every active non-terminal stage up to and
+  // including the target that isn't yet reached is marked, ascending, via the
+  // per-click stage PATCH (matches v0.1's per-click pattern). The step-3 handler
+  // recomputes current_stage_key = furthest reached on each call. We reload at
+  // the end to pick up reached_at + current_stage_key.
+  //
+  // BACKWARD MOVES: under the furthest-reached model, clicking an already-reached
+  // stage is a no-op — reached is monotonic and the pointer stays at the furthest
+  // reached stage (reached buttons are disabled). True regression (un-reaching a
+  // later stage) is not supported by the stage API and is intentionally out of
+  // scope here.
+  async function advanceTo(stageKey: string) {
+    if (!prospect || !pipeline) return
+    const target = pipeline.find((s) => s.stage_key === stageKey)
+    if (!target || target.is_terminal) return
+    const reached = new Set(prospect.stage_progress.map((p) => p.stage_key))
+    const toMark = pipeline
+      .filter((s) => s.active && !s.is_terminal && s.sort_order <= target.sort_order && !reached.has(s.stage_key))
+      .sort((a, b) => a.sort_order - b.sort_order)
+    if (toMark.length === 0) return
+    setStageBusyKey(stageKey)
+    setStageError(null)
     try {
-      const res = await authFetch(`/api/coach/prospects/${prospect.id}`, {
+      for (const s of toMark) {
+        const res = await authFetch(`/api/coach/prospects/${prospect.id}/stage`, {
+          method: "PATCH",
+          body: JSON.stringify({ stage_key: s.stage_key }),
+        })
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          setStageError(j?.error || "Couldn't advance — try again")
+          setTimeout(() => setStageError(null), 4000)
+          break
+        }
+      }
+      await load({ silent: true })
+    } catch {
+      setStageError("Network error — try again")
+      setTimeout(() => setStageError(null), 4000)
+    } finally {
+      setStageBusyKey(null)
+    }
+  }
+
+  // ── Convert (terminal stage; button-with-confirmation) ──
+  // Single convert path: PATCH .../stage with the terminal stage_key. The step-3
+  // handler fires the existing conversion (lifecycle → Active) AND sets
+  // prospect_status = won, returning redirect_to. We use that to do the same
+  // post-convert redirect the old standalone "Convert to Active" button did
+  // (that button is removed — see header — to avoid two convert paths; the old
+  // one bypassed prospect_status=won).
+  async function convertViaStage() {
+    if (!prospect || !pipeline) return
+    const terminal = pipeline.find((s) => s.is_terminal)
+    if (!terminal) {
+      setStageError("No Convert stage configured")
+      return
+    }
+    if (!confirm(`Convert ${prospect.name || "this prospect"} to a client? This creates their client account and can't be undone.`)) return
+    setConverting(true)
+    try {
+      const res = await authFetch(`/api/coach/prospects/${prospect.id}/stage`, {
         method: "PATCH",
-        body: JSON.stringify({ phases: { [key]: nextChecked } }),
+        body: JSON.stringify({ stage_key: terminal.stage_key }),
       })
+      const j = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setProspect(prev)
-        const j = await res.json().catch(() => ({}))
-        setPhaseError(j?.error || "Couldn't save — try again")
-        setTimeout(() => setPhaseError(null), 4000)
+        alert(j?.error || "Couldn't convert — try again")
         return
       }
-      const j = await res.json()
-      if (j?.prospect) {
-        setProspect({
-          ...j.prospect,
-          notes: j.prospect.notes ?? prev.notes,
-        })
-      }
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      router.push(j?.redirect_to || `/dashboard/coach/coach-clients/${prospect.id}`)
     } catch {
-      setProspect(prev)
-      setPhaseError("Network error — try again")
-      setTimeout(() => setPhaseError(null), 4000)
+      alert("Network error — try again")
+    } finally {
+      setConverting(false)
+    }
+  }
+
+  // ── Prospect status (Active / Inactive / Lost) ──
+  async function setProspectStatus(next: ProspectStatus) {
+    if (!prospect) return
+    setStatusBusy(true)
+    setStageError(null)
+    try {
+      const res = await authFetch(`/api/coach/prospects/${prospect.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ prospect_status: next }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setStageError(j?.error || "Couldn't update status — try again")
+        setTimeout(() => setStageError(null), 4000)
+        return
+      }
+      setProspect((p) => (p ? { ...p, prospect_status: next } : p))
+    } catch {
+      setStageError("Network error — try again")
+      setTimeout(() => setStageError(null), 4000)
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -1157,35 +1408,6 @@ export default function ProspectDetailPage() {
       return { ok: true }
     } catch {
       return { ok: false, error: "Network error — try again" }
-    }
-  }
-
-  // Convert to Active (one-click, no confirm — per C2). PATCHes
-  // lifecycle then pushes to /coach-clients/[id] (the 4d
-  // post-conversion-pre-invite surface). A short delay gives the
-  // "Converting..." button state + transient banner time to register
-  // before the redirect. The lifecycle-mismatch useEffect above also
-  // fires once setProspect lands the new lifecycle, but the explicit
-  // push gives the back button a clean history entry.
-  async function handleConvert() {
-    if (!prospect) return
-    setConverting(true)
-    try {
-      const res = await authFetch(`/api/coach/prospects/${prospect.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ lifecycle_status: "Active" }),
-      })
-      const j = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        alert(j?.error || "Couldn't convert — try again")
-        return
-      }
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      router.push(`/dashboard/coach/coach-clients/${prospect.id}`)
-    } catch {
-      alert("Network error — try again")
-    } finally {
-      setConverting(false)
     }
   }
 
@@ -1266,7 +1488,10 @@ export default function ProspectDetailPage() {
     return <LoadingShell label="Redirecting..." />
   }
 
-  const phasesCount = countCheckedPhases(prospect.phases)
+  // Active stages in order for the tracker; reached map from progress rows.
+  const activeStages = (pipeline ?? []).filter((s) => s.active).sort((a, b) => a.sort_order - b.sort_order)
+  const reachedMap: Record<string, string | null> = {}
+  for (const p of prospect.stage_progress) reachedMap[p.stage_key] = p.reached_at
 
   return (
     <div>
@@ -1365,29 +1590,13 @@ export default function ProspectDetailPage() {
           >
             Prospect
           </span>
+          {/* Prospect sub-status (Active / Inactive / Lost). Won is automatic on
+              convert (§4) and is never offered here. */}
+          <ProspectStatusControl status={prospect.prospect_status} busy={statusBusy} onSet={setProspectStatus} />
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              onClick={handleConvert}
-              disabled={converting}
-              style={{
-                background: T.GRAD_PRIMARY,
-                color: "#04060F",
-                borderRadius: 10,
-                padding: "8px 16px",
-                fontSize: 13,
-                fontWeight: 800,
-                cursor: converting ? "wait" : "pointer",
-                border: "none",
-                fontFamily: "inherit",
-                opacity: converting ? 0.5 : 1,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {converting && <SavingSpinner size={10} />}
-              {converting ? "Converting..." : "Convert to Active"}
-            </button>
+            {/* The standalone "Convert to Active" button is removed — conversion
+                now happens via the stage tracker's terminal Convert button
+                (single convert path; also sets prospect_status=won). */}
             <button
               onClick={handleArchive}
               onMouseEnter={() => setArchiveHover(true)}
@@ -1411,7 +1620,7 @@ export default function ProspectDetailPage() {
         </div>
       </div>
 
-      {/* Name save error (inline below the header, parallel to phaseError) */}
+      {/* Name save error (inline below the header, parallel to stageError) */}
       {nameError && (
         <div
           style={{
@@ -1426,8 +1635,8 @@ export default function ProspectDetailPage() {
         </div>
       )}
 
-      {/* Transient phase save error banner */}
-      {phaseError && (
+      {/* Transient stage/status save error banner */}
+      {stageError && (
         <div
           style={{
             padding: 10,
@@ -1437,7 +1646,7 @@ export default function ProspectDetailPage() {
             marginBottom: 16,
           }}
         >
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{phaseError}</span>
+          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{stageError}</span>
         </div>
       )}
 
@@ -1451,17 +1660,22 @@ export default function ProspectDetailPage() {
         />
       </Section>
 
-      <Section title={`Phases (${phasesCount} / 7 complete)`}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {PHASE_KEYS.map((k) => (
-            <PhaseRow
-              key={k}
-              phaseKey={k}
-              pair={prospect.phases[k]}
-              onToggle={togglePhase}
-            />
-          ))}
-        </div>
+      <Section title="Pipeline">
+        {pipeline === null ? (
+          <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading pipeline…</p>
+        ) : activeStages.length === 0 ? (
+          <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>No pipeline stages configured.</p>
+        ) : (
+          <StageTracker
+            stages={activeStages}
+            reachedMap={reachedMap}
+            currentStageKey={prospect.current_stage_key}
+            busyKey={stageBusyKey}
+            converting={converting}
+            onAdvance={advanceTo}
+            onConvert={convertViaStage}
+          />
+        )}
       </Section>
 
       <ProspectNotesSection
