@@ -22,9 +22,9 @@
 // inline banners rather than failing silently.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { T, input, btnPrimary, btnSecondary } from "../../../../lib/dashboard-theme"
-import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
-import { SavingSpinner } from "../SavingSpinner"
+import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
+import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
+import { SavingSpinner } from "../../SavingSpinner"
 
 const LABEL_MAX = 60
 
