@@ -304,14 +304,18 @@ export async function PUT(req: NextRequest) {
         continue
       }
 
-      // Non-terminal existing stage. Label editable only for custom stages
-      // (master labels are fixed for cross-coach reporting).
+      // Non-terminal existing stage. Label is editable for BOTH canned and
+      // custom stages (Step 4b). The rename is purely cosmetic: stage_key is
+      // immutable, so reporting that aggregates on stage_key is unaffected by a
+      // renamed "SOW Sent" → "Proposal Sent" (key stays sow_sent). Only the
+      // terminal Convert label stays fixed (handled in the is_terminal branch
+      // above). is_terminal / convert identity are never editable here.
       let label = row.label
-      if (typeof s.label === "string" && row.is_custom) {
+      if (typeof s.label === "string") {
         const trimmed = s.label.trim()
-        if (!trimmed) return withCorsJson(req, { ok: false, error: "Custom stage label cannot be empty" }, 400)
+        if (!trimmed) return withCorsJson(req, { ok: false, error: "Stage label cannot be empty" }, 400)
         if (trimmed.length > LABEL_MAX) {
-          return withCorsJson(req, { ok: false, error: `Custom stage label too long (max ${LABEL_MAX})` }, 400)
+          return withCorsJson(req, { ok: false, error: `Stage label too long (max ${LABEL_MAX})` }, 400)
         }
         label = trimmed
       }
@@ -365,6 +369,100 @@ export async function PUT(req: NextRequest) {
       .order("sort_order", { ascending: true })
     if (afterErr) return withCorsJson(req, { ok: false, error: `Saved, but re-read failed: ${afterErr.message}` }, 500)
     return withCorsJson(req, { ok: true, stages: (after as StageRow[]).map(toApiStage) })
+  } catch (e: any) {
+    const msg = e?.message || String(e)
+    const status = /unauthorized/i.test(msg) ? 401 : 500
+    return withCorsJson(req, { ok: false, error: msg }, status)
+  }
+}
+
+// ── DELETE: remove a custom stage (used-check decides soft vs hard) ──
+//
+// Query: ?stage_key=<key>. Only CUSTOM, non-terminal stages are deletable.
+//   - If the stage has any prospect_stage_progress rows (a prospect reached
+//     it) → SOFT delete (active=false), preserving history.
+//   - If never used → HARD delete the row.
+// The used-check is server-side (the client never decides). Canned stages are
+// not deletable (deselect via PUT active=false instead); the Convert stage is
+// never deletable. Returns the fresh ordered set + { deleted: 'soft' | 'hard' }.
+export async function DELETE(req: NextRequest) {
+  try {
+    const { userId, email } = await getAuthedUser(req)
+    const coach = await getCoachProfile(userId, email)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
+    if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
+    const coachProfileId = coach.id as string
+
+    const stageKey = new URL(req.url).searchParams.get("stage_key")?.trim()
+    if (!stageKey) return withCorsJson(req, { ok: false, error: "stage_key query param is required" }, 400)
+
+    const supabase = getSupabaseAdmin()
+
+    // The stage must belong to this coach.
+    const { data: stage, error: stageErr } = await supabase
+      .from("coach_pipeline_stages")
+      .select(STAGE_SELECT)
+      .eq("coach_profile_id", coachProfileId)
+      .eq("stage_key", stageKey)
+      .maybeSingle()
+    if (stageErr) return withCorsJson(req, { ok: false, error: `Failed to read stage: ${stageErr.message}` }, 500)
+    if (!stage) return withCorsJson(req, { ok: false, error: `Unknown stage_key: ${stageKey}` }, 404)
+    const row = stage as StageRow
+    if (row.is_terminal) {
+      return withCorsJson(req, { ok: false, error: "The Convert stage cannot be deleted" }, 400)
+    }
+    if (!row.is_custom) {
+      return withCorsJson(req, { ok: false, error: "Canned stages cannot be deleted — deselect them instead" }, 400)
+    }
+
+    // Used-check (server-side, scoped to this coach's prospects). Custom keys
+    // are globally unique, but scoping to the coach's coach_clients keeps this
+    // correct even if that ever changes.
+    const { data: clientRows } = await supabase
+      .from("coach_clients")
+      .select("id")
+      .eq("coach_profile_id", coachProfileId)
+    const clientIds = (clientRows || []).map((r: any) => r.id)
+    let used = false
+    if (clientIds.length > 0) {
+      const { count } = await supabase
+        .from("prospect_stage_progress")
+        .select("id", { count: "exact", head: true })
+        .eq("stage_key", stageKey)
+        .in("coach_client_id", clientIds)
+      used = (count || 0) > 0
+    }
+
+    if (used) {
+      // SOFT delete — preserve the row + its progress history.
+      const { error: softErr } = await supabase
+        .from("coach_pipeline_stages")
+        .update({ active: false })
+        .eq("id", row.id)
+        .eq("coach_profile_id", coachProfileId)
+      if (softErr) return withCorsJson(req, { ok: false, error: `Failed to deactivate stage: ${softErr.message}` }, 500)
+    } else {
+      // HARD delete — never used, safe to remove entirely.
+      const { error: hardErr } = await supabase
+        .from("coach_pipeline_stages")
+        .delete()
+        .eq("id", row.id)
+        .eq("coach_profile_id", coachProfileId)
+      if (hardErr) return withCorsJson(req, { ok: false, error: `Failed to delete stage: ${hardErr.message}` }, 500)
+    }
+
+    const { data: after, error: afterErr } = await supabase
+      .from("coach_pipeline_stages")
+      .select(STAGE_SELECT)
+      .eq("coach_profile_id", coachProfileId)
+      .order("sort_order", { ascending: true })
+    if (afterErr) return withCorsJson(req, { ok: false, error: `Deleted, but re-read failed: ${afterErr.message}` }, 500)
+    return withCorsJson(req, {
+      ok: true,
+      deleted: used ? "soft" : "hard",
+      stage_key: stageKey,
+      stages: (after as StageRow[]).map(toApiStage),
+    })
   } catch (e: any) {
     const msg = e?.message || String(e)
     const status = /unauthorized/i.test(msg) ? 401 : 500

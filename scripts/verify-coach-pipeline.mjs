@@ -63,6 +63,28 @@ async function api(token, method, body) {
   const json = await res.json().catch(() => ({}))
   return { status: res.status, json }
 }
+async function del(token, stageKey) {
+  const res = await fetch(`${ENDPOINT_BASE}/api/coach/pipeline?stage_key=${encodeURIComponent(stageKey)}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${token}` },
+  })
+  const json = await res.json().catch(() => ({}))
+  return { status: res.status, json }
+}
+// Build a full PUT payload from a current stages list (mirrors the UI Save),
+// after an optional in-place mutation of the copied array.
+function payloadFromStages(stages, mutate) {
+  const copy = stages.map((s) => ({ ...s }))
+  if (mutate) mutate(copy)
+  return {
+    stages: copy.map((s, i) => {
+      if (!s.stage_key) return { is_custom: true, label: s.label, sort_order: i + 1 }
+      const b = { stage_key: s.stage_key, sort_order: i + 1, active: s.active }
+      if (!s.is_terminal) b.label = s.label
+      return b
+    }),
+  }
+}
 
 async function clearPipeline(coachProfileId) {
   await sb.from("coach_pipeline_stages").delete().eq("coach_profile_id", coachProfileId)
@@ -70,6 +92,7 @@ async function clearPipeline(coachProfileId) {
 
 async function main() {
   console.log(`${TAG} endpoint=${ENDPOINT_BASE} coach=${COACH_EMAIL}`)
+  let testProspectId = null
 
   // Resolve coach profile id for cleanup.
   const { data: prof } = await sb.from("client_profiles").select("id, is_coach").eq("email", COACH_EMAIL).maybeSingle()
@@ -171,7 +194,110 @@ async function main() {
   const p5 = await api(token, "PUT", { stages: unknown })
   check("rejected with 400", p5.status === 400, `status ${p5.status}`)
 
+  // ════════════════════════════════════════════════════════════════
+  // Step 4b: stage rename + custom delete (soft/hard)
+  // ════════════════════════════════════════════════════════════════
+
+  // ── 8. Canned label rename (stage_key immutable) ──
+  console.log("\n8. PUT canned rename — label changes, stage_key fixed")
+  let cur = (await api(token, "GET")).json.stages || []
+  const p8 = await api(token, "PUT", payloadFromStages(cur, (arr) => {
+    const lead = arr.find((s) => s.stage_key === "lead_identified")
+    if (lead) lead.label = "Lead Spotted"
+  }))
+  check("PUT 200", p8.status === 200, `status ${p8.status} ${JSON.stringify(p8.json).slice(0,160)}`)
+  const lead8 = (p8.json.stages || []).find((s) => s.stage_key === "lead_identified")
+  check("canned label renamed", lead8?.label === "Lead Spotted", lead8?.label)
+  check("canned stage_key unchanged", lead8?.stage_key === "lead_identified")
+  check("canned stays is_custom:false", lead8?.is_custom === false)
+
+  // ── 9. Custom rename ──
+  console.log("\n9. PUT custom rename")
+  cur = (await api(token, "GET")).json.stages || []
+  const customRow = cur.find((s) => s.is_custom)
+  check("a custom stage exists to rename", !!customRow)
+  if (customRow) {
+    const p9 = await api(token, "PUT", payloadFromStages(cur, (arr) => {
+      const c = arr.find((s) => s.stage_key === customRow.stage_key)
+      if (c) c.label = "Reference Call"
+    }))
+    check("PUT 200", p9.status === 200, `status ${p9.status}`)
+    const c9 = (p9.json.stages || []).find((s) => s.stage_key === customRow.stage_key)
+    check("custom label renamed", c9?.label === "Reference Call", c9?.label)
+    check("custom stage_key unchanged", c9?.stage_key === customRow.stage_key)
+    check("custom stays is_custom:true", c9?.is_custom === true)
+  }
+
+  // ── 10. Custom hard-delete (unused) ──
+  console.log("\n10. DELETE unused custom → hard delete (row removed)")
+  cur = (await api(token, "GET")).json.stages || []
+  const p10a = await api(token, "PUT", payloadFromStages(cur, (arr) => {
+    const term = arr.findIndex((s) => s.is_terminal)
+    arr.splice(term, 0, { label: "Temp Unused", is_custom: true, is_terminal: false, active: true })
+  }))
+  check("add temp custom 200", p10a.status === 200)
+  const tempKey = (p10a.json.stages || []).find((s) => s.label === "Temp Unused")?.stage_key
+  check("temp custom has generated key", !!tempKey && tempKey.startsWith("custom_"))
+  const d10 = await del(token, tempKey)
+  check("DELETE 200", d10.status === 200, `status ${d10.status} ${JSON.stringify(d10.json).slice(0,160)}`)
+  check("deleted=hard", d10.json?.deleted === "hard", d10.json?.deleted)
+  check("temp custom gone from list", !(d10.json.stages || []).some((s) => s.stage_key === tempKey))
+  const { count: tempRows } = await sb
+    .from("coach_pipeline_stages").select("id", { count: "exact", head: true })
+    .eq("coach_profile_id", coachProfileId).eq("stage_key", tempKey)
+  check("temp custom row hard-deleted in DB", (tempRows || 0) === 0, `rows ${tempRows}`)
+
+  // ── 11. Custom soft-delete (used → active=false, row + progress preserved) ──
+  console.log("\n11. DELETE used custom → soft delete (kept inactive, progress preserved)")
+  cur = (await api(token, "GET")).json.stages || []
+  const p11a = await api(token, "PUT", payloadFromStages(cur, (arr) => {
+    const term = arr.findIndex((s) => s.is_terminal)
+    arr.splice(term, 0, { label: "Used Stage", is_custom: true, is_terminal: false, active: true })
+  }))
+  check("add used custom 200", p11a.status === 200)
+  const usedKey = (p11a.json.stages || []).find((s) => s.label === "Used Stage")?.stage_key
+  check("used custom has key", !!usedKey)
+  // Seed a prospect + a progress row referencing the custom stage.
+  const { data: createdP } = await sb
+    .from("coach_clients")
+    .insert({
+      coach_profile_id: coachProfileId, client_profile_id: null, status: "active",
+      access_level: "full", lifecycle_status: "Prospect", prospect_status: "active",
+      name: "[verify-coach-pipeline] soft-delete prospect", source_category: "referral",
+    })
+    .select("id").single()
+  testProspectId = createdP?.id
+  check("seeded prospect for progress", !!testProspectId)
+  await sb.from("prospect_stage_progress").insert({ coach_client_id: testProspectId, stage_key: usedKey, reached_at: new Date().toISOString() })
+  const d11 = await del(token, usedKey)
+  check("DELETE 200", d11.status === 200, `status ${d11.status} ${JSON.stringify(d11.json).slice(0,160)}`)
+  check("deleted=soft", d11.json?.deleted === "soft", d11.json?.deleted)
+  const used11 = (d11.json.stages || []).find((s) => s.stage_key === usedKey)
+  check("used custom still present (not removed)", !!used11)
+  check("used custom now active=false", used11?.active === false)
+  const { count: usedRows } = await sb
+    .from("coach_pipeline_stages").select("id", { count: "exact", head: true })
+    .eq("coach_profile_id", coachProfileId).eq("stage_key", usedKey)
+  check("used custom row preserved in DB", (usedRows || 0) === 1, `rows ${usedRows}`)
+  const { data: progAfter } = await sb
+    .from("prospect_stage_progress").select("id")
+    .eq("coach_client_id", testProspectId).eq("stage_key", usedKey)
+  check("progress row preserved", (progAfter || []).length === 1, `rows ${(progAfter || []).length}`)
+  // Cleanup the test prospect (cascades its progress row).
+  await sb.from("coach_clients").delete().eq("id", testProspectId)
+  testProspectId = null
+
+  // ── 12. Delete guards: canned + convert are not deletable ──
+  console.log("\n12. DELETE guards — canned + convert rejected")
+  const d12a = await del(token, "lead_identified")
+  check("canned delete rejected 400", d12a.status === 400, `status ${d12a.status}`)
+  check("error says deselect instead", /deselect/i.test(d12a.json?.error || ""), d12a.json?.error)
+  const d12b = await del(token, "convert_to_client")
+  check("convert delete rejected 400", d12b.status === 400, `status ${d12b.status}`)
+  check("convert delete error mentions Convert", /convert/i.test(d12b.json?.error || ""), d12b.json?.error)
+
   // ── Cleanup: clear pipeline so re-runs re-seed fresh ──
+  if (testProspectId) await sb.from("coach_clients").delete().eq("id", testProspectId)
   await clearPipeline(coachProfileId)
   console.log("\ncleanup: pipeline rows cleared for", COACH_EMAIL)
 
