@@ -214,17 +214,17 @@ async function main() {
   // ── 9. Custom rename ──
   console.log("\n9. PUT custom rename")
   cur = (await api(token, "GET")).json.stages || []
-  const customRow = cur.find((s) => s.is_custom)
-  check("a custom stage exists to rename", !!customRow)
-  if (customRow) {
+  const customForRename = cur.find((s) => s.is_custom)
+  check("a custom stage exists to rename", !!customForRename)
+  if (customForRename) {
     const p9 = await api(token, "PUT", payloadFromStages(cur, (arr) => {
-      const c = arr.find((s) => s.stage_key === customRow.stage_key)
+      const c = arr.find((s) => s.stage_key === customForRename.stage_key)
       if (c) c.label = "Reference Call"
     }))
     check("PUT 200", p9.status === 200, `status ${p9.status}`)
-    const c9 = (p9.json.stages || []).find((s) => s.stage_key === customRow.stage_key)
+    const c9 = (p9.json.stages || []).find((s) => s.stage_key === customForRename.stage_key)
     check("custom label renamed", c9?.label === "Reference Call", c9?.label)
-    check("custom stage_key unchanged", c9?.stage_key === customRow.stage_key)
+    check("custom stage_key unchanged", c9?.stage_key === customForRename.stage_key)
     check("custom stays is_custom:true", c9?.is_custom === true)
   }
 
