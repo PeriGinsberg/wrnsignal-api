@@ -194,6 +194,40 @@ async function main() {
     check("prospect_status → won (automatic)", row?.prospect_status === "won", row?.prospect_status)
     pr = await progressRows()
     check("terminal progress row recorded", pr.some((p) => p.stage_key === terminalKey))
+
+    // ── 9. Convert auto-creates a "Send SIGNAL invite" action item (idempotent) ──
+    console.log("\n9. convert auto-creates 'Send SIGNAL invite' action item (idempotent)")
+    const inviteRows = async () => {
+      const { data } = await sb
+        .from("coach_client_notes")
+        .select("id, body, type, priority, completed_at, deleted_at")
+        .eq("coach_client_id", prospectId)
+        .eq("type", "action_item")
+        .is("deleted_at", null)
+        .ilike("body", "Send SIGNAL invite to %")
+      return data || []
+    }
+    let inv = await inviteRows()
+    check("one invite action item created", inv.length === 1, `got ${inv.length}`)
+    check("invite item not completed", inv[0]?.completed_at == null)
+    check("invite item priority this_week", inv[0]?.priority === "this_week", inv[0]?.priority)
+    // It surfaces via the existing action-items system (Required Actions / Home).
+    const ai = await api(token, "/api/coach/action-items", "GET")
+    const surfaced = (ai.json?.items || []).find(
+      (it) => it.coach_client_id === prospectId && /^Send SIGNAL invite to /.test(it.body || ""),
+    )
+    check("invite item surfaces via /api/coach/action-items", !!surfaced)
+    // NULL client_profile_id surface (v0.1 Commit 3 risk class): a freshly
+    // converted prospect has no profile yet, so the action item carries
+    // client_id=null. The list must still render — name resolves from
+    // coach_clients.name, the row doesn't break.
+    check("surfaced item has NULL client_id (no profile yet)", surfaced ? surfaced.client_id === null : false, `client_id=${surfaced?.client_id}`)
+    check("surfaced item name resolves from coach_clients (NULL-profile surface)", !!surfaced?.client_name, `client_name=${surfaced?.client_name}`)
+    // Second convert must NOT duplicate the invite item.
+    const c2 = await api(token, `/api/coach/prospects/${prospectId}/stage`, "PATCH", { stage_key: terminalKey })
+    check("second convert 200", c2.status === 200, `status ${c2.status}`)
+    inv = await inviteRows()
+    check("still exactly one invite item (no duplicate on re-convert)", inv.length === 1, `got ${inv.length}`)
   } finally {
     // Hard delete the test prospect (cascades prospect_stage_progress + notes).
     if (prospectId) {

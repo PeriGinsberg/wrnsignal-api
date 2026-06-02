@@ -38,6 +38,14 @@ export const dynamic = "force-dynamic"
 // handleConvert in app/dashboard/coach/prospects/[id]/page.tsx).
 const CONVERT_REDIRECT_PREFIX = "/dashboard/coach/coach-clients/"
 
+// On conversion, auto-create a "Send SIGNAL invite" action item so the coach is
+// reminded to invite the new client. Action items are coach_client_notes rows
+// (type='action_item'); 'this_week' matches the default priority used by the
+// notes create path (DEFAULT_ACTION_ITEM_PRIORITY). The fixed prefix is the
+// idempotency key — at most one live invite item per client.
+const INVITE_ACTION_PREFIX = "Send SIGNAL invite to "
+const INVITE_ACTION_PRIORITY = "this_week"
+
 // ── Auth helpers (inlined per coach-route convention; copied from
 //    pipeline/route.ts) ──
 function getSupabaseAdmin() {
@@ -102,7 +110,7 @@ async function getCoachProfile(userId: string, email: string | null) {
 async function verifyProspectOwnership(coachClientId: string, coachProfileId: string, supabase: any) {
   const { data } = await supabase
     .from("coach_clients")
-    .select("id, coach_profile_id, lifecycle_status, client_profile_id")
+    .select("id, coach_profile_id, name, lifecycle_status, client_profile_id")
     .eq("id", coachClientId)
     .eq("coach_profile_id", coachProfileId)
     .eq("status", "active")
@@ -219,6 +227,38 @@ export async function PATCH(
         await supabase
           .from("prospect_stage_progress")
           .insert({ coach_client_id: id, stage_key: stageKey, reached_at: nowIso })
+      }
+
+      // 4. Auto-create a "Send SIGNAL invite" action item so the coach is
+      //    reminded to invite the new client. Writes into the existing action
+      //    item system (coach_client_notes, type='action_item') so it surfaces
+      //    on Required Actions / Coach Home via /api/coach/action-items — no new
+      //    surface. The coach checks it off manually (no auto-clear).
+      //    Idempotency: skip if a live invite item already exists for this
+      //    client (guards a double-convert). Best-effort — the conversion has
+      //    already succeeded, so a failure here must NOT fail the response.
+      try {
+        const { data: existingInvite } = await supabase
+          .from("coach_client_notes")
+          .select("id")
+          .eq("coach_client_id", id)
+          .eq("type", "action_item")
+          .is("deleted_at", null)
+          .ilike("body", `${INVITE_ACTION_PREFIX}%`)
+          .maybeSingle()
+        if (!existingInvite) {
+          const inviteName = (prospect.name as string | null)?.trim() || "this client"
+          await supabase.from("coach_client_notes").insert({
+            coach_client_id: id,
+            coach_profile_id: coachProfileId,
+            client_profile_id: prospect.client_profile_id,
+            type: "action_item",
+            body: `${INVITE_ACTION_PREFIX}${inviteName}`,
+            priority: INVITE_ACTION_PRIORITY,
+          })
+        }
+      } catch {
+        // Swallow — the invite reminder is a nicety, not part of the convert.
       }
 
       return withCorsJson(req, {
