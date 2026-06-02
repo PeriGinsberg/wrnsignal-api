@@ -38,10 +38,12 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
   lost: "Lost",
   won: "Won",
 }
+// Selected colors kept in sync with the detail page (prospects/[id]/page.tsx):
+// Active green, Inactive amber "on hold", Lost red, Won teal.
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
-  active:   { bg: "rgba(74,222,128,0.15)",  color: "#4ade80", border: "rgba(74,222,128,0.40)" },
-  inactive: { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
-  lost:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.40)" },
+  active:   { bg: "rgba(74,222,128,0.18)",  color: "#4ade80", border: "rgba(74,222,128,0.50)" },
+  inactive: { bg: "rgba(254,176,106,0.18)", color: "#FEB06A", border: "rgba(254,176,106,0.50)" },
+  lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
   won:      { bg: "rgba(45,165,141,0.18)",  color: "#2CA58D", border: "rgba(45,165,141,0.45)" },
 }
 
