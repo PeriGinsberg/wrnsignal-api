@@ -13,6 +13,7 @@ import {
   headline,
   label,
 } from "../../lib/dashboard-theme"
+import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../lib/jobType"
 
 type CoachRecommendation = {
   id: string
@@ -229,6 +230,16 @@ export default function DashboardPage() {
   function openProfileEdit() {
     setEditProfile(profile ? { ...profile } : null)
     setProfileEditOpen(true)
+  }
+
+  function toggleJobType(opt: string) {
+    if (!editProfile) return
+    const cur = new Set((editProfile.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
+    let next: string[]
+    if (opt === "Any") next = cur.has("Any") ? [] : ["Any"]
+    else if (cur.has(opt)) { cur.delete(opt); next = Array.from(cur) }
+    else { cur.delete("Any"); cur.add(opt); next = Array.from(cur) }
+    setEditProfile({ ...editProfile, job_type: normalizeJobType(next).value ?? "" })
   }
 
   async function saveProfile() {
@@ -604,16 +615,30 @@ export default function DashboardPage() {
                         {!req && <span style={{ fontSize: 9, color: T.DIM }}>optional</span>}
                       </div>
                       {key === "job_type" ? (
-                        <select
-                          style={{ ...input, cursor: "pointer", colorScheme: "dark" }}
-                          value={(editProfile[key] as string) ?? ""}
-                          onChange={(e) => setEditProfile({ ...editProfile, [key]: e.target.value })}
-                        >
-                          <option value="" disabled style={{ background: "#0a1628", color: "#E8E6E1" }}>Select job type</option>
-                          <option value="Full Time" style={{ background: "#0a1628", color: "#E8E6E1" }}>Full Time</option>
-                          <option value="Internship" style={{ background: "#0a1628", color: "#E8E6E1" }}>Internship</option>
-                          <option value="Both" style={{ background: "#0a1628", color: "#E8E6E1" }}>Both</option>
-                        </select>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {JOB_TYPE_OPTIONS.map((opt) => {
+                            const active = (editProfile.job_type || "").split(",").map((s) => s.trim()).includes(opt)
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => toggleJobType(opt)}
+                                style={{
+                                  padding: "8px 14px",
+                                  borderRadius: 999,
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
+                                  background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
+                                  color: active ? T.WRN_BLUE : T.DIM,
+                                }}
+                              >
+                                {opt}
+                              </button>
+                            )
+                          })}
+                        </div>
                       ) : multi ? (
                         <textarea
                           style={{ ...textarea, minHeight: 100 }}

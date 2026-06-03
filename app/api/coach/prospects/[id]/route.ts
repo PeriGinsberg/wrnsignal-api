@@ -21,7 +21,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { normalizeJobType } from "@/lib/jobType"
+import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -589,7 +589,7 @@ export async function PATCH(
       updates.education_status = r.value
     }
     if ("job_type" in body) {
-      const r = normalizeJobType(body.job_type)
+      const r = normalizeJobType(canonicalizeLegacyJobType(body.job_type))
       if (r.invalid.length) {
         return withCorsJson(req, { ok: false, error: `Invalid job_type: ${r.invalid.join(", ")}` }, 400)
       }

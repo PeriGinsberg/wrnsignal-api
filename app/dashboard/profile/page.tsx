@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, input, textarea, btnPrimary, card, eyebrow, headline, label } from "../../../lib/dashboard-theme"
+import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../lib/jobType"
 
 type Profile = {
   id: string
@@ -53,6 +54,16 @@ export default function ProfilePage() {
     load()
   }, [])
 
+  function toggleJobType(opt: string) {
+    if (!profile) return
+    const cur = new Set((profile.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
+    let next: string[]
+    if (opt === "Any") next = cur.has("Any") ? [] : ["Any"]
+    else if (cur.has(opt)) { cur.delete(opt); next = Array.from(cur) }
+    else { cur.delete("Any"); cur.add(opt); next = Array.from(cur) }
+    setProfile({ ...profile, job_type: normalizeJobType(next).value ?? "" })
+  }
+
   async function save() {
     if (!profile) return
     setSaving(true)
@@ -96,7 +107,32 @@ export default function ProfilePage() {
                 <span style={{ ...label, color: req ? T.WRN_BLUE : T.DIM }}>{lbl}</span>
                 {!req && <span style={{ fontSize: 10, color: T.DIM }}>optional</span>}
               </div>
-              {multi ? (
+              {key === "job_type" ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {JOB_TYPE_OPTIONS.map((opt) => {
+                    const active = (profile.job_type || "").split(",").map((s) => s.trim()).includes(opt)
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => toggleJobType(opt)}
+                        style={{
+                          padding: "8px 14px",
+                          borderRadius: 999,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
+                          background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
+                          color: active ? T.WRN_BLUE : T.DIM,
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : multi ? (
                 <textarea
                   style={{ ...textarea, minHeight: 180 }}
                   value={(profile[key] as string) ?? ""}

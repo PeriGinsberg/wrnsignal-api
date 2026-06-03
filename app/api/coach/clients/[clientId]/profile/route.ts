@@ -2,7 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
-import { normalizeJobType } from "@/lib/jobType"
+import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -193,7 +193,8 @@ export async function PATCH(
       if (v === undefined) continue
       if (k === "job_type") {
         // Canonical multi-aware validate/normalize (replaces raw write).
-        const r = normalizeJobType(v as string | string[] | null)
+        // Coerce legacy/dirty spellings before strict validation (prod-safety).
+        const r = normalizeJobType(canonicalizeLegacyJobType(v as string | string[] | null))
         if (r.invalid.length) {
           return withCorsJson(req, { ok: false, error: `Invalid job_type: ${r.invalid.join(", ")}` }, 400)
         }

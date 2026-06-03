@@ -42,6 +42,69 @@ export type JobType = (typeof JOB_TYPE_OPTIONS)[number]
  *              should 400 when this is non-empty (matches the old optEnum);
  *              lenient/migration callers can ignore it and use `value`.
  */
+/**
+ * Lenient pre-coercion of legacy/dirty job_type values to canonical, run BEFORE
+ * the strict normalizeJobType (job_type overhaul §10 step 6). Pure.
+ *
+ * Why this exists: prod client_profiles.job_type was never normalized (the
+ * Step-1 migration was dev-only), so ~45 rows still hold 9 legacy variants
+ * ('Full Time Role', 'Full Time', 'full time', 'internship', 'All', etc.). On a
+ * full-form resave the strict normalizeJobType would 400 those values and lock
+ * the user out of saving. This maps the known legacy spellings to canonical so
+ * they coerce instead of erroring.
+ *
+ * - Case/space/hyphen-insensitive: members are compared on a compact key
+ *   (lowercased, spaces+hyphens removed), so any spelling of "full time" maps.
+ * - Multi-aware: coerces each comma-split member independently.
+ * - Known non-job-type values mis-filed into job_type ('Recent graduate',
+ *   'Current student') are DROPPED.
+ * - UNRECOGNIZED members pass through unchanged so the downstream strict
+ *   normalizeJobType still rejects genuine garbage (preserves the 400 guard for
+ *   real API misuse — that's the whole reason for two layers).
+ *
+ * Compose as: normalizeJobType(canonicalizeLegacyJobType(input))
+ *
+ * Returns a comma-joined string of coerced/passed members, or null when nothing
+ * remains.
+ */
+export function canonicalizeLegacyJobType(
+  input: string | string[] | null | undefined,
+): string | null {
+  // compact-key → canonical (null = drop a known non-job-type value).
+  const LEGACY_MAP: Record<string, string | null> = {
+    fulltime: "Full-time",
+    fulltimerole: "Full-time",
+    parttime: "Part-time",
+    internship: "Internship",
+    contract: "Contract",
+    any: "Any",
+    all: "Any",
+    recentgraduate: null,
+    currentstudent: null,
+  }
+
+  const rawMembers: string[] =
+    input == null
+      ? []
+      : (Array.isArray(input) ? input : [input])
+          .flatMap((x) => String(x).split(","))
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0)
+
+  const out: string[] = []
+  for (const m of rawMembers) {
+    const key = m.toLowerCase().replace(/[\s-]/g, "")
+    if (key in LEGACY_MAP) {
+      const mapped = LEGACY_MAP[key]
+      if (mapped !== null) out.push(mapped) // null = drop
+    } else {
+      out.push(m) // unrecognized → pass through to strict validator
+    }
+  }
+
+  return out.length ? out.join(", ") : null
+}
+
 export function normalizeJobType(
   input: string | string[] | null | undefined,
 ): { value: string | null; invalid: string[] } {

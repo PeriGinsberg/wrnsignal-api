@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -265,6 +266,17 @@ export async function PUT(req: NextRequest) {
 
     // Strip fields that must not be changed via this route
     const { email, id, user_id, seat_id, profile_version, ...allowed } = body
+
+    // Canonical job_type: coerce legacy/dirty spellings (this is a full-form
+    // resave, so an untouched legacy value is resubmitted as-is) BEFORE strict
+    // validation, then validate. 400 only on genuinely unrecognized members.
+    if ("job_type" in allowed) {
+      const r = normalizeJobType(canonicalizeLegacyJobType(allowed.job_type))
+      if (r.invalid.length) {
+        return withCorsJson(req, { error: `Invalid job_type: ${r.invalid.join(", ")}` }, 400)
+      }
+      allowed.job_type = r.value
+    }
 
     const { data: updated, error: updateErr } = await supabase
       .from("client_profiles")
