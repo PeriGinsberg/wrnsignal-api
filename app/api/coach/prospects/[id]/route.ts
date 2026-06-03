@@ -21,6 +21,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
+import { normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -139,7 +140,6 @@ const PROSPECT_SELECT_COLS = [
 // Same shape as the sibling list/POST route. Each returns { value } or
 // { error } (a 400 message); empty input normalizes to null.
 const EDUCATION_STATUSES = ["in_school", "graduated", "na"] as const
-const JOB_TYPES = ["Full Time Role", "Internship", "Both"] as const
 
 type FieldResult<T> = { value: T } | { error: string }
 
@@ -589,8 +589,10 @@ export async function PATCH(
       updates.education_status = r.value
     }
     if ("job_type" in body) {
-      const r = optEnum(body.job_type, "job_type", JOB_TYPES)
-      if ("error" in r) return withCorsJson(req, { ok: false, error: r.error }, 400)
+      const r = normalizeJobType(body.job_type)
+      if (r.invalid.length) {
+        return withCorsJson(req, { ok: false, error: `Invalid job_type: ${r.invalid.join(", ")}` }, 400)
+      }
       updates.job_type = r.value
     }
     if ("years_experience_approx" in body) {

@@ -33,6 +33,7 @@ import {
   eyebrow,
   label,
 } from "../../../../../lib/dashboard-theme"
+import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../../../lib/jobType"
 import { SavingSpinner } from "../../SavingSpinner"
 import { LoadingShell } from "../../LoadingShell"
 
@@ -217,12 +218,6 @@ const EDUCATION_LABEL: Record<string, string> = {
   graduated: "Graduated",
   na: "Not applicable",
 }
-const JOB_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "—" },
-  { value: "Full Time Role", label: "Full Time Role" },
-  { value: "Internship", label: "Internship" },
-  { value: "Both", label: "Both" },
-]
 
 // ── Auth helpers (inline) ──
 
@@ -601,6 +596,22 @@ function SourceSection({
   function cancelEdit() { setEditing(false); setError(null) }
   function set(k: keyof Draft, v: string) { setDraft((d) => ({ ...d, [k]: v })) }
 
+  // Multi-select job_type toggle. 'Any' is mutually exclusive: selecting 'Any'
+  // clears the rest; selecting a specific option removes 'Any'. normalizeJobType
+  // canonicalizes order + de-dupes; stored value never has 'Any' alongside others.
+  function toggleJobType(opt: string) {
+    const cur = new Set((draft.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
+    let next: string[]
+    if (opt === "Any") {
+      next = cur.has("Any") ? [] : ["Any"]
+    } else if (cur.has(opt)) {
+      cur.delete(opt); next = Array.from(cur)
+    } else {
+      cur.delete("Any"); cur.add(opt); next = Array.from(cur)
+    }
+    set("job_type", normalizeJobType(next).value ?? "")
+  }
+
   async function handleSave() {
     if (!draft.source_category) { setError("Source category is required"); return }
     setSaving(true)
@@ -717,7 +728,6 @@ function SourceSection({
             { label: "COMPANY", value: prospect.current_company, show: !!prospect.current_company },
             { label: "LOCATION", value: prospect.location, show: !!prospect.location },
             { label: "EXPERIENCE", value: prospect.years_experience_approx != null ? `${prospect.years_experience_approx} yrs` : null, show: prospect.years_experience_approx != null },
-            { label: "JOB TYPE", value: prospect.job_type, show: !!prospect.job_type },
           ])}
           {group("EDUCATION", [
             { label: "STATUS", value: prospect.education_status ? (EDUCATION_LABEL[prospect.education_status] ?? prospect.education_status) : null, show: !!prospect.education_status },
@@ -730,6 +740,7 @@ function SourceSection({
             { label: "LOCATIONS", value: prospect.target_locations, show: !!prospect.target_locations },
             { label: "PREFERRED", value: prospect.preferred_locations, show: !!prospect.preferred_locations },
             { label: "TIMELINE", value: prospect.timeline, show: !!prospect.timeline },
+            { label: "JOB TYPE", value: prospect.job_type, show: !!prospect.job_type },
           ])}
           {group("OTHER", [
             { label: "TAGS", value: prospect.tags, show: !!prospect.tags },
@@ -767,6 +778,7 @@ function SourceSection({
   )
   const editGroupStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }
   const groupHdr: React.CSSProperties = { ...eyebrow, fontSize: 9, color: T.DIM, marginTop: 6 }
+  const jobTypeSelected = new Set((draft.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, opacity: saving ? 0.5 : 1, pointerEvents: saving ? "none" : "auto", transition: "opacity 120ms ease" }}>
@@ -815,12 +827,6 @@ function SourceSection({
         {field("current_company", "COMPANY")}
         {field("location", "LOCATION")}
         {field("years_experience_approx", "YEARS EXPERIENCE", { type: "number", placeholder: "e.g. 5" })}
-        <div>
-          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>JOB TYPE</span>
-          <select style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.job_type} onChange={(e) => set("job_type", e.target.value)}>
-            {JOB_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value} style={{ background: T.CARD, color: T.TEXT }}>{o.label}</option>)}
-          </select>
-        </div>
       </div>
 
       {/* Education */}
@@ -847,6 +853,29 @@ function SourceSection({
         {field("target_locations", "TARGET LOCATIONS")}
         {field("preferred_locations", "PREFERRED LOCATIONS")}
         {field("timeline", "TIMELINE", { placeholder: "e.g. 3-6 months" })}
+        <div>
+          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>JOB TYPE</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {JOB_TYPE_OPTIONS.map((opt) => {
+              const active = jobTypeSelected.has(opt)
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => toggleJobType(opt)}
+                  style={{
+                    fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
+                    border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
+                    background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
+                    color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
+                  }}
+                >
+                  {opt}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Other */}
