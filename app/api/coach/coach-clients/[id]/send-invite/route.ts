@@ -158,7 +158,7 @@ export async function POST(
     // existence-probing). Returns the row's columns we need below.
     const { data: ccRow } = await supabase
       .from("coach_clients")
-      .select("id, lifecycle_status, client_profile_id, invited_email, name")
+      .select("id, lifecycle_status, client_profile_id, invited_email, name, job_type, target_roles, target_locations, preferred_locations, timeline")
       .eq("id", coachClientId)
       .eq("coach_profile_id", coachProfileId)
       .eq("status", "active")
