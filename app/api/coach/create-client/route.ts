@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { sendClientInvite } from "../../../../lib/email/sendClientInvite"
 import { getAppUrl } from "@/lib/urls"
+import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -108,6 +109,14 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: `Missing required fields: ${missing.join(", ")}` }, 400)
     }
 
+    // Canonical job_type (coerce legacy → validate). Modal sends canonical chips;
+    // this guards non-form callers and any carried-over legacy value.
+    const jt = normalizeJobType(canonicalizeLegacyJobType(jobType))
+    if (jt.invalid.length) {
+      return withCorsJson(req, { ok: false, error: `Invalid jobType: ${jt.invalid.join(", ")}` }, 400)
+    }
+    const jobTypeCanonical = jt.value
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return withCorsJson(req, { ok: false, error: "Invalid email format" }, 400)
     }
@@ -147,7 +156,7 @@ export async function POST(req: NextRequest) {
       if (v) lines.push(`${label}: ${v}`)
     }
     add("Name", fullName)
-    add("Job type", jobType)
+    add("Job type", jobTypeCanonical)
     add("Target roles", targetRoles)
     add("Target locations", targetLocations)
     add("Timeline", timeframe)
@@ -163,7 +172,7 @@ export async function POST(req: NextRequest) {
         user_id: createdAuthUserId,
         email,
         name: fullName,
-        job_type: jobType,
+        job_type: jobTypeCanonical,
         target_roles: targetRoles,
         target_locations: targetLocations,
         timeline: timeframe,

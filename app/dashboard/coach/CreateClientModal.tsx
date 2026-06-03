@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { SavingSpinner } from "./SavingSpinner"
+import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../lib/jobType"
 
 /* ── Colors ──────────────────────────────────────────────────── */
 const PLUM = "#3D1A4A"
@@ -68,6 +69,15 @@ export default function CreateClientModal({
   const [emailConflict, setEmailConflict] = useState("")
   const [generalError, setGeneralError] = useState("")
   const [result, setResult] = useState<{ ok: boolean; emailSent?: boolean } | null>(null)
+
+  function toggleJobType(opt: string) {
+    const cur = new Set(jobType.split(",").map((s) => s.trim()).filter(Boolean))
+    let next: string[]
+    if (opt === "Any") next = cur.has("Any") ? [] : ["Any"]
+    else if (cur.has(opt)) { cur.delete(opt); next = Array.from(cur) }
+    else { cur.delete("Any"); cur.add(opt); next = Array.from(cur) }
+    setJobType(normalizeJobType(next).value ?? "")
+  }
 
   function reset() {
     setFirstName(""); setLastName(""); setEmail("")
@@ -252,18 +262,27 @@ export default function CreateClientModal({
           <div>
             <span style={sectionLabel}>Job Search Details</span>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <select
-                style={selectStyle}
-                value={jobType}
-                onChange={(e) => setJobType(e.target.value)}
-              >
-                <option value="">Select job type...</option>
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Internship">Internship</option>
-                <option value="Contract">Contract</option>
-                <option value="Any">Any</option>
-              </select>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {JOB_TYPE_OPTIONS.map((opt) => {
+                  const active = jobType.split(",").map((s) => s.trim()).includes(opt)
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => toggleJobType(opt)}
+                      style={{
+                        padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "inherit",
+                        border: active ? `1px solid ${ROSE}` : `0.5px solid ${BORDER}`,
+                        background: active ? "rgba(201,96,122,0.12)" : "#fff",
+                        color: active ? PLUM_TEXT : MUTED,
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  )
+                })}
+              </div>
               <input
                 style={inputStyle}
                 value={targetRoles}

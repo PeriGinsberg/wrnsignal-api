@@ -4,6 +4,7 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { isValidLaneId, isValidSubLaneId } from "../../../lib/laneTaxonomy"
 import { deriveCareerStage } from "../../../lib/candidateTargeting"
+import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -669,7 +670,16 @@ export async function POST(req: Request) {
     // Required fields for clean intake
     const resume_text = clampText(body.resume_text, 120000)
     const target_roles = clampText(body.target_roles, 4000)
-    const job_type = clampText(body.job_type, 200)
+    // Coerce legacy intake vocab (Framer sends "Full Time Role" etc.) →
+    // canonical, then validate. 400 only on genuinely unrecognized members; a
+    // value that canonicalizes to nothing falls through to the missing-field
+    // check below. job_type then flows canonical into profile_text,
+    // profile_structured, and the RPC payload (SQL function untouched).
+    const jobTypeNorm = normalizeJobType(canonicalizeLegacyJobType(clampText(body.job_type, 200)))
+    if (jobTypeNorm.invalid.length) {
+      return withCorsJson(req, { ok: false, error: "invalid_job_type", invalid: jobTypeNorm.invalid }, 400)
+    }
+    const job_type = jobTypeNorm.value
 
     const missing: string[] = []
     if (!resume_text) missing.push("resume_text")

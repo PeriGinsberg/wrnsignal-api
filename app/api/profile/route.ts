@@ -113,7 +113,12 @@ async function backfillProfileFields(profile: any, supabase: any) {
 
   const updates: Record<string, any> = {}
   if (!profile.name && parsed.name) updates.name = parsed.name
-  if (!profile.job_type && parsed.job_type) updates.job_type = parsed.job_type
+  if (!profile.job_type && parsed.job_type) {
+    // Coerce the parsed legacy text → canonical; skip the fill if it
+    // canonicalizes to nothing. Silent (this is a GET-time heal, never 400).
+    const r = normalizeJobType(canonicalizeLegacyJobType(parsed.job_type))
+    if (r.value) updates.job_type = r.value
+  }
   if (!profile.target_roles && parsed.target_roles) updates.target_roles = parsed.target_roles
   if (!profile.preferred_locations && parsed.preferred_locations) updates.preferred_locations = parsed.preferred_locations
   if (!profile.timeline && parsed.timeline) updates.timeline = parsed.timeline
