@@ -14,6 +14,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label } from "../../../../../lib/dashboard-theme"
+import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../../../lib/jobType"
 import { SavingSpinner } from "../../SavingSpinner"
 
 // ──────────────────────────────────────────────────────────────
@@ -28,6 +29,9 @@ export type ClientProfileFull = {
   target_roles: string | null
   target_locations: string | null
   timeline: string | null
+  // Optional: carried by the route's select("*") + the parent's clientProfile
+  // at runtime; optional on the type so the parent assignment is unaffected.
+  preferred_locations?: string | null
   coach_notes_avoid: string | null
   coach_notes_strengths: string | null
   coach_notes_concerns: string | null
@@ -49,20 +53,11 @@ export type ClientPersonaFull = {
 
 type SaveState = "idle" | "saving" | "saved" | "error"
 
-const JOB_TYPE_OPTIONS = ["Full-time", "Part-time", "Internship", "Contract", "Any"] as const
-const TIMEFRAME_OPTIONS = [
-  "Actively looking",
-  "Within 1 month",
-  "1-3 months",
-  "3-6 months",
-  "6-12 months",
-  "Exploring options",
-] as const
-
 type EditableField =
   | "job_type"
   | "target_roles"
   | "target_locations"
+  | "preferred_locations"
   | "timeline"
   | "coach_notes_avoid"
   | "coach_notes_strengths"
@@ -133,6 +128,7 @@ export default function ProfilePersonasTab({
     job_type: p.job_type ?? "",
     target_roles: p.target_roles ?? "",
     target_locations: p.target_locations ?? "",
+    preferred_locations: p.preferred_locations ?? "",
     timeline: p.timeline ?? "",
     coach_notes_avoid: p.coach_notes_avoid ?? "",
     coach_notes_strengths: p.coach_notes_strengths ?? "",
@@ -142,7 +138,7 @@ export default function ProfilePersonasTab({
   useEffect(() => { setDrafts(initDrafts(initialProfile)) }, [initialProfile])
 
   const initSaveStates = (): Record<EditableField, SaveState> => ({
-    job_type: "idle", target_roles: "idle", target_locations: "idle", timeline: "idle",
+    job_type: "idle", target_roles: "idle", target_locations: "idle", preferred_locations: "idle", timeline: "idle",
     coach_notes_avoid: "idle", coach_notes_strengths: "idle", coach_notes_concerns: "idle",
   })
   const [saveStates, setSaveStates] = useState<Record<EditableField, SaveState>>(initSaveStates)
@@ -189,6 +185,24 @@ export default function ProfilePersonasTab({
       console.warn("[ProfilePersonasTab] saveField error:", (e as Error).message)
       setSaveState(field, "error")
     }
+  }
+
+  // Multi-select job_type. 'Any' is mutually exclusive (selecting 'Any' clears
+  // the rest; selecting a specific removes 'Any'). This form autosaves on
+  // change, so the toggle updates drafts AND commits via saveField.
+  function toggleJobType(opt: string) {
+    const cur = new Set((drafts.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
+    let next: string[]
+    if (opt === "Any") {
+      next = cur.has("Any") ? [] : ["Any"]
+    } else if (cur.has(opt)) {
+      cur.delete(opt); next = Array.from(cur)
+    } else {
+      cur.delete("Any"); cur.add(opt); next = Array.from(cur)
+    }
+    const value = normalizeJobType(next).value ?? ""
+    setDrafts((d) => ({ ...d, job_type: value }))
+    saveField("job_type", value)
   }
 
   // ── Personas ──
@@ -384,37 +398,42 @@ export default function ProfilePersonasTab({
         {/* Editable fields */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <FieldRow labelText="Job Type" state={saveStates.job_type}>
-            <select
-              style={{ ...input, height: 38, colorScheme: "dark", cursor: "pointer" } as React.CSSProperties}
-              value={drafts.job_type}
-              onChange={(e) => {
-                const v = e.target.value
-                setDrafts((d) => ({ ...d, job_type: v }))
-                saveField("job_type", v)  // selects commit immediately
-              }}
-            >
-              <option value="" style={{ background: "#0a1628" }}>—</option>
-              {JOB_TYPE_OPTIONS.map((v) => (
-                <option key={v} value={v} style={{ background: "#0a1628" }}>{v}</option>
-              ))}
-            </select>
+            {(() => {
+              const selected = new Set((drafts.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
+              return (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {JOB_TYPE_OPTIONS.map((opt) => {
+                    const active = selected.has(opt)
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => toggleJobType(opt)}
+                        style={{
+                          fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
+                          border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
+                          background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
+                          color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </FieldRow>
 
           <FieldRow labelText="Timeline" state={saveStates.timeline}>
-            <select
-              style={{ ...input, height: 38, colorScheme: "dark", cursor: "pointer" } as React.CSSProperties}
+            <input
+              type="text"
+              style={input}
+              placeholder="e.g. July 2026"
               value={drafts.timeline}
-              onChange={(e) => {
-                const v = e.target.value
-                setDrafts((d) => ({ ...d, timeline: v }))
-                saveField("timeline", v)
-              }}
-            >
-              <option value="" style={{ background: "#0a1628" }}>—</option>
-              {TIMEFRAME_OPTIONS.map((v) => (
-                <option key={v} value={v} style={{ background: "#0a1628" }}>{v}</option>
-              ))}
-            </select>
+              onChange={(e) => setDrafts((d) => ({ ...d, timeline: e.target.value }))}
+              onBlur={(e) => saveField("timeline", e.target.value)}
+            />
           </FieldRow>
 
           <FieldRow labelText="Target Roles" state={saveStates.target_roles}>
@@ -434,6 +453,16 @@ export default function ProfilePersonasTab({
               value={drafts.target_locations}
               onChange={(e) => setDrafts((d) => ({ ...d, target_locations: e.target.value }))}
               onBlur={(e) => saveField("target_locations", e.target.value)}
+            />
+          </FieldRow>
+
+          <FieldRow labelText="Preferred Locations" state={saveStates.preferred_locations}>
+            <input
+              type="text"
+              style={input}
+              value={drafts.preferred_locations}
+              onChange={(e) => setDrafts((d) => ({ ...d, preferred_locations: e.target.value }))}
+              onBlur={(e) => saveField("preferred_locations", e.target.value)}
             />
           </FieldRow>
         </div>

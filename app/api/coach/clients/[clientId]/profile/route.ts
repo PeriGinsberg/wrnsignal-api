@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -155,6 +156,7 @@ const COACH_EDITABLE_PROFILE_FIELDS = new Set([
   "job_type",
   "target_roles",
   "target_locations",
+  "preferred_locations",
   "timeline",
   "coach_notes_avoid",
   "coach_notes_strengths",
@@ -189,6 +191,15 @@ export async function PATCH(
     for (const [k, v] of Object.entries(body)) {
       if (!COACH_EDITABLE_PROFILE_FIELDS.has(k)) continue
       if (v === undefined) continue
+      if (k === "job_type") {
+        // Canonical multi-aware validate/normalize (replaces raw write).
+        const r = normalizeJobType(v as string | string[] | null)
+        if (r.invalid.length) {
+          return withCorsJson(req, { ok: false, error: `Invalid job_type: ${r.invalid.join(", ")}` }, 400)
+        }
+        updates.job_type = r.value
+        continue
+      }
       // Empty string → null (so coach can clear a field by blanking it)
       const str = v === null ? null : String(v)
       updates[k] = str !== null && str.trim().length === 0 ? null : str
