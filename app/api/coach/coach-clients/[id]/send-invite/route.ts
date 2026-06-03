@@ -248,6 +248,16 @@ export async function POST(
       if (resumeText) profileTextLines.push(`\nResume:\n${resumeText}`)
       const profileText = profileTextLines.join("\n").trim()
 
+      // Carry-over (conversion-carryover-v1): seed the new profile from the
+      // prospect's captured fields on ccRow. Copy only non-null/non-empty
+      // values so we never write null over a column default. create-new only.
+      const carryover: Record<string, string> = {}
+      if (ccRow.job_type) carryover.job_type = ccRow.job_type
+      if (ccRow.target_roles) carryover.target_roles = ccRow.target_roles
+      if (ccRow.target_locations) carryover.target_locations = ccRow.target_locations
+      if (ccRow.preferred_locations) carryover.preferred_locations = ccRow.preferred_locations
+      if (ccRow.timeline) carryover.timeline = ccRow.timeline
+
       const { data: newProfile, error: profileErr } = await supabase
         .from("client_profiles")
         .insert({
@@ -258,6 +268,7 @@ export async function POST(
           resume_text: resumeText,
           profile_complete: false,
           active: true,
+          ...carryover,
         })
         .select("id")
         .single()
