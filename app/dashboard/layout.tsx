@@ -22,6 +22,8 @@ type NavItem = {
   matchPrefix?: boolean
   /** Action items render as a <button> instead of an <a>; no navigation. */
   action?: "feedback" | "logout"
+  /** Disabled "Soon" item — greyed, non-clickable, no navigation. */
+  disabled?: boolean
 }
 type NavGroup = { header: string; items: NavItem[] }
 
@@ -52,14 +54,22 @@ const COACH_NAV: NavGroup[] = [
     ],
   },
   {
+    header: "MY SETTINGS",
+    items: [
+      // Domain items are real routes (deep-linkable). matchPrefix keeps the
+      // group highlighted on any /settings/<domain> descendant. Billing is a
+      // disabled "Soon" domain (no route this phase). Spec §4 Move 1 / §7.
+      { href: "/dashboard/coach/settings/prospects", label: "Prospects", matchPrefix: true },
+      { href: "/dashboard/coach/settings/services", label: "Services", matchPrefix: true },
+      { label: "Billing", disabled: true },
+    ],
+  },
+  {
     header: "ACCOUNT",
     items: [
-      // Coaches operate only as coaches. The old "My Account" → /dashboard
-      // (the D2C account page) and the external "Back to SIGNAL" JobFit link
-      // are removed from the coach nav; coach configuration now lives in My
-      // Settings. The /dashboard page and the job-seeker product are
-      // unchanged — only the coach nav links to them are gone. (Spec §0.2.)
-      { href: "/dashboard/coach/settings", label: "My Settings" },
+      // Coaches operate only as coaches. The D2C "My Account" + external "Back
+      // to SIGNAL" links are removed from the coach nav; coach configuration
+      // now lives in the My Settings group above. (Spec §0.2.)
       // Sign out. Renders as a <button> (action item); full session teardown
       // in handleLogout below. Coaches otherwise have no way to log out.
       { label: "Log out", action: "logout" },
@@ -476,6 +486,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       border: active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
                       background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
                       color: active ? T.WRN_ORANGE : T.TEXT,
+                    }
+                    // Disabled "Soon" domain — greyed, non-clickable, no nav.
+                    // Mirrors the disabled-item treatment formerly in the
+                    // settings sub-nav.
+                    if (item.disabled) {
+                      return (
+                        <div
+                          key={item.label}
+                          style={{
+                            ...itemStyle,
+                            border: `1px solid ${T.BORDER_SOFT}`,
+                            background: "transparent",
+                            color: T.DIM,
+                            cursor: "default",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span>{item.label}</span>
+                          <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: T.DIM }}>
+                            Soon
+                          </span>
+                        </div>
+                      )
                     }
                     // Action items render as a <button> instead of navigating —
                     // Feedback opens the slide-in, Log out tears down the
