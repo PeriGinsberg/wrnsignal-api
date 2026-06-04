@@ -265,7 +265,14 @@ export function DeliverablesTab() {
       const res = await authFetch(`/api/coach/milestones/${id}`, { method: "DELETE" })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) {
-        setActionError(j?.error || `Delete failed (${res.status})`)
+        // 409 = used in one or more packages. Surface which ones so the coach
+        // knows why the delete was blocked (and where to unlink it first).
+        if (res.status === 409 && Array.isArray(j?.packages) && j.packages.length) {
+          const names = (j.packages as string[]).map((n) => `“${n}”`).join(", ")
+          setActionError(`${j.error || "This deliverable is used in a package."} Used in: ${names}.`)
+        } else {
+          setActionError(j?.error || `Delete failed (${res.status})`)
+        }
         await resync()
         return
       }

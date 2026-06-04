@@ -1,18 +1,20 @@
 "use client"
 
 // Services domain tab island (spec §4 Move 2 / §7). Structurally mirrors
-// ProspectsTabs. Deliverables is LIVE (the milestones catalog); Packages remains
-// a "Soon" tab. URL ?tab= is source of truth; default lands on Deliverables.
-// Reuses SettingsTabs (the bar) + SettingsBlock (the card wrapper).
+// ProspectsTabs. Both Deliverables (the milestones catalog) and Packages (bundles
+// of deliverables with live pricing) are LIVE. URL ?tab= is source of truth;
+// default lands on Deliverables. Reuses SettingsTabs (the bar) + SettingsBlock
+// (the card wrapper).
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { SettingsTabs, type SettingsTab } from "../SettingsTabs"
 import { SettingsBlock } from "../SettingsBlock"
 import { DeliverablesTab } from "./DeliverablesTab"
+import { PackagesTab } from "./PackagesTab"
 
 const TABS: SettingsTab[] = [
   { key: "deliverables", label: "Deliverables" },
-  { key: "packages", label: "Packages", disabled: true },
+  { key: "packages", label: "Packages" },
 ]
 const DEFAULT_TAB = "deliverables"
 
@@ -35,6 +37,11 @@ export function ServicesTabs() {
       {active === "deliverables" && (
         <SettingsBlock title="Deliverables">
           <DeliverablesTab />
+        </SettingsBlock>
+      )}
+      {active === "packages" && (
+        <SettingsBlock title="Packages">
+          <PackagesTab />
         </SettingsBlock>
       )}
     </div>
