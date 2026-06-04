@@ -7,8 +7,8 @@
 // server round-trip.
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { T, card, eyebrow } from "../../../../../lib/dashboard-theme"
 import { SettingsTabs, type SettingsTab } from "../SettingsTabs"
+import { SettingsBlock } from "../SettingsBlock"
 import { MyPipelineSection } from "./MyPipelineSection"
 
 const TABS: SettingsTab[] = [
@@ -16,17 +16,6 @@ const TABS: SettingsTab[] = [
   // Future: { key: "capture", label: "Capture defaults", disabled: true }, etc.
 ]
 const DEFAULT_TAB = "pipeline"
-
-// One configuration block within a domain — moved here from page.tsx unchanged.
-function SettingsBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={{ ...card, padding: 22, marginBottom: 20, position: "relative" }}>
-      <div aria-hidden="true" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: T.WRN_ORANGE, borderTopLeftRadius: 18, borderTopRightRadius: 18 }} />
-      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 14 }}>{title}</div>
-      {children}
-    </section>
-  )
-}
 
 export function ProspectsTabs() {
   const router = useRouter()
