@@ -29,12 +29,14 @@ type MilestoneRow = {
   category: string | null
   sort_order: number
   active: boolean
+  time_estimate_days: number | null
+  fee_cents: number | null
   created_at: string
   updated_at: string
 }
 
 const MILESTONE_SELECT =
-  "id, coach_profile_id, name, description, category, sort_order, active, created_at, updated_at"
+  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, created_at, updated_at"
 
 // ── Auth helpers (inlined per coach-route convention; copied from
 //    app/api/coach/pipeline/route.ts) ──
@@ -102,7 +104,32 @@ function toApiMilestone(r: MilestoneRow) {
     category: r.category,
     sort_order: r.sort_order,
     active: r.active,
+    time_estimate_days: r.time_estimate_days,
+    // DB stores cents; the client only ever sees dollars. null = unpriced.
+    fee: r.fee_cents === null ? null : r.fee_cents / 100,
   }
+}
+
+// Parse an optional fee given in DOLLARS into integer cents for the DB.
+// null / undefined / "" → null (unpriced, NOT 0). Otherwise must be a finite
+// number >= 0; Math.round(dollars * 100) avoids binary-float drift
+// (e.g. 150.50 → 15050, never 15049).
+function parseFeeToCents(v: unknown): { cents: number | null } | { error: string } {
+  if (v === undefined || v === null || v === "") return { cents: null }
+  if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
+    return { error: "fee must be a number >= 0 (dollars)" }
+  }
+  return { cents: Math.round(v * 100) }
+}
+
+// Parse optional time_estimate_days (fractional days OK, e.g. 0.5).
+// null / undefined / "" → null. Otherwise must be a finite number >= 0.
+function parseTimeEstimateDays(v: unknown): { days: number | null } | { error: string } {
+  if (v === undefined || v === null || v === "") return { days: null }
+  if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
+    return { error: "time_estimate_days must be a number >= 0" }
+  }
+  return { days: v }
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -139,7 +166,9 @@ export async function GET(req: NextRequest) {
 
 // ── POST: create one milestone ──
 //
-// Body: { name: string (required), description?: string, category?: string }
+// Body: { name: string (required), description?: string, category?: string,
+//         time_estimate_days?: number (>=0), fee?: number (>=0, DOLLARS) }
+// fee is accepted in dollars and stored as cents (null = unpriced, NOT $0).
 // sort_order is server-assigned = (this coach's current max) + 1. The coach id
 // comes from the token, never the body.
 export async function POST(req: NextRequest) {
@@ -164,6 +193,18 @@ export async function POST(req: NextRequest) {
     const category =
       typeof body.category === "string" && body.category.trim() ? body.category.trim() : null
 
+    // fee arrives in DOLLARS, persists as cents; time_estimate_days is stored
+    // as-is. Reject bad values here so the error is clean (the DB CHECKs are
+    // only a backstop).
+    const feeParsed = parseFeeToCents(body.fee)
+    if ("error" in feeParsed) {
+      return withCorsJson(req, { ok: false, error: feeParsed.error }, 400)
+    }
+    const timeParsed = parseTimeEstimateDays(body.time_estimate_days)
+    if ("error" in timeParsed) {
+      return withCorsJson(req, { ok: false, error: timeParsed.error }, 400)
+    }
+
     const supabase = getSupabaseAdmin()
 
     // Next sort_order = this coach's current max + 1 (scoped to the coach).
@@ -187,6 +228,8 @@ export async function POST(req: NextRequest) {
         description,
         category,
         sort_order: nextSortOrder,
+        time_estimate_days: timeParsed.days,
+        fee_cents: feeParsed.cents,
       })
       .select(MILESTONE_SELECT)
       .single()

@@ -3,10 +3,13 @@
 // Smoke test for the Coach Deliverables (milestones) API. Runs against a
 // DEPLOYED environment (default: staging, which is wired to DEV Supabase).
 // Covers list/create AND per-row edit/delete with cross-coach isolation:
-//   1. Coach A POST → 201, response omits coach_profile_id.
-//   2. Coach A GET lists it.
+//   1. Coach A POST (fee=150.50, time_estimate_days=1.5) → 201, response omits
+//      coach_profile_id, and fee/time round-trip (dollars↔cents holds).
+//   2. Coach A GET lists it; GET still shows fee=150.5 and time=1.5.
 //   3. Coach B GET does NOT see it (read isolation).
 //   4. Coach A PATCH (rename + active:false) → 200; GET shows the change.
+//   4b. Pricing edits: PATCH fee→0 → fee===0 (priced at zero, ≠ unpriced);
+//       PATCH fee→null → fee===null (unpriced); negative fee on create → 400.
 //   5. Coach B PATCH on Coach A's id → 404 (write isolation).
 //   6. Coach B DELETE on Coach A's id → 404 (write isolation).
 //   7. Coach A DELETE → 200 { deleted }; GET confirms it's gone.
@@ -81,17 +84,31 @@ const tokenB = await signIn("Coach B", B)
 
 // 1. Coach A creates a milestone (unique name so assertions are unambiguous).
 const testName = `__verify_milestone_${Date.now()}`
-const created = await api("POST", tokenA, "", { name: testName, description: "verify-script row", category: "test" })
+const created = await api("POST", tokenA, "", {
+  name: testName,
+  description: "verify-script row",
+  category: "test",
+  fee: 150.5,
+  time_estimate_days: 1.5,
+})
 ok(created.status === 201, `POST returns 201 (got ${created.status})`)
 ok(created.json?.ok === true && created.json?.milestone?.id, "POST returns { ok, milestone.id }")
 const id = created.json?.milestone?.id
 ok(created.json?.milestone?.name === testName, "created milestone name matches")
 ok(created.json?.milestone?.coach_profile_id === undefined, "POST response omits coach_profile_id (mapper)")
+ok(created.json?.milestone?.fee === 150.5, `POST fee round-trips through cents → 150.5 (got ${created.json?.milestone?.fee})`)
+ok(created.json?.milestone?.time_estimate_days === 1.5, `POST time_estimate_days === 1.5 (got ${created.json?.milestone?.time_estimate_days})`)
+ok(created.json?.milestone?.fee_cents === undefined, "POST response does NOT leak fee_cents")
 
 // 2. Coach A lists and sees it.
 let listA = await api("GET", tokenA, "")
 ok(listA.status === 200 && listA.json?.ok === true, `Coach A GET 200 ok (got ${listA.status})`)
 ok((listA.json?.milestones || []).some((m) => m.id === id), "Coach A sees the created milestone")
+{
+  const row = (listA.json?.milestones || []).find((m) => m.id === id)
+  ok(row?.fee === 150.5, `GET shows fee === 150.5 after create (got ${row?.fee})`)
+  ok(row?.time_estimate_days === 1.5, `GET shows time_estimate_days === 1.5 (got ${row?.time_estimate_days})`)
+}
 
 // 3. Coach B must NOT see it (read isolation).
 const listB = await api("GET", tokenB, "")
@@ -108,6 +125,28 @@ ok(patched.json?.milestone?.coach_profile_id === undefined, "PATCH response omit
 listA = await api("GET", tokenA, "")
 const aRow = (listA.json?.milestones || []).find((m) => m.id === id)
 ok(!!aRow && aRow.name === newName && aRow.active === false, "Coach A GET reflects the edit")
+
+// 4b. PATCH fee → 0: priced at zero, distinct from unpriced.
+const patchFee0 = await api("PATCH", tokenA, `/${id}`, { fee: 0 })
+ok(patchFee0.status === 200 && patchFee0.json?.milestone?.fee === 0,
+   `PATCH fee=0 → fee === 0 (got ${patchFee0.json?.milestone?.fee})`)
+listA = await api("GET", tokenA, "")
+ok((listA.json?.milestones || []).find((m) => m.id === id)?.fee === 0,
+   "GET shows fee === 0 (priced at zero, not unpriced)")
+
+// 4c. PATCH fee → null: back to unpriced.
+const patchFeeNull = await api("PATCH", tokenA, `/${id}`, { fee: null })
+ok(patchFeeNull.status === 200 && patchFeeNull.json?.milestone?.fee === null,
+   `PATCH fee=null → fee === null (got ${patchFeeNull.json?.milestone?.fee})`)
+listA = await api("GET", tokenA, "")
+ok((listA.json?.milestones || []).find((m) => m.id === id)?.fee === null,
+   "GET shows fee === null (unpriced)")
+
+// 4d. Negative fee on create → 400 (API rejects before the DB CHECK).
+const negFee = await api("POST", tokenA, "", { name: `${testName}_neg`, fee: -1 })
+ok(negFee.status === 400, `POST negative fee → 400 (got ${negFee.status})`)
+// Safety: if the rejection failed to fire, clean up the stray row.
+if (negFee.json?.milestone?.id) await api("DELETE", tokenA, `/${negFee.json.milestone.id}`)
 
 // 5. Coach B PATCH on Coach A's id → 404 (write isolation).
 const patchB = await api("PATCH", tokenB, `/${id}`, { name: "hijacked" })

@@ -30,12 +30,14 @@ type MilestoneRow = {
   category: string | null
   sort_order: number
   active: boolean
+  time_estimate_days: number | null
+  fee_cents: number | null
   created_at: string
   updated_at: string
 }
 
 const MILESTONE_SELECT =
-  "id, coach_profile_id, name, description, category, sort_order, active, created_at, updated_at"
+  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, created_at, updated_at"
 
 // ── Auth helpers (inlined per coach-route convention; copied from
 //    app/api/coach/milestones/route.ts) ──
@@ -103,7 +105,32 @@ function toApiMilestone(r: MilestoneRow) {
     category: r.category,
     sort_order: r.sort_order,
     active: r.active,
+    time_estimate_days: r.time_estimate_days,
+    // DB stores cents; the client only ever sees dollars. null = unpriced.
+    fee: r.fee_cents === null ? null : r.fee_cents / 100,
   }
+}
+
+// Parse an optional fee given in DOLLARS into integer cents for the DB.
+// null / undefined / "" → null (unpriced, NOT 0). Otherwise must be a finite
+// number >= 0; Math.round(dollars * 100) avoids binary-float drift
+// (e.g. 150.50 → 15050, never 15049).
+function parseFeeToCents(v: unknown): { cents: number | null } | { error: string } {
+  if (v === undefined || v === null || v === "") return { cents: null }
+  if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
+    return { error: "fee must be a number >= 0 (dollars)" }
+  }
+  return { cents: Math.round(v * 100) }
+}
+
+// Parse optional time_estimate_days (fractional days OK, e.g. 0.5).
+// null / undefined / "" → null. Otherwise must be a finite number >= 0.
+function parseTimeEstimateDays(v: unknown): { days: number | null } | { error: string } {
+  if (v === undefined || v === null || v === "") return { days: null }
+  if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
+    return { error: "time_estimate_days must be a number >= 0" }
+  }
+  return { days: v }
 }
 
 // Resolve { coachProfileId } or return an error Response (401/403/404).
@@ -120,7 +147,15 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 // ── PATCH: partial update (allow-listed fields), scoped to the coach ──
-const PATCH_ALLOWED = new Set(["name", "description", "category", "active", "sort_order"])
+const PATCH_ALLOWED = new Set([
+  "name",
+  "description",
+  "category",
+  "active",
+  "sort_order",
+  "time_estimate_days",
+  "fee",
+])
 
 export async function PATCH(
   req: NextRequest,
@@ -175,6 +210,21 @@ export async function PATCH(
         return withCorsJson(req, { ok: false, error: "sort_order must be an integer" }, 400)
       }
       updates.sort_order = body.sort_order
+    }
+    if ("time_estimate_days" in body) {
+      const parsed = parseTimeEstimateDays(body.time_estimate_days)
+      if ("error" in parsed) {
+        return withCorsJson(req, { ok: false, error: parsed.error }, 400)
+      }
+      updates.time_estimate_days = parsed.days
+    }
+    // Client sends `fee` in DOLLARS; the column is fee_cents. fee:null → unpriced.
+    if ("fee" in body) {
+      const parsed = parseFeeToCents(body.fee)
+      if ("error" in parsed) {
+        return withCorsJson(req, { ok: false, error: parsed.error }, 400)
+      }
+      updates.fee_cents = parsed.cents
     }
 
     if (Object.keys(updates).length === 0) {
