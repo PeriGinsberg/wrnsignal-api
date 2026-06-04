@@ -1,6 +1,6 @@
 # Spec: My Settings IA Restructure (Phase 0.5)
 
-**Status:** Draft — awaiting Peri approval
+**Status:** Approved — ready to build (§7 decisions locked 2026-06-04)
 **Author:** Peri Ginsberg + Claude (design conversation 2026-06-04)
 **Date:** 2026-06-04
 **Type:** UI / IA scaffolding. No data-layer changes beyond existing `/api/coach/pipeline`.
@@ -51,7 +51,7 @@ Clients / Interviewing were **placeholders** — final main-level domains TBD.
 My Settings   (promoted to its own top-level nav GROUP in COACH_NAV)
 ├── Prospects        → tabs: Pipeline (live) | [future: Capture defaults, Source categories]
 ├── Services         → tabs: Deliverables (Soon) | Packages (Soon)
-└── Billing          (Soon — separate S-sized PM feature)
+└── Billing          (Soon domain — separate S-sized PM feature, no content this phase)
 ```
 
 Rationale locked in design conversation:
@@ -95,7 +95,7 @@ Rationale locked in design conversation:
 
 ---
 
-## 5. Tab mechanism (recommended — confirm)
+## 5. Tab mechanism (LOCKED)
 
 **Query-param tabs (`?tab=pipeline`)**, matching the existing precedent at
 `clients/[clientId]/page.tsx:529-545` (TABS array → buttons toggling state,
@@ -128,23 +128,23 @@ is state+`?tab`-driven — fine to mirror for these domain tabs.
 - Any Billing content (separate S feature)
 - Any data-layer change (no new tables/routes; pipeline route untouched)
 - Profile & Personas (per-client; stays at `clients/[clientId]`)
-- Clients / Interviewing domains (placeholders — drop them, or keep as Soon
-  domains? see open item)
+- Clients / Interviewing domains — **dropped from the nav** (were placeholders;
+  no coach-level settings concept defined for either; re-addable later as one
+  array entry if a real coach-level setting surfaces)
 
 ---
 
-## 7. Open items to lock before build
+## 7. Decisions locked (2026-06-04)
 
-1. **Billing in this phase?** Scaffold Billing as a Soon domain now (cheap,
-   proves the group), or leave it out until the S-sized billing feature starts?
-   *Lean: scaffold as Soon.*
-2. **Clients / Interviewing** — they were placeholders. Drop them from the nav
-   entirely now, or keep as Soon domains? *Lean: drop Interviewing; keep Clients
-   as Soon only if you expect coach-level client settings (vs the per-client
-   tabs that already exist).*
-3. **Tab mechanism** — confirm query-param (§5).
-4. **Group label** — "My Settings" as the group name, or rename (e.g. "Coach
-   Settings")? *Lean: keep "My Settings".*
+1. **Billing:** scaffold as a **Soon domain** now (no content — that's the
+   separate S-sized billing feature). Proves the group renders with 3 items.
+2. **Clients / Interviewing:** **dropped** from the nav. Not coach-level
+   settings concepts today; re-addable later if a real one surfaces.
+3. **Tab mechanism:** **query-param** (`?tab=`), per §5.
+4. **Group label:** **"My Settings"** (unchanged).
+
+Resulting live group: **Prospects** (Pipeline tab, live) · **Services**
+(Deliverables / Packages tabs, Soon) · **Billing** (Soon domain).
 
 ---
 
