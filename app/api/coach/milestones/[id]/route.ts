@@ -257,6 +257,11 @@ export async function PATCH(
 }
 
 // ── DELETE: hard delete, scoped to the coach ──
+//
+// Guard: coach_package_milestones FKs this row with ON DELETE RESTRICT, so a
+// deliverable that's in any package can't be deleted. We check that up front
+// and return a clean 409 (+ the referencing package names) rather than letting
+// Postgres throw the raw 23503. Behavior-preserving when it's in no package.
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -267,6 +272,47 @@ export async function DELETE(
     if (authErr) return authErr
 
     const supabase = getSupabaseAdmin()
+
+    // Ownership first — never leak package references for a milestone the coach
+    // doesn't own.
+    const { data: owned, error: ownErr } = await supabase
+      .from("coach_milestones")
+      .select("id")
+      .eq("id", id)
+      .eq("coach_profile_id", coachProfileId)
+      .maybeSingle()
+    if (ownErr) {
+      return withCorsJson(req, { ok: false, error: `Failed to read milestone: ${ownErr.message}` }, 500)
+    }
+    if (!owned) {
+      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+    }
+
+    // RESTRICT guard: refuse with 409 if this deliverable is used in any package.
+    const { data: links, error: linkErr } = await supabase
+      .from("coach_package_milestones")
+      .select("package_id")
+      .eq("milestone_id", id)
+    if (linkErr) {
+      return withCorsJson(req, { ok: false, error: `Failed to check package references: ${linkErr.message}` }, 500)
+    }
+    if (links && links.length) {
+      const pkgIds = [...new Set(links.map((l: any) => l.package_id))]
+      const { data: pkgs } = await supabase
+        .from("coach_packages")
+        .select("name")
+        .in("id", pkgIds)
+        .eq("coach_profile_id", coachProfileId)
+      const names = (pkgs ?? []).map((p: any) => p.name as string)
+      const first = names[0] ?? "a package"
+      const others = Math.max(0, names.length - 1)
+      const msg =
+        others > 0
+          ? `Can't delete — used in '${first}' and ${others} other package${others > 1 ? "s" : ""}.`
+          : `Can't delete — used in '${first}'.`
+      return withCorsJson(req, { ok: false, error: msg, packages: names }, 409)
+    }
+
     // Match BOTH id and coach_profile_id; .select() returns the deleted row so we
     // can distinguish a real delete from a no-op (not found / not owned → 404).
     const { data: deleted, error: delErr } = await supabase
