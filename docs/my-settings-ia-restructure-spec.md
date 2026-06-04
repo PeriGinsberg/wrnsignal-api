@@ -1,6 +1,6 @@
 # Spec: My Settings IA Restructure (Phase 0.5)
 
-**Status:** Approved — ready to build (§7 decisions locked 2026-06-04)
+**Status:** Shipped to dev — Steps 1–3 (not prod-promoted). Commits ba7f5994, bea62f91, ad80cb71.
 **Author:** Peri Ginsberg + Claude (design conversation 2026-06-04)
 **Date:** 2026-06-04
 **Type:** UI / IA scaffolding. No data-layer changes beyond existing `/api/coach/pipeline`.
@@ -161,6 +161,12 @@ Resulting live group: **Prospects** (Pipeline tab, live) · **Services**
 
 Step 1 is the load-bearing one (global nav change). Steps 2–4 are additive and
 low-risk.
+
+**Step 4 (Billing Soon-domain stub) — skipped (2026-06-04).** Billing's nav item
+is a disabled, no-href "Soon" entry (Step 1) — it doesn't 404 and needs no
+placeholder route. A `/settings/billing` page arrives with the billing feature
+itself (separate S-sized PM card), not as an empty stub now. Scaffolding chain
+complete at Step 3.
 
 ---
 
