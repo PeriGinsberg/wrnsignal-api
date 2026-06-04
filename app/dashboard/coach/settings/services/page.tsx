@@ -1,11 +1,15 @@
-// Services settings domain (Step 1 — placeholder).
+// Services settings domain.
 //
-// Services (Deliverables + Packages) is a first-class settings domain. This is a
-// minimal placeholder so the Services nav item resolves to a real route instead
-// of 404ing. The Deliverables/Packages tab content lands in Step 3 (spec §4
-// Move 2). No tabs / no content here by design.
+// Domain page within the My Settings area. Content is organized into ?tab=-driven
+// horizontal tabs (spec §4 Move 2 / §7), matching Prospects. Both tabs —
+// Deliverables and Packages — are "Soon" today (future phases), so the island
+// renders the tab bar + an empty-state line. The tab bar + URL plumbing live in
+// the ServicesTabs client island; this page stays a server component and wraps
+// it in Suspense (useSearchParams requirement on an otherwise-static route).
 
+import { Suspense } from "react"
 import { T } from "../../../../../lib/dashboard-theme"
+import { ServicesTabs } from "./ServicesTabs"
 
 export default function ServicesSettingsPage() {
   return (
@@ -15,9 +19,13 @@ export default function ServicesSettingsPage() {
           Services
         </h2>
         <p style={{ fontSize: 13, color: T.MUTED, marginTop: 6 }}>
-          Your deliverables and packages — the catalog you assign to prospects and clients. Coming soon.
+          Your deliverables and packages — the catalog you assign to prospects and clients.
         </p>
       </div>
+
+      <Suspense fallback={<p style={{ fontSize: 13, color: T.MUTED }}>Loading…</p>}>
+        <ServicesTabs />
+      </Suspense>
     </div>
   )
 }
