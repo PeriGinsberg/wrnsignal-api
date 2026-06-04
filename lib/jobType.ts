@@ -105,6 +105,22 @@ export function canonicalizeLegacyJobType(
   return out.length ? out.join(", ") : null
 }
 
+/**
+ * Read-side predicate: does this job_type value express interest in full-time
+ * work? True when the (canonicalized) value contains 'Full-time' OR 'Any'
+ * ('Any' subsumes full-time — job_type overhaul §7). Multi-aware; lenient on
+ * legacy/dirty input (coerces before checking) so it's safe on raw stored or
+ * incoming values. Empty/null → false.
+ */
+export function includesFullTimeInterest(
+  input: string | string[] | null | undefined,
+): boolean {
+  const { value } = normalizeJobType(canonicalizeLegacyJobType(input))
+  if (!value) return false
+  const members = value.split(",").map((s) => s.trim())
+  return members.includes("Full-time") || members.includes("Any")
+}
+
 export function normalizeJobType(
   input: string | string[] | null | undefined,
 ): { value: string | null; invalid: string[] } {

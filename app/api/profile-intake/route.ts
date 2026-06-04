@@ -4,7 +4,7 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { isValidLaneId, isValidSubLaneId } from "../../../lib/laneTaxonomy"
 import { deriveCareerStage } from "../../../lib/candidateTargeting"
-import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
+import { canonicalizeLegacyJobType, includesFullTimeInterest, normalizeJobType } from "@/lib/jobType"
 
 // ---------- ENV ----------
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -546,7 +546,7 @@ function buildProfileStructuredForJobFit(body: IntakeBody) {
       hardNoSales: /\bcommission|commission-only|cold calling|cold outreach\b/i.test(
         toText(body.hard_nos)
       ),
-      prefFullTime: /full[\s-]*time/i.test(toText(body.job_type)),
+      prefFullTime: includesFullTimeInterest(body.job_type),
       hardNoContract: /\bcontract\b/i.test(toText(body.hard_nos)),
       hardNoHourlyPay: /\bhourly\b/i.test(toText(body.hard_nos)),
       hardNoGovernment: /\bgovernment\b/i.test(toText(body.hard_nos)),
