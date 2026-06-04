@@ -1,32 +1,15 @@
-// Prospects settings domain (Step 4c).
+// Prospects settings domain.
 //
-// This is the Prospects DOMAIN page within the My Settings area. The pipeline
-// configuration is ONE block within it ("My Pipeline"). The page is structured
-// as a stack of blocks so additional prospect-settings blocks (e.g. future
-// configurable source categories, capture defaults) can be added alongside the
-// pipeline without another restructure — add a new <SettingsBlock> below.
+// Domain page within the My Settings area. Content is organized into ?tab=-driven
+// horizontal tabs (spec §4 Move 2 / §5). Today there is one live tab — Pipeline
+// (renders the existing MyPipelineSection). The tab bar + active-tab switching
+// live in the ProspectsTabs client island (query-param interactivity); this page
+// stays a server component and wraps it in Suspense (useSearchParams requirement
+// on an otherwise-static route). MyPipelineSection is unchanged.
 
-import { T, card, eyebrow } from "../../../../../lib/dashboard-theme"
-import { MyPipelineSection } from "./MyPipelineSection"
-
-// One configuration block within a domain. Same card + 2px orange top-accent
-// treatment as the Coach Home / Required Actions sections so the visual
-// language stays consistent across the app.
-function SettingsBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={{ ...card, padding: 22, marginBottom: 20, position: "relative" }}>
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: 2,
-          background: T.WRN_ORANGE, borderTopLeftRadius: 18, borderTopRightRadius: 18,
-        }}
-      />
-      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 14 }}>{title}</div>
-      {children}
-    </section>
-  )
-}
+import { Suspense } from "react"
+import { T } from "../../../../../lib/dashboard-theme"
+import { ProspectsTabs } from "./ProspectsTabs"
 
 export default function ProspectsSettingsPage() {
   return (
@@ -40,12 +23,9 @@ export default function ProspectsSettingsPage() {
         </p>
       </div>
 
-      <SettingsBlock title="My Pipeline">
-        <MyPipelineSection />
-      </SettingsBlock>
-
-      {/* Future prospect-settings blocks (source categories, capture defaults,
-          …) add here as additional <SettingsBlock> entries. */}
+      <Suspense fallback={<p style={{ fontSize: 13, color: T.MUTED }}>Loading…</p>}>
+        <ProspectsTabs />
+      </Suspense>
     </div>
   )
 }
