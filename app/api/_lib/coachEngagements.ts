@@ -37,6 +37,17 @@ export async function isCoachClientOwnedByCoach(
   return !!data
 }
 
+// ── Proposal lifecycle (on the engagement row): draft → sent → approved →
+//    declined. Validated at the API edge with a clean 400 (the DB CHECK
+//    coach_client_engagements_proposal_status_valid is only the backstop).
+//    Note: this is independent of coach_clients lifecycle — approving has NO
+//    side effect on the prospect/client row. ──
+export const PROPOSAL_STATUSES = ["draft", "sent", "approved", "declined"] as const
+export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
+export function isValidProposalStatus(v: unknown): v is ProposalStatus {
+  return typeof v === "string" && (PROPOSAL_STATUSES as readonly string[]).includes(v)
+}
+
 // ── Resolver: client_profile_id + coach → the single coach_clients.id ──
 // UNIQUE(coach_profile_id, client_profile_id) guarantees at most one. Returns
 // null if this coach has no relationship row for that client profile. The linked
@@ -63,12 +74,13 @@ export type EngagementRow = {
   source_package_id: string | null
   name: string
   discount_cents: number | null
+  proposal_status: string
   attached_at: string
   created_at: string
   updated_at: string
 }
 export const ENGAGEMENT_SELECT =
-  "id, coach_client_id, source_package_id, name, discount_cents, attached_at, created_at, updated_at"
+  "id, coach_client_id, source_package_id, name, discount_cents, proposal_status, attached_at, created_at, updated_at"
 
 type EngDeliverableRow = {
   id: string
@@ -169,6 +181,7 @@ export async function toApiEngagements(supabase: SupabaseClient, rows: Engagemen
     return {
       id: e.id,
       name: e.name,
+      proposal_status: e.proposal_status,
       attached_at: e.attached_at,
       discount: discountCents === null ? null : discountCents / 100,
       deliverables,

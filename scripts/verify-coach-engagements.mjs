@@ -129,6 +129,7 @@ const E1 = attach.json?.engagement?.id
 // ── 2. GET single — frozen pricing + nested activities w/ status ──
 let single = await api("GET", tokenA, `/coach-clients/${ccA}/engagements/${E1}`)
 ok(single.status === 200, `GET single → 200 (got ${single.status})`)
+ok(single.json?.engagement?.proposal_status === "draft", `fresh attach mints proposal_status=draft (got ${single.json?.engagement?.proposal_status})`)
 let pr = single.json?.engagement?.pricing
 ok(cents(pr?.subtotal) === cents(150.5), `subtotal === 150.50 (got ${pr?.subtotal})`)
 ok(pr?.unpriced_count === 1, `unpriced_count === 1 (got ${pr?.unpriced_count})`)
@@ -178,6 +179,33 @@ ok((await api("DELETE", tokenB, `/coach-clients/${ccA}/engagements/${E1}`)).stat
 // The critical case: B reaches A's engagement via B's OWN relationship id → dual check fails.
 ok((await api("GET", tokenB, `/coach-clients/${ccB}/engagements/${E1}`)).status === 404,
    "Coach B GET A's engagement via B's own coach_client id → 404")
+
+// ── 6b. Proposal lifecycle (PATCH proposal_status) ──
+const canon = (o) => JSON.stringify(o, Object.keys(o || {}).sort())
+for (const st of ["sent", "approved", "declined", "draft"]) {
+  const p = await api("PATCH", tokenA, `/coach-clients/${ccA}/engagements/${E1}`, { proposal_status: st })
+  ok(p.status === 200 && p.json?.engagement?.proposal_status === st,
+     `PATCH proposal_status=${st} → 200 + value (got ${p.status}/${p.json?.engagement?.proposal_status})`)
+  const g = await api("GET", tokenA, `/coach-clients/${ccA}/engagements/${E1}`)
+  ok(g.json?.engagement?.proposal_status === st, `GET reflects proposal_status=${st} (got ${g.json?.engagement?.proposal_status})`)
+}
+// invalid value rejected at the API edge (not a DB-CHECK 500)
+ok((await api("PATCH", tokenA, `/coach-clients/${ccA}/engagements/${E1}`, { proposal_status: "pending" })).status === 400,
+   "PATCH proposal_status=pending → 400")
+// cross-coach: B can't PATCH A's engagement (A's relationship not owned by B)
+ok((await api("PATCH", tokenB, `/coach-clients/${ccA}/engagements/${E1}`, { proposal_status: "sent" })).status === 404,
+   "Coach B PATCH A's engagement → 404")
+// cross-coach: B via B's OWN relationship id → dual check fails
+ok((await api("PATCH", tokenB, `/coach-clients/${ccB}/engagements/${E1}`, { proposal_status: "sent" })).status === 404,
+   "Coach B PATCH A's engagement via B's own coach_client id → 404")
+
+// THE KEY: approving a proposal has ZERO side effect on the coach_clients row.
+const ccBefore = (await admin.from("coach_clients").select("*").eq("id", ccA).single()).data
+const approveRes = await api("PATCH", tokenA, `/coach-clients/${ccA}/engagements/${E1}`, { proposal_status: "approved" })
+const ccAfter = (await admin.from("coach_clients").select("*").eq("id", ccA).single()).data
+ok(approveRes.status === 200, `PATCH approved → 200 (got ${approveRes.status})`)
+ok(canon(ccBefore) === canon(ccAfter),
+   "approve has NO side effect — coach_clients row byte-identical (lifecycle_status, prospect_status, every column)")
 
 // ── 7. DELETE detach ──
 const del = await api("DELETE", tokenA, `/coach-clients/${ccA}/engagements/${E1}`)

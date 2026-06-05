@@ -3,11 +3,12 @@
 // Client Engagements — read / detach a single engagement.
 //
 //   GET    — full snapshot (deliverables[] + nested activities[]) + pricing.
+//   PATCH  — set the proposal lifecycle status (draft/sent/approved/declined).
 //   DELETE — detach (hard delete; CASCADE clears deliverables + activities).
 //
 // SECURITY (two-step, the one that matters): (1) the coach_clients row [id] must
 // belong to the authed coach; (2) the engagement is matched on BOTH engagement_id
-// AND coach_client_id = [id]. So a coach can't read/delete another coach's
+// AND coach_client_id = [id]. So a coach can't read/edit/delete another coach's
 // engagement by pairing it with one of THEIR OWN coach_clients rows — the
 // coach_client_id match fails → 404.
 
@@ -17,6 +18,8 @@ import {
   getSupabaseAdmin,
   resolveCoach,
   errStatus,
+  PROPOSAL_STATUSES,
+  isValidProposalStatus,
   isCoachClientOwnedByCoach,
   getApiEngagementById,
 } from "../../../../../_lib/coachEngagements"
@@ -49,6 +52,57 @@ export async function GET(
     if (!engagement) {
       return withCorsJson(req, { ok: false, error: "Engagement not found" }, 404)
     }
+    return withCorsJson(req, { ok: true, engagement })
+  } catch (e: any) {
+    return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))
+  }
+}
+
+// ── PATCH: set the proposal lifecycle status ──
+//
+// Body: { proposal_status: 'draft' | 'sent' | 'approved' | 'declined' }.
+// CRITICAL: this writes ONLY coach_client_engagements.proposal_status. It NEVER
+// touches coach_clients — approving a proposal has zero side effect on the
+// prospect/client row. Convert-to-Client is a completely separate action.
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; engagement_id: string }> },
+) {
+  try {
+    const { id, engagement_id } = await params
+    const { coachProfileId, error } = await resolveCoach(req)
+    if (error) return error
+
+    const body = await req.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
+    }
+    if (!isValidProposalStatus(body.proposal_status)) {
+      return withCorsJson(req, { ok: false, error: `proposal_status must be one of: ${PROPOSAL_STATUSES.join(", ")}` }, 400)
+    }
+
+    const supabase = getSupabaseAdmin()
+    if (!(await isCoachClientOwnedByCoach(supabase, coachProfileId, id))) {
+      return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
+    }
+
+    // Update ONLY the engagement row, matched on BOTH engagement_id and
+    // coach_client_id = [id] (the dual check). No coach_clients write.
+    const { data: updated, error: upErr } = await supabase
+      .from("coach_client_engagements")
+      .update({ proposal_status: body.proposal_status })
+      .eq("id", engagement_id)
+      .eq("coach_client_id", id)
+      .select("id")
+      .maybeSingle()
+    if (upErr) {
+      return withCorsJson(req, { ok: false, error: `Failed to update proposal status: ${upErr.message}` }, 500)
+    }
+    if (!updated) {
+      return withCorsJson(req, { ok: false, error: "Engagement not found" }, 404)
+    }
+
+    const engagement = await getApiEngagementById(supabase, id, engagement_id)
     return withCorsJson(req, { ok: true, engagement })
   } catch (e: any) {
     return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))
