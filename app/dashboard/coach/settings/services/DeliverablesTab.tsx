@@ -3,21 +3,26 @@
 // Deliverables tab content — the coach's milestones catalog (Services →
 // Deliverables). Lists / creates / edits / deletes / toggles milestones against
 // the per-row CRUD API:
-//   GET    /api/coach/milestones
+//   GET    /api/coach/milestones            (list; each row has activity_count)
+//   GET    /api/coach/milestones/[id]       (single; full ordered activities[])
 //   POST   /api/coach/milestones
 //   PATCH  /api/coach/milestones/[id]
 //   DELETE /api/coach/milestones/[id]
+//   POST   /api/coach/milestones/[id]/activities
+//   PATCH  /api/coach/milestones/[id]/activities/[activity_id]
+//   DELETE /api/coach/milestones/[id]/activities/[activity_id]
 //
 // Per-row immediate REST (not a batch save). Optimistic on success; on ANY write
 // failure we show an inline banner AND refetch the list (resync) so local state
-// can never diverge from server truth — the active toggle in particular snaps
-// back. Rendered inside a single <SettingsBlock title="Deliverables"> by
-// ServicesTabs (this component owns the rows + forms, not the card).
+// can never diverge from server truth. Activities are edited INSIDE the
+// deliverable form and committed on the deliverable's existing Save — there is
+// no per-activity save button. The activity sync mirrors the package-edit diff
+// pattern (non-atomic + resync, which matches the API).
 //
 // getToken/authFetch are inlined per the coach-route client convention (same
 // pair as MyPipelineSection); there is no shared helper module.
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 
@@ -34,6 +39,28 @@ type Milestone = {
   // to/from cents). Both null = unset; fee 0 = priced free (≠ unset).
   time_estimate_days: number | null
   fee: number | null
+  activity_count?: number // from the list endpoint; count only
+}
+
+type ActivityOwner = "coach" | "client" | "both"
+const OWNER_OPTIONS: { key: ActivityOwner; label: string }[] = [
+  { key: "coach", label: "Coach" },
+  { key: "client", label: "Client" },
+  { key: "both", label: "Both" },
+]
+
+// A draft activity row in the form. `key` is a stable local id for React keys +
+// focus targeting; `id` is the server id (null = new, not yet POSTed).
+type ActivityDraft = {
+  key: string
+  id: string | null
+  name: string
+  owner: ActivityOwner
+}
+function genKey(): string {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `k_${Math.random().toString(36).slice(2)}`
 }
 
 // Parse an optional numeric form field (time in days, or fee in dollars).
@@ -78,6 +105,97 @@ async function authFetch(url: string, opts: RequestInit = {}): Promise<Response>
   })
 }
 
+// Read one deliverable (with its activities[]) and map to the list shape,
+// deriving activity_count from the array length. Returns null on any failure.
+async function readMilestone(id: string): Promise<Milestone | null> {
+  try {
+    const res = await authFetch(`/api/coach/milestones/${id}`)
+    const j = await res.json().catch(() => ({}))
+    if (res.ok && j?.ok && j.milestone) {
+      const m = j.milestone
+      return {
+        id: m.id,
+        name: m.name,
+        description: m.description ?? null,
+        category: m.category ?? null,
+        sort_order: m.sort_order,
+        active: m.active,
+        time_estimate_days: m.time_estimate_days ?? null,
+        fee: m.fee ?? null,
+        activity_count: Array.isArray(m.activities) ? m.activities.length : 0,
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  return null
+}
+
+// Reconcile a deliverable's activities to the desired final list. DELETE removed
+// rows, POST new rows, PATCH changed rows — assigning sort_order = display index
+// + 1. Non-atomic: returns an error string on the first failed call (caller
+// shows the banner + resync), or null on success.
+//
+// Retry-safe: when a POST succeeds, the returned id is written back onto the
+// local row via onRowPersisted, so a retry after a mid-sequence failure PATCHes
+// the already-created rows instead of POSTing duplicates. A 404 on DELETE is
+// treated as already-done (a prior partial run removed it), so retrying a delete
+// doesn't surface an error.
+async function syncActivities(
+  milestoneId: string,
+  finalRows: ActivityDraft[],
+  origRows: ActivityDraft[],
+  onRowPersisted?: (key: string, id: string) => void,
+): Promise<string | null> {
+  const finalIds = new Set(finalRows.filter((r) => r.id).map((r) => r.id as string))
+
+  // 1) DELETE server rows no longer present locally. A 404 means it's already
+  //    gone (prior partial run) — treat as done.
+  for (const r of origRows) {
+    if (r.id && !finalIds.has(r.id)) {
+      const res = await authFetch(`/api/coach/milestones/${milestoneId}/activities/${r.id}`, { method: "DELETE" })
+      if (res.status === 404) continue
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) return j?.error || `Couldn't remove an activity (${res.status})`
+    }
+  }
+
+  // 2) POST new + PATCH changed, in final order (sort_order = index + 1).
+  const origById = new Map(origRows.filter((r) => r.id).map((r) => [r.id as string, r]))
+  const origIndex = new Map(origRows.map((r, i) => [r.id as string, i]))
+  for (let i = 0; i < finalRows.length; i++) {
+    const row = finalRows[i]
+    const sort_order = i + 1
+    const name = row.name.trim()
+    if (!row.id) {
+      const res = await authFetch(`/api/coach/milestones/${milestoneId}/activities`, {
+        method: "POST",
+        body: JSON.stringify({ name, owner: row.owner, sort_order }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) return j?.error || `Couldn't add an activity (${res.status})`
+      // Persist the new id back onto the local row so a retry PATCHes instead of
+      // re-POSTing this same activity.
+      const newId = j.activity?.id as string | undefined
+      if (newId) onRowPersisted?.(row.key, newId)
+    } else {
+      const orig = origById.get(row.id)
+      const oi = origIndex.get(row.id)
+      const changed =
+        !orig || orig.name !== name || orig.owner !== row.owner || (typeof oi === "number" && oi + 1 !== sort_order)
+      if (changed) {
+        const res = await authFetch(`/api/coach/milestones/${milestoneId}/activities/${row.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ name, owner: row.owner, sort_order }),
+        })
+        const j = await res.json().catch(() => ({}))
+        if (!res.ok || !j?.ok) return j?.error || `Couldn't update an activity (${res.status})`
+      }
+    }
+  }
+  return null
+}
+
 export function DeliverablesTab() {
   const [items, setItems] = useState<Milestone[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,15 +209,19 @@ export function DeliverablesTab() {
   const [cCat, setCCat] = useState("")
   const [cTime, setCTime] = useState("")
   const [cFee, setCFee] = useState("")
+  const [cActivities, setCActivities] = useState<ActivityDraft[]>([])
   const [creating, setCreating] = useState(false)
 
-  // Inline edit.
+  // Inline edit. eOrigActivities is the snapshot fetched on open, for diffing.
   const [editingId, setEditingId] = useState<string | null>(null)
   const [eName, setEName] = useState("")
   const [eDesc, setEDesc] = useState("")
   const [eCat, setECat] = useState("")
   const [eTime, setETime] = useState("")
   const [eFee, setEFee] = useState("")
+  const [eActivities, setEActivities] = useState<ActivityDraft[]>([])
+  const [eOrigActivities, setEOrigActivities] = useState<ActivityDraft[]>([])
+  const [eActivitiesLoading, setEActivitiesLoading] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
 
   // Delete confirm + in-flight markers.
@@ -142,12 +264,15 @@ export function DeliverablesTab() {
   async function handleCreate() {
     const name = cName.trim()
     if (!name || creating) return
-    // Mirror the API: time/fee, if filled, must be a number ≥ 0. Empty → null
-    // (unset), never 0 or "".
     const timeParsed = parseOptionalNonNegNumber(cTime)
     if ("error" in timeParsed) { setActionError(`Time estimate: ${timeParsed.error}`); return }
     const feeParsed = parseOptionalNonNegNumber(cFee)
     if ("error" in feeParsed) { setActionError(`Fee: ${feeParsed.error}`); return }
+    // Defensive (the form blocks this): no blank activity names.
+    if (cActivities.some((a) => !a.name.trim())) {
+      setActionError("Every activity needs a name — fill it in or remove the row.")
+      return
+    }
     setCreating(true)
     setActionError(null)
     try {
@@ -157,8 +282,8 @@ export function DeliverablesTab() {
           name,
           description: cDesc.trim() || undefined,
           category: cCat.trim() || undefined,
-          time_estimate_days: timeParsed.value, // null when unset
-          fee: feeParsed.value,                 // dollars; null = unpriced
+          time_estimate_days: timeParsed.value,
+          fee: feeParsed.value,
         }),
       })
       const j = await res.json().catch(() => ({}))
@@ -167,8 +292,21 @@ export function DeliverablesTab() {
         await resync()
         return
       }
-      setItems((prev) => [...prev, j.milestone as Milestone])
-      setCName(""); setCDesc(""); setCCat(""); setCTime(""); setCFee("")
+      const newId = (j.milestone as Milestone).id
+
+      // The deliverable now exists — POST its activities to the returned id.
+      const actErr = await syncActivities(newId, cActivities, [])
+      // Reset the create form regardless: re-submitting would duplicate the
+      // already-created deliverable.
+      setCName(""); setCDesc(""); setCCat(""); setCTime(""); setCFee(""); setCActivities([])
+      if (actErr) {
+        setActionError(actErr)
+        await resync()
+        return
+      }
+      const fresh = await readMilestone(newId)
+      if (fresh) setItems((prev) => [...prev, fresh])
+      else await resync()
     } catch {
       setActionError("Network error — try again")
       await resync()
@@ -184,13 +322,39 @@ export function DeliverablesTab() {
     setEName(m.name)
     setEDesc(m.description ?? "")
     setECat(m.category ?? "")
-    // Pre-fill the DOLLAR value (m.fee is already dollars), not cents.
     setETime(m.time_estimate_days != null ? String(m.time_estimate_days) : "")
     setEFee(m.fee != null ? String(m.fee) : "")
+    // The list row carries only activity_count — fetch the full ordered array.
+    setEActivities([])
+    setEOrigActivities([])
+    setEActivitiesLoading(true)
+    void (async () => {
+      try {
+        const res = await authFetch(`/api/coach/milestones/${m.id}`)
+        const j = await res.json().catch(() => ({}))
+        if (res.ok && j?.ok) {
+          const rows: ActivityDraft[] = (j.milestone?.activities ?? []).map((a: any) => ({
+            key: genKey(),
+            id: a.id,
+            name: a.name,
+            owner: a.owner as ActivityOwner,
+          }))
+          setEActivities(rows)
+          setEOrigActivities(rows.map((r) => ({ ...r }))) // snapshot for diffing
+        } else {
+          setActionError(j?.error || "Couldn't load this deliverable's activities")
+        }
+      } catch {
+        setActionError("Network error loading activities")
+      } finally {
+        setEActivitiesLoading(false)
+      }
+    })()
   }
   function cancelEdit() {
     setEditingId(null)
     setEName(""); setEDesc(""); setECat(""); setETime(""); setEFee("")
+    setEActivities([]); setEOrigActivities([]); setEActivitiesLoading(false)
   }
 
   async function saveEdit(id: string) {
@@ -200,6 +364,10 @@ export function DeliverablesTab() {
     if ("error" in timeParsed) { setActionError(`Time estimate: ${timeParsed.error}`); return }
     const feeParsed = parseOptionalNonNegNumber(eFee)
     if ("error" in feeParsed) { setActionError(`Fee: ${feeParsed.error}`); return }
+    if (eActivities.some((a) => !a.name.trim())) {
+      setActionError("Every activity needs a name — fill it in or remove the row.")
+      return
+    }
     if (savingEdit) return
     setSavingEdit(true)
     setActionError(null)
@@ -210,8 +378,8 @@ export function DeliverablesTab() {
           name,
           description: eDesc.trim() ? eDesc.trim() : null,
           category: eCat.trim() ? eCat.trim() : null,
-          time_estimate_days: timeParsed.value, // null clears it
-          fee: feeParsed.value,                 // dollars; null = unpriced
+          time_estimate_days: timeParsed.value,
+          fee: feeParsed.value,
         }),
       })
       const j = await res.json().catch(() => ({}))
@@ -220,7 +388,24 @@ export function DeliverablesTab() {
         await resync()
         return
       }
-      setItems((prev) => prev.map((m) => (m.id === id ? (j.milestone as Milestone) : m)))
+
+      // Reconcile activities; on mid-sequence failure show the banner + resync
+      // and leave the form open (don't hide the partial state). New rows that
+      // POST successfully get their id written back into the open form, so a
+      // retry PATCHes them instead of creating duplicates.
+      const actErr = await syncActivities(id, eActivities, eOrigActivities, (key, newId) =>
+        setEActivities((prev) => prev.map((r) => (r.key === key ? { ...r, id: newId } : r))),
+      )
+      if (actErr) {
+        setActionError(actErr)
+        await resync()
+        return
+      }
+
+      // Re-read so the displayed row (incl. activity_count) is server truth.
+      const fresh = await readMilestone(id)
+      if (fresh) setItems((prev) => prev.map((m) => (m.id === id ? fresh : m)))
+      else await resync()
       cancelEdit()
     } catch {
       setActionError("Network error — try again")
@@ -248,7 +433,10 @@ export function DeliverablesTab() {
         await resync() // snaps the toggle back to server truth
         return
       }
-      setItems((prev) => prev.map((x) => (x.id === m.id ? (j.milestone as Milestone) : x)))
+      // The PATCH response has no activity_count — preserve the existing count.
+      setItems((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...(j.milestone as Milestone), activity_count: x.activity_count } : x)),
+      )
     } catch {
       setActionError("Network error — try again")
       await resync()
@@ -324,8 +512,11 @@ export function DeliverablesTab() {
                 <DeliverableForm
                   name={eName} description={eDesc} category={eCat}
                   timeEstimate={eTime} fee={eFee}
+                  activities={eActivities} activitiesLoading={eActivitiesLoading}
                   onName={setEName} onDescription={setEDesc} onCategory={setECat}
                   onTimeEstimate={setETime} onFee={setEFee}
+                  onActivitiesChange={setEActivities}
+                  onInvalid={setActionError}
                   onSubmit={() => void saveEdit(m.id)} submitLabel="Save"
                   busy={savingEdit} onCancel={cancelEdit}
                 />
@@ -356,8 +547,11 @@ export function DeliverablesTab() {
         <DeliverableForm
           name={cName} description={cDesc} category={cCat}
           timeEstimate={cTime} fee={cFee}
+          activities={cActivities} activitiesLoading={false}
           onName={setCName} onDescription={setCDesc} onCategory={setCCat}
           onTimeEstimate={setCTime} onFee={setCFee}
+          onActivitiesChange={setCActivities}
+          onInvalid={setActionError}
           onSubmit={() => void handleCreate()} submitLabel="+ Add deliverable"
           busy={creating}
         />
@@ -381,6 +575,7 @@ function Row({
   onConfirmDelete: () => void
   onCancelDelete: () => void
 }) {
+  const activityCount = m.activity_count ?? 0
   return (
     <div
       style={{
@@ -396,6 +591,11 @@ function Row({
           {m.category && (
             <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_BLUE, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 6, padding: "1px 5px" }}>
               {m.category}
+            </span>
+          )}
+          {activityCount > 0 && (
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.MUTED, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 6, padding: "1px 6px" }}>
+              {activityCount} {activityCount === 1 ? "activity" : "activities"}
             </span>
           )}
         </div>
@@ -447,36 +647,82 @@ function Row({
   )
 }
 
-// ── Shared create/edit form (name/desc/category + time/fee; Enter submits) ──
+// ── Shared create/edit form (name/desc/category + time/fee + activities) ──
 function DeliverableForm({
   name, description, category, timeEstimate, fee,
-  onName, onDescription, onCategory, onTimeEstimate, onFee,
-  onSubmit, submitLabel, busy, onCancel,
+  activities, activitiesLoading,
+  onName, onDescription, onCategory, onTimeEstimate, onFee, onActivitiesChange,
+  onInvalid, onSubmit, submitLabel, busy, onCancel,
 }: {
   name: string
   description: string
   category: string
   timeEstimate: string
   fee: string
+  activities: ActivityDraft[]
+  activitiesLoading: boolean
   onName: (v: string) => void
   onDescription: (v: string) => void
   onCategory: (v: string) => void
   onTimeEstimate: (v: string) => void
   onFee: (v: string) => void
+  onActivitiesChange: (next: ActivityDraft[]) => void
+  onInvalid: (msg: string) => void
   onSubmit: () => void
   submitLabel: string
   busy: boolean
   onCancel?: () => void
 }) {
+  const [triedSubmit, setTriedSubmit] = useState(false)
+  // Which freshly-added row to focus next (by key). Cleared once focused.
+  const [focusKey, setFocusKey] = useState<string | null>(null)
+
   // Inline validation mirrors the API (number ≥ 0); empty is valid (unset).
   const timeCheck = parseOptionalNonNegNumber(timeEstimate)
   const feeCheck = parseOptionalNonNegNumber(fee)
   const timeErr = "error" in timeCheck ? timeCheck.error : null
   const feeErr = "error" in feeCheck ? feeCheck.error : null
-  const canSubmit = !!name.trim() && !busy && !timeErr && !feeErr
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") { e.preventDefault(); if (canSubmit) onSubmit() }
+  const baseValid = !!name.trim() && !timeErr && !feeErr
+  const hasBlankActivity = activities.some((a) => !a.name.trim())
+
+  function onClickSubmit() {
+    setTriedSubmit(true)
+    if (!baseValid) return // name/fee/time also disable the button
+    if (hasBlankActivity) {
+      onInvalid("Every activity needs a name — fill it in or remove the row.")
+      return
+    }
+    onSubmit()
   }
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") { e.preventDefault(); onClickSubmit() }
+  }
+
+  // ── Activity mutations (all funnel through onActivitiesChange) ──
+  const addActivity = () => {
+    const k = genKey()
+    onActivitiesChange([...activities, { key: k, id: null, name: "", owner: "coach" }])
+    setFocusKey(k)
+  }
+  const addAfter = (i: number) => {
+    const k = genKey()
+    const next = [...activities]
+    next.splice(i + 1, 0, { key: k, id: null, name: "", owner: "coach" })
+    onActivitiesChange(next)
+    setFocusKey(k)
+  }
+  const updateRow = (i: number, patch: Partial<ActivityDraft>) =>
+    onActivitiesChange(activities.map((a, idx) => (idx === i ? { ...a, ...patch } : a)))
+  const removeRow = (i: number) => onActivitiesChange(activities.filter((_, idx) => idx !== i))
+  const moveRow = (i: number, dir: -1 | 1) => {
+    const j = i + dir
+    if (j < 0 || j >= activities.length) return
+    const next = [...activities]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onActivitiesChange(next)
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <input
@@ -534,17 +780,196 @@ function DeliverableForm({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* ── Activities ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+        <label style={fieldLabel}>Activities</label>
+
+        {activitiesLoading ? (
+          <div style={{ fontSize: 12, color: T.MUTED }}>Loading activities…</div>
+        ) : activities.length === 0 ? (
+          <div style={{ fontSize: 12, color: T.DIM, lineHeight: 1.5 }}>
+            Break this deliverable into the steps you&apos;ll actually do — e.g. workshop,
+            draft, review, finalize, sign-off.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {activities.map((a, i) => (
+              <ActivityRow
+                key={a.key}
+                index={i}
+                activity={a}
+                canUp={i > 0}
+                canDown={i < activities.length - 1}
+                shouldFocus={focusKey === a.key}
+                showError={triedSubmit && !a.name.trim()}
+                onName={(v) => updateRow(i, { name: v })}
+                onOwner={(o) => updateRow(i, { owner: o })}
+                onUp={() => moveRow(i, -1)}
+                onDown={() => moveRow(i, 1)}
+                onRemove={() => removeRow(i)}
+                onEnter={() => addAfter(i)}
+                onFocused={() => setFocusKey(null)}
+              />
+            ))}
+          </div>
+        )}
+
+        {!activitiesLoading && (
+          <button type="button" onClick={addActivity} style={{ ...smallBtn, alignSelf: "flex-start" }}>
+            + Add activity
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button
-          onClick={onSubmit}
-          disabled={!canSubmit}
-          style={{ ...btnPrimary, opacity: canSubmit ? 1 : 0.5, cursor: canSubmit ? "pointer" : "default" }}
+          onClick={onClickSubmit}
+          disabled={busy || !baseValid || activitiesLoading}
+          style={{ ...btnPrimary, opacity: busy || !baseValid || activitiesLoading ? 0.5 : 1, cursor: busy || !baseValid || activitiesLoading ? "default" : "pointer" }}
         >
           {busy ? "Saving…" : submitLabel}
         </button>
         {onCancel && <button onClick={onCancel} disabled={busy} style={btnSecondary}>Cancel</button>}
       </div>
     </div>
+  )
+}
+
+// ── One activity row: step number · name · owner segmented · ▲▼ · remove ──
+function ActivityRow({
+  index, activity, canUp, canDown, shouldFocus, showError,
+  onName, onOwner, onUp, onDown, onRemove, onEnter, onFocused,
+}: {
+  index: number
+  activity: ActivityDraft
+  canUp: boolean
+  canDown: boolean
+  shouldFocus: boolean
+  showError: boolean
+  onName: (v: string) => void
+  onOwner: (o: ActivityOwner) => void
+  onUp: () => void
+  onDown: () => void
+  onRemove: () => void
+  onEnter: () => void
+  onFocused: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (shouldFocus) {
+      inputRef.current?.focus()
+      onFocused()
+    }
+  }, [shouldFocus, onFocused])
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+      {/* Step number */}
+      <span
+        aria-hidden
+        style={{
+          width: 22, height: 22, flexShrink: 0, borderRadius: 999,
+          border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED,
+          fontSize: 11, fontWeight: 800,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        {index + 1}
+      </span>
+
+      {/* Name */}
+      <div style={{ flex: 1, minWidth: 160, display: "flex", flexDirection: "column", gap: 3 }}>
+        <input
+          ref={inputRef}
+          style={{ ...input, height: 40, borderColor: showError ? T.ERROR : undefined }}
+          placeholder="e.g. Resume workshop with client"
+          value={activity.name}
+          maxLength={NAME_MAX}
+          onChange={(e) => onName(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter adds another row (fast multi-step entry); it does NOT submit
+            // the deliverable. Shift+Enter / blur do nothing special.
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onEnter() }
+          }}
+        />
+        {showError && <span style={fieldError}>Name required</span>}
+      </div>
+
+      {/* Owner — segmented control (all options visible, one tap) */}
+      <OwnerSegmented value={activity.owner} onChange={onOwner} />
+
+      {/* Reorder arrows (Pipeline pattern), disabled at the ends */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, width: 22, flexShrink: 0 }}>
+        <ArrowBtn dir="up" disabled={!canUp} onClick={onUp} />
+        <ArrowBtn dir="down" disabled={!canDown} onClick={onDown} />
+      </div>
+
+      {/* Remove — low stakes (nothing persists until Save), no confirm */}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove activity"
+        title="Remove activity"
+        style={{ ...smallBtn, color: T.ERROR, flexShrink: 0, padding: "6px 8px" }}
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
+function OwnerSegmented({ value, onChange }: { value: ActivityOwner; onChange: (o: ActivityOwner) => void }) {
+  return (
+    <div
+      role="group"
+      aria-label="Owner"
+      style={{ display: "inline-flex", flexShrink: 0, borderRadius: 8, border: `1px solid ${T.BORDER_SOFT}`, overflow: "hidden" }}
+    >
+      {OWNER_OPTIONS.map((o, i) => {
+        const active = value === o.key
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            aria-pressed={active}
+            style={{
+              background: active ? "rgba(81,173,229,0.16)" : "transparent",
+              color: active ? T.WRN_BLUE : T.MUTED,
+              border: "none",
+              borderLeft: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`,
+              padding: "10px 16px", // touch-friendly tap target
+              fontSize: 12, fontWeight: 800,
+              cursor: "pointer", whiteSpace: "nowrap",
+            }}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function ArrowBtn({ dir, disabled, onClick }: { dir: "up" | "down"; disabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "up" ? "Move up" : "Move down"}
+      style={{
+        background: "transparent",
+        border: "none",
+        color: disabled ? T.DIM : T.MUTED,
+        cursor: disabled ? "default" : "pointer",
+        fontSize: 10,
+        lineHeight: "10px",
+        padding: 2,
+      }}
+    >
+      {dir === "up" ? "▲" : "▼"}
+    </button>
   )
 }
 
