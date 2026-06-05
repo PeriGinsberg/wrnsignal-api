@@ -1,17 +1,20 @@
 "use client"
 
-// Engagements tab — the client's attached package snapshots (frozen copies).
-// Keyed by coach_clients.id, which this page resolves once on load (the profile
-// route returns coach_client_id) and passes in. The engagement API:
+// Engagements — a client/prospect's attached package snapshots (frozen copies).
+// Shared by the linked-client page (tab) and the prospect detail page (section);
+// both pass coach_clients.id directly. The engagement API:
 //   GET    /api/coach/coach-clients/[ccId]/engagements
-//   POST   /api/coach/coach-clients/[ccId]/engagements   { package_id }
+//   POST   /api/coach/coach-clients/[ccId]/engagements   { package_id }   (mints draft)
 //   GET    /api/coach/coach-clients/[ccId]/engagements/[engagement_id]
+//   PATCH  /api/coach/coach-clients/[ccId]/engagements/[engagement_id]  { proposal_status }
 //   DELETE /api/coach/coach-clients/[ccId]/engagements/[engagement_id]
 //
-// READ-ONLY this slice: activity status is displayed (a quiet pill) but not
-// editable — the interactive control is the next slice. Optimistic on success;
-// on any write failure show a banner AND resync. The server (toApiEngagement) is
-// the source of truth for ALL pricing — no client-side recompute. Dollars only.
+// The proposal lifecycle (draft/sent/approved/declined) is editable here — the
+// only COLORED status in this surface. Activity completion status stays a quiet
+// MUTED pill (read-only this slice) so the two systems read as distinct.
+// Optimistic on success; on any write failure show a banner AND resync. The
+// server (toApiEngagement) is the source of truth for pricing + status — no
+// client-side recompute. Dollars only.
 //
 // getToken/authFetch inlined per the coach-route client convention (same pair as
 // NotesTab / PackagesTab).
@@ -37,9 +40,11 @@ type EngPricing = {
   total: number
   discount_clamped: boolean
 }
+type ProposalStatus = "draft" | "sent" | "approved" | "declined"
 type Engagement = {
   id: string
   name: string
+  proposal_status: string
   attached_at: string
   discount: number | null // DOLLARS; null = no discount
   deliverables: EngDeliverable[]
@@ -70,10 +75,23 @@ function fmtDate(iso: string | null): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 const OWNER_LABEL: Record<string, string> = { coach: "Coach", client: "Client", both: "Both" }
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  not_started: { label: "Not started", color: T.MUTED, bg: "rgba(255,255,255,0.05)" },
-  in_progress: { label: "In progress", color: T.WRN_BLUE, bg: "rgba(81,173,229,0.12)" },
-  complete: { label: "Complete", color: T.SUCCESS, bg: "rgba(74,222,128,0.12)" },
+
+// Proposal lifecycle — the ONLY colored status here (app tokens). draft neutral,
+// sent info, approved success, declined danger.
+const PROPOSAL_ORDER: ProposalStatus[] = ["draft", "sent", "approved", "declined"]
+const PROPOSAL_META: Record<ProposalStatus, { label: string; color: string; bg: string; border: string }> = {
+  draft: { label: "Draft", color: T.MUTED, bg: T.NAV_DEFAULT_BG, border: T.BORDER_SOFT },
+  sent: { label: "Sent", color: T.WRN_BLUE, bg: "rgba(81,173,229,0.12)", border: "rgba(81,173,229,0.30)" },
+  approved: { label: "Approved", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" },
+  declined: { label: "Declined", color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" },
+}
+
+// Activity completion status — deliberately MUTED/neutral (no color), so it
+// reads as a different system from the colored proposal pill above it.
+const ACTIVITY_STATUS_LABEL: Record<string, string> = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  complete: "Complete",
 }
 
 function countActivities(e: Engagement): number {
@@ -98,7 +116,17 @@ async function authFetch(url: string, opts: RequestInit = {}): Promise<Response>
   })
 }
 
-export function EngagementsTab({ coachClientId, clientName }: { coachClientId: string | null; clientName: string }) {
+export function EngagementsTab({
+  coachClientId,
+  clientName,
+  showConvertNudge = false,
+}: {
+  coachClientId: string | null
+  clientName: string
+  // Prospect page only: when an engagement is approved, show a quiet nudge toward
+  // the Pipeline's Convert action. Informational — it does NOT trigger convert.
+  showConvertNudge?: boolean
+}) {
   const [items, setItems] = useState<Engagement[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -113,6 +141,7 @@ export function EngagementsTab({ coachClientId, clientName }: { coachClientId: s
   const [attachingId, setAttachingId] = useState<string | null>(null) // package_id in flight
 
   const [detachingId, setDetachingId] = useState<string | null>(null)
+  const [settingStatusId, setSettingStatusId] = useState<string | null>(null) // engagement in flight
 
   const base = coachClientId ? `/api/coach/coach-clients/${coachClientId}/engagements` : null
 
@@ -176,13 +205,34 @@ export function EngagementsTab({ coachClientId, clientName }: { coachClientId: s
         await resync()
         return
       }
-      setItems((prev) => [j.engagement as Engagement, ...prev]) // newest first
+      setItems((prev) => [j.engagement as Engagement, ...prev]) // newest first (mints draft)
       setPickerOpen(false)
     } catch {
       setActionError("Network error — try again")
       await resync()
     } finally {
       setAttachingId(null)
+    }
+  }
+
+  async function setStatus(id: string, status: ProposalStatus) {
+    if (!base || settingStatusId) return
+    setSettingStatusId(id)
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${id}`, { method: "PATCH", body: JSON.stringify({ proposal_status: status }) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't update status (${res.status})`)
+        await resync()
+        return
+      }
+      setItems((prev) => prev.map((e) => (e.id === id ? (j.engagement as Engagement) : e)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    } finally {
+      setSettingStatusId(null)
     }
   }
 
@@ -246,8 +296,11 @@ export function EngagementsTab({ coachClientId, clientName }: { coachClientId: s
               e={e}
               expanded={expandedId === e.id}
               detaching={detachingId === e.id}
+              proposalBusy={settingStatusId === e.id}
+              showConvertNudge={showConvertNudge}
               onToggle={() => setExpandedId((prev) => (prev === e.id ? null : e.id))}
               onDetach={() => void detach(e.id)}
+              onSetStatus={(s) => void setStatus(e.id, s)}
             />
           ))}
         </div>
@@ -308,15 +361,19 @@ export function EngagementsTab({ coachClientId, clientName }: { coachClientId: s
   )
 }
 
-// ── One engagement card (collapsed summary + expandable frozen snapshot) ──
+// ── One engagement card (collapsed summary + proposal control + frozen snapshot) ──
 function EngagementCard({
-  e, expanded, detaching, onToggle, onDetach,
+  e, expanded, detaching, proposalBusy, showConvertNudge,
+  onToggle, onDetach, onSetStatus,
 }: {
   e: Engagement
   expanded: boolean
   detaching: boolean
+  proposalBusy: boolean
+  showConvertNudge: boolean
   onToggle: () => void
   onDetach: () => void
+  onSetStatus: (s: ProposalStatus) => void
 }) {
   const count = e.deliverables.length
   const acts = countActivities(e)
@@ -327,13 +384,19 @@ function EngagementCard({
   if (e.discount != null && e.discount > 0) chips.push(`${fmtMoney(e.discount)} off`)
   if (e.pricing.unpriced_count > 0) chips.push(`${e.pricing.unpriced_count} unpriced`)
 
+  const pm = PROPOSAL_META[(e.proposal_status as ProposalStatus)] ?? PROPOSAL_META.draft
+
   return (
     <div style={{ borderRadius: 12, border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, padding: "12px 14px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 15, color: T.TEXT, fontWeight: 700 }}>{e.name}</span>
             <span style={{ fontSize: 14, color: T.TEXT, fontWeight: 800 }}>{fmtMoney(e.pricing.total)}</span>
+            {/* Colored proposal-status pill — the at-a-glance lifecycle state. */}
+            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: pm.color, background: pm.bg, border: `1px solid ${pm.border}`, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>
+              {pm.label}
+            </span>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 5, fontSize: 12, color: T.MUTED }}>
             {chips.map((c, i) => <span key={i}>{c}</span>)}
@@ -353,40 +416,101 @@ function EngagementCard({
         </div>
       </div>
 
+      {/* Proposal-status control — free-set any of the four. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.DIM }}>Proposal</span>
+        <div style={{ display: "inline-flex", borderRadius: 8, border: `1px solid ${T.BORDER_SOFT}`, overflow: "hidden", opacity: proposalBusy ? 0.6 : 1 }}>
+          {PROPOSAL_ORDER.map((st, i) => {
+            const active = e.proposal_status === st
+            const m = PROPOSAL_META[st]
+            return (
+              <button
+                key={st}
+                type="button"
+                disabled={proposalBusy || active}
+                onClick={() => onSetStatus(st)}
+                aria-pressed={active}
+                style={{
+                  background: active ? m.bg : "transparent",
+                  color: active ? m.color : T.MUTED,
+                  border: "none",
+                  borderLeft: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`,
+                  padding: "6px 12px",
+                  fontSize: 11, fontWeight: 800,
+                  cursor: proposalBusy || active ? "default" : "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {m.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Prospect-page nudge near an approved proposal — informational, NOT a convert trigger. */}
+      {showConvertNudge && e.proposal_status === "approved" && (
+        <div style={{ fontSize: 11, color: T.DIM, marginTop: 8, fontStyle: "italic" }}>
+          Approved — convert this prospect from the Pipeline above when you&apos;re ready.
+        </div>
+      )}
+
       {expanded && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.BORDER_SOFT}`, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.BORDER_SOFT}`, display: "flex", flexDirection: "column", gap: 10 }}>
           {e.deliverables.length === 0 ? (
             <p style={{ fontSize: 12, color: T.DIM, margin: 0 }}>This package had no deliverables.</p>
           ) : (
             e.deliverables.map((d) => (
-              <div key={d.id}>
-                <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
-                  <span style={{ fontSize: 13, color: T.TEXT, fontWeight: 600 }}>{d.name}</span>
-                  <span style={{ fontSize: 12, color: d.fee === null ? T.DIM : T.MUTED, fontWeight: 600 }}>{fmtFee(d.fee)}</span>
-                  {d.category && <span style={{ fontSize: 11, color: T.DIM }}>· {d.category}</span>}
-                </div>
-                {d.activities.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6, paddingLeft: 10 }}>
-                    {d.activities.map((a) => {
-                      const s = STATUS_META[a.status] ?? STATUS_META.not_started
-                      return (
-                        <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                          <span style={{ color: T.TEXT }}>{a.name}</span>
-                          <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
-                          {/* Read-only status pill (interactive control ships next slice). */}
-                          <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, letterSpacing: 0.4, textTransform: "uppercase", color: s.color, background: s.bg, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" }}>
-                            {s.label}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+              <DeliverableBlock key={d.id} d={d} />
             ))
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Deliverable sub-block: inset surface + coral left accent + nested activities ──
+function DeliverableBlock({ d }: { d: EngDeliverable }) {
+  return (
+    <div style={{ display: "flex", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.NAV_DEFAULT_BG, overflow: "hidden" }}>
+      {/* Thin coral left-accent bar (inner element → block keeps rounded corners). */}
+      <div aria-hidden style={{ width: 3, alignSelf: "stretch", background: T.WRN_ORANGE, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0, padding: "10px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          {/* Deliverable name = primary/bright tier. */}
+          <span style={{ fontSize: 13, color: T.TEXT, fontWeight: 700 }}>{d.name}</span>
+          <span style={{ fontSize: 12, color: d.fee === null ? T.DIM : T.MUTED, fontWeight: 600 }}>{fmtFee(d.fee)}</span>
+          {d.category && (
+            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: T.WRN_ORANGE, background: "rgba(254,176,106,0.10)", border: `1px solid ${T.NAV_ACTIVE_BORDER}`, borderRadius: 6, padding: "1px 6px" }}>
+              {d.category}
+            </span>
+          )}
+        </div>
+
+        {d.activities.length > 0 && (
+          <div style={{ marginTop: 6, paddingLeft: 10 }}>
+            {d.activities.map((a, i) => (
+              <div
+                key={a.id}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, fontSize: 12,
+                  padding: "6px 0",
+                  borderTop: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`, // hairline dividers
+                }}
+              >
+                {/* Activity name = secondary/muted tier (a step below the deliverable). */}
+                <span style={{ color: T.MUTED }}>{a.name}</span>
+                <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
+                {/* Activity completion pill — MUTED/neutral (distinct from the colored proposal pill). */}
+                <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, letterSpacing: 0.4, textTransform: "uppercase", color: T.MUTED, background: "rgba(255,255,255,0.05)", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" }}>
+                  {ACTIVITY_STATUS_LABEL[a.status] ?? a.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

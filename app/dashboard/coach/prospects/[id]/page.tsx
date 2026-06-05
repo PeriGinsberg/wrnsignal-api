@@ -36,6 +36,9 @@ import {
 import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../../../lib/jobType"
 import { SavingSpinner } from "../../SavingSpinner"
 import { LoadingShell } from "../../LoadingShell"
+// Shared Engagements surface (also used as a tab on the linked-client page).
+// [id] here is coach_clients.id directly, so no resolver is needed.
+import { EngagementsTab } from "../../clients/[clientId]/EngagementsTab"
 
 // ── Constants (duplicated per inline pattern) ──
 
@@ -1950,6 +1953,18 @@ export default function ProspectDetailPage() {
             onConvert={convertViaStage}
           />
         )}
+      </Section>
+
+      {/* Engagements — attached package snapshots (proposal lifecycle). [id] =
+          coach_clients.id, passed straight through. Attaching mints a draft.
+          showConvertNudge surfaces a quiet hint near an approved proposal toward
+          the Pipeline's Convert action above — it does NOT trigger convert. */}
+      <Section title="Engagements">
+        <EngagementsTab
+          coachClientId={prospect.id}
+          clientName={prospect.name || "this prospect"}
+          showConvertNudge
+        />
       </Section>
 
       <ProspectNotesSection
