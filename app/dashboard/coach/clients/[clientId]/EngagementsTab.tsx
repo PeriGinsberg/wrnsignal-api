@@ -375,6 +375,10 @@ function EngagementCard({
   onDetach: () => void
   onSetStatus: (s: ProposalStatus) => void
 }) {
+  // Hover affordance for the proposal control (same pattern as the prospect
+  // status / pipeline controls). Hover is neutral + transient, never the active
+  // status color, so a hovered stage can't be mistaken for the selected one.
+  const [hoveredStatus, setHoveredStatus] = useState<ProposalStatus | null>(null)
   const count = e.deliverables.length
   const acts = countActivities(e)
   const chips: string[] = [
@@ -423,22 +427,30 @@ function EngagementCard({
           {PROPOSAL_ORDER.map((st, i) => {
             const active = e.proposal_status === st
             const m = PROPOSAL_META[st]
+            // Hover only on a non-active, non-busy stage. Neutral lift (white
+            // fill + brighter text/divider), distinct from the active fill.
+            const isHover = hoveredStatus === st && !active && !proposalBusy
             return (
               <button
                 key={st}
                 type="button"
                 disabled={proposalBusy || active}
                 onClick={() => onSetStatus(st)}
+                onMouseEnter={() => { if (!active && !proposalBusy) setHoveredStatus(st) }}
+                onMouseLeave={() => setHoveredStatus((h) => (h === st ? null : h))}
                 aria-pressed={active}
                 style={{
-                  background: active ? m.bg : "transparent",
-                  color: active ? m.color : T.MUTED,
+                  background: active ? m.bg : isHover ? "rgba(255,255,255,0.06)" : "transparent",
+                  color: active ? m.color : isHover ? T.TEXT : T.MUTED,
                   border: "none",
-                  borderLeft: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`,
+                  borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
                   padding: "6px 12px",
                   fontSize: 11, fontWeight: 800,
-                  cursor: proposalBusy || active ? "default" : "pointer",
+                  // Pointer on every stage (active too) so the control reads as
+                  // interactive; default only while a PATCH is in flight.
+                  cursor: proposalBusy ? "default" : "pointer",
                   whiteSpace: "nowrap",
+                  transition: "background 130ms ease, color 130ms ease, border-color 130ms ease",
                 }}
               >
                 {m.label}
