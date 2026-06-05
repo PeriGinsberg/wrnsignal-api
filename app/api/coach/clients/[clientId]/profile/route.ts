@@ -135,6 +135,12 @@ export async function GET(
       ok: true,
       profile,
       personas: personas || [],
+      // The coach_clients.id for (this client_profile_id, authed coach) —
+      // already resolved by verifyCoachAccess above (access.id). The
+      // Engagements tab is keyed by it (the engagement API uses coach_clients.id,
+      // not client_profile_id). Equivalent to resolveCoachClientId, reusing the
+      // row this route already fetched.
+      coach_client_id: access.id,
       // Engagement start = when the coach-client invite was accepted.
       // The Client Dashboard header uses this for "Client since [date]".
       // Null when the link has never been formally accepted (legacy data).

@@ -24,12 +24,14 @@ import { SavingSpinner } from "../../SavingSpinner"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { LoadingShell } from "../../LoadingShell"
 import { DashboardView } from "./dashboard/DashboardView"
+import { EngagementsTab } from "./EngagementsTab"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
 // History) tab was removed entirely — its surface no longer ships in the
 // Beta. jobfit_runs table + sourced_by_coach_id column intentionally
 // retained (data is preserved; only the surface is gone).
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis"
+// "engagements" added for the attached-package snapshots (Client Engagement UI).
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -130,6 +132,9 @@ export default function CoachClientPage() {
 
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null)
   const [clientPersonas, setClientPersonas] = useState<ClientPersona[]>([])
+  // coach_clients.id for (this client_profile_id, authed coach) — the engagement
+  // API is keyed by it. Resolved once from the profile route on load.
+  const [coachClientId, setCoachClientId] = useState<string | null>(null)
   const [acceptedAt, setAcceptedAt] = useState<string | null>(null)
   const [lifecycleStatus, setLifecycleStatus] = useState<LifecycleStatus>("Active")
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
@@ -216,6 +221,7 @@ export default function CoachClientPage() {
 
       setClientProfile(profileData.profile || null)
       setClientPersonas(profileData.personas || [])
+      setCoachClientId(profileData.coach_client_id ?? null)
       setAcceptedAt(profileData.accepted_at ?? null)
       setLifecycleStatus((profileData.lifecycle_status as LifecycleStatus) ?? "Active")
       setClientApps(trackerData.applications || [])
@@ -425,6 +431,7 @@ export default function CoachClientPage() {
     { id: "source", label: "Source a Job" },
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
+    { id: "engagements", label: "Engagements" },
   ]
 
   const filteredApps = useMemo(() => {
@@ -1492,6 +1499,14 @@ export default function CoachClientPage() {
           initialPersonas={clientPersonas}
           getToken={getToken}
           onChange={loadAll}
+        />
+      )}
+
+      {/* TAB 5 — Engagements (attached package snapshots) */}
+      {tab === "engagements" && (
+        <EngagementsTab
+          coachClientId={coachClientId}
+          clientName={clientProfile?.name || clientProfile?.email || "this client"}
         />
       )}
 
