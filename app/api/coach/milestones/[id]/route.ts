@@ -146,6 +146,54 @@ export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
+// ── GET: single deliverable + its ordered activities[] ──
+// Activities are the sub-resource in coach_milestone_activities (ordered by
+// sort_order then created_at). The list endpoint returns only activity_count;
+// the full array lives here.
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params
+    const { coachProfileId, error: authErr } = await resolveCoach(req)
+    if (authErr) return authErr
+
+    const supabase = getSupabaseAdmin()
+    const { data: milestone, error: mErr } = await supabase
+      .from("coach_milestones")
+      .select(MILESTONE_SELECT)
+      .eq("id", id)
+      .eq("coach_profile_id", coachProfileId)
+      .maybeSingle()
+    if (mErr) {
+      return withCorsJson(req, { ok: false, error: `Failed to read milestone: ${mErr.message}` }, 500)
+    }
+    if (!milestone) {
+      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+    }
+
+    const { data: acts, error: aErr } = await supabase
+      .from("coach_milestone_activities")
+      .select("id, name, owner, sort_order")
+      .eq("milestone_id", id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
+    if (aErr) {
+      return withCorsJson(req, { ok: false, error: `Failed to read activities: ${aErr.message}` }, 500)
+    }
+
+    return withCorsJson(req, {
+      ok: true,
+      milestone: { ...toApiMilestone(milestone as MilestoneRow), activities: acts ?? [] },
+    })
+  } catch (e: any) {
+    const msg = e?.message || String(e)
+    const status = /unauthorized/i.test(msg) ? 401 : 500
+    return withCorsJson(req, { ok: false, error: msg }, status)
+  }
+}
+
 // ── PATCH: partial update (allow-listed fields), scoped to the coach ──
 const PATCH_ALLOWED = new Set([
   "name",

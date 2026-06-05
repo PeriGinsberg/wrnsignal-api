@@ -155,8 +155,30 @@ export async function GET(req: NextRequest) {
     if (error) {
       return withCorsJson(req, { ok: false, error: `Failed to read milestones: ${error.message}` }, 500)
     }
+    const rows = (data as MilestoneRow[]) ?? []
 
-    return withCorsJson(req, { ok: true, milestones: (data as MilestoneRow[]).map(toApiMilestone) })
+    // activity_count per deliverable — count only (the full activities[] array is
+    // on GET /milestones/[id]). One grouped query over this coach's rows.
+    const countByMilestone = new Map<string, number>()
+    const ids = rows.map((m) => m.id)
+    if (ids.length) {
+      const { data: acts, error: aErr } = await supabase
+        .from("coach_milestone_activities")
+        .select("milestone_id")
+        .in("milestone_id", ids)
+      if (aErr) {
+        return withCorsJson(req, { ok: false, error: `Failed to read activity counts: ${aErr.message}` }, 500)
+      }
+      for (const a of (acts ?? []) as { milestone_id: string }[]) {
+        countByMilestone.set(a.milestone_id, (countByMilestone.get(a.milestone_id) ?? 0) + 1)
+      }
+    }
+
+    const milestones = rows.map((m) => ({
+      ...toApiMilestone(m),
+      activity_count: countByMilestone.get(m.id) ?? 0,
+    }))
+    return withCorsJson(req, { ok: true, milestones })
   } catch (e: any) {
     const msg = e?.message || String(e)
     const status = /unauthorized/i.test(msg) ? 401 : 500
