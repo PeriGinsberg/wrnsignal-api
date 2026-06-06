@@ -25,7 +25,14 @@
 
 import { createClient } from "@supabase/supabase-js"
 import { randomUUID } from "node:crypto"
-import { logCoachClientEvent } from "../app/api/_lib/coachClientEvents"
+// Import the ACTUAL helper. tsx may emit it as CJS, so resolve dynamically and
+// tolerate the interop (named export can surface under .default). Run with tsx.
+const _eventsMod = await import("../app/api/_lib/coachClientEvents.ts")
+const logCoachClientEvent = _eventsMod.logCoachClientEvent ?? _eventsMod.default?.logCoachClientEvent
+if (typeof logCoachClientEvent !== "function") {
+  console.error("Could not load logCoachClientEvent from the helper module")
+  process.exit(2)
+}
 
 const BASE_URL = (process.env.BASE_URL || "https://wrnsignal-api-staging.vercel.app").replace(/\/$/, "")
 const SUPABASE_URL = process.env.SUPABASE_URL
