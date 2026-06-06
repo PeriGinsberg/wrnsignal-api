@@ -11,12 +11,10 @@ import { SettingsTabs, type SettingsTab } from "../SettingsTabs"
 import { SettingsBlock } from "../SettingsBlock"
 import { DeliverablesTab } from "./DeliverablesTab"
 import { PackagesTab } from "./PackagesTab"
-import { DocumentsTab } from "./DocumentsTab"
 
 const TABS: SettingsTab[] = [
   { key: "deliverables", label: "Deliverables" },
   { key: "packages", label: "Packages" },
-  { key: "documents", label: "Documents" },
 ]
 const DEFAULT_TAB = "deliverables"
 
@@ -44,11 +42,6 @@ export function ServicesTabs() {
       {active === "packages" && (
         <SettingsBlock title="Packages">
           <PackagesTab />
-        </SettingsBlock>
-      )}
-      {active === "documents" && (
-        <SettingsBlock title="Documents">
-          <DocumentsTab />
         </SettingsBlock>
       )}
     </div>

@@ -61,6 +61,7 @@ const COACH_NAV: NavGroup[] = [
       // disabled "Soon" domain (no route this phase). Spec §4 Move 1 / §7.
       { href: "/dashboard/coach/settings/prospects", label: "Prospects", matchPrefix: true },
       { href: "/dashboard/coach/settings/services", label: "Services", matchPrefix: true },
+      { href: "/dashboard/coach/settings/documents", label: "Documents", matchPrefix: true },
       { label: "Billing", disabled: true },
     ],
   },
