@@ -82,3 +82,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Native <select> dark-theme fix (app-wide).
+ *
+ * Our selects use the shared `input` style (color: near-white) so the CLOSED
+ * control reads on its dark background. But <option> children inherit that
+ * white, and browsers render the OPEN option list on their own LIGHT
+ * background → white-on-light, unreadable. Force option text to the navy
+ * foreground token so the open list is legible. We scope this to `option`
+ * only — the select's own inline color still drives the closed control, so
+ * both the closed select (light text on dark) and the open list (navy text on
+ * light) stay readable. Covers every current and future native <select>.
+ */
+select option {
+  color: var(--signal-primary-foreground);
+}
