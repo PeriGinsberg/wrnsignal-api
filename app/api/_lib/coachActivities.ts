@@ -2,7 +2,7 @@
 //
 // Shared building blocks for the Deliverable Activities API — a sub-resource of
 // coach_milestones (coach_milestone_activities). Auth / scoping is REUSED from
-// ./coachPackages (the same generic coach-route helpers — bearer → authed user
+// ./coachAuth (the same generic coach-route helpers — bearer → authed user
 // → coach profile → is_coach — used across the coach API); not reinvented here.
 //
 // SECURITY: coach_milestone_activities has NO coach_profile_id and NO RLS —
@@ -15,7 +15,7 @@
 import { type SupabaseClient } from "@supabase/supabase-js"
 
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
-export { getSupabaseAdmin, resolveCoach, errStatus } from "./coachPackages"
+export { getSupabaseAdmin, resolveCoach, errStatus } from "./coachAuth"
 
 export const ACTIVITY_OWNERS = ["coach", "client", "both"] as const
 export type ActivityOwner = (typeof ACTIVITY_OWNERS)[number]

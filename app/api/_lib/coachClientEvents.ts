@@ -8,12 +8,12 @@
 //      coach-clients/[id]/send-invite/route.ts.
 //   2. listApiEvents(...) + toApiEvent — read side for the events GET route.
 //
-// Deliberately self-contained: imports only @supabase/supabase-js (its own
-// service-role admin getter), so the logger has minimal surface area and can be
-// invoked from anywhere without dragging in the route/cors stack. The read
-// route injects its already-resolved admin client into listApiEvents.
+// The logger uses the shared service-role admin getter from ./coachAuth (the one
+// canonical implementation). The read route injects its already-resolved admin
+// client into listApiEvents.
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
+import { getSupabaseAdmin } from "./coachAuth"
 
 // The event vocabulary — typed in code, never user input (so the table has no
 // CHECK on event_type; this union is the source of truth).
@@ -30,15 +30,6 @@ export const COACH_CLIENT_EVENT_TYPES = [
 ] as const
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]
 
-// Service-role admin client used ONLY by the logger. Created lazily inside the
-// try so even a missing-env throw is swallowed (the logger never throws).
-function eventLogAdmin(): SupabaseClient {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
 // BEST-EFFORT, NEVER THROWS. Inserts one append-only event. Any failure (FK
 // violation, missing env, network, …) is swallowed with a console.warn and the
 // promise still resolves — a logging failure can never propagate to the caller.
@@ -50,7 +41,7 @@ export async function logCoachClientEvent(args: {
   context?: Record<string, unknown> | null
 }): Promise<void> {
   try {
-    const admin = eventLogAdmin()
+    const admin = getSupabaseAdmin()
     const { error } = await admin.from("coach_client_events").insert({
       coach_client_id: args.coachClientId,
       event_type: args.eventType,

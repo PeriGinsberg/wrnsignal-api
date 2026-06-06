@@ -2,7 +2,7 @@
 //
 // Shared building blocks for the Client Engagement API — a sub-resource of
 // coach_clients (coach_client_engagements + …_deliverables + …_activities).
-// Auth / scoping is REUSED from ./coachPackages (the same generic coach-route
+// Auth / scoping is REUSED from ./coachAuth (the same generic coach-route
 // helpers — bearer → authed user → coach profile → is_coach); not reinvented.
 //
 // SECURITY: the engagement tables have NO coach_profile_id and NO RLS —
@@ -19,7 +19,7 @@
 import { type SupabaseClient } from "@supabase/supabase-js"
 
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
-export { getSupabaseAdmin, resolveCoach, errStatus, UUID_RE } from "./coachPackages"
+export { getSupabaseAdmin, resolveCoach, errStatus, UUID_RE } from "./coachAuth"
 
 // ── Ownership guard: does this coach_clients row belong to the coach? ──
 export async function isCoachClientOwnedByCoach(
