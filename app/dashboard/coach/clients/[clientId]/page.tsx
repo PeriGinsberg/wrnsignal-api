@@ -25,6 +25,7 @@ import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { LoadingShell } from "../../LoadingShell"
 import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
+import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
@@ -33,7 +34,7 @@ import { HistoryTab } from "./HistoryTab"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -434,6 +435,7 @@ export default function CoachClientPage() {
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
+    { id: "library", label: "Library" },
     { id: "history", label: "History" },
   ]
 
@@ -1513,7 +1515,15 @@ export default function CoachClientPage() {
         />
       )}
 
-      {/* TAB 6 — History (read-only event timeline) */}
+      {/* TAB 6 — Library (per-client document links) */}
+      {tab === "library" && (
+        <LibraryTab
+          coachClientId={coachClientId}
+          clientName={clientProfile?.name || clientProfile?.email || "this client"}
+        />
+      )}
+
+      {/* TAB 7 — History (read-only event timeline) */}
       {tab === "history" && <HistoryTab coachClientId={coachClientId} />}
 
       {/* Slide-in Add Note panel — overlays current tab without navigation */}
