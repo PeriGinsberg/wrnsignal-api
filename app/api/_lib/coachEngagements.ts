@@ -48,6 +48,16 @@ export function isValidProposalStatus(v: unknown): v is ProposalStatus {
   return typeof v === "string" && (PROPOSAL_STATUSES as readonly string[]).includes(v)
 }
 
+// ── Activity completion status (on a snapshot activity): not_started →
+//    in_progress → complete. Validated at the edge with a clean 400 (the DB
+//    CHECK ccea_status_valid is only the backstop). Per-snapshot-activity — the
+//    catalog templates have no status. ──
+export const ACTIVITY_STATUSES = ["not_started", "in_progress", "complete"] as const
+export type ActivityStatus = (typeof ACTIVITY_STATUSES)[number]
+export function isValidActivityStatus(v: unknown): v is ActivityStatus {
+  return typeof v === "string" && (ACTIVITY_STATUSES as readonly string[]).includes(v)
+}
+
 // ── Resolver: client_profile_id + coach → the single coach_clients.id ──
 // UNIQUE(coach_profile_id, client_profile_id) guarantees at most one. Returns
 // null if this coach has no relationship row for that client profile. The linked
