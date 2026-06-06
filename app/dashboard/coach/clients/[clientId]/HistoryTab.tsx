@@ -37,6 +37,7 @@ function describe(e: CoachClientEvent): string {
     case "proposal_declined": return withName("Proposal declined")
     case "engagement_attached": return withName("Engagement attached")
     case "engagement_detached": return withName("Engagement detached")
+    case "activity_completed": return withName("Activity completed")
     case "invite_sent": return "SIGNAL invite sent"
     default: return e.event_type
   }

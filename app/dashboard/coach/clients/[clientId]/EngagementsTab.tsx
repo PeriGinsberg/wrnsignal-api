@@ -9,12 +9,12 @@
 //   PATCH  /api/coach/coach-clients/[ccId]/engagements/[engagement_id]  { proposal_status }
 //   DELETE /api/coach/coach-clients/[ccId]/engagements/[engagement_id]
 //
-// The proposal lifecycle (draft/sent/approved/declined) is editable here — the
-// only COLORED status in this surface. Activity completion status stays a quiet
-// MUTED pill (read-only this slice) so the two systems read as distinct.
-// Optimistic on success; on any write failure show a banner AND resync. The
-// server (toApiEngagement) is the source of truth for pricing + status — no
-// client-side recompute. Dollars only.
+// Two editable status systems, kept distinct by palette AND placement: the
+// proposal lifecycle (draft/sent/approved/declined) is a colored control at the
+// engagement-card header; activity completion (not_started/in_progress/complete)
+// is a colored 3-way control on each activity row inside a deliverable. On any
+// write failure show a banner AND resync. The server (toApiEngagement) is the
+// source of truth for pricing + status — no client-side recompute. Dollars only.
 //
 // getToken/authFetch inlined per the coach-route client convention (same pair as
 // NotesTab / PackagesTab).
@@ -86,12 +86,15 @@ const PROPOSAL_META: Record<ProposalStatus, { label: string; color: string; bg: 
   declined: { label: "Declined", color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" },
 }
 
-// Activity completion status — deliberately MUTED/neutral (no color), so it
-// reads as a different system from the colored proposal pill above it.
-const ACTIVITY_STATUS_LABEL: Record<string, string> = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  complete: "Complete",
+// Activity completion status — now an interactive colored 3-way control on each
+// activity row. Its OWN palette (muted → amber → green) keeps it distinct from
+// the proposal control's blue/green/red, and it lives at a different level
+// (nested inside a deliverable, not the card header). App tokens, no new colors.
+const ACTIVITY_STATUS_ORDER = ["not_started", "in_progress", "complete"] as const
+const ACTIVITY_STATUS_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  not_started: { label: "Not started", color: T.MUTED, bg: T.NAV_DEFAULT_BG, border: T.BORDER_SOFT },
+  in_progress: { label: "In progress", color: T.WRN_ORANGE, bg: "rgba(254,176,106,0.14)", border: T.NAV_ACTIVE_BORDER },
+  complete: { label: "Complete", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" },
 }
 
 function countActivities(e: Engagement): number {
@@ -141,7 +144,8 @@ export function EngagementsTab({
   const [attachingId, setAttachingId] = useState<string | null>(null) // package_id in flight
 
   const [detachingId, setDetachingId] = useState<string | null>(null)
-  const [settingStatusId, setSettingStatusId] = useState<string | null>(null) // engagement in flight
+  const [settingStatusId, setSettingStatusId] = useState<string | null>(null) // engagement (proposal) in flight
+  const [settingActivityId, setSettingActivityId] = useState<string | null>(null) // activity status in flight
 
   const base = coachClientId ? `/api/coach/coach-clients/${coachClientId}/engagements` : null
 
@@ -236,6 +240,32 @@ export function EngagementsTab({
     }
   }
 
+  // Set one activity's completion status. The route returns the fresh engagement;
+  // reconcile local state from it. Banner + resync on failure.
+  async function setActivityStatus(engagementId: string, activityId: string, status: string) {
+    if (!base || settingActivityId) return
+    setSettingActivityId(activityId)
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}/activities/${activityId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't update activity (${res.status})`)
+        await resync()
+        return
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    } finally {
+      setSettingActivityId(null)
+    }
+  }
+
   async function detach(id: string) {
     if (!base || detachingId) return
     // High-stakes (deletes the client's copy) — explicit confirm, unlike a catalog row.
@@ -297,10 +327,12 @@ export function EngagementsTab({
               expanded={expandedId === e.id}
               detaching={detachingId === e.id}
               proposalBusy={settingStatusId === e.id}
+              settingActivityId={settingActivityId}
               showConvertNudge={showConvertNudge}
               onToggle={() => setExpandedId((prev) => (prev === e.id ? null : e.id))}
               onDetach={() => void detach(e.id)}
               onSetStatus={(s) => void setStatus(e.id, s)}
+              onSetActivityStatus={(activityId, status) => void setActivityStatus(e.id, activityId, status)}
             />
           ))}
         </div>
@@ -363,17 +395,19 @@ export function EngagementsTab({
 
 // ── One engagement card (collapsed summary + proposal control + frozen snapshot) ──
 function EngagementCard({
-  e, expanded, detaching, proposalBusy, showConvertNudge,
-  onToggle, onDetach, onSetStatus,
+  e, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
+  onToggle, onDetach, onSetStatus, onSetActivityStatus,
 }: {
   e: Engagement
   expanded: boolean
   detaching: boolean
   proposalBusy: boolean
+  settingActivityId: string | null
   showConvertNudge: boolean
   onToggle: () => void
   onDetach: () => void
   onSetStatus: (s: ProposalStatus) => void
+  onSetActivityStatus: (activityId: string, status: string) => void
 }) {
   // Hover affordance for the proposal control (same pattern as the prospect
   // status / pipeline controls). Hover is neutral + transient, never the active
@@ -473,7 +507,12 @@ function EngagementCard({
             <p style={{ fontSize: 12, color: T.DIM, margin: 0 }}>This package had no deliverables.</p>
           ) : (
             e.deliverables.map((d) => (
-              <DeliverableBlock key={d.id} d={d} />
+              <DeliverableBlock
+                key={d.id}
+                d={d}
+                settingActivityId={settingActivityId}
+                onSetActivityStatus={onSetActivityStatus}
+              />
             ))
           )}
         </div>
@@ -483,7 +522,13 @@ function EngagementCard({
 }
 
 // ── Deliverable sub-block: inset surface + coral left accent + nested activities ──
-function DeliverableBlock({ d }: { d: EngDeliverable }) {
+function DeliverableBlock({
+  d, settingActivityId, onSetActivityStatus,
+}: {
+  d: EngDeliverable
+  settingActivityId: string | null
+  onSetActivityStatus: (activityId: string, status: string) => void
+}) {
   return (
     <div style={{ display: "flex", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.NAV_DEFAULT_BG, overflow: "hidden" }}>
       {/* Thin coral left-accent bar (inner element → block keeps rounded corners). */}
@@ -506,7 +551,7 @@ function DeliverableBlock({ d }: { d: EngDeliverable }) {
               <div
                 key={a.id}
                 style={{
-                  display: "flex", alignItems: "center", gap: 8, fontSize: 12,
+                  display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 12,
                   padding: "6px 0",
                   borderTop: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`, // hairline dividers
                 }}
@@ -514,15 +559,66 @@ function DeliverableBlock({ d }: { d: EngDeliverable }) {
                 {/* Activity name = secondary/muted tier (a step below the deliverable). */}
                 <span style={{ color: T.MUTED }}>{a.name}</span>
                 <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
-                {/* Activity completion pill — MUTED/neutral (distinct from the colored proposal pill). */}
-                <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, letterSpacing: 0.4, textTransform: "uppercase", color: T.MUTED, background: "rgba(255,255,255,0.05)", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" }}>
-                  {ACTIVITY_STATUS_LABEL[a.status] ?? a.status}
-                </span>
+                {/* Interactive colored completion control (compact; sits to the right). */}
+                <ActivityStatusControl
+                  value={a.status}
+                  busy={settingActivityId === a.id}
+                  onSet={(s) => onSetActivityStatus(a.id, s)}
+                />
               </div>
             ))}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Compact 3-way activity status control (mirrors the proposal control's
+//    hover / active / in-flight interaction; smaller, on the activity row) ──
+function ActivityStatusControl({
+  value, busy, onSet,
+}: {
+  value: string
+  busy: boolean
+  onSet: (status: string) => void
+}) {
+  const [hovered, setHovered] = useState<string | null>(null)
+  return (
+    <div
+      role="group"
+      aria-label="Activity status"
+      style={{ marginLeft: "auto", display: "inline-flex", flexShrink: 0, borderRadius: 7, border: `1px solid ${T.BORDER_SOFT}`, overflow: "hidden", opacity: busy ? 0.6 : 1 }}
+    >
+      {ACTIVITY_STATUS_ORDER.map((st, i) => {
+        const active = value === st
+        const m = ACTIVITY_STATUS_META[st]
+        const isHover = hovered === st && !active && !busy
+        return (
+          <button
+            key={st}
+            type="button"
+            disabled={busy || active}
+            onClick={() => onSet(st)}
+            onMouseEnter={() => { if (!active && !busy) setHovered(st) }}
+            onMouseLeave={() => setHovered((h) => (h === st ? null : h))}
+            aria-pressed={active}
+            style={{
+              background: active ? m.bg : isHover ? "rgba(255,255,255,0.06)" : "transparent",
+              color: active ? m.color : isHover ? T.TEXT : T.MUTED,
+              border: "none",
+              borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
+              padding: "4px 9px",
+              fontSize: 9, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase",
+              cursor: busy ? "default" : "pointer",
+              whiteSpace: "nowrap",
+              transition: "background 130ms ease, color 130ms ease, border-color 130ms ease",
+            }}
+          >
+            {m.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
