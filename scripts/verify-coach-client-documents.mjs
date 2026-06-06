@@ -97,6 +97,18 @@ async function createRel(coachId, clientProfileId) {
   if (error) abort(`createRel failed: ${error.message}`)
   return data.id
 }
+// Distinct client_profiles ids not already linked to this coach (coach_clients
+// has UNIQUE(coach_profile_id, client_profile_id), so each throwaway rel needs
+// its own client). Never the coach itself.
+async function pickClientProfiles(coachId, n, exclude = []) {
+  const { data: profs } = await sb.from("client_profiles").select("id").limit(1000)
+  const { data: links } = await sb.from("coach_clients").select("client_profile_id").eq("coach_profile_id", coachId)
+  const taken = new Set((links || []).map((l) => l.client_profile_id))
+  const ex = new Set([coachId, ...exclude])
+  const free = (profs || []).map((p) => p.id).filter((id) => !taken.has(id) && !ex.has(id))
+  if (free.length < n) abort(`not enough free client_profiles for coach ${coachId} (need ${n}, have ${free.length})`)
+  return free.slice(0, n)
+}
 
 async function main() {
   console.log(`${TAG} endpoint=${ENDPOINT_BASE} A=${COACH_EMAIL} B=${COACH_B_EMAIL}`)
@@ -126,10 +138,13 @@ async function main() {
   await http(tokenA, "DELETE", catUrl(`/${aInactiveCatId}`))
 
   // Throwaway relationships: relA1 (primary), relA2 (2nd owned by A, nested
-  // guard), relB1 (owned by B, cross-coach). client_profile_id must be non-null.
-  const relA1 = await createRel(coachAId, coachAId)
-  const relA2 = await createRel(coachAId, coachAId)
-  const relB1 = await createRel(coachBId, coachBId)
+  // guard), relB1 (owned by B, cross-coach). Each needs a distinct, unlinked
+  // client_profile_id (non-null, and unique per coach).
+  const [clientA1, clientA2] = await pickClientProfiles(coachAId, 2)
+  const [clientB1] = await pickClientProfiles(coachBId, 1, [clientA1, clientA2])
+  const relA1 = await createRel(coachAId, clientA1)
+  const relA2 = await createRel(coachAId, clientA2)
+  const relB1 = await createRel(coachBId, clientB1)
 
   // ── 1. POST valid category + URL normalization ──
   console.log("\n1. POST valid category, URL normalized (prepend https)")
