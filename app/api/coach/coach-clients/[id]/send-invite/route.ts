@@ -32,6 +32,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { sendClientInvite } from "@/lib/email/sendClientInvite"
 import { getAppUrl } from "@/lib/urls"
+import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -401,6 +402,14 @@ export async function POST(
     } catch (noteErr: any) {
       console.warn("[send-invite] System note insert threw:", noteErr?.message)
     }
+
+    // Best-effort event log (the invite has already been sent at this point).
+    await logCoachClientEvent({
+      coachClientId,
+      eventType: "invite_sent",
+      actorProfileId: coachProfileId,
+      context: { branch },
+    })
 
     return withCorsJson(req, {
       ok: true,

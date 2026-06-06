@@ -23,6 +23,7 @@ import {
   isCoachClientOwnedByCoach,
   getApiEngagementById,
 } from "../../../../../_lib/coachEngagements"
+import { logCoachClientEvent } from "../../../../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -103,6 +104,22 @@ export async function PATCH(
     }
 
     const engagement = await getApiEngagementById(supabase, id, engagement_id)
+
+    // Best-effort event log. Map the new status → event; SKIP draft (we don't
+    // log draft transitions).
+    const proposalEvent =
+      body.proposal_status === "sent" ? "proposal_sent" :
+      body.proposal_status === "approved" ? "proposal_approved" :
+      body.proposal_status === "declined" ? "proposal_declined" : null
+    if (proposalEvent) {
+      await logCoachClientEvent({
+        coachClientId: id,
+        eventType: proposalEvent,
+        actorProfileId: coachProfileId,
+        context: { name: engagement?.name },
+      })
+    }
+
     return withCorsJson(req, { ok: true, engagement })
   } catch (e: any) {
     return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))
@@ -125,12 +142,13 @@ export async function DELETE(
     }
 
     // Match on BOTH engagement_id and coach_client_id = [id] (see header note).
+    // RETURNING also gives the deleted row's name (captured before it's gone).
     const { data: deleted, error: delErr } = await supabase
       .from("coach_client_engagements")
       .delete()
       .eq("id", engagement_id)
       .eq("coach_client_id", id)
-      .select("id")
+      .select("id, name")
       .maybeSingle()
     if (delErr) {
       return withCorsJson(req, { ok: false, error: `Failed to detach engagement: ${delErr.message}` }, 500)
@@ -138,8 +156,17 @@ export async function DELETE(
     if (!deleted) {
       return withCorsJson(req, { ok: false, error: "Engagement not found" }, 404)
     }
+    const removed = deleted as { id: string; name: string }
 
-    return withCorsJson(req, { ok: true, deleted: (deleted as { id: string }).id })
+    // Best-effort event log (after the detach succeeded; name was returned).
+    await logCoachClientEvent({
+      coachClientId: id,
+      eventType: "engagement_detached",
+      actorProfileId: coachProfileId,
+      context: { name: removed.name, engagement_id },
+    })
+
+    return withCorsJson(req, { ok: true, deleted: removed.id })
   } catch (e: any) {
     return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))
   }

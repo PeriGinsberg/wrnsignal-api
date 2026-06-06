@@ -30,6 +30,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 // the lifecycle_status:"Active" flip, ownership checks, and validation all run
 // through the one canonical implementation.
 import { PATCH as convertProspectLifecycle } from "../route"
+import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -261,6 +262,15 @@ export async function PATCH(
         // Swallow — the invite reminder is a nicety, not part of the convert.
       }
 
+      // Best-effort event log — TERMINAL path logs ONLY converted_to_client
+      // (this branch returns, so the non-terminal stage_changed below can never
+      // also fire for the convert).
+      await logCoachClientEvent({
+        coachClientId: id,
+        eventType: "converted_to_client",
+        actorProfileId: coachProfileId,
+      })
+
       return withCorsJson(req, {
         ok: true,
         converted: true,
@@ -309,6 +319,15 @@ export async function PATCH(
       .eq("id", id)
       .eq("coach_profile_id", coachProfileId)
     if (updErr) return withCorsJson(req, { ok: false, error: `Failed to update current stage: ${updErr.message}` }, 500)
+
+    // Best-effort event log — NON-TERMINAL stage change only (terminal converts
+    // returned above and logged converted_to_client instead).
+    await logCoachClientEvent({
+      coachClientId: id,
+      eventType: "stage_changed",
+      actorProfileId: coachProfileId,
+      context: { stage_key: stageKey },
+    })
 
     return withCorsJson(req, {
       ok: true,

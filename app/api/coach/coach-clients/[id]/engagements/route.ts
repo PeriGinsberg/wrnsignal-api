@@ -22,6 +22,7 @@ import {
   listApiEngagements,
   getApiEngagementById,
 } from "../../../../_lib/coachEngagements"
+import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -93,6 +94,15 @@ export async function POST(
     }
 
     const engagement = await getApiEngagementById(supabase, id, newEngagementId as string)
+
+    // Best-effort event log (after the snapshot landed).
+    await logCoachClientEvent({
+      coachClientId: id,
+      eventType: "engagement_attached",
+      actorProfileId: coachProfileId,
+      context: { name: engagement?.name, engagement_id: newEngagementId },
+    })
+
     return withCorsJson(req, { ok: true, engagement }, 201)
   } catch (e: any) {
     return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))

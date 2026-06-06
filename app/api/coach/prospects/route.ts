@@ -16,6 +16,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { logCoachClientEvent } from "../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -487,6 +488,14 @@ export async function POST(req: NextRequest) {
       }, 500)
     }
     const created = createdData as unknown as CoachClientRow
+
+    // Best-effort event log (the helper never throws; runs after the insert).
+    await logCoachClientEvent({
+      coachClientId: created.id,
+      eventType: "prospect_created",
+      actorProfileId: coachProfileId,
+      context: { name, source_category: sourceCategory },
+    })
 
     // 2. Optional initial_note. Non-fatal: prospect is usable
     //    regardless; coach can add notes via /notes routes (2b).

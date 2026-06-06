@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getAppUrl } from "@/lib/urls"
+import { logCoachClientEvent } from "../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -112,6 +113,9 @@ export async function POST(req: NextRequest) {
 
     const inviteToken = crypto.randomUUID()
 
+    // The coach_clients.id for the event log — captured from whichever branch runs.
+    let coachClientId: string | null = null
+
     if (existingInvite) {
       const { error: updateErr } = await supabase
         .from("coach_clients")
@@ -125,8 +129,11 @@ export async function POST(req: NextRequest) {
         .eq("id", existingInvite.id)
 
       if (updateErr) throw new Error(`Failed to update invite: ${updateErr.message}`)
+      coachClientId = existingInvite.id as string
     } else {
-      const { error: insertErr } = await supabase
+      // .select("id") added to capture the new row's id for the event log — the
+      // insert behavior is otherwise unchanged.
+      const { data: insertedRow, error: insertErr } = await supabase
         .from("coach_clients")
         .insert({
           coach_profile_id: profileId,
@@ -136,8 +143,11 @@ export async function POST(req: NextRequest) {
           status: "pending",
           invite_token: inviteToken,
         })
+        .select("id")
+        .single()
 
       if (insertErr) throw new Error(`Failed to create invite: ${insertErr.message}`)
+      coachClientId = (insertedRow?.id as string) ?? null
     }
 
     // Send magic link to the client
@@ -164,6 +174,17 @@ export async function POST(req: NextRequest) {
       scenario: clientProfileId ? "existing_user" : "new_user",
       redirectUrl,
     })
+
+    // Best-effort event log (the invite has already been sent). actor = profileId
+    // (the acting coach's client_profiles.id, same value as coachProfileId elsewhere).
+    if (coachClientId) {
+      await logCoachClientEvent({
+        coachClientId,
+        eventType: "invite_sent",
+        actorProfileId: profileId,
+        context: { email: clientEmail },
+      })
+    }
 
     return withCorsJson(req, {
       ok: true,
