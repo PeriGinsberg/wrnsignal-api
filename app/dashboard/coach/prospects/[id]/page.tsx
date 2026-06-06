@@ -39,6 +39,7 @@ import { LoadingShell } from "../../LoadingShell"
 // Shared Engagements surface (also used as a tab on the linked-client page).
 // [id] here is coach_clients.id directly, so no resolver is needed.
 import { EngagementsTab } from "../../clients/[clientId]/EngagementsTab"
+import { HistoryTab } from "../../clients/[clientId]/HistoryTab"
 
 // ── Constants (duplicated per inline pattern) ──
 
@@ -1965,6 +1966,12 @@ export default function ProspectDetailPage() {
           clientName={prospect.name || "this prospect"}
           showConvertNudge
         />
+      </Section>
+
+      {/* History — read-only event timeline. [id] = coach_clients.id (params.id),
+          passed straight through; no resolver needed. */}
+      <Section title="History">
+        <HistoryTab coachClientId={prospect.id} />
       </Section>
 
       <ProspectNotesSection

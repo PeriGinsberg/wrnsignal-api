@@ -25,13 +25,15 @@ import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { LoadingShell } from "../../LoadingShell"
 import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
+import { HistoryTab } from "./HistoryTab"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
 // History) tab was removed entirely — its surface no longer ships in the
 // Beta. jobfit_runs table + sourced_by_coach_id column intentionally
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements"
+// "history" added for the read-only event timeline (Client Event Log UI).
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -432,6 +434,7 @@ export default function CoachClientPage() {
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
+    { id: "history", label: "History" },
   ]
 
   const filteredApps = useMemo(() => {
@@ -1509,6 +1512,9 @@ export default function CoachClientPage() {
           clientName={clientProfile?.name || clientProfile?.email || "this client"}
         />
       )}
+
+      {/* TAB 6 — History (read-only event timeline) */}
+      {tab === "history" && <HistoryTab coachClientId={coachClientId} />}
 
       {/* Slide-in Add Note panel — overlays current tab without navigation */}
       <AddNotePanel
