@@ -235,6 +235,33 @@ async function main() {
   const t10b = await http(tokenA, "PATCH", docsUrl(relA1, `/${docValid}`), { activity_id: "00000000-0000-0000-0000-000000000000" })
   check("PATCH with activity_id → 400 (unknown field)", t10b.status === 400, `status ${t10b.status}`)
 
+  // ── 11. visible_to_client (Slice 1): default private, explicit true, PATCH toggles, GET carries ──
+  console.log("\n11. visible_to_client — default false, explicit true, PATCH toggles")
+  const v1 = await http(tokenA, "POST", docsUrl(relA1), { title: "Private by default", url: "https://x.com/p" })
+  check("POST without visible_to_client → 201", v1.status === 201, `status ${v1.status}`)
+  check("defaults visible_to_client=false (private)", v1.json?.document?.visible_to_client === false, JSON.stringify(v1.json?.document))
+  const docPrivate = v1.json?.document?.id
+  const v2 = await http(tokenA, "POST", docsUrl(relA1), { title: "Shared", url: "https://x.com/s", visible_to_client: true })
+  check("POST visible_to_client:true → 201", v2.status === 201, `status ${v2.status}`)
+  check("persists visible_to_client=true", v2.json?.document?.visible_to_client === true)
+  const docShared = v2.json?.document?.id
+  // PATCH false→true→false on the private doc.
+  const v3 = await http(tokenA, "PATCH", docsUrl(relA1, `/${docPrivate}`), { visible_to_client: true })
+  check("PATCH false→true → 200", v3.status === 200, `status ${v3.status}`)
+  check("now true", v3.json?.document?.visible_to_client === true)
+  const v4 = await http(tokenA, "PATCH", docsUrl(relA1, `/${docPrivate}`), { visible_to_client: false })
+  check("PATCH true→false → 200", v4.status === 200)
+  check("now false", v4.json?.document?.visible_to_client === false)
+  // GET carries visible_to_client on every doc.
+  const gV = await http(tokenA, "GET", docsUrl(relA1))
+  const allHaveFlag = (gV.json?.documents || []).every((d) => typeof d.visible_to_client === "boolean")
+  check("GET returns visible_to_client on every doc", allHaveFlag)
+  const sharedInGet = (gV.json?.documents || []).find((d) => d.id === docShared)
+  check("shared doc reads true in GET", sharedInGet?.visible_to_client === true)
+  // Non-boolean rejected.
+  const v5 = await http(tokenA, "POST", docsUrl(relA1), { title: "bad", url: "https://x.com", visible_to_client: "yes" })
+  check("POST non-boolean visible_to_client → 400", v5.status === 400, `status ${v5.status}`)
+
   // ── Cleanup ──
   await clearThrowawayRels(coachAId)
   await clearThrowawayRels(coachBId)

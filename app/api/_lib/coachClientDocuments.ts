@@ -37,13 +37,14 @@ export type DocumentRow = {
   title: string
   url: string
   sort_order: number
+  visible_to_client: boolean
   created_at: string
   updated_at: string
   deleted_at: string | null
 }
 
 export const DOCUMENT_SELECT =
-  "id, coach_client_id, coach_profile_id, client_profile_id, category_id, activity_id, title, url, sort_order, created_at, updated_at, deleted_at"
+  "id, coach_client_id, coach_profile_id, client_profile_id, category_id, activity_id, title, url, sort_order, visible_to_client, created_at, updated_at, deleted_at"
 
 export function toApiDocument(r: DocumentRow) {
   return {
@@ -53,6 +54,7 @@ export function toApiDocument(r: DocumentRow) {
     title: r.title,
     url: r.url,
     sort_order: r.sort_order,
+    visible_to_client: r.visible_to_client,
   }
 }
 

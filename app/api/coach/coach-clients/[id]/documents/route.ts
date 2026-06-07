@@ -99,6 +99,17 @@ export async function POST(
       categoryId = body.category_id
     }
 
+    // visible_to_client: optional; default false (private) — matches the column
+    // default and the curated-workspace posture (nothing reaches the client until
+    // explicitly shared).
+    let visibleToClient = false
+    if (body.visible_to_client !== undefined) {
+      if (typeof body.visible_to_client !== "boolean") {
+        return withCorsJson(req, { ok: false, error: "visible_to_client must be a boolean" }, 400)
+      }
+      visibleToClient = body.visible_to_client
+    }
+
     const supabase = getSupabaseAdmin()
     const rel = await getOwnedRelationship(supabase, coachProfileId, id)
     if (!rel) {
@@ -137,6 +148,7 @@ export async function POST(
         title: titleParsed.title,
         url: urlParsed.url,
         sort_order: nextSortOrder,
+        visible_to_client: visibleToClient,
       })
       .select(DOCUMENT_SELECT)
       .single()

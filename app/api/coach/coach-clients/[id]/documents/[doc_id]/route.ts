@@ -36,7 +36,7 @@ export async function OPTIONS(req: NextRequest) {
 
 // ── PATCH: partial update (allow-listed fields), scoped to the coach ──
 // activity_id is intentionally absent from the allow-list → "Unknown field".
-const PATCH_ALLOWED = new Set(["title", "url", "category_id", "sort_order"])
+const PATCH_ALLOWED = new Set(["title", "url", "category_id", "sort_order", "visible_to_client"])
 
 export async function PATCH(
   req: NextRequest,
@@ -83,6 +83,12 @@ export async function PATCH(
         return withCorsJson(req, { ok: false, error: "sort_order must be an integer" }, 400)
       }
       updates.sort_order = body.sort_order
+    }
+    if ("visible_to_client" in body) {
+      if (typeof body.visible_to_client !== "boolean") {
+        return withCorsJson(req, { ok: false, error: "visible_to_client must be a boolean" }, 400)
+      }
+      updates.visible_to_client = body.visible_to_client
     }
     if (Object.keys(updates).length === 0) {
       return withCorsJson(req, { ok: false, error: "No updatable fields supplied" }, 400)

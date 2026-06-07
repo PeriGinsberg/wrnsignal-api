@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { isCoached } from "../_lib/coachedClient"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
@@ -178,6 +179,20 @@ export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
+// Return the profile payload with the coached-account gate computed inline, so
+// the D2C layout's existing /api/profile load can gate a coached nav item
+// without a second round-trip. The gate failing must never break the profile
+// read — fall back to coached:false. (Sibling { coached } to is_coach.)
+async function profileResponse(req: NextRequest, supabase: any, profile: any) {
+  let coached = false
+  try {
+    coached = await isCoached(supabase, profile.id as string)
+  } catch {
+    coached = false
+  }
+  return withCorsJson(req, { ok: true, profile: { ...profile, coached } })
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { userId, email } = await getAuthedUser(req)
@@ -194,7 +209,7 @@ export async function GET(req: NextRequest) {
     if (byUserId) {
       const filled = await backfillProfileFields(byUserId, supabase)
       const healed = await healProfileComplete(filled, supabase)
-      return withCorsJson(req, { ok: true, profile: healed })
+      return profileResponse(req, supabase, healed)
     }
 
     // 2) Fallback: lookup by email and attach user_id
@@ -211,7 +226,7 @@ export async function GET(req: NextRequest) {
         if (byEmail.user_id === userId) {
           const filled = await backfillProfileFields(byEmail, supabase)
           const healed = await healProfileComplete(filled, supabase)
-          return withCorsJson(req, { ok: true, profile: healed })
+          return profileResponse(req, supabase, healed)
         }
         // user_id is missing or stale (auth user was recreated) — re-attach
         const { data: attached, error: attachErr } = await supabase
@@ -224,7 +239,7 @@ export async function GET(req: NextRequest) {
         if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
         const filled = await backfillProfileFields(attached, supabase)
         const healed = await healProfileComplete(filled, supabase)
-        return withCorsJson(req, { ok: true, profile: healed })
+        return profileResponse(req, supabase, healed)
       }
     }
 
@@ -241,7 +256,7 @@ export async function GET(req: NextRequest) {
       .single()
 
     if (createErr) throw new Error(`Profile create failed: ${createErr.message}`)
-    return withCorsJson(req, { ok: true, profile: created })
+    return profileResponse(req, supabase, created)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
