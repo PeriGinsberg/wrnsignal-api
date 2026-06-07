@@ -161,6 +161,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sending, setSending] = useState(false)
   const [fromFramer, setFromFramer] = useState(false)
   const [isCoach, setIsCoach] = useState(false)
+  // True when this D2C account has an ACTIVE coach (from /api/profile's `coached`
+  // gate). Gates the coached-only "Coaching Tools" nav item.
+  const [coached, setCoached] = useState(false)
   // Beta-feedback slide-in (Phase 3). Mounted at layout level so it's
   // reachable from any coach page; nav trigger wired in Phase 4.
   const [feedbackOpen, setFeedbackOpen] = useState(false)
@@ -268,6 +271,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (!res.ok) return
         const j = await res.json()
         setIsCoach(!!j.profile?.is_coach)
+        setCoached(!!j.profile?.coached)
       } catch {}
     }
     checkCoach()
@@ -456,6 +460,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
+  // D2C nav, with the coached-only "Coaching Tools" item injected into the
+  // DASHBOARD group when this account has an active coach. Non-coached D2C users
+  // never see it. (is_coach users render COACH_NAV, so the item is D2C-only.)
+  const d2cNav: NavGroup[] = coached
+    ? D2C_NAV.map((g) =>
+        g.header === "DASHBOARD"
+          ? { ...g, items: [...g.items, { href: "/dashboard/coaching-tools", label: "Coaching Tools", matchPrefix: true }] }
+          : g,
+      )
+    : D2C_NAV
+  const navGroups = isCoach ? COACH_NAV : d2cNav
+
   return (
     <div style={{ minHeight: "100vh", background: T.BG, display: "flex", flexDirection: "column" }}>
       {fromFramer && <FramerBanner />}
@@ -463,10 +479,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav style={{ width: 220, background: T.NAV_BG, borderRight: `1px solid ${T.BORDER_SOFT}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
           <Logo />
           <div style={{ padding: "0 12px" }}>
-            {(isCoach ? COACH_NAV : D2C_NAV).map((group, gi) => {
+            {navGroups.map((group, gi) => {
               const groupHot = isGroupActive(group, pathname)
               return (
-                <div key={group.header} style={{ marginBottom: gi === (isCoach ? COACH_NAV.length - 1 : D2C_NAV.length - 1) ? 12 : 16 }}>
+                <div key={group.header} style={{ marginBottom: gi === navGroups.length - 1 ? 12 : 16 }}>
                   <div style={{
                     ...eyebrow, fontSize: 11, letterSpacing: 1.2,
                     color: groupHot ? T.WRN_ORANGE : "rgba(255,255,255,0.42)",
