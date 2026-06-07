@@ -19,8 +19,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
+import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 
 const UNCATEGORIZED_KEY = "__uncategorized__"
+
+// Visibility palette — mirrored from NoteVisibilityIcon (teal = shared, goldenrod
+// = coach-private) so the row label reads at the same glance as the icon. The
+// icon hardcodes these and doesn't export them; keep these two in sync with it.
+const VIS_TEAL = "#2CA58D"
+const VIS_GOLD = "#E1A92E"
 
 type Category = { id: string; name: string; sort_order: number; is_custom: boolean; active: boolean }
 type DocLink = {
@@ -30,6 +37,7 @@ type DocLink = {
   title: string
   url: string
   sort_order: number
+  visible_to_client: boolean
 }
 
 // Host label under the title (url is server-normalized, so it has a protocol).
@@ -81,7 +89,11 @@ export function LibraryTab({
   const [aTitle, setATitle] = useState("")
   const [aUrl, setAUrl] = useState("")
   const [aCategoryId, setACategoryId] = useState<string>("") // "" = Uncategorized
+  const [aVisible, setAVisible] = useState(false) // DEFAULT private (matches column default)
   const [creating, setCreating] = useState(false)
+
+  // Per-row visibility toggle in flight (doc id).
+  const [togglingVisibleId, setTogglingVisibleId] = useState<string | null>(null)
 
   // Inline edit.
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -167,12 +179,12 @@ export function LibraryTab({
   function openAdd() {
     setActionError(null)
     setEditingId(null)
-    setATitle(""); setAUrl(""); setACategoryId("")
+    setATitle(""); setAUrl(""); setACategoryId(""); setAVisible(false)
     setAdding(true)
   }
   function cancelAdd() {
     setAdding(false)
-    setATitle(""); setAUrl(""); setACategoryId("")
+    setATitle(""); setAUrl(""); setACategoryId(""); setAVisible(false)
   }
 
   async function handleCreate() {
@@ -185,7 +197,7 @@ export function LibraryTab({
     try {
       const res = await authFetch(base, {
         method: "POST",
-        body: JSON.stringify({ title, url, category_id: aCategoryId || undefined }),
+        body: JSON.stringify({ title, url, category_id: aCategoryId || undefined, visible_to_client: aVisible }),
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) {
@@ -269,6 +281,34 @@ export function LibraryTab({
     }
   }
 
+  // Toggle a doc's client visibility (eye ↔ lock). Optimistic; PATCH; banner +
+  // resync (snap back to server truth) on failure.
+  async function toggleVisible(d: DocLink) {
+    if (!base || togglingVisibleId) return
+    const next = !d.visible_to_client
+    setTogglingVisibleId(d.id)
+    setActionError(null)
+    setDocs((prev) => prev.map((x) => (x.id === d.id ? { ...x, visible_to_client: next } : x)))
+    try {
+      const res = await authFetch(`${base}/${d.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ visible_to_client: next }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't update visibility (${res.status})`)
+        await resync()
+        return
+      }
+      setDocs((prev) => prev.map((x) => (x.id === d.id ? (j.document as DocLink) : x)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    } finally {
+      setTogglingVisibleId(null)
+    }
+  }
+
   // Guard: no relationship resolved → benign empty, not an error.
   if (!coachClientId) {
     return <p style={{ fontSize: 13, color: T.DIM, margin: 0 }}>No library for this client yet.</p>
@@ -326,6 +366,8 @@ export function LibraryTab({
                       doc={d}
                       confirming={confirmDeleteId === d.id}
                       deleting={deletingId === d.id}
+                      toggling={togglingVisibleId === d.id}
+                      onToggleVisible={() => void toggleVisible(d)}
                       onEdit={() => startEdit(d)}
                       onAskDelete={() => { setActionError(null); setConfirmDeleteId(d.id) }}
                       onConfirmDelete={() => void confirmDelete(d.id)}
@@ -351,6 +393,7 @@ export function LibraryTab({
             <LinkForm
               title={aTitle} url={aUrl} categoryId={aCategoryId}
               categories={cats}
+              visible={aVisible} onVisible={setAVisible}
               onTitle={setATitle} onUrl={setAUrl} onCategory={setACategoryId}
               onSubmit={() => void handleCreate()} submitLabel="+ Add link"
               busy={creating} onCancel={cancelAdd}
@@ -362,13 +405,15 @@ export function LibraryTab({
   )
 }
 
-// ── One link row: title (opens in new tab) + host, edit + delete ──
+// ── One link row: title (opens in new tab) + host, visibility toggle + edit + delete ──
 function LinkRow({
-  doc, confirming, deleting, onEdit, onAskDelete, onConfirmDelete, onCancelDelete,
+  doc, confirming, deleting, toggling, onToggleVisible, onEdit, onAskDelete, onConfirmDelete, onCancelDelete,
 }: {
   doc: DocLink
   confirming: boolean
   deleting: boolean
+  toggling: boolean
+  onToggleVisible: () => void
   onEdit: () => void
   onAskDelete: () => void
   onConfirmDelete: () => void
@@ -406,6 +451,7 @@ function LinkRow({
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <VisibilityToggle visible={doc.visible_to_client} busy={toggling} onClick={onToggleVisible} />
           <IconBtn label="Edit link" onClick={onEdit}>✎</IconBtn>
           <IconBtn label="Remove link" danger onClick={onAskDelete}>✕</IconBtn>
         </div>
@@ -414,15 +460,45 @@ function LinkRow({
   )
 }
 
-// ── Shared add/edit form (title + url + category picker) ──
+// ── Visibility toggle: eye (shared) / lock (private), glanceable + labeled ──
+// Reuses NoteVisibilityIcon for the glyph; click flips visible_to_client.
+function VisibilityToggle({ visible, busy, onClick }: { visible: boolean; busy: boolean; onClick: () => void }) {
+  const color = visible ? VIS_TEAL : VIS_GOLD
+  const full = visible ? "Visible to client" : "Coach-private"
+  const action = visible ? "click to make private" : "click to share with client"
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      aria-label={`${full} — ${action}`}
+      title={`${full} — ${action}`}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: "transparent", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 8,
+        color, fontSize: 11, fontWeight: 800, whiteSpace: "nowrap",
+        cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, padding: "5px 8px",
+      }}
+    >
+      <NoteVisibilityIcon visible={visible} />
+      {visible ? "Shared" : "Private"}
+    </button>
+  )
+}
+
+// ── Shared add/edit form (title + url + category picker; optional visibility) ──
+// visible/onVisible are only passed by the ADD form (default OFF — private). Edit
+// keeps visibility on the per-row eye/lock toggle, so onVisible is omitted there.
 function LinkForm({
-  title, url, categoryId, categories,
+  title, url, categoryId, categories, visible, onVisible,
   onTitle, onUrl, onCategory, onSubmit, submitLabel, busy, onCancel,
 }: {
   title: string
   url: string
   categoryId: string
   categories: Category[]
+  visible?: boolean
+  onVisible?: (v: boolean) => void
   onTitle: (v: string) => void
   onUrl: (v: string) => void
   onCategory: (v: string) => void
@@ -462,6 +538,17 @@ function LinkForm({
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}
       </select>
+      {onVisible && (
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.MUTED, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={!!visible}
+            onChange={(e) => onVisible(e.target.checked)}
+            style={{ accentColor: T.WRN_ORANGE }}
+          />
+          Visible to client (off = coach-private)
+        </label>
+      )}
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button
           onClick={onSubmit}
