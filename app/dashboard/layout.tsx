@@ -33,7 +33,6 @@ const D2C_NAV: NavGroup[] = [
     items: [
       { href: "/dashboard", label: "My Account" },
       { href: "/dashboard/tracker", label: "Job Tracker" },
-      { href: "/dashboard/resume-rx", label: "ResumeRx (Coming Soon)" },
     ],
   },
 ]
