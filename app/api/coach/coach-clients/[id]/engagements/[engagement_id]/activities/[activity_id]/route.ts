@@ -1,10 +1,12 @@
 // app/api/coach/coach-clients/[id]/engagements/[engagement_id]/activities/[activity_id]/route.ts
 //
-// Engagement activity status — coach-facing completion tracking on the FROZEN
-// snapshot activity (not_started → in_progress → complete).
+// Engagement activity write — coach-facing edits on the FROZEN snapshot activity:
+// completion status (not_started → in_progress → complete) and an optional due date.
 //
-//   PATCH — { status } sets coach_client_engagement_activities.status for one
-//           activity. Writes ONLY that column.
+//   PATCH — { status?, due_date? } updates coach_client_engagement_activities for
+//           one activity. status is the 3-way completion; due_date is a YYYY-MM-DD
+//           string or null (clears it). At least one of the two must be present;
+//           writes ONLY the fields provided — nothing else.
 //
 // SECURITY — a THREE-LEVEL ownership walk (one deeper than the engagement
 // routes), so a coach can't PATCH another coach's activity by pairing it with an
@@ -23,6 +25,7 @@ import {
   errStatus,
   ACTIVITY_STATUSES,
   isValidActivityStatus,
+  isValidActivityDueDate,
   isCoachClientOwnedByCoach,
   getApiEngagementById,
 } from "../../../../../../../_lib/coachEngagements"
@@ -48,10 +51,20 @@ export async function PATCH(
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
-    if (!isValidActivityStatus(body.status)) {
+    // Allow-list: status and/or due_date. At least one must be present; any other
+    // key is simply ignored (we only ever build an update from these two).
+    const hasStatus = Object.prototype.hasOwnProperty.call(body, "status")
+    const hasDueDate = Object.prototype.hasOwnProperty.call(body, "due_date")
+    if (!hasStatus && !hasDueDate) {
+      return withCorsJson(req, { ok: false, error: "Provide status and/or due_date" }, 400)
+    }
+    if (hasStatus && !isValidActivityStatus(body.status)) {
       return withCorsJson(req, { ok: false, error: `status must be one of: ${ACTIVITY_STATUSES.join(", ")}` }, 400)
     }
-    const nextStatus = body.status
+    if (hasDueDate && !isValidActivityDueDate(body.due_date)) {
+      return withCorsJson(req, { ok: false, error: "due_date must be a YYYY-MM-DD date or null" }, 400)
+    }
+    const nextStatus = hasStatus ? (body.status as string) : null
 
     const supabase = getSupabaseAdmin()
 
@@ -92,18 +105,22 @@ export async function PATCH(
 
     const priorStatus = activity.status as string
 
-    // Update ONLY the activity's status (chain already verified above).
+    // Update ONLY the fields provided (chain already verified above). Building the
+    // patch from the allow-list flags keeps the write to status/due_date only.
+    const patch: { status?: string; due_date?: string | null } = {}
+    if (hasStatus) patch.status = nextStatus as string
+    if (hasDueDate) patch.due_date = body.due_date as string | null
     const { error: upErr } = await supabase
       .from("coach_client_engagement_activities")
-      .update({ status: nextStatus })
+      .update(patch)
       .eq("id", activity_id)
     if (upErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to update activity status: ${upErr.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to update activity: ${upErr.message}` }, 500)
     }
 
     // Best-effort event log — ONLY on a transition INTO complete (not a re-complete,
-    // not other statuses). The helper never throws; a logging failure can't fail
-    // the status PATCH.
+    // not other statuses, not a due_date-only edit). The helper never throws; a
+    // logging failure can't fail the PATCH.
     if (nextStatus === "complete" && priorStatus !== "complete") {
       await logCoachClientEvent({
         coachClientId: id,

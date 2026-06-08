@@ -27,8 +27,19 @@ import { T, card, headline, btnSecondary } from "../../../lib/dashboard-theme"
 type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
 
-type PlanActivity = { id: string; name: string; status: string; owner: string }
+type PlanActivity = { id: string; name: string; status: string; owner: string; due_date: string | null }
 type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+// Format a DATE value ("2026-07-01") to "Jul 1" — parsed from parts so a date-only
+// value never timezone-shifts a day. Returns "" for null/garbage (chip hidden).
+function fmtDue(d: string | null): string {
+  if (!d) return ""
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d)
+  if (!m) return ""
+  return `${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}`
+}
 
 // Activity status — mirrors the coach-side ActivityStatusControl visual language
 // (muted → amber → green) so client + coach reads consistently. These constants
@@ -197,6 +208,11 @@ function MyPlanSection() {
                         </span>
                       )}
                     </span>
+                    {a.due_date && (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_BLUE, whiteSpace: "nowrap" }}>
+                        Due {fmtDue(a.due_date)}
+                      </span>
+                    )}
                     <ActivityStatusControl
                       value={a.status}
                       busy={settingId === a.id}

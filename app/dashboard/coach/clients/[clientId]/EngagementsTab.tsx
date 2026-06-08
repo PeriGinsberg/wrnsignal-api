@@ -23,7 +23,7 @@ import { useCallback, useEffect, useState } from "react"
 import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 
-type EngActivity = { id: string; name: string; owner: string; status: string; sort_order: number }
+type EngActivity = { id: string; name: string; owner: string; status: string; due_date: string | null; sort_order: number }
 type EngDeliverable = {
   id: string
   name: string
@@ -266,6 +266,33 @@ export function EngagementsTab({
     }
   }
 
+  // Set one activity's due date (YYYY-MM-DD, or null to clear). Same route + return
+  // shape as the status write; reconcile from the fresh engagement, banner + resync
+  // on failure. Shares the settingActivityId in-flight lock with the status control.
+  async function setActivityDueDate(engagementId: string, activityId: string, dueDate: string | null) {
+    if (!base || settingActivityId) return
+    setSettingActivityId(activityId)
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}/activities/${activityId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ due_date: dueDate }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't update due date (${res.status})`)
+        await resync()
+        return
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    } finally {
+      setSettingActivityId(null)
+    }
+  }
+
   async function detach(id: string) {
     if (!base || detachingId) return
     // High-stakes (deletes the client's copy) — explicit confirm, unlike a catalog row.
@@ -333,6 +360,7 @@ export function EngagementsTab({
               onDetach={() => void detach(e.id)}
               onSetStatus={(s) => void setStatus(e.id, s)}
               onSetActivityStatus={(activityId, status) => void setActivityStatus(e.id, activityId, status)}
+              onSetActivityDueDate={(activityId, dueDate) => void setActivityDueDate(e.id, activityId, dueDate)}
             />
           ))}
         </div>
@@ -396,7 +424,7 @@ export function EngagementsTab({
 // ── One engagement card (collapsed summary + proposal control + frozen snapshot) ──
 function EngagementCard({
   e, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
-  onToggle, onDetach, onSetStatus, onSetActivityStatus,
+  onToggle, onDetach, onSetStatus, onSetActivityStatus, onSetActivityDueDate,
 }: {
   e: Engagement
   expanded: boolean
@@ -408,6 +436,7 @@ function EngagementCard({
   onDetach: () => void
   onSetStatus: (s: ProposalStatus) => void
   onSetActivityStatus: (activityId: string, status: string) => void
+  onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
 }) {
   // Hover affordance for the proposal control (same pattern as the prospect
   // status / pipeline controls). Hover is neutral + transient, never the active
@@ -512,6 +541,7 @@ function EngagementCard({
                 d={d}
                 settingActivityId={settingActivityId}
                 onSetActivityStatus={onSetActivityStatus}
+                onSetActivityDueDate={onSetActivityDueDate}
               />
             ))
           )}
@@ -523,11 +553,12 @@ function EngagementCard({
 
 // ── Deliverable sub-block: inset surface + coral left accent + nested activities ──
 function DeliverableBlock({
-  d, settingActivityId, onSetActivityStatus,
+  d, settingActivityId, onSetActivityStatus, onSetActivityDueDate,
 }: {
   d: EngDeliverable
   settingActivityId: string | null
   onSetActivityStatus: (activityId: string, status: string) => void
+  onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
 }) {
   return (
     <div style={{ display: "flex", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.NAV_DEFAULT_BG, overflow: "hidden" }}>
@@ -559,6 +590,12 @@ function DeliverableBlock({
                 {/* Activity name = secondary/muted tier (a step below the deliverable). */}
                 <span style={{ color: T.MUTED }}>{a.name}</span>
                 <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
+                {/* Optional due date — native picker, set/clear writes due_date. */}
+                <ActivityDueDateControl
+                  value={a.due_date}
+                  busy={settingActivityId === a.id}
+                  onSet={(due) => onSetActivityDueDate(a.id, due)}
+                />
                 {/* Interactive colored completion control (compact; sits to the right). */}
                 <ActivityStatusControl
                   value={a.status}
@@ -571,6 +608,39 @@ function DeliverableBlock({
         )}
       </div>
     </div>
+  )
+}
+
+// ── Optional per-activity due date — native date picker, app tokens. Empty =
+//    no date (muted); set = blue. Clearing (native ✕) sends "" → null. The input
+//    is both the display and the control; shares the row's in-flight lock. ──
+function ActivityDueDateControl({
+  value, busy, onSet,
+}: {
+  value: string | null
+  busy: boolean
+  onSet: (dueDate: string | null) => void
+}) {
+  return (
+    <input
+      type="date"
+      aria-label="Activity due date"
+      value={value ?? ""}
+      disabled={busy}
+      onChange={(ev) => onSet(ev.target.value === "" ? null : ev.target.value)}
+      style={{
+        background: T.NAV_DEFAULT_BG,
+        color: value ? T.WRN_BLUE : T.MUTED,
+        border: `1px solid ${T.BORDER_SOFT}`,
+        borderRadius: 7,
+        padding: "3px 7px",
+        fontSize: 11,
+        fontWeight: 700,
+        colorScheme: "dark", // dark native calendar/spinners on the dark surface
+        opacity: busy ? 0.6 : 1,
+        cursor: busy ? "default" : "pointer",
+      }}
+    />
   )
 }
 

@@ -14,8 +14,9 @@
 // activities across ALL of the active relationship's engagements, grouped by
 // DELIVERABLE. owner='coach' activities are filtered out. Read-only.
 //
-// Minimal per-activity payload — { id, name, status, owner } — never source_*_id,
-// pricing/fee, or any engagement/coach internals.
+// Minimal per-activity payload — { id, name, status, owner, due_date } — never
+// source_*_id, pricing/fee, or any engagement/coach internals. due_date is read
+// only here (the client sees it; the coach sets it).
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
@@ -81,6 +82,7 @@ type ActRow = {
   name: string
   status: string
   owner: string
+  due_date: string | null
   sort_order: number
   created_at: string
   engagement_deliverable_id: string
@@ -126,7 +128,7 @@ export async function GET(req: NextRequest) {
     // line between "mine to do" and the coach's own steps.
     const { data: actData, error: actErr } = await supabase
       .from("coach_client_engagement_activities")
-      .select("id, name, status, owner, sort_order, created_at, engagement_deliverable_id")
+      .select("id, name, status, owner, due_date, sort_order, created_at, engagement_deliverable_id")
       .in("engagement_deliverable_id", [...delivById.keys()])
       .in("owner", ["client", "both"])
       .order("sort_order", { ascending: true })
@@ -135,7 +137,7 @@ export async function GET(req: NextRequest) {
     const acts = (actData ?? []) as ActRow[]
 
     // Group by deliverable — only deliverables that have ≥1 owned activity appear.
-    type Group = { deliverable_id: string; name: string; sort_order: number; created_at: string; activities: { id: string; name: string; status: string; owner: string }[] }
+    type Group = { deliverable_id: string; name: string; sort_order: number; created_at: string; activities: { id: string; name: string; status: string; owner: string; due_date: string | null }[] }
     const groups = new Map<string, Group>()
     for (const a of acts) {
       const d = delivById.get(a.engagement_deliverable_id)
@@ -145,7 +147,7 @@ export async function GET(req: NextRequest) {
         g = { deliverable_id: d.id, name: d.name, sort_order: d.sort_order, created_at: d.created_at, activities: [] }
         groups.set(d.id, g)
       }
-      g.activities.push({ id: a.id, name: a.name, status: a.status, owner: a.owner })
+      g.activities.push({ id: a.id, name: a.name, status: a.status, owner: a.owner, due_date: a.due_date })
     }
 
     // Order groups by deliverable sort_order, then created_at as a stable

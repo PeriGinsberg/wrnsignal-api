@@ -58,6 +58,20 @@ export function isValidActivityStatus(v: unknown): v is ActivityStatus {
   return typeof v === "string" && (ACTIVITY_STATUSES as readonly string[]).includes(v)
 }
 
+// ── Activity due date (on a snapshot activity): an optional calendar date.
+//    Accepts null (clear) or a strict YYYY-MM-DD string that is a REAL date
+//    (rejects 2026-13-40 etc.) so the DATE column never sees garbage. Validated
+//    at the edge with a clean 400. ──
+export function isValidActivityDueDate(v: unknown): v is string | null {
+  if (v === null) return true
+  if (typeof v !== "string") return false
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
+  if (!m) return false
+  const y = Number(m[1]), mo = Number(m[2]), da = Number(m[3])
+  const dt = new Date(Date.UTC(y, mo - 1, da))
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === da
+}
+
 // ── Resolver: client_profile_id + coach → the single coach_clients.id ──
 // UNIQUE(coach_profile_id, client_profile_id) guarantees at most one. Returns
 // null if this coach has no relationship row for that client profile. The linked
@@ -111,14 +125,15 @@ type EngActivityRow = {
   name: string
   owner: string
   status: string
+  due_date: string | null
   sort_order: number
   created_at: string
 }
 const ENG_ACTIVITY_SELECT =
-  "id, engagement_deliverable_id, name, owner, status, sort_order, created_at"
+  "id, engagement_deliverable_id, name, owner, status, due_date, sort_order, created_at"
 
 function toApiEngActivity(a: EngActivityRow) {
-  return { id: a.id, name: a.name, owner: a.owner, status: a.status, sort_order: a.sort_order }
+  return { id: a.id, name: a.name, owner: a.owner, status: a.status, due_date: a.due_date, sort_order: a.sort_order }
 }
 
 function toApiEngDeliverable(d: EngDeliverableRow, activities: ReturnType<typeof toApiEngActivity>[]) {
