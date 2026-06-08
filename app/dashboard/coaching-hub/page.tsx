@@ -155,7 +155,7 @@ export default function CoachingHubPage() {
 
       {/* Sections compose here — add future coached surfaces below these. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <ActionItemsSection groups={groups} loading={loading} loadError={loadError} settingId={settingId} onSetStatus={setStatus} />
+        <ActionItemsSection groups={groups} loadError={loadError} />
         <MyPlanSection
           groups={groups}
           loading={loading}
@@ -171,109 +171,47 @@ export default function CoachingHubPage() {
   )
 }
 
-// ── Section: Action Items — what needs the client now, computed from the same
-//    activities payload. Two lists: incomplete owned activities (completable inline
-//    via the shared status handler) and action-required visible notes (read-only
-//    this slice — the acknowledge loop is 5b). Pure presentation; no fetch of its
-//    own. On load error it renders nothing — MyPlan surfaces the error + retry. ──
+// ── Section: Action Items — ONLY what the coach explicitly pushed: the
+//    action-required visible notes (already visible-filtered by the route).
+//    Activities are plan work and live under My Plan, not here. Read-only this
+//    slice (the acknowledge loop is 5b). Pure presentation over the lifted payload;
+//    renders NOTHING (no zone, no empty box) when there's nothing pushed or on load
+//    error — so the Hub leads with My Plan unless the coach has actually asked. ──
 function ActionItemsSection({
-  groups, loading, loadError, settingId, onSetStatus,
+  groups, loadError,
 }: {
   groups: PlanGroup[]
-  loading: boolean
   loadError: string | null
-  settingId: string | null
-  onSetStatus: (id: string, status: string) => void
 }) {
   if (loadError) return null // MyPlan owns the error display + retry; don't double up
 
-  // (a) Incomplete owned activities (owner already client/both server-side). Dated
-  //     first by date asc (YYYY-MM-DD string compare = date order), then undated.
-  const incomplete = groups
-    .flatMap((g) => g.activities.filter((a) => a.status !== "complete").map((a) => ({ a, deliverableName: g.name })))
-    .sort((x, y) => {
-      if (x.a.due_date && y.a.due_date) return x.a.due_date.localeCompare(y.a.due_date)
-      if (x.a.due_date) return -1
-      if (y.a.due_date) return 1
-      return 0
-    })
-  // (b) Action-required notes (already visible-filtered by the route).
   const actionNotes = groups.flatMap((g) =>
     g.activities.flatMap((a) => a.notes.filter((n) => n.action_required).map((n) => ({ n, activityName: a.name }))),
   )
+  if (actionNotes.length === 0) return null // nothing pushed → hide the whole zone
 
   return (
     <section style={{ ...card, padding: 22 }}>
       <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
         Action Items
       </div>
-
-      {loading ? (
-        <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading…</p>
-      ) : incomplete.length === 0 && actionNotes.length === 0 ? (
-        <p style={{ fontSize: 13, color: T.DIM, margin: 0, lineHeight: 1.5 }}>
-          You’re all caught up — nothing needs you right now.
-        </p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {/* Things to do — completable right here via the shared handler. */}
-          {incomplete.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {incomplete.map(({ a, deliverableName }) => (
-                <div
-                  key={a.id}
-                  style={{
-                    display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10,
-                    padding: "10px 12px", borderRadius: 12,
-                    border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS,
-                  }}
-                >
-                  <span style={{ flex: 1, minWidth: 160, wordBreak: "break-word" }}>
-                    <span style={{ fontSize: 14, color: T.TEXT, fontWeight: 600 }}>{a.name}</span>
-                    {a.due_date && (
-                      <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: T.WRN_BLUE, whiteSpace: "nowrap" }}>
-                        — due {fmtDue(a.due_date)}
-                      </span>
-                    )}
-                    <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 2 }}>{deliverableName}</span>
-                  </span>
-                  <ActivityStatusControl
-                    value={a.status}
-                    busy={settingId === a.id}
-                    onSet={(s) => void onSetStatus(a.id, s)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Coach asks — action-required notes, read-only this slice. */}
-          {actionNotes.length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
-                Coach asks
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {actionNotes.map(({ n, activityName }) => (
-                  <div
-                    key={n.id}
-                    style={{
-                      padding: "10px 12px", borderRadius: 12,
-                      border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
-                      fontSize: 13, color: T.TEXT, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word",
-                    }}
-                  >
-                    <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 2 }}>
-                      On {activityName}
-                    </span>
-                    {n.body}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {actionNotes.map(({ n, activityName }) => (
+          <div
+            key={n.id}
+            style={{
+              padding: "10px 12px", borderRadius: 12,
+              border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
+              fontSize: 13, color: T.TEXT, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word",
+            }}
+          >
+            <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 2 }}>
+              On {activityName}
+            </span>
+            {n.body}
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
