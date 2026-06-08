@@ -14,9 +14,12 @@
 // activities across ALL of the active relationship's engagements, grouped by
 // DELIVERABLE. owner='coach' activities are filtered out. Read-only.
 //
-// Minimal per-activity payload — { id, name, status, owner, due_date } — never
-// source_*_id, pricing/fee, or any engagement/coach internals. due_date is read
-// only here (the client sees it; the coach sets it).
+// Minimal per-activity payload — { id, name, status, owner, due_date, notes[] } —
+// never source_*_id, pricing/fee, or any engagement/coach internals. due_date is
+// read only here (the client sees it; the coach sets it). notes carries ONLY the
+// activity's VISIBLE notes (visible_to_client = true AND not deleted) — coach-private
+// notes NEVER cross to the client. action_required rides along (its Action-Items
+// surfacing is Slice 5; here the note is plain-displayed).
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
@@ -136,8 +139,30 @@ export async function GET(req: NextRequest) {
     if (actErr) throw new Error(`Activities lookup failed: ${actErr.message}`)
     const acts = (actData ?? []) as ActRow[]
 
+    // Visible notes (visible_to_client = true, not deleted) for the owned activities,
+    // newest-first. The visibility + deleted_at filters ARE the privacy wall — a
+    // coach-private note never appears here. owner-coach activities were already
+    // dropped above, so their notes can't leak either.
+    type NoteOut = { id: string; body: string; action_required: boolean; created_at: string }
+    const notesByActivity = new Map<string, NoteOut[]>()
+    if (acts.length) {
+      const { data: noteData, error: noteErr } = await supabase
+        .from("coach_client_activity_notes")
+        .select("id, body, action_required, created_at, engagement_activity_id")
+        .in("engagement_activity_id", acts.map((a) => a.id))
+        .eq("visible_to_client", true)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+      if (noteErr) throw new Error(`Notes lookup failed: ${noteErr.message}`)
+      for (const n of (noteData ?? []) as (NoteOut & { engagement_activity_id: string })[]) {
+        const list = notesByActivity.get(n.engagement_activity_id) ?? []
+        list.push({ id: n.id, body: n.body, action_required: n.action_required, created_at: n.created_at })
+        notesByActivity.set(n.engagement_activity_id, list)
+      }
+    }
+
     // Group by deliverable — only deliverables that have ≥1 owned activity appear.
-    type Group = { deliverable_id: string; name: string; sort_order: number; created_at: string; activities: { id: string; name: string; status: string; owner: string; due_date: string | null }[] }
+    type Group = { deliverable_id: string; name: string; sort_order: number; created_at: string; activities: { id: string; name: string; status: string; owner: string; due_date: string | null; notes: NoteOut[] }[] }
     const groups = new Map<string, Group>()
     for (const a of acts) {
       const d = delivById.get(a.engagement_deliverable_id)
@@ -147,7 +172,7 @@ export async function GET(req: NextRequest) {
         g = { deliverable_id: d.id, name: d.name, sort_order: d.sort_order, created_at: d.created_at, activities: [] }
         groups.set(d.id, g)
       }
-      g.activities.push({ id: a.id, name: a.name, status: a.status, owner: a.owner, due_date: a.due_date })
+      g.activities.push({ id: a.id, name: a.name, status: a.status, owner: a.owner, due_date: a.due_date, notes: notesByActivity.get(a.id) ?? [] })
     }
 
     // Order groups by deliverable sort_order, then created_at as a stable

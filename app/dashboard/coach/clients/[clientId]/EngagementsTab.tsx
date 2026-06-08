@@ -22,6 +22,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
+import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
+
+// Visibility palette — mirrored from NoteVisibilityIcon (teal = shared with client,
+// goldenrod = coach-private). The icon hardcodes these and doesn't export them; keep
+// in sync (same pattern as LibraryTab's VisibilityToggle).
+const VIS_TEAL = "#2CA58D"
+const VIS_GOLD = "#E1A92E"
 
 type EngActivity = { id: string; name: string; owner: string; status: string; due_date: string | null; sort_order: number }
 type EngDeliverable = {
@@ -351,6 +358,7 @@ export function EngagementsTab({
             <EngagementCard
               key={e.id}
               e={e}
+              coachClientId={coachClientId}
               expanded={expandedId === e.id}
               detaching={detachingId === e.id}
               proposalBusy={settingStatusId === e.id}
@@ -423,10 +431,11 @@ export function EngagementsTab({
 
 // ── One engagement card (collapsed summary + proposal control + frozen snapshot) ──
 function EngagementCard({
-  e, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
+  e, coachClientId, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
   onToggle, onDetach, onSetStatus, onSetActivityStatus, onSetActivityDueDate,
 }: {
   e: Engagement
+  coachClientId: string
   expanded: boolean
   detaching: boolean
   proposalBusy: boolean
@@ -539,6 +548,8 @@ function EngagementCard({
               <DeliverableBlock
                 key={d.id}
                 d={d}
+                coachClientId={coachClientId}
+                engagementId={e.id}
                 settingActivityId={settingActivityId}
                 onSetActivityStatus={onSetActivityStatus}
                 onSetActivityDueDate={onSetActivityDueDate}
@@ -553,9 +564,11 @@ function EngagementCard({
 
 // ── Deliverable sub-block: inset surface + coral left accent + nested activities ──
 function DeliverableBlock({
-  d, settingActivityId, onSetActivityStatus, onSetActivityDueDate,
+  d, coachClientId, engagementId, settingActivityId, onSetActivityStatus, onSetActivityDueDate,
 }: {
   d: EngDeliverable
+  coachClientId: string
+  engagementId: string
   settingActivityId: string | null
   onSetActivityStatus: (activityId: string, status: string) => void
   onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
@@ -582,25 +595,30 @@ function DeliverableBlock({
               <div
                 key={a.id}
                 style={{
-                  display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 12,
                   padding: "6px 0",
                   borderTop: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`, // hairline dividers
                 }}
               >
-                {/* Activity name = secondary/muted tier (a step below the deliverable). */}
-                <span style={{ color: T.MUTED }}>{a.name}</span>
-                <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
-                {/* Optional due date — native picker, set/clear writes due_date. */}
-                <ActivityDueDateControl
-                  value={a.due_date}
-                  busy={settingActivityId === a.id}
-                  onSet={(due) => onSetActivityDueDate(a.id, due)}
-                />
-                {/* Interactive colored completion control (compact; sits to the right). */}
-                <ActivityStatusControl
-                  value={a.status}
-                  busy={settingActivityId === a.id}
-                  onSet={(s) => onSetActivityStatus(a.id, s)}
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 12 }}>
+                  {/* Activity name = secondary/muted tier (a step below the deliverable). */}
+                  <span style={{ color: T.MUTED }}>{a.name}</span>
+                  <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
+                  {/* Optional due date — native picker, set/clear writes due_date. */}
+                  <ActivityDueDateControl
+                    value={a.due_date}
+                    busy={settingActivityId === a.id}
+                    onSet={(due) => onSetActivityDueDate(a.id, due)}
+                  />
+                  {/* Interactive colored completion control (compact; sits to the right). */}
+                  <ActivityStatusControl
+                    value={a.status}
+                    busy={settingActivityId === a.id}
+                    onSet={(s) => onSetActivityStatus(a.id, s)}
+                  />
+                </div>
+                {/* Per-activity notes — lazy-loaded on open via the CRUD route. */}
+                <ActivityNotes
+                  notesBase={`/api/coach/coach-clients/${coachClientId}/engagements/${engagementId}/activities/${a.id}/notes`}
                 />
               </div>
             ))}
@@ -691,6 +709,229 @@ function ActivityStatusControl({
       })}
     </div>
   )
+}
+
+// ── Per-activity notes (coach_client_activity_notes) — lazy-loaded on first open
+//    via the existing CRUD route. Compact sub-panel under the activity row: list +
+//    add, each note with body, a visibility toggle (NoteVisibilityIcon — the same
+//    glyph the Library uses) and an action-required toggle, plus edit/delete.
+//    Toggles are optimistic (revert on fail); add/edit/delete reconcile from the
+//    response and resync (re-GET) on failure. Self-contained: owns its own state so
+//    it can't disturb the engagement list. ──
+type ActivityNote = {
+  id: string
+  body: string
+  visible_to_client: boolean
+  action_required: boolean
+  created_at: string
+  updated_at: string
+}
+
+function ActivityNotes({ notesBase }: { notesBase: string }) {
+  const [open, setOpen] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [notes, setNotes] = useState<ActivityNote[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null) // note id in flight, or "__new__"
+  const [draft, setDraft] = useState("")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState("")
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await authFetch(notesBase)
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) { setError(j?.error || `Couldn't load notes (${res.status})`); return }
+      setNotes(j.notes || [])
+      setLoaded(true)
+    } catch {
+      setError("Network error — try again")
+    } finally {
+      setLoading(false)
+    }
+  }, [notesBase])
+
+  function toggleOpen() {
+    setOpen((o) => {
+      const next = !o
+      if (next && !loaded && !loading) void load()
+      return next
+    })
+  }
+
+  async function addNote() {
+    const body = draft.trim()
+    if (!body || busyId) return
+    setBusyId("__new__")
+    setError(null)
+    try {
+      const res = await authFetch(notesBase, { method: "POST", body: JSON.stringify({ body }) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) { setError(j?.error || `Couldn't add note (${res.status})`); return }
+      setNotes((prev) => [j.note as ActivityNote, ...prev]) // newest-first
+      setDraft("")
+    } catch {
+      setError("Network error — try again"); await load()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function putNote(id: string, patch: Partial<Pick<ActivityNote, "body" | "visible_to_client" | "action_required">>) {
+    const res = await authFetch(`${notesBase}/${id}`, { method: "PUT", body: JSON.stringify(patch) })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || !j?.ok) throw new Error(j?.error || `Update failed (${res.status})`)
+    return j.note as ActivityNote
+  }
+
+  async function toggle(id: string, field: "visible_to_client" | "action_required") {
+    if (busyId) return
+    const cur = notes.find((n) => n.id === id)
+    if (!cur) return
+    setBusyId(id)
+    setError(null)
+    const next = !cur[field]
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, [field]: next } : n))) // optimistic
+    try {
+      const updated = await putNote(id, { [field]: next })
+      setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)))
+    } catch (e: any) {
+      setError(e?.message || "Update failed")
+      setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, [field]: cur[field] } : n))) // revert
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function saveEdit(id: string) {
+    const body = editDraft.trim()
+    if (!body || busyId) return
+    setBusyId(id)
+    setError(null)
+    try {
+      const updated = await putNote(id, { body })
+      setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)))
+      setEditingId(null); setEditDraft("")
+    } catch (e: any) {
+      setError(e?.message || "Update failed"); await load()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function remove(id: string) {
+    if (busyId) return
+    setBusyId(id)
+    setError(null)
+    try {
+      const res = await authFetch(`${notesBase}/${id}`, { method: "DELETE" })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) { setError(j?.error || `Delete failed (${res.status})`); await load(); return }
+      setNotes((prev) => prev.filter((n) => n.id !== id))
+    } catch {
+      setError("Network error — try again"); await load()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 6 }}>
+      <button
+        type="button"
+        onClick={toggleOpen}
+        style={{ background: "transparent", border: "none", color: T.WRN_BLUE, cursor: "pointer", fontSize: 11, fontWeight: 700, padding: 0 }}
+      >
+        {open ? "Hide notes" : loaded ? `Notes (${notes.length})` : "Notes"}
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+          {error && <div style={{ fontSize: 11, color: T.ERROR }}>{error}</div>}
+          {loading ? (
+            <div style={{ fontSize: 11, color: T.MUTED }}>Loading…</div>
+          ) : (
+            <>
+              {notes.length === 0 && <div style={{ fontSize: 11, color: T.DIM }}>No notes yet.</div>}
+              {notes.map((n) => {
+                const busy = busyId === n.id
+                return (
+                  <div key={n.id} style={{ borderRadius: 8, border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, padding: "8px 10px" }}>
+                    {editingId === n.id ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <textarea value={editDraft} onChange={(ev) => setEditDraft(ev.target.value)} rows={2} style={noteTextarea} />
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <button style={{ ...noteTextBtn, color: T.SUCCESS }} disabled={busy || !editDraft.trim()} onClick={() => void saveEdit(n.id)}>
+                            {busy ? "Saving…" : "Save"}
+                          </button>
+                          <button style={noteTextBtn} disabled={busy} onClick={() => { setEditingId(null); setEditDraft("") }}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, color: T.TEXT, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.45 }}>{n.body}</div>
+                        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                          <button
+                            type="button" disabled={busy} onClick={() => void toggle(n.id, "visible_to_client")}
+                            title={n.visible_to_client ? "Visible to client — click to make private" : "Coach-private — click to share with client"}
+                            style={{ ...noteToggle, color: n.visible_to_client ? VIS_TEAL : VIS_GOLD, opacity: busy ? 0.6 : 1 }}
+                          >
+                            <NoteVisibilityIcon visible={n.visible_to_client} />
+                            {n.visible_to_client ? "Shared" : "Private"}
+                          </button>
+                          <button
+                            type="button" disabled={busy} onClick={() => void toggle(n.id, "action_required")}
+                            title={n.action_required ? "Action required — click to clear" : "Mark action required"}
+                            style={{ ...noteToggle, color: n.action_required ? T.WRN_ORANGE : T.MUTED, borderColor: n.action_required ? T.NAV_ACTIVE_BORDER : T.BORDER_SOFT, opacity: busy ? 0.6 : 1 }}
+                          >
+                            {n.action_required ? "★ Action" : "Action"}
+                          </button>
+                          <span style={{ marginLeft: "auto", display: "inline-flex", gap: 10 }}>
+                            <button style={noteTextBtn} disabled={busy} onClick={() => { setEditingId(n.id); setEditDraft(n.body) }}>Edit</button>
+                            <button style={{ ...noteTextBtn, color: T.ERROR }} disabled={busy} onClick={() => void remove(n.id)}>Delete</button>
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Add a note */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <textarea value={draft} onChange={(ev) => setDraft(ev.target.value)} rows={2} placeholder="Add a note…" style={noteTextarea} />
+                <button
+                  style={{ ...noteTextBtn, alignSelf: "flex-start", color: T.WRN_BLUE }}
+                  disabled={!draft.trim() || busyId === "__new__"}
+                  onClick={() => void addNote()}
+                >
+                  {busyId === "__new__" ? "Adding…" : "Add note"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const noteToggle: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 5,
+  background: "transparent", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 7,
+  padding: "3px 8px", fontSize: 11, fontWeight: 800, cursor: "pointer",
+}
+const noteTextBtn: React.CSSProperties = {
+  background: "transparent", border: "none", color: T.MUTED,
+  cursor: "pointer", fontSize: 11, fontWeight: 700, padding: 0,
+}
+const noteTextarea: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box", background: T.NAV_DEFAULT_BG, color: T.TEXT,
+  border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 8, padding: "6px 8px",
+  fontSize: 13, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit",
 }
 
 const smallBtn: React.CSSProperties = {

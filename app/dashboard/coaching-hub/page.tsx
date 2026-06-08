@@ -27,7 +27,8 @@ import { T, card, headline, btnSecondary } from "../../../lib/dashboard-theme"
 type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
 
-type PlanActivity = { id: string; name: string; status: string; owner: string; due_date: string | null }
+type PlanNote = { id: string; body: string; action_required: boolean; created_at: string }
+type PlanActivity = { id: string; name: string; status: string; owner: string; due_date: string | null; notes: PlanNote[] }
 type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -195,29 +196,48 @@ function MyPlanSection() {
                   <div
                     key={a.id}
                     style={{
-                      display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10,
+                      display: "flex", flexDirection: "column", gap: 8,
                       padding: "10px 12px", borderRadius: 12,
                       border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS,
                     }}
                   >
-                    <span style={{ flex: 1, minWidth: 160, fontSize: 14, color: T.TEXT, fontWeight: 600, wordBreak: "break-word" }}>
-                      {a.name}
-                      {a.owner === "both" && (
-                        <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.DIM }}>
-                          shared with coach
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                      <span style={{ flex: 1, minWidth: 160, fontSize: 14, color: T.TEXT, fontWeight: 600, wordBreak: "break-word" }}>
+                        {a.name}
+                        {a.owner === "both" && (
+                          <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.DIM }}>
+                            shared with coach
+                          </span>
+                        )}
+                      </span>
+                      {a.due_date && (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_BLUE, whiteSpace: "nowrap" }}>
+                          Due {fmtDue(a.due_date)}
                         </span>
                       )}
-                    </span>
-                    {a.due_date && (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_BLUE, whiteSpace: "nowrap" }}>
-                        Due {fmtDue(a.due_date)}
-                      </span>
+                      <ActivityStatusControl
+                        value={a.status}
+                        busy={settingId === a.id}
+                        onSet={(s) => void setStatus(a.id, s)}
+                      />
+                    </div>
+                    {/* Coach notes shared with the client — read-only, newest-first.
+                        action_required is carried but its surfacing is Slice 5. */}
+                    {a.notes.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {a.notes.map((n) => (
+                          <div
+                            key={n.id}
+                            style={{
+                              fontSize: 13, color: T.MUTED, lineHeight: 1.45, whiteSpace: "pre-wrap",
+                              wordBreak: "break-word", borderLeft: `2px solid ${T.BORDER}`, paddingLeft: 10,
+                            }}
+                          >
+                            {n.body}
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    <ActivityStatusControl
-                      value={a.status}
-                      busy={settingId === a.id}
-                      onSet={(s) => void setStatus(a.id, s)}
-                    />
                   </div>
                 ))}
               </div>
