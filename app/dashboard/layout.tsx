@@ -459,13 +459,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  // D2C nav, with the coached-only "Coaching Tools" item injected into the
+  // D2C nav, with the coached-only "Coaching Hub" item injected into the
   // DASHBOARD group when this account has an active coach. Non-coached D2C users
   // never see it. (is_coach users render COACH_NAV, so the item is D2C-only.)
   const d2cNav: NavGroup[] = coached
     ? D2C_NAV.map((g) =>
         g.header === "DASHBOARD"
-          ? { ...g, items: [...g.items, { href: "/dashboard/coaching-tools", label: "Coaching Tools", matchPrefix: true }] }
+          ? { ...g, items: [...g.items, { href: "/dashboard/coaching-hub", label: "Coaching Hub", matchPrefix: true }] }
           : g,
       )
     : D2C_NAV
