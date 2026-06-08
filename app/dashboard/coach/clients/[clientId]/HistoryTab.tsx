@@ -37,7 +37,11 @@ function describe(e: CoachClientEvent): string {
     case "proposal_declined": return withName("Proposal declined")
     case "engagement_attached": return withName("Engagement attached")
     case "engagement_detached": return withName("Engagement detached")
-    case "activity_completed": return withName("Activity completed")
+    // by_client flag is set ONLY by the client write route (/api/me/activities);
+    // its absence = a coach completion. No actor-name resolution — the
+    // distinction rides entirely on the context flag.
+    case "activity_completed":
+      return withName(e.context?.by_client === true ? "Activity completed by client" : "Activity completed")
     case "invite_sent": return "SIGNAL invite sent"
     default: return e.event_type
   }
