@@ -4,16 +4,19 @@
 // Checks client_profiles BEFORE sending OTP:
 //   - No active profile → 403 (no_account)
 //   - is_coach          → magic link to /dashboard/coach
+//   - coached           → magic link to /dashboard/coaching-hub
 //   - profile_complete  → magic link to /dashboard/tracker
 //   - else              → magic link to /dashboard
 //
 // is_coach is checked first regardless of profile_complete — coaches who
 // happen to have profile_complete=true should still land on Coach Home,
-// not the D2C Job Tracker.
+// not the D2C Job Tracker. coached is checked next so a coached D2C client
+// lands on the Coaching Hub instead of the Job Tracker.
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { isCoached } from "../../_lib/coachedClient"
 import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
@@ -66,11 +69,29 @@ export async function POST(req: NextRequest) {
 
     // Determine redirect:
     //   coaches  → /dashboard/coach (Sprint 2 — Coach Home / "My Clients" landing)
+    //   coached  → /dashboard/coaching-hub (coached client's landing — the Hub)
     //   complete → /dashboard/tracker (returning client lands on Job Tracker)
     //   else     → /dashboard (My Account, gentle on first sign-in)
+    //
+    // coached uses the same definition as /api/profile (isCoached over the active
+    // coach_clients row, via the same service-role client + profile.id). It's only
+    // resolved for non-coach accounts, and defaults to false if the lookup throws
+    // so a transient error never blocks the magic link (worst case: lands on the
+    // tracker/My Account instead of the Hub).
     const appUrl = getAppUrl(req)
+    let coached = false
+    if (!profile.is_coach) {
+      try {
+        coached = await isCoached(supabase, profile.id as string)
+      } catch (e: any) {
+        console.error("[send-link] isCoached lookup failed:", e?.message)
+        coached = false
+      }
+    }
     const redirectTo = profile.is_coach
       ? `${appUrl}/dashboard/coach`
+      : coached
+      ? `${appUrl}/dashboard/coaching-hub`
       : profile.profile_complete
       ? `${appUrl}/dashboard/tracker`
       : `${appUrl}/dashboard`
