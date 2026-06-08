@@ -72,6 +72,59 @@ export function isValidActivityDueDate(v: unknown): v is string | null {
   return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === da
 }
 
+// ── Shared 3-level ownership walk for activity sub-resources (notes, …):
+//    (1) the coach owns coach_clients [id]; (2) the engagement belongs to [id];
+//    (3) the activity belongs to a deliverable of that engagement. Returns the
+//    activity id + the relationship's client_profile_id (denormalized onto child
+//    rows on insert), or null if ANY level fails — callers map null → 404. Mirrors
+//    the walk in the activity status/due-date PATCH route; the [noteId] routes layer
+//    a 4th check (note.engagement_activity_id === [activity_id]) on top. ──
+export async function resolveOwnedEngagementActivity(
+  supabase: SupabaseClient,
+  coachProfileId: string,
+  coachClientId: string,
+  engagementId: string,
+  activityId: string,
+): Promise<{ activityId: string; clientProfileId: string | null } | null> {
+  // (1) coach owns the relationship — and grab client_profile_id for denorm.
+  const { data: rel, error: relErr } = await supabase
+    .from("coach_clients")
+    .select("id, client_profile_id")
+    .eq("id", coachClientId)
+    .eq("coach_profile_id", coachProfileId)
+    .maybeSingle()
+  if (relErr) throw new Error(`Ownership check failed: ${relErr.message}`)
+  if (!rel) return null
+
+  // (2) the engagement belongs to this relationship.
+  const { data: eng, error: engErr } = await supabase
+    .from("coach_client_engagements")
+    .select("id")
+    .eq("id", engagementId)
+    .eq("coach_client_id", coachClientId)
+    .maybeSingle()
+  if (engErr) throw new Error(`Engagement lookup failed: ${engErr.message}`)
+  if (!eng) return null
+
+  // (3) the activity belongs to a deliverable of THIS engagement.
+  const { data: act, error: actErr } = await supabase
+    .from("coach_client_engagement_activities")
+    .select("id, engagement_deliverable_id")
+    .eq("id", activityId)
+    .maybeSingle()
+  if (actErr) throw new Error(`Activity lookup failed: ${actErr.message}`)
+  if (!act) return null
+  const { data: deliv, error: delErr } = await supabase
+    .from("coach_client_engagement_deliverables")
+    .select("engagement_id")
+    .eq("id", act.engagement_deliverable_id)
+    .maybeSingle()
+  if (delErr) throw new Error(`Deliverable lookup failed: ${delErr.message}`)
+  if (!deliv || deliv.engagement_id !== engagementId) return null
+
+  return { activityId: act.id as string, clientProfileId: (rel.client_profile_id as string | null) ?? null }
+}
+
 // ── Resolver: client_profile_id + coach → the single coach_clients.id ──
 // UNIQUE(coach_profile_id, client_profile_id) guarantees at most one. Returns
 // null if this coach has no relationship row for that client profile. The linked
