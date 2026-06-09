@@ -1,8 +1,21 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+
+const CONVERSION_PATH = "/checkout/success";
 
 export default function Analytics() {
+  const pathname = usePathname();
+  // The backend is an app/API host, not a marketing surface. Load Meta Pixel +
+  // Google tags ONLY on the post-purchase conversion page, where PurchaseEvent
+  // fires Purchase / Google Ads / GA4. Every other backend page (dashboard,
+  // positioning, feedback) renders nothing — so no PageView pixel fires off
+  // wrnsignal-api(-staging).vercel.app or localhost. usePathname is SSR-safe
+  // (same value server + client), so no hydration mismatch and no load-timing
+  // delay — PurchaseEvent's fbq/gtag calls are unaffected.
+  if (pathname !== CONVERSION_PATH) return null;
+
   return (
     <>
       {/* Meta Pixel */}
