@@ -386,18 +386,35 @@ export async function POST(req: NextRequest) {
         ms_elapsed: Date.now() - t0,
       }
 
-      // No await. Response returns immediately.
-      supabase
+      // Awaited so insert errors surface in this async context. Still never
+      // fails the user response — on error we log and fall through to return.
+      console.log("[anonymous_runs] insert_attempt", {
+        session_id: analyticsPayload.session_id,
+        decision: analyticsPayload.decision,
+        score: analyticsPayload.score,
+        resume_char_count: analyticsPayload.resume_char_count,
+        jd_char_count: analyticsPayload.jd_char_count,
+        why_code_count: analyticsPayload.why_code_count,
+        risk_code_count: analyticsPayload.risk_code_count,
+        jd_hash: analyticsPayload.jd_hash ? analyticsPayload.jd_hash.slice(0, 12) : null,
+      })
+
+      const { data: insertedRow, error: insertErr } = await supabase
         .from("jobfit_anonymous_runs")
         .insert(analyticsPayload)
-        .then(({ error }) => {
-          if (error) {
-            console.error("[anonymous_runs] insert_failed", {
-              message: error.message,
-              code: (error as any).code,
-            })
-          }
+        .select("id")
+        .single()
+
+      if (insertErr) {
+        console.error("[anonymous_runs] insert_failed", {
+          message: insertErr.message,
+          code: (insertErr as any).code,
+          details: (insertErr as any).details,
+          hint: (insertErr as any).hint,
         })
+      } else {
+        console.log("[anonymous_runs] insert_ok", { id: insertedRow?.id })
+      }
     } catch (analyticsErr: any) {
       console.error(
         "[anonymous_runs] setup_failed",
