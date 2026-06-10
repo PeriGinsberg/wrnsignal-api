@@ -57,17 +57,9 @@ export function ClientHeaderStrip({
     OVERFLOW_MENU_HEIGHT_ESTIMATE,
   )
 
-  // Build summary line from the four populated fields, in order:
-  // FT/internship · target roles · timeframe · location. Empty fields
-  // hidden silently per spec. (school + year are not in schema; see
-  // discovery notes — header omits them.)
-  const summaryParts = [
-    profile.job_type,
-    profile.target_roles,
-    profile.timeline,
-    profile.target_locations,
-  ].filter((v): v is string => !!v && v.trim().length > 0)
-
+  // Summary line (job_type · target_roles · timeline · target_locations)
+  // removed — now fully covered by the "Client Information" card's TARGETING +
+  // JOB TYPE rows directly below this strip (arc 1, Commit 4).
   const engagementStart = profile.engagement_started_at
     ? new Date(profile.engagement_started_at).toLocaleDateString("en-US", {
         month: "short",
@@ -108,18 +100,6 @@ export function ClientHeaderStrip({
           >
             {profile.name || profile.email || "Client"}
           </div>
-          {summaryParts.length > 0 && (
-            <div
-              style={{
-                fontSize: 12,
-                color: T.MUTED,
-                marginTop: 4,
-                lineHeight: 1.5,
-              }}
-            >
-              {summaryParts.join(" · ")}
-            </div>
-          )}
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
             <LifecycleStatusPill
               value={lifecycleStatus}
