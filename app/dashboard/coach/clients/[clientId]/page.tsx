@@ -23,6 +23,8 @@ import type { ApplicationStatus } from "../../../../_lib/applicationStatuses"
 import { SavingSpinner } from "../../SavingSpinner"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { LoadingShell } from "../../LoadingShell"
+import { InfoCard, type InfoGroup } from "../../InfoCard"
+import { formatDate } from "../../formatDate"
 import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
 import { LibraryTab } from "./LibraryTab"
@@ -114,6 +116,127 @@ function Badge({ text, style: s }: { text: string; style: { bg: string; color: s
   )
 }
 
+// ── Client Information card (arc 1, display-only) ──
+// The profile GET `capture` namespace = the coach_clients prospect-capture
+// columns, which persist through convert (Commit 1). Source/education label
+// maps + timeAgo are duplicated inline per the established coach-route pattern
+// (the same maps live on the prospect detail page).
+
+type Capture = {
+  source_category: string | null
+  source_detail: string | null
+  invited_email: string | null
+  phone: string | null
+  linkedin_url: string | null
+  current_title: string | null
+  current_company: string | null
+  location: string | null
+  years_experience_approx: number | null
+  education_status: string | null
+  university: string | null
+  field_of_study: string | null
+  grad_date: string | null
+  target_roles: string | null
+  target_locations: string | null
+  preferred_locations: string | null
+  timeline: string | null
+  job_type: string | null
+  tags: string | null
+  invited_at: string | null
+  last_activity_at: string | null
+}
+
+const SOURCE_LABEL: Record<string, string> = {
+  referral: "Referral", social_media: "Social Media", website: "Website",
+  personal_contact: "Personal Contact", other: "Other",
+}
+const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
+  social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: "#2CA58D" },
+  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: "#4ade80" },
+  other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+}
+const EDUCATION_LABEL: Record<string, string> = {
+  in_school: "In school", graduated: "Graduated", na: "Not applicable",
+}
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return ""
+  const ms = Date.now() - new Date(iso).getTime()
+  if (ms < 0) return "Just now"
+  const d = Math.floor(ms / (24 * 60 * 60 * 1000))
+  if (d === 0) return "Today"
+  if (d === 1) return "Yesterday"
+  if (d < 7) return `${d}d ago`
+  if (d < 30) return `${Math.floor(d / 7)}w ago`
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+
+// Map the capture namespace → InfoCard groups. Lives here (page render), NOT in
+// the dumb InfoCard. 6-field null-coalesce — target_roles, target_locations,
+// preferred_locations, timeline, job_type, invited_email prefer capture and
+// fall back to client_profiles; every other field reads capture directly.
+// Each row's `show` is presence-based, so a group whose rows are all null
+// collapses entirely (InfoCard's empty-group filter): a capture-NULL client
+// shows TARGETING (via fallback) + EMAIL, but no blank CONTACT/EDUCATION.
+function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): InfoGroup[] {
+  const c: Partial<Capture> = cap ?? {}
+  const email = c.invited_email ?? profile.email ?? null
+  const roles = c.target_roles ?? (profile as any).target_roles ?? null
+  const locations = c.target_locations ?? (profile as any).target_locations ?? null
+  const preferred = c.preferred_locations ?? (profile as any).preferred_locations ?? null
+  const timeline = c.timeline ?? (profile as any).timeline ?? null
+  const jobType = c.job_type ?? (profile as any).job_type ?? null
+
+  const sourceStyle = c.source_category ? (SOURCE_STYLE[c.source_category] ?? SOURCE_STYLE.other) : SOURCE_STYLE.other
+  const sourceBadge = c.source_category ? (
+    <span style={{ display: "inline-block", background: sourceStyle.bg, color: sourceStyle.color, fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", padding: "3px 10px", borderRadius: 999 }}>
+      {SOURCE_LABEL[c.source_category] ?? c.source_category}
+    </span>
+  ) : null
+  const phoneVal = c.phone ? (
+    <a href={`tel:${c.phone}`} style={{ color: T.TEXT, textDecoration: "none" }}>{c.phone}</a>
+  ) : null
+  const linkedinVal = c.linkedin_url ? (
+    <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "none" }}>{c.linkedin_url}</a>
+  ) : null
+
+  return [
+    { title: "CONTACT", rows: [
+      { label: "SOURCE", value: sourceBadge, show: !!c.source_category },
+      { label: "DETAIL", value: c.source_detail, show: !!c.source_detail },
+      { label: "EMAIL", value: email, show: !!email },
+      { label: "PHONE", value: phoneVal, show: !!c.phone },
+      { label: "LINKEDIN", value: linkedinVal, show: !!c.linkedin_url },
+    ] },
+    { title: "CURRENT ROLE", rows: [
+      { label: "TITLE", value: c.current_title, show: !!c.current_title },
+      { label: "COMPANY", value: c.current_company, show: !!c.current_company },
+      { label: "LOCATION", value: c.location, show: !!c.location },
+      { label: "EXPERIENCE", value: c.years_experience_approx != null ? `${c.years_experience_approx} yrs` : null, show: c.years_experience_approx != null },
+    ] },
+    { title: "EDUCATION", rows: [
+      { label: "STATUS", value: c.education_status ? (EDUCATION_LABEL[c.education_status] ?? c.education_status) : null, show: !!c.education_status },
+      { label: "UNIVERSITY", value: c.university, show: !!c.university },
+      { label: "FIELD", value: c.field_of_study, show: !!c.field_of_study },
+      { label: "GRAD DATE", value: c.grad_date ? formatDate(c.grad_date) : null, show: !!c.grad_date },
+    ] },
+    { title: "TARGETING", rows: [
+      { label: "ROLES", value: roles, show: !!roles },
+      { label: "LOCATIONS", value: locations, show: !!locations },
+      { label: "PREFERRED", value: preferred, show: !!preferred },
+      { label: "TIMELINE", value: timeline, show: !!timeline },
+      { label: "JOB TYPE", value: jobType, show: !!jobType },
+    ] },
+    { title: "OTHER", rows: [
+      { label: "TAGS", value: c.tags, show: !!c.tags },
+      { label: "ADDED", value: c.invited_at ? formatDate(c.invited_at) : null, show: !!c.invited_at },
+      { label: "ACTIVITY", value: c.last_activity_at ? timeAgo(c.last_activity_at) : null, show: !!c.last_activity_at },
+    ] },
+  ]
+}
+
 export default function CoachClientPage() {
   const params = useParams()
   const router = useRouter()
@@ -140,6 +263,9 @@ export default function CoachClientPage() {
   const [coachClientId, setCoachClientId] = useState<string | null>(null)
   const [acceptedAt, setAcceptedAt] = useState<string | null>(null)
   const [lifecycleStatus, setLifecycleStatus] = useState<LifecycleStatus>("Active")
+  // Prospect-capture columns from the profile GET `capture` namespace (Commit 1),
+  // rendered as the read-only "Client Information" card (arc 1).
+  const [capture, setCapture] = useState<Capture | null>(null)
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
   const [clientApps, setClientApps] = useState<ClientApplication[]>([])
   const [loading, setLoading] = useState(true)
@@ -227,6 +353,7 @@ export default function CoachClientPage() {
       setCoachClientId(profileData.coach_client_id ?? null)
       setAcceptedAt(profileData.accepted_at ?? null)
       setLifecycleStatus((profileData.lifecycle_status as LifecycleStatus) ?? "Active")
+      setCapture((profileData.capture as Capture | null) ?? null)
       setClientApps(trackerData.applications || [])
       setCoachRecs(trackerData.recommendations || [])
 
@@ -536,6 +663,13 @@ export default function CoachClientPage() {
           }}
           onLifecycleStatusChange={setLifecycleStatus}
         />
+      )}
+
+      {/* Client Information — read-only capture card (arc 1), below the header
+          strip and above the tab nav so it's always-visible header content.
+          Data mapping lives in buildClientInfoGroups (not inside InfoCard). */}
+      {clientProfile && (
+        <InfoCard title="Client Information" groups={buildClientInfoGroups(capture, clientProfile)} />
       )}
 
       {/* Tab bar */}
