@@ -131,10 +131,82 @@ export async function GET(
       .eq("profile_id", clientProfileId)
       .order("created_at", { ascending: false })
 
+    // Prospect-capture columns live on the SAME coach_clients row: a converted
+    // prospect keeps its capture fields through convert (lifecycle just flips to
+    // 'Active'), so they're already present on the linked-client row (NULL when
+    // never captured — e.g. clients created via create-client). Surfaces the
+    // coach_clients capture columns in the "Client Information" card on the
+    // client detail page. Scoped SELECT by access.id; deliberately NOT folded
+    // into the shared verifyCoachAccess helper (blast radius). Returned under a
+    // dedicated `capture` namespace, never flattened into `profile`.
+    const CAPTURE_COLS = [
+      "source_category", "source_detail", "invited_email", "phone",
+      "linkedin_url", "current_title", "current_company", "location",
+      "years_experience_approx", "education_status", "university",
+      "field_of_study", "grad_date", "target_roles", "target_locations",
+      "preferred_locations", "timeline", "job_type", "tags", "invited_at",
+      // phase _at columns — used only to compute last_activity_at (mirrors the
+      // prospect route's computeLastActivityAt); not returned individually.
+      "phase_initial_contact_made_at", "phase_discovery_call_scheduled_at",
+      "phase_discovery_call_completed_at", "phase_sow_sent_at",
+      "phase_sow_signed_at", "phase_invoice_sent_at", "phase_invoice_paid_at",
+    ].join(", ")
+
+    const { data: ccData } = await supabase
+      .from("coach_clients")
+      .select(CAPTURE_COLS)
+      .eq("id", access.id)
+      .maybeSingle()
+    const cc = ccData as Record<string, any> | null
+
+    let capture: Record<string, any> | null = null
+    if (cc) {
+      // last_activity_at: newest of the 7 phase timestamps (timestamp-or-null).
+      // Each phase _at is a candidate in the max, so all 7 are required inputs.
+      // (Note-derived activity dropped — phase timestamps only.)
+      const activityCandidates = [
+        cc.phase_initial_contact_made_at,
+        cc.phase_discovery_call_scheduled_at,
+        cc.phase_discovery_call_completed_at,
+        cc.phase_sow_sent_at,
+        cc.phase_sow_signed_at,
+        cc.phase_invoice_sent_at,
+        cc.phase_invoice_paid_at,
+      ].filter((v): v is string => v !== null && v !== undefined)
+      const lastActivityAt = activityCandidates.length
+        ? activityCandidates.reduce((a, b) => (a > b ? a : b))
+        : null
+
+      capture = {
+        source_category: cc.source_category,
+        source_detail: cc.source_detail,
+        invited_email: cc.invited_email,
+        phone: cc.phone,
+        linkedin_url: cc.linkedin_url,
+        current_title: cc.current_title,
+        current_company: cc.current_company,
+        location: cc.location,
+        years_experience_approx: cc.years_experience_approx,
+        education_status: cc.education_status,
+        university: cc.university,
+        field_of_study: cc.field_of_study,
+        grad_date: cc.grad_date,
+        target_roles: cc.target_roles,
+        target_locations: cc.target_locations,
+        preferred_locations: cc.preferred_locations,
+        timeline: cc.timeline,
+        job_type: cc.job_type,
+        tags: cc.tags,
+        invited_at: cc.invited_at,
+        last_activity_at: lastActivityAt,
+      }
+    }
+
     return withCorsJson(req, {
       ok: true,
       profile,
       personas: personas || [],
+      capture,
       // The coach_clients.id for (this client_profile_id, authed coach) —
       // already resolved by verifyCoachAccess above (access.id). The
       // Engagements tab is keyed by it (the engagement API uses coach_clients.id,
