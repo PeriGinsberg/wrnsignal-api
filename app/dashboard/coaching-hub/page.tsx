@@ -230,6 +230,11 @@ function MyPlanSection({
   onRetry: () => void
   onSetStatus: (id: string, status: string) => void
 }) {
+  // Collapse-by-default: show only the first milestone group; "Show all"
+  // reveals the rest. Local to this section (not lifted). No toggle when
+  // there's 0–1 group (nothing to expand).
+  const [expanded, setExpanded] = useState(false)
+  const visibleGroups = expanded ? groups : groups.slice(0, 1)
   return (
     <section style={{ ...card, padding: 22 }}>
       <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
@@ -256,8 +261,9 @@ function MyPlanSection({
           No plan items assigned to you yet — your coach will add them here.
         </p>
       ) : (
+        <>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {groups.map((g) => (
+          {visibleGroups.map((g) => (
             <div key={g.deliverable_id}>
               <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
                 {g.name}
@@ -315,6 +321,22 @@ function MyPlanSection({
             </div>
           ))}
         </div>
+        {groups.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            style={{
+              marginTop: 16, background: "none", border: "none", padding: 0,
+              fontSize: 12, fontWeight: 700, color: T.WRN_BLUE, cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {expanded
+              ? "Show less"
+              : `Show all (${groups.flatMap((g) => g.activities).length} activities)`}
+          </button>
+        )}
+        </>
       )}
     </section>
   )
