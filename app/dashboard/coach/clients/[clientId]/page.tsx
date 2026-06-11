@@ -689,6 +689,19 @@ export default function CoachClientPage() {
               border: tab === t.id ? `1px solid rgba(254,176,106,0.35)` : `1px solid ${T.BORDER_SOFT}`,
               background: tab === t.id ? "rgba(254,176,106,0.08)" : "rgba(255,255,255,0.04)",
               color: tab === t.id ? T.WRN_ORANGE : T.MUTED,
+              transition: "background 120ms ease, color 120ms ease, border-color 120ms ease",
+            }}
+            onMouseEnter={(e) => {
+              if (tab !== t.id) {
+                ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.08)"
+                ;(e.currentTarget.style as any).color = T.TEXT
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (tab !== t.id) {
+                ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.04)"
+                ;(e.currentTarget.style as any).color = T.MUTED
+              }
             }}
           >
             {t.label}
