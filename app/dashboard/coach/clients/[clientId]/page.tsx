@@ -312,6 +312,10 @@ export default function CoachClientPage() {
   // LinkedIn helper state (source tab)
   const [showLinkedInHelper, setShowLinkedInHelper] = useState(false)
   const [linkedInPasteText, setLinkedInPasteText] = useState("")
+  // Blocked-site popup (mirrors the D2C JobFit flow): explains the
+  // cut/paste workaround and offers to open the posting in a new window
+  // (on the button click — a user gesture — so popup blockers allow it).
+  const [showBlockedPopup, setShowBlockedPopup] = useState(false)
 
   // Notes tab + Add Note slide-in panel state.
   // notesRefreshKey gets bumped after the slide-in saves a note so the
@@ -412,6 +416,7 @@ export default function CoachClientPage() {
     if (!sourceUrl.trim()) return
     setFetchingUrl(true)
     setShowLinkedInHelper(false)
+    setShowBlockedPopup(false)
     setRunError('')
     try {
       const res = await authFetch("/api/parse-job-url", {
@@ -427,6 +432,7 @@ export default function CoachClientPage() {
           setRunError("Fetched the URL but could not extract job details. Try pasting the job description manually below.")
         }
       } else if (j.code === "LINKEDIN") {
+        setShowBlockedPopup(true)
         setShowLinkedInHelper(true)
         setLinkedInPasteText("")
       } else {
@@ -1196,8 +1202,52 @@ export default function CoachClientPage() {
               </p>
             </div>
 
+            {/* Blocked-site popup — mirrors the D2C JobFit flow. Explains the
+                cut/paste workaround, offers to open the posting in a new window
+                (window.open stays on the button click so popup blockers allow
+                it), then reveals the paste helper below once dismissed. */}
+            {showBlockedPopup && (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 1000,
+                  background: "rgba(0,0,0,0.6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 20,
+                }}
+              >
+                <div style={{ ...card, padding: 28, maxWidth: 460, width: "100%", textAlign: "center" }}>
+                  <div style={{ ...eyebrow, color: "#FBBF24", fontSize: 9, marginBottom: 10 }}>LINKEDIN</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: T.TEXT, marginBottom: 12 }}>
+                    We couldn't read this job posting
+                  </div>
+                  <p style={{ fontSize: 13, color: T.MUTED, lineHeight: "20px", marginBottom: 20, textAlign: "left" }}>
+                    LinkedIn blocks automated access to job postings. To continue, open the
+                    posting, copy the full job description, and paste it below.
+                  </p>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      onClick={() => { window.open(sourceUrl.trim(), "_blank"); setShowBlockedPopup(false) }}
+                      style={{ ...btnPrimary, flex: 1, fontSize: 13, padding: "11px 16px" }}
+                    >
+                      Open Job Posting
+                    </button>
+                    <button
+                      onClick={() => setShowBlockedPopup(false)}
+                      style={{ ...btnSecondary, flex: 1, fontSize: 13, padding: "11px 16px" }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* LinkedIn helper */}
-            {showLinkedInHelper && (
+            {showLinkedInHelper && !showBlockedPopup && (
               <div style={{
                 background: "rgba(253,186,40,0.08)", border: "1px solid rgba(253,186,40,0.3)",
                 borderRadius: 14, padding: 20, marginBottom: 20,
