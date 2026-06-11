@@ -136,6 +136,9 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
   const [connection, setConnection] = useState<ConnectionMeta | null>(null)
   const [retryAfter, setRetryAfter] = useState<number | null>(null)
   const [errorBanner, setErrorBanner] = useState<string | null>(null)
+  // Collapse-by-default: show the first 5 of today's events; "Show all"
+  // reveals the rest. Render-only, client-side over already-fetched events.
+  const [expanded, setExpanded] = useState(false)
 
   async function fetchToday() {
     setState("loading")
@@ -368,6 +371,10 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
   // loaded_with_events / loaded_empty — shared chrome.
   const allDay = events.filter((e) => e.is_all_day)
   const timed = events.filter((e) => !e.is_all_day)
+  // Display order = all-day first, then timed (matches the rendered order); the
+  // collapse slices THIS, not the raw events array, so "first 5" = first 5 shown.
+  const ordered = [...allDay, ...timed]
+  const visible = expanded ? ordered : ordered.slice(0, 5)
 
   return (
     <ScheduleCard>
@@ -385,22 +392,25 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
           </p>
         </NestedBox>
       ) : (
+        <>
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-          {allDay.map((e) => (
-            <li
-              key={e.id}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 8,
-                background: "rgba(255,255,255,0.03)",
-                border: `1px solid ${T.BORDER_SOFT}`,
-              }}
-            >
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.DIM, letterSpacing: 0.4 }}>ALL DAY</div>
-              <div style={{ fontSize: 13, color: T.TEXT, marginTop: 2 }}>{truncate(e.subject || "(no title)")}</div>
-            </li>
-          ))}
-          {timed.map((e) => {
+          {visible.map((e) => {
+            if (e.is_all_day) {
+              return (
+                <li
+                  key={e.id}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    background: "rgba(255,255,255,0.03)",
+                    border: `1px solid ${T.BORDER_SOFT}`,
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.DIM, letterSpacing: 0.4 }}>ALL DAY</div>
+                  <div style={{ fontSize: 13, color: T.TEXT, marginTop: 2 }}>{truncate(e.subject || "(no title)")}</div>
+                </li>
+              )
+            }
             const attendeeLabel = e.attendee_count > 1 ? `${e.attendee_count} attendees` : null
             return (
               <li
@@ -433,6 +443,20 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
             )
           })}
         </ul>
+        {ordered.length > 5 && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            style={{
+              marginTop: 16, background: "none", border: "none", padding: 0,
+              fontSize: 12, fontWeight: 700, color: T.WRN_BLUE, cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {expanded ? "Show less" : `Show all (${ordered.length} events)`}
+          </button>
+        )}
+        </>
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14 }}>
