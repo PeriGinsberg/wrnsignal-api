@@ -171,10 +171,30 @@ async function handlePurchase(event: any) {
 
   console.log("[revenuecat-webhook] profile_created:", email)
 
-  // OTP email for the mobile code-entry screen. No options at all — matches
-  // the Stripe webhook's isMobile branch exactly. Passing options.data biased
-  // Supabase toward the bare "Confirm signup" template instead of the branded
-  // "Magic Link" template, so it's omitted (see Unit 2.2 followup).
+  // Pre-create the auth user so the subsequent signInWithOtp routes through
+  // the branded "Magic Link" template instead of the bare "Confirm signup"
+  // template. email_confirm: true suppresses Supabase's auto-confirmation
+  // email and marks the user confirmed, so signInWithOtp treats them as an
+  // existing user. Mirrors the coach create-client pattern (create-client
+  // route.ts:138-142). New-customer branch only — the idempotent_skip and
+  // linked_iap_to_existing paths returned earlier (their auth user exists).
+  const { error: createErr } = await supabase.auth.admin.createUser({
+    email,
+    email_confirm: true,
+  })
+  if (createErr) {
+    // Already-exists (race / re-fire) is benign — we signInWithOtp regardless.
+    // Only surface unexpected errors.
+    if (!createErr.message.toLowerCase().includes("already")) {
+      console.error("[revenuecat-webhook] admin.createUser failed:", createErr.message)
+    }
+  } else {
+    console.log("[revenuecat-webhook] auth_user_created:", email)
+  }
+
+  // signInWithOtp on the now-confirmed user routes through the branded
+  // "Magic Link" template (not "Confirm signup"). No options — matches the
+  // Stripe webhook's isMobile branch.
   const { error: otpErr } = await supabase.auth.signInWithOtp({
     email,
   })
