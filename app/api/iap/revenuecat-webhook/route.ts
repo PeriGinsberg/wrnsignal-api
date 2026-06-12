@@ -171,12 +171,12 @@ async function handlePurchase(event: any) {
 
   console.log("[revenuecat-webhook] profile_created:", email)
 
-  // OTP email for the mobile code-entry screen. No emailRedirectTo (mobile
-  // types the 6-digit code, not a magic link) — same as the Stripe webhook's
-  // isMobile branch. data.source tags the auth user as mobile-originated.
+  // OTP email for the mobile code-entry screen. No options at all — matches
+  // the Stripe webhook's isMobile branch exactly. Passing options.data biased
+  // Supabase toward the bare "Confirm signup" template instead of the branded
+  // "Magic Link" template, so it's omitted (see Unit 2.2 followup).
   const { error: otpErr } = await supabase.auth.signInWithOtp({
     email,
-    options: { data: { source: "mobile" } },
   })
   if (otpErr) {
     console.error("[revenuecat-webhook] OTP send failed:", otpErr.message)
