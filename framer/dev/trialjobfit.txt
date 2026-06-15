@@ -48,6 +48,36 @@ const OPEN_FLOW_HANDOFF_KEY = "signal_open_trial_handoff"
 // (stale tab, user navigated back hours later) and show the input view.
 const OPEN_FLOW_HANDOFF_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes
 
+// Non-destructive peek at the v2 landing handoff. Mirrors the read in the
+// mount effect exactly (same key, parse, ts, freshness, min-length checks)
+// but never removes the key. Used by the loading initializer so a handoff
+// entry starts on the loader instead of flashing the input view, and re-used
+// by the effect, which stays the sole owner of removeItem + the auto-run.
+// Returns null when absent, stale, invalid, or storage is unavailable
+// (SSR / blocked).
+function peekFreshOpenFlowHandoff(): { resume: string; jd: string } | null {
+    if (typeof window === "undefined") return null
+    try {
+        const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw) as {
+            resume_text?: string
+            job_description?: string
+            ts?: number
+        }
+        const ts = typeof parsed.ts === "number" ? parsed.ts : 0
+        const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
+        const r = String(parsed.resume_text || "").trim()
+        const j = String(parsed.job_description || "").trim()
+        if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
+            return { resume: r, jd: j }
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
 // Destination for upgrade CTAs when isOpenFlow=true. The new upgrade page
 // reads the handoff key below to render a verdict-driven personalized view.
 // Gated-flow users continue to use the existing direct-to-Stripe path
@@ -302,7 +332,9 @@ export default function SignalTrialJobFit() {
     const [jd, setJd] = React.useState("")
 
     // ── State ───────────────────────────────────────────────────────
-    const [loading, setLoading] = React.useState(false)
+    const [loading, setLoading] = React.useState(
+        () => peekFreshOpenFlowHandoff() !== null
+    )
     const [error, setError] = React.useState("")
     const [response, setResponse] = React.useState<TrialResponse | null>(null)
     const [upgradeLoading, setUpgradeLoading] = React.useState(false)
@@ -496,40 +528,33 @@ export default function SignalTrialJobFit() {
         // just submitted a NEW form on the landing page and wants a fresh
         // scan — restoring a cached result here would silently show the
         // prior scan instead of running the new one.
-        try {
-            const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
-            if (raw) {
-                // Single-use: clear immediately so back-button reloads don't
-                // re-trigger the analysis.
+        // Same non-destructive read the loading initializer used, so the two
+        // paths cannot diverge. This effect is the SOLE owner of removeItem
+        // and runAnalysis.
+        const handoff = peekFreshOpenFlowHandoff()
+        if (handoff) {
+            // Single-use: clear so back-button reloads don't re-trigger the
+            // analysis.
+            try {
                 sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
-                const parsed = JSON.parse(raw) as {
-                    resume_text?: string
-                    job_description?: string
-                    ts?: number
-                }
-                const ts = typeof parsed.ts === "number" ? parsed.ts : 0
-                const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
-                const r = String(parsed.resume_text || "").trim()
-                const j = String(parsed.job_description || "").trim()
-                if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
-                    // Drop any stale prior-scan cache — a fresh submit
-                    // supersedes whatever the user last looked at.
-                    try {
-                        sessionStorage.removeItem(RESULT_CACHE_KEY)
-                    } catch {}
-                    // Mirror values into state so the input view (used as
-                    // error fallback) shows them pre-filled if the run fails.
-                    setResume(r)
-                    setJd(j)
-                    setIsOpenFlow(true)
-                    // Fire-and-forget — runAnalysis owns its own loading state.
-                    void runAnalysis({ email: "", resume: r, jd: j, useOpenEndpoint: true })
-                    return
-                }
-            }
-        } catch {
-            // sessionStorage / JSON parse failure: silently fall through to
-            // the cached result restore below.
+            } catch {}
+            // A fresh submit supersedes any prior-scan cache.
+            try {
+                sessionStorage.removeItem(RESULT_CACHE_KEY)
+            } catch {}
+            // Mirror values into state so the input view (used as error
+            // fallback) shows them pre-filled if the run fails.
+            setResume(handoff.resume)
+            setJd(handoff.jd)
+            setIsOpenFlow(true)
+            // Fire-and-forget; runAnalysis owns its own loading state.
+            void runAnalysis({
+                email: "",
+                resume: handoff.resume,
+                jd: handoff.jd,
+                useOpenEndpoint: true,
+            })
+            return
         }
 
         // ── Cached result restore (back-nav from /signal/upgrade) ──
