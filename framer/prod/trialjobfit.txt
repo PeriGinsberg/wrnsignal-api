@@ -48,6 +48,36 @@ const OPEN_FLOW_HANDOFF_KEY = "signal_open_trial_handoff"
 // (stale tab, user navigated back hours later) and show the input view.
 const OPEN_FLOW_HANDOFF_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes
 
+// Non-destructive peek at the v2 landing handoff. Mirrors the read in the
+// mount effect exactly (same key, parse, ts, freshness, min-length checks)
+// but never removes the key. Used by the loading initializer so a handoff
+// entry starts on the loader instead of flashing the input view, and re-used
+// by the effect, which stays the sole owner of removeItem + the auto-run.
+// Returns null when absent, stale, invalid, or storage is unavailable
+// (SSR / blocked).
+function peekFreshOpenFlowHandoff(): { resume: string; jd: string } | null {
+    if (typeof window === "undefined") return null
+    try {
+        const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw) as {
+            resume_text?: string
+            job_description?: string
+            ts?: number
+        }
+        const ts = typeof parsed.ts === "number" ? parsed.ts : 0
+        const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
+        const r = String(parsed.resume_text || "").trim()
+        const j = String(parsed.job_description || "").trim()
+        if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
+            return { resume: r, jd: j }
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
 // Destination for upgrade CTAs when isOpenFlow=true. The new upgrade page
 // reads the handoff key below to render a verdict-driven personalized view.
 // Gated-flow users continue to use the existing direct-to-Stripe path
@@ -302,7 +332,9 @@ export default function SignalTrialJobFit() {
     const [jd, setJd] = React.useState("")
 
     // ── State ───────────────────────────────────────────────────────
-    const [loading, setLoading] = React.useState(false)
+    const [loading, setLoading] = React.useState(
+        () => peekFreshOpenFlowHandoff() !== null
+    )
     const [error, setError] = React.useState("")
     const [response, setResponse] = React.useState<TrialResponse | null>(null)
     const [upgradeLoading, setUpgradeLoading] = React.useState(false)
@@ -496,40 +528,33 @@ export default function SignalTrialJobFit() {
         // just submitted a NEW form on the landing page and wants a fresh
         // scan — restoring a cached result here would silently show the
         // prior scan instead of running the new one.
-        try {
-            const raw = sessionStorage.getItem(OPEN_FLOW_HANDOFF_KEY)
-            if (raw) {
-                // Single-use: clear immediately so back-button reloads don't
-                // re-trigger the analysis.
+        // Same non-destructive read the loading initializer used, so the two
+        // paths cannot diverge. This effect is the SOLE owner of removeItem
+        // and runAnalysis.
+        const handoff = peekFreshOpenFlowHandoff()
+        if (handoff) {
+            // Single-use: clear so back-button reloads don't re-trigger the
+            // analysis.
+            try {
                 sessionStorage.removeItem(OPEN_FLOW_HANDOFF_KEY)
-                const parsed = JSON.parse(raw) as {
-                    resume_text?: string
-                    job_description?: string
-                    ts?: number
-                }
-                const ts = typeof parsed.ts === "number" ? parsed.ts : 0
-                const fresh = ts && Date.now() - ts < OPEN_FLOW_HANDOFF_MAX_AGE_MS
-                const r = String(parsed.resume_text || "").trim()
-                const j = String(parsed.job_description || "").trim()
-                if (fresh && r.length >= MIN_RESUME_CHARS && j.length >= MIN_JD_CHARS) {
-                    // Drop any stale prior-scan cache — a fresh submit
-                    // supersedes whatever the user last looked at.
-                    try {
-                        sessionStorage.removeItem(RESULT_CACHE_KEY)
-                    } catch {}
-                    // Mirror values into state so the input view (used as
-                    // error fallback) shows them pre-filled if the run fails.
-                    setResume(r)
-                    setJd(j)
-                    setIsOpenFlow(true)
-                    // Fire-and-forget — runAnalysis owns its own loading state.
-                    void runAnalysis({ email: "", resume: r, jd: j, useOpenEndpoint: true })
-                    return
-                }
-            }
-        } catch {
-            // sessionStorage / JSON parse failure: silently fall through to
-            // the cached result restore below.
+            } catch {}
+            // A fresh submit supersedes any prior-scan cache.
+            try {
+                sessionStorage.removeItem(RESULT_CACHE_KEY)
+            } catch {}
+            // Mirror values into state so the input view (used as error
+            // fallback) shows them pre-filled if the run fails.
+            setResume(handoff.resume)
+            setJd(handoff.jd)
+            setIsOpenFlow(true)
+            // Fire-and-forget; runAnalysis owns its own loading state.
+            void runAnalysis({
+                email: "",
+                resume: handoff.resume,
+                jd: handoff.jd,
+                useOpenEndpoint: true,
+            })
+            return
         }
 
         // ── Cached result restore (back-nav from /signal/upgrade) ──
@@ -790,6 +815,10 @@ export default function SignalTrialJobFit() {
                 @keyframes trialSpin {
                     from { transform: rotate(0deg); }
                     to   { transform: rotate(360deg); }
+                }
+                @keyframes trialBounce {
+                    0%, 100% { transform: translateY(0); }
+                    50%      { transform: translateY(4px); }
                 }
             `}</style>
             <Orbs hasResult={!!response} />
@@ -1176,6 +1205,42 @@ function SuccessView(props: {
                 </div>
             </div>
 
+            {/* COMPACT EARLY UPGRADE CTA — smaller sibling of the bottom UpgradeBox,
+                placed high so users don't have to scroll past 5 locked cards to see
+                the pitch. Reuses the shared onUpgrade handler (distinct cta_source). */}
+            <div style={upgradeBoxCompact}>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: C.body,
+                        fontWeight: 700,
+                        lineHeight: 1.4,
+                        flex: "1 1 200px",
+                    }}
+                >
+                    Your full plays are below, or unlock everything now
+                    {upgrade.price ? ` for ${upgrade.price}` : ""}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => onUpgrade("trial_upgrade_cta_top")}
+                    disabled={upgradeLoading}
+                    style={{
+                        ...primaryBtn,
+                        width: "auto",
+                        padding: "10px 18px",
+                        fontSize: 13,
+                        background: upgradeLoading
+                            ? "#3A3A3A"
+                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
+                    }}
+                >
+                    {upgradeLoading
+                        ? "Setting up checkout..."
+                        : "Unlock full SIGNAL →"}
+                </button>
+            </div>
+
             {/* WHY + RISK */}
             <div
                 style={{
@@ -1216,6 +1281,35 @@ function SuccessView(props: {
                         ))}
                     </SectionCard>
                 ) : null}
+            </div>
+
+            {/* SCROLL CUE — passive affordance signaling more content below the cut */}
+            <div style={{ textAlign: "center" as const, marginTop: 14 }}>
+                <div
+                    style={{
+                        animation: "trialBounce 1.6s ease-in-out infinite",
+                        lineHeight: 1,
+                    }}
+                >
+                    <svg
+                        width="16"
+                        height="10"
+                        viewBox="0 0 16 10"
+                        fill="none"
+                        style={{ display: "inline-block" }}
+                    >
+                        <path
+                            d="M1 1L8 8L15 1"
+                            stroke={C.dim}
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                </div>
+                <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
+                    More below
+                </div>
             </div>
 
             {/* LOCKED TEASERS */}
@@ -2891,6 +2985,25 @@ const upgradeBox: React.CSSProperties = {
     borderRadius: 16,
     flexWrap: "wrap" as const,
     boxSizing: "border-box" as const,
+}
+
+// Compact early-CTA container — same visual language as upgradeBox at reduced
+// scale (smaller padding/gap/radius). Sits between the WHY/RISK grid and the
+// locked teasers so the upgrade pitch is visible without scrolling to the
+// bottom of the page.
+const upgradeBoxCompact: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 14,
+    padding: "14px 16px",
+    background: "linear-gradient(135deg, #0D1828, #0A1F35)",
+    border: "1px solid " + C.orange + "33",
+    borderRadius: 14,
+    flexWrap: "wrap" as const,
+    boxSizing: "border-box" as const,
+    marginTop: 14,
 }
 
 // ── Tiny helpers used inline above ─────────────────────────────────────────
