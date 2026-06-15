@@ -771,6 +771,14 @@ export default function SignalUpgradePage(props: { style?: React.CSSProperties }
         try {
             const raw = sessionStorage.getItem(HANDOFF_KEY)
             if (!raw) {
+                // Cold entry (no handoff): honor a ?src= attribution tag from
+                // the link so a pre-sold buyer arriving via the landing's
+                // secondary CTA still carries a distinct source into checkout.
+                try {
+                    const sp = new URLSearchParams(window.location.search)
+                    const src = sp.get("src")
+                    if (src) setCtaSource(src)
+                } catch {}
                 setHydrated(true)
                 return
             }

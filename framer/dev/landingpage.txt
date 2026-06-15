@@ -32,6 +32,10 @@ const TRIAL_RESULT_URL = "/signal/jobfit-run-trial"
 // works regardless of which marketing domain the user landed on.
 const LOGIN_URL = "/signal/jobfit"
 
+// Paid upgrade destination for pre-sold buyers who skip the free scan.
+// Relative/same-origin so the visitor stays on their current domain.
+const UPGRADE_URL = "/signal/upgrade"
+
 // sessionStorage handoff key consumed by trialjobfit.txt on mount.
 const HANDOFF_KEY = "signal_open_trial_handoff"
 
@@ -775,6 +779,20 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
         }
     }
 
+    function handleSecondaryUpgradeClick() {
+        // Pre-sold buyer skipping the free scan. Fire a distinct funnel event
+        // only (no Lead, no fbq, no conversion) and let the anchor navigate.
+        try {
+            if (typeof window !== "undefined" && (window as any).gtag) {
+                (window as any).gtag("event", "upgrade_cta_click", {
+                    event_category: "funnel",
+                    cta_source: "landing_secondary",
+                    ...getEventUtmParams(),
+                })
+            }
+        } catch {}
+    }
+
     const jdChars = jdText.length
     const jdMet = jdChars >= 100
     const charCountClass = "v2-char-count" + (jdMet ? " met" : "")
@@ -1159,6 +1177,26 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
                     <p className="v2-final-cta-trust">
                         No account · No credit card · ~30-second results
                     </p>
+                    <div style={{ marginTop: 20 }}>
+                        <span
+                            style={{
+                                display: "block",
+                                color: "rgba(255,255,255,0.4)",
+                                fontSize: 12,
+                                marginBottom: 10,
+                            }}
+                        >
+                            or
+                        </span>
+                        <a
+                            href={UPGRADE_URL + "?src=landing_secondary"}
+                            target="_top"
+                            className="v2-header-btn v2-header-btn-white"
+                            onClick={handleSecondaryUpgradeClick}
+                        >
+                            Already sold? Unlock SIGNAL now, $99 →
+                        </a>
+                    </div>
                 </section>
 
                 {/* ===== FOOTER ===== */}
