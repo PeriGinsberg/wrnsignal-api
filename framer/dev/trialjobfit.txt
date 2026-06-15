@@ -1180,6 +1180,42 @@ function SuccessView(props: {
                 </div>
             </div>
 
+            {/* COMPACT EARLY UPGRADE CTA — smaller sibling of the bottom UpgradeBox,
+                placed high so users don't have to scroll past 5 locked cards to see
+                the pitch. Reuses the shared onUpgrade handler (distinct cta_source). */}
+            <div style={upgradeBoxCompact}>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: C.body,
+                        fontWeight: 700,
+                        lineHeight: 1.4,
+                        flex: "1 1 200px",
+                    }}
+                >
+                    Your full plays are below, or unlock everything now
+                    {upgrade.price ? ` for ${upgrade.price}` : ""}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => onUpgrade("trial_upgrade_cta_top")}
+                    disabled={upgradeLoading}
+                    style={{
+                        ...primaryBtn,
+                        width: "auto",
+                        padding: "10px 18px",
+                        fontSize: 13,
+                        background: upgradeLoading
+                            ? "#3A3A3A"
+                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
+                    }}
+                >
+                    {upgradeLoading
+                        ? "Setting up checkout..."
+                        : "Unlock full SIGNAL →"}
+                </button>
+            </div>
+
             {/* WHY + RISK */}
             <div
                 style={{
@@ -1220,42 +1256,6 @@ function SuccessView(props: {
                         ))}
                     </SectionCard>
                 ) : null}
-            </div>
-
-            {/* COMPACT EARLY UPGRADE CTA — smaller sibling of the bottom UpgradeBox,
-                placed high so users don't have to scroll past 5 locked cards to see
-                the pitch. Reuses the shared onUpgrade handler (distinct cta_source). */}
-            <div style={upgradeBoxCompact}>
-                <div
-                    style={{
-                        fontSize: 13,
-                        color: C.body,
-                        fontWeight: 700,
-                        lineHeight: 1.4,
-                        flex: "1 1 200px",
-                    }}
-                >
-                    Your full plays are below, or unlock everything now
-                    {upgrade.price ? ` for ${upgrade.price}` : ""}
-                </div>
-                <button
-                    type="button"
-                    onClick={() => onUpgrade("trial_upgrade_cta_top")}
-                    disabled={upgradeLoading}
-                    style={{
-                        ...primaryBtn,
-                        width: "auto",
-                        padding: "10px 18px",
-                        fontSize: 13,
-                        background: upgradeLoading
-                            ? "#3A3A3A"
-                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
-                    }}
-                >
-                    {upgradeLoading
-                        ? "Setting up checkout..."
-                        : "Unlock full SIGNAL →"}
-                </button>
             </div>
 
             {/* SCROLL CUE — passive affordance signaling more content below the cut */}
