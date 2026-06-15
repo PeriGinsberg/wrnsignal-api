@@ -791,6 +791,10 @@ export default function SignalTrialJobFit() {
                     from { transform: rotate(0deg); }
                     to   { transform: rotate(360deg); }
                 }
+                @keyframes trialBounce {
+                    0%, 100% { transform: translateY(0); }
+                    50%      { transform: translateY(4px); }
+                }
             `}</style>
             <Orbs hasResult={!!response} />
             <div style={{ position: "relative" as const, zIndex: 1 }}>
@@ -1216,6 +1220,71 @@ function SuccessView(props: {
                         ))}
                     </SectionCard>
                 ) : null}
+            </div>
+
+            {/* COMPACT EARLY UPGRADE CTA — smaller sibling of the bottom UpgradeBox,
+                placed high so users don't have to scroll past 5 locked cards to see
+                the pitch. Reuses the shared onUpgrade handler (distinct cta_source). */}
+            <div style={upgradeBoxCompact}>
+                <div
+                    style={{
+                        fontSize: 13,
+                        color: C.body,
+                        fontWeight: 700,
+                        lineHeight: 1.4,
+                        flex: "1 1 200px",
+                    }}
+                >
+                    Your full plays are below, or unlock everything now
+                    {upgrade.price ? ` for ${upgrade.price}` : ""}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => onUpgrade("trial_upgrade_cta_top")}
+                    disabled={upgradeLoading}
+                    style={{
+                        ...primaryBtn,
+                        width: "auto",
+                        padding: "10px 18px",
+                        fontSize: 13,
+                        background: upgradeLoading
+                            ? "#3A3A3A"
+                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
+                    }}
+                >
+                    {upgradeLoading
+                        ? "Setting up checkout..."
+                        : "Unlock full SIGNAL →"}
+                </button>
+            </div>
+
+            {/* SCROLL CUE — passive affordance signaling more content below the cut */}
+            <div style={{ textAlign: "center" as const, marginTop: 14 }}>
+                <div
+                    style={{
+                        animation: "trialBounce 1.6s ease-in-out infinite",
+                        lineHeight: 1,
+                    }}
+                >
+                    <svg
+                        width="16"
+                        height="10"
+                        viewBox="0 0 16 10"
+                        fill="none"
+                        style={{ display: "inline-block" }}
+                    >
+                        <path
+                            d="M1 1L8 8L15 1"
+                            stroke={C.dim}
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                </div>
+                <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
+                    More below
+                </div>
             </div>
 
             {/* LOCKED TEASERS */}
@@ -2891,6 +2960,25 @@ const upgradeBox: React.CSSProperties = {
     borderRadius: 16,
     flexWrap: "wrap" as const,
     boxSizing: "border-box" as const,
+}
+
+// Compact early-CTA container — same visual language as upgradeBox at reduced
+// scale (smaller padding/gap/radius). Sits between the WHY/RISK grid and the
+// locked teasers so the upgrade pitch is visible without scrolling to the
+// bottom of the page.
+const upgradeBoxCompact: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 14,
+    padding: "14px 16px",
+    background: "linear-gradient(135deg, #0D1828, #0A1F35)",
+    border: "1px solid " + C.orange + "33",
+    borderRadius: 14,
+    flexWrap: "wrap" as const,
+    boxSizing: "border-box" as const,
+    marginTop: 14,
 }
 
 // ── Tiny helpers used inline above ─────────────────────────────────────────
