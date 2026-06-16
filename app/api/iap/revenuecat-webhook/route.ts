@@ -80,6 +80,12 @@ async function handlePurchase(event: any) {
   const originalTransactionId = event.original_transaction_id ?? null
   const productId = event.product_id ?? null
 
+  // Gross USD price → integer cents (parity with purchases.amount_cents).
+  // RevenueCat sends price=NULL when unknown → store null, don't guess.
+  const priceUsd = typeof event.price === "number" ? event.price : null
+  const amountCents = priceUsd === null ? null : Math.round(priceUsd * 100)
+  const currency = typeof event.currency === "string" ? event.currency.toLowerCase() : null
+
   if (!email) {
     console.error("[revenuecat-webhook] purchase with no app_user_id")
     return
@@ -133,12 +139,19 @@ async function handlePurchase(event: any) {
       return
     }
     console.log("[revenuecat-webhook] linked_iap_to_existing:", email)
+    await recordIapPurchase(supabase, {
+      clientProfileId: existing.id,
+      email,
+      appleTransactionId,
+      revenuecatAppUserId: event.app_user_id ?? email,
+      productId, amountCents, currency, purchasedAtIso,
+    })
     return
   }
 
   // New customer: insert a paid-active row. profile_text="" + profile_complete
   // =false mirror the Stripe webhook's new-row shape (intake completes later).
-  const { error: insertErr } = await supabase
+  const { data: inserted, error: insertErr } = await supabase
     .from("client_profiles")
     .insert({
       email,
@@ -152,6 +165,8 @@ async function handlePurchase(event: any) {
       created_at: nowIso,
       updated_at: nowIso,
     })
+    .select("id")
+    .maybeSingle()
 
   if (insertErr) {
     // 23505 = unique_violation (apple_transaction_id or email) from a
@@ -170,6 +185,15 @@ async function handlePurchase(event: any) {
   }
 
   console.log("[revenuecat-webhook] profile_created:", email)
+
+  // Record app revenue (separate from the client_profiles access grant above).
+  await recordIapPurchase(supabase, {
+    clientProfileId: inserted?.id ?? null,
+    email,
+    appleTransactionId,
+    revenuecatAppUserId: event.app_user_id ?? email,
+    productId, amountCents, currency, purchasedAtIso,
+  })
 
   // Pre-create the auth user so the subsequent signInWithOtp routes through
   // the branded "Magic Link" template instead of the bare "Confirm signup"
@@ -203,6 +227,46 @@ async function handlePurchase(event: any) {
   } else {
     console.log("[revenuecat-webhook] OTP code sent to:", email)
   }
+}
+
+// ── Record app revenue into iap_purchases (IAP-side mirror of purchases) ──
+// Best-effort: errors are logged, never thrown, so the webhook still 200s.
+// Idempotent via UNIQUE(apple_transaction_id) → a re-fire no-ops on 23505.
+async function recordIapPurchase(
+  supabase: SupabaseClient,
+  p: {
+    clientProfileId: string | null
+    email: string
+    appleTransactionId: string
+    revenuecatAppUserId: string
+    productId: string | null
+    amountCents: number | null
+    currency: string | null
+    purchasedAtIso: string
+  }
+) {
+  const { error } = await supabase.from("iap_purchases").insert({
+    client_profile_id: p.clientProfileId,
+    email: p.email,
+    apple_transaction_id: p.appleTransactionId,
+    revenuecat_app_user_id: p.revenuecatAppUserId,
+    product_id: p.productId,
+    amount_cents: p.amountCents,
+    currency: p.currency,
+    purchased_at: p.purchasedAtIso,
+    // created_at: db default; refunded_at: null until a refund event
+  })
+  if (error) {
+    if (error.code === "23505") {
+      console.log("[revenuecat-webhook] iap_purchase_exists:", p.appleTransactionId)
+      return
+    }
+    console.error("[revenuecat-webhook] iap_purchase insert failed:", error.message)
+    return
+  }
+  console.log("[revenuecat-webhook] iap_purchase_recorded:", {
+    email: p.email, amount_cents: p.amountCents, currency: p.currency,
+  })
 }
 
 // ── Refund / cancellation: CANCELLATION / REFUND ──────────────────────
@@ -245,4 +309,14 @@ async function handleRefund(event: any) {
   console.log("[revenuecat-webhook] refund_applied:", {
     email: match.email, transaction_id: appleTransactionId,
   })
+
+  // Mirror the refund onto the revenue row so refunded app revenue is
+  // excluded from totals (same as the web purchases.refunded_at flow).
+  const { error: iapRefundErr } = await supabase
+    .from("iap_purchases")
+    .update({ refunded_at: nowIso })
+    .eq("apple_transaction_id", appleTransactionId)
+  if (iapRefundErr) {
+    console.error("[revenuecat-webhook] iap refund update failed:", iapRefundErr.message)
+  }
 }
