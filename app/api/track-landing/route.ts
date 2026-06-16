@@ -3,8 +3,21 @@ import { corsOptionsResponse } from "../_lib/cors"
 
 export const runtime = "nodejs"
 
+// sendBeacon issues *credentialed* cross-origin requests, so the preflight and
+// the responses must carry Access-Control-Allow-Credentials: true alongside the
+// echoed (non-wildcard) origin, or the browser rejects the preflight. The
+// shared corsOptionsResponse already echoes the allowlisted origin; this adds
+// the credentials header on top. Scoped to this route only — cors.ts and
+// /api/track are intentionally left unchanged.
+function corsCreds(req: Request): Response {
+  const base = corsOptionsResponse(req.headers.get("origin"))
+  const headers = new Headers(base.headers)
+  headers.set("Access-Control-Allow-Credentials", "true")
+  return new Response(null, { status: 204, headers })
+}
+
 export async function OPTIONS(req: Request) {
-  return corsOptionsResponse(req.headers.get("origin"))
+  return corsCreds(req)
 }
 
 // Replicated from app/api/track/route.ts so the landing logger filters bots
@@ -38,7 +51,7 @@ export async function POST(req: Request) {
     // Bot filter before any insert — landing pages attract crawlers and
     // link-unfurlers that would inflate the count. 204, no insert.
     if (looksLikeBot(req)) {
-      return corsOptionsResponse(req.headers.get("origin"))
+      return corsCreds(req)
     }
 
     // Tolerant parse: handles application/json (fetch fallback) and
@@ -65,5 +78,5 @@ export async function POST(req: Request) {
     // Swallow — logging must never surface an error to the page.
   }
   // 204, null body, CORS headers — fast ack for sendBeacon / keepalive fetch.
-  return corsOptionsResponse(req.headers.get("origin"))
+  return corsCreds(req)
 }
