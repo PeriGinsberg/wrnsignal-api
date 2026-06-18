@@ -1,0 +1,179 @@
+# Ticket 1 — Context-aware capability matcher (build plan)
+
+**Status: CLOSED (2026-06-18) — rules track complete.** Shipped on
+`feat/jobfit-ticket1`: Stage 1 (word-boundary PhraseSpec schema), Stage 2a
+(finance context anchors), Stage 2b lever 1 (coursework-vs-experience hygiene),
+Stage 2b lever 2 (JD-classifier precision, `27dc9dff`).
+
+Results: **Catherine/J6 fixed** (Apply→Pass); **Jordan/Zurich Apply/80 → Review/61**
+(2a halved him, 2b lever 2 reclassified the underwriting JD Sales→Operations);
+hard guards (George not-Pass, Matthew/Allison J9+J10 Apply) and all 7/7 true-fits
+held; 68-case regression clean at every gate.
+
+The remaining false-positives (Jordan→Pass last step, Ava/J4 & Ava/J6) are
+**proven SEMANTIC** ("right skill, wrong domain") — not rules-solvable. They move
+to a separate ticket: [jobfit-semantic-relevance-layer-scope.md](./jobfit-semantic-relevance-layer-scope.md),
+whose acceptance gate includes all three. Closing this ticket is deliberate: it
+ships the rules wins instead of holding them behind a different (semantic) fix.
+
+**Stage 4 (re-enable Fix C) stays IN this ticket's scope — not dropped.** It is a
+deterministic/rules change that was gated only on the matcher upgrade, which is
+now done. See the Stage 4 status note below.
+
+**Decision:** Ticket 1 was THE fix for the free-path over-crediting problem
+(see [jobfit-ticket-acceptance-suite.md](./jobfit-ticket-acceptance-suite.md)).
+Ticket 2 (tag-membership) is downgraded to an optional backstop.
+
+## Problem (one line)
+`CAPABILITY_RULES` phrases are bare `.includes()` substring matches with no word
+boundaries or context, so generic language ("analysis", "report", "strategic
+analysis", "Excel", "PowerPoint", "outreach") satisfies specialized requirements
+(financial modeling, underwriting, etc.), producing false-positive Applies
+(Jordan/Zurich Apply/80, Ava→IB, Catherine→FinAnalyst).
+
+## Fix shape
+Pre-compile each rule phrase to a **word-boundary regex** plus optional
+**`requiresNearby`** (a finance/role anchor that must co-occur) and
+**`negativeContext`** (kill matches in constraint/benefit/EEO lines). Touches
+all 30+ detectors. (CLAUDE.md debt #1.)
+
+---
+
+## Stages (each = its own reviewable commit + gate)
+
+### Stage 0 — Acceptance harness + baseline freeze (no engine change)
+- Turn the ad-hoc validation into a committed, runnable harness that executes
+  the frozen acceptance suite (Jordan, the 9 must-fire/must-not-fire cells,
+  the discrimination sets) and the 26-case regression, capturing CURRENT
+  (pre-fix) outputs as the "before" snapshot.
+- **Gate:** harness runs green capturing baselines; zero engine code touched;
+  `regression-check.ts` clean against existing `baseline.json`.
+
+### Stage 1 — Rule-schema refactor + word boundaries (behavior-near-neutral)
+- Introduce the compiled rule shape `{ phrase, requiresNearby?, negativeContext?,
+  wordBoundary }` and the compiler (phrase → `\b…\b` regex). Migrate all 30+
+  detectors to the new shape with NO nearby/negative context yet — i.e. a pure
+  structural refactor that only adds word boundaries.
+- Expected diffs: a controlled set where bare-substring bugs stop firing
+  (e.g. `content_execution` on "no pure social media content roles").
+- **Gate:** 26-case regression — review EVERY diff line; each must be an intended
+  word-boundary improvement. Acceptance harness: no regressions on true-fits.
+
+### Stage 2a — Context guards: FINANCE family first (highest-value)
+- Author `requiresNearby` / `negativeContext` for the finance detectors driving
+  the worst false-positives: `financial_analysis` / `analysis_reporting` require
+  a finance/valuation anchor near "analysis"; "report/findings" ≠ financial
+  reporting; "strategic analysis" (marketing) ≠ financial modeling; PowerPoint /
+  Excel as weak-not-fit signals.
+- **Gate (the money gate):** acceptance suite — **Jordan→Pass, Catherine→Pass,
+  Ava down from Apply**, WHILE George/Matthew/true finance fits preserved.
+  26-case regression reviewed.
+
+### Stage 2b — Context guards: remaining detectors
+- Apply the same treatment to the other detector families (marketing, sales,
+  ops, legal, etc.) flagged by regression/acceptance diffs.
+- **Gate:** acceptance suite all-green (all must-fire fire, all must-not-fire
+  don't); 26-case regression reviewed.
+
+### Stage 3 — (Optional, related) JD-classifier precision
+- Tighten the JD-side misclassifications surfaced by the suite (SDR→IT_Software,
+  Data Scientist→Engineering, underwriting→Sales). NOT required to fix Jordan
+  (Stage 2 fixes him via requirement matching regardless of family), but it
+  improves the classifier the whole engine relies on. Can be split to a
+  follow-up ticket.
+- **Gate:** Rutstein/J10 no longer mis-penalized in any backstop; no family
+  regressions in the 26 cases.
+
+### Stage 4 — Re-enable Fix C (family-distance override)  — READY, NOT YET ATTEMPTED
+- Fix C was HELD pending this matcher upgrade ([[project_jobfit_fix_c_held]]).
+- **Status (2026-06-18): the blocker is cleared.** Fix C was held specifically
+  for "CAPABILITY_RULES context-aware matching," which is exactly what Stages
+  1–2b delivered (word boundaries + finance anchors + classifier precision).
+  Its precondition is now met. It is **deferred but ready**, not dropped: it
+  remains in Ticket 1's scope as the one open item, to attempt as its own
+  reviewable commit when picked up. Re-confirm the original hold reason against
+  the shipped matcher before re-enabling (the override could now behave
+  differently with anchored matching).
+- **Gate:** Fix C's own regression cases + full 68-case + acceptance suite
+  (true-fits and hard guards must still hold — Fix C reshapes family-distance
+  penalties, so the sales true-fits Allison J9/J10 are the primary risk).
+
+### Stage 5 — Baseline update + prod distribution recheck + ship
+- After every diff is reviewed, update `baseline.json`; run
+  `inspect-prod-runs.ts` and confirm the decision/score distribution shift is
+  the intended reduction in over-credited Applies (no unexpected collapses).
+- **Gate:** baseline committed with code; prod structural health reviewed.
+
+---
+
+## Regression plan (run at every gate)
+1. **26-case baseline** (`tests/jobfit-regression/regression-check.ts`) — review
+   every diff line; update `baseline.json` only after verification (CLAUDE.md
+   workflow).
+2. **Frozen acceptance suite** — Stage 0 makes it runnable; gate = all MUST-FIRE
+   fire / MUST-NOT-FIRE don't, **including Jordan→Pass** and the true-fit
+   protections (George, Matthew, Lees/J5, Allison, Catherine/J5, Ava/J7).
+3. **Prod-run distribution** (`inspect-prod-runs.ts`) — before/after the decision,
+   score, and family distributions; confirm the shift is the intended
+   over-credit reduction, direction only (history is not rewritten).
+
+## Blast radius
+- **All 30+ CAPABILITY_RULES detectors** change shape (Stage 1).
+- **Scores move broadly**: the over-credit class drops — expect a cohort of
+  Apply→Review and Review→Pass, concentrated in cross-field / wrong-specialty
+  résumés on specialized JDs. **True in-field fits should stay put** (protected
+  by the acceptance suite's must-not-fire cases).
+- **`baseline.json` changes materially** → all 26 cases must be re-audited.
+- **508+ historical prod runs**: distribution shifts (some past Applies would now
+  be Review/Pass); not rewritten, just confirmed in direction.
+- **Unblocks Fix C** (Stage 4).
+- **Primary risk:** over-correction (tightening starves true fits of matches).
+  Mitigated by the must-not-fire / true-fit acceptance cases at every gate.
+
+## Estimated session count
+**~5–8 sessions** (largest refactor in the engine):
+- Stage 0: ~0.5–1
+- Stage 1: ~1–2 (30+ detectors)
+- Stage 2a+2b: ~2–3 (judgment-heavy, iterative with regression)
+- Stage 3 (if included): ~1
+- Stage 4: ~0.5–1
+- Stage 5: folded into gates + ~0.5 final
+
+Each stage is independently shippable behind its gate; we can pause after any
+stage with the engine in a consistent, regression-clean state.
+
+## Investigation notes (from Stage 0)
+
+- **Scorer reads the email local-part (candidate name).** Found while trying to
+  PII-scrub the batch CSV: replacing candidate emails (even domain-preserving,
+  `name@gmail.com` → `redacted@gmail.com`) shifts scoring on `batch-40926b` and
+  `batch-40926d` (gain risks / drop a tier), while phone and LinkedIn scrubs are
+  fully score-neutral. All email domains are `gmail.com`, so the signal is the
+  **local part** — i.e. the contact-line name is leaking into extraction. The
+  scorer should not depend on a contact-line name; investigate during Stage 1/2
+  (likely the contact header bleeding into a requirement/section unit) and add a
+  regression case once fixed. This is also why the batch CSV is kept local-only
+  (can't be neutrally scrubbed) — see tests/jobfit-regression/README.md.
+
+## Residuals (post-2b)
+
+- **Ava → SEMANTIC residual (confirmed Stage 2b lever 1).** Coursework downgrade
+  (lever 1) weakened her "Financial Accounting" course credit but did NOT flip
+  her: she's carried by `analysis_reporting` firing on genuine quantitative
+  marketing analytics ("…KPIs, conversion rates, channel-driven sales") which
+  seeds adjacent `financial_analysis`. The credit is real analytics; the error
+  is treating marketing/KPI analytics as *financial* analysis for an IB/finance
+  role. That's an evidence-vs-requirement RELEVANCE judgment keyword/adjacency
+  rules can't make cleanly (the blunt adjacency cut, 1b, over-broadened). Needs
+  the semantic/LLM (or embedding) evidence-relevance layer.
+
+## Backlog (out of Ticket 1 scope)
+
+- **Add a lab/science capability rule.** Surfaced in Stage 2a: Lily Stein (a
+  bench scientist) lost her only credit when the analysis_reporting anchor
+  correctly stopped a wet-lab protein assay ("BCA Analysis") from matching the
+  data/BI capability. She has genuine in-field fit for Scientist/Chemist/QC
+  Analyst roles that NO capability captures (40926e QC Analyst dropped Apply→
+  Review as accepted collateral). Fix is a dedicated lab/science capability —
+  NOT re-crediting wet-lab work as BI analysis (that would create new
+  false-positives, e.g. a scientist scored as a data analyst). Separate ticket.

@@ -34,17 +34,35 @@ type CapabilityRule = {
   label: string
   kind: EvidenceKind
   functionTag?: FunctionTag
-  profilePhrases: string[]
-  jobPhrases: string[]
+  profilePhrases: PhraseSpec[]
+  jobPhrases: PhraseSpec[]
   adjacentKeys?: string[]
-  aliases?: string[]
-  profileWeakPhrases?: string[]
-  jobWeakPhrases?: string[]
-  profileBoostPhrases?: string[]
-  jobBoostPhrases?: string[]
+  aliases?: PhraseSpec[]
+  profileWeakPhrases?: PhraseSpec[]
+  jobWeakPhrases?: PhraseSpec[]
+  profileBoostPhrases?: PhraseSpec[]
+  jobBoostPhrases?: PhraseSpec[]
   minMatches?: number
   suppressAnalyticsHeavy?: boolean
 }
+
+// Stage 2a (Ticket 1): anchors that gate generic analysis/reporting profile
+// phrases so they only credit analysis_reporting (and its finance adjacency)
+// when the SAME line carries a quantitative/financial signal. Stops generic
+// "report"/"analysis"/"metrics" on comms/marketing/sports lines from seeding
+// finance credit, while real finance/analytics lines (which carry these
+// anchors) still match. Deliberately excludes pure-marketing terms.
+const QUANT_ANALYSIS_ANCHORS: string[] = [
+  "data", "dataset", "dashboard", "kpi", "kpis", "sql", "excel", "spreadsheet",
+  "pivottable", "statistic", "statistical", "regression", "forecast", "forecasting",
+  "variance", "budget", "budgeting", "financial", "finance", "revenue", "p&l",
+  "profit", "margin", "quantitative", "analytics", "tableau", "power bi",
+  "valuation", "ebitda", "cash flow", "financial model", "financial modeling",
+  // Stage 2a (B): legitimate analytical-work context — protects real analysts
+  // whose evidence is phrased without a narrow quant token (e.g. 0410m's
+  // "comprehensive market research and competitive analysis").
+  "market research", "competitive analysis",
+]
 
 const CAPABILITY_RULES: CapabilityRule[] = [
   {
@@ -222,14 +240,14 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     functionTag: "data_analytics_bi",
     profilePhrases: [
       "dashboard",
-      "reporting",
-      "analysis",
+      { phrase: "reporting", requiresNearby: QUANT_ANALYSIS_ANCHORS },
+      { phrase: "analysis", requiresNearby: QUANT_ANALYSIS_ANCHORS },
       "data analysis",
       "data visualization",
-      "metrics",
+      { phrase: "metrics", requiresNearby: QUANT_ANALYSIS_ANCHORS },
       "forecast",
       "trend analysis",
-      "report",
+      { phrase: "report", requiresNearby: QUANT_ANALYSIS_ANCHORS },
       "reporting cadence",
     ],
     jobPhrases: [
@@ -520,7 +538,11 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "cold calling",
       "outreach",
       "lead generation",
-      "new business",
+      // Stage 2b lever 2: insurance "issuing new business and renewal policies"
+      // is policy issuance, NOT sales pipeline. Suppress sales prospecting when
+      // the line carries insurance/underwriting context (fixes the Zurich
+      // UA underwriting JD mis-classifying as Sales).
+      { phrase: "new business", negativeContext: ["policy", "policies", "policyholder", "underwriting", "underwriter", "insurance", "insurer", "endorsement", "endorsements", "renewal", "renewals", "premium", "premiums", "claims", "coverage", "account servicing"] },
       "sales calls",
       "sales presentations",
       // Pharma / field sales language
@@ -801,7 +823,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "acumed customers",
       "product portfolio",
       "device product knowledge",
-      "industry knowledge",
+      { phrase: "industry knowledge", requiresNearby: ["device", "medical", "clinical", "implant", "orthopedic", "healthcare", "pharma", "hospital", "biotech", "life sciences"] },
     ],
     adjacentKeys: ["hospital_or_environment", "product_training_enablement"],
   },
@@ -1433,7 +1455,7 @@ const FALLBACK_JOB_RULES: Array<{
   label: string
   kind: EvidenceKind
   functionTag?: FunctionTag
-  phrases: string[]
+  phrases: PhraseSpec[]
   requiredness?: "core" | "supporting"
 }> = [
   {
@@ -1552,22 +1574,53 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-function includesPhrase(hay: string, phrase: string): boolean {
-  const p = norm(phrase)
-  if (!p) return false
-  const pattern = new RegExp(`(^|\\W)${escapeRegExp(p)}($|\\W)`, "i")
-  return pattern.test(hay)
+// Compiled rule-phrase shape. A bare string matches as a whole token (word
+// boundaries are already enforced below). A spec object can additionally require
+// a co-occurring anchor (requiresNearby — at least one must also match) or be
+// suppressed by a negativeContext term — both consumed from Stage 2 onward to
+// make matching context-aware. wordBoundary defaults true; set false only to
+// opt a phrase back into raw substring matching. An unset spec behaves exactly
+// like the bare string, so introducing this shape is behavior-neutral until
+// rules actually populate requiresNearby/negativeContext.
+type PhraseSpec =
+  | string
+  | {
+      phrase: string
+      requiresNearby?: string[]
+      negativeContext?: string[]
+      wordBoundary?: boolean
+    }
+
+function phraseText(spec: PhraseSpec): string {
+  return typeof spec === "string" ? spec : spec.phrase
 }
 
-function includesAny(hay: string, phrases: string[]): boolean {
+function includesPhrase(hay: string, spec: PhraseSpec): boolean {
+  const p = norm(phraseText(spec))
+  if (!p) return false
+  const wordBoundary = typeof spec === "string" ? true : spec.wordBoundary ?? true
+  const matched = wordBoundary
+    ? new RegExp(`(^|\\W)${escapeRegExp(p)}($|\\W)`, "i").test(hay)
+    : hay.includes(p)
+  if (!matched) return false
+  if (typeof spec !== "string") {
+    // negativeContext: any present term kills the match.
+    if (spec.negativeContext?.some((t) => includesPhrase(hay, t))) return false
+    // requiresNearby: at least one anchor must also be present.
+    if (spec.requiresNearby && !spec.requiresNearby.some((t) => includesPhrase(hay, t))) return false
+  }
+  return true
+}
+
+function includesAny(hay: string, phrases: PhraseSpec[]): boolean {
   return phrases.some((p) => includesPhrase(hay, p))
 }
 
-function countHits(hay: string, phrases: string[]): number {
+function countHits(hay: string, phrases: PhraseSpec[]): number {
   return phrases.reduce((acc, p) => acc + (includesPhrase(hay, p) ? 1 : 0), 0)
 }
 
-function countWeakHits(hay: string, phrases?: string[]): number {
+function countWeakHits(hay: string, phrases?: PhraseSpec[]): number {
   if (!phrases?.length) return 0
   return countHits(hay, phrases)
 }
@@ -2143,6 +2196,15 @@ function profileRuleStrength(
 
   strength += boostHits
   strength -= weakHits * 3
+
+  // Stage 2b lever 1: coursework is academic exposure, not work experience.
+  // When the matched evidence line is a coursework/curriculum listing, downgrade
+  // hard so a course title ("Financial Accounting") doesn't score like real
+  // accounting WORK. General rule across all capabilities (function matches lean
+  // on this most). Real experience lines are unaffected.
+  if (/\b(relevant\s+)?coursework\b|\bcourses?\s*:|\bcurriculum\b/i.test(cleaned)) {
+    strength -= 6
+  }
 
   if (
     rule.key === "client_commercial_work" &&

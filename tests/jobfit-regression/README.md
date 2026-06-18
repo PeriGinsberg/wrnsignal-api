@@ -99,3 +99,60 @@ Exit code is 0 if all pass, non-zero otherwise. Use in CI.
 
 For bullet quality, use the `/api/jobfit/debug-review` endpoint which runs
 an LLM sanity-check on any scoring result.
+
+## Deterministic in-process suite (`regression-check.ts` + `baseline.json`)
+
+Separate from the live-endpoint `run.ts` above, `regression-check.ts` runs all
+cases **in-process through `runJobFit` (deterministic, no LLM)** and diffs a
+snapshot (decision / score / why+risk counts / family / gate) against
+`baseline.json`. This is the gate to run after any scoring/extraction change:
+
+```bash
+npx tsx tests/jobfit-regression/regression-check.ts                  # diff vs baseline (exit 1 on drift)
+npx tsx tests/jobfit-regression/regression-check.ts --update-baseline  # re-freeze after reviewing every diff
+```
+
+It runs 68 cases = 21 prod-issue batch + synthetic CSV + inline retest cases.
+
+### ⚠ Local-only batch fixture — `issues/040926ProdIssues.csv` (NOT in git)
+
+The 21 `batch-40926*` prod-issue cases load from `issues/040926ProdIssues.csv`
+at the repo root. **This file is intentionally NOT committed** — it contains
+real candidate contact PII (emails), and the scorer reads the email
+local-part, so the contacts can't be scrubbed without changing scores (see the
+Ticket 1 investigation note in `docs/jobfit-ticket1-plan.md`). `regression-check.ts`
+**skips the batch silently** if the file is absent (you'll see "Baseline cases
+missing from live run"), which previously hid this gap.
+
+**Recover it (per checkout):**
+```bash
+mkdir -p issues
+cp "/c/Users/perig/wrnsignal-api-archive/2026-04-28/issues/040926ProdIssues.csv" issues/040926ProdIssues.csv
+```
+`issues/.gitignore` keeps the CSV from being accidentally committed. After
+recovery, `regression-check.ts` should report "All 68 cases match baseline."
+
+## Acceptance gate (Ticket 1) — `acceptance/`
+
+`acceptance/acceptance-check.ts` runs the frozen free-path acceptance suite
+(real-world Jordan/Zurich + the false-positive and true-fit cases) and asserts
+target verdicts:
+
+```bash
+npx tsx tests/jobfit-regression/acceptance/acceptance-check.ts                  # RED until Ticket 1 lands
+npx tsx tests/jobfit-regression/acceptance/acceptance-check.ts --update-baseline
+```
+
+- **false-positive** cases must come down (Jordan→Pass, Catherine/J6→Pass,
+  Ava/J4 & Ava/J6 → not Apply). **RED now by design**; flips green across Ticket 1
+  Stages 1–2b.
+- **true-fit** cases must stay (Apply-or-better; George must not drop to Pass).
+  A true-fit failing = a regression / over-correction.
+
+Inputs are **LOCAL-ONLY** (gitignored): `acceptance/fixtures.local.ts` (real
+candidate résumés/JDs the scorer reads — can't be neutrally scrubbed) and
+`acceptance/haiku-overrides.local.json` (frozen Haiku pre-pass output, so runs
+are reproducible yet faithful to the live funnel). The harness +
+`acceptance/acceptance-baseline.json` (outputs only) are committed; on a checkout
+without the local fixtures the harness **skips**. Regenerate the fixtures from
+the source résumé/JD text if lost.
