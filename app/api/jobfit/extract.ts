@@ -1989,7 +1989,9 @@ function extractToolMentions(text: string): string[] {
   return Array.from(out)
 }
 
-function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
+type FamilyAggregate = { family: JobFamily; topScore: number; margin: number }
+
+function familyAggregateFromFunctionTags(tags: FunctionTag[]): FamilyAggregate {
   const score: Record<JobFamily, number> = {
     Consulting: 0,
     Marketing: 0,
@@ -2095,9 +2097,75 @@ function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
 
   // Minimum threshold — prevents single weak-tag noise from winning.
   // Strong single-tag families (Engineering/IT/Legal/Trades at +8) always pass.
-  if (bestScore < 4) return "Other"
+  if (bestScore < 4) return { family: "Other", topScore: bestScore, margin: 0 }
 
-  return best
+  // margin = winner's score minus the best score among all OTHER families.
+  // A tie at the top yields margin 0 (ambiguous → the Fix C guards won't act).
+  let secondScore = 0
+  for (const family of ordered) {
+    if (family !== best && score[family] > secondScore) secondScore = score[family]
+  }
+
+  return { family: best, topScore: bestScore, margin: bestScore - secondScore }
+}
+
+// Thin wrapper preserving the prior JobFamily-only contract for existing call
+// sites (jobFamilyFromTags fallback, profile-side inference, etc.).
+function familyFromFunctionTags(tags: FunctionTag[]): JobFamily {
+  return familyAggregateFromFunctionTags(tags).family
+}
+
+// ── Fix C: JD family-distance override ───────────────────────────────────────
+// The title-cascade family (jobFamily) is normally trusted over the function-
+// tag aggregate. But when a JD's TITLE misclassifies the role while its BODY
+// (function tags) confidently points to a DIFFERENT, non-adjacent family, the
+// body should win — e.g. a "Client Associate" (Finance title) whose body is an
+// advisor-marketing/content role (Marketing tags). Held since 2026-05-07
+// pending context-aware matching; re-enabled after the JD-side anchoring
+// pre-step de-noised the tag aggregate. See docs/jobfit-ticket1-plan.md Stage 4
+// and project_jobfit_fix_c_held.
+//
+// Adjacency below = "close cousin" (distance 1): overlapping fields where the
+// title is the better signal and tag spillover is expected, so we NEVER
+// override them (protects e.g. Sales→Marketing true-fits, medical-device
+// Engineering, product marketing). Any pair NOT listed is distance 2
+// (override-eligible). Undirected; each pair listed once.
+const FAMILY_CLOSE_COUSINS: ReadonlyArray<readonly [JobFamily, JobFamily]> = [
+  // technical
+  ["Engineering", "IT_Software"],
+  ["Engineering", "ProductManagement"],
+  ["Engineering", "Healthcare"], // biomedical / medical device / life sciences
+  ["Engineering", "Analytics"],
+  ["IT_Software", "ProductManagement"],
+  ["IT_Software", "Analytics"],
+  ["IT_Software", "Finance"], // fintech / quant dev
+  // finance / quant
+  ["Finance", "Accounting"],
+  ["Finance", "Analytics"],
+  ["Finance", "Consulting"],
+  ["Finance", "Sales"], // financial advisor / wealth sales
+  // strategy / ops / people
+  ["Consulting", "Operations"],
+  ["Consulting", "Analytics"],
+  ["Consulting", "Marketing"], // growth / brand strategy
+  ["Consulting", "HR"],
+  ["Operations", "HR"],
+  ["HR", "Legal"], // compliance / people-policy overlap
+  ["Legal", "Government"], // policy / regulatory
+  // commercial
+  ["Sales", "Marketing"],
+  ["Marketing", "ProductManagement"], // product marketing
+  ["Sales", "PreMed"], // medical / clinical sales
+  // medical
+  ["Healthcare", "PreMed"],
+]
+
+function familyDistance(a: JobFamily, b: JobFamily): number {
+  if (a === b) return 0
+  const adjacent = FAMILY_CLOSE_COUSINS.some(
+    ([x, y]) => (x === a && y === b) || (x === b && y === a)
+  )
+  return adjacent ? 1 : 2
 }
 
 function makeProfileUnit(
@@ -3826,12 +3894,13 @@ export function extractJobSignals(
     functionTags.push("legal_regulatory")
   }
 
-  const jobFamilyFromTags = familyFromFunctionTags(functionTags)
+  const tagAggregate = familyAggregateFromFunctionTags(functionTags)
+  const jobFamilyFromTags = tagAggregate.family
 
   // Family assignment cascade — title overrides beat tag-based inference.
   // Priority order: hard-field titles first, then business-field titles,
   // then tag-based fallback.
-  const jobFamily: JobFamily = jobTitleIsLegal
+  let jobFamily: JobFamily = jobTitleIsLegal
     ? "Legal"
     : isLegalOpsContext
     ? "Other"
@@ -3868,6 +3937,22 @@ export function extractJobSignals(
                               : jobTitleIsSales
                                 ? "Sales"
                                 : jobFamilyFromTags
+
+  // Fix C — family-distance override. Trust the body (tags) over a
+  // misclassifying title when the confident tag family is a non-adjacent
+  // (distance >= 2) field. All four guards required; see FAMILY_CLOSE_COUSINS.
+  let jobFamilyOverrideNote: string | null = null
+  if (
+    jobFamily !== jobFamilyFromTags &&
+    jobFamilyFromTags !== "Other" &&
+    familyDistance(jobFamily, jobFamilyFromTags) >= 2 &&
+    tagAggregate.margin >= 2 &&
+    tagAggregate.topScore >= 8
+  ) {
+    jobFamilyOverrideNote = `Fix C: family overridden ${jobFamily} → ${jobFamilyFromTags} (tag top=${tagAggregate.topScore}, margin=${tagAggregate.margin}, distance>=2).`
+    jobFamily = jobFamilyFromTags
+  }
+
   const analytics = detectAnalytics(jobTextRaw, functionTags, requirementUnits)
   const location = detectLocationMode(jobTextRaw)
   const yearsRequired = extractYearsRequired(normalized)
@@ -4547,6 +4632,7 @@ return {
         built.jobUnits.length === 0
           ? "Weak-posting fallback extraction activated because no standard requirement units were detected."
           : "Standard extraction path used.",
+        ...(jobFamilyOverrideNote ? [jobFamilyOverrideNote] : []),
       ],
     },
     location,
