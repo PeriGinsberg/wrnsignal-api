@@ -83,7 +83,9 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     ],
     jobPhrases: [
       "brand marketing",
-      "campaign",
+      // Bare "campaign" fires on sales lines where an SDR/rep gives feedback
+      // TO marketing on campaign effectiveness — that is sales, not brand work.
+      { phrase: "campaign", negativeContext: ["lead quality", "feedback to marketing", "qualified leads"] },
       "positioning",
       "go-to-market",
       "messaging",
@@ -115,7 +117,11 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "messaging",
     ],
     jobPhrases: [
-      "communications",
+      // "communications" listed as a DEGREE FIELD ("degree in … Communications,
+      // … or related field") is not communications WORK — suppress in that
+      // enumeration. A real comms responsibility line still fires via the
+      // other phrases (public relations, media relations, press release, …).
+      { phrase: "communications", negativeContext: ["related field", "degree in"] },
       "public relations",
       "media relations",
       "press release",
@@ -172,10 +178,14 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "newsletter",
     ],
     jobPhrases: [
-      "social media",
+      // "social media" as a sales prospecting CHANNEL (outbound/lead-gen) is
+      // not content/marketing work — suppress when the line is sales-flavored.
+      { phrase: "social media", negativeContext: ["prospecting", "outbound", "cold call", "cold-call", "qualified leads", "lead generation", "sales development"] },
       "content creation",
       "content marketing",
-      "content production",
+      // "content production" inside a company-description sentence (founding
+      // year, revenue, "divisions") is org boilerplate, not a responsibility.
+      { phrase: "content production", negativeContext: ["founded in", "annual revenue", "revolutionized", "headquartered"] },
       "instagram",
       "tiktok",
       "social channel",
@@ -921,7 +931,9 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "legal team",
       "litigation",
       "legislative",
-      "safety standards",
+      // Operational/EHS safety compliance (OSHA, DOT) is Operations work, not
+      // legal/policy/regulatory practice — suppress the legal_regulatory tag.
+      { phrase: "safety standards", negativeContext: ["osha", "dot", "workplace safety"] },
       "regulatory filings",
     ],
     adjacentKeys: ["communications_writing", "drafting_documentation", "analysis_reporting"],
