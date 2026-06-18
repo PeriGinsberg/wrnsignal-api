@@ -538,7 +538,11 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "cold calling",
       "outreach",
       "lead generation",
-      "new business",
+      // Stage 2b lever 2: insurance "issuing new business and renewal policies"
+      // is policy issuance, NOT sales pipeline. Suppress sales prospecting when
+      // the line carries insurance/underwriting context (fixes the Zurich
+      // UA underwriting JD mis-classifying as Sales).
+      { phrase: "new business", negativeContext: ["policy", "policies", "policyholder", "underwriting", "underwriter", "insurance", "insurer", "endorsement", "endorsements", "renewal", "renewals", "premium", "premiums", "claims", "coverage", "account servicing"] },
       "sales calls",
       "sales presentations",
       // Pharma / field sales language
