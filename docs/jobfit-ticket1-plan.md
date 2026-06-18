@@ -1,7 +1,26 @@
 # Ticket 1 — Context-aware capability matcher (build plan)
 
-**Status:** DRAFT for approval — no code until approved.
-**Decision:** Ticket 1 is THE fix for the free-path over-crediting problem
+**Status: CLOSED (2026-06-18) — rules track complete.** Shipped on
+`feat/jobfit-ticket1`: Stage 1 (word-boundary PhraseSpec schema), Stage 2a
+(finance context anchors), Stage 2b lever 1 (coursework-vs-experience hygiene),
+Stage 2b lever 2 (JD-classifier precision, `27dc9dff`).
+
+Results: **Catherine/J6 fixed** (Apply→Pass); **Jordan/Zurich Apply/80 → Review/61**
+(2a halved him, 2b lever 2 reclassified the underwriting JD Sales→Operations);
+hard guards (George not-Pass, Matthew/Allison J9+J10 Apply) and all 7/7 true-fits
+held; 68-case regression clean at every gate.
+
+The remaining false-positives (Jordan→Pass last step, Ava/J4 & Ava/J6) are
+**proven SEMANTIC** ("right skill, wrong domain") — not rules-solvable. They move
+to a separate ticket: [jobfit-semantic-relevance-layer-scope.md](./jobfit-semantic-relevance-layer-scope.md),
+whose acceptance gate includes all three. Closing this ticket is deliberate: it
+ships the rules wins instead of holding them behind a different (semantic) fix.
+
+**Stage 4 (re-enable Fix C) stays IN this ticket's scope — not dropped.** It is a
+deterministic/rules change that was gated only on the matcher upgrade, which is
+now done. See the Stage 4 status note below.
+
+**Decision:** Ticket 1 was THE fix for the free-path over-crediting problem
 (see [jobfit-ticket-acceptance-suite.md](./jobfit-ticket-acceptance-suite.md)).
 Ticket 2 (tag-membership) is downgraded to an optional backstop.
 
@@ -65,10 +84,19 @@ all 30+ detectors. (CLAUDE.md debt #1.)
 - **Gate:** Rutstein/J10 no longer mis-penalized in any backstop; no family
   regressions in the 26 cases.
 
-### Stage 4 — Re-enable Fix C (family-distance override)
+### Stage 4 — Re-enable Fix C (family-distance override)  — READY, NOT YET ATTEMPTED
 - Fix C was HELD pending this matcher upgrade ([[project_jobfit_fix_c_held]]).
-  Reattempt now that matching is context-aware.
-- **Gate:** Fix C's own regression cases + full 26-case + acceptance suite.
+- **Status (2026-06-18): the blocker is cleared.** Fix C was held specifically
+  for "CAPABILITY_RULES context-aware matching," which is exactly what Stages
+  1–2b delivered (word boundaries + finance anchors + classifier precision).
+  Its precondition is now met. It is **deferred but ready**, not dropped: it
+  remains in Ticket 1's scope as the one open item, to attempt as its own
+  reviewable commit when picked up. Re-confirm the original hold reason against
+  the shipped matcher before re-enabling (the override could now behave
+  differently with anchored matching).
+- **Gate:** Fix C's own regression cases + full 68-case + acceptance suite
+  (true-fits and hard guards must still hold — Fix C reshapes family-distance
+  penalties, so the sales true-fits Allison J9/J10 are the primary risk).
 
 ### Stage 5 — Baseline update + prod distribution recheck + ship
 - After every diff is reviewed, update `baseline.json`; run
