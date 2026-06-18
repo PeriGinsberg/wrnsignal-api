@@ -1,0 +1,6 @@
+# The regression batch CSV (040926ProdIssues.csv) contains real candidate
+# contact PII (emails) that the scorer reads, so it is NOT committed.
+# Keep it local-only; recover it from the archive (see
+# tests/jobfit-regression/README.md). Ignore everything here except this file.
+*
+!.gitignore

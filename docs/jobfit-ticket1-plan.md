@@ -113,3 +113,16 @@ all 30+ detectors. (CLAUDE.md debt #1.)
 
 Each stage is independently shippable behind its gate; we can pause after any
 stage with the engine in a consistent, regression-clean state.
+
+## Investigation notes (from Stage 0)
+
+- **Scorer reads the email local-part (candidate name).** Found while trying to
+  PII-scrub the batch CSV: replacing candidate emails (even domain-preserving,
+  `name@gmail.com` → `redacted@gmail.com`) shifts scoring on `batch-40926b` and
+  `batch-40926d` (gain risks / drop a tier), while phone and LinkedIn scrubs are
+  fully score-neutral. All email domains are `gmail.com`, so the signal is the
+  **local part** — i.e. the contact-line name is leaking into extraction. The
+  scorer should not depend on a contact-line name; investigate during Stage 1/2
+  (likely the contact header bleeding into a requirement/section unit) and add a
+  regression case once fixed. This is also why the batch CSV is kept local-only
+  (can't be neutrally scrubbed) — see tests/jobfit-regression/README.md.

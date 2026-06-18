@@ -1,0 +1,108 @@
+=== JobFit production-run inspection ===
+Connecting to ejhnokcnahauvrcbcmic...
+
+jobfit_runs total: 1057
+signal_applications total: 636
+Inspection limit: 1000
+Pulled 1000 rows for analysis.
+
+Sample result_json top-level keys:
+  bullets, cover_letter_strategy, debug, decision, fingerprint_code, fingerprint_hash, gate_triggered, icon, job_signals, jobfit_logic_version, location_constraint, next_step, personaId, personaName, personaVersionAtRun, profileVersionAtRun, profile_signals, risk, risk_codes, risk_flags, risk_structured, score, score_breakdown, why, why_codes, why_structured
+
+Decision distribution:
+  Priority Apply         128  (12.8%)
+  Apply                  349  (34.9%)
+  Review                 241  (24.1%)
+  Pass                   282  (28.2%)
+
+Score histogram (10-point bins):
+  10-19        3 
+  20-29       57 ███████
+  30-39       13 ██
+  40-49       72 █████████
+  50-59      130 ████████████████
+  60-69      129 ████████████████
+  70-79      195 █████████████████████████
+  80-89      163 █████████████████████
+  90-99      238 ██████████████████████████████
+
+Family distribution — Job classification vs Profile targets
+  (1000 runs, 64 unique profiles)
+
+  Family                 Jobs      (%)   Profiles      (%)
+  ──────────────────────────────────────────────────────────
+  Marketing               330    33.0%         28    43.8%   skew=0.8x
+  Finance                 116    11.6%          9    14.1%   skew=0.8x
+  Other                    96     9.6%         11    17.2%   skew=0.6x
+  Sales                    96     9.6%         16    25.0%   skew=0.4x
+  Consulting               91     9.1%         11    17.2%   skew=0.5x
+  Engineering              78     7.8%          5     7.8%   skew=1.0x
+  Operations               40     4.0%          2     3.1%   skew=1.3x
+  Analytics                35     3.5%          2     3.1%   skew=1.1x
+  IT_Software              31     3.1%          4     6.3%   skew=0.5x
+  HR                       28     2.8%          0     0.0%   skew=-
+  Legal                    23     2.3%          1     1.6%   skew=1.5x
+  PreMed                   17     1.7%          4     6.3%   skew=0.3x
+  Accounting                8     0.8%          0     0.0%   skew=-
+  ProductManagement         4     0.4%          0     0.0%   skew=-
+  Trades                    4     0.4%          0     0.0%   skew=-
+  Healthcare                3     0.3%          1     1.6%   skew=0.2x
+  Government                0     0.0%          2     3.1%   skew=-
+
+  skew = job% / profile%. >2x means jobs are classified to this family
+  much more often than users target it (possible over-routing).
+  <0.5x means users target this family but few jobs get classified there.
+
+=== Structural outliers ===
+
+[apply_no_quality_directs] 0 of 1000 (0.0%)
+  Apply / Priority Apply with no quality direct WHYs (the new guardrail would have downgraded these)
+
+[apply_zero_whys] 0 of 1000 (0.0%)
+  Apply / Priority Apply with zero WHY codes (should be capped at Pass)
+
+[priority_apply_with_high_risk] 10 of 1000 (1.0%)
+  Priority Apply with one or more high-severity risks
+  - 2206f5d8-e32a-4e8d-bf9d-69bf290547e8 2026-03-30 :: score=93 highRisks=1 codes=[RISK_MISSING_PROOF]
+  - 97d19e45-2c96-4b85-bb10-4ce44b7b434b 2026-03-26 :: score=93 highRisks=1 codes=[RISK_MISSING_PROOF]
+  - fd909b04-87af-428c-9d91-3c35053877a2 2026-03-25 :: score=93 highRisks=1 codes=[RISK_MISSING_PROOF]
+  ... and 7 more
+
+[pass_with_family_match] 50 of 1000 (5.0%)
+  Pass with profile.targetFamilies including job.jobFamily AND no force_pass gate (probable false negative)
+  - 9d6b5813-8dcb-46a0-9080-a3a3c8b13ec9 2026-06-16 :: score=55 jobFamily=Marketing targets=[Sales,Marketing]
+  - b978d32b-b780-43f0-a538-02f84439a250 2026-06-09 :: score=46 jobFamily=Consulting targets=[Healthcare,Consulting,Engineering]
+  - af4a6eac-26ff-4509-8c2a-11b8cd797af9 2026-06-09 :: score=55 jobFamily=Engineering targets=[Healthcare,Consulting,Engineering]
+  ... and 47 more
+
+[score_band_boundary] 100 of 1000 (10.0%)
+  Score sitting on a decision-band boundary (73-75 or 95-96) — coin flip cases worth manual review
+  - b3e99f67-b91f-4722-ad54-2c9eace0064b 2026-06-15 :: score=74 decision=Review
+  - e5cf6c5a-a22f-489d-ad26-f6d43e8acb8b 2026-06-12 :: score=75 decision=Apply
+  - 9b50ff4b-4e98-4a70-b842-9b76e4af0c21 2026-06-12 :: score=74 decision=Review
+  ... and 97 more
+
+[training_program_below_floor] 6 of 1000 (0.6%)
+  Training program with family match but score < 65 AND no force_pass gate (the training-program floor in scoring.ts:864 should have raised this to 65)
+  - 9d6b5813-8dcb-46a0-9080-a3a3c8b13ec9 2026-06-16 :: score=55 decision=Pass family=Marketing
+  - 53a7237d-cb88-4eca-84e2-f31a7891a127 2026-06-03 :: score=55 decision=Pass family=Engineering
+  - cdae93c3-7217-4fac-af36-3e1074492f6a 2026-05-22 :: score=55 decision=Pass family=Finance
+  ... and 3 more
+
+[review_score_above_apply_floor] 1 of 1000 (0.1%)
+  Review decision with score >= 75 (Apply threshold) — guardrail or downgrade fired; check if intentional
+  - 45389246-4fb4-47e0-aee8-cbf8a25485aa 2026-03-24 :: score=83 (capped from raw)
+
+=== Outcome cross-tab (NOT YET MEANINGFUL) ===
+application_status was just introduced; historical data is mostly empty.
+This section will become useful as users adopt the new tracking feature.
+
+Decision × application_status:
+  Pass                 saved=156, applied=14, offer=1, rejected=1, interviewing=5, withdrawn=2
+  Review               saved=94, interviewing=4, applied=20, rejected=4
+  Apply                saved=120, applied=51, interviewing=10, offer=1, rejected=11
+  Priority Apply       saved=53, applied=13
+
+=== Done ===
+Next: pick a row id from any outlier above and drill in:
+  npx tsx tests/jobfit-regression/inspect-prod-runs.ts --inspect <row-id>

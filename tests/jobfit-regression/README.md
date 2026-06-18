@@ -99,3 +99,35 @@ Exit code is 0 if all pass, non-zero otherwise. Use in CI.
 
 For bullet quality, use the `/api/jobfit/debug-review` endpoint which runs
 an LLM sanity-check on any scoring result.
+
+## Deterministic in-process suite (`regression-check.ts` + `baseline.json`)
+
+Separate from the live-endpoint `run.ts` above, `regression-check.ts` runs all
+cases **in-process through `runJobFit` (deterministic, no LLM)** and diffs a
+snapshot (decision / score / why+risk counts / family / gate) against
+`baseline.json`. This is the gate to run after any scoring/extraction change:
+
+```bash
+npx tsx tests/jobfit-regression/regression-check.ts                  # diff vs baseline (exit 1 on drift)
+npx tsx tests/jobfit-regression/regression-check.ts --update-baseline  # re-freeze after reviewing every diff
+```
+
+It runs 68 cases = 21 prod-issue batch + synthetic CSV + inline retest cases.
+
+### ⚠ Local-only batch fixture — `issues/040926ProdIssues.csv` (NOT in git)
+
+The 21 `batch-40926*` prod-issue cases load from `issues/040926ProdIssues.csv`
+at the repo root. **This file is intentionally NOT committed** — it contains
+real candidate contact PII (emails), and the scorer reads the email
+local-part, so the contacts can't be scrubbed without changing scores (see the
+Ticket 1 investigation note in `docs/jobfit-ticket1-plan.md`). `regression-check.ts`
+**skips the batch silently** if the file is absent (you'll see "Baseline cases
+missing from live run"), which previously hid this gap.
+
+**Recover it (per checkout):**
+```bash
+mkdir -p issues
+cp "/c/Users/perig/wrnsignal-api-archive/2026-04-28/issues/040926ProdIssues.csv" issues/040926ProdIssues.csv
+```
+`issues/.gitignore` keeps the CSV from being accidentally committed. After
+recovery, `regression-check.ts` should report "All 68 cases match baseline."
