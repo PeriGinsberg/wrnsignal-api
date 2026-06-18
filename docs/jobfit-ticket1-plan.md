@@ -126,3 +126,14 @@ stage with the engine in a consistent, regression-clean state.
   (likely the contact header bleeding into a requirement/section unit) and add a
   regression case once fixed. This is also why the batch CSV is kept local-only
   (can't be neutrally scrubbed) — see tests/jobfit-regression/README.md.
+
+## Backlog (out of Ticket 1 scope)
+
+- **Add a lab/science capability rule.** Surfaced in Stage 2a: Lily Stein (a
+  bench scientist) lost her only credit when the analysis_reporting anchor
+  correctly stopped a wet-lab protein assay ("BCA Analysis") from matching the
+  data/BI capability. She has genuine in-field fit for Scientist/Chemist/QC
+  Analyst roles that NO capability captures (40926e QC Analyst dropped Apply→
+  Review as accepted collateral). Fix is a dedicated lab/science capability —
+  NOT re-crediting wet-lab work as BI analysis (that would create new
+  false-positives, e.g. a scientist scored as a data analyst). Separate ticket.

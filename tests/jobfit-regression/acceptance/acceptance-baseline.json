@@ -5,8 +5,8 @@
     "target": {
       "decision": "Pass"
     },
-    "decision": "Apply",
-    "score": 80,
+    "decision": "Review",
+    "score": 69,
     "met": false
   },
   {
@@ -15,9 +15,9 @@
     "target": {
       "decision": "Pass"
     },
-    "decision": "Review",
-    "score": 67,
-    "met": false
+    "decision": "Pass",
+    "score": 53,
+    "met": true
   },
   {
     "id": "ava-j6",

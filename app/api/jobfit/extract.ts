@@ -46,6 +46,24 @@ type CapabilityRule = {
   suppressAnalyticsHeavy?: boolean
 }
 
+// Stage 2a (Ticket 1): anchors that gate generic analysis/reporting profile
+// phrases so they only credit analysis_reporting (and its finance adjacency)
+// when the SAME line carries a quantitative/financial signal. Stops generic
+// "report"/"analysis"/"metrics" on comms/marketing/sports lines from seeding
+// finance credit, while real finance/analytics lines (which carry these
+// anchors) still match. Deliberately excludes pure-marketing terms.
+const QUANT_ANALYSIS_ANCHORS: string[] = [
+  "data", "dataset", "dashboard", "kpi", "kpis", "sql", "excel", "spreadsheet",
+  "pivottable", "statistic", "statistical", "regression", "forecast", "forecasting",
+  "variance", "budget", "budgeting", "financial", "finance", "revenue", "p&l",
+  "profit", "margin", "quantitative", "analytics", "tableau", "power bi",
+  "valuation", "ebitda", "cash flow", "financial model", "financial modeling",
+  // Stage 2a (B): legitimate analytical-work context — protects real analysts
+  // whose evidence is phrased without a narrow quant token (e.g. 0410m's
+  // "comprehensive market research and competitive analysis").
+  "market research", "competitive analysis",
+]
+
 const CAPABILITY_RULES: CapabilityRule[] = [
   {
     key: "brand_messaging",
@@ -222,14 +240,14 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     functionTag: "data_analytics_bi",
     profilePhrases: [
       "dashboard",
-      "reporting",
-      "analysis",
+      { phrase: "reporting", requiresNearby: QUANT_ANALYSIS_ANCHORS },
+      { phrase: "analysis", requiresNearby: QUANT_ANALYSIS_ANCHORS },
       "data analysis",
       "data visualization",
-      "metrics",
+      { phrase: "metrics", requiresNearby: QUANT_ANALYSIS_ANCHORS },
       "forecast",
       "trend analysis",
-      "report",
+      { phrase: "report", requiresNearby: QUANT_ANALYSIS_ANCHORS },
       "reporting cadence",
     ],
     jobPhrases: [
@@ -801,7 +819,7 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "acumed customers",
       "product portfolio",
       "device product knowledge",
-      "industry knowledge",
+      { phrase: "industry knowledge", requiresNearby: ["device", "medical", "clinical", "implant", "orthopedic", "healthcare", "pharma", "hospital", "biotech", "life sciences"] },
     ],
     adjacentKeys: ["hospital_or_environment", "product_training_enablement"],
   },
