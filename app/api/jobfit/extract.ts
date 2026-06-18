@@ -34,14 +34,14 @@ type CapabilityRule = {
   label: string
   kind: EvidenceKind
   functionTag?: FunctionTag
-  profilePhrases: string[]
-  jobPhrases: string[]
+  profilePhrases: PhraseSpec[]
+  jobPhrases: PhraseSpec[]
   adjacentKeys?: string[]
-  aliases?: string[]
-  profileWeakPhrases?: string[]
-  jobWeakPhrases?: string[]
-  profileBoostPhrases?: string[]
-  jobBoostPhrases?: string[]
+  aliases?: PhraseSpec[]
+  profileWeakPhrases?: PhraseSpec[]
+  jobWeakPhrases?: PhraseSpec[]
+  profileBoostPhrases?: PhraseSpec[]
+  jobBoostPhrases?: PhraseSpec[]
   minMatches?: number
   suppressAnalyticsHeavy?: boolean
 }
@@ -1433,7 +1433,7 @@ const FALLBACK_JOB_RULES: Array<{
   label: string
   kind: EvidenceKind
   functionTag?: FunctionTag
-  phrases: string[]
+  phrases: PhraseSpec[]
   requiredness?: "core" | "supporting"
 }> = [
   {
@@ -1552,22 +1552,53 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-function includesPhrase(hay: string, phrase: string): boolean {
-  const p = norm(phrase)
-  if (!p) return false
-  const pattern = new RegExp(`(^|\\W)${escapeRegExp(p)}($|\\W)`, "i")
-  return pattern.test(hay)
+// Compiled rule-phrase shape. A bare string matches as a whole token (word
+// boundaries are already enforced below). A spec object can additionally require
+// a co-occurring anchor (requiresNearby — at least one must also match) or be
+// suppressed by a negativeContext term — both consumed from Stage 2 onward to
+// make matching context-aware. wordBoundary defaults true; set false only to
+// opt a phrase back into raw substring matching. An unset spec behaves exactly
+// like the bare string, so introducing this shape is behavior-neutral until
+// rules actually populate requiresNearby/negativeContext.
+type PhraseSpec =
+  | string
+  | {
+      phrase: string
+      requiresNearby?: string[]
+      negativeContext?: string[]
+      wordBoundary?: boolean
+    }
+
+function phraseText(spec: PhraseSpec): string {
+  return typeof spec === "string" ? spec : spec.phrase
 }
 
-function includesAny(hay: string, phrases: string[]): boolean {
+function includesPhrase(hay: string, spec: PhraseSpec): boolean {
+  const p = norm(phraseText(spec))
+  if (!p) return false
+  const wordBoundary = typeof spec === "string" ? true : spec.wordBoundary ?? true
+  const matched = wordBoundary
+    ? new RegExp(`(^|\\W)${escapeRegExp(p)}($|\\W)`, "i").test(hay)
+    : hay.includes(p)
+  if (!matched) return false
+  if (typeof spec !== "string") {
+    // negativeContext: any present term kills the match.
+    if (spec.negativeContext?.some((t) => includesPhrase(hay, t))) return false
+    // requiresNearby: at least one anchor must also be present.
+    if (spec.requiresNearby && !spec.requiresNearby.some((t) => includesPhrase(hay, t))) return false
+  }
+  return true
+}
+
+function includesAny(hay: string, phrases: PhraseSpec[]): boolean {
   return phrases.some((p) => includesPhrase(hay, p))
 }
 
-function countHits(hay: string, phrases: string[]): number {
+function countHits(hay: string, phrases: PhraseSpec[]): number {
   return phrases.reduce((acc, p) => acc + (includesPhrase(hay, p) ? 1 : 0), 0)
 }
 
-function countWeakHits(hay: string, phrases?: string[]): number {
+function countWeakHits(hay: string, phrases?: PhraseSpec[]): number {
   if (!phrases?.length) return 0
   return countHits(hay, phrases)
 }
