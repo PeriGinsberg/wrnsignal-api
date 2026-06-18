@@ -7,8 +7,21 @@ with no field-mismatch penalty because `targetFamilies` is forced to `[]`).
 
 A fix is acceptable only if it satisfies **all** the cases below.
 
-- **Ticket 1** — context-aware capability matcher (the `.includes()` fix; unblocks Fix C).
-- **Ticket 2** — lightweight free-path JD-family-vs-résumé-evidence check (tag-membership variant).
+## Decision (2026-06-18) — Ticket 1 is THE fix
+
+The Jordan Reyes × Zurich case (real-world, was Apply/80) **empirically breaks
+tag-membership** (the JD classifies as Sales, Jordan has `sales_bd`, so the
+field check passes him → Apply survives). Family-level matching cannot tell
+"insurance underwriting" from "reactivation sales." Therefore:
+
+- **Ticket 1 — context-aware capability matcher (the `.includes()` fix).
+  PRIMARY / REQUIRED.** This is the actual fix: the Apply/80 came from the
+  matcher over-crediting generic outreach / analytical / "analysis" / Excel /
+  PowerPoint language against specialized requirements. Also unblocks Fix C.
+- **Ticket 2 — tag-membership field check. DOWNGRADED to an optional coarse
+  backstop**, only worth doing AFTER Ticket 1 ships, if at all. It cannot catch
+  wrong-specialty-within-family cases (Jordan) and inherits JD-classifier
+  errors (Rutstein/SDR), so it is not a substitute for Ticket 1.
 
 Validation is run read-only via `extractProfileSignals(résumé,{})` (résumé
 function_tags + tag-based family) and `extractJobSignals(jd,{})` (JD family),
