@@ -2193,6 +2193,15 @@ function profileRuleStrength(
   strength += boostHits
   strength -= weakHits * 3
 
+  // Stage 2b lever 1: coursework is academic exposure, not work experience.
+  // When the matched evidence line is a coursework/curriculum listing, downgrade
+  // hard so a course title ("Financial Accounting") doesn't score like real
+  // accounting WORK. General rule across all capabilities (function matches lean
+  // on this most). Real experience lines are unaffected.
+  if (/\b(relevant\s+)?coursework\b|\bcourses?\s*:|\bcurriculum\b/i.test(cleaned)) {
+    strength -= 6
+  }
+
   if (
     rule.key === "client_commercial_work" &&
     /\b(scheduling client meetings|maintaining client communication|client meetings)\b/i.test(cleaned)

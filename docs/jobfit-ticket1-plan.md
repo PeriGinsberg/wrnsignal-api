@@ -127,6 +127,18 @@ stage with the engine in a consistent, regression-clean state.
   regression case once fixed. This is also why the batch CSV is kept local-only
   (can't be neutrally scrubbed) — see tests/jobfit-regression/README.md.
 
+## Residuals (post-2b)
+
+- **Ava → SEMANTIC residual (confirmed Stage 2b lever 1).** Coursework downgrade
+  (lever 1) weakened her "Financial Accounting" course credit but did NOT flip
+  her: she's carried by `analysis_reporting` firing on genuine quantitative
+  marketing analytics ("…KPIs, conversion rates, channel-driven sales") which
+  seeds adjacent `financial_analysis`. The credit is real analytics; the error
+  is treating marketing/KPI analytics as *financial* analysis for an IB/finance
+  role. That's an evidence-vs-requirement RELEVANCE judgment keyword/adjacency
+  rules can't make cleanly (the blunt adjacency cut, 1b, over-broadened). Needs
+  the semantic/LLM (or embedding) evidence-relevance layer.
+
 ## Backlog (out of Ticket 1 scope)
 
 - **Add a lab/science capability rule.** Surfaced in Stage 2a: Lily Stein (a
