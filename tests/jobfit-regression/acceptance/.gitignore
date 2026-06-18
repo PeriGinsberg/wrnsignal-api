@@ -1,0 +1,6 @@
+# Acceptance fixtures carry real candidate PII (résumé emails the scorer reads,
+# so they can't be neutrally scrubbed) and the frozen Haiku-override cache.
+# Keep them LOCAL-ONLY. The harness (acceptance-check.ts) and the outputs-only
+# acceptance-baseline.json ARE committed; the inputs are not.
+*.local.ts
+*.local.json

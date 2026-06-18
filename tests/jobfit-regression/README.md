@@ -131,3 +131,28 @@ cp "/c/Users/perig/wrnsignal-api-archive/2026-04-28/issues/040926ProdIssues.csv"
 ```
 `issues/.gitignore` keeps the CSV from being accidentally committed. After
 recovery, `regression-check.ts` should report "All 68 cases match baseline."
+
+## Acceptance gate (Ticket 1) — `acceptance/`
+
+`acceptance/acceptance-check.ts` runs the frozen free-path acceptance suite
+(real-world Jordan/Zurich + the false-positive and true-fit cases) and asserts
+target verdicts:
+
+```bash
+npx tsx tests/jobfit-regression/acceptance/acceptance-check.ts                  # RED until Ticket 1 lands
+npx tsx tests/jobfit-regression/acceptance/acceptance-check.ts --update-baseline
+```
+
+- **false-positive** cases must come down (Jordan→Pass, Catherine/J6→Pass,
+  Ava/J4 & Ava/J6 → not Apply). **RED now by design**; flips green across Ticket 1
+  Stages 1–2b.
+- **true-fit** cases must stay (Apply-or-better; George must not drop to Pass).
+  A true-fit failing = a regression / over-correction.
+
+Inputs are **LOCAL-ONLY** (gitignored): `acceptance/fixtures.local.ts` (real
+candidate résumés/JDs the scorer reads — can't be neutrally scrubbed) and
+`acceptance/haiku-overrides.local.json` (frozen Haiku pre-pass output, so runs
+are reproducible yet faithful to the live funnel). The harness +
+`acceptance/acceptance-baseline.json` (outputs only) are committed; on a checkout
+without the local fixtures the harness **skips**. Regenerate the fixtures from
+the source résumé/JD text if lost.

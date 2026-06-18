@@ -1,0 +1,112 @@
+[
+  {
+    "id": "jordan-zurich",
+    "kind": "false-positive",
+    "target": {
+      "decision": "Pass"
+    },
+    "decision": "Apply",
+    "score": 80,
+    "met": false
+  },
+  {
+    "id": "catherine-j6",
+    "kind": "false-positive",
+    "target": {
+      "decision": "Pass"
+    },
+    "decision": "Review",
+    "score": 67,
+    "met": false
+  },
+  {
+    "id": "ava-j6",
+    "kind": "false-positive",
+    "target": {
+      "notApply": true
+    },
+    "decision": "Apply",
+    "score": 81,
+    "met": false
+  },
+  {
+    "id": "ava-j4",
+    "kind": "false-positive",
+    "target": {
+      "notApply": true
+    },
+    "decision": "Apply",
+    "score": 82,
+    "met": false
+  },
+  {
+    "id": "nachman-j1",
+    "kind": "true-fit",
+    "target": {
+      "atLeast": "Apply"
+    },
+    "decision": "Apply",
+    "score": 79,
+    "met": true
+  },
+  {
+    "id": "lees-j5",
+    "kind": "true-fit",
+    "target": {
+      "atLeast": "Apply"
+    },
+    "decision": "Apply",
+    "score": 94,
+    "met": true
+  },
+  {
+    "id": "george-j4",
+    "kind": "true-fit",
+    "target": {
+      "notPass": true
+    },
+    "decision": "Review",
+    "score": 67,
+    "met": true
+  },
+  {
+    "id": "matthew-j6",
+    "kind": "true-fit",
+    "target": {
+      "atLeast": "Apply"
+    },
+    "decision": "Apply",
+    "score": 91,
+    "met": true
+  },
+  {
+    "id": "allison-j9",
+    "kind": "true-fit",
+    "target": {
+      "atLeast": "Apply"
+    },
+    "decision": "Apply",
+    "score": 95,
+    "met": true
+  },
+  {
+    "id": "allison-j10",
+    "kind": "true-fit",
+    "target": {
+      "atLeast": "Apply"
+    },
+    "decision": "Apply",
+    "score": 92,
+    "met": true
+  },
+  {
+    "id": "ava-j7",
+    "kind": "true-fit",
+    "target": {
+      "atLeast": "Apply"
+    },
+    "decision": "Apply",
+    "score": 81,
+    "met": true
+  }
+]
