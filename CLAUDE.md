@@ -4,7 +4,7 @@
 
 Signal is a job-fit evaluation platform. Users paste a job description and the system scores how well their profile matches, producing a decision (Priority Apply / Apply / Review / Pass) with evidence-backed WHY codes, RISK codes, and actionable bullets.
 
-The scoring engine is fully deterministic — no LLM in the scoring loop. An LLM (Claude Haiku) is used only for bullet text rendering (V5 renderer).
+The scoring engine is deterministic. On the paid/authed paths there is no LLM in the scoring loop. On the free path (`jobfit-run-trial-open`) a gated LLM evidence-relevance check (Claude Haiku, temp 0) can down-weight "right skill, wrong domain" matches — so that path is deterministic *given frozen/cached verdicts* and fails open (any cache miss / error / timeout keeps the credit, reverting to the deterministic result). See `docs/jobfit-semantic-relevance-layer-scope.md` and `app/api/jobfit/semanticGate.ts` / `semanticRelevance.ts`. Separately, an LLM (Claude Haiku) renders human-readable WHY/RISK bullets (V5 renderer).
 
 ## Architecture
 
