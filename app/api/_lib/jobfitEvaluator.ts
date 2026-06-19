@@ -10,6 +10,7 @@ import {
   resolveSuppressions,
   verdictKey,
   type VerdictCache,
+  type VerdictLog,
 } from "../jobfit/semanticRelevance"
 import { decisionFromScore, applyGateOverrides, applyRiskDowngrades, applyEvidenceGuardrails, capScoreForDecision } from "../jobfit/decision"
 import type {
@@ -68,7 +69,7 @@ export async function runJobFit(args: {
   // suppressed on a satisfies:false + confidence:high verdict. Omit to disable
   // (no suppression). Tests pass a frozen cache with allowLive:false for
   // determinism; the prod route passes a runtime cache with allowLive:true.
-  semantic?: { cache: VerdictCache; allowLive: boolean }
+  semantic?: { cache: VerdictCache; allowLive: boolean; onVerdict?: (log: VerdictLog) => void }
 }): Promise<
   EvalOutput & {
     icon: string
@@ -112,7 +113,7 @@ export async function runJobFit(args: {
       })),
       jobSignals,
       args.semantic.cache,
-      { allowLive: args.semantic.allowLive }
+      { allowLive: args.semantic.allowLive, onVerdict: args.semantic.onVerdict }
     )
     if (suppressed.size > 0) {
       suppressMatch = (m) => suppressed.has(verdictKey(m.job_fact, m.profile_fact))

@@ -175,6 +175,20 @@ export type RawMatchView = {
   profile_fact: string
 }
 
+// Observability record emitted per distinct suspect pair evaluated on a scan.
+// PII-safe: carries the JD requirement snippet (employer text) but NOT the raw
+// candidate evidence snippet — the LLM `reason` paraphrases enough to review.
+export type VerdictLog = {
+  job_unit_key: string
+  profile_unit_key: string
+  match_strength: "direct" | "adjacent"
+  requirement_snippet: string
+  satisfies: boolean
+  confidence: "high" | "med" | "low"
+  reason: string
+  suppressed: boolean
+}
+
 // Resolve the set of verdict keys to SUPPRESS for one scan: gate to suspect
 // matches, fetch each verdict (cache/live), keep only satisfies:false +
 // confidence:high. Returned keys are verdictKey(requirement, evidence) so the
@@ -183,7 +197,7 @@ export async function resolveSuppressions(
   matches: RawMatchView[],
   job: StructuredJobSignals,
   cache: VerdictCache,
-  opts: { allowLive: boolean }
+  opts: { allowLive: boolean; onVerdict?: (log: VerdictLog) => void }
 ): Promise<Set<string>> {
   const gm: GateMatch[] = matches.map((m) => ({
     job_unit_key: m.job_unit_key,
@@ -197,13 +211,26 @@ export async function resolveSuppressions(
   )
   const jobContext = buildJobContext(job)
   const suppressed = new Set<string>()
+  const seen = new Set<string>() // one verdict (and one onVerdict) per distinct pair/scan
   for (const m of matches) {
     if (!suspectKeySet.has(`${m.profile_unit_key}|${m.job_unit_key}|${m.match_strength}`)) continue
     if (!m.job_fact || !m.profile_fact) continue
-    const v = await getVerdict(cache, { jobContext, requirement: m.job_fact, evidence: m.profile_fact }, opts)
-    if (v.satisfies === false && v.confidence === "high") {
-      suppressed.add(verdictKey(m.job_fact, m.profile_fact))
-    }
+    const key = verdictKey(m.job_fact, m.profile_fact)
+    if (seen.has(key)) continue
+    seen.add(key)
+    const v = await getVerdict(cache, { jobContext, requirement: m.job_fact, evidence: m.profile_fact }, { allowLive: opts.allowLive })
+    const suppress = v.satisfies === false && v.confidence === "high"
+    if (suppress) suppressed.add(key)
+    opts.onVerdict?.({
+      job_unit_key: m.job_unit_key,
+      profile_unit_key: m.profile_unit_key,
+      match_strength: m.match_strength,
+      requirement_snippet: m.job_fact,
+      satisfies: v.satisfies,
+      confidence: v.confidence,
+      reason: v.reason,
+      suppressed: suppress,
+    })
   }
   return suppressed
 }

@@ -27,7 +27,7 @@ import crypto from "crypto"
 import { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
-import type { VerdictCache } from "../jobfit/semanticRelevance"
+import type { VerdictCache, VerdictLog } from "../jobfit/semanticRelevance"
 import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
 import type { StructuredProfileSignals } from "../jobfit/signals"
@@ -262,13 +262,20 @@ export async function POST(req: NextRequest) {
     const effectiveProfileText = "Resume:\n" + resumeText
 
     // ── Run the deterministic engine ─────────────────────────────────
+    // Collect semantic verdicts emitted during the scan for fire-and-forget
+    // logging below (observability for the relevance layer; never blocks).
+    const semanticVerdictLogs: VerdictLog[] = []
     let raw: any
     try {
       raw = await runJobFit({
         profileText: effectiveProfileText,
         jobText,
         profileOverrides: trialOverrides,
-        semantic: { cache: SEMANTIC_VERDICT_CACHE, allowLive: true },
+        semantic: {
+          cache: SEMANTIC_VERDICT_CACHE,
+          allowLive: true,
+          onVerdict: (log) => semanticVerdictLogs.push(log),
+        },
       })
     } catch (err: any) {
       console.error("[jobfit-run-trial-open] runJobFit failed:", err?.message || String(err))
@@ -429,6 +436,45 @@ export async function POST(req: NextRequest) {
         "[anonymous_runs] setup_failed",
         analyticsErr?.message || String(analyticsErr)
       )
+    }
+
+    // ── Semantic-relevance verdict logging (fire-and-forget) ─────────────
+    // One row per suspect pair the relevance layer judged this scan, for
+    // observability. PII-safe: hashes + JD requirement snippet only, NO
+    // candidate evidence text (the LLM `reason` paraphrases). Never blocks or
+    // fails the response (mirrors anonymous_runs). Insert errors — including a
+    // missing table before the prod migration runs — are logged, never surfaced.
+    if (semanticVerdictLogs.length > 0) {
+      try {
+        const supabase = getSupabase()
+        const resumeHash = crypto.createHash("sha256").update(resumeText).digest("hex")
+        const rows = semanticVerdictLogs.map((v) => ({
+          resume_hash: resumeHash,
+          jd_hash: jdHash,
+          job_unit_key: v.job_unit_key,
+          profile_unit_key: v.profile_unit_key,
+          match_strength: v.match_strength,
+          requirement_snippet: v.requirement_snippet,
+          satisfies: v.satisfies,
+          confidence: v.confidence,
+          reason: v.reason,
+          suppressed: v.suppressed,
+        }))
+        const { error: vErr } = await supabase.from("jobfit_semantic_verdicts").insert(rows)
+        if (vErr) {
+          console.error("[semantic_verdicts] insert_failed", {
+            message: vErr.message,
+            code: (vErr as any).code,
+          })
+        } else {
+          console.log("[semantic_verdicts] insert_ok", {
+            rows: rows.length,
+            suppressed: rows.filter((r) => r.suppressed).length,
+          })
+        }
+      } catch (vSetupErr: any) {
+        console.error("[semantic_verdicts] setup_failed", vSetupErr?.message || String(vSetupErr))
+      }
     }
 
     return withCorsJson(req, successResponse, 200)
