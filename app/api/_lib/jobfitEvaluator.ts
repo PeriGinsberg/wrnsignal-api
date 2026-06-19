@@ -5,7 +5,12 @@
 
 import { extractJobSignals, extractProfileSignals } from "../jobfit/extract"
 import { evaluateGates } from "../jobfit/constraints"
-import { scoreJobFit } from "../jobfit/scoring"
+import { scoreJobFit, buildEvidenceMatches } from "../jobfit/scoring"
+import {
+  resolveSuppressions,
+  verdictKey,
+  type VerdictCache,
+} from "../jobfit/semanticRelevance"
 import { decisionFromScore, applyGateOverrides, applyRiskDowngrades, applyEvidenceGuardrails, capScoreForDecision } from "../jobfit/decision"
 import type {
   EvalOutput,
@@ -58,6 +63,12 @@ export async function runJobFit(args: {
   // authoritative user value, not the extractor's best guess.
   userJobTitle?: string
   userCompanyName?: string
+  // Semantic evidence-relevance layer. When provided, suspect generic-on-
+  // specialized matches are sent through the gated relevance check and
+  // suppressed on a satisfies:false + confidence:high verdict. Omit to disable
+  // (no suppression). Tests pass a frozen cache with allowLive:false for
+  // determinism; the prod route passes a runtime cache with allowLive:true.
+  semantic?: { cache: VerdictCache; allowLive: boolean }
 }): Promise<
   EvalOutput & {
     icon: string
@@ -84,7 +95,31 @@ export async function runJobFit(args: {
   const profileSignals = extractProfileSignals(args.profileText || "", args.profileOverrides || {})
 
   const gate = evaluateGates(jobSignals, profileSignals)
-  const scored = scoreJobFit(jobSignals, profileSignals)
+
+  // Semantic relevance suppression (optional). Resolve which suspect matches
+  // the gated LLM rejects, then hand scoreJobFit a predicate that drops them.
+  let suppressMatch: ((m: { job_fact: string; profile_fact: string }) => boolean) | undefined
+  if (args.semantic) {
+    const matches = buildEvidenceMatches(jobSignals, profileSignals)
+    const suppressed = await resolveSuppressions(
+      matches.map((m) => ({
+        job_unit_key: m.job_unit.key,
+        profile_unit_key: m.profile_unit.key,
+        match_strength: m.match_strength,
+        weight: m.weight,
+        job_fact: m.job_fact,
+        profile_fact: m.profile_fact,
+      })),
+      jobSignals,
+      args.semantic.cache,
+      { allowLive: args.semantic.allowLive }
+    )
+    if (suppressed.size > 0) {
+      suppressMatch = (m) => suppressed.has(verdictKey(m.job_fact, m.profile_fact))
+    }
+  }
+
+  const scored = scoreJobFit(jobSignals, profileSignals, { suppressMatch })
 
   // High-confidence positive-match boost. The raw score undercredits the
   // "many matches, no gaps" shape: when a JD lists 10 requirements and a

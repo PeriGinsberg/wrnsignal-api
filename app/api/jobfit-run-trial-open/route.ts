@@ -27,6 +27,7 @@ import crypto from "crypto"
 import { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { runJobFit } from "../_lib/jobfitEvaluator"
+import type { VerdictCache } from "../jobfit/semanticRelevance"
 import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
 import type { StructuredProfileSignals } from "../jobfit/signals"
@@ -38,6 +39,13 @@ export const dynamic = "force-dynamic"
 
 const MIN_RESUME_CHARS = 100
 const MIN_JD_CHARS = 100
+
+// Semantic-relevance verdict cache, per warm function instance. temp-0 verdicts
+// keyed by sha256(model|requirement|evidence) are stable, so a warm instance
+// reuses them across scans; cold starts re-warm. Bounds repeat LLM cost without
+// a persistent store. Suppression fails open, so a cold cache only means a few
+// extra live calls, never a wrong score.
+const SEMANTIC_VERDICT_CACHE: VerdictCache = {}
 
 // Upgrade target (same env var as gated trial — stays consistent across
 // trial flows; configurable per environment).
@@ -260,6 +268,7 @@ export async function POST(req: NextRequest) {
         profileText: effectiveProfileText,
         jobText,
         profileOverrides: trialOverrides,
+        semantic: { cache: SEMANTIC_VERDICT_CACHE, allowLive: true },
       })
     } catch (err: any) {
       console.error("[jobfit-run-trial-open] runJobFit failed:", err?.message || String(err))

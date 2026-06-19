@@ -253,3 +253,18 @@ Ticket 1's close-out (or its own small ticket), **out of** the semantic ticket.
   pinned model. This is the actual decision — accept that tradeoff or don't build.
 - **Payoff:** resolves all 3 residuals AND the whole "generic skill, specialized
   role" class that rules structurally cannot.
+
+---
+
+## Known edges (accepted, not bugs)
+
+- **Pure-accountant in-field gap (Stage 1, accepted 2026-06-18).** The suspect
+  gate's in-field exclusion uses an APEX set that excludes `accounting_operations`
+  (it fires on coursework — e.g. Ava's "Financial Accounting" — and including it
+  would falsely protect the cross-domain case we must flag). Consequence: a
+  *pure accountant* true-fit whose only specialized evidence is a direct
+  `accounting_operations` match (no `financial_analysis`) would be flagged as
+  suspect and incur an LLM relevance call. That call should return
+  `satisfies:true` and keep the credit — so the worst case is a wasted call, not
+  a wrong verdict. No such case exists in the 68-case + acceptance corpus. Decided
+  against a carve-out: no speculative complexity for a case not in the corpus.

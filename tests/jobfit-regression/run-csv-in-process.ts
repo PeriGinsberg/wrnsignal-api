@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join, basename, dirname } from "node:path"
 import { runJobFit } from "../../app/api/_lib/jobfitEvaluator"
 import { mapClientProfileToOverrides } from "../../app/api/_lib/jobfitProfileAdapter"
+import { frozenSemanticOption } from "./lib/semantic-cache"
 
 // Exported type for regression-check consumers.
 export type BatchCaseResult = {
@@ -182,6 +183,7 @@ export async function runBatch(csvPath: string, opts?: {
 
   const dataRows = rows.slice(1).filter((r) => r.some((c) => c.trim().length > 0))
   const out: BatchCaseResult[] = []
+  const SEMANTIC = frozenSemanticOption()
 
   for (const row of dataRows) {
     const caseNo = row[idxCaseNo]?.trim() || "unnamed"
@@ -237,6 +239,7 @@ export async function runBatch(csvPath: string, opts?: {
         profileOverrides,
         userJobTitle: override.jobTitle || undefined,
         userCompanyName: override.companyName || undefined,
+        semantic: SEMANTIC,
       } as any)
     } catch (e: any) {
       console.error(`  ✗ runJobFit threw for ${caseNo}: ${e.message}`)
@@ -359,6 +362,7 @@ async function main() {
         profileOverrides,
         userJobTitle: override.jobTitle || undefined,
         userCompanyName: override.companyName || undefined,
+        semantic: frozenSemanticOption(),
       } as any)
     } catch (e: any) {
       console.error(`  ✗ runJobFit threw: ${e.message}`)

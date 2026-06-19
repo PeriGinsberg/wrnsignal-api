@@ -1,0 +1,7 @@
+# Frozen semantic-relevance verdict cache. Keyed by sha256(model|requirement|
+# evidence); the requirement/evidence snippets are drawn from local-only test
+# inputs (the prod batch CSV + acceptance PII fixtures), so the cache is
+# LOCAL-ONLY too. The deterministic test suites read it on the dev machine; it
+# is never committed. A fresh checkout fails open (keeps credit) — consistent
+# with the batch CSV / acceptance fixtures already being local-only.
+*.local.json

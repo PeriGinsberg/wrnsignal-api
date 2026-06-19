@@ -39,6 +39,8 @@ async function main() {
 
   const { runJobFit } = await import("../../../app/api/_lib/jobfitEvaluator")
   const { inferProfileOverridesFromResume } = await import("../../../app/api/_lib/inferProfileOverridesFromResume")
+  const { frozenSemanticOption } = await import("../lib/semantic-cache")
+  const SEMANTIC = frozenSemanticOption()
 
   // Frozen Haiku overrides cache (one entry per résumé id).
   const cache: Record<string, any> = existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {}
@@ -58,7 +60,7 @@ async function main() {
   const results: any[] = []
   for (const c of CASES) {
     const ov = { ...(cache[c.resume] || {}), constraints: ZEROED, locationPreference: { mode: "unclear", constrained: false, allowedCities: [] }, targetFamilies: [] }
-    const raw: any = await runJobFit({ profileText: "Resume:\n" + RESUMES[c.resume], jobText: JDS[c.jd], profileOverrides: ov })
+    const raw: any = await runJobFit({ profileText: "Resume:\n" + RESUMES[c.resume], jobText: JDS[c.jd], profileOverrides: ov, semantic: SEMANTIC })
     results.push({ id: c.id, kind: c.kind, target: c.target, decision: raw.decision, score: raw.score, met: meets(raw.decision, c.target) })
   }
 

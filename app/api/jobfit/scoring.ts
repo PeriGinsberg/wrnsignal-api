@@ -414,7 +414,7 @@ function evidenceShapeCompatible(jobUnit: JobRequirementUnit, profileUnit: Profi
   return { compatible: true, degradeToAdjacent: false, boost: 0 }
 }
 
-function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProfileSignals): WhyEvidenceMatch[] {
+export function buildEvidenceMatches(job: StructuredJobSignals, profile: StructuredProfileSignals): WhyEvidenceMatch[] {
   const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
   const profileUnits = Array.isArray(profile.profile_evidence_units) ? profile.profile_evidence_units : []
   const matches: WhyEvidenceMatch[] = []
@@ -901,11 +901,23 @@ function capabilitySeverity(jobUnit: JobRequirementUnit, nearMiss: boolean): Sev
   return "low"
 }
 
-export function scoreJobFit(job: StructuredJobSignals, profile: StructuredProfileSignals): ScoreResult {
+export function scoreJobFit(
+  job: StructuredJobSignals,
+  profile: StructuredProfileSignals,
+  opts?: { suppressMatch?: (m: WhyEvidenceMatch) => boolean }
+): ScoreResult {
   const penalties: Penalty[] = []
   const riskOnlyCodes: RiskCode[] = []
 
-  const allMatches = buildEvidenceMatches(job, profile)
+  // Semantic relevance suppression (Stage 3): drop matches the gated LLM
+  // judged satisfies:false + confidence:high — a generic/transferable capability
+  // that does not actually satisfy a specialized requirement. Removing the match
+  // (and thus its coverage + WHY + score contribution, including any adjacency
+  // seed it WAS) is the down-weight. Fail-open: no predicate → no suppression.
+  const builtMatches = buildEvidenceMatches(job, profile)
+  const allMatches = opts?.suppressMatch
+    ? builtMatches.filter((m) => !opts.suppressMatch!(m))
+    : builtMatches
   const coverage = buildCoverage(job, allMatches)
   const majorGapRisks = buildMajorGapRisks(job, coverage)
   const selectedMatches = selectWhyMatches(allMatches, 3, 6)

@@ -40,6 +40,7 @@ import { join } from "node:path"
 import { runJobFit } from "../../app/api/_lib/jobfitEvaluator"
 import { mapClientProfileToOverrides } from "../../app/api/_lib/jobfitProfileAdapter"
 import { runBatch } from "./run-csv-in-process"
+import { frozenSemanticOption } from "./lib/semantic-cache"
 import {
   type CaseSnapshot,
   toSnapshot,
@@ -102,6 +103,7 @@ async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapsh
     profileOverrides,
     userJobTitle: c.userJobTitle,
     userCompanyName: c.userCompanyName,
+    semantic: frozenSemanticOption(),
   } as any)
 
   return toSnapshot(c.id, c.label, result)
