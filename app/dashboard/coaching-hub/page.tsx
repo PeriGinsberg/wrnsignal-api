@@ -88,7 +88,6 @@ export default function CoachingHubPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [settingId, setSettingId] = useState<string | null>(null) // activity id in flight
-  const [hubTab, setHubTab] = useState<"required" | "plan">("required")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -165,42 +164,21 @@ export default function CoachingHubPage() {
         </p>
       </div>
 
-      {/* Tab bar — Required Actions (default) + My Plan (existing surfaces). */}
-      <div style={{ display: "flex", gap: 24, borderBottom: `1px solid ${T.BORDER_SOFT}`, marginBottom: 20 }}>
-        {([["required", "Required Actions"], ["plan", "My Plan"]] as const).map(([key, labelText]) => (
-          <button
-            key={key}
-            onClick={() => setHubTab(key)}
-            style={{
-              background: "none", border: "none", cursor: "pointer", padding: "10px 0",
-              borderBottom: hubTab === key ? "2px solid #FEB06A" : "2px solid transparent",
-              color: hubTab === key ? T.WRN_ORANGE : T.MUTED,
-              fontSize: 13, fontWeight: 900, fontFamily: "inherit",
-            }}
-          >
-            {labelText}
-          </button>
-        ))}
-      </div>
-
-      {hubTab === "required" ? (
+      {/* Stacked sections — single scrolling page, top to bottom. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <RequiredActionsSection />
-      ) : (
-        // My Plan — existing surfaces, unchanged, now under a tab.
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <ActionItemsSection groups={groups} loadError={loadError} />
-          <MyPlanSection
-            groups={groups}
-            loading={loading}
-            loadError={loadError}
-            actionError={actionError}
-            settingId={settingId}
-            onRetry={load}
-            onSetStatus={setStatus}
-          />
-          <SharedDocumentsSection />
-        </div>
-      )}
+        <ActionItemsSection groups={groups} loadError={loadError} />
+        <MyPlanSection
+          groups={groups}
+          loading={loading}
+          loadError={loadError}
+          actionError={actionError}
+          settingId={settingId}
+          onRetry={load}
+          onSetStatus={setStatus}
+        />
+        <SharedDocumentsSection />
+      </div>
     </div>
   )
 }
