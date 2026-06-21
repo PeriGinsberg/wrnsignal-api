@@ -372,13 +372,16 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
             // dismissible card with a "Mark done" button instead of a link.
             if (a.doneEndpoint) {
               return (
-                <div key={`${a.kind}:${a.id}`} style={cardStyle}>
-                  {inner}
+                <div
+                  key={`${a.kind}:${a.id}`}
+                  style={{ ...cardStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>{inner}</div>
                   <button
                     type="button"
                     disabled={doingId === a.id}
                     onClick={() => void markDone(a)}
-                    style={{ ...btnSecondary, marginTop: 10, fontSize: 12, padding: "6px 14px", borderRadius: 8, opacity: doingId === a.id ? 0.6 : 1 }}
+                    style={{ ...btnSecondary, flexShrink: 0, fontSize: 12, padding: "6px 14px", borderRadius: 8, opacity: doingId === a.id ? 0.6 : 1 }}
                   >
                     {doingId === a.id ? "Marking…" : "Mark done"}
                   </button>
