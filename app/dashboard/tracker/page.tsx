@@ -228,6 +228,7 @@ export default function TrackerPage() {
   const [editingInterviewId, setEditingInterviewId] = useState<string | null>(null)
   const [interviewFilter, setInterviewFilter] = useState("all")
   const [saving, setSaving] = useState(false)
+  const [jdExpanded, setJdExpanded] = useState(false)
 
   // Personas
   const [personas, setPersonas] = useState<any[]>([])
@@ -295,6 +296,7 @@ export default function TrackerPage() {
   function expandApp(app: any) {
     setEditingApp({ ...app })
     setExpandedId(app.id)
+    setJdExpanded(false)
   }
 
   function collapseApp() {
@@ -311,7 +313,7 @@ export default function TrackerPage() {
     setSaving(true)
     const token = await getToken()
     if (!token) { setSaving(false); return }
-    const { id, profile_id, created_at, signal_decision, signal_score, signal_run_at, jobfit_run_id, interview_count, persona_name, ...fields } = editingApp
+    const { id, profile_id, created_at, signal_decision, signal_score, signal_run_at, jobfit_run_id, interview_count, persona_name, job_description, ...fields } = editingApp
     const result = await apiCall(`/api/applications/${editingApp.id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -981,6 +983,27 @@ export default function TrackerPage() {
                                 </div>
                               )}
                             </div>
+                          </div>
+                        )}
+                        {/* Job Description — read-only, saved from the scoring
+                            run so the candidate can reread it for interview
+                            prep after the posting comes down. Only shows when
+                            the linked jobfit_run has stored JD text; null for
+                            manual/legacy jobs → nothing renders. GET-only. */}
+                        {a.job_description && (
+                          <div style={{ marginTop: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 16px", border: `1px solid ${T.BORDER_SOFT}` }}>
+                            <div onClick={() => setJdExpanded((v) => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                              <span style={{ ...label, color: T.DIM }}>JOB DESCRIPTION</span>
+                              <span style={{ fontSize: 12, color: T.DIM }}>{jdExpanded ? "▲" : "▼"}</span>
+                            </div>
+                            <p style={{ fontSize: 11, color: T.DIM, margin: "4px 0 0" }}>
+                              Saved from when this job was scored, so you can reread it even if the original posting comes down.
+                            </p>
+                            {jdExpanded && (
+                              <div style={{ marginTop: 10, fontSize: 12, color: T.MUTED, lineHeight: "18px", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 360, overflowY: "auto" }}>
+                                {a.job_description}
+                              </div>
+                            )}
                           </div>
                         )}
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16 }}>

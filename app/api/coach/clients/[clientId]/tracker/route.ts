@@ -104,7 +104,7 @@ export async function GET(
     // Fetch client applications
     const { data: applications, error: appsErr } = await supabase
       .from("signal_applications")
-      .select("*, signal_interviews(id), client_personas(name)")
+      .select("*, signal_interviews(id), client_personas(name), jobfit_runs!jobfit_run_id(job_description)")
       .eq("profile_id", clientProfileId)
       .order("created_at", { ascending: false })
 
@@ -133,8 +133,11 @@ export async function GET(
       ...app,
       interview_count: Array.isArray(app.signal_interviews) ? app.signal_interviews.length : 0,
       persona_name: app.client_personas?.name || null,
+      // Read-only JD captured at scoring time (see /api/applications GET).
+      job_description: app.jobfit_runs?.job_description ?? null,
       signal_interviews: undefined,
       client_personas: undefined,
+      jobfit_runs: undefined,
       coach_annotations: annotationsByApp[app.id] || [],
     }))
 

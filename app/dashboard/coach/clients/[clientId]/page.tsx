@@ -69,6 +69,7 @@ type ClientApplication = {
   signal_decision: string | null
   signal_score: number | null
   job_url: string | null
+  job_description: string | null
   created_at: string | null
   coach_annotations: any[]
 }
@@ -303,6 +304,7 @@ export default function CoachClientPage() {
 
   // Application card expand state (tracker tab)
   const [openAppIds, setOpenAppIds] = useState<Set<string>>(new Set())
+  const [jdOpenIds, setJdOpenIds] = useState<Set<string>>(new Set())
   const [annotatingAppId, setAnnotatingAppId] = useState<string | null>(null)
   const [annotationNote, setAnnotationNote] = useState("")
   const [annotationPriority, setAnnotationPriority] = useState("info")
@@ -1014,6 +1016,28 @@ export default function CoachClientPage() {
                               </div>
                             )}
                           </div>
+
+                          {/* Job Description — read-only, saved from the
+                              scoring run so the client can reread it for
+                              interview prep after the posting comes down.
+                              Mirrors the client tracker section. Null for
+                              manual/legacy jobs → nothing renders. */}
+                          {app.job_description && (
+                            <div style={{ marginBottom: 12, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.BORDER_SOFT}` }}>
+                              <div onClick={() => setJdOpenIds((prev) => { const next = new Set(prev); next.has(app.id) ? next.delete(app.id) : next.add(app.id); return next })} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                                <span style={{ ...eyebrow, fontSize: 9, color: T.DIM }}>JOB DESCRIPTION</span>
+                                <span style={{ fontSize: 12, color: T.DIM }}>{jdOpenIds.has(app.id) ? "▲" : "▼"}</span>
+                              </div>
+                              <p style={{ fontSize: 11, color: T.DIM, margin: "4px 0 0" }}>
+                                Saved from when this job was scored, so you can reread it even if the original posting comes down.
+                              </p>
+                              {jdOpenIds.has(app.id) && (
+                                <div style={{ marginTop: 10, fontSize: 12, color: T.MUTED, lineHeight: "18px", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 360, overflowY: "auto" }}>
+                                  {app.job_description}
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {/* Existing annotations */}
                           {app.coach_annotations?.length > 0 && (
