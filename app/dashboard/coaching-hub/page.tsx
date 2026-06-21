@@ -22,7 +22,7 @@
 // never another client's data. The nav hides this for non-coached users; this
 // page does not re-check (nav-hiding isn't access control — the API is).
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, card, headline, btnSecondary } from "../../../lib/dashboard-theme"
 
@@ -166,8 +166,7 @@ export default function CoachingHubPage() {
 
       {/* Stacked sections — single scrolling page, top to bottom. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <RequiredActionsSection />
-        <ActionItemsSection groups={groups} loadError={loadError} />
+        <RequiredActionsSection groups={groups} />
         <MyPlanSection
           groups={groups}
           loading={loading}
@@ -196,7 +195,7 @@ type RequiredAction = {
   kind: string
   label: string
   title: string
-  company: string
+  subtitle: string | null
   note: string | null
   decision: string | null
   score: number | null
@@ -204,9 +203,11 @@ type RequiredAction = {
   sentAt: string | null
 }
 
+type ProviderContext = { token: string; groups: PlanGroup[] }
+
 type ActionProvider = {
   kind: string
-  load: (token: string) => Promise<RequiredAction[]>
+  load: (ctx: ProviderContext) => Promise<RequiredAction[]>
 }
 
 // Provider: unreviewed coach-sourced jobs. Reuses the existing client endpoint
@@ -214,7 +215,7 @@ type ActionProvider = {
 // the unanswered ones that have a tracker job to open.
 const unreviewedSourcedJobs: ActionProvider = {
   kind: "sourced_job",
-  load: async (token) => {
+  load: async ({ token }) => {
     const res = await fetch("/api/coach/my-recommendations", { headers: { Authorization: `Bearer ${token}` } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j?.ok) throw new Error(j?.error || `Couldn't load recommendations (${res.status})`)
@@ -225,7 +226,7 @@ const unreviewedSourcedJobs: ActionProvider = {
         kind: "sourced_job",
         label: "Review the job your coach sent",
         title: r.job_title || "Untitled role",
-        company: r.company_name || "",
+        subtitle: r.company_name || null,
         note: r.coaching_note || null,
         decision: r.signal_decision || null,
         score: typeof r.signal_score === "number" ? r.signal_score : null,
@@ -235,27 +236,62 @@ const unreviewedSourcedJobs: ActionProvider = {
   },
 }
 
-const ACTION_PROVIDERS: ActionProvider[] = [unreviewedSourcedJobs]
+// Provider: coach action-required activity notes. Sourced from the activities
+// the page already loaded (no extra fetch) — an item appears when a visible
+// note is flagged action_required AND its activity isn't complete yet.
+// Read-and-jump: the card deep-links down to that activity in My Plan
+// (#activity-<id>), where the status pills already live; marking it complete
+// clears this on next load.
+const coachActionRequiredNotes: ActionProvider = {
+  kind: "activity_note",
+  load: async ({ groups }) =>
+    groups.flatMap((g) =>
+      g.activities
+        .filter((a) => a.status !== "complete")
+        .flatMap((a) =>
+          a.notes
+            .filter((n) => n.action_required)
+            .map((n) => ({
+              id: n.id,
+              kind: "activity_note",
+              label: "Your coach needs something from you",
+              title: a.name,
+              subtitle: g.name || null,
+              note: n.body,
+              decision: null,
+              score: null,
+              sentAt: null,
+              href: `#activity-${a.id}`,
+            })),
+        ),
+    ),
+}
 
-function RequiredActionsSection() {
+const ACTION_PROVIDERS: ActionProvider[] = [unreviewedSourcedJobs, coachActionRequiredNotes]
+
+function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
   const [actions, setActions] = useState<RequiredAction[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  // Show "Loading…" only on the first run; later re-runs (when the page's plan
+  // data changes) update the list silently instead of flashing.
+  const firstLoad = useRef(true)
 
   const load = useCallback(async () => {
-    setLoading(true)
+    if (firstLoad.current) setLoading(true)
     setLoadError(null)
     try {
       const token = await getToken()
       if (!token) { setLoadError("Please sign in again."); return }
-      const results = await Promise.all(ACTION_PROVIDERS.map((p) => p.load(token)))
+      const results = await Promise.all(ACTION_PROVIDERS.map((p) => p.load({ token, groups })))
       setActions(results.flat())
     } catch (e: any) {
       setLoadError(e?.message || "Network error — try again")
     } finally {
+      firstLoad.current = false
       setLoading(false)
     }
-  }, [])
+  }, [groups])
 
   useEffect(() => { void load() }, [load])
 
@@ -294,7 +330,7 @@ function RequiredActionsSection() {
               </span>
               <span style={{ display: "block", fontSize: 14, color: T.TEXT, fontWeight: 700, wordBreak: "break-word" }}>
                 {a.title}
-                {a.company && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.company}</span>}
+                {a.subtitle && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.subtitle}</span>}
               </span>
               {(a.decision || a.score !== null) && (
                 <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
@@ -319,51 +355,6 @@ function RequiredActionsSection() {
   )
 }
 
-// ── Section: Action Items — ONLY what the coach explicitly pushed: the
-//    action-required visible notes (already visible-filtered by the route).
-//    Activities are plan work and live under My Plan, not here. Read-only this
-//    slice (the acknowledge loop is 5b). Pure presentation over the lifted payload;
-//    renders NOTHING (no zone, no empty box) when there's nothing pushed or on load
-//    error — so the Hub leads with My Plan unless the coach has actually asked. ──
-function ActionItemsSection({
-  groups, loadError,
-}: {
-  groups: PlanGroup[]
-  loadError: string | null
-}) {
-  if (loadError) return null // MyPlan owns the error display + retry; don't double up
-
-  const actionNotes = groups.flatMap((g) =>
-    g.activities.flatMap((a) => a.notes.filter((n) => n.action_required).map((n) => ({ n, activityName: a.name }))),
-  )
-  if (actionNotes.length === 0) return null // nothing pushed → hide the whole zone
-
-  return (
-    <section style={{ ...card, padding: 22 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
-        Action Items
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {actionNotes.map(({ n, activityName }) => (
-          <div
-            key={n.id}
-            style={{
-              padding: "10px 12px", borderRadius: 12,
-              border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
-              fontSize: 13, color: T.TEXT, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word",
-            }}
-          >
-            <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 2 }}>
-              On {activityName}
-            </span>
-            {n.body}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 // ── Section: My Plan — the client's own engagement activities. Presentational:
 //    the page owns the fetch + status writes (lifted); this renders exactly as
 //    before, sourcing state + handlers from props. ──
@@ -382,6 +373,33 @@ function MyPlanSection({
   // reveals the rest. Local to this section (not lifted). No toggle when
   // there's 0–1 group (nothing to expand).
   const [expanded, setExpanded] = useState(false)
+  // Deep-link target from a Required Action (coach action-required note):
+  // #activity-<id> expands the plan (so a collapsed group's activity is in the
+  // DOM) and scrolls it into view. Mirrors the tracker's app-<id> pattern, but
+  // same-page via the URL hash so it also handles clicks made while already here.
+  const [scrollTarget, setScrollTarget] = useState<string | null>(null)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const handle = () => {
+      const hash = window.location.hash
+      if (!hash.startsWith("#activity-")) return
+      const actId = hash.slice("#activity-".length)
+      if (!groups.some((g) => g.activities.some((a) => a.id === actId))) return
+      setExpanded(true)
+      setScrollTarget(actId)
+    }
+    handle()
+    window.addEventListener("hashchange", handle)
+    return () => window.removeEventListener("hashchange", handle)
+  }, [groups])
+  useEffect(() => {
+    if (!scrollTarget) return
+    const el = document.getElementById(`activity-${scrollTarget}`)
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      setScrollTarget(null)
+    }
+  }, [scrollTarget, expanded, groups])
   const visibleGroups = expanded ? groups : groups.slice(0, 1)
   return (
     <section style={{ ...card, padding: 22 }}>
@@ -420,6 +438,7 @@ function MyPlanSection({
                 {g.activities.map((a) => (
                   <div
                     key={a.id}
+                    id={`activity-${a.id}`}
                     style={{
                       display: "flex", flexDirection: "column", gap: 8,
                       padding: "10px 12px", borderRadius: 12,
