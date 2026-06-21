@@ -77,6 +77,7 @@ export default function CoachingHubPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [settingId, setSettingId] = useState<string | null>(null) // activity id in flight
+  const [hubTab, setHubTab] = useState<"required" | "plan">("required")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -153,21 +154,172 @@ export default function CoachingHubPage() {
         </p>
       </div>
 
-      {/* Sections compose here — add future coached surfaces below these. */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <ActionItemsSection groups={groups} loadError={loadError} />
-        <MyPlanSection
-          groups={groups}
-          loading={loading}
-          loadError={loadError}
-          actionError={actionError}
-          settingId={settingId}
-          onRetry={load}
-          onSetStatus={setStatus}
-        />
-        <SharedDocumentsSection />
+      {/* Tab bar — Required Actions (default) + My Plan (existing surfaces). */}
+      <div style={{ display: "flex", gap: 24, borderBottom: `1px solid ${T.BORDER_SOFT}`, marginBottom: 20 }}>
+        {([["required", "Required Actions"], ["plan", "My Plan"]] as const).map(([key, labelText]) => (
+          <button
+            key={key}
+            onClick={() => setHubTab(key)}
+            style={{
+              background: "none", border: "none", cursor: "pointer", padding: "10px 0",
+              borderBottom: hubTab === key ? "2px solid #FEB06A" : "2px solid transparent",
+              color: hubTab === key ? T.WRN_ORANGE : T.MUTED,
+              fontSize: 13, fontWeight: 900, fontFamily: "inherit",
+            }}
+          >
+            {labelText}
+          </button>
+        ))}
       </div>
+
+      {hubTab === "required" ? (
+        <RequiredActionsSection />
+      ) : (
+        // My Plan — existing surfaces, unchanged, now under a tab.
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <ActionItemsSection groups={groups} loadError={loadError} />
+          <MyPlanSection
+            groups={groups}
+            loading={loading}
+            loadError={loadError}
+            actionError={actionError}
+            settingId={settingId}
+            onRetry={load}
+            onSetStatus={setStatus}
+          />
+          <SharedDocumentsSection />
+        </div>
+      )}
     </div>
+  )
+}
+
+// ── Required Actions — the client's single "what should I do next" list ──────
+// Built as a list of action PROVIDERS so future item types append without
+// restructuring: each provider fetches its own source and maps to the shared
+// RequiredAction shape; the section concatenates them. v1 ships ONE provider —
+// unreviewed coach-sourced jobs (coach_job_recommendations, client_status='new').
+// Read-and-jump: the card deep-links into the Job Tracker, where Apply/Pass
+// already lives; responding there flips client_status off 'new', so the item
+// clears on the next load. No write path here.
+type RequiredAction = {
+  id: string
+  kind: string
+  label: string
+  title: string
+  company: string
+  note: string | null
+  decision: string | null
+  score: number | null
+  href: string
+}
+
+type ActionProvider = {
+  kind: string
+  load: (token: string) => Promise<RequiredAction[]>
+}
+
+// Provider: unreviewed coach-sourced jobs. Reuses the existing client endpoint
+// /api/coach/my-recommendations (returns all recs for this client); keep only
+// the unanswered ones that have a tracker job to open.
+const unreviewedSourcedJobs: ActionProvider = {
+  kind: "sourced_job",
+  load: async (token) => {
+    const res = await fetch("/api/coach/my-recommendations", { headers: { Authorization: `Bearer ${token}` } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || !j?.ok) throw new Error(j?.error || `Couldn't load recommendations (${res.status})`)
+    return (j.recommendations || [])
+      .filter((r: any) => r.client_status === "new" && r.application_id)
+      .map((r: any) => ({
+        id: r.id,
+        kind: "sourced_job",
+        label: "Review the job your coach sent",
+        title: r.job_title || "Untitled role",
+        company: r.company_name || "",
+        note: r.coaching_note || null,
+        decision: r.signal_decision || null,
+        score: typeof r.signal_score === "number" ? r.signal_score : null,
+        href: `/dashboard/tracker?job=${r.application_id}`,
+      }))
+  },
+}
+
+const ACTION_PROVIDERS: ActionProvider[] = [unreviewedSourcedJobs]
+
+function RequiredActionsSection() {
+  const [actions, setActions] = useState<RequiredAction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const token = await getToken()
+      if (!token) { setLoadError("Please sign in again."); return }
+      const results = await Promise.all(ACTION_PROVIDERS.map((p) => p.load(token)))
+      setActions(results.flat())
+    } catch (e: any) {
+      setLoadError(e?.message || "Network error — try again")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void load() }, [load])
+
+  return (
+    <section style={{ ...card, padding: 22 }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
+        Required Actions
+      </div>
+      {loading ? (
+        <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading…</p>
+      ) : loadError ? (
+        <div>
+          <div style={{ fontSize: 12, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
+            {loadError}
+          </div>
+          <button style={{ ...btnSecondary, marginTop: 12 }} onClick={() => void load()}>Retry</button>
+        </div>
+      ) : actions.length === 0 ? (
+        <p style={{ fontSize: 13, color: T.DIM, margin: 0, lineHeight: 1.5 }}>
+          You’re all caught up — no actions need your attention right now.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {actions.map((a) => (
+            <a
+              key={`${a.kind}:${a.id}`}
+              href={a.href}
+              style={{
+                display: "block", textDecoration: "none",
+                padding: "12px 14px", borderRadius: 12,
+                border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
+              }}
+            >
+              <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 4 }}>
+                {a.label}
+              </span>
+              <span style={{ display: "block", fontSize: 14, color: T.TEXT, fontWeight: 700, wordBreak: "break-word" }}>
+                {a.title}
+                {a.company && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.company}</span>}
+              </span>
+              {(a.decision || a.score !== null) && (
+                <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
+                  {a.decision}{a.decision && a.score !== null ? " · " : ""}{a.score !== null ? `Score ${a.score}` : ""}
+                </span>
+              )}
+              {a.note && (
+                <span style={{ display: "block", fontSize: 13, color: T.MUTED, marginTop: 6, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: `2px solid ${T.BORDER}`, paddingLeft: 10 }}>
+                  {a.note}
+                </span>
+              )}
+            </a>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 

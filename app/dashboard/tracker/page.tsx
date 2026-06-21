@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, card, eyebrow, headline, input, textarea, btnPrimary, btnSecondary, label } from "../../../lib/dashboard-theme"
 import { FRAMER_URL } from "../../../lib/urls"
@@ -290,6 +290,25 @@ export default function TrackerPage() {
   }, [])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  // Deep-link from the Coaching Hub Required Actions:
+  // /dashboard/tracker?job=<applicationId> auto-opens that job's detail and
+  // scrolls it into view. Fires once, after applications load (guarded so
+  // later setApplications writes from edits don't re-trigger it).
+  const deepLinkHandled = useRef(false)
+  useEffect(() => {
+    if (deepLinkHandled.current || loading || typeof window === "undefined") return
+    const jobId = new URLSearchParams(window.location.search).get("job")
+    if (!jobId) { deepLinkHandled.current = true; return }
+    const app = applications.find((a) => a.id === jobId)
+    if (!app) return // applications not in yet — retry on next load
+    deepLinkHandled.current = true
+    setActiveTab("applications")
+    expandApp(app)
+    requestAnimationFrame(() => {
+      document.getElementById(`app-${jobId}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+  }, [loading, applications])
 
   // ── Application CRUD ──────────────────────────────────────
 
@@ -752,7 +771,7 @@ export default function TrackerPage() {
                 const priorityBorder = coachRec ? PRIORITY_BORDER[coachRec.priority] || null : null
                 const noteExpanded = expandedNotes[a.id] ?? false
                 return (
-                  <div key={a.id} style={priorityBorder ? { borderLeft: `3px solid ${priorityBorder}` } : undefined}>
+                  <div key={a.id} id={`app-${a.id}`} style={priorityBorder ? { borderLeft: `3px solid ${priorityBorder}` } : undefined}>
                     <div
                       onClick={() => expanded ? collapseApp() : expandApp(a)}
                       style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1fr 0.9fr 1fr 0.6fr 0.8fr 0.7fr", padding: "13px 18px", borderBottom: `1px solid rgba(255,255,255,0.06)`, cursor: "pointer", alignItems: "center", background: expanded ? "rgba(255,255,255,0.02)" : coachRec ? "rgba(0,245,212,0.02)" : "transparent" }}
