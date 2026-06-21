@@ -44,6 +44,17 @@ function fmtDue(d: string | null): string {
   return `${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}`
 }
 
+// Format an ISO timestamp (e.g. coach_job_recommendations.created_at) to
+// "MMM D" in local time — for the "Sent" date on Required Actions cards.
+// (fmtDue above only handles date-only YYYY-MM-DD values.) Returns "" for
+// null/garbage so the line is hidden.
+function fmtSent(iso: string | null): string {
+  if (!iso) return ""
+  const dt = new Date(iso)
+  if (Number.isNaN(dt.getTime())) return ""
+  return `${MONTHS[dt.getMonth()]} ${dt.getDate()}`
+}
+
 // Activity status — mirrors the coach-side ActivityStatusControl visual language
 // (muted → amber → green) so client + coach reads consistently. These constants
 // aren't exported from EngagementsTab; kept in sync by convention.
@@ -212,6 +223,7 @@ type RequiredAction = {
   decision: string | null
   score: number | null
   href: string
+  sentAt: string | null
 }
 
 type ActionProvider = {
@@ -240,6 +252,7 @@ const unreviewedSourcedJobs: ActionProvider = {
         decision: r.signal_decision || null,
         score: typeof r.signal_score === "number" ? r.signal_score : null,
         href: `/dashboard/tracker?job=${r.application_id}`,
+        sentAt: r.created_at || null,
       }))
   },
 }
@@ -308,6 +321,11 @@ function RequiredActionsSection() {
               {(a.decision || a.score !== null) && (
                 <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
                   {a.decision}{a.decision && a.score !== null ? " · " : ""}{a.score !== null ? `Score ${a.score}` : ""}
+                </span>
+              )}
+              {fmtSent(a.sentAt) && (
+                <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 4 }}>
+                  Sent {fmtSent(a.sentAt)}
                 </span>
               )}
               {a.note && (
