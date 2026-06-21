@@ -29,7 +29,7 @@ import { T, card, headline, btnSecondary } from "../../../lib/dashboard-theme"
 type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
 
-type PlanNote = { id: string; body: string; action_required: boolean; created_at: string }
+type PlanNote = { id: string; body: string; action_required: boolean; created_at: string; client_done_at: string | null }
 type PlanActivity = { id: string; name: string; status: string; owner: string; due_date: string | null; notes: PlanNote[] }
 type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
 
@@ -201,6 +201,7 @@ type RequiredAction = {
   score: number | null
   href: string
   sentAt: string | null
+  doneEndpoint?: string
 }
 
 type ProviderContext = { token: string; groups: PlanGroup[] }
@@ -238,10 +239,10 @@ const unreviewedSourcedJobs: ActionProvider = {
 
 // Provider: coach action-required activity notes. Sourced from the activities
 // the page already loaded (no extra fetch) — an item appears when a visible
-// note is flagged action_required AND its activity isn't complete yet.
-// Read-and-jump: the card deep-links down to that activity in My Plan
-// (#activity-<id>), where the status pills already live; marking it complete
-// clears this on next load.
+// note is flagged action_required, its activity isn't complete, and the client
+// hasn't marked it done. The card carries a doneEndpoint, so it renders a
+// "Mark done" button (PATCH client_done_at) instead of a link; that
+// acknowledgement is coach-visible and clears the card.
 const coachActionRequiredNotes: ActionProvider = {
   kind: "activity_note",
   load: async ({ groups }) =>
@@ -250,18 +251,19 @@ const coachActionRequiredNotes: ActionProvider = {
         .filter((a) => a.status !== "complete")
         .flatMap((a) =>
           a.notes
-            .filter((n) => n.action_required)
+            .filter((n) => n.action_required && !n.client_done_at)
             .map((n) => ({
               id: n.id,
               kind: "activity_note",
               label: "Your coach needs something from you",
-              title: a.name,
-              subtitle: g.name || null,
-              note: n.body,
+              title: n.body,
+              subtitle: null,
+              note: null,
               decision: null,
               score: null,
               sentAt: null,
-              href: `#activity-${a.id}`,
+              href: "",
+              doneEndpoint: `/api/me/activity-notes/${n.id}/done`,
             })),
         ),
     ),
@@ -276,6 +278,25 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
   // Show "Loading…" only on the first run; later re-runs (when the page's plan
   // data changes) update the list silently instead of flashing.
   const firstLoad = useRef(true)
+  const [doingId, setDoingId] = useState<string | null>(null)
+
+  async function markDone(a: RequiredAction) {
+    if (!a.doneEndpoint || doingId) return
+    setDoingId(a.id)
+    setLoadError(null)
+    try {
+      const token = await getToken()
+      if (!token) { setLoadError("Please sign in again."); return }
+      const res = await fetch(a.doneEndpoint, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) { setLoadError(j?.error || `Couldn't mark that done (${res.status})`); return }
+      setActions((prev) => prev.filter((x) => !(x.kind === a.kind && x.id === a.id)))
+    } catch {
+      setLoadError("Network error — try again")
+    } finally {
+      setDoingId(null)
+    }
+  }
 
   const load = useCallback(async () => {
     if (firstLoad.current) setLoading(true)
@@ -315,40 +336,61 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {actions.map((a) => (
-            <a
-              key={`${a.kind}:${a.id}`}
-              href={a.href}
-              style={{
-                display: "block", textDecoration: "none",
-                padding: "12px 14px", borderRadius: 12,
-                border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
-              }}
-            >
-              <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 4 }}>
-                {a.label}
-              </span>
-              <span style={{ display: "block", fontSize: 14, color: T.TEXT, fontWeight: 700, wordBreak: "break-word" }}>
-                {a.title}
-                {a.subtitle && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.subtitle}</span>}
-              </span>
-              {(a.decision || a.score !== null) && (
-                <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
-                  {a.decision}{a.decision && a.score !== null ? " · " : ""}{a.score !== null ? `Score ${a.score}` : ""}
+          {actions.map((a) => {
+            const cardStyle: React.CSSProperties = {
+              display: "block", textDecoration: "none",
+              padding: "12px 14px", borderRadius: 12,
+              border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
+            }
+            const inner = (
+              <>
+                <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 4 }}>
+                  {a.label}
                 </span>
-              )}
-              {fmtSent(a.sentAt) && (
-                <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 4 }}>
-                  Sent {fmtSent(a.sentAt)}
+                <span style={{ display: "block", fontSize: 14, color: T.TEXT, fontWeight: 700, wordBreak: "break-word" }}>
+                  {a.title}
+                  {a.subtitle && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.subtitle}</span>}
                 </span>
-              )}
-              {a.note && (
-                <span style={{ display: "block", fontSize: 13, color: T.MUTED, marginTop: 6, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: `2px solid ${T.BORDER}`, paddingLeft: 10 }}>
-                  {a.note}
-                </span>
-              )}
-            </a>
-          ))}
+                {(a.decision || a.score !== null) && (
+                  <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
+                    {a.decision}{a.decision && a.score !== null ? " · " : ""}{a.score !== null ? `Score ${a.score}` : ""}
+                  </span>
+                )}
+                {fmtSent(a.sentAt) && (
+                  <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 4 }}>
+                    Sent {fmtSent(a.sentAt)}
+                  </span>
+                )}
+                {a.note && (
+                  <span style={{ display: "block", fontSize: 13, color: T.MUTED, marginTop: 6, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: `2px solid ${T.BORDER}`, paddingLeft: 10 }}>
+                    {a.note}
+                  </span>
+                )}
+              </>
+            )
+            // Items with a write action (coach action-required notes) render as a
+            // dismissible card with a "Mark done" button instead of a link.
+            if (a.doneEndpoint) {
+              return (
+                <div key={`${a.kind}:${a.id}`} style={cardStyle}>
+                  {inner}
+                  <button
+                    type="button"
+                    disabled={doingId === a.id}
+                    onClick={() => void markDone(a)}
+                    style={{ ...btnSecondary, marginTop: 10, fontSize: 12, padding: "6px 14px", borderRadius: 8, opacity: doingId === a.id ? 0.6 : 1 }}
+                  >
+                    {doingId === a.id ? "Marking…" : "Mark done"}
+                  </button>
+                </div>
+              )
+            }
+            return (
+              <a key={`${a.kind}:${a.id}`} href={a.href} style={cardStyle}>
+                {inner}
+              </a>
+            )
+          })}
         </div>
       )}
     </section>
@@ -373,33 +415,6 @@ function MyPlanSection({
   // reveals the rest. Local to this section (not lifted). No toggle when
   // there's 0–1 group (nothing to expand).
   const [expanded, setExpanded] = useState(false)
-  // Deep-link target from a Required Action (coach action-required note):
-  // #activity-<id> expands the plan (so a collapsed group's activity is in the
-  // DOM) and scrolls it into view. Mirrors the tracker's app-<id> pattern, but
-  // same-page via the URL hash so it also handles clicks made while already here.
-  const [scrollTarget, setScrollTarget] = useState<string | null>(null)
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const handle = () => {
-      const hash = window.location.hash
-      if (!hash.startsWith("#activity-")) return
-      const actId = hash.slice("#activity-".length)
-      if (!groups.some((g) => g.activities.some((a) => a.id === actId))) return
-      setExpanded(true)
-      setScrollTarget(actId)
-    }
-    handle()
-    window.addEventListener("hashchange", handle)
-    return () => window.removeEventListener("hashchange", handle)
-  }, [groups])
-  useEffect(() => {
-    if (!scrollTarget) return
-    const el = document.getElementById(`activity-${scrollTarget}`)
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" })
-      setScrollTarget(null)
-    }
-  }, [scrollTarget, expanded, groups])
   const visibleGroups = expanded ? groups : groups.slice(0, 1)
   return (
     <section style={{ ...card, padding: 22 }}>
@@ -438,7 +453,6 @@ function MyPlanSection({
                 {g.activities.map((a) => (
                   <div
                     key={a.id}
-                    id={`activity-${a.id}`}
                     style={{
                       display: "flex", flexDirection: "column", gap: 8,
                       padding: "10px 12px", borderRadius: 12,

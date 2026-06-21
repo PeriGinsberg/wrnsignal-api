@@ -143,12 +143,12 @@ export async function GET(req: NextRequest) {
     // newest-first. The visibility + deleted_at filters ARE the privacy wall — a
     // coach-private note never appears here. owner-coach activities were already
     // dropped above, so their notes can't leak either.
-    type NoteOut = { id: string; body: string; action_required: boolean; created_at: string }
+    type NoteOut = { id: string; body: string; action_required: boolean; created_at: string; client_done_at: string | null }
     const notesByActivity = new Map<string, NoteOut[]>()
     if (acts.length) {
       const { data: noteData, error: noteErr } = await supabase
         .from("coach_client_activity_notes")
-        .select("id, body, action_required, created_at, engagement_activity_id")
+        .select("id, body, action_required, client_done_at, created_at, engagement_activity_id")
         .in("engagement_activity_id", acts.map((a) => a.id))
         .eq("visible_to_client", true)
         .is("deleted_at", null)
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
       if (noteErr) throw new Error(`Notes lookup failed: ${noteErr.message}`)
       for (const n of (noteData ?? []) as (NoteOut & { engagement_activity_id: string })[]) {
         const list = notesByActivity.get(n.engagement_activity_id) ?? []
-        list.push({ id: n.id, body: n.body, action_required: n.action_required, created_at: n.created_at })
+        list.push({ id: n.id, body: n.body, action_required: n.action_required, created_at: n.created_at, client_done_at: n.client_done_at })
         notesByActivity.set(n.engagement_activity_id, list)
       }
     }

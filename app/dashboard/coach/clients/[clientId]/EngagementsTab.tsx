@@ -723,6 +723,7 @@ type ActivityNote = {
   body: string
   visible_to_client: boolean
   action_required: boolean
+  client_done_at: string | null
   created_at: string
   updated_at: string
 }
@@ -889,6 +890,11 @@ function ActivityNotes({ notesBase }: { notesBase: string }) {
                           >
                             {n.action_required ? "★ Action" : "Action"}
                           </button>
+                          {n.client_done_at && (
+                            <span style={{ ...noteToggle, color: T.SUCCESS, borderColor: T.NAV_ACTIVE_BORDER, cursor: "default" }}>
+                              ✓ Client marked done
+                            </span>
+                          )}
                           <span style={{ marginLeft: "auto", display: "inline-flex", gap: 10 }}>
                             <button style={noteTextBtn} disabled={busy} onClick={() => { setEditingId(n.id); setEditDraft(n.body) }}>Edit</button>
                             <button style={{ ...noteTextBtn, color: T.ERROR }} disabled={busy} onClick={() => void remove(n.id)}>Delete</button>

@@ -24,7 +24,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const MAX_NOTE_LEN = 5000
-const NOTE_SELECT = "id, body, visible_to_client, action_required, created_at, updated_at"
+const NOTE_SELECT = "id, body, visible_to_client, action_required, client_done_at, created_at, updated_at"
 
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
