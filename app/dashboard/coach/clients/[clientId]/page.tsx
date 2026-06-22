@@ -809,6 +809,8 @@ export default function CoachClientPage() {
                                 <select style={{ ...input, cursor: "pointer", colorScheme: "dark", height: 38 } as React.CSSProperties} value={editRecAction} onChange={(e) => setEditRecAction(e.target.value)}>
                                   <option value="apply" style={{ background: "#0a1628" }}>Apply</option>
                                   <option value="research_first" style={{ background: "#0a1628" }}>Research First</option>
+                                  <option value="tailor_resume" style={{ background: "#0a1628" }}>Tailor Resume</option>
+                                  <option value="reach_out_first" style={{ background: "#0a1628" }}>Reach Out First</option>
                                   <option value="hold" style={{ background: "#0a1628" }}>Hold</option>
                                   <option value="skip" style={{ background: "#0a1628" }}>Skip</option>
                                 </select>
