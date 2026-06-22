@@ -182,7 +182,7 @@ export default function CreateClientModal({
         return
       }
       if (!res.ok) {
-        setGeneralError(data.error || "Something went wrong. Please try again.")
+        setGeneralError(data.message || data.error || "Something went wrong. Please try again.")
         return
       }
 
