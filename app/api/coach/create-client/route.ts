@@ -95,6 +95,12 @@ export async function POST(req: NextRequest) {
     const hardConstraints = String(body.hardConstraints || "").trim() || null
     const strengths = String(body.strengths || "").trim() || null
     const concerns = String(body.concerns || "").trim() || null
+    // Optional client-detail intake fields (stored as client_profiles columns).
+    const phone = String(body.phone || "").trim() || null
+    const linkedinUrl = String(body.linkedin_url || "").trim() || null
+    const educationStatus = String(body.education_status || "").trim() || null
+    const university = String(body.university || "").trim() || null
+    const gradDate = String(body.grad_date || "").trim() || null
 
     const missing: string[] = []
     if (!firstName) missing.push("firstName")
@@ -119,6 +125,16 @@ export async function POST(req: NextRequest) {
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return withCorsJson(req, { ok: false, error: "Invalid email format" }, 400)
+    }
+
+    // Guard the two constrained intake fields so bad input returns 400 rather
+    // than tripping the DB CHECK / date cast as a 500. The modal already
+    // constrains both; this protects non-form callers.
+    if (educationStatus && !["in_school", "graduated", "na"].includes(educationStatus)) {
+      return withCorsJson(req, { ok: false, error: "Invalid education_status" }, 400)
+    }
+    if (gradDate && !/^\d{4}-\d{2}-\d{2}$/.test(gradDate)) {
+      return withCorsJson(req, { ok: false, error: "Invalid grad_date (expected YYYY-MM-DD)" }, 400)
     }
 
     // ── STEP 3: Check if account already exists ──
@@ -187,6 +203,11 @@ export async function POST(req: NextRequest) {
         coach_notes_avoid: hardConstraints,
         coach_notes_strengths: strengths,
         coach_notes_concerns: concerns,
+        phone,
+        linkedin_url: linkedinUrl,
+        education_status: educationStatus,
+        university,
+        grad_date: gradDate,
       })
       .select("id")
       .single()

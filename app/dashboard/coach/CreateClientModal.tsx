@@ -36,6 +36,15 @@ const selectStyle: React.CSSProperties = {
   ...inputStyle, cursor: "pointer", appearance: "auto" as any,
 }
 
+// Education status — University + Grad date reveal only for in_school /
+// graduated (mirrors AddProspectModal). Values match the client_profiles
+// CHECK enum.
+const EDUCATION_OPTIONS: { value: "in_school" | "graduated" | "na"; label: string }[] = [
+  { value: "in_school", label: "In school" },
+  { value: "graduated", label: "Graduated" },
+  { value: "na", label: "N/A" },
+]
+
 /* ── Component ───────────────────────────────────────────────── */
 
 export default function CreateClientModal({
@@ -57,6 +66,12 @@ export default function CreateClientModal({
   const [hardConstraints, setHardConstraints] = useState("")
   const [strengths, setStrengths] = useState("")
   const [concerns, setConcerns] = useState("")
+  // Client-detail intake (optional) — stored as client_profiles columns.
+  const [phone, setPhone] = useState("")
+  const [linkedinUrl, setLinkedinUrl] = useState("")
+  const [educationStatus, setEducationStatus] = useState<"" | "in_school" | "graduated" | "na">("")
+  const [university, setUniversity] = useState("")
+  const [gradDate, setGradDate] = useState("")
 
   // Resume tab
   const [resumeTab, setResumeTab] = useState<"paste" | "upload">("paste")
@@ -69,6 +84,8 @@ export default function CreateClientModal({
   const [emailConflict, setEmailConflict] = useState("")
   const [generalError, setGeneralError] = useState("")
   const [result, setResult] = useState<{ ok: boolean; emailSent?: boolean } | null>(null)
+
+  const showEducationDetails = educationStatus === "in_school" || educationStatus === "graduated"
 
   function toggleJobType(opt: string) {
     const cur = new Set(jobType.split(",").map((s) => s.trim()).filter(Boolean))
@@ -84,6 +101,7 @@ export default function CreateClientModal({
     setJobType(""); setTargetRoles(""); setTargetLocations("")
     setTimeframe(""); setResumeText("")
     setHardConstraints(""); setStrengths(""); setConcerns("")
+    setPhone(""); setLinkedinUrl(""); setEducationStatus(""); setUniversity(""); setGradDate("")
     setResumeTab("paste"); setUploadStatus(null)
     setEmailConflict(""); setGeneralError(""); setResult(null)
   }
@@ -150,6 +168,11 @@ export default function CreateClientModal({
           hardConstraints: hardConstraints || null,
           strengths: strengths || null,
           concerns: concerns || null,
+          phone: phone.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+          education_status: educationStatus || null,
+          university: showEducationDetails ? (university.trim() || null) : null,
+          grad_date: showEducationDetails ? (gradDate || null) : null,
         }),
       })
       const data = await res.json()
@@ -255,6 +278,47 @@ export default function CreateClientModal({
             />
             {emailConflict && (
               <div style={{ fontSize: 12, color: ROSE, marginTop: 4 }}>{emailConflict}</div>
+            )}
+            {/* Contact + education detail (all optional) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+              <input
+                style={inputStyle}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone (optional)"
+              />
+              <input
+                style={inputStyle}
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                placeholder="LinkedIn URL (optional)"
+              />
+            </div>
+            <select
+              style={{ ...selectStyle, marginTop: 16 }}
+              value={educationStatus}
+              onChange={(e) => setEducationStatus(e.target.value as typeof educationStatus)}
+            >
+              <option value="">Education status (optional)…</option>
+              {EDUCATION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            {showEducationDetails && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+                <input
+                  style={inputStyle}
+                  value={university}
+                  onChange={(e) => setUniversity(e.target.value)}
+                  placeholder="University (optional)"
+                />
+                <input
+                  type="date"
+                  style={inputStyle}
+                  value={gradDate}
+                  onChange={(e) => setGradDate(e.target.value)}
+                />
+              </div>
             )}
           </div>
 
