@@ -265,7 +265,7 @@ export async function POST(req: NextRequest) {
       type: "magiclink",
       email,
       options: {
-        redirectTo: `${getAppUrl(req)}/dashboard`,
+        redirectTo: `${getAppUrl(req)}/dashboard/welcome`,
       },
     })
 
