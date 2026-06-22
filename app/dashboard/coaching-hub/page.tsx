@@ -201,6 +201,7 @@ type RequiredAction = {
   score: number | null
   href: string
   sentAt: string | null
+  context?: string
   doneEndpoint?: string
 }
 
@@ -262,6 +263,7 @@ const coachActionRequiredNotes: ActionProvider = {
               decision: null,
               score: null,
               sentAt: null,
+              context: a.name,
               href: "",
               doneEndpoint: `/api/me/activity-notes/${n.id}/done`,
             })),
@@ -351,6 +353,11 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
                   {a.title}
                   {a.subtitle && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.subtitle}</span>}
                 </span>
+                {a.context && (
+                  <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 2 }}>
+                    {a.context}
+                  </span>
+                )}
                 {(a.decision || a.score !== null) && (
                   <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
                     {a.decision}{a.decision && a.score !== null ? " · " : ""}{a.score !== null ? `Score ${a.score}` : ""}
@@ -482,11 +489,13 @@ function MyPlanSection({
                         onSet={(s) => void onSetStatus(a.id, s)}
                       />
                     </div>
-                    {/* Coach notes shared with the client — read-only, newest-first.
-                        action_required is carried but its surfacing is Slice 5. */}
-                    {a.notes.length > 0 && (
+                    {/* Informational coach notes only — read-only, newest-first.
+                        action_required notes live in Required Actions (one home
+                        per action note), so they're filtered out here regardless
+                        of done state. */}
+                    {a.notes.filter((n) => !n.action_required).length > 0 && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {a.notes.map((n) => (
+                        {a.notes.filter((n) => !n.action_required).map((n) => (
                           <div
                             key={n.id}
                             style={{
