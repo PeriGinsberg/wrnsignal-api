@@ -306,18 +306,24 @@ export default function CreateClientModal({
             </select>
             {showEducationDetails && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
-                <input
-                  style={inputStyle}
-                  value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
-                  placeholder="University (optional)"
-                />
-                <input
-                  type="date"
-                  style={inputStyle}
-                  value={gradDate}
-                  onChange={(e) => setGradDate(e.target.value)}
-                />
+                <div>
+                  <label style={{ fontSize: 11, color: MUTED, marginBottom: 6, display: "block" }}>University</label>
+                  <input
+                    style={inputStyle}
+                    value={university}
+                    onChange={(e) => setUniversity(e.target.value)}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: MUTED, marginBottom: 6, display: "block" }}>Graduation date</label>
+                  <input
+                    type="date"
+                    style={inputStyle}
+                    value={gradDate}
+                    onChange={(e) => setGradDate(e.target.value)}
+                  />
+                </div>
               </div>
             )}
           </div>
