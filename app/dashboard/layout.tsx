@@ -50,12 +50,6 @@ const COACH_NAV: NavGroup[] = [
       // matchPrefix so /dashboard/coach/prospects/[id] highlights "My Prospects"
       { href: "/dashboard/coach/prospects", label: "My Prospects", matchPrefix: true },
       { href: "/dashboard/coach/required-actions", label: "Required Actions" },
-      // Static resource — the coach guide PDF in /public. Opens in a new tab
-      // (newTab) rather than client-side navigation; never marked active.
-      { href: "/SIGNAL-Coach-Guide.pdf", label: "Coaches Guide", newTab: true },
-      // Action item: opens the beta-feedback slide-in (Phase 4). Renders as a
-      // <button>, not an <a> — no navigation.
-      { label: "Feedback", action: "feedback" },
     ],
   },
   {
@@ -68,6 +62,17 @@ const COACH_NAV: NavGroup[] = [
       { href: "/dashboard/coach/settings/services", label: "Services", matchPrefix: true },
       { href: "/dashboard/coach/settings/documents", label: "Documents", matchPrefix: true },
       { label: "Billing", disabled: true },
+    ],
+  },
+  {
+    header: "SUPPORT",
+    items: [
+      // Static resource — the coach guide PDF in /public. Opens in a new tab
+      // (newTab) rather than client-side navigation; never marked active.
+      { href: "/SIGNAL-Coach-Guide.pdf", label: "Coaches Guide", newTab: true },
+      // Action item: opens the beta-feedback slide-in (Phase 4). Renders as a
+      // <button>, not an <a> — no navigation.
+      { label: "Feedback", action: "feedback" },
     ],
   },
   {
