@@ -228,9 +228,11 @@ export async function GET(
 
 // Editable fields on client_profiles when a coach patches the row from
 // the Profile & Personas tab. Anything outside this allowlist is ignored.
-// `name`, `email`, `resume_text`, and `profile_text` are intentionally
-// excluded — those flow through other paths (auth, persona sync, intake).
+// `email`, `resume_text`, and `profile_text` are intentionally excluded —
+// those flow through other paths (auth, persona sync, intake). `name` is
+// editable (the coach profile editor manages it; client-side blocks blank).
 const COACH_EDITABLE_PROFILE_FIELDS = new Set([
+  "name",
   "job_type",
   "target_roles",
   "target_locations",

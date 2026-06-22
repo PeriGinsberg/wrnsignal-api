@@ -54,6 +54,7 @@ export type ClientPersonaFull = {
 type SaveState = "idle" | "saving" | "saved" | "error"
 
 type EditableField =
+  | "name"
   | "job_type"
   | "target_roles"
   | "target_locations"
@@ -61,6 +62,19 @@ type EditableField =
   | "coach_notes_avoid"
   | "coach_notes_strengths"
   | "coach_notes_concerns"
+
+// Single source of truth for which profile fields the draft-then-Save form
+// manages. Used for draft init, the dirty check, and the changed-only PATCH body.
+const EDITABLE_FIELDS: EditableField[] = [
+  "name",
+  "job_type",
+  "target_roles",
+  "target_locations",
+  "timeline",
+  "coach_notes_avoid",
+  "coach_notes_strengths",
+  "coach_notes_concerns",
+]
 
 type Props = {
   clientId: string
@@ -82,12 +96,11 @@ function SaveIndicator({ state }: { state: SaveState }) {
   return <span style={{ fontSize: 11, color, marginLeft: 8 }}>{text}</span>
 }
 
-function FieldRow({ labelText, state, children }: { labelText: string; state: SaveState; children: React.ReactNode }) {
+function FieldRow({ labelText, children }: { labelText: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 5 }}>
+      <div style={{ marginBottom: 5 }}>
         <span style={{ ...label, color: T.WRN_BLUE }}>{labelText.toUpperCase()}</span>
-        <SaveIndicator state={state} />
       </div>
       {children}
     </div>
@@ -122,8 +135,9 @@ export default function ProfilePersonasTab({
   useEffect(() => { setProfile(initialProfile) }, [initialProfile])
   useEffect(() => { setPersonas(initialPersonas) }, [initialPersonas])
 
-  // ── Per-field draft + saveState ──
+  // ── Profile drafts + explicit save (Option B: draft-then-Save) ──
   const initDrafts = (p: ClientProfileFull): Record<EditableField, string> => ({
+    name: p.name ?? "",
     job_type: p.job_type ?? "",
     target_roles: p.target_roles ?? "",
     target_locations: p.target_locations ?? "",
@@ -133,61 +147,71 @@ export default function ProfilePersonasTab({
     coach_notes_concerns: p.coach_notes_concerns ?? "",
   })
   const [drafts, setDrafts] = useState<Record<EditableField, string>>(() => initDrafts(initialProfile))
-  useEffect(() => { setDrafts(initDrafts(initialProfile)) }, [initialProfile])
-
-  const initSaveStates = (): Record<EditableField, SaveState> => ({
-    job_type: "idle", target_roles: "idle", target_locations: "idle", timeline: "idle",
-    coach_notes_avoid: "idle", coach_notes_strengths: "idle", coach_notes_concerns: "idle",
-  })
-  const [saveStates, setSaveStates] = useState<Record<EditableField, SaveState>>(initSaveStates)
-
-  // Track timers to fade "Saved" back to idle after 2s
-  const savedTimers = useRef<Partial<Record<EditableField, ReturnType<typeof setTimeout>>>>({})
-  useEffect(() => () => {
-    for (const t of Object.values(savedTimers.current)) if (t) clearTimeout(t)
-  }, [])
-
-  function setSaveState(field: EditableField, s: SaveState) {
-    setSaveStates((prev) => ({ ...prev, [field]: s }))
-    if (s === "saved") {
-      const existing = savedTimers.current[field]
-      if (existing) clearTimeout(existing)
-      savedTimers.current[field] = setTimeout(() => {
-        setSaveStates((prev) => ({ ...prev, [field]: "idle" }))
-      }, 2000)
+  // Re-init drafts ONLY when the client actually changes (profile.id) — NOT on
+  // every initialProfile reference change. A same-client refetch (a persona
+  // action → onChange → loadAll re-passes a new initialProfile object) must not
+  // wipe the coach's unsaved profile drafts. The `profile` mirror still
+  // re-syncs on its own effect above, so read-only Email + the dirty baseline
+  // reflect server truth regardless.
+  const lastProfileId = useRef(initialProfile.id)
+  useEffect(() => {
+    if (initialProfile.id !== lastProfileId.current) {
+      lastProfileId.current = initialProfile.id
+      setDrafts(initDrafts(initialProfile))
     }
-  }
+  }, [initialProfile])
 
-  async function saveField(field: EditableField, rawValue: string) {
-    const value = rawValue
-    const original = (profile[field] ?? "")
-    if (value === original) return  // no-op
+  // One block-level save state for the whole profile form — the coach sees a
+  // single Save control, not seven per-field indicators.
+  const [profileSaveState, setProfileSaveState] = useState<"idle" | "saving" | "error">("idle")
+  const [nameError, setNameError] = useState<string | null>(null)
 
-    setSaveState(field, "saving")
+  const isDirty = useMemo(
+    () => EDITABLE_FIELDS.some((f) => (drafts[f] ?? "") !== (profile[f] ?? "")),
+    [drafts, profile],
+  )
+
+  async function saveProfile() {
+    // Build a body of ONLY changed fields (endpoint accepts multi-field bodies).
+    const changed: Record<string, string> = {}
+    for (const f of EDITABLE_FIELDS) {
+      if ((drafts[f] ?? "") !== (profile[f] ?? "")) changed[f] = drafts[f]
+    }
+    if (Object.keys(changed).length === 0) return
+    // Name may not be blanked — empty → null would wipe the client's name.
+    if ("name" in changed && !changed.name.trim()) {
+      setNameError("Name can't be empty.")
+      return
+    }
+    setNameError(null)
+    setProfileSaveState("saving")
     try {
       const token = await getToken()
       if (!token) throw new Error("No auth token")
       const res = await fetch(`/api/coach/clients/${clientId}/profile`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value }),
+        body: JSON.stringify(changed),
       })
       if (!res.ok) {
         const j = await res.json().catch(() => null)
         throw new Error(j?.error || `Save failed (${res.status})`)
       }
       const j = await res.json()
-      setProfile(j.profile)
-      setSaveState(field, "saved")
+      setProfile(j.profile)             // mirror = saved truth
+      setDrafts(initDrafts(j.profile))  // drafts now clean
+      setProfileSaveState("idle")
+      try { await onChange() } catch {} // refresh parent (header name, etc.)
     } catch (e) {
-      console.warn("[ProfilePersonasTab] saveField error:", (e as Error).message)
-      setSaveState(field, "error")
+      // Keep drafts so the coach can retry without losing their edits.
+      console.warn("[ProfilePersonasTab] saveProfile error:", (e as Error).message)
+      setProfileSaveState("error")
     }
   }
 
   // Multi-select job_type. 'Any' is mutually exclusive (selecting 'Any' clears
-  // the rest; selecting a specific removes 'Any'). This form autosaves on
-  // change, so the toggle updates drafts AND commits via saveField.
+  // the rest; selecting a specific removes 'Any'). Updates drafts only; the
+  // change is committed with the rest of the form on Save.
   function toggleJobType(opt: string) {
     const cur = new Set((drafts.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
     let next: string[]
@@ -200,7 +224,6 @@ export default function ProfilePersonasTab({
     }
     const value = normalizeJobType(next).value ?? ""
     setDrafts((d) => ({ ...d, job_type: value }))
-    saveField("job_type", value)
   }
 
   // ── Personas ──
@@ -389,13 +412,21 @@ export default function ProfilePersonasTab({
 
         {/* Read-only header */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-          <ReadOnlyRow labelText="Name" value={profile.name} />
+          <FieldRow labelText="Name">
+            <input
+              type="text"
+              style={input}
+              value={drafts.name}
+              onChange={(e) => { setDrafts((d) => ({ ...d, name: e.target.value })); if (nameError) setNameError(null) }}
+            />
+            {nameError && <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4 }}>{nameError}</div>}
+          </FieldRow>
           <ReadOnlyRow labelText="Email" value={profile.email} />
         </div>
 
         {/* Editable fields */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-          <FieldRow labelText="Job Type" state={saveStates.job_type}>
+          <FieldRow labelText="Job Type">
             {(() => {
               const selected = new Set((drafts.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
               return (
@@ -423,34 +454,31 @@ export default function ProfilePersonasTab({
             })()}
           </FieldRow>
 
-          <FieldRow labelText="Timeline" state={saveStates.timeline}>
+          <FieldRow labelText="Timeline">
             <input
               type="text"
               style={input}
               placeholder="e.g. July 2026"
               value={drafts.timeline}
               onChange={(e) => setDrafts((d) => ({ ...d, timeline: e.target.value }))}
-              onBlur={(e) => saveField("timeline", e.target.value)}
             />
           </FieldRow>
 
-          <FieldRow labelText="Target Roles" state={saveStates.target_roles}>
+          <FieldRow labelText="Target Roles">
             <input
               type="text"
               style={input}
               value={drafts.target_roles}
               onChange={(e) => setDrafts((d) => ({ ...d, target_roles: e.target.value }))}
-              onBlur={(e) => saveField("target_roles", e.target.value)}
             />
           </FieldRow>
 
-          <FieldRow labelText="Target Locations" state={saveStates.target_locations}>
+          <FieldRow labelText="Target Locations">
             <input
               type="text"
               style={input}
               value={drafts.target_locations}
               onChange={(e) => setDrafts((d) => ({ ...d, target_locations: e.target.value }))}
-              onBlur={(e) => saveField("target_locations", e.target.value)}
             />
           </FieldRow>
 
@@ -458,35 +486,52 @@ export default function ProfilePersonasTab({
 
         {/* Coaching notes (full width each) */}
         <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 18 }}>
-          <FieldRow labelText="Coaching note — roles / locations / companies to avoid" state={saveStates.coach_notes_avoid}>
+          <FieldRow labelText="Coaching note — roles / locations / companies to avoid">
             <textarea
               style={{ ...textarea, minHeight: 70 }}
               placeholder="What should this client steer clear of?"
               value={drafts.coach_notes_avoid}
               onChange={(e) => setDrafts((d) => ({ ...d, coach_notes_avoid: e.target.value }))}
-              onBlur={(e) => saveField("coach_notes_avoid", e.target.value)}
             />
           </FieldRow>
 
-          <FieldRow labelText="Coaching note — what does this client do well?" state={saveStates.coach_notes_strengths}>
+          <FieldRow labelText="Coaching note — what does this client do well?">
             <textarea
               style={{ ...textarea, minHeight: 70 }}
               placeholder="Client strengths to lead with"
               value={drafts.coach_notes_strengths}
               onChange={(e) => setDrafts((d) => ({ ...d, coach_notes_strengths: e.target.value }))}
-              onBlur={(e) => saveField("coach_notes_strengths", e.target.value)}
             />
           </FieldRow>
 
-          <FieldRow labelText="Coaching note — gaps or challenges to address" state={saveStates.coach_notes_concerns}>
+          <FieldRow labelText="Coaching note — gaps or challenges to address">
             <textarea
               style={{ ...textarea, minHeight: 70 }}
               placeholder="What needs work?"
               value={drafts.coach_notes_concerns}
               onChange={(e) => setDrafts((d) => ({ ...d, coach_notes_concerns: e.target.value }))}
-              onBlur={(e) => saveField("coach_notes_concerns", e.target.value)}
             />
           </FieldRow>
+        </div>
+
+        {/* Block-level Save — explicit draft-then-Save (Option B). Disabled when
+            clean; "Unsaved changes" shows while dirty; drafts are preserved on
+            error so the coach can retry. */}
+        <div style={{ marginTop: 22, display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            type="button"
+            onClick={saveProfile}
+            disabled={!isDirty || profileSaveState === "saving"}
+            style={{ ...btnPrimary, fontSize: 12, padding: "9px 20px", opacity: (!isDirty || profileSaveState === "saving") ? 0.5 : 1 }}
+          >
+            {profileSaveState === "saving" ? "Saving…" : isDirty ? "Save changes" : "Saved"}
+          </button>
+          {profileSaveState === "error" && (
+            <span style={{ fontSize: 12, color: T.ERROR }}>Couldn&apos;t save — try again</span>
+          )}
+          {profileSaveState !== "error" && isDirty && (
+            <span style={{ fontSize: 12, color: T.WRN_ORANGE }}>Unsaved changes</span>
+          )}
         </div>
       </div>
 
@@ -513,7 +558,7 @@ export default function ProfilePersonasTab({
         <div style={{ ...card, padding: 24, marginBottom: 16 }}>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>NEW PERSONA</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <FieldRow labelText="Persona Name" state="idle">
+            <FieldRow labelText="Persona Name">
               <input
                 type="text"
                 style={input}
