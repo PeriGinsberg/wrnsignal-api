@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const { data: coachProfile } = await supabase
       .from("client_profiles")
-      .select("id, name, is_coach, coach_org")
+      .select("id, name, is_coach, coach_org, client_seat_cap")
       .eq("user_id", userId)
       .maybeSingle()
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       if (callerEmail) {
         const { data: byEmail } = await supabase
           .from("client_profiles")
-          .select("id, name, is_coach, coach_org")
+          .select("id, name, is_coach, coach_org, client_seat_cap")
           .eq("email", callerEmail)
           .maybeSingle()
         if (!byEmail?.is_coach) {
@@ -76,6 +76,29 @@ export async function POST(req: NextRequest) {
     const coach = coachProfile!
     if (!coach.is_coach) {
       return withCorsJson(req, { ok: false, error: "Coach access required" }, 403)
+    }
+
+    // ── STEP 1.5: Seat-cap enforcement ──
+    // Block creation when the coach is at/over their client_seat_cap. Runs
+    // before any auth user / profile rows are created (STEP 4+), so a rejection
+    // needs no cleanup/rollback. NULL cap = unlimited. Fails OPEN on a count
+    // error — transient infra shouldn't block a legitimate create. Counts ALL
+    // coach_clients rows the coach owns (any status, incl. prospects).
+    const seatCap = (coach as any).client_seat_cap ?? null
+    if (seatCap !== null) {
+      const { count, error: countErr } = await supabase
+        .from("coach_clients")
+        .select("id", { count: "exact", head: true })
+        .eq("coach_profile_id", coach.id)
+      if (countErr) {
+        console.warn("[create-client] seat-cap count failed, allowing creation:", countErr.message)
+      } else if ((count ?? 0) >= seatCap) {
+        return withCorsJson(req, {
+          ok: false,
+          error: "seat_limit_reached",
+          message: `Client limit reached (${seatCap}). Contact your administrator to add seats.`,
+        }, 403)
+      }
     }
 
     // ── STEP 2: Read and validate request body ──
