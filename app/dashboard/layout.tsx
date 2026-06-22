@@ -24,6 +24,9 @@ type NavItem = {
   action?: "feedback" | "logout"
   /** Disabled "Soon" item — greyed, non-clickable, no navigation. */
   disabled?: boolean
+  /** Opens in a new browser tab via a plain anchor (target="_blank").
+   *  For static/external resources like the Coaches Guide PDF. */
+  newTab?: boolean
 }
 type NavGroup = { header: string; items: NavItem[] }
 
@@ -47,6 +50,9 @@ const COACH_NAV: NavGroup[] = [
       // matchPrefix so /dashboard/coach/prospects/[id] highlights "My Prospects"
       { href: "/dashboard/coach/prospects", label: "My Prospects", matchPrefix: true },
       { href: "/dashboard/coach/required-actions", label: "Required Actions" },
+      // Static resource — the coach guide PDF in /public. Opens in a new tab
+      // (newTab) rather than client-side navigation; never marked active.
+      { href: "/SIGNAL-Coach-Guide.pdf", label: "Coaches Guide", newTab: true },
       // Action item: opens the beta-feedback slide-in (Phase 4). Renders as a
       // <button>, not an <a> — no navigation.
       { label: "Feedback", action: "feedback" },
@@ -553,7 +559,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       )
                     }
                     return (
-                      <a key={item.href} href={item.href} style={itemStyle}>
+                      <a
+                        key={item.href}
+                        href={item.href}
+                        style={itemStyle}
+                        {...(item.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      >
                         {item.label}
                       </a>
                     )
