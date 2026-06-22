@@ -189,6 +189,14 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
   const preferred = c.preferred_locations ?? (profile as any).preferred_locations ?? null
   const timeline = c.timeline ?? (profile as any).timeline ?? null
   const jobType = c.job_type ?? (profile as any).job_type ?? null
+  // phone, linkedin, and the education fields are captured on client_profiles
+  // by the direct Create Client flow, so fall back to the profile when the
+  // coach_clients capture column is null (same pattern as targeting above).
+  const phone = c.phone ?? (profile as any).phone ?? null
+  const linkedin = c.linkedin_url ?? (profile as any).linkedin_url ?? null
+  const educationStatus = c.education_status ?? (profile as any).education_status ?? null
+  const university = c.university ?? (profile as any).university ?? null
+  const gradDate = c.grad_date ?? (profile as any).grad_date ?? null
 
   const sourceStyle = c.source_category ? (SOURCE_STYLE[c.source_category] ?? SOURCE_STYLE.other) : SOURCE_STYLE.other
   const sourceBadge = c.source_category ? (
@@ -196,11 +204,11 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
       {SOURCE_LABEL[c.source_category] ?? c.source_category}
     </span>
   ) : null
-  const phoneVal = c.phone ? (
-    <a href={`tel:${c.phone}`} style={{ color: T.TEXT, textDecoration: "none" }}>{c.phone}</a>
+  const phoneVal = phone ? (
+    <a href={`tel:${phone}`} style={{ color: T.TEXT, textDecoration: "none" }}>{phone}</a>
   ) : null
-  const linkedinVal = c.linkedin_url ? (
-    <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "none" }}>{c.linkedin_url}</a>
+  const linkedinVal = linkedin ? (
+    <a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "none" }}>{linkedin}</a>
   ) : null
 
   return [
@@ -208,8 +216,8 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
       { label: "SOURCE", value: sourceBadge, show: !!c.source_category },
       { label: "DETAIL", value: c.source_detail, show: !!c.source_detail },
       { label: "EMAIL", value: email, show: !!email },
-      { label: "PHONE", value: phoneVal, show: !!c.phone },
-      { label: "LINKEDIN", value: linkedinVal, show: !!c.linkedin_url },
+      { label: "PHONE", value: phoneVal, show: !!phone },
+      { label: "LINKEDIN", value: linkedinVal, show: !!linkedin },
     ] },
     { title: "CURRENT ROLE", rows: [
       { label: "TITLE", value: c.current_title, show: !!c.current_title },
@@ -218,10 +226,10 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
       { label: "EXPERIENCE", value: c.years_experience_approx != null ? `${c.years_experience_approx} yrs` : null, show: c.years_experience_approx != null },
     ] },
     { title: "EDUCATION", rows: [
-      { label: "STATUS", value: c.education_status ? (EDUCATION_LABEL[c.education_status] ?? c.education_status) : null, show: !!c.education_status },
-      { label: "UNIVERSITY", value: c.university, show: !!c.university },
+      { label: "STATUS", value: educationStatus ? (EDUCATION_LABEL[educationStatus] ?? educationStatus) : null, show: !!educationStatus },
+      { label: "UNIVERSITY", value: university, show: !!university },
       { label: "FIELD", value: c.field_of_study, show: !!c.field_of_study },
-      { label: "GRAD DATE", value: c.grad_date ? formatDate(c.grad_date) : null, show: !!c.grad_date },
+      { label: "GRAD DATE", value: gradDate ? formatDate(gradDate) : null, show: !!gradDate },
     ] },
     { title: "TARGETING", rows: [
       { label: "ROLES", value: roles, show: !!roles },
