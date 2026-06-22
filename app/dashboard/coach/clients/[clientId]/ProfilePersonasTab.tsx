@@ -57,7 +57,6 @@ type EditableField =
   | "job_type"
   | "target_roles"
   | "target_locations"
-  | "preferred_locations"
   | "timeline"
   | "coach_notes_avoid"
   | "coach_notes_strengths"
@@ -128,7 +127,6 @@ export default function ProfilePersonasTab({
     job_type: p.job_type ?? "",
     target_roles: p.target_roles ?? "",
     target_locations: p.target_locations ?? "",
-    preferred_locations: p.preferred_locations ?? "",
     timeline: p.timeline ?? "",
     coach_notes_avoid: p.coach_notes_avoid ?? "",
     coach_notes_strengths: p.coach_notes_strengths ?? "",
@@ -138,7 +136,7 @@ export default function ProfilePersonasTab({
   useEffect(() => { setDrafts(initDrafts(initialProfile)) }, [initialProfile])
 
   const initSaveStates = (): Record<EditableField, SaveState> => ({
-    job_type: "idle", target_roles: "idle", target_locations: "idle", preferred_locations: "idle", timeline: "idle",
+    job_type: "idle", target_roles: "idle", target_locations: "idle", timeline: "idle",
     coach_notes_avoid: "idle", coach_notes_strengths: "idle", coach_notes_concerns: "idle",
   })
   const [saveStates, setSaveStates] = useState<Record<EditableField, SaveState>>(initSaveStates)
@@ -456,15 +454,6 @@ export default function ProfilePersonasTab({
             />
           </FieldRow>
 
-          <FieldRow labelText="Preferred Locations" state={saveStates.preferred_locations}>
-            <input
-              type="text"
-              style={input}
-              value={drafts.preferred_locations}
-              onChange={(e) => setDrafts((d) => ({ ...d, preferred_locations: e.target.value }))}
-              onBlur={(e) => saveField("preferred_locations", e.target.value)}
-            />
-          </FieldRow>
         </div>
 
         {/* Coaching notes (full width each) */}

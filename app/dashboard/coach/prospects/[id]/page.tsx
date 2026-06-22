@@ -521,7 +521,6 @@ type Draft = {
   job_type: string
   target_roles: string
   target_locations: string
-  preferred_locations: string
   timeline: string
   tags: string
 }
@@ -544,7 +543,6 @@ function draftFromProspect(p: Prospect): Draft {
     job_type: p.job_type ?? "",
     target_roles: p.target_roles ?? "",
     target_locations: p.target_locations ?? "",
-    preferred_locations: p.preferred_locations ?? "",
     timeline: p.timeline ?? "",
     tags: p.tags ?? "",
   }
@@ -599,7 +597,7 @@ function ProspectInfoBlock({
       "source_detail", "invited_email", "phone", "linkedin_url",
       "current_title", "current_company", "location", "education_status",
       "university", "field_of_study", "grad_date", "years_experience_approx",
-      "job_type", "target_roles", "target_locations", "preferred_locations",
+      "job_type", "target_roles", "target_locations",
       "timeline", "tags",
     ]
     for (const k of keys) {
@@ -786,7 +784,6 @@ function ProspectInfoBlock({
       <div style={editGroupStyle}>
         {field("target_roles", "TARGET ROLES", { placeholder: "e.g. Product Manager" })}
         {field("target_locations", "TARGET LOCATIONS")}
-        {field("preferred_locations", "PREFERRED LOCATIONS")}
         {field("timeline", "TIMELINE", { placeholder: "e.g. 3-6 months" })}
         <div>
           <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>JOB TYPE</span>

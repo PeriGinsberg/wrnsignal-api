@@ -22,7 +22,6 @@ const FIELDS: { key: keyof Profile; label: string; multi: boolean; required: boo
   { key: "job_type", label: "JOB TYPE", multi: false, required: true },
   { key: "target_roles", label: "TARGET ROLES", multi: false, required: true },
   { key: "target_locations", label: "TARGET LOCATIONS", multi: false, required: false },
-  { key: "preferred_locations", label: "PREFERRED LOCATIONS", multi: false, required: false },
   { key: "timeline", label: "TIMELINE", multi: false, required: false },
   { key: "resume_text", label: "RESUME TEXT", multi: true, required: true },
 ]
@@ -71,7 +70,9 @@ export default function ProfilePage() {
     setError("")
     const token = await getToken()
     if (!token) { setError("Session expired"); setSaving(false); return }
-    const { id, profile_version, ...fields } = profile
+    // preferred_locations destructured out so this form no longer writes it
+    // (field removed); the column stays as inert dead storage.
+    const { id, profile_version, preferred_locations, ...fields } = profile
     const res = await fetch("/api/profile", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

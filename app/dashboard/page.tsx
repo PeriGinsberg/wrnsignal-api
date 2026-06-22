@@ -63,7 +63,6 @@ const PROFILE_FIELDS: { key: keyof Profile; label: string; multi: boolean; requi
   { key: "job_type", label: "JOB TYPE", multi: false, required: true },
   { key: "target_roles", label: "TARGET ROLES", multi: false, required: true },
   { key: "target_locations", label: "TARGET LOCATIONS", multi: false, required: false },
-  { key: "preferred_locations", label: "PREFERRED LOCATIONS", multi: false, required: false },
   { key: "timeline", label: "TIMELINE", multi: false, required: false },
 ]
 
@@ -247,7 +246,9 @@ export default function DashboardPage() {
     setSaving(true)
     const token = await getToken()
     if (!token) { setSaving(false); return }
-    const { id, email, profile_version, profile_structured, ...fields } = editProfile
+    // preferred_locations is destructured out so this form no longer writes it
+    // (field removed); the column/readers stay as inert dead storage.
+    const { id, email, profile_version, profile_structured, preferred_locations, ...fields } = editProfile
     const res = await fetch("/api/profile", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
