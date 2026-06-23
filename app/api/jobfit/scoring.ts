@@ -3,7 +3,7 @@
 // Evidence-first scoring for WHY pipeline.
 // WHY bullets are created from matched proof objects, not category overlap.
 
-import { POLICY, type PenaltyKey } from "./policy"
+import { POLICY, LOCATION_FIT_SCORING_ENABLED, type PenaltyKey } from "./policy"
 import type {
   EvidenceKind,
   JobRequirementUnit,
@@ -926,7 +926,7 @@ export function scoreJobFit(
   const hasExplicitTools =
     (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
-  {
+  if (LOCATION_FIT_SCORING_ENABLED) {
     const profileConstrained = !!profile.locationPreference.constrained
     const jobCity = job.location?.city ?? null
     const allowedCities = profile.locationPreference.allowedCities
@@ -1232,7 +1232,7 @@ export function scoreJobFit(
   // or "within 30 miles of territory boundaries" without specifying the
   // actual territory location. Candidate should confirm location before
   // applying since it may be anywhere in the country.
-  if ((job as any)?.territoryUndisclosed) {
+  if (LOCATION_FIT_SCORING_ENABLED && (job as any)?.territoryUndisclosed) {
     riskOnlyCodes.push({
       code: "RISK_LOCATION_UNDISCLOSED",
       job_fact: "Job references a sales territory but does not specify where it is located.",
@@ -1253,6 +1253,7 @@ export function scoreJobFit(
   const jobLocCity = (job as any)?.location?.city
   const profileAllowedCities = (profile as any)?.locationPreference?.allowedCities as string[] | undefined
   if (
+    LOCATION_FIT_SCORING_ENABLED &&
     !(job as any)?.territoryUndisclosed &&
     jobLocMode === "unclear" &&
     !jobLocCity &&

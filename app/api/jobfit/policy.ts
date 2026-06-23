@@ -113,6 +113,17 @@ export type JobFitPolicy = {
   extraction: ExtractionPolicy
 }
 
+// Reversible kill-switch for CITY/LOCATION-FIT scoring. When false, the
+// city-mismatch penalty + RISK_LOCATION, the RISK_LOCATION_UNCLEAR and
+// RISK_LOCATION_UNDISCLOSED risks, and the GATE_FLOOR_REVIEW_LOCATION gate are
+// all skipped. Disabled because the 11-city extractor produces ~57% false
+// "can't determine" gaps. Extraction still populates job_signals.location for
+// logging/future re-enable. NOTE: this flag scopes CITY-FIT ONLY — the remote
+// hard-stop (hardNoFullyRemote vs remote: scoring remote penalty +
+// GATE_REMOTE_MISMATCH) is NOT governed by it and stays active. Flip to true to
+// restore city-fit once the extractor is fixed.
+export const LOCATION_FIT_SCORING_ENABLED = false
+
 export const POLICY: JobFitPolicy = {
   version: "jobfit_policy_v4_2026-03-14",
 

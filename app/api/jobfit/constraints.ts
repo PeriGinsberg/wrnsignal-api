@@ -1,6 +1,7 @@
 // FILE: app/api/jobfit/constraints.ts
 
 import type { GateTriggered, StructuredJobSignals, StructuredProfileSignals } from "./signals"
+import { LOCATION_FIT_SCORING_ENABLED } from "./policy"
 
 function normCity(s: string): string {
   return (s || "")
@@ -233,7 +234,10 @@ if (job.credentialRequired) {
   const profileConstrained = Boolean(profile.locationPreference.constrained)
   const jobConstrained = Boolean(job.location.constrained)
 
-  if (profileConstrained && jobConstrained) {
+  // City/location-fit gate is behind the reversible LOCATION_FIT_SCORING_ENABLED
+  // flag (broken extractor). When disabled, fall through to later gates. The
+  // remote hard-stop gate (GATE_REMOTE_MISMATCH, above) is NOT flag-governed.
+  if (LOCATION_FIT_SCORING_ENABLED && profileConstrained && jobConstrained) {
     const jobCity = job.location.city
     const allowedCities = profile.locationPreference.allowedCities
 
