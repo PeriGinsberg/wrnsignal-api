@@ -32,6 +32,7 @@ import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
 import type { StructuredProfileSignals } from "../jobfit/signals"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { scoreCoherence, type CoherenceResult } from "@/lib/positioning/v2/coherence"
 
 export const runtime = "nodejs"
 export const maxDuration = 90
@@ -216,6 +217,17 @@ export async function POST(req: NextRequest) {
     const locks = buildLocks()
     const upgrade = buildUpgrade()
 
+    // ── Resume-coherence detector (flag-gated, parallel, fail-open) ──────
+    // Kicked off here so it runs concurrently with the override pre-pass +
+    // engine + V5 renderer — adds ~0 wall-clock. Scores ONLY the submitted
+    // resume text (no persona/default). Never throws: scoreCoherence fails
+    // open to null, and .catch guards the promise. The result.coherence field
+    // is omitted entirely when COHERENCE_TRIAL_ENABLED !== "1".
+    const coherenceEnabled = process.env.COHERENCE_TRIAL_ENABLED === "1"
+    const coherencePromise: Promise<CoherenceResult | null> = coherenceEnabled
+      ? scoreCoherence(resumeText).catch(() => null)
+      : Promise.resolve(null)
+
     // ── Haiku pre-pass for structured overrides ──────────────────────
     // Fails open: returns {} on any error so the engine falls back to its
     // heuristic detectors. Mirrors jobfit-run-trial behavior.
@@ -312,6 +324,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Resolve the parallel coherence read (already running since pre-pass).
+    // Omitted from the response entirely when the flag is off, so the payload
+    // is byte-identical to today's output in that case.
+    const coherence = await coherencePromise
+
     const successResponse = {
       status: "ok" as const,
       locked: false,
@@ -334,6 +351,7 @@ export async function POST(req: NextRequest) {
         cover_letter_strategy: raw.cover_letter_strategy ?? null,
         positioning_strategy: raw.positioning_strategy ?? null,
         networking_strategy: raw.networking_strategy ?? null,
+        ...(coherenceEnabled ? { coherence } : {}),
       },
       locks,
       upgrade,
