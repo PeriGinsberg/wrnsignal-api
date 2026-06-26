@@ -103,16 +103,35 @@ an LLM sanity-check on any scoring result.
 ## Deterministic in-process suite (`regression-check.ts` + `baseline.json`)
 
 Separate from the live-endpoint `run.ts` above, `regression-check.ts` runs all
-cases **in-process through `runJobFit` (deterministic, no LLM)** and diffs a
-snapshot (decision / score / why+risk counts / family / gate) against
-`baseline.json`. This is the gate to run after any scoring/extraction change:
+cases **in-process through `runJobFit` (deterministic, no LLM)** and captures a
+**v2 structured snapshot** per case — decision, score, gate, the full
+requirement/profile units, the full match set (match_strength / weight /
+coverageScore / kind / keys), all WHY/RISK codes, the programmatic scalar
+manifest, and score_breakdown (see `lib/snapshot.ts`). It diffs against
+`baseline.json` with a **tiered tolerant diff**:
+
+- **HARD** (fail, exit 1): decision, gate type, per-match `match_strength`,
+  WHY/RISK code-set add/remove, any scalar-manifest change, match/unit set
+  add/remove, and any *unclassified* path (default-to-HARD — new fields are
+  never silently ignored).
+- **SOFT** (report, exit 0): score (±2), match weight (±5), coverageScore (±5),
+  breakdown points (±3) — within-band deltas suppressed, outside-band reported
+  but non-failing.
+
+A `schema_version` mismatch is refused with a re-baseline instruction (exit 2).
 
 ```bash
-npx tsx tests/jobfit-regression/regression-check.ts                  # diff vs baseline (exit 1 on drift)
-npx tsx tests/jobfit-regression/regression-check.ts --update-baseline  # re-freeze after reviewing every diff
+npx tsx tests/jobfit-regression/regression-check.ts                  # tiered diff (exit 1 on HARD)
+npx tsx tests/jobfit-regression/regression-check.ts --update-baseline  # re-freeze after reviewing every HARD diff
 ```
 
-It runs 68 cases = 21 prod-issue batch + synthetic CSV + inline retest cases.
+It runs 68 cases = 21 prod-issue batch + 41 synthetic CSV + 6 inline retest cases.
+
+> **⚠ Fresh-checkout wrinkle (note, not fixed):** the 21 `batch-*` cases AND
+> the frozen semantic verdicts (`semantic-verdicts.local.json`) are local-only /
+> gitignored. On a clean checkout the harness runs **47 cases** (41 synthetic +
+> 6 retest) and surfaces the 21 batch baseline entries as missing (HARD). See
+> "Local-only batch fixture" below for recovery.
 
 ### ⚠ Local-only batch fixture — `issues/040926ProdIssues.csv` (NOT in git)
 

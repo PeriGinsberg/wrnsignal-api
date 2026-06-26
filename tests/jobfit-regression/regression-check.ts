@@ -3,13 +3,26 @@
 //
 // Unified JobFit regression check. Runs:
 //   - All 21 batch cases in issues/040926ProdIssues.csv
+//   - 41 synthetic cases in fixtures/synthetic-cases-4102026.csv
 //   - All 6 one-off retest scripts (retest-013-ryan, retest-012-ryan,
 //     retest-reece-01, retest-026, retest-emma-01, retest-zoe-paralegal)
 //
-// Compares each case's high-signal snapshot (decision, score, WHY/
-// RISK counts, family, sub-families, gate type) against the committed
-// baseline in `baseline.json` and exits non-zero on any unexplained
-// change. Prints a clear diff table when drift is detected.
+// Captures a v2 STRUCTURED snapshot per case (decision, score, gate, the full
+// requirement/profile units, the full match set, all WHY/RISK codes, the
+// programmatic scalar manifest, and score_breakdown — see lib/snapshot.ts) and
+// runs a TIERED tolerant diff against `baseline.json`:
+//   HARD changes (decision, gate, per-match match_strength, WHY/RISK code-set,
+//     scalar manifest, match/unit set, any unclassified path) FAIL (exit 1).
+//   SOFT changes (score, weight, coverageScore, breakdown points) are reported
+//     within tolerance bands and DO NOT fail the run (exit 0).
+// A schema_version mismatch is refused with a re-baseline instruction (exit 2).
+//
+// FRESH-CHECKOUT WRINKLE (known, not a bug): the 21 batch cases
+// (issues/040926ProdIssues.csv) AND the frozen semantic verdicts
+// (semantic-verdicts.local.json) are LOCAL-ONLY / gitignored (PII + repo
+// convention). On a clean checkout the harness runs 47 cases (41 synthetic +
+// 6 retest) and surfaces the 21 batch baseline entries as missing (HARD). This
+// machine has both local files present, so all 68 run. See README "Local-only".
 //
 // USAGE:
 //   npx tsx tests/jobfit-regression/regression-check.ts
@@ -43,10 +56,14 @@ import { runBatch } from "./run-csv-in-process"
 import { frozenSemanticOption } from "./lib/semantic-cache"
 import {
   type CaseSnapshot,
+  type SnapshotDiff,
   toSnapshot,
   diffSnapshots,
   formatSnapshot,
+  formatDiff,
 } from "./lib/snapshot"
+
+const SCHEMA_VERSION = 2
 
 // Import test case constants from each retest script.
 import { CASE as ryan013 } from "./retest-013-ryan"
@@ -104,6 +121,7 @@ async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapsh
     userJobTitle: c.userJobTitle,
     userCompanyName: c.userCompanyName,
     semantic: frozenSemanticOption(),
+    includeEngineTrace: true,
   } as any)
 
   return toSnapshot(c.id, c.label, result)
@@ -187,24 +205,47 @@ async function main() {
     process.exit(2)
   }
 
+  // ── Global schema-version guard ──────────────────────────────────────────
+  // Refuse to diff a baseline written under a different snapshot schema. A
+  // version skew means the structured shapes are incomparable; the only safe
+  // move is a reviewed re-baseline, not a noisy field-by-field mismatch dump.
+  const baselineVersions = new Set(
+    Object.values(baseline).map((s: any) => s?.schema_version ?? 1)
+  )
+  if (!(baselineVersions.size === 1 && baselineVersions.has(SCHEMA_VERSION))) {
+    console.error(
+      `\n✗ Baseline schema version mismatch.\n` +
+        `  baseline: ${[...baselineVersions].join(", ")}   harness: ${SCHEMA_VERSION}\n` +
+        `  The snapshot schema changed; the old baseline cannot be diffed against\n` +
+        `  the new structured snapshots. Re-baseline after verifying current results:\n` +
+        `      npx tsx tests/jobfit-regression/regression-check.ts --update-baseline`
+    )
+    process.exit(2)
+  }
+
   // Identify missing / new cases so we notice when the case set changes.
   const baselineIds = new Set(Object.keys(baseline))
   const liveIds = new Set(Object.keys(live))
   const newCases = [...liveIds].filter((id) => !baselineIds.has(id))
   const missingCases = [...baselineIds].filter((id) => !liveIds.has(id))
 
-  // Diff each case that exists in both.
-  const allDiffs: Array<{
+  // Tiered structured diff per case (in both baseline + live).
+  const perCase: Array<{
     id: string
     label: string
-    diffs: ReturnType<typeof diffSnapshots>
+    hard: SnapshotDiff[]
+    soft: SnapshotDiff[]
   }> = []
   for (const id of Object.keys(live)) {
     if (!baseline[id]) continue
     const d = diffSnapshots(baseline[id], live[id])
-    if (d.length > 0) {
-      allDiffs.push({ id, label: live[id].label, diffs: d })
-    }
+    if (d.length === 0) continue
+    perCase.push({
+      id,
+      label: live[id].label,
+      hard: d.filter((x) => x.tier === "hard"),
+      soft: d.filter((x) => x.tier === "soft"),
+    })
   }
 
   if (verbose) {
@@ -215,47 +256,63 @@ async function main() {
     console.log("")
   }
 
-  let hasDrift = false
+  const hardCases = perCase.filter((c) => c.hard.length > 0)
+  const softOnlyCases = perCase.filter((c) => c.hard.length === 0 && c.soft.length > 0)
+  // HARD failure = any hard diff, any new case, or any missing case.
+  const hasHardFailure =
+    hardCases.length > 0 || newCases.length > 0 || missingCases.length > 0
 
   if (newCases.length > 0) {
-    console.log("⚠ New cases not in baseline:")
+    console.log("✗ New cases not in baseline (HARD):")
     for (const id of newCases) console.log("  + " + id + " — " + live[id].label)
     console.log("  (run with --update-baseline to include them)\n")
-    hasDrift = true
   }
 
   if (missingCases.length > 0) {
-    console.log("⚠ Baseline cases missing from live run:")
+    console.log("✗ Baseline cases missing from live run (HARD):")
     for (const id of missingCases) console.log("  - " + id + " — " + baseline[id].label)
     console.log("")
-    hasDrift = true
   }
 
-  if (allDiffs.length === 0 && newCases.length === 0 && missingCases.length === 0) {
+  // HARD changes first — these fail the run.
+  if (hardCases.length > 0) {
+    console.log(`✗ ${hardCases.length} case(s) with HARD changes (fail):\n`)
+    for (const { id, label, hard, soft } of hardCases) {
+      console.log(`  ${id} — ${label}`)
+      for (const d of hard) console.log(`    ${formatDiff(d)}`)
+      for (const d of soft) console.log(`    ${formatDiff(d)}`)
+      console.log("")
+    }
+  }
+
+  // SOFT-only changes — informational, do NOT fail the run.
+  if (softOnlyCases.length > 0) {
+    console.log(`~ ${softOnlyCases.length} case(s) with SOFT drift only (informational):\n`)
+    for (const { id, label, soft } of softOnlyCases) {
+      console.log(`  ${id} — ${label}`)
+      for (const d of soft) console.log(`    ${formatDiff(d)}`)
+      console.log("")
+    }
+  }
+
+  if (perCase.length === 0 && newCases.length === 0 && missingCases.length === 0) {
     console.log(`✓ All ${Object.keys(live).length} cases match baseline. No drift.`)
     return
   }
 
-  if (allDiffs.length > 0) {
-    console.log(`✗ ${allDiffs.length} case(s) drifted from baseline:\n`)
-    for (const { id, label, diffs } of allDiffs) {
-      console.log(`  ${id} — ${label}`)
-      for (const d of diffs) {
-        console.log(`    ${d.field}: ${JSON.stringify(d.baseline)} → ${JSON.stringify(d.live)}`)
-      }
-      console.log("")
-    }
-    hasDrift = true
-  }
-
-  if (hasDrift) {
+  if (hasHardFailure) {
     console.log("Next steps:")
-    console.log("  - If these changes are INTENDED (a fix or improvement),")
-    console.log("    review each diff manually, then run:")
+    console.log("  - HARD changes need adjudication. If INTENDED (a fix or improvement),")
+    console.log("    review each, then run:")
     console.log("      npx tsx tests/jobfit-regression/regression-check.ts --update-baseline")
-    console.log("  - If any change is UNINTENDED, fix the regression before committing.")
+    console.log("  - If any HARD change is UNINTENDED, fix the regression before committing.")
     process.exit(1)
   }
+
+  // SOFT-only drift: reported above, run passes.
+  console.log(
+    `✓ No HARD changes. ${softOnlyCases.length} case(s) had SOFT drift within review tolerance (reported above).`
+  )
 }
 
 main().catch((e) => {

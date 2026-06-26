@@ -5,7 +5,12 @@
 
 import { extractJobSignals, extractProfileSignals } from "../jobfit/extract"
 import { evaluateGates } from "../jobfit/constraints"
-import { scoreJobFit, buildEvidenceMatches } from "../jobfit/scoring"
+import {
+  scoreJobFit,
+  buildEvidenceMatches,
+  type WhyEvidenceMatch,
+  type RequirementCoverage,
+} from "../jobfit/scoring"
 import {
   resolveSuppressions,
   verdictKey,
@@ -70,10 +75,15 @@ export async function runJobFit(args: {
   // (no suppression). Tests pass a frozen cache with allowLive:false for
   // determinism; the prod route passes a runtime cache with allowLive:true.
   semantic?: { cache: VerdictCache; allowLive: boolean; onVerdict?: (log: VerdictLog) => void }
+  // Stage 0 regression harness opt-in. When true, attach the full match set +
+  // coverage under `engine_trace` on the return. Route callers omit this, so
+  // their output is byte-identical (no engine_trace key, no payload bloat).
+  includeEngineTrace?: boolean
 }): Promise<
   EvalOutput & {
     icon: string
     debug: Record<string, unknown>
+    engine_trace?: { matches: WhyEvidenceMatch[]; coverage: RequirementCoverage[] }
   }
 > {
   // Pass the user-provided title INTO extraction so title-based family
@@ -204,6 +214,9 @@ export async function runJobFit(args: {
     icon: iconForDecision(decisionFinal),
     bullets: rendered.why,
     risk_flags: rendered.risk,
+    ...(args.includeEngineTrace
+      ? { engine_trace: { matches: scored.allMatches, coverage: scored.coverage } }
+      : {}),
     debug: {
       eval_wrapper_stamp: JOBFIT_EVAL_WRAPPER_STAMP,
       renderer_stamp: RENDERER_V4_STAMP,

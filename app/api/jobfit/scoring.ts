@@ -33,6 +33,12 @@ export type ScoreResult = {
   penaltySum: number
   whyCodes: WhyCode[]
   riskCodes: RiskCode[]
+  // Stage 0 regression-harness trace (additive). The full match set the
+  // scorer built (post semantic-suppression) and the per-requirement
+  // coverage. Nothing in the scoring/decision/output path consumes these;
+  // they are surfaced only for the structured regression snapshot.
+  allMatches: WhyEvidenceMatch[]
+  coverage: RequirementCoverage[]
 }
 
 type Severity = "low" | "medium" | "high"
@@ -44,7 +50,7 @@ type ToolOverlapResult = {
   profile: string[]
 }
 
-type WhyEvidenceMatch = {
+export type WhyEvidenceMatch = {
   code: string
   match_key: string
   match_kind: EvidenceKind
@@ -58,7 +64,7 @@ type WhyEvidenceMatch = {
   coverageScore: number
 }
 
-type RequirementCoverage = {
+export type RequirementCoverage = {
   jobUnit: JobRequirementUnit
   bestMatch: WhyEvidenceMatch | null
   coverageScore: number
@@ -1790,5 +1796,7 @@ export function scoreJobFit(
     penaltySum,
     whyCodes,
     riskCodes,
+    allMatches,
+    coverage,
   }
 }

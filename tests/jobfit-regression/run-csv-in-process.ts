@@ -240,6 +240,7 @@ export async function runBatch(csvPath: string, opts?: {
         userJobTitle: override.jobTitle || undefined,
         userCompanyName: override.companyName || undefined,
         semantic: SEMANTIC,
+        includeEngineTrace: true,
       } as any)
     } catch (e: any) {
       console.error(`  ✗ runJobFit threw for ${caseNo}: ${e.message}`)
@@ -363,6 +364,7 @@ async function main() {
         userJobTitle: override.jobTitle || undefined,
         userCompanyName: override.companyName || undefined,
         semantic: frozenSemanticOption(),
+        includeEngineTrace: true,
       } as any)
     } catch (e: any) {
       console.error(`  ✗ runJobFit threw: ${e.message}`)
