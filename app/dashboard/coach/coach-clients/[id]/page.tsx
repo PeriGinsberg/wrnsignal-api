@@ -31,6 +31,7 @@ import {
   btnSecondary,
   card,
   eyebrow,
+  input,
   label,
 } from "../../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../../SavingSpinner"
@@ -57,6 +58,11 @@ const SOURCE_CATEGORIES = [
   "other",
 ] as const
 type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
+
+// Mirrors the server's EMAIL_RE in app/api/coach/prospects/[id]/route.ts so the
+// client never allows a value the PATCH will reject (and vice versa). This is
+// the same regex the route validates invited_email against.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const SOURCE_LABEL: Record<SourceCategory, string> = {
   referral: "Referral",
@@ -861,6 +867,16 @@ export default function CoachClientPostConversionPage() {
   >(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
 
+  // Pre-invite email editor state (accountless state only). The prospect
+  // detail page — which has the invited_email editor — redirects away once
+  // lifecycle_status='Active', so this is the only surface where a coach can
+  // add or correct the email after conversion but before the invite.
+  const [emailDraft, setEmailDraft] = useState("")
+  const [savingEmail, setSavingEmail] = useState(false)
+  const [emailSaveError, setEmailSaveError] = useState<string | null>(null)
+  const [emailSaved, setEmailSaved] = useState(false)
+  const emailSeededRef = useRef<string | null>(null)
+
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
       const silent = opts?.silent === true || hasLoadedOnceRef.current
@@ -882,6 +898,17 @@ export default function CoachClientPostConversionPage() {
   )
 
   useEffect(() => { load() }, [load])
+
+  // Seed the email draft from the record once it arrives. Keyed on record.id
+  // so it initializes when the record loads but does NOT clobber the coach's
+  // in-progress typing on silent refetches (same id → no re-seed). After a
+  // successful save we set the draft explicitly from the server response.
+  useEffect(() => {
+    if (record && emailSeededRef.current !== record.id) {
+      emailSeededRef.current = record.id
+      setEmailDraft(record.invited_email ?? "")
+    }
+  }, [record])
 
   // Routing guards — redirect away when the record's lifecycle / link
   // state doesn't match the 4d surface contract. Both use router.replace
@@ -934,6 +961,44 @@ export default function CoachClientPostConversionPage() {
     }
   }
 
+  // Save the edited pre-invite email to the EXISTING prospect PATCH route,
+  // which accepts invited_email and serves this accountless-client case.
+  // On success we replace local record state from the server's returned
+  // prospect so (a) the displayed email updates, (b) the Send Invite button's
+  // disabled state (!record.invited_email) re-evaluates and enables, and
+  // (c) the "Add an email" invite hint is cleared.
+  async function handleSaveEmail() {
+    if (!record || savingEmail) return
+    const next = emailDraft.trim().toLowerCase()
+    if (!EMAIL_RE.test(next)) {
+      setEmailSaveError("Enter a valid email address.")
+      return
+    }
+    setSavingEmail(true)
+    setEmailSaveError(null)
+    setEmailSaved(false)
+    try {
+      const res = await authFetch(`/api/coach/prospects/${record.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ invited_email: next }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) {
+        setRecord(j.prospect)
+        setEmailDraft(j.prospect?.invited_email ?? next)
+        setInviteError(null) // a valid email now exists — clear the invite hint
+        setEmailSaved(true)
+        setTimeout(() => setEmailSaved(false), 2000)
+      } else {
+        setEmailSaveError(j?.error || "Couldn't save email — try again")
+      }
+    } catch {
+      setEmailSaveError("Network error — try again")
+    } finally {
+      setSavingEmail(false)
+    }
+  }
+
   if (loading) return <LoadingShell />
 
   if (accessDenied) {
@@ -956,6 +1021,14 @@ export default function CoachClientPostConversionPage() {
   const displayName = record.name || record.invited_email || "Unnamed client"
   const firstName = firstNameOf(record.name, record.invited_email)
   const inviteWasJustSent = !!inviteResult
+
+  // Email-editor derived state. The render reaching this point is already
+  // gated on !record.client_profile_id (the redirect guard above), so this
+  // editor only ever shows for accountless clients.
+  const trimmedEmailDraft = emailDraft.trim().toLowerCase()
+  const emailDraftValid = EMAIL_RE.test(trimmedEmailDraft)
+  const emailDirty = trimmedEmailDraft !== (record.invited_email ?? "")
+  const canSaveEmail = emailDraftValid && emailDirty && !savingEmail
 
   return (
     <div>
@@ -1163,7 +1236,65 @@ export default function CoachClientPostConversionPage() {
             />
           )}
           {record.source_detail && <InfoRow label="SOURCE DETAIL" value={record.source_detail} />}
-          {record.invited_email && <InfoRow label="EMAIL" value={record.invited_email} />}
+          {/* EMAIL — editable in the accountless state (client_profile_id IS
+              NULL, already guaranteed by the redirect guard at the top of this
+              render). The coach can add a missing email OR fix a typo before
+              sending the invite. Saving posts invited_email to the existing
+              PATCH /api/coach/prospects/[id]; once a valid email is saved the
+              Send Invite button above re-enables (it keys off
+              record.invited_email). Accounted clients never reach this surface
+              — they're redirected to /clients/[client_profile_id]. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, gridColumn: "1 / -1" }}>
+            <span style={{ ...label, color: T.WRN_BLUE, fontSize: 10 }}>EMAIL</span>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
+              <input
+                type="email"
+                value={emailDraft}
+                onChange={(e) => {
+                  setEmailDraft(e.target.value)
+                  if (emailSaveError) setEmailSaveError(null)
+                  if (emailSaved) setEmailSaved(false)
+                }}
+                placeholder="client@example.com"
+                autoComplete="email"
+                style={{ ...input, flex: "1 1 260px", maxWidth: 360 }}
+              />
+              <button
+                onClick={handleSaveEmail}
+                disabled={!canSaveEmail}
+                style={{
+                  ...btnPrimary,
+                  fontSize: 13,
+                  padding: "9px 18px",
+                  opacity: canSaveEmail ? 1 : 0.5,
+                  cursor: canSaveEmail ? "pointer" : "default",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                {savingEmail && <SavingSpinner />}
+                {savingEmail ? "Saving..." : "Save Email"}
+              </button>
+            </div>
+            {/* Inline hints — no network call until valid. */}
+            {trimmedEmailDraft !== "" && !emailDraftValid && (
+              <span style={{ fontSize: 12, color: "#FBBF24", fontWeight: 700 }}>
+                Enter a valid email address.
+              </span>
+            )}
+            {trimmedEmailDraft === "" && (
+              <span style={{ fontSize: 12, color: T.MUTED, fontWeight: 600 }}>
+                Add an email address to enable the SIGNAL invite.
+              </span>
+            )}
+            {emailSaveError && (
+              <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{emailSaveError}</span>
+            )}
+            {emailSaved && (
+              <span style={{ fontSize: 12, color: T.SUCCESS, fontWeight: 700 }}>Saved</span>
+            )}
+          </div>
           {record.phone && (
             <InfoRow
               label="PHONE"
