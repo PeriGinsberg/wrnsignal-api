@@ -87,6 +87,11 @@ const SYNTHETIC_CSV_PATH = join(
   "fixtures",
   "synthetic-cases-4102026.csv"
 )
+// 4th source — real prod (resume, JD) pairs. Inputs are LOCAL-ONLY/gitignored
+// (PII); only the outputs-only baseline-prod.json is committed. Absent fixture
+// => prod suite skipped entirely (clean checkout stays the fast 68-case gate).
+const PROD_FIXTURE_PATH = join(__dirname, "prod-corpus.local.json")
+const PROD_BASELINE_PATH = join(__dirname, "baseline-prod.json")
 
 // Run one of the inline retest cases through runJobFit and return a snapshot.
 async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapshot> {
@@ -158,84 +163,95 @@ async function collectLiveSnapshots(): Promise<Record<string, CaseSnapshot>> {
   return out
 }
 
-function readBaseline(): Record<string, CaseSnapshot> | null {
-  if (!existsSync(BASELINE_PATH)) return null
-  const raw = readFileSync(BASELINE_PATH, "utf8")
+// Prod corpus (4th source). Reads the local-only fixture, replays today's
+// engine on each (resume, JD) pair, returns v2 snapshots keyed `prod-<id>`.
+// Tracks errored/skipped rows for the run summary. Gated by the caller on
+// existsSync(PROD_FIXTURE_PATH).
+async function collectProdSnapshots(): Promise<{
+  snapshots: Record<string, CaseSnapshot>
+  errored: Array<{ id: string; reason: string }>
+  skipped: Array<{ id: string; reason: string }>
+}> {
+  const out: Record<string, CaseSnapshot> = {}
+  const errored: Array<{ id: string; reason: string }> = []
+  const skipped: Array<{ id: string; reason: string }> = []
+  const rows = JSON.parse(readFileSync(PROD_FIXTURE_PATH, "utf8")) as any[]
+  const SEM = frozenSemanticOption()
+  for (const row of rows) {
+    const key = `prod-${row.id}`
+    const profileText = String(row.profileText || "")
+    const jobText = String(row.jobText || "")
+    if (profileText.trim().length === 0) {
+      skipped.push({ id: key, reason: "empty profileText" })
+      continue
+    }
+    if (jobText.trim().length === 0) {
+      skipped.push({ id: key, reason: "empty jobText" })
+      continue
+    }
+    try {
+      const result: any = await runJobFit({
+        profileText,
+        jobText,
+        profileOverrides: row.profileOverrides ?? undefined,
+        userJobTitle: row.userJobTitle || undefined,
+        userCompanyName: row.userCompanyName || undefined,
+        semantic: SEM,
+        includeEngineTrace: true,
+      } as any)
+      out[key] = toSnapshot(key, String(row.label || key), result)
+    } catch (e: any) {
+      errored.push({ id: key, reason: e?.message || String(e) })
+    }
+  }
+  console.log(
+    `[prod-corpus] ${rows.length} rows → ${Object.keys(out).length} scored, ` +
+      `${errored.length} errored, ${skipped.length} skipped`
+  )
+  return { snapshots: out, errored, skipped }
+}
+
+function readBaseline(path: string): Record<string, CaseSnapshot> | null {
+  if (!existsSync(path)) return null
   try {
-    return JSON.parse(raw) as Record<string, CaseSnapshot>
+    return JSON.parse(readFileSync(path, "utf8")) as Record<string, CaseSnapshot>
   } catch (e) {
-    console.error("Failed to parse baseline.json:", (e as Error).message)
+    console.error(`Failed to parse ${path}:`, (e as Error).message)
     return null
   }
 }
 
-function writeBaseline(snapshots: Record<string, CaseSnapshot>) {
+function writeBaseline(path: string, snapshots: Record<string, CaseSnapshot>) {
   // Sort keys for stable diffs.
   const sorted: Record<string, CaseSnapshot> = {}
   for (const k of Object.keys(snapshots).sort()) sorted[k] = snapshots[k]
-  writeFileSync(BASELINE_PATH, JSON.stringify(sorted, null, 2) + "\n", "utf8")
+  writeFileSync(path, JSON.stringify(sorted, null, 2) + "\n", "utf8")
 }
 
-async function main() {
-  const args = process.argv.slice(2)
-  const updateBaseline = args.includes("--update-baseline")
-  const verbose = args.includes("--verbose") || args.includes("-v")
-
-  console.log("Running jobfit regression check...")
-  const t0 = Date.now()
-  const live = await collectLiveSnapshots()
-  const ms = Date.now() - t0
-  console.log(`Ran ${Object.keys(live).length} cases in ${(ms / 1000).toFixed(1)}s\n`)
-
-  if (updateBaseline) {
-    writeBaseline(live)
-    console.log(`✓ Wrote baseline to ${BASELINE_PATH}`)
-    console.log(`  ${Object.keys(live).length} case snapshots captured.`)
-    console.log(`  Remember to commit baseline.json.`)
-    return
-  }
-
-  const baseline = readBaseline()
-  if (!baseline) {
+// Tiered structured diff + report for ONE suite. Prints a suite-prefixed
+// report (HARD first, then SOFT). Returns true on a HARD failure (any hard
+// diff / new / missing case). A schema_version skew exits 2 immediately.
+function compareSuite(
+  suiteName: string,
+  live: Record<string, CaseSnapshot>,
+  baseline: Record<string, CaseSnapshot>
+): boolean {
+  const versions = new Set(Object.values(baseline).map((s: any) => s?.schema_version ?? 1))
+  if (!(versions.size === 1 && versions.has(SCHEMA_VERSION))) {
     console.error(
-      `\n✗ No baseline found at ${BASELINE_PATH}.\n` +
-        `Run with --update-baseline to create one after verifying the current\n` +
-        `results are correct.`
+      `\n✗ [${suiteName}] Baseline schema version mismatch.\n` +
+        `  baseline: ${[...versions].join(", ")}   harness: ${SCHEMA_VERSION}\n` +
+        `  Re-baseline after verifying current results: --update-baseline`
     )
     process.exit(2)
   }
 
-  // ── Global schema-version guard ──────────────────────────────────────────
-  // Refuse to diff a baseline written under a different snapshot schema. A
-  // version skew means the structured shapes are incomparable; the only safe
-  // move is a reviewed re-baseline, not a noisy field-by-field mismatch dump.
-  const baselineVersions = new Set(
-    Object.values(baseline).map((s: any) => s?.schema_version ?? 1)
-  )
-  if (!(baselineVersions.size === 1 && baselineVersions.has(SCHEMA_VERSION))) {
-    console.error(
-      `\n✗ Baseline schema version mismatch.\n` +
-        `  baseline: ${[...baselineVersions].join(", ")}   harness: ${SCHEMA_VERSION}\n` +
-        `  The snapshot schema changed; the old baseline cannot be diffed against\n` +
-        `  the new structured snapshots. Re-baseline after verifying current results:\n` +
-        `      npx tsx tests/jobfit-regression/regression-check.ts --update-baseline`
-    )
-    process.exit(2)
-  }
-
-  // Identify missing / new cases so we notice when the case set changes.
   const baselineIds = new Set(Object.keys(baseline))
   const liveIds = new Set(Object.keys(live))
   const newCases = [...liveIds].filter((id) => !baselineIds.has(id))
   const missingCases = [...baselineIds].filter((id) => !liveIds.has(id))
 
-  // Tiered structured diff per case (in both baseline + live).
-  const perCase: Array<{
-    id: string
-    label: string
-    hard: SnapshotDiff[]
-    soft: SnapshotDiff[]
-  }> = []
+  const perCase: Array<{ id: string; label: string; hard: SnapshotDiff[]; soft: SnapshotDiff[] }> = []
   for (const id of Object.keys(live)) {
     if (!baseline[id]) continue
     const d = diffSnapshots(baseline[id], live[id])
@@ -248,35 +264,23 @@ async function main() {
     })
   }
 
-  if (verbose) {
-    console.log("=== All case snapshots ===")
-    for (const id of Object.keys(live).sort()) {
-      console.log("  " + formatSnapshot(live[id]))
-    }
-    console.log("")
-  }
-
   const hardCases = perCase.filter((c) => c.hard.length > 0)
   const softOnlyCases = perCase.filter((c) => c.hard.length === 0 && c.soft.length > 0)
-  // HARD failure = any hard diff, any new case, or any missing case.
-  const hasHardFailure =
-    hardCases.length > 0 || newCases.length > 0 || missingCases.length > 0
+  const hardFail = hardCases.length > 0 || newCases.length > 0 || missingCases.length > 0
 
+  console.log(`── suite: ${suiteName} (${liveIds.size} live, ${baselineIds.size} baseline) ──`)
   if (newCases.length > 0) {
-    console.log("✗ New cases not in baseline (HARD):")
+    console.log(`✗ [${suiteName}] New cases not in baseline (HARD):`)
     for (const id of newCases) console.log("  + " + id + " — " + live[id].label)
     console.log("  (run with --update-baseline to include them)\n")
   }
-
   if (missingCases.length > 0) {
-    console.log("✗ Baseline cases missing from live run (HARD):")
+    console.log(`✗ [${suiteName}] Baseline cases missing from live run (HARD):`)
     for (const id of missingCases) console.log("  - " + id + " — " + baseline[id].label)
     console.log("")
   }
-
-  // HARD changes first — these fail the run.
   if (hardCases.length > 0) {
-    console.log(`✗ ${hardCases.length} case(s) with HARD changes (fail):\n`)
+    console.log(`✗ [${suiteName}] ${hardCases.length} case(s) with HARD changes (fail):\n`)
     for (const { id, label, hard, soft } of hardCases) {
       console.log(`  ${id} — ${label}`)
       for (const d of hard) console.log(`    ${formatDiff(d)}`)
@@ -284,35 +288,106 @@ async function main() {
       console.log("")
     }
   }
-
-  // SOFT-only changes — informational, do NOT fail the run.
   if (softOnlyCases.length > 0) {
-    console.log(`~ ${softOnlyCases.length} case(s) with SOFT drift only (informational):\n`)
+    console.log(`~ [${suiteName}] ${softOnlyCases.length} case(s) with SOFT drift only (informational):\n`)
     for (const { id, label, soft } of softOnlyCases) {
       console.log(`  ${id} — ${label}`)
       for (const d of soft) console.log(`    ${formatDiff(d)}`)
       console.log("")
     }
   }
-
   if (perCase.length === 0 && newCases.length === 0 && missingCases.length === 0) {
-    console.log(`✓ All ${Object.keys(live).length} cases match baseline. No drift.`)
+    console.log(`✓ [${suiteName}] All ${liveIds.size} cases match baseline. No drift.\n`)
+  } else if (!hardFail) {
+    console.log(`✓ [${suiteName}] No HARD changes. ${softOnlyCases.length} SOFT-only case(s) within tolerance.\n`)
+  }
+  return hardFail
+}
+
+async function main() {
+  const args = process.argv.slice(2)
+  const updateBaseline = args.includes("--update-baseline")
+  const verbose = args.includes("--verbose") || args.includes("-v")
+
+  console.log("Running jobfit regression check...")
+  const t0 = Date.now()
+
+  // Core 68-case suite (always). Prod corpus (4th source) only when the
+  // local-only fixture is present.
+  const core = await collectLiveSnapshots()
+  const prodExists = existsSync(PROD_FIXTURE_PATH)
+  let prod: Record<string, CaseSnapshot> = {}
+  if (prodExists) {
+    const res = await collectProdSnapshots()
+    prod = res.snapshots
+    if (res.errored.length > 0) {
+      console.log(`[prod-corpus] errored rows:`)
+      for (const e of res.errored.slice(0, 20)) console.log(`  ✗ ${e.id}: ${e.reason}`)
+      if (res.errored.length > 20) console.log(`  …and ${res.errored.length - 20} more`)
+    }
+    if (res.skipped.length > 0) {
+      console.log(`[prod-corpus] skipped rows:`)
+      for (const s of res.skipped.slice(0, 20)) console.log(`  - ${s.id}: ${s.reason}`)
+      if (res.skipped.length > 20) console.log(`  …and ${res.skipped.length - 20} more`)
+    }
+  }
+  const ms = Date.now() - t0
+  console.log(
+    `Ran ${Object.keys(core).length} core` +
+      (prodExists ? ` + ${Object.keys(prod).length} prod` : "") +
+      ` cases in ${(ms / 1000).toFixed(1)}s\n`
+  )
+
+  if (updateBaseline) {
+    writeBaseline(BASELINE_PATH, core)
+    console.log(`✓ Wrote core baseline to ${BASELINE_PATH} (${Object.keys(core).length} cases)`)
+    if (prodExists) {
+      writeBaseline(PROD_BASELINE_PATH, prod)
+      console.log(`✓ Wrote prod baseline to ${PROD_BASELINE_PATH} (${Object.keys(prod).length} cases)`)
+    } else {
+      console.log(`  (prod corpus fixture absent — baseline-prod.json not written)`)
+    }
+    console.log(`  Remember to commit baseline.json${prodExists ? " + baseline-prod.json" : ""}.`)
     return
   }
 
-  if (hasHardFailure) {
+  if (verbose) {
+    console.log("=== core snapshots ===")
+    for (const id of Object.keys(core).sort()) console.log("  " + formatSnapshot(core[id]))
+    console.log("")
+  }
+
+  const coreBaseline = readBaseline(BASELINE_PATH)
+  if (!coreBaseline) {
+    console.error(
+      `\n✗ No baseline found at ${BASELINE_PATH}.\n` +
+        `Run with --update-baseline to create one after verifying current results.`
+    )
+    process.exit(2)
+  }
+  let hardFail = compareSuite("core", core, coreBaseline)
+
+  if (prodExists) {
+    const prodBaseline = readBaseline(PROD_BASELINE_PATH)
+    if (!prodBaseline) {
+      console.error(
+        `\n✗ Prod corpus fixture present but no baseline at ${PROD_BASELINE_PATH}.\n` +
+          `Run with --update-baseline to create it.`
+      )
+      process.exit(2)
+    }
+    hardFail = compareSuite("prod", prod, prodBaseline) || hardFail
+  } else {
+    console.log("── suite: prod — fixture absent (prod-corpus.local.json) → skipped ──\n")
+  }
+
+  if (hardFail) {
     console.log("Next steps:")
-    console.log("  - HARD changes need adjudication. If INTENDED (a fix or improvement),")
-    console.log("    review each, then run:")
-    console.log("      npx tsx tests/jobfit-regression/regression-check.ts --update-baseline")
+    console.log("  - HARD changes need adjudication. If INTENDED, review then run --update-baseline.")
     console.log("  - If any HARD change is UNINTENDED, fix the regression before committing.")
     process.exit(1)
   }
-
-  // SOFT-only drift: reported above, run passes.
-  console.log(
-    `✓ No HARD changes. ${softOnlyCases.length} case(s) had SOFT drift within review tolerance (reported above).`
-  )
+  console.log("✓ All suites pass (no HARD changes).")
 }
 
 main().catch((e) => {

@@ -5,3 +5,10 @@
 # is never committed. A fresh checkout fails open (keeps credit) — consistent
 # with the batch CSV / acceptance fixtures already being local-only.
 *.local.json
+
+# Real-prod corpus INPUTS (629 resume+JD pairs from jobfit_runs) — real
+# candidate PII, local-only. Already covered by *.local.json above; named
+# explicitly for clarity. Only the OUTPUTS-ONLY baseline-prod.json (v2
+# structured snapshots, zero raw resume text) is committed. Rebuild with:
+#   NODE_OPTIONS=--use-system-ca npx tsx tests/jobfit-regression/build-prod-corpus.ts
+prod-corpus.local.json
