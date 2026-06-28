@@ -3,7 +3,7 @@
 // Evidence-first scoring for WHY pipeline.
 // WHY bullets are created from matched proof objects, not category overlap.
 
-import { POLICY, LOCATION_FIT_SCORING_ENABLED, type PenaltyKey } from "./policy"
+import { POLICY, type PenaltyKey } from "./policy"
 import type {
   EvidenceKind,
   JobRequirementUnit,
@@ -159,29 +159,6 @@ function applyDiminishingReturns(penaltySum: number): number {
   const extra = penaltySum - softCap
   const reduced = extra * (1 - POLICY.score.diminishingReturnsRate)
   return softCap + reduced
-}
-
-function normalizeCity(s: string | null | undefined): string {
-  const t = norm(s)
-  if (!t) return ""
-  if (t.includes("new york") || t.includes("nyc")) return "new york"
-  if (t.includes("boston")) return "boston"
-  if (t.includes("philadelphia") || t.includes("philly")) return "philadelphia"
-  if (t.includes("washington") && (t.includes("dc") || t.includes("d.c"))) return "washington, d.c."
-  if (t.includes("chicago")) return "chicago"
-  if (t.includes("miami")) return "miami"
-  if (t.includes("atlanta")) return "atlanta"
-  if (t.includes("charlotte")) return "charlotte"
-  if (t.includes("austin")) return "austin"
-  if (t.includes("los angeles") || t === "la") return "los angeles"
-  return t
-}
-
-function locationCityMatches(jobCity: string, preferredCities: string[]): boolean {
-  const j = normalizeCity(jobCity)
-  if (!j) return false
-  const prefs = (preferredCities || []).map(normalizeCity).filter(Boolean)
-  return prefs.includes(j)
 }
 
 function toolMissing(profileTools: string[], tool: string): boolean {
@@ -933,52 +910,6 @@ export function scoreJobFit(
   const hasExplicitTools =
     (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
-  if (LOCATION_FIT_SCORING_ENABLED) {
-    const profileConstrained = !!profile.locationPreference.constrained
-    const jobCity = job.location?.city ?? null
-    const allowedCities = profile.locationPreference.allowedCities
-
-    const hasJobCity =
-      typeof jobCity === "string" && jobCity.trim().length > 0
-
-    const hasAllowedCities =
-      Array.isArray(allowedCities) && allowedCities.length > 0
-
-    const cityMismatch =
-      hasJobCity &&
-      hasAllowedCities &&
-      !locationCityMatches(jobCity, allowedCities)
-
-    if (cityMismatch) {
-      if (profileConstrained) {
-        const amt = computePenaltyAmount("location_mismatch_constrained")
-
-        penalties.push({
-          key: "location_mismatch_constrained",
-          amount: amt,
-          note: `Constrained city mismatch (job: ${jobCity})`,
-          risk: {
-            code: "RISK_LOCATION",
-            job_fact: `Job location indicates ${jobCity}.`,
-            profile_fact: `Allowed cities are ${allowedCities.join(", ")}.`,
-            risk: "Your location constraints do not match the job location.",
-            severity: "high",
-            weight: -amt,
-          },
-        })
-      } else {
-        riskOnlyCodes.push({
-          code: "RISK_LOCATION",
-          job_fact: `Job location indicates ${jobCity}.`,
-          profile_fact: `Preferred cities are ${allowedCities.join(", ")}.`,
-          risk: "The job location sits outside your stated preferred cities.",
-          severity: "medium",
-          weight: 0,
-        })
-      }
-    }
-  }
-
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
     const k: PenaltyKey = "location_mismatch_constrained"
     const amt = computePenaltyAmount(k)
@@ -1233,48 +1164,6 @@ export function scoreJobFit(
       weight: -amt,
     })
     console.log(`[scoring] Sales sub-segment mismatch fired: profile=${profileLabel} vs job=${jobLabel}`)
-  }
-
-  // Undisclosed territory risk — JDs that reference "within territory"
-  // or "within 30 miles of territory boundaries" without specifying the
-  // actual territory location. Candidate should confirm location before
-  // applying since it may be anywhere in the country.
-  if (LOCATION_FIT_SCORING_ENABLED && (job as any)?.territoryUndisclosed) {
-    riskOnlyCodes.push({
-      code: "RISK_LOCATION_UNDISCLOSED",
-      job_fact: "Job references a sales territory but does not specify where it is located.",
-      profile_fact: "Your profile has a preferred location, but the territory may be elsewhere.",
-      risk: "The posting mentions a territory requirement without disclosing which territory. Confirm the territory location before investing time in this application — it may be outside your preferred region.",
-      severity: "low",
-    })
-    console.log("[scoring] Undisclosed territory risk fired")
-  }
-
-  // General location-unclear risk — when the JD doesn't disclose a
-  // location at all (mode: "unclear") AND the candidate has explicit
-  // preferred cities, fire a low-severity risk so they know to verify
-  // before applying. Distinct from territoryUndisclosed which fires on
-  // territory-specific sales JDs. Suppressed for remote-explicit jobs
-  // and for internal-facing postings that don't normally list cities.
-  const jobLocMode = (job as any)?.location?.mode
-  const jobLocCity = (job as any)?.location?.city
-  const profileAllowedCities = (profile as any)?.locationPreference?.allowedCities as string[] | undefined
-  if (
-    LOCATION_FIT_SCORING_ENABLED &&
-    !(job as any)?.territoryUndisclosed &&
-    jobLocMode === "unclear" &&
-    !jobLocCity &&
-    Array.isArray(profileAllowedCities) &&
-    profileAllowedCities.length > 0
-  ) {
-    riskOnlyCodes.push({
-      code: "RISK_LOCATION_UNCLEAR",
-      job_fact: "The job posting does not clearly state a location.",
-      profile_fact: `Your preferred locations: ${profileAllowedCities.slice(0, 4).join(", ")}.`,
-      risk: "This posting does not clearly specify a city or region. Before investing time in an application, confirm the location is compatible with your preferences — many corporate postings default to the company's HQ city, which may not be where you want to work.",
-      severity: "low",
-    })
-    console.log("[scoring] Location-unclear risk fired; profile cities:", profileAllowedCities.join(", "))
   }
 
   // Pharmaceutical sales training preference — soft risk when JD lists

@@ -2,32 +2,6 @@
 
 import type { GateTriggered, StructuredJobSignals, StructuredProfileSignals } from "./signals"
 import { hasRequiredDegree } from "./signals"
-import { LOCATION_FIT_SCORING_ENABLED } from "./policy"
-
-function normCity(s: string): string {
-  return (s || "")
-    .toLowerCase()
-    .replace(/\./g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
-function cityMatches(jobCity: string, allowed: string[]): boolean {
-  const j = normCity(jobCity)
-  const prefs = allowed.map(normCity).filter(Boolean)
-
-  // basic normalization helpers
-  const mapAlias = (x: string) => {
-    if (x === "nyc" || x.includes("new york")) return "new york"
-    if (x.includes("washington") && (x.includes("dc") || x.includes("d c"))) return "washington dc"
-    return x
-  }
-
-  const jj = mapAlias(j)
-  const pp = prefs.map(mapAlias)
-
-  return pp.includes(jj)
-}
 
 /**
  * Gate philosophy:
@@ -230,44 +204,6 @@ if (job.credentialRequired) {
   }
 
   // ---------------- Soft overrides (Apply -> Review) ----------------
-
-  // Location mismatch when constrained:
-  // Prefer city mismatch when we have explicit city prefs + job city.
-  // Fall back to mode mismatch only when city info is missing.
-  const profileConstrained = Boolean(profile.locationPreference.constrained)
-  const jobConstrained = Boolean(job.location.constrained)
-
-  // City/location-fit gate is behind the reversible LOCATION_FIT_SCORING_ENABLED
-  // flag (broken extractor). When disabled, fall through to later gates. The
-  // remote hard-stop gate (GATE_REMOTE_MISMATCH, above) is NOT flag-governed.
-  if (LOCATION_FIT_SCORING_ENABLED && profileConstrained && jobConstrained) {
-    const jobCity = job.location.city
-    const allowedCities = profile.locationPreference.allowedCities
-
-    const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
-    const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
-
-    if (hasCityPrefs && jobCityKnown) {
-      if (!cityMatches(jobCity!, allowedCities!)) {
-        return {
-          type: "floor_review",
-          gateCode: "GATE_FLOOR_REVIEW_LOCATION",
-          detail: "Constrained city mismatch",
-        }
-      }
-    } else {
-      // fallback: mode mismatch only
-      const pm = profile.locationPreference.mode
-      const jm = job.location.mode
-      if (pm !== "unclear" && jm !== "unclear" && pm !== jm) {
-        return {
-          type: "floor_review",
-          gateCode: "GATE_FLOOR_REVIEW_LOCATION",
-          detail: "Location mismatch (constrained)",
-        }
-      }
-    }
-  }
 
   // Pref full-time vs contract should block Apply but not necessarily “Pass”
   if (profile.constraints.prefFullTime && job.isContract) {
