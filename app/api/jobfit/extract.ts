@@ -2008,6 +2008,7 @@ function familyAggregateFromFunctionTags(tags: FunctionTag[]): FamilyAggregate {
     IT_Software: 0,
     ProductManagement: 0,
     Healthcare: 0,
+    LifeSciences: 0,
     Legal: 0,
     Trades: 0,
     Other: 0,
@@ -2071,6 +2072,7 @@ function familyAggregateFromFunctionTags(tags: FunctionTag[]): FamilyAggregate {
     "IT_Software",
     "ProductManagement",
     "Healthcare",
+    "LifeSciences",
     "Legal",
     "Trades",
     "Finance",
@@ -2159,6 +2161,9 @@ const FAMILY_CLOSE_COUSINS: ReadonlyArray<readonly [JobFamily, JobFamily]> = [
   ["Sales", "PreMed"], // medical / clinical sales
   // medical
   ["Healthcare", "PreMed"],
+  // life sciences — lab/bench work sits between Healthcare and Engineering
+  ["LifeSciences", "Healthcare"],
+  ["LifeSciences", "Engineering"],
 ]
 
 function familyDistance(a: JobFamily, b: JobFamily): number {

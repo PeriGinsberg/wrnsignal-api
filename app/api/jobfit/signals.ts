@@ -22,6 +22,7 @@ export type JobFamily =
   | "IT_Software"
   | "ProductManagement"
   | "Healthcare"
+  | "LifeSciences"
   | "Legal"
   | "Trades"
   | "Other"

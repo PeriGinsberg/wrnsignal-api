@@ -17,6 +17,7 @@ const FAMILY_DISPLAY: Record<string, string> = {
   it_software: "IT / Software Engineering",
   premed: "Pre-Med / Life Sciences",
   healthcare: "Healthcare",
+  lifesciences: "Life Sciences",
   engineering: "Engineering",
   finance: "Finance",
   accounting: "Accounting",

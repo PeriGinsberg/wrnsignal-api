@@ -45,6 +45,8 @@ const HARD_TECHNICAL_FAMILIES = new Set([
 
 // Business/generalist families — profiles in these families should not match
 // hard technical roles.
+// DEAD: defined but never read anywhere in the engine (tech-debt). Not
+// extended with LifeSciences since nothing consumes it.
 const BUSINESS_FAMILIES = new Set([
   "Consulting",
   "Marketing",
