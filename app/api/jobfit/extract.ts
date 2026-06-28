@@ -17,6 +17,7 @@
 import crypto from "crypto"
 import { POLICY } from "./policy"
 import type {
+  DegreeRequirement,
   EvidenceKind,
   FinanceSubFamily,
   FunctionTag,
@@ -3984,9 +3985,15 @@ export function extractJobSignals(
     // Alternative-degree structure: "master's degree … or … bachelor's degree"
     // — a bachelor's listed as an acceptable minimum alternative.
     /\b(master'?s?|bachelor'?s?)\s+degree\b[^.?!]{0,80}\bor\s+a?\s*bachelor'?s?\s+degree\b/i.test(jobTextRaw)
-  const bachelorPreferred =
-    !bachelorRequired &&
-    /\bbachelor'?s?\s*(degree)?\s*preferred/i.test(jobTextRaw)
+  // Structural (Move A): regex path emits ONLY required bachelor/mba, with
+  // field & field_kind null — the exact equivalent of the old booleans. It
+  // does not judge level=master/phd/associate, requiredness=preferred, or
+  // field; the LLM extractor fills those later. bachelorPreferred dropped (dead).
+  const degrees: DegreeRequirement[] = []
+  if (bachelorRequired)
+    degrees.push({ level: "bachelor", requiredness: "required", field: null, field_kind: "none" })
+  if (mbaRequired)
+    degrees.push({ level: "mba", requiredness: "required", field: null, field_kind: "none" })
 // Credential hard requirements
   const lawSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.lawSchoolKeywords).map(norm)
   const medSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.medSchoolKeywords).map(norm)
@@ -4641,9 +4648,7 @@ return {
     isContract,
     isHourly,
     yearsRequired,
-    mbaRequired,
-    bachelorRequired,
-    bachelorPreferred,
+    degrees,
     credentialRequired,
     credentialDetail,
     credentialSponsored,

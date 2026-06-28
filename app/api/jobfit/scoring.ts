@@ -14,6 +14,7 @@ import type {
   StructuredProfileSignals,
   WhyCode,
 } from "./signals"
+import { hasRequiredDegree } from "./signals"
 import { getFinanceSubFamilyDistance } from "./extract"
 import { familyDisplayName } from "./deterministicBulletRendererV4"
 
@@ -1479,7 +1480,7 @@ export function scoreJobFit(
   }
 
   // Degree requirement risk
-  if (job.bachelorRequired && profile.degreeStatus === "in_progress") {
+  if (hasRequiredDegree(job.degrees, "bachelor") && profile.degreeStatus === "in_progress") {
     const isGradThisYear = profile.gradYear === new Date().getFullYear()
     const amt = isGradThisYear ? computePenaltyAmount("grad_window_mismatch") : computePenaltyAmount("mba_required")
     penalties.push({
@@ -1499,7 +1500,7 @@ export function scoreJobFit(
     })
   }
 
-  if (job.bachelorRequired && profile.degreeStatus === "unknown") {
+  if (hasRequiredDegree(job.degrees, "bachelor") && profile.degreeStatus === "unknown") {
     const amt = Math.max(computePenaltyAmount("grad_window_mismatch") - 2, 3)
     penalties.push({
       key: "degree_unknown",
@@ -1516,7 +1517,7 @@ export function scoreJobFit(
     })
   }
 
-  if (job.mbaRequired) {
+  if (hasRequiredDegree(job.degrees, "mba")) {
     const amt = computePenaltyAmount("mba_required")
     penalties.push({
       key: "mba_required",
@@ -1673,7 +1674,7 @@ export function scoreJobFit(
     job.location?.mode === "unclear" &&
     !job.isContract &&
     !job.isHourly &&
-    !job.mbaRequired &&
+    !hasRequiredDegree(job.degrees, "mba") &&
     job.gradYearHint === null
   ) {
     riskOnlyCodes.push({

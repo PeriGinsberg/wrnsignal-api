@@ -1,6 +1,7 @@
 // FILE: app/api/jobfit/constraints.ts
 
 import type { GateTriggered, StructuredJobSignals, StructuredProfileSignals } from "./signals"
+import { hasRequiredDegree } from "./signals"
 import { LOCATION_FIT_SCORING_ENABLED } from "./policy"
 
 function normCity(s: string): string {
@@ -74,7 +75,7 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
     }
   }
 
-  if (job.mbaRequired) {
+  if (hasRequiredDegree(job.degrees, "mba")) {
     const detail = profile.degreeStatus === "in_progress"
       ? "This role requires an MBA. Based on your profile, you are currently pursuing an undergraduate degree. This is a hard requirement that cannot be overcome through other qualifications."
       : "MBA required"
