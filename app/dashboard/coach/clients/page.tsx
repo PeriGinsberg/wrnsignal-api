@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
-import { LifecycleStatusPill, type LifecycleStatus } from "../LifecycleStatusPill"
+import { LifecycleStatusPill, LIFECYCLE_STATUS_VALUES, type LifecycleStatus } from "../LifecycleStatusPill"
 import { BackToDashboard } from "../BackToDashboard"
 import { LoadingShell } from "../LoadingShell"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
@@ -20,6 +20,24 @@ import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANS
 const FILTER_LABELS: Record<string, string> = {
   prospect: "Active Prospects",
   active: "Active Clients",
+}
+
+// In-page lifecycle filter (segmented control above the roster). "All"
+// means every non-Prospect row. The status options are derived from
+// LIFECYCLE_STATUS_VALUES (single source of truth) with Prospect dropped —
+// Prospect rows are already excluded from this view (see load()).
+type LifecycleFilter = LifecycleStatus | "All"
+const LIFECYCLE_FILTER_OPTIONS: LifecycleFilter[] = [
+  ...LIFECYCLE_STATUS_VALUES.filter((s) => s !== "Prospect"),
+  "All",
+]
+
+// Seed the in-page selection from the deep-link ?filter= param. Today only
+// ?filter=active maps to an in-page selection (Active); every other case —
+// no param, an unknown value, or ?filter=prospect — also defaults to Active.
+// Written as a map so future param→filter additions slot in cleanly.
+const SEED_FILTER_BY_PARAM: Partial<Record<string, LifecycleFilter>> = {
+  active: "Active",
 }
 
 type CoachClient = {
@@ -124,6 +142,12 @@ export default function MyClientsFullPage() {
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
 
+  // In-page lifecycle filter. Defaults to Active every load (no
+  // persistence). Seeded once from ?filter= for deep-link consistency.
+  const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleFilter>(
+    () => (filter && SEED_FILTER_BY_PARAM[filter]) || "Active",
+  )
+
   // Per-row invite state keyed on coach_clients.id. Tracks the
   // optimistic UI transition for the "Invite to SIGNAL" button.
   // Absent key = idle. No persistence — page refresh resets, but the
@@ -184,15 +208,20 @@ export default function MyClientsFullPage() {
     router.push("/dashboard/coach/clients")
   }
 
-  // Same default sort as the Dashboard summary
+  // Lifecycle filter first (on the already Prospect-excluded array), then
+  // the same default sort as the Dashboard summary — so sorting applies to
+  // the visible subset.
   const sorted = useMemo(() => {
     if (!clients) return []
-    return [...clients].sort((a, b) => {
+    const filtered = lifecycleFilter === "All"
+      ? clients
+      : clients.filter((c) => c.lifecycle_status === lifecycleFilter)
+    return [...filtered].sort((a, b) => {
       if (b.updates_since_visit !== a.updates_since_visit) return b.updates_since_visit - a.updates_since_visit
       if (a.attention_level !== b.attention_level) return a.attention_level === "medium" ? -1 : 1
       return (a.name || "").localeCompare(b.name || "")
     })
-  }, [clients])
+  }, [clients, lifecycleFilter])
 
   if (loading) return <LoadingShell />
 
@@ -236,6 +265,34 @@ export default function MyClientsFullPage() {
         )}
       </div>
 
+      {/* Lifecycle filter — segmented button group. Selected state reuses
+          the orange accent from the "Filtered:" deep-link pill above. */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+        {LIFECYCLE_FILTER_OPTIONS.map((opt) => {
+          const selected = opt === lifecycleFilter
+          return (
+            <button
+              key={opt}
+              onClick={() => setLifecycleFilter(opt)}
+              aria-pressed={selected}
+              style={{
+                background: selected ? "rgba(254,176,106,0.10)" : T.NAV_DEFAULT_BG,
+                border: `1px solid ${selected ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
+                color: selected ? "#FEB06A" : T.MUTED,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: "6px 14px",
+                borderRadius: 999,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+
       {/* overflow: "visible" overrides the card's default overflow:hidden
           so LifecycleStatusPill dropdowns on bottom-of-roster rows
           aren't clipped at the card boundary. Same pattern as the
@@ -244,9 +301,11 @@ export default function MyClientsFullPage() {
       <div style={{ ...card, padding: 20, overflow: "visible" }}>
         {sorted.length === 0 ? (
           <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-            {filter
-              ? `No clients match the "${FILTER_LABELS[filter]}" filter. Clear the filter to see your full roster.`
-              : "No clients yet. Use Create or Invite from the Dashboard to add one."}
+            {(clients?.length ?? 0) > 0 && lifecycleFilter !== "All"
+              ? `No ${lifecycleFilter} clients.`
+              : filter
+                ? `No clients match the "${FILTER_LABELS[filter]}" filter. Clear the filter to see your full roster.`
+                : "No clients yet. Use Create or Invite from the Dashboard to add one."}
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
