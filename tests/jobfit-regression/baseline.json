@@ -192,7 +192,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Titan America",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -220,7 +219,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -229,7 +227,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -660,7 +660,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "QuidelOrtho",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -690,7 +689,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint",
@@ -704,7 +702,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -1010,7 +1010,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "ADMA Biologics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -1038,7 +1037,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -1047,7 +1045,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3
+        "yearsRequired": 3,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -1335,7 +1335,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "PL Developments",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -1363,7 +1362,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "r"
         ],
@@ -1374,7 +1372,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 1
+        "yearsRequired": 1,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -1688,7 +1688,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "(Unknown)",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -1717,7 +1716,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -1726,7 +1724,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -2461,7 +2461,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Joe & The Juice",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -2490,7 +2489,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "figma"
         ],
@@ -2501,7 +2499,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -3329,7 +3329,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Vogue",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -3359,7 +3358,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -3368,7 +3366,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -4370,7 +4370,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Mario Badescu",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -4400,7 +4399,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "google docs",
@@ -4416,7 +4414,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -5125,7 +5125,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Allison",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -5153,7 +5152,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint",
@@ -5166,7 +5164,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -5884,7 +5884,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Momentum Communications Group",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -5913,7 +5912,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -5922,7 +5920,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 1
+        "yearsRequired": 1,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -6354,7 +6354,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "(Unknown - Boca Raton)",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -6382,7 +6381,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint",
@@ -6395,7 +6393,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -6701,7 +6701,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "CoralTree / Pier Sixty-Six Resort",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -6728,7 +6727,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -6737,7 +6735,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 7
+        "yearsRequired": 7,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -7188,7 +7188,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "TEAM",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -7220,7 +7219,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -7229,7 +7227,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 8
+        "yearsRequired": 8,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -7578,7 +7578,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Affirm",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -7609,7 +7608,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -7618,7 +7616,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -8072,7 +8072,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "SEI",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -8101,7 +8100,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel"
         ],
@@ -8112,7 +8110,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -8634,7 +8634,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "GVW Group",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -8665,7 +8664,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -8674,7 +8672,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -9381,7 +9381,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Intuit",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -9408,7 +9407,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "git",
           "jenkins",
@@ -9427,7 +9425,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -9814,7 +9814,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Maybern",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -9841,7 +9840,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -9850,7 +9848,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -10478,7 +10478,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Notion",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -10506,7 +10505,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "figma"
         ],
@@ -10521,7 +10519,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 1
+        "yearsRequired": 1,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -10995,7 +10995,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "(Unknown)",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -11024,7 +11023,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [
           "excel",
@@ -11037,7 +11035,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -11464,7 +11464,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "RightClick (client unnamed)",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -11492,7 +11491,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -11501,7 +11499,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -12046,7 +12046,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Raymond James",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -12077,7 +12076,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "crm",
           "excel"
@@ -12089,7 +12087,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -12561,7 +12561,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Hennion & Walsh",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -12589,7 +12588,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -12598,7 +12596,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -13006,7 +13006,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Fanatics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -13035,7 +13034,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint"
@@ -13047,7 +13045,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3
+        "yearsRequired": 3,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -13390,7 +13390,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Richemont Americas",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -13418,7 +13417,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "crm",
           "excel",
@@ -13435,7 +13433,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -13949,7 +13949,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "(Unknown Pharma CSO)",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -13976,7 +13975,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "mentionsPharmaTraining": true,
         "preferredTools": [],
         "requiredTools": [],
@@ -13987,7 +13985,9 @@
         "salesSubFamily": "pharmaceutical",
         "softCredentialDetail": null,
         "territoryUndisclosed": true,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -14628,7 +14628,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "DiCello Levitt",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -14658,7 +14657,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [
           "excel",
@@ -14672,7 +14670,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 4
+        "yearsRequired": 4,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -14910,7 +14910,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meridian Distribution",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -14938,7 +14937,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel"
         ],
@@ -14949,7 +14947,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -15640,7 +15640,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Goldman Sachs",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -15669,7 +15668,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint"
@@ -15681,7 +15679,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -16044,7 +16044,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "BioGenesis Therapeutics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -16074,7 +16073,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "gcp"
         ],
@@ -16085,7 +16083,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -16619,7 +16619,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meridian Capital Partners",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -16649,7 +16648,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint"
@@ -16661,7 +16659,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -16962,7 +16962,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "MegaTrans Logistics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -16991,7 +16990,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -17000,7 +16998,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -17435,7 +17435,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "FinanceFlow Technologies",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -17469,7 +17468,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "sql"
         ],
@@ -17483,7 +17481,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -18160,7 +18160,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Goldman Sachs",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -18190,7 +18189,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint"
@@ -18202,7 +18200,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -18955,7 +18955,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meta",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -18985,7 +18984,6 @@
           "constrained": false,
           "mode": "remote"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "c++",
           "git",
@@ -19004,7 +19002,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -19828,7 +19828,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "UniLever Global",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -19861,7 +19860,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "google analytics",
@@ -19877,7 +19875,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -20357,7 +20357,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Lockheed Martin Aerospace",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -20387,7 +20386,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "ansys",
           "catia",
@@ -20403,7 +20401,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 1
+        "yearsRequired": 1,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -21223,7 +21223,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Tampa General Hospital",
         "credentialDetail": "medical school enrollment or MD/RN",
         "credentialRequired": true,
@@ -21254,7 +21253,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -21263,7 +21261,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -22129,7 +22129,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "McKinsey & Company",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -22158,7 +22157,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint"
@@ -22170,7 +22168,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -22610,7 +22610,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "TechGlobal Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -22640,7 +22639,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -22649,7 +22647,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 7
+        "yearsRequired": 7,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -23087,7 +23087,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "StreamVision Media",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -23116,7 +23115,6 @@
           "constrained": false,
           "mode": "remote"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "java",
           "kubernetes",
@@ -23133,7 +23131,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -24218,7 +24218,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Sterling Capital Partners",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -24248,7 +24247,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel"
         ],
@@ -24262,7 +24260,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -24743,7 +24743,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Pacific Logistics Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -24772,7 +24771,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -24781,7 +24779,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -25662,7 +25662,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meta",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -25691,7 +25690,6 @@
           "constrained": false,
           "mode": "remote"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "aws",
           "azure",
@@ -25712,7 +25710,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -26558,7 +26558,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "ProConsumer Global",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -26591,7 +26590,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel"
         ],
@@ -26607,7 +26605,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -27138,7 +27138,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "AeroDefense Technologies",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -27168,7 +27167,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "catia",
           "solidworks"
@@ -27183,7 +27181,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -27864,7 +27864,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "HCA Healthcare Southeast Division",
         "credentialDetail": "medical school enrollment or MD/RN",
         "credentialRequired": true,
@@ -27893,7 +27892,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -27902,7 +27900,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -28913,7 +28913,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meridian Strategy Partners",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -28943,7 +28942,6 @@
           "constrained": false,
           "mode": "in_person"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint",
@@ -28958,7 +28956,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -29252,7 +29252,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "TechFlow Dynamics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -29282,7 +29281,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [
           "excel",
@@ -29294,7 +29292,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -29786,7 +29786,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "StreamVision Media",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -29817,7 +29816,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "aws",
           "gcp",
@@ -29832,7 +29830,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -30122,7 +30122,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "TechFlow Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -30153,7 +30152,6 @@
           "constrained": false,
           "mode": "remote"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "react",
           "sql"
@@ -30168,7 +30166,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 5
+        "yearsRequired": 5,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -30460,7 +30460,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "NexTech Electronics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -30490,7 +30489,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "java",
           "python"
@@ -30506,7 +30504,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 7
+        "yearsRequired": 7,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -31166,7 +31166,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "CloudSync Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -31194,7 +31193,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [
           "crm",
@@ -31206,7 +31204,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "saas_tech",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -32080,7 +32080,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "BioAdvance Therapeutics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -32112,7 +32111,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "gcp",
           "python",
@@ -32125,7 +32123,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -32748,7 +32748,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meridian Capital Partners",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -32778,7 +32777,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint"
@@ -32790,7 +32788,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -33246,7 +33246,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Pacific Logistics Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -33274,7 +33273,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -33283,7 +33281,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 5
+        "yearsRequired": 5,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -33767,7 +33767,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "FinTech Innovations Inc.",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -33798,7 +33797,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [
           "jira"
@@ -33809,7 +33807,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -34543,7 +34543,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Goldman Sachs",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -34572,7 +34571,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel"
         ],
@@ -34585,7 +34583,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -34895,7 +34895,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meta",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -34924,7 +34923,6 @@
           "constrained": false,
           "mode": "hybrid"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "aws",
           "azure",
@@ -34943,7 +34941,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3
+        "yearsRequired": 3,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -35848,7 +35848,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Procter & Gamble",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -35880,7 +35879,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint",
@@ -35895,7 +35893,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -36209,7 +36209,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": null,
         "credentialDetail": null,
         "credentialRequired": false,
@@ -36239,7 +36238,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "catia",
           "solidworks"
@@ -36254,7 +36252,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3
+        "yearsRequired": 3,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -36505,7 +36505,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": null,
         "credentialDetail": "medical school enrollment or MD/RN",
         "credentialRequired": true,
@@ -36536,7 +36535,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -36545,7 +36543,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -37429,7 +37429,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "McKinsey & Company",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -37460,7 +37459,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "powerpoint",
@@ -37475,7 +37473,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -37789,7 +37789,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "Meta",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -37818,7 +37817,6 @@
           "constrained": false,
           "mode": "remote"
         },
-        "mbaRequired": false,
         "preferredTools": [],
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
@@ -37827,7 +37825,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -38818,7 +38818,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "StreamFlow Technologies",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -38848,7 +38847,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "aws",
           "azure",
@@ -38868,7 +38866,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -39349,7 +39349,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "CloudSync Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -39378,7 +39377,6 @@
           "constrained": false,
           "mode": "remote"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "figma",
           "illustrator",
@@ -39392,7 +39390,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2
+        "yearsRequired": 2,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -39968,7 +39968,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "TechFlow Electronics",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -39996,7 +39995,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "excel",
           "power bi",
@@ -40010,7 +40008,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 1
+        "yearsRequired": 1,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
@@ -40681,7 +40681,6 @@
         "analytics": {
           "isHeavy": false
         },
-        "bachelorRequired": false,
         "companyName": "CloudSync Solutions",
         "credentialDetail": null,
         "credentialRequired": false,
@@ -40710,7 +40709,6 @@
           "constrained": false,
           "mode": "unclear"
         },
-        "mbaRequired": false,
         "preferredTools": [
           "crm",
           "salesforce"
@@ -40722,7 +40720,9 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "saas_tech",
         "softCredentialDetail": null,
-        "yearsRequired": null
+        "yearsRequired": null,
+        "bachelorRequired": false,
+        "mbaRequired": false
       },
       "profile": {
         "constraints": {
