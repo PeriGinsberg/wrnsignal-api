@@ -26,11 +26,19 @@ import type {
   LocationConstraint,
 } from "../jobfit/signals"
 import { renderBulletsV4, RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
+import { extractJobSignalsLLM } from "../jobfit/extractJobSignalsLLM"
+import { llmJobExtractionToSignals } from "../jobfit/llmJobSignalsAdapter"
+import type { ExtractionCache } from "../jobfit/extractionCache"
 
 export const JOBFIT_EVAL_WRAPPER_STAMP =
   "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B"
 
 console.log("[jobfitEvaluator] loaded:", JOBFIT_EVAL_WRAPPER_STAMP)
+
+// In-memory extraction cache — mirrors the semantic layer's SEMANTIC_VERDICT_CACHE
+// (warm-instance reuse on Fluid Compute, repopulated on cold start). No durable
+// backing yet; see commit follow-up note (Supabase-backed ExtractionCache).
+const EXTRACTION_CACHE: ExtractionCache = {}
 
 function iconForDecision(decision: Decision) {
   if (decision === "Priority Apply") return "🔥"
@@ -98,10 +106,34 @@ export async function runJobFit(args: {
   // first 1500 chars do not repeat the title get misclassified —
   // e.g. a Maybern "Software Engineer" JD that opens with a company
   // blurb was classifying as Marketing family.
-  const jobSignals = args.jobSignalsOverride
-    ?? extractJobSignals(args.jobText || "", {
+  let jobSignals: StructuredJobSignals
+  if (args.jobSignalsOverride) {
+    // Explicit override (shadow harness) wins — unchanged.
+    jobSignals = args.jobSignalsOverride
+  } else if (process.env.JOBFIT_LLM_EXTRACTION === "on") {
+    // LLM-first extraction (cutover), gated by env flag. extractJobSignalsLLM
+    // FAILS OPEN: returns null on missing key / HTTP / refusal / unparseable /
+    // throw, so any LLM hiccup silently falls back to regex — a JobFit run
+    // NEVER hard-fails on the LLM path. The fallback is logged (to watch the
+    // fail-open rate on dev) but never surfaced to the user.
+    const llm = await extractJobSignalsLLM(args.jobText || "", {
       userJobTitle: args.userJobTitle,
+      cache: EXTRACTION_CACHE,
+      allowLive: true,
     })
+    if (llm) {
+      jobSignals = llmJobExtractionToSignals(llm, {
+        jobText: args.jobText || "",
+        userJobTitle: args.userJobTitle,
+      })
+    } else {
+      console.warn("[jobfitEvaluator] LLM extraction unavailable — fail-open to regex")
+      jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle })
+    }
+  } else {
+    // Default (flag off): regex extraction — current behavior, byte-identical.
+    jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle })
+  }
 
   // Overwrite the surface jobTitle / companyName fields for display.
   // Extraction used the title for family detection but may have set its
