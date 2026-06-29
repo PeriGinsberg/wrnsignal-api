@@ -1294,6 +1294,24 @@ export function scoreJobFit(
     console.log("[scoring] Soft credential risk flag added:", detail)
   }
 
+  // Sponsored hard credential — the role requires a credential the EMPLOYER
+  // provides/sponsors post-hire ("obtain Series 7 within 120 days"). The
+  // credential gate is suppressed for this case (constraints.ts), so surface it
+  // here as a non-gating heads-up instead of letting the signal vanish.
+  // Regex-inert: regex sets credentialRequired=false when sponsored, so this
+  // only fires on the LLM-fed path.
+  if ((job as any).credentialRequired && (job as any).credentialSponsored) {
+    const detail = (job as any).credentialDetail || "a professional credential"
+    riskOnlyCodes.push({
+      code: "RISK_CREDENTIAL_PREFERRED",
+      job_fact: `This role requires ${detail}, which the employer provides or sponsors after hire.`,
+      profile_fact: "Profile does not yet show this credential.",
+      risk: `${detail} is required, but the employer sponsors obtaining it after you start — you can apply without holding it now. Expect to commit to earning it on the stated timeline.`,
+      severity: "low",
+    })
+    console.log("[scoring] Sponsored-credential heads-up added:", detail)
+  }
+
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     const yearsGap = job.yearsRequired - profile.yearsExperienceApprox
     if (yearsGap > 0.5) {

@@ -63,6 +63,26 @@ if (job.credentialRequired) {
     // Suppress the hard gate entirely for training programs.
     if ((job as any).isTrainingProgram) {
       // Don't gate — fall through to normal scoring
+    } else if (
+      // Policy: a hard credential gates ONLY when it's a genuine pre-requisite
+      // you must already hold (CPA/RN/bar/Series/CDL-class). Two cases are NOT
+      // dealbreakers and must not force_pass:
+      //   (a) credentialSponsored — the employer provides/sponsors it post-hire
+      //       ("obtain Series 7 within 120 days"); you can apply without it.
+      //   (b) ubiquitous-license class — an ordinary driver's license (NOT a
+      //       CDL/commercial license, which IS a real occupational pre-req).
+      // Regex never reaches here for these (it sets credentialRequired=false
+      // when sponsored, and never classifies an ordinary driver's license as a
+      // hard credential), so this branch is regex-inert — it only corrects the
+      // LLM-fed path. The sponsored heads-up is surfaced as a soft, non-gating
+      // RISK_CREDENTIAL_PREFERRED in scoring; an ordinary license stays silent.
+      (job as any).credentialSponsored ||
+      (() => {
+        const d = (job.credentialDetail || "").toLowerCase()
+        return /driver'?s?\s+licen[sc]e/.test(d) && !/\bcdl\b|commercial/.test(d)
+      })()
+    ) {
+      // Non-blocking credential — fall through to normal scoring (no gate).
     } else {
     const profileFunctionTags = profile.function_tags || []
     const statedRoles = (profile.statedInterests?.targetRoles || []).join(" ").toLowerCase()
