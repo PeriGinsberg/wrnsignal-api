@@ -2642,11 +2642,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -2656,6 +2677,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -2663,11 +2698,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -4273,11 +4322,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -4287,6 +4357,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -4294,11 +4378,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -8087,6 +8185,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
+      },
+      {
         "id": "61e705c1293c5b38",
         "key": "excel",
         "kind": "tool",
@@ -9789,6 +9894,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
+      },
+      {
         "id": "61e705c1293c5b38",
         "key": "excel",
         "kind": "tool",
@@ -10807,6 +10919,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -12581,6 +12700,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "react tool usage"
+      },
+      {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "8f150aea9b118471",
@@ -16452,11 +16578,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -16466,6 +16613,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -16473,11 +16634,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -16693,11 +16868,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -16707,6 +16903,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -16714,11 +16924,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -17032,6 +17256,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -18513,6 +18744,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -19309,6 +19547,13 @@
         "label": "canva tool usage"
       },
       {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "3cafa47b93c33d4a",
         "key": "consumer_research",
         "kind": "function",
@@ -19712,11 +19957,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -19726,6 +19992,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -19733,11 +20013,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -32012,6 +32306,13 @@
         "label": "canva tool usage"
       },
       {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "3cafa47b93c33d4a",
         "key": "consumer_research",
         "kind": "function",
@@ -35617,11 +35918,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -35631,6 +35953,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -35638,11 +35974,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -35955,6 +36305,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -36735,11 +37092,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -36749,6 +37127,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -36756,11 +37148,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -40942,11 +41348,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -40956,6 +41383,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -40963,11 +41404,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -48855,6 +49310,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -49710,11 +50172,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -49724,6 +50207,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -49731,11 +50228,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -53967,11 +54478,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -53981,6 +54513,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -53988,11 +54534,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -54780,6 +55340,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -55533,11 +56100,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -55547,6 +56135,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -55554,11 +56156,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -55853,6 +56469,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -58729,6 +59352,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -58970,11 +59600,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -58984,6 +59635,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -58991,11 +59656,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -60090,6 +60769,13 @@
         "kind": "deliverable",
         "strength": 4,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "6960ca5c7f951b46",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "781f4a8295049948",
@@ -61216,6 +61902,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -62459,11 +63152,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -62473,6 +63187,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -62480,11 +63208,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -64349,11 +65091,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -64363,6 +65126,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -64370,11 +65147,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -65918,11 +66709,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -65932,6 +66744,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -65939,11 +66765,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -66288,6 +67128,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -66817,6 +67664,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -70047,11 +70901,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -70061,6 +70936,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -70068,11 +70957,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -70306,6 +71209,13 @@
         "kind": "tool",
         "strength": 9,
         "label": "canva tool usage"
+      },
+      {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
       },
       {
         "id": "3cafa47b93c33d4a",
@@ -71914,6 +72824,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -77393,6 +78310,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -80565,6 +81489,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -82252,11 +83183,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -82266,6 +83218,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -82273,11 +83239,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -82751,6 +83731,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -83024,6 +84011,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -83304,11 +84298,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -83318,6 +84333,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -83325,11 +84354,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -86736,11 +87779,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -86750,6 +87814,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -86757,11 +87835,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -88230,6 +89322,13 @@
         "label": "react tool usage"
       },
       {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "8f150aea9b118471",
         "key": "software_engineering",
         "kind": "function",
@@ -88791,11 +89890,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -88805,6 +89925,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -88812,11 +89946,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -95074,6 +96222,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -96340,6 +97495,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -96759,6 +97921,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "react tool usage"
+      },
+      {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "8f150aea9b118471",
@@ -99254,6 +100423,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "31a414e156b5a375",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "4c77b63bed6914d5",
         "key": "python",
         "kind": "tool",
@@ -99552,6 +100728,13 @@
         "kind": "tool",
         "strength": 9,
         "label": "canva tool usage"
+      },
+      {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
       },
       {
         "id": "3cafa47b93c33d4a",
@@ -100420,6 +101603,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -106775,11 +107965,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -106789,6 +108000,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -106796,11 +108021,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -107128,6 +108367,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -109083,6 +110329,13 @@
         "kind": "tool",
         "strength": 9,
         "label": "canva tool usage"
+      },
+      {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
       },
       {
         "id": "3cafa47b93c33d4a",
@@ -111580,6 +112833,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -112686,11 +113946,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -112700,6 +113981,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -112707,11 +114002,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -116649,11 +117958,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -116663,6 +117993,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -116670,11 +118014,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -118890,6 +120248,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -122876,6 +124241,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
+      },
+      {
         "id": "61e705c1293c5b38",
         "key": "excel",
         "kind": "tool",
@@ -123706,6 +125078,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -124406,6 +125785,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -127911,6 +129297,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -128307,6 +129700,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -129305,6 +130705,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -131738,6 +133145,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -134677,11 +136091,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -134691,6 +136126,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -134698,11 +136147,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -135528,6 +136991,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -138761,6 +140231,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -139989,6 +141466,13 @@
         "label": "product training, in-service support, and product introductions"
       },
       {
+        "id": "e43bc0c8adc3ba70",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
+      },
+      {
         "id": "e468c36a71188fed",
         "key": "operations_execution",
         "kind": "execution",
@@ -140426,6 +141910,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -144107,11 +145598,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -144121,6 +145633,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -144128,11 +145654,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -144346,11 +145886,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -144360,6 +145921,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -144367,11 +145942,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -145228,6 +146817,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -152178,6 +153774,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -152582,11 +154185,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -152596,6 +154220,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -152603,11 +154241,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -154086,6 +155738,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
+      },
+      {
         "id": "61e705c1293c5b38",
         "key": "excel",
         "kind": "tool",
@@ -155027,11 +156686,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -155041,6 +156721,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -155048,11 +156742,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -155409,6 +157117,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -159872,11 +161587,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -159886,6 +161622,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -159893,11 +161643,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -162578,6 +164342,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -163046,6 +164817,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "react tool usage"
+      },
+      {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "8f150aea9b118471",
@@ -165196,6 +166974,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -166932,11 +168717,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -166946,6 +168752,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -166953,11 +168773,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -167962,6 +169796,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -172192,6 +174033,13 @@
         "label": "react tool usage"
       },
       {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "8f150aea9b118471",
         "key": "software_engineering",
         "kind": "function",
@@ -174544,11 +176392,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -174558,6 +176427,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -174565,11 +176448,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -174793,11 +176690,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -174807,6 +176725,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -174814,11 +176746,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -176838,6 +178784,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -179730,11 +181683,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -179744,6 +181718,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -179751,11 +181739,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -181319,11 +183321,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -181333,6 +183356,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -181340,11 +183377,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -183013,6 +185064,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -185785,6 +187843,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "react tool usage"
+      },
+      {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "8f150aea9b118471",
@@ -189111,6 +191176,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
+      },
+      {
         "id": "61e705c1293c5b38",
         "key": "excel",
         "kind": "tool",
@@ -189997,6 +192069,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -190433,11 +192512,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -190447,6 +192547,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -190454,11 +192568,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -194661,11 +196789,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -194675,6 +196824,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -194682,11 +196845,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -195008,6 +197185,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -196299,11 +198483,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -196313,6 +198518,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -196320,11 +198539,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -197273,6 +199506,13 @@
         "label": "react tool usage"
       },
       {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "8f150aea9b118471",
         "key": "software_engineering",
         "kind": "function",
@@ -197950,6 +200190,13 @@
         "kind": "deliverable",
         "strength": 10,
         "label": "product training, in-service support, and product introductions"
+      },
+      {
+        "id": "e43bc0c8adc3ba70",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
       },
       {
         "id": "e468c36a71188fed",
@@ -198940,11 +201187,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -198954,6 +201222,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -198961,11 +201243,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -199199,6 +201495,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -203930,6 +206233,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
+      },
+      {
         "id": "61e705c1293c5b38",
         "key": "excel",
         "kind": "tool",
@@ -207712,11 +210022,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -207726,6 +210057,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -207733,11 +210078,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -207951,6 +210310,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -208209,11 +210575,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -208223,6 +210610,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -208230,11 +210631,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -209703,6 +212118,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "react tool usage"
+      },
+      {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "8f150aea9b118471",
@@ -213126,6 +215548,13 @@
         "kind": "tool",
         "strength": 9,
         "label": "canva tool usage"
+      },
+      {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
       },
       {
         "id": "3cafa47b93c33d4a",
@@ -216589,11 +219018,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -216603,6 +219053,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -216610,11 +219074,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -217593,6 +220071,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -225956,6 +228441,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -228183,11 +230675,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -228197,6 +230710,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -228204,11 +230731,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -230265,6 +232806,13 @@
         "label": "power bi tool usage"
       },
       {
+        "id": "e43bc0c8adc3ba70",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
+      },
+      {
         "id": "e468c36a71188fed",
         "key": "operations_execution",
         "kind": "execution",
@@ -230973,6 +233521,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -231257,6 +233812,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -233369,11 +235931,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -233383,6 +235966,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -233390,11 +235987,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -235452,6 +238063,13 @@
         "label": "git tool usage"
       },
       {
+        "id": "237190a0bb694c48",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "258cb890aa49b879",
         "key": "sql",
         "kind": "tool",
@@ -235929,11 +238547,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -235943,6 +238582,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -235950,11 +238603,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -236679,6 +239346,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -238355,11 +241029,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -238369,6 +241064,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -238376,11 +241085,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -239121,11 +241844,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -239135,6 +241879,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -239142,11 +241900,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -242810,6 +245582,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -244471,6 +247250,13 @@
         "label": "react tool usage"
       },
       {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "8f150aea9b118471",
         "key": "software_engineering",
         "kind": "function",
@@ -245081,6 +247867,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -246006,6 +248799,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -251306,6 +254106,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -253756,6 +256563,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -254842,11 +257656,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -254856,6 +257691,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -254863,11 +257712,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -255871,6 +258734,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -258701,11 +261571,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -258715,6 +261606,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -258722,11 +261627,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -261260,11 +264179,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -261274,6 +264214,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -261281,11 +264235,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -262936,6 +265904,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -264708,11 +267683,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -264722,6 +267718,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -264729,11 +267739,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -264945,6 +267969,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "git tool usage"
+      },
+      {
+        "id": "237190a0bb694c48",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "258cb890aa49b879",
@@ -266887,11 +269918,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -266901,6 +269953,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -266908,11 +269974,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -268624,6 +271704,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -271005,6 +274092,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -272861,6 +275955,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -274640,6 +277741,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -276891,11 +279999,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -276905,6 +280034,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -276912,11 +280055,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -278569,6 +281726,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "31a414e156b5a375",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "4c77b63bed6914d5",
@@ -280952,11 +284116,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -280966,6 +284151,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -280973,11 +284172,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -281353,6 +284566,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -282228,11 +285448,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -282242,6 +285483,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -282249,11 +285504,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -282853,11 +286122,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -282867,6 +286157,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -282874,11 +286178,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -283093,11 +286411,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -283107,6 +286446,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -283114,11 +286467,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -287593,11 +290960,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -287607,6 +290995,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -287614,11 +291016,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -292837,6 +296253,13 @@
         "label": "react tool usage"
       },
       {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "8f150aea9b118471",
         "key": "software_engineering",
         "kind": "function",
@@ -294188,6 +297611,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -295610,6 +299040,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -297042,6 +300479,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -298917,6 +302361,13 @@
         "label": "canva tool usage"
       },
       {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "3cafa47b93c33d4a",
         "key": "consumer_research",
         "kind": "function",
@@ -299359,11 +302810,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -299373,6 +302845,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -299380,11 +302866,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -299671,11 +303171,53 @@
         "label": "excel tool usage"
       },
       {
+        "id": "44eb6ecdb75db4d7",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 6,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6280481ed0001588",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8993e1d3c4dc0cc6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bf0a8e19e9c23d11",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "d86c6ff7c356ee8a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 6,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -299912,11 +303454,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -299926,6 +303489,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -299933,11 +303510,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -302395,11 +305986,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -302409,6 +306021,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -302416,11 +306042,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -303711,11 +307351,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -303725,6 +307386,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -303732,11 +307407,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -306558,11 +310247,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -306572,6 +310282,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -306579,11 +310303,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -306793,11 +310531,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -306807,6 +310566,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -306814,11 +310587,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -307034,11 +310821,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -307048,6 +310856,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -307055,11 +310877,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -310620,6 +314456,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -310939,6 +314782,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -316315,11 +320165,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -316329,6 +320200,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -316336,11 +320221,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -317135,11 +321034,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -317149,6 +321069,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -317156,11 +321090,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -317805,11 +321753,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -317819,6 +321788,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -317826,11 +321809,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -318131,6 +322128,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -318547,6 +322551,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "31a414e156b5a375",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "4c77b63bed6914d5",
@@ -319928,6 +323939,13 @@
         "label": "react tool usage"
       },
       {
+        "id": "8cf93195a7a3ec50",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "8f150aea9b118471",
         "key": "software_engineering",
         "kind": "function",
@@ -320534,6 +324552,13 @@
         "kind": "function",
         "strength": 6,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "530e00f5ebfa0919",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 5,
+        "label": "second-language fluency"
       },
       {
         "id": "61e705c1293c5b38",
@@ -323782,11 +327807,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -323796,6 +327842,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -323803,11 +327863,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -326796,6 +330870,13 @@
         "label": "canva tool usage"
       },
       {
+        "id": "17507742c5b48d37",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "3cafa47b93c33d4a",
         "key": "consumer_research",
         "kind": "function",
@@ -328115,11 +332196,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -328129,6 +332231,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -328136,11 +332252,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -331533,11 +335663,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -331547,6 +335698,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -331554,11 +335719,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -331876,6 +336055,13 @@
         "kind": "deliverable",
         "strength": 10,
         "label": "product training, in-service support, and product introductions"
+      },
+      {
+        "id": "e43bc0c8adc3ba70",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
       },
       {
         "id": "e468c36a71188fed",
@@ -333064,6 +337250,13 @@
         "label": "bluebeam tool usage"
       },
       {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "5e57f571d7c2ab7e",
         "key": "python",
         "kind": "tool",
@@ -333401,6 +337594,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "autocad tool usage"
+      },
+      {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "d676fdd61ea32a95",
@@ -335578,6 +339778,13 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "d2bfb937af14b9c3",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "d676fdd61ea32a95",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -335812,6 +340019,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "55f81d4f14758f62",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5e57f571d7c2ab7e",
@@ -336504,11 +340718,53 @@
         "label": "excel tool usage"
       },
       {
+        "id": "44eb6ecdb75db4d7",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 6,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6280481ed0001588",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8993e1d3c4dc0cc6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bf0a8e19e9c23d11",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "d86c6ff7c356ee8a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 6,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [],
@@ -336703,11 +340959,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -336717,6 +340994,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -336724,11 +341015,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -337746,11 +342051,32 @@
         "label": "excel tool usage"
       },
       {
+        "id": "600e098b42afd428",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "6caae95ead2d8ce4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "706f98e71045790f",
         "key": "r",
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "8060b7ce3348a369",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 9,
+        "label": "laboratory / bench research"
       },
       {
         "id": "98e8e6bf46dbb206",
@@ -337760,6 +342086,20 @@
         "label": "autocad tool usage"
       },
       {
+        "id": "b722964980e82478",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
+        "id": "bfd16bcecd463cb4",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c11e1fca9cfe593f",
         "key": "excel",
         "kind": "tool",
@@ -337767,11 +342107,25 @@
         "label": "excel tool usage"
       },
       {
+        "id": "eccb7339a1048439",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 5,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "ed84179b9fafa49a",
         "key": "python",
         "kind": "tool",
         "strength": 4,
         "label": "python tool usage"
+      },
+      {
+        "id": "f6d66d804207d276",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       }
     ],
     "matches": [
@@ -342437,6 +346791,13 @@
         "kind": "tool",
         "strength": 4,
         "label": "bluebeam tool usage"
+      },
+      {
+        "id": "31a414e156b5a375",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
       },
       {
         "id": "4c77b63bed6914d5",

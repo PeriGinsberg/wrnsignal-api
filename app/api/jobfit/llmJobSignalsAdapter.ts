@@ -194,11 +194,10 @@ export function llmJobExtractionToSignals(
 
   // ── (e) degrees[] synthesized from booleans (field_kind:"none") ────────────
   // Mirrors the regex degree populator exactly; licensure gate stays inert.
-  const degrees: DegreeRequirement[] = []
-  if (s.bachelorRequired)
-    degrees.push({ level: "bachelor", requiredness: "required", field: null, field_kind: "none" })
-  if (s.mbaRequired)
-    degrees.push({ level: "mba", requiredness: "required", field: null, field_kind: "none" })
+  // degrees[] now come straight from the LLM (jd-extract-v3 schema); pass them
+  // through. field_kind is LLM-judged (conservative default "directional"),
+  // unblocking Move B (the degree-licensure gate) as a separate follow-up.
+  const degrees: DegreeRequirement[] = Array.isArray(s.degrees) ? s.degrees : []
 
   // ── function_tags (filter to enum) ─────────────────────────────────────────
   const function_tags = (s.function_tags || [])

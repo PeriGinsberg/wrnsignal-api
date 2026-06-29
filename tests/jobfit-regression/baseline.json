@@ -56,11 +56,25 @@
         "label": "python tool usage"
       },
       {
+        "id": "228834191c5408d6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "3ff2aae71d69d6a3",
         "key": "python",
         "kind": "tool",
         "strength": 8,
         "label": "python tool usage"
+      },
+      {
+        "id": "46debd55cc4d649a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5845bdb564b3ff84",
@@ -105,6 +119,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "a1b35c48e37efbe9",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "a9c9e5729c0b023c",
         "key": "strategy_problem_solving",
         "kind": "function",
@@ -119,6 +140,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "b9502f00538ac4d2",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c46dc44554367e93",
         "key": "autocad",
         "kind": "tool",
@@ -131,6 +159,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "e791d23ab8f4fe9c",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "ecb99630b15dcb19",
@@ -440,11 +475,25 @@
         "label": "python tool usage"
       },
       {
+        "id": "228834191c5408d6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "3ff2aae71d69d6a3",
         "key": "python",
         "kind": "tool",
         "strength": 8,
         "label": "python tool usage"
+      },
+      {
+        "id": "46debd55cc4d649a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5845bdb564b3ff84",
@@ -489,6 +538,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "a1b35c48e37efbe9",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "a9c9e5729c0b023c",
         "key": "strategy_problem_solving",
         "kind": "function",
@@ -503,6 +559,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "b9502f00538ac4d2",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c46dc44554367e93",
         "key": "autocad",
         "kind": "tool",
@@ -515,6 +578,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "e791d23ab8f4fe9c",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "ecb99630b15dcb19",
@@ -867,11 +937,25 @@
         "label": "python tool usage"
       },
       {
+        "id": "228834191c5408d6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "3ff2aae71d69d6a3",
         "key": "python",
         "kind": "tool",
         "strength": 8,
         "label": "python tool usage"
+      },
+      {
+        "id": "46debd55cc4d649a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5845bdb564b3ff84",
@@ -916,6 +1000,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "a1b35c48e37efbe9",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "a9c9e5729c0b023c",
         "key": "strategy_problem_solving",
         "kind": "function",
@@ -930,6 +1021,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "b9502f00538ac4d2",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c46dc44554367e93",
         "key": "autocad",
         "kind": "tool",
@@ -942,6 +1040,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "e791d23ab8f4fe9c",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "ecb99630b15dcb19",
@@ -1218,11 +1323,25 @@
         "label": "python tool usage"
       },
       {
+        "id": "228834191c5408d6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "3ff2aae71d69d6a3",
         "key": "python",
         "kind": "tool",
         "strength": 8,
         "label": "python tool usage"
+      },
+      {
+        "id": "46debd55cc4d649a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5845bdb564b3ff84",
@@ -1267,6 +1386,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "a1b35c48e37efbe9",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "a9c9e5729c0b023c",
         "key": "strategy_problem_solving",
         "kind": "function",
@@ -1281,6 +1407,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "b9502f00538ac4d2",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c46dc44554367e93",
         "key": "autocad",
         "kind": "tool",
@@ -1293,6 +1426,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "e791d23ab8f4fe9c",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "ecb99630b15dcb19",
@@ -1545,11 +1685,25 @@
         "label": "python tool usage"
       },
       {
+        "id": "228834191c5408d6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "3ff2aae71d69d6a3",
         "key": "python",
         "kind": "tool",
         "strength": 8,
         "label": "python tool usage"
+      },
+      {
+        "id": "46debd55cc4d649a",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 8,
+        "label": "laboratory / bench research"
       },
       {
         "id": "5845bdb564b3ff84",
@@ -1594,6 +1748,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "a1b35c48e37efbe9",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 7,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "a9c9e5729c0b023c",
         "key": "strategy_problem_solving",
         "kind": "function",
@@ -1608,6 +1769,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "b9502f00538ac4d2",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "c46dc44554367e93",
         "key": "autocad",
         "kind": "tool",
@@ -1620,6 +1788,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "e791d23ab8f4fe9c",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "ecb99630b15dcb19",
@@ -6078,6 +6253,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
+      },
+      {
         "id": "4e2700bd027c396f",
         "key": "product_training_enablement",
         "kind": "deliverable",
@@ -6522,6 +6704,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
+      },
+      {
         "id": "4e2700bd027c396f",
         "key": "product_training_enablement",
         "kind": "deliverable",
@@ -6902,6 +7091,13 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "account support and account management"
+      },
+      {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
       },
       {
         "id": "4e2700bd027c396f",
@@ -7388,6 +7584,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
+      },
+      {
         "id": "4e2700bd027c396f",
         "key": "product_training_enablement",
         "kind": "deliverable",
@@ -7767,6 +7970,13 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "account support and account management"
+      },
+      {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
       },
       {
         "id": "4e2700bd027c396f",
@@ -8277,6 +8487,13 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "account support and account management"
+      },
+      {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
       },
       {
         "id": "4e2700bd027c396f",
@@ -8870,6 +9087,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "git tool usage"
+      },
+      {
+        "id": "2735220677ce7cb6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "2849d58889a0e2c0",
@@ -9555,6 +9779,13 @@
         "label": "git tool usage"
       },
       {
+        "id": "2735220677ce7cb6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "2849d58889a0e2c0",
         "key": "react",
         "kind": "tool",
@@ -10017,6 +10248,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "git tool usage"
+      },
+      {
+        "id": "2735220677ce7cb6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "2849d58889a0e2c0",
@@ -10690,6 +10928,13 @@
         "label": "git tool usage"
       },
       {
+        "id": "2735220677ce7cb6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
+      },
+      {
         "id": "2849d58889a0e2c0",
         "key": "react",
         "kind": "tool",
@@ -11172,6 +11417,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "git tool usage"
+      },
+      {
+        "id": "2735220677ce7cb6",
+        "key": "laboratory_research",
+        "kind": "function",
+        "strength": 10,
+        "label": "laboratory / bench research"
       },
       {
         "id": "2849d58889a0e2c0",
@@ -12744,6 +12996,13 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "account support and account management"
+      },
+      {
+        "id": "460c5e4b33e6925b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 6,
+        "label": "second-language fluency"
       },
       {
         "id": "4e2700bd027c396f",
@@ -20678,6 +20937,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "a72388e86880961b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "b7a5c933dc564e75",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -27323,11 +27589,25 @@
         "label": "Nursing / Clinical"
       },
       {
+        "id": "2aaca2a1e6d83807",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "3003a3e9374dd49e",
         "key": "nursing_clinical",
         "kind": "function",
         "strength": 6,
         "label": "Nursing / Clinical"
+      },
+      {
+        "id": "30b5d5c80523556c",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 7,
+        "label": "second-language fluency"
       },
       {
         "id": "3184c725d306b23b",
@@ -27454,6 +27734,13 @@
         "kind": "function",
         "strength": 10,
         "label": "Nursing / Clinical"
+      },
+      {
+        "id": "b1c86a2bc77db89d",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 7,
+        "label": "second-language fluency"
       },
       {
         "id": "bf4225aa9861a280",
@@ -33437,6 +33724,13 @@
         "label": "Nursing / Clinical"
       },
       {
+        "id": "065753510f9693f6",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 1,
+        "label": "second-language fluency"
+      },
+      {
         "id": "0e925a64a462ba82",
         "key": "nursing_clinical",
         "kind": "function",
@@ -33584,6 +33878,13 @@
         "label": "clinical and patient-facing work"
       },
       {
+        "id": "a72388e86880961b",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "ab5be81cde6a012b",
         "key": "hospital_or_environment",
         "kind": "function",
@@ -33617,6 +33918,13 @@
         "kind": "deliverable",
         "strength": 1,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "d93f4f6431f4a6aa",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 8,
+        "label": "second-language fluency"
       },
       {
         "id": "d96da822b71d2a42",
@@ -34801,6 +35109,13 @@
         "kind": "function",
         "strength": 9,
         "label": "clinical and patient-facing work"
+      },
+      {
+        "id": "2446d54db2f71800",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 9,
+        "label": "second-language fluency"
       },
       {
         "id": "2816cfa6e3968e69",
@@ -39555,6 +39870,13 @@
         "label": "clinical and patient-facing work"
       },
       {
+        "id": "0498c157aecec724",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 4,
+        "label": "second-language fluency"
+      },
+      {
         "id": "0e78b04ee2b9f553",
         "key": "nursing_clinical",
         "kind": "function",
@@ -39597,6 +39919,13 @@
         "label": "clinical and patient-facing work"
       },
       {
+        "id": "278589fb5841cd9a",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 9,
+        "label": "second-language fluency"
+      },
+      {
         "id": "299f2f141d48d929",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -39623,6 +39952,13 @@
         "kind": "function",
         "strength": 9,
         "label": "Nursing / Clinical"
+      },
+      {
+        "id": "3ea11e0dacccbee3",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 7,
+        "label": "second-language fluency"
       },
       {
         "id": "4971c0d75400ed66",
@@ -39728,6 +40064,13 @@
         "kind": "function",
         "strength": 9,
         "label": "Nursing / Clinical"
+      },
+      {
+        "id": "8dd26a8d14117d35",
+        "key": "bilingual_language",
+        "kind": "function",
+        "strength": 7,
+        "label": "second-language fluency"
       },
       {
         "id": "8efa99e6d037aff8",

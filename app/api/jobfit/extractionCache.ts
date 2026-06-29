@@ -23,7 +23,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs"
 // Pinned model + prompt version. Both participate in the cache key so either a
 // model swap or a prompt edit invalidates the frozen cache and forces a review.
 export const EXTRACTION_MODEL = "claude-opus-4-8"
-export const EXTRACTION_PROMPT_VERSION = "jd-extract-v2"
+export const EXTRACTION_PROMPT_VERSION = "jd-extract-v3"
 
 // The cached value is whatever the extractor returns. Kept opaque here so the
 // cache stays decoupled from the schema in extractJobSignalsLLM.

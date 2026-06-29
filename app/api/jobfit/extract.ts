@@ -1396,6 +1396,51 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     jobPhrases: ["welding", "plumbing", "hvac", "carpentry", "electrician", "machinist", "cnc", "journeyman"],
     adjacentKeys: [],
   },
+  {
+    // Phase-2 paired profile-side rule for the LLM canonical key
+    // "laboratory_research". The JD side is supplied by the LLM extractor
+    // (canonical_key="laboratory_research"); this rule lets a lab candidate's
+    // RESUME emit the matching profile key so the match can form. jobPhrases is
+    // intentionally EMPTY so the regex JD path never emits this key — keeps the
+    // 696 regex regression zero-drift (regex JD has no lab units to match).
+    key: "laboratory_research",
+    label: "laboratory / bench research",
+    kind: "function" as EvidenceKind,
+    profilePhrases: [
+      "cell culture", "aseptic technique", "aseptic", "pcr", "qpcr", "rt-pcr",
+      "assay", "assays", "pipetting", "pipette", "microbiology", "molecular biology",
+      "dna extraction", "rna extraction", "plasmid", "gel electrophoresis",
+      "western blot", "elisa", "flow cytometry", "chromatography", "hplc",
+      "reagent", "cell line", "tissue culture", "wet lab", "bench science",
+      "spectroscopy", "titration", "specimen", "in vitro",
+    ],
+    jobPhrases: [],
+    adjacentKeys: [],
+  },
+  {
+    // Phase-2 paired profile-side rule for the LLM canonical key
+    // "bilingual_language". Same pairing rationale as laboratory_research:
+    // jobPhrases EMPTY (regex JD never emits it → zero-drift). Deliberately NOT
+    // adjacency-linked to communications_writing — a bilingual requirement must
+    // match actual second-language evidence, not generic communication.
+    key: "bilingual_language",
+    label: "second-language fluency",
+    kind: "function" as EvidenceKind,
+    profilePhrases: [
+      // Bare "fluent in" / "fluency in" dropped: they match "fluent in English"
+      // (not a second-language differentiator), which would let a monolingual
+      // English speaker spuriously satisfy a bilingual requirement once the LLM
+      // JD path emits bilingual_language. Keep only ACTUAL second-language
+      // evidence — unambiguous markers + language-qualified fluency patterns.
+      "bilingual", "native speaker", "multilingual", "trilingual",
+      "spanish-speaking", "conversational spanish", "conversational mandarin",
+      "proficient in spanish", "professional working proficiency",
+      "fluent in spanish", "fluent in mandarin", "fluent in french",
+      "fluent in portuguese", "fluent in chinese", "fluency in spanish",
+    ],
+    jobPhrases: [],
+    adjacentKeys: [],
+  },
 ]
 
 const TOOL_ALIASES: Record<string, string[]> = {

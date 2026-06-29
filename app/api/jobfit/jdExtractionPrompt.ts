@@ -13,9 +13,10 @@ import type {
   SalesSubFamily,
   LocationMode,
   RoleArchetype,
+  DegreeRequirement,
 } from "./signals"
 
-// ── Canonical capability vocabulary (37 keys, empirical from the 696-case corpus)
+// ── Canonical capability vocabulary (39 keys, empirical from the 696-case corpus)
 // The LLM picks canonical_key from these (+ "tool" + "other"). Tools are an open
 // vocabulary carried separately in tool_name.
 export const CANONICAL_CAPABILITY_KEYS = [
@@ -56,6 +57,8 @@ export const CANONICAL_CAPABILITY_KEYS = [
   "civil_engineering",
   "nursing_clinical",
   "trades_construction",
+  "laboratory_research",
+  "bilingual_language",
 ] as const
 
 export type CanonicalCapabilityKey = (typeof CANONICAL_CAPABILITY_KEYS)[number]
@@ -109,6 +112,8 @@ export const CAPABILITY_KEY_GLOSSES: Record<CanonicalCapabilityKey, string> = {
   civil_engineering: "civil engineering discipline",
   nursing_clinical: "nursing / licensed clinical work",
   trades_construction: "skilled trades / construction",
+  laboratory_research: "hands-on wet-lab / bench work: cell culture, aseptic technique, assays, PCR/molecular biology, microbiology, reagent prep, lab instrumentation",
+  bilingual_language: "second-language fluency as a job requirement (e.g. bilingual English/Spanish, fluent in Mandarin)",
 }
 
 // ── Output types ──────────────────────────────────────────────────────────────
@@ -143,8 +148,7 @@ export type LLMJobScalars = {
   isSeniorRole: boolean
   isTrainingProgram: boolean
   isContentExecutionHeavy: boolean
-  mbaRequired: boolean
-  bachelorRequired: boolean
+  degrees: DegreeRequirement[]
   credentialRequired: boolean
   credentialDetail: string | null
   credentialSponsored: boolean
@@ -211,8 +215,8 @@ export const EXTRACTION_JSON_SCHEMA = {
         "jobFamily", "financeSubFamily", "salesSubFamily", "jobArchetype", "jobIndustry",
         "detectedDomain", "analytics", "location", "yearsRequired", "gradYearHint",
         "isGovernment", "isSalesHeavy", "isContract", "isHourly", "isPartTime",
-        "isSeniorRole", "isTrainingProgram", "isContentExecutionHeavy", "mbaRequired",
-        "bachelorRequired", "credentialRequired", "credentialDetail", "credentialSponsored",
+        "isSeniorRole", "isTrainingProgram", "isContentExecutionHeavy", "degrees",
+        "credentialRequired", "credentialDetail", "credentialSponsored",
         "requiresAdvisoryBackground", "requiresFinancialModeling", "requiresDomainIndustryExperience",
         "requiresSoftCredential", "softCredentialDetail", "mentionsPharmaTraining",
         "territoryUndisclosed", "requiredTools", "preferredTools", "function_tags",
@@ -221,7 +225,7 @@ export const EXTRACTION_JSON_SCHEMA = {
         jobFamily: {
           enum: ["Consulting", "Marketing", "Finance", "Accounting", "Analytics", "Sales",
             "Operations", "HR", "Government", "PreMed", "Engineering", "IT_Software",
-            "ProductManagement", "Healthcare", "Legal", "Trades", "Other"],
+            "ProductManagement", "Healthcare", "LifeSciences", "Legal", "Trades", "Other"],
         },
         financeSubFamily: { enum: ["ib", "fpa", "credit", "project_finance", "asset_management", "other_finance", null] },
         salesSubFamily: {
@@ -253,8 +257,20 @@ export const EXTRACTION_JSON_SCHEMA = {
         isSeniorRole: { type: "boolean" },
         isTrainingProgram: { type: "boolean" },
         isContentExecutionHeavy: { type: "boolean" },
-        mbaRequired: { type: "boolean" },
-        bachelorRequired: { type: "boolean" },
+        degrees: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["level", "requiredness", "field", "field_kind"],
+            properties: {
+              level: { enum: ["associate", "bachelor", "master", "mba", "phd"] },
+              requiredness: { enum: ["required", "preferred"] },
+              field: { anyOf: [{ type: "string" }, { type: "null" }] },
+              field_kind: { enum: ["licensure_floor", "directional", "none"] },
+            },
+          },
+        },
         credentialRequired: { type: "boolean" },
         credentialDetail: { anyOf: [{ type: "string" }, { type: "null" }] },
         credentialSponsored: { type: "boolean" },
@@ -306,7 +322,7 @@ CANONICAL CAPABILITY KEYS (pick the single best fit for each capability unit; us
 ${glossBlock()}
 
 SCALAR FIELD GUIDANCE (fill every field; use null/false when the JD does not support a value):
-  - jobFamily: the role's functional family (use the user-provided title as the strongest signal).
+  - jobFamily: the role's functional family (use the user-provided title as the strongest signal). LifeSciences = wet-lab / bench / R&D science roles (associate scientist, cell-culture/microbiology/assay lab work, process development, biotech R&D) — distinct from patient-facing Healthcare/PreMed and from Engineering.
   - financeSubFamily / salesSubFamily: only when jobFamily is Finance / Sales; else null.
   - jobArchetype: analytical | strategic | execution | mixed | unclear — the day-to-day shape of the work.
   - jobIndustry / detectedDomain: the industry vertical / a specific industry-experience requirement, if the JD names one.
@@ -318,7 +334,11 @@ SCALAR FIELD GUIDANCE (fill every field; use null/false when the JD does not sup
   - isSeniorRole: true only for genuinely senior/lead/manager-level roles that hire experienced people. A title merely containing "manager" is NOT automatically senior — "Account Manager", "Manager Trainee", and entry-level roles with "manager" in the title are NOT senior. Judge the actual experience level the posting hires at.
   - isTrainingProgram: a structured training/development program where qualifications are taught on the job.
   - isContentExecutionHeavy: the role is mostly content/social/event execution.
-  - mbaRequired / bachelorRequired: a completed MBA / Bachelor's is required.
+  - degrees: an array of the degree requirements the posting states. For each: level (associate/bachelor/master/mba/phd), requiredness (required vs preferred — apply the same required-vs-preferred judgment as above), field (the named field of study, or null if the posting says only "a degree"), and field_kind:
+      • "licensure_floor" — the degree/field is a legal or licensure prerequisite to perform the role (e.g. a nursing degree for an RN, an ABET/accredited engineering degree for a PE track). Use this ONLY when the field is genuinely gatekeeping.
+      • "directional" — a field is named or preferred but is not a hard screen (e.g. "degree in Marketing, Communications, or related field"). This is the CONSERVATIVE DEFAULT whenever a field is named without clear licensure gating.
+      • "none" — a degree is required but no field is specified ("Bachelor's degree required").
+    Emit one entry per distinct degree requirement; emit an empty array when the posting states no degree requirement. Do NOT also place degree requirements in requirement_units.
   - credentialRequired + credentialDetail: a hard professional license/credential is required to perform the role (e.g. FINRA Series 7, CPA, RN, bar admission, CDL); credentialDetail names it.
   - credentialSponsored: the employer sponsors obtaining the credential.
   - requiresAdvisoryBackground: requires prior experience at a top management-consulting firm or investment bank.
