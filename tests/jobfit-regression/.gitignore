@@ -12,3 +12,6 @@
 # structured snapshots, zero raw resume text) is committed. Rebuild with:
 #   NODE_OPTIONS=--use-system-ca npx tsx tests/jobfit-regression/build-prod-corpus.ts
 prod-corpus.local.json
+
+# Local-only scratch/harness scripts (e.g. shadow-score). Never committed.
+*.local.ts

@@ -21,6 +21,7 @@ import { decisionFromScore, applyGateOverrides, applyRiskDowngrades, applyEviden
 import type {
   EvalOutput,
   StructuredProfileSignals,
+  StructuredJobSignals,
   Decision,
   LocationConstraint,
 } from "../jobfit/signals"
@@ -79,6 +80,11 @@ export async function runJobFit(args: {
   // coverage under `engine_trace` on the return. Route callers omit this, so
   // their output is byte-identical (no engine_trace key, no payload bloat).
   includeEngineTrace?: boolean
+  // Shadow-scoring seam. When provided, skip the internal regex extraction and
+  // score this pre-built job-signal object instead. No live caller — the shadow
+  // harness uses it to feed LLM-adapted signals through the same spine. Omit for
+  // byte-identical behavior (cf. includeEngineTrace precedent).
+  jobSignalsOverride?: StructuredJobSignals
 }): Promise<
   EvalOutput & {
     icon: string
@@ -92,9 +98,10 @@ export async function runJobFit(args: {
   // first 1500 chars do not repeat the title get misclassified —
   // e.g. a Maybern "Software Engineer" JD that opens with a company
   // blurb was classifying as Marketing family.
-  const jobSignals = extractJobSignals(args.jobText || "", {
-    userJobTitle: args.userJobTitle,
-  })
+  const jobSignals = args.jobSignalsOverride
+    ?? extractJobSignals(args.jobText || "", {
+      userJobTitle: args.userJobTitle,
+    })
 
   // Overwrite the surface jobTitle / companyName fields for display.
   // Extraction used the title for family detection but may have set its
