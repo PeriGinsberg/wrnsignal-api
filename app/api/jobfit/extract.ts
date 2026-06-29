@@ -1555,7 +1555,7 @@ const FALLBACK_JOB_RULES: Array<{
   },
 ]
 
-function stableHash(input: string): string {
+export function stableHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex").slice(0, 16)
 }
 
@@ -2194,7 +2194,7 @@ function makeProfileUnit(
   }
 }
 
-function compressJobSnippet(snippet: string): string {
+export function compressJobSnippet(snippet: string): string {
   const text = String(snippet || "").replace(/\s+/g, " ").trim()
   if (!text) return ""
 
@@ -3500,7 +3500,7 @@ export function getFinanceSubFamilyDistance(
 
 // ── Job title & company name extraction ─────────────────────────────────────
 
-function extractJobTitle(rawLines: string[]): string | null {
+export function extractJobTitle(rawLines: string[]): string | null {
   // First pass: find a line that looks like a real job title (has role keywords)
   const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
   const prefixStrip = /^(?:Title|Position|Role|Job Title)\s*[:]\s*/i

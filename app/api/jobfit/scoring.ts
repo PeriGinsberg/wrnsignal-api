@@ -494,36 +494,45 @@ export function buildEvidenceMatches(job: StructuredJobSignals, profile: Structu
 function buildCoverage(job: StructuredJobSignals, allMatches: WhyEvidenceMatch[]): RequirementCoverage[] {
   const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
 
-  return jobUnits.map((ju) => {
-    const matchesForUnit = allMatches
-      .filter((m) => m.job_unit.id === ju.id)
-      .sort((a, b) => b.coverageScore - a.coverageScore)
+  // Out-of-vocabulary "other" units (LLM-fed path only) are structurally
+  // uncoverable — no profile unit ever carries key="other" and isAdjacent()
+  // returns false for it. Excluding them here is the single chokepoint that
+  // keeps them out of coverage, major-gap risks, the uncovered-capability
+  // penalty, and the base-score coverage contribution, so they never fire an
+  // artifact RISK_MISSING_PROOF or penalty. No-op for the regex path, which
+  // never emits key="other" (its keys are the CAPABILITY_RULES vocabulary).
+  return jobUnits
+    .filter((ju) => ju.key !== "other")
+    .map((ju) => {
+      const matchesForUnit = allMatches
+        .filter((m) => m.job_unit.id === ju.id)
+        .sort((a, b) => b.coverageScore - a.coverageScore)
 
-    const bestMatch = matchesForUnit[0] || null
-    const minimumCoverage =
-      ju.requiredness === "core"
-        ? DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
-          ? 70
-          : 60
-        : DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
-        ? 62
-        : 52
+      const bestMatch = matchesForUnit[0] || null
+      const minimumCoverage =
+        ju.requiredness === "core"
+          ? DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
+            ? 70
+            : 60
+          : DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
+          ? 62
+          : 52
 
-    const nearMissFloor =
-      ju.requiredness === "core" ? minimumCoverage - 18 : minimumCoverage - 14
+      const nearMissFloor =
+        ju.requiredness === "core" ? minimumCoverage - 18 : minimumCoverage - 14
 
-    const coverageScore = bestMatch?.coverageScore || 0
-    const adequate = coverageScore >= minimumCoverage
-    const nearMiss = !adequate && coverageScore >= nearMissFloor
+      const coverageScore = bestMatch?.coverageScore || 0
+      const adequate = coverageScore >= minimumCoverage
+      const nearMiss = !adequate && coverageScore >= nearMissFloor
 
-    return {
-      jobUnit: ju,
-      bestMatch,
-      coverageScore,
-      adequate,
-      nearMiss,
-    }
-  })
+      return {
+        jobUnit: ju,
+        bestMatch,
+        coverageScore,
+        adequate,
+        nearMiss,
+      }
+    })
 }
 
 function buildMajorGapRisks(job: StructuredJobSignals, coverage: RequirementCoverage[]): RiskCode[] {
