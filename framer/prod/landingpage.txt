@@ -687,6 +687,21 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
         }
     }
 
+    // Paste alternative to the file upload. Writes typed text to the same
+    // resumeText state the upload path populates (last-writer-wins; no
+    // mutual exclusion). When the user types real text, reset the upload
+    // box label/sub so it stops claiming a previously-attached file is
+    // still in play, and clear any stale upload error.
+    function handleResumePaste(e: React.ChangeEvent<HTMLTextAreaElement>) {
+        const value = e.target.value
+        setResumeText(value)
+        if (value) {
+            setResumeLabel("Upload your resume")
+            setResumeSub("PDF (DOCX accepted)")
+        }
+        setResumeError("")
+    }
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
         setSubmitError("")
@@ -800,6 +815,13 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
         ? jdChars + " chars · ready"
         : jdChars + " chars · need " + (100 - jdChars) + " more"
 
+    const resumeChars = resumeText.length
+    const resumeMet = resumeChars >= 100
+    const resumeCountClass = "v2-char-count" + (resumeMet ? " met" : "")
+    const resumeCountText = resumeMet
+        ? resumeChars + " chars · ready"
+        : resumeChars + " chars · need " + (100 - resumeChars) + " more"
+
     const uploadBoxClass =
         "v2-upload-box" +
         (resumeUploading ? " uploading" : "") +
@@ -864,6 +886,16 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
                                     onChange={handleFileChange}
                                 />
                             </label>
+                        </div>
+                        <div className="v2-textarea-wrap">
+                            <span className="v2-textarea-helper">or paste your resume text</span>
+                            <textarea
+                                className="v2-jd-textarea"
+                                placeholder="Paste your full resume text here: name, education, work experience, skills."
+                                value={resumeText}
+                                onChange={handleResumePaste}
+                            />
+                            <div className={resumeCountClass}>{resumeCountText}</div>
                         </div>
                         {resumeError ? (
                             <div className="v2-form-error">{resumeError}</div>
