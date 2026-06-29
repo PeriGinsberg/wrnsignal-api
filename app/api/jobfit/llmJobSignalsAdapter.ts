@@ -31,7 +31,7 @@ import type {
   FunctionTag,
   EvidenceKind,
 } from "./signals"
-import type { LLMJobExtraction } from "./jdExtractionPrompt"
+import type { LLMJobExtraction, LLMRequirementUnit } from "./jdExtractionPrompt"
 import { stableHash, compressJobSnippet, extractJobTitle } from "./extract"
 
 // Runtime mirror of the FunctionTag union (signals.ts). LLM function tags are
@@ -76,6 +76,70 @@ function uniqueLower(items: string[]): string[] {
   return out
 }
 
+// Collapse same-key matchable units to ONE merged unit per key, restoring the
+// one-unit-per-key invariant the scoring spine was calibrated for (regex emits
+// at most one unit per key). The LLM decomposes a JD into many granular lines,
+// several legitimately sharing a capability key; left un-merged they fan out
+// the job×profile match cross-product (N×M) and multiply coverage obligations.
+//
+// Merge rules: requiredness = "core" if ANY instance is core; strength = MAX;
+// kind = modal (tie-break → the strongest instance's kind); snippet = the
+// strongest instance's line (NOT concatenated — keeps evidenceShapeCompatible
+// regexes coherent); distinct responsibility texts retained in `tags` (unread
+// by scoring) for later WHY rendering; id re-minted on the strongest line.
+//
+// NOTE: "other" units are NOT passed here — they never match/cover and all
+// share key="other", so collapsing would destroy their per-requirement count.
+function mergeMatchableByKey(units: LLMRequirementUnit[]): JobRequirementUnit[] {
+  const groups = new Map<string, LLMRequirementUnit[]>()
+  for (const u of units) {
+    const g = groups.get(u.canonical_key)
+    if (g) g.push(u)
+    else groups.set(u.canonical_key, [u])
+  }
+
+  const out: JobRequirementUnit[] = []
+  for (const [key, group] of groups) {
+    // Strongest instance (deterministic): max strength → core over supporting → first.
+    const strongest = group.reduce((best, u) => {
+      if (u.strength !== best.strength) return u.strength > best.strength ? u : best
+      const uCore = u.requiredness === "core" ? 1 : 0
+      const bCore = best.requiredness === "core" ? 1 : 0
+      return uCore > bCore ? u : best
+    }, group[0])
+
+    // Modal kind; ties resolve to the strongest instance's kind.
+    const kindCounts = new Map<string, number>()
+    for (const u of group) kindCounts.set(u.kind, (kindCounts.get(u.kind) || 0) + 1)
+    let modalKind: string = strongest.kind
+    let modalCount = -1
+    for (const [k, c] of kindCounts) {
+      if (c > modalCount || (c === modalCount && k === strongest.kind)) { modalKind = k; modalCount = c }
+    }
+
+    const anyCore = group.some((u) => u.requiredness === "core")
+    const maxStrength = Math.max(...group.map((u) => u.strength))
+    const strongestRaw = strongest.requirement_text || ""
+    // Distinct responsibility texts (whitespace-normalized) retained for WHY rendering.
+    const tags = [...new Set(
+      group.map((u) => String(u.requirement_text || "").replace(/\s+/g, " ").trim()).filter(Boolean),
+    )]
+
+    out.push({
+      id: stableHash(`job|${key}|${strongestRaw}`),
+      kind: modalKind as EvidenceKind,
+      key,
+      label: strongest.label,
+      snippet: compressJobSnippet(strongestRaw),
+      requiredness: anyCore ? "core" : "supporting",
+      strength: maxStrength,
+      functionTag: asFunctionTag(strongest.functionTag),
+      tags,
+    })
+  }
+  return out
+}
+
 export function llmJobExtractionToSignals(
   llm: LLMJobExtraction,
   ctx: { jobText: string; userJobTitle?: string },
@@ -98,25 +162,35 @@ export function llmJobExtractionToSignals(
   const requiredTools = uniqueLower([...(s.requiredTools || []), ...toolUnitsRequired])
   const preferredTools = uniqueLower([...(s.preferredTools || []), ...toolUnitsPreferred])
 
-  // ── Requirement units (drop "tool"; keep "other" for countability) ─────────
-  const requirement_units: JobRequirementUnit[] = allUnits
-    .filter((u) => u.canonical_key !== "tool")
-    .map((u) => {
-      const key = u.canonical_key // "other" passes through; spine excludes it in buildCoverage
+  // ── Requirement units — three-way partition ────────────────────────────────
+  // tool  → dropped (routed to scalar arrays above).
+  // other → 1:1 passthrough (kept for countability; coverage-excluded by spine).
+  // else  → merged to one unit per key (restores the spine's one-per-key invariant).
+  const matchable: LLMRequirementUnit[] = []
+  const otherUnits: JobRequirementUnit[] = []
+  for (const u of allUnits) {
+    if (u.canonical_key === "tool") continue
+    if (u.canonical_key === "other") {
       const rawSnippet = u.requirement_text || ""
-      return {
-        // Mirror regex makeJobUnit exactly: id hashes the RAW snippet; the
-        // stored snippet field is compressed.
-        id: stableHash(`job|${key}|${rawSnippet}`),
+      otherUnits.push({
+        // Mirror regex makeJobUnit: id hashes the RAW snippet; snippet field compressed.
+        id: stableHash(`job|other|${rawSnippet}`),
         kind: u.kind as EvidenceKind, // UnitKind ≡ EvidenceKind
-        key,
+        key: "other",
         label: u.label,
         snippet: compressJobSnippet(rawSnippet),
         requiredness: u.requiredness,
         strength: u.strength,
         functionTag: asFunctionTag(u.functionTag),
-      }
-    })
+      })
+      continue
+    }
+    matchable.push(u)
+  }
+  const requirement_units: JobRequirementUnit[] = [
+    ...mergeMatchableByKey(matchable),
+    ...otherUnits,
+  ]
 
   // ── (e) degrees[] synthesized from booleans (field_kind:"none") ────────────
   // Mirrors the regex degree populator exactly; licensure gate stays inert.
