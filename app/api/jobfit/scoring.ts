@@ -1218,67 +1218,11 @@ export function scoreJobFit(
     }
   }
 
-  // ── Role archetype mismatch ─────────────────────────────────────────────────
-  // Fires when the job archetype conflicts with the candidate's stated role targets.
-  const profileRoleArchetype = (profile as any)?.roleArchetype as string | null
-  const jobArchetype = (job as any)?.jobArchetype as string | null
-  const profileTargetRoles = ((profile as any)?.statedInterests?.targetRoles || []) as string[]
   const hardNoContentOnlyFromConstraints = (profile as any)?.constraints?.hardNoContentOnly as boolean
   const hardNoContentOnly =
     hardNoContentOnlyFromConstraints ||
     profileHeaderText.includes("no pure social media") ||
     profileHeaderText.includes("no social media content roles")
-
-  if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear") {
-    // For "mixed" archetypes, check if the mix is analytical+strategic (not execution)
-    // and the job is execution — that's still a meaningful mismatch
-    const profileIsNonExecution =
-      profileRoleArchetype === "analytical" ||
-      profileRoleArchetype === "strategic" ||
-      (profileRoleArchetype === "mixed" &&
-        profileTargetRoles.some(r =>
-          r.includes("analyst") || r.includes("research") || r.includes("strategy") ||
-          r.includes("data") || r.includes("insights") || r.includes("brand strategy")
-        ) &&
-        !profileTargetRoles.some(r =>
-          r.includes("coordinator") || r.includes("content") || r.includes("social media")
-        ))
-
-    const mismatch =
-      profileIsNonExecution && jobArchetype === "execution"
-
-    if (mismatch) {
-      const archetypeLabels: Record<string, string> = {
-        analytical: "analytics, research, and data-driven work",
-        strategic: "brand strategy and planning",
-        execution: "content creation, events, and coordination",
-        mixed: "analytical and strategic marketing work",
-      }
-      const profileLabel = archetypeLabels[profileRoleArchetype] || "the roles you are targeting"
-      const jobLabel = archetypeLabels[jobArchetype] || jobArchetype
-
-      penalties.push({
-        key: "role_archetype_mismatch" as any,
-        amount: 12,
-        note: `Role archetype mismatch: profile=${profileRoleArchetype}, job=${jobArchetype}`,
-        risk: {
-          code: "RISK_ROLE_ARCHETYPE",
-          job_fact: `This role is primarily focused on ${jobLabel}.`,
-          profile_fact: `Your stated target roles focus on ${profileLabel}.`,
-          risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
-          severity: "medium" as const,
-        },
-      })
-      riskOnlyCodes.push({
-        code: "RISK_ROLE_ARCHETYPE",
-        job_fact: `This role is primarily focused on ${jobLabel}.`,
-        profile_fact: `Your stated target roles focus on ${profileLabel}.`,
-        risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
-        severity: "medium",
-      })
-      console.log("[scoring] Role archetype mismatch:", profileRoleArchetype, "vs", jobArchetype)
-    }
-  }
 
   // ── Content execution constraint ────────────────────────────────────────────
   // Candidate said "no pure social media content roles" — penalize if job is content-heavy.

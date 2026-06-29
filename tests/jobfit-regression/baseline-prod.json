@@ -141206,7 +141206,7 @@
     "id": "prod-67db2a14-03a0-45fe-a1f6-db3f9646f25b",
     "label": "prod 67db2a14 — Marketing Strategist - Associate @ Barkley&Co (2026-06-25)",
     "decision": "Apply",
-    "score": 81,
+    "score": 93,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -142143,11 +142143,6 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_ROLE_ARCHETYPE",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -142296,12 +142291,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -16,
-          "note": "16"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 81,
-      "clamped_score": 81
+      "raw_score": 93,
+      "clamped_score": 93
     }
   },
   "prod-69485545-6c25-42a8-9fa2-1dbc54d69ca2": {
