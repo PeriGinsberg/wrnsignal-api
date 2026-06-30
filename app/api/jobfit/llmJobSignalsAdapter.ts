@@ -229,7 +229,14 @@ export function llmJobExtractionToSignals(
     isSalesHeavy: s.isSalesHeavy,
     isContract: s.isContract,
     isHourly: s.isHourly,
-    yearsRequired: s.yearsRequired,
+    // Clamp to the regex-path rule (extract.ts extractYearsRequired :2566): a
+    // value in (0, 20] is a real minimum; 0 / negative / >20 / null collapse to
+    // null. Mirrors "0 min = entry-level → no requirement" so a range low-end of
+    // 0 (or an LLM stray) never scores as an experience gap.
+    yearsRequired:
+      typeof s.yearsRequired === "number" && s.yearsRequired > 0 && s.yearsRequired <= 20
+        ? s.yearsRequired
+        : null,
     degrees,
     credentialRequired: s.credentialRequired,
     credentialDetail: s.credentialDetail,

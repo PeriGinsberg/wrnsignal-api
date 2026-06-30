@@ -328,10 +328,10 @@ SCALAR FIELD GUIDANCE (fill every field; use null/false when the JD does not sup
   - jobIndustry / detectedDomain: the industry vertical / a specific industry-experience requirement, if the JD names one.
   - analytics.isHeavy: true if the role is genuinely analytics-heavy (SQL/Python/modeling/experimentation central).
   - location: mode (in_person/hybrid/remote/unclear), constrained (must be in a specific place), city (named city or null).
-  - yearsRequired: the minimum years of experience required as an integer (the low end of a range; null if none).
+  - yearsRequired: the minimum years of experience required as an integer — the LOW end of a stated range. A low end of 0 means NO real requirement: emit null, not 0. Examples: "0-2 years" → null, "0-3 years" → null, "2-4 years" → 2, "5+ years" → 5; no figure stated → null.
   - gradYearHint: a graduation-year the posting screens for, if any.
   - isGovernment / isSalesHeavy / isContract / isHourly / isPartTime: employment-type and sector flags.
-  - isSeniorRole: true only for genuinely senior/lead/manager-level roles that hire experienced people. A title merely containing "manager" is NOT automatically senior — "Account Manager", "Manager Trainee", and entry-level roles with "manager" in the title are NOT senior. Judge the actual experience level the posting hires at.
+  - isSeniorRole: true only for genuinely senior/lead/manager-level roles that hire experienced people. A title merely containing "manager" is NOT automatically senior — "Account Manager", "Manager Trainee", and entry-level roles with "manager" in the title are NOT senior. Titles led by "Associate", "Coordinator", "Analyst", or "Assistant" are entry- or early-career BY DEFAULT and are NOT senior unless the JD explicitly says otherwise (e.g. "Senior Associate", or a stated multi-year minimum). A stated experience requirement of 0-2 years means the role is NOT senior regardless of title. Judge the actual experience level the posting hires at.
   - isTrainingProgram: a structured training/development program where qualifications are taught on the job.
   - isContentExecutionHeavy: the role is mostly content/social/event execution.
   - degrees: an array of the degree requirements the posting states. For each: level (associate/bachelor/master/mba/phd), requiredness (required vs preferred — apply the same required-vs-preferred judgment as above), field (the named field of study, or null if the posting says only "a degree"), and field_kind:
