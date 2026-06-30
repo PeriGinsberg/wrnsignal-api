@@ -3,7 +3,7 @@
 // Evidence-first scoring for WHY pipeline.
 // WHY bullets are created from matched proof objects, not category overlap.
 
-import { POLICY, LOCATION_FIT_SCORING_ENABLED, type PenaltyKey } from "./policy"
+import { POLICY, type PenaltyKey } from "./policy"
 import type {
   EvidenceKind,
   JobRequirementUnit,
@@ -14,6 +14,7 @@ import type {
   StructuredProfileSignals,
   WhyCode,
 } from "./signals"
+import { hasRequiredDegree } from "./signals"
 import { getFinanceSubFamilyDistance } from "./extract"
 import { familyDisplayName } from "./deterministicBulletRendererV4"
 
@@ -158,29 +159,6 @@ function applyDiminishingReturns(penaltySum: number): number {
   const extra = penaltySum - softCap
   const reduced = extra * (1 - POLICY.score.diminishingReturnsRate)
   return softCap + reduced
-}
-
-function normalizeCity(s: string | null | undefined): string {
-  const t = norm(s)
-  if (!t) return ""
-  if (t.includes("new york") || t.includes("nyc")) return "new york"
-  if (t.includes("boston")) return "boston"
-  if (t.includes("philadelphia") || t.includes("philly")) return "philadelphia"
-  if (t.includes("washington") && (t.includes("dc") || t.includes("d.c"))) return "washington, d.c."
-  if (t.includes("chicago")) return "chicago"
-  if (t.includes("miami")) return "miami"
-  if (t.includes("atlanta")) return "atlanta"
-  if (t.includes("charlotte")) return "charlotte"
-  if (t.includes("austin")) return "austin"
-  if (t.includes("los angeles") || t === "la") return "los angeles"
-  return t
-}
-
-function locationCityMatches(jobCity: string, preferredCities: string[]): boolean {
-  const j = normalizeCity(jobCity)
-  if (!j) return false
-  const prefs = (preferredCities || []).map(normalizeCity).filter(Boolean)
-  return prefs.includes(j)
 }
 
 function toolMissing(profileTools: string[], tool: string): boolean {
@@ -516,36 +494,45 @@ export function buildEvidenceMatches(job: StructuredJobSignals, profile: Structu
 function buildCoverage(job: StructuredJobSignals, allMatches: WhyEvidenceMatch[]): RequirementCoverage[] {
   const jobUnits = Array.isArray(job.requirement_units) ? job.requirement_units : []
 
-  return jobUnits.map((ju) => {
-    const matchesForUnit = allMatches
-      .filter((m) => m.job_unit.id === ju.id)
-      .sort((a, b) => b.coverageScore - a.coverageScore)
+  // Out-of-vocabulary "other" units (LLM-fed path only) are structurally
+  // uncoverable — no profile unit ever carries key="other" and isAdjacent()
+  // returns false for it. Excluding them here is the single chokepoint that
+  // keeps them out of coverage, major-gap risks, the uncovered-capability
+  // penalty, and the base-score coverage contribution, so they never fire an
+  // artifact RISK_MISSING_PROOF or penalty. No-op for the regex path, which
+  // never emits key="other" (its keys are the CAPABILITY_RULES vocabulary).
+  return jobUnits
+    .filter((ju) => ju.key !== "other")
+    .map((ju) => {
+      const matchesForUnit = allMatches
+        .filter((m) => m.job_unit.id === ju.id)
+        .sort((a, b) => b.coverageScore - a.coverageScore)
 
-    const bestMatch = matchesForUnit[0] || null
-    const minimumCoverage =
-      ju.requiredness === "core"
-        ? DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
-          ? 70
-          : 60
-        : DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
-        ? 62
-        : 52
+      const bestMatch = matchesForUnit[0] || null
+      const minimumCoverage =
+        ju.requiredness === "core"
+          ? DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
+            ? 70
+            : 60
+          : DIRECT_PROOF_REQUIRED_KEYS.has(ju.key)
+          ? 62
+          : 52
 
-    const nearMissFloor =
-      ju.requiredness === "core" ? minimumCoverage - 18 : minimumCoverage - 14
+      const nearMissFloor =
+        ju.requiredness === "core" ? minimumCoverage - 18 : minimumCoverage - 14
 
-    const coverageScore = bestMatch?.coverageScore || 0
-    const adequate = coverageScore >= minimumCoverage
-    const nearMiss = !adequate && coverageScore >= nearMissFloor
+      const coverageScore = bestMatch?.coverageScore || 0
+      const adequate = coverageScore >= minimumCoverage
+      const nearMiss = !adequate && coverageScore >= nearMissFloor
 
-    return {
-      jobUnit: ju,
-      bestMatch,
-      coverageScore,
-      adequate,
-      nearMiss,
-    }
-  })
+      return {
+        jobUnit: ju,
+        bestMatch,
+        coverageScore,
+        adequate,
+        nearMiss,
+      }
+    })
 }
 
 function buildMajorGapRisks(job: StructuredJobSignals, coverage: RequirementCoverage[]): RiskCode[] {
@@ -932,52 +919,6 @@ export function scoreJobFit(
   const hasExplicitTools =
     (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
-  if (LOCATION_FIT_SCORING_ENABLED) {
-    const profileConstrained = !!profile.locationPreference.constrained
-    const jobCity = job.location?.city ?? null
-    const allowedCities = profile.locationPreference.allowedCities
-
-    const hasJobCity =
-      typeof jobCity === "string" && jobCity.trim().length > 0
-
-    const hasAllowedCities =
-      Array.isArray(allowedCities) && allowedCities.length > 0
-
-    const cityMismatch =
-      hasJobCity &&
-      hasAllowedCities &&
-      !locationCityMatches(jobCity, allowedCities)
-
-    if (cityMismatch) {
-      if (profileConstrained) {
-        const amt = computePenaltyAmount("location_mismatch_constrained")
-
-        penalties.push({
-          key: "location_mismatch_constrained",
-          amount: amt,
-          note: `Constrained city mismatch (job: ${jobCity})`,
-          risk: {
-            code: "RISK_LOCATION",
-            job_fact: `Job location indicates ${jobCity}.`,
-            profile_fact: `Allowed cities are ${allowedCities.join(", ")}.`,
-            risk: "Your location constraints do not match the job location.",
-            severity: "high",
-            weight: -amt,
-          },
-        })
-      } else {
-        riskOnlyCodes.push({
-          code: "RISK_LOCATION",
-          job_fact: `Job location indicates ${jobCity}.`,
-          profile_fact: `Preferred cities are ${allowedCities.join(", ")}.`,
-          risk: "The job location sits outside your stated preferred cities.",
-          severity: "medium",
-          weight: 0,
-        })
-      }
-    }
-  }
-
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
     const k: PenaltyKey = "location_mismatch_constrained"
     const amt = computePenaltyAmount(k)
@@ -1234,48 +1175,6 @@ export function scoreJobFit(
     console.log(`[scoring] Sales sub-segment mismatch fired: profile=${profileLabel} vs job=${jobLabel}`)
   }
 
-  // Undisclosed territory risk — JDs that reference "within territory"
-  // or "within 30 miles of territory boundaries" without specifying the
-  // actual territory location. Candidate should confirm location before
-  // applying since it may be anywhere in the country.
-  if (LOCATION_FIT_SCORING_ENABLED && (job as any)?.territoryUndisclosed) {
-    riskOnlyCodes.push({
-      code: "RISK_LOCATION_UNDISCLOSED",
-      job_fact: "Job references a sales territory but does not specify where it is located.",
-      profile_fact: "Your profile has a preferred location, but the territory may be elsewhere.",
-      risk: "The posting mentions a territory requirement without disclosing which territory. Confirm the territory location before investing time in this application — it may be outside your preferred region.",
-      severity: "low",
-    })
-    console.log("[scoring] Undisclosed territory risk fired")
-  }
-
-  // General location-unclear risk — when the JD doesn't disclose a
-  // location at all (mode: "unclear") AND the candidate has explicit
-  // preferred cities, fire a low-severity risk so they know to verify
-  // before applying. Distinct from territoryUndisclosed which fires on
-  // territory-specific sales JDs. Suppressed for remote-explicit jobs
-  // and for internal-facing postings that don't normally list cities.
-  const jobLocMode = (job as any)?.location?.mode
-  const jobLocCity = (job as any)?.location?.city
-  const profileAllowedCities = (profile as any)?.locationPreference?.allowedCities as string[] | undefined
-  if (
-    LOCATION_FIT_SCORING_ENABLED &&
-    !(job as any)?.territoryUndisclosed &&
-    jobLocMode === "unclear" &&
-    !jobLocCity &&
-    Array.isArray(profileAllowedCities) &&
-    profileAllowedCities.length > 0
-  ) {
-    riskOnlyCodes.push({
-      code: "RISK_LOCATION_UNCLEAR",
-      job_fact: "The job posting does not clearly state a location.",
-      profile_fact: `Your preferred locations: ${profileAllowedCities.slice(0, 4).join(", ")}.`,
-      risk: "This posting does not clearly specify a city or region. Before investing time in an application, confirm the location is compatible with your preferences — many corporate postings default to the company's HQ city, which may not be where you want to work.",
-      severity: "low",
-    })
-    console.log("[scoring] Location-unclear risk fired; profile cities:", profileAllowedCities.join(", "))
-  }
-
   // Pharmaceutical sales training preference — soft risk when JD lists
   // pharma-specific training as a plus and profile has no pharma
   // exposure. Medium severity because it is a preference, not a
@@ -1328,67 +1227,11 @@ export function scoreJobFit(
     }
   }
 
-  // ── Role archetype mismatch ─────────────────────────────────────────────────
-  // Fires when the job archetype conflicts with the candidate's stated role targets.
-  const profileRoleArchetype = (profile as any)?.roleArchetype as string | null
-  const jobArchetype = (job as any)?.jobArchetype as string | null
-  const profileTargetRoles = ((profile as any)?.statedInterests?.targetRoles || []) as string[]
   const hardNoContentOnlyFromConstraints = (profile as any)?.constraints?.hardNoContentOnly as boolean
   const hardNoContentOnly =
     hardNoContentOnlyFromConstraints ||
     profileHeaderText.includes("no pure social media") ||
     profileHeaderText.includes("no social media content roles")
-
-  if (profileRoleArchetype && jobArchetype && profileRoleArchetype !== "unclear" && jobArchetype !== "unclear") {
-    // For "mixed" archetypes, check if the mix is analytical+strategic (not execution)
-    // and the job is execution — that's still a meaningful mismatch
-    const profileIsNonExecution =
-      profileRoleArchetype === "analytical" ||
-      profileRoleArchetype === "strategic" ||
-      (profileRoleArchetype === "mixed" &&
-        profileTargetRoles.some(r =>
-          r.includes("analyst") || r.includes("research") || r.includes("strategy") ||
-          r.includes("data") || r.includes("insights") || r.includes("brand strategy")
-        ) &&
-        !profileTargetRoles.some(r =>
-          r.includes("coordinator") || r.includes("content") || r.includes("social media")
-        ))
-
-    const mismatch =
-      profileIsNonExecution && jobArchetype === "execution"
-
-    if (mismatch) {
-      const archetypeLabels: Record<string, string> = {
-        analytical: "analytics, research, and data-driven work",
-        strategic: "brand strategy and planning",
-        execution: "content creation, events, and coordination",
-        mixed: "analytical and strategic marketing work",
-      }
-      const profileLabel = archetypeLabels[profileRoleArchetype] || "the roles you are targeting"
-      const jobLabel = archetypeLabels[jobArchetype] || jobArchetype
-
-      penalties.push({
-        key: "role_archetype_mismatch" as any,
-        amount: 12,
-        note: `Role archetype mismatch: profile=${profileRoleArchetype}, job=${jobArchetype}`,
-        risk: {
-          code: "RISK_ROLE_ARCHETYPE",
-          job_fact: `This role is primarily focused on ${jobLabel}.`,
-          profile_fact: `Your stated target roles focus on ${profileLabel}.`,
-          risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
-          severity: "medium" as const,
-        },
-      })
-      riskOnlyCodes.push({
-        code: "RISK_ROLE_ARCHETYPE",
-        job_fact: `This role is primarily focused on ${jobLabel}.`,
-        profile_fact: `Your stated target roles focus on ${profileLabel}.`,
-        risk: `This role is structured around ${jobLabel} — a different track than what you said you are targeting. You have the skills to do this work, but taking this role may pull your career away from the ${profileLabel} direction you want to go.`,
-        severity: "medium",
-      })
-      console.log("[scoring] Role archetype mismatch:", profileRoleArchetype, "vs", jobArchetype)
-    }
-  }
 
   // ── Content execution constraint ────────────────────────────────────────────
   // Candidate said "no pure social media content roles" — penalize if job is content-heavy.
@@ -1451,6 +1294,24 @@ export function scoreJobFit(
     console.log("[scoring] Soft credential risk flag added:", detail)
   }
 
+  // Sponsored hard credential — the role requires a credential the EMPLOYER
+  // provides/sponsors post-hire ("obtain Series 7 within 120 days"). The
+  // credential gate is suppressed for this case (constraints.ts), so surface it
+  // here as a non-gating heads-up instead of letting the signal vanish.
+  // Regex-inert: regex sets credentialRequired=false when sponsored, so this
+  // only fires on the LLM-fed path.
+  if ((job as any).credentialRequired && (job as any).credentialSponsored) {
+    const detail = (job as any).credentialDetail || "a professional credential"
+    riskOnlyCodes.push({
+      code: "RISK_CREDENTIAL_PREFERRED",
+      job_fact: `This role requires ${detail}, which the employer provides or sponsors after hire.`,
+      profile_fact: "Profile does not yet show this credential.",
+      risk: `${detail} is required, but the employer sponsors obtaining it after you start — you can apply without holding it now. Expect to commit to earning it on the stated timeline.`,
+      severity: "low",
+    })
+    console.log("[scoring] Sponsored-credential heads-up added:", detail)
+  }
+
   if (job.yearsRequired !== null && profile.yearsExperienceApprox !== null) {
     const yearsGap = job.yearsRequired - profile.yearsExperienceApprox
     if (yearsGap > 0.5) {
@@ -1479,7 +1340,7 @@ export function scoreJobFit(
   }
 
   // Degree requirement risk
-  if (job.bachelorRequired && profile.degreeStatus === "in_progress") {
+  if (hasRequiredDegree(job.degrees, "bachelor") && profile.degreeStatus === "in_progress") {
     const isGradThisYear = profile.gradYear === new Date().getFullYear()
     const amt = isGradThisYear ? computePenaltyAmount("grad_window_mismatch") : computePenaltyAmount("mba_required")
     penalties.push({
@@ -1499,7 +1360,7 @@ export function scoreJobFit(
     })
   }
 
-  if (job.bachelorRequired && profile.degreeStatus === "unknown") {
+  if (hasRequiredDegree(job.degrees, "bachelor") && profile.degreeStatus === "unknown") {
     const amt = Math.max(computePenaltyAmount("grad_window_mismatch") - 2, 3)
     penalties.push({
       key: "degree_unknown",
@@ -1516,7 +1377,7 @@ export function scoreJobFit(
     })
   }
 
-  if (job.mbaRequired) {
+  if (hasRequiredDegree(job.degrees, "mba")) {
     const amt = computePenaltyAmount("mba_required")
     penalties.push({
       key: "mba_required",
@@ -1673,7 +1534,7 @@ export function scoreJobFit(
     job.location?.mode === "unclear" &&
     !job.isContract &&
     !job.isHourly &&
-    !job.mbaRequired &&
+    !hasRequiredDegree(job.degrees, "mba") &&
     job.gradYearHint === null
   ) {
     riskOnlyCodes.push({

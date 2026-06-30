@@ -105,6 +105,7 @@ const SCALAR_DENYLIST = new Set<string>([
   "requiresAECExperience", // CUT channel
   "analytics.isLight", // CUT nested leaf (analytics.isHeavy is kept)
   "location.evidence", // free-text JD phrase; mode/city already carry the signal
+  "degrees", // transitional (Move A): re-expressed as bachelorRequired/mbaRequired below
 ])
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -141,6 +142,18 @@ function captureScalars(signals: any, prefix = ""): Record<string, unknown> {
       out[key] = v
     }
   }
+  return out
+}
+
+// Transitional (Move A): engine replaced job.bachelorRequired/mbaRequired with
+// degrees[]. Re-express degrees back into the booleans the frozen baseline
+// captured, so a value-identical refactor shows zero drift. Remove when degree
+// behavior is intentionally re-baselined.
+function jobScalarsWithDegreeCompat(job: any): Record<string, unknown> {
+  const out = captureScalars(job)
+  const ds: any[] = Array.isArray(job?.degrees) ? job.degrees : []
+  out.bachelorRequired = ds.some((d) => d?.level === "bachelor" && d?.requiredness === "required")
+  out.mbaRequired = ds.some((d) => d?.level === "mba" && d?.requiredness === "required")
   return out
 }
 
@@ -259,7 +272,7 @@ export function toSnapshot(id: string, label: string, result: any): CaseSnapshot
     matches: sortBy(matches, matchSortKey),
     why_codes: sortBy(whyCodes, whySortKey),
     risk_codes: sortBy(riskCodes, riskSortKey),
-    scalars: { job: captureScalars(job), profile: captureScalars(profile) },
+    scalars: { job: jobScalarsWithDegreeCompat(job), profile: captureScalars(profile) },
     score_breakdown,
   }
 }

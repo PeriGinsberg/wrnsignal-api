@@ -17,6 +17,7 @@
 import crypto from "crypto"
 import { POLICY } from "./policy"
 import type {
+  DegreeRequirement,
   EvidenceKind,
   FinanceSubFamily,
   FunctionTag,
@@ -1395,6 +1396,51 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     jobPhrases: ["welding", "plumbing", "hvac", "carpentry", "electrician", "machinist", "cnc", "journeyman"],
     adjacentKeys: [],
   },
+  {
+    // Phase-2 paired profile-side rule for the LLM canonical key
+    // "laboratory_research". The JD side is supplied by the LLM extractor
+    // (canonical_key="laboratory_research"); this rule lets a lab candidate's
+    // RESUME emit the matching profile key so the match can form. jobPhrases is
+    // intentionally EMPTY so the regex JD path never emits this key — keeps the
+    // 696 regex regression zero-drift (regex JD has no lab units to match).
+    key: "laboratory_research",
+    label: "laboratory / bench research",
+    kind: "function" as EvidenceKind,
+    profilePhrases: [
+      "cell culture", "aseptic technique", "aseptic", "pcr", "qpcr", "rt-pcr",
+      "assay", "assays", "pipetting", "pipette", "microbiology", "molecular biology",
+      "dna extraction", "rna extraction", "plasmid", "gel electrophoresis",
+      "western blot", "elisa", "flow cytometry", "chromatography", "hplc",
+      "reagent", "cell line", "tissue culture", "wet lab", "bench science",
+      "spectroscopy", "titration", "specimen", "in vitro",
+    ],
+    jobPhrases: [],
+    adjacentKeys: [],
+  },
+  {
+    // Phase-2 paired profile-side rule for the LLM canonical key
+    // "bilingual_language". Same pairing rationale as laboratory_research:
+    // jobPhrases EMPTY (regex JD never emits it → zero-drift). Deliberately NOT
+    // adjacency-linked to communications_writing — a bilingual requirement must
+    // match actual second-language evidence, not generic communication.
+    key: "bilingual_language",
+    label: "second-language fluency",
+    kind: "function" as EvidenceKind,
+    profilePhrases: [
+      // Bare "fluent in" / "fluency in" dropped: they match "fluent in English"
+      // (not a second-language differentiator), which would let a monolingual
+      // English speaker spuriously satisfy a bilingual requirement once the LLM
+      // JD path emits bilingual_language. Keep only ACTUAL second-language
+      // evidence — unambiguous markers + language-qualified fluency patterns.
+      "bilingual", "native speaker", "multilingual", "trilingual",
+      "spanish-speaking", "conversational spanish", "conversational mandarin",
+      "proficient in spanish", "professional working proficiency",
+      "fluent in spanish", "fluent in mandarin", "fluent in french",
+      "fluent in portuguese", "fluent in chinese", "fluency in spanish",
+    ],
+    jobPhrases: [],
+    adjacentKeys: [],
+  },
 ]
 
 const TOOL_ALIASES: Record<string, string[]> = {
@@ -1554,7 +1600,7 @@ const FALLBACK_JOB_RULES: Array<{
   },
 ]
 
-function stableHash(input: string): string {
+export function stableHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex").slice(0, 16)
 }
 
@@ -2007,6 +2053,7 @@ function familyAggregateFromFunctionTags(tags: FunctionTag[]): FamilyAggregate {
     IT_Software: 0,
     ProductManagement: 0,
     Healthcare: 0,
+    LifeSciences: 0,
     Legal: 0,
     Trades: 0,
     Other: 0,
@@ -2070,6 +2117,7 @@ function familyAggregateFromFunctionTags(tags: FunctionTag[]): FamilyAggregate {
     "IT_Software",
     "ProductManagement",
     "Healthcare",
+    "LifeSciences",
     "Legal",
     "Trades",
     "Finance",
@@ -2158,6 +2206,9 @@ const FAMILY_CLOSE_COUSINS: ReadonlyArray<readonly [JobFamily, JobFamily]> = [
   ["Sales", "PreMed"], // medical / clinical sales
   // medical
   ["Healthcare", "PreMed"],
+  // life sciences — lab/bench work sits between Healthcare and Engineering
+  ["LifeSciences", "Healthcare"],
+  ["LifeSciences", "Engineering"],
 ]
 
 function familyDistance(a: JobFamily, b: JobFamily): number {
@@ -2188,7 +2239,7 @@ function makeProfileUnit(
   }
 }
 
-function compressJobSnippet(snippet: string): string {
+export function compressJobSnippet(snippet: string): string {
   const text = String(snippet || "").replace(/\s+/g, " ").trim()
   if (!text) return ""
 
@@ -3494,7 +3545,7 @@ export function getFinanceSubFamilyDistance(
 
 // ── Job title & company name extraction ─────────────────────────────────────
 
-function extractJobTitle(rawLines: string[]): string | null {
+export function extractJobTitle(rawLines: string[]): string | null {
   // First pass: find a line that looks like a real job title (has role keywords)
   const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
   const prefixStrip = /^(?:Title|Position|Role|Job Title)\s*[:]\s*/i
@@ -3984,9 +4035,15 @@ export function extractJobSignals(
     // Alternative-degree structure: "master's degree … or … bachelor's degree"
     // — a bachelor's listed as an acceptable minimum alternative.
     /\b(master'?s?|bachelor'?s?)\s+degree\b[^.?!]{0,80}\bor\s+a?\s*bachelor'?s?\s+degree\b/i.test(jobTextRaw)
-  const bachelorPreferred =
-    !bachelorRequired &&
-    /\bbachelor'?s?\s*(degree)?\s*preferred/i.test(jobTextRaw)
+  // Structural (Move A): regex path emits ONLY required bachelor/mba, with
+  // field & field_kind null — the exact equivalent of the old booleans. It
+  // does not judge level=master/phd/associate, requiredness=preferred, or
+  // field; the LLM extractor fills those later. bachelorPreferred dropped (dead).
+  const degrees: DegreeRequirement[] = []
+  if (bachelorRequired)
+    degrees.push({ level: "bachelor", requiredness: "required", field: null, field_kind: "none" })
+  if (mbaRequired)
+    degrees.push({ level: "mba", requiredness: "required", field: null, field_kind: "none" })
 // Credential hard requirements
   const lawSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.lawSchoolKeywords).map(norm)
   const medSchoolKeywords = asStringArray((POLICY as any)?.extraction?.credential?.medSchoolKeywords).map(norm)
@@ -4641,9 +4698,7 @@ return {
     isContract,
     isHourly,
     yearsRequired,
-    mbaRequired,
-    bachelorRequired,
-    bachelorPreferred,
+    degrees,
     credentialRequired,
     credentialDetail,
     credentialSponsored,

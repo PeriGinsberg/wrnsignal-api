@@ -17,6 +17,7 @@ const FAMILY_DISPLAY: Record<string, string> = {
   it_software: "IT / Software Engineering",
   premed: "Pre-Med / Life Sciences",
   healthcare: "Healthcare",
+  lifesciences: "Life Sciences",
   engineering: "Engineering",
   finance: "Finance",
   accounting: "Accounting",
@@ -293,7 +294,10 @@ if (k === "consumer_research") return "market and user research work"
 
 if (phrase) return phrase
 
-// HARD FAILSAFE: never return raw job text
+// HARD FAILSAFE: never return raw job text.
+// NOTE: renderRiskBullet (RISK_MISSING_PROOF branch) string-matches this exact
+// value to avoid a tautological "This role emphasizes <failsafe>" sentence —
+// keep the two in sync if this string changes.
 return "the work this role requires"
 }
 
@@ -799,6 +803,13 @@ if (code === "RISK_CONTRACT") {
    const jobFactRaw = String(r.job_fact || "").toLowerCase()
     if (jobFactRaw.includes("tool") || jobFactRaw.includes("excel") || jobFactRaw.includes("word") || jobFactRaw.includes("powerpoint")) {
       return null // tool gaps are handled by RISK_MISSING_TOOLS already
+    }
+    // summarizeJobFact returns the literal failsafe "the work this role requires"
+    // when it can't resolve the unit to a named phrase; dropping that into the
+    // "This role emphasizes X" frame reads as a tautology. Use a generic
+    // direct-proof sentence in that case (display text only — same risk still renders).
+    if (jf === "the work this role requires") {
+      return sentence("This role expects clearer direct proof in a core area than your background currently shows")
     }
     return sentence(`This role emphasizes ${jf}, and your background does not yet show clear direct proof in that area`)
   }

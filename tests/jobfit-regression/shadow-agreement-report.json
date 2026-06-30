@@ -1,0 +1,524 @@
+{
+  "generated_from": "shadow-jd.local.json",
+  "coverage": {
+    "total": 697,
+    "withLLM": 693,
+    "nullLLM": 4,
+    "bySource": {
+      "cache": 30,
+      "live": 663,
+      "error": 4
+    }
+  },
+  "headline": {
+    "stableScalarMeanAgree": "85.1%",
+    "unitKeyMicro": {
+      "precision": "39.1%",
+      "recall": "65.8%",
+      "jaccard": "32.5%"
+    }
+  },
+  "units": {
+    "micro": {
+      "precision": "39.1%",
+      "recall": "65.8%",
+      "jaccard": "32.5%"
+    },
+    "macro": {
+      "precision": "38.0%",
+      "recall": "67.8%",
+      "jaccard": "32.2%"
+    },
+    "otherRate": "14.8%",
+    "otherTotal": 1325,
+    "otherLabelHistogram": [
+      [
+        "bachelor's degree",
+        26
+      ],
+      [
+        "valid driver's license",
+        6
+      ],
+      [
+        "bilingual english/spanish",
+        5
+      ],
+      [
+        "bachelor's degree in relevant field",
+        4
+      ],
+      [
+        "attention to detail",
+        4
+      ],
+      [
+        "occasional travel",
+        4
+      ],
+      [
+        "willingness to travel",
+        3
+      ],
+      [
+        "project management skills",
+        3
+      ],
+      [
+        "negotiation skills",
+        3
+      ],
+      [
+        "life sciences supply chain & manufacturing experience",
+        3
+      ],
+      [
+        "willing to travel up to 75%",
+        3
+      ],
+      [
+        "mouse handling and procedures",
+        3
+      ],
+      [
+        "flow cytometry and immunoassays",
+        3
+      ],
+      [
+        "handle confidential information",
+        3
+      ],
+      [
+        "laboratory animal handling (mice)",
+        3
+      ],
+      [
+        "single cell suspension preparation",
+        3
+      ],
+      [
+        "immunofluorescence cell staining",
+        3
+      ],
+      [
+        "binding affinity assay",
+        3
+      ],
+      [
+        "cellular biology lab experience",
+        3
+      ],
+      [
+        "time management and organizational skills",
+        3
+      ],
+      [
+        "3+ years leading recruiting teams",
+        3
+      ],
+      [
+        "minimum 3.0 gpa",
+        3
+      ],
+      [
+        "demonstrated leadership experience",
+        3
+      ],
+      [
+        "bachelor's in quantitative field",
+        2
+      ],
+      [
+        "2-3 years pr experience",
+        2
+      ]
+    ],
+    "countDelta": {
+      "meanLlmMinusRegex": "7.72",
+      "median": 8,
+      "min": -12,
+      "max": 19,
+      "pctJDsLlmGtRegex": "98.3%",
+      "regexUnitsTotal": 3600,
+      "llmUnitsTotal": 8949
+    },
+    "kindDistribution": {
+      "regex": {
+        "execution": 829,
+        "tool": 1329,
+        "function": 1017,
+        "deliverable": 240,
+        "stakeholder": 185
+      },
+      "llm": {
+        "function": 5174,
+        "execution": 635,
+        "deliverable": 421,
+        "tool": 1760,
+        "domain": 808,
+        "environment": 92,
+        "stakeholder": 59
+      }
+    },
+    "matchedKeyIntersection": {
+      "pairs": 2370,
+      "requirednessAgree": "45.6%",
+      "strengthWithin2": "63.8%"
+    }
+  },
+  "stableScalars": {
+    "bool": {
+      "mbaRequired": {
+        "agree": "99.7%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 0,
+          "regexFalse_llmTrue": 2
+        }
+      },
+      "bachelorRequired": {
+        "agree": "63.1%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 10,
+          "regexFalse_llmTrue": 246
+        }
+      },
+      "credentialRequired": {
+        "agree": "95.1%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 2,
+          "regexFalse_llmTrue": 32
+        }
+      },
+      "credentialSponsored": {
+        "agree": "98.7%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 4,
+          "regexFalse_llmTrue": 5
+        }
+      },
+      "isContract": {
+        "agree": "95.8%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 1,
+          "regexFalse_llmTrue": 28
+        }
+      },
+      "isHourly": {
+        "agree": "96.1%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 1,
+          "regexFalse_llmTrue": 26
+        }
+      },
+      "isGovernment": {
+        "agree": "94.5%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 25,
+          "regexFalse_llmTrue": 13
+        }
+      },
+      "isTrainingProgram": {
+        "agree": "83.1%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 16,
+          "regexFalse_llmTrue": 101
+        }
+      },
+      "isSalesHeavy": {
+        "agree": "85.4%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 87,
+          "regexFalse_llmTrue": 14
+        }
+      },
+      "mentionsPharmaTraining": {
+        "agree": "100.0%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 0,
+          "regexFalse_llmTrue": 0
+        }
+      },
+      "territoryUndisclosed": {
+        "agree": "99.0%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 1,
+          "regexFalse_llmTrue": 6
+        }
+      },
+      "requiresAdvisoryBackground": {
+        "agree": "99.3%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 0,
+          "regexFalse_llmTrue": 5
+        }
+      },
+      "requiresSoftCredential": {
+        "agree": "97.8%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 0,
+          "regexFalse_llmTrue": 15
+        }
+      },
+      "location.constrained": {
+        "agree": "48.8%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 1,
+          "regexFalse_llmTrue": 354
+        }
+      }
+    },
+    "numeric": {
+      "yearsRequired": {
+        "agreeWithinBand": "74.9%",
+        "band": 1,
+        "n": 693
+      },
+      "gradYearHint": {
+        "agreeWithinBand": "97.5%",
+        "band": 1,
+        "n": 693
+      }
+    },
+    "enum": {
+      "location.mode": {
+        "agree": "59.3%",
+        "n": 693
+      }
+    },
+    "presence": {
+      "credentialDetail": {
+        "presenceAgree": "95.4%",
+        "n": 693
+      },
+      "softCredentialDetail": {
+        "presenceAgree": "95.2%",
+        "n": 693
+      },
+      "location.city": {
+        "presenceAgree": "77.3%",
+        "n": 693
+      }
+    },
+    "toolSet": {
+      "jaccard": "31.9%",
+      "precision": "40.0%",
+      "recall": "61.4%"
+    },
+    "isPartTime_LLMonly": {
+      "llmFlaggedPartTime": 30,
+      "of": 693,
+      "note": "regex never emits isPartTime (dead gate) — LLM-only signal, no agreement baseline"
+    }
+  },
+  "judgmentScalars": {
+    "note": "SOFT / directional — one frozen sample per JD; classification/threshold calls wobble. EXCLUDED from headline.",
+    "bool": {
+      "isSeniorRole": {
+        "agree": "87.0%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 61,
+          "regexFalse_llmTrue": 29
+        }
+      },
+      "requiresDomainIndustryExperience": {
+        "agree": "74.7%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 14,
+          "regexFalse_llmTrue": 161
+        }
+      },
+      "isContentExecutionHeavy": {
+        "agree": "80.7%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 0,
+          "regexFalse_llmTrue": 134
+        }
+      },
+      "requiresFinancialModeling": {
+        "agree": "97.4%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 14,
+          "regexFalse_llmTrue": 4
+        }
+      },
+      "analytics.isHeavy": {
+        "agree": "82.5%",
+        "n": 693,
+        "dir": {
+          "regexTrue_llmFalse": 22,
+          "regexFalse_llmTrue": 99
+        }
+      }
+    },
+    "enum": {
+      "jobFamily": {
+        "agree": "57.9%",
+        "n": 693
+      },
+      "financeSubFamily": {
+        "agree": "90.8%",
+        "n": 693
+      },
+      "salesSubFamily": {
+        "agree": "68.8%",
+        "n": 693
+      },
+      "jobArchetype": {
+        "agree": "22.1%",
+        "n": 693
+      }
+    },
+    "value_presence": {
+      "jobIndustry": {
+        "presenceAgree": "3.9%",
+        "n": 693
+      },
+      "detectedDomain": {
+        "presenceAgree": "33.6%",
+        "n": 693
+      }
+    }
+  },
+  "jobFamilyConfusion": {
+    "Marketing": {
+      "Marketing": 172,
+      "Sales": 7,
+      "Operations": 9,
+      "Analytics": 7,
+      "ProductManagement": 1,
+      "Consulting": 3,
+      "Finance": 3,
+      "Other": 1
+    },
+    "Analytics": {
+      "Analytics": 4,
+      "Marketing": 4,
+      "Operations": 9,
+      "Other": 2,
+      "Engineering": 3,
+      "Government": 1,
+      "Finance": 1
+    },
+    "Legal": {
+      "Operations": 8,
+      "Marketing": 4,
+      "ProductManagement": 1,
+      "Other": 3,
+      "Consulting": 1,
+      "Legal": 7,
+      "Sales": 1,
+      "Finance": 5,
+      "Engineering": 2,
+      "Analytics": 2,
+      "Government": 1
+    },
+    "Operations": {
+      "Marketing": 4,
+      "Operations": 41,
+      "Other": 1,
+      "Sales": 1,
+      "Analytics": 1,
+      "Consulting": 1,
+      "HR": 1
+    },
+    "Engineering": {
+      "IT_Software": 2,
+      "Engineering": 18,
+      "Healthcare": 8,
+      "Other": 45,
+      "Operations": 1,
+      "Finance": 1,
+      "Analytics": 4
+    },
+    "IT_Software": {
+      "IT_Software": 25,
+      "Marketing": 5,
+      "Engineering": 4,
+      "Analytics": 2
+    },
+    "Sales": {
+      "Marketing": 14,
+      "Sales": 17,
+      "Operations": 6,
+      "IT_Software": 2,
+      "Healthcare": 3,
+      "Government": 2,
+      "HR": 1,
+      "Engineering": 1,
+      "Finance": 2
+    },
+    "Consulting": {
+      "Operations": 17,
+      "Consulting": 34,
+      "Sales": 7,
+      "IT_Software": 2,
+      "Marketing": 2,
+      "Finance": 9,
+      "Analytics": 3,
+      "Healthcare": 1
+    },
+    "HR": {
+      "HR": 25,
+      "Marketing": 1,
+      "Sales": 3,
+      "Consulting": 2,
+      "Accounting": 1,
+      "Analytics": 2,
+      "IT_Software": 1,
+      "Other": 1
+    },
+    "ProductManagement": {
+      "ProductManagement": 11
+    },
+    "Accounting": {
+      "Operations": 1,
+      "IT_Software": 2,
+      "Marketing": 1,
+      "Accounting": 1
+    },
+    "Other": {
+      "Operations": 6,
+      "IT_Software": 1,
+      "Consulting": 1,
+      "Marketing": 6,
+      "Other": 3,
+      "Government": 1,
+      "Analytics": 1
+    },
+    "Finance": {
+      "Operations": 8,
+      "Other": 3,
+      "Finance": 39,
+      "Sales": 8,
+      "Marketing": 1,
+      "Accounting": 1,
+      "Analytics": 2,
+      "IT_Software": 1,
+      "ProductManagement": 1
+    },
+    "Trades": {
+      "Engineering": 4
+    },
+    "Healthcare": {
+      "Healthcare": 4
+    }
+  }
+}

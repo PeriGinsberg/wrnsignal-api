@@ -1,32 +1,7 @@
 // FILE: app/api/jobfit/constraints.ts
 
 import type { GateTriggered, StructuredJobSignals, StructuredProfileSignals } from "./signals"
-import { LOCATION_FIT_SCORING_ENABLED } from "./policy"
-
-function normCity(s: string): string {
-  return (s || "")
-    .toLowerCase()
-    .replace(/\./g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
-function cityMatches(jobCity: string, allowed: string[]): boolean {
-  const j = normCity(jobCity)
-  const prefs = allowed.map(normCity).filter(Boolean)
-
-  // basic normalization helpers
-  const mapAlias = (x: string) => {
-    if (x === "nyc" || x.includes("new york")) return "new york"
-    if (x.includes("washington") && (x.includes("dc") || x.includes("d c"))) return "washington dc"
-    return x
-  }
-
-  const jj = mapAlias(j)
-  const pp = prefs.map(mapAlias)
-
-  return pp.includes(jj)
-}
+import { hasRequiredDegree } from "./signals"
 
 /**
  * Gate philosophy:
@@ -44,6 +19,8 @@ const HARD_TECHNICAL_FAMILIES = new Set([
 
 // Business/generalist families — profiles in these families should not match
 // hard technical roles.
+// DEAD: defined but never read anywhere in the engine (tech-debt). Not
+// extended with LifeSciences since nothing consumes it.
 const BUSINESS_FAMILIES = new Set([
   "Consulting",
   "Marketing",
@@ -74,7 +51,7 @@ export function evaluateGates(job: StructuredJobSignals, profile: StructuredProf
     }
   }
 
-  if (job.mbaRequired) {
+  if (hasRequiredDegree(job.degrees, "mba")) {
     const detail = profile.degreeStatus === "in_progress"
       ? "This role requires an MBA. Based on your profile, you are currently pursuing an undergraduate degree. This is a hard requirement that cannot be overcome through other qualifications."
       : "MBA required"
@@ -86,6 +63,26 @@ if (job.credentialRequired) {
     // Suppress the hard gate entirely for training programs.
     if ((job as any).isTrainingProgram) {
       // Don't gate — fall through to normal scoring
+    } else if (
+      // Policy: a hard credential gates ONLY when it's a genuine pre-requisite
+      // you must already hold (CPA/RN/bar/Series/CDL-class). Two cases are NOT
+      // dealbreakers and must not force_pass:
+      //   (a) credentialSponsored — the employer provides/sponsors it post-hire
+      //       ("obtain Series 7 within 120 days"); you can apply without it.
+      //   (b) ubiquitous-license class — an ordinary driver's license (NOT a
+      //       CDL/commercial license, which IS a real occupational pre-req).
+      // Regex never reaches here for these (it sets credentialRequired=false
+      // when sponsored, and never classifies an ordinary driver's license as a
+      // hard credential), so this branch is regex-inert — it only corrects the
+      // LLM-fed path. The sponsored heads-up is surfaced as a soft, non-gating
+      // RISK_CREDENTIAL_PREFERRED in scoring; an ordinary license stays silent.
+      (job as any).credentialSponsored ||
+      (() => {
+        const d = (job.credentialDetail || "").toLowerCase()
+        return /driver'?s?\s+licen[sc]e/.test(d) && !/\bcdl\b|commercial/.test(d)
+      })()
+    ) {
+      // Non-blocking credential — fall through to normal scoring (no gate).
     } else {
     const profileFunctionTags = profile.function_tags || []
     const statedRoles = (profile.statedInterests?.targetRoles || []).join(" ").toLowerCase()
@@ -227,44 +224,6 @@ if (job.credentialRequired) {
   }
 
   // ---------------- Soft overrides (Apply -> Review) ----------------
-
-  // Location mismatch when constrained:
-  // Prefer city mismatch when we have explicit city prefs + job city.
-  // Fall back to mode mismatch only when city info is missing.
-  const profileConstrained = Boolean(profile.locationPreference.constrained)
-  const jobConstrained = Boolean(job.location.constrained)
-
-  // City/location-fit gate is behind the reversible LOCATION_FIT_SCORING_ENABLED
-  // flag (broken extractor). When disabled, fall through to later gates. The
-  // remote hard-stop gate (GATE_REMOTE_MISMATCH, above) is NOT flag-governed.
-  if (LOCATION_FIT_SCORING_ENABLED && profileConstrained && jobConstrained) {
-    const jobCity = job.location.city
-    const allowedCities = profile.locationPreference.allowedCities
-
-    const hasCityPrefs = Array.isArray(allowedCities) && allowedCities.length > 0
-    const jobCityKnown = typeof jobCity === "string" && jobCity.trim().length > 0
-
-    if (hasCityPrefs && jobCityKnown) {
-      if (!cityMatches(jobCity!, allowedCities!)) {
-        return {
-          type: "floor_review",
-          gateCode: "GATE_FLOOR_REVIEW_LOCATION",
-          detail: "Constrained city mismatch",
-        }
-      }
-    } else {
-      // fallback: mode mismatch only
-      const pm = profile.locationPreference.mode
-      const jm = job.location.mode
-      if (pm !== "unclear" && jm !== "unclear" && pm !== jm) {
-        return {
-          type: "floor_review",
-          gateCode: "GATE_FLOOR_REVIEW_LOCATION",
-          detail: "Location mismatch (constrained)",
-        }
-      }
-    }
-  }
 
   // Pref full-time vs contract should block Apply but not necessarily “Pass”
   if (profile.constraints.prefFullTime && job.isContract) {

@@ -29,7 +29,7 @@ export type BatchCaseResult = {
 // what a user would enter through the required job-title / company-name
 // inputs on the live JobFit form. Once the CSV schema is extended with
 // "Job Title" and "Company Name" columns, this map goes away.
-const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> = {
+export const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> = {
   "40926a": { jobTitle: "Director of Human Resources", companyName: "Titan America" },
   "40926b": { jobTitle: "Scientist I", companyName: "QuidelOrtho" },
   "40926c": { jobTitle: "Chemist I", companyName: "ADMA Biologics" },
@@ -59,7 +59,7 @@ const CASE_OVERRIDES: Record<string, { jobTitle: string; companyName: string }> 
 }
 
 // ── Minimal CSV parser (handles quoted fields with embedded newlines/commas/quotes)
-function parseCSV(text: string): string[][] {
+export function parseCSV(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let cell = ""

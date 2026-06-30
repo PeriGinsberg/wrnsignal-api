@@ -22,6 +22,7 @@ export type JobFamily =
   | "IT_Software"
   | "ProductManagement"
   | "Healthcare"
+  | "LifeSciences"
   | "Legal"
   | "Trades"
   | "Other"
@@ -178,6 +179,22 @@ export type StructuredProfileSignals = {
   profileHeaderText?: string
 }
 
+export type DegreeRequirement = {
+  level: "associate" | "bachelor" | "master" | "mba" | "phd"
+  requiredness: "required" | "preferred"
+  field: string | null
+  field_kind: "licensure_floor" | "directional" | "none"
+}
+
+// Spine helper preserving the old job.bachelorRequired / job.mbaRequired
+// semantics (a *required* degree at `level`). Used by scoring + constraints.
+export function hasRequiredDegree(
+  degrees: DegreeRequirement[],
+  level: DegreeRequirement["level"],
+): boolean {
+  return degrees.some((d) => d.level === level && d.requiredness === "required")
+}
+
 export type StructuredJobSignals = {
   rawHash: string
   jobTitle: string | null
@@ -203,9 +220,7 @@ export type StructuredJobSignals = {
   isContract: boolean
   isHourly: boolean
   yearsRequired: number | null
-  mbaRequired: boolean
-  bachelorRequired: boolean
-  bachelorPreferred: boolean
+  degrees: DegreeRequirement[]
 credentialRequired: boolean
   credentialDetail: string | null
   credentialSponsored: boolean
