@@ -2550,3 +2550,55 @@ Not yet shipped (final ship gate is Peri's manual round trip):
 Production promotion of routes + schema deferred until full v0.1
 ship completes + second-coach validation per FRD §11.
 
+
+---
+
+### 2026-06-30 — DEFERRED to Stage 3: Case 4 subfamily-mismatch under-weight (recon only, no code change)
+
+Case 4 (Lazard IB role, profile asset_management → IB) surfaces a real
+under-weight in `RISK_SUBFAMILY_MISMATCH`. Decision: **defer the fix to Stage 3,
+do not patch now.** Recorded for pickup.
+
+**Two structural causes of the under-weight:**
+
+1. **Distance table + penalty cap.** `SUBFAMILY_DISTANCE` (`extract.ts:3529-3536`)
+   collapses most cross-track finance pairs to distance-1, which the scorer
+   treats as risk-flag-only (`severity: low`, `weight: 0` — `scoring.ts:1501-1512`).
+   Only `ib↔fpa` reaches distance-2; nothing reaches distance-3. Even a
+   distance-2 hit caps at `computePenaltyAmount("finance_subfamily_mismatch")` =
+   severity 3 × multiplier 2.2 = **6.6** (`policy.ts:232-237`), which cannot cross
+   the 28-point Apply→Review penalty-sum band (`policy.ts:131`). So a genuine
+   cross-track mismatch barely moves — or doesn't move — the verdict.
+
+2. **No "subfamily is the core capability" signal.** The LLM extraction schema
+   (`jdExtractionPrompt.ts:132-165`, enum at `:230`) emits the subfamily *label*
+   only — no flag for whether the specialized subfamily IS dispositive for the
+   role. The scorer therefore cannot escalate the penalty when the specialized
+   subfamily is the core of the job (the case that warrants a hard hit) vs. an
+   incidental tag (the case that should stay light).
+
+**Compounding: profile-side subfamily is regex-inferred, not LLM.**
+`profile.financeSubFamily` comes from `inferProfileFinanceSubFamily` in
+`extractProfileSignals` (`extract.ts:4816-4836`), gated on `targetFamilies`
+including "finance"; the LLM path extracts the JD side only. This is the same
+stale-`asset_management` problem seen in the repositioning A/B — same Stage 3
+root cause (profile signals not yet on the LLM path).
+
+**Why not a quick fix now:** a JD-side-only weight bump (raise the distance-2
+amount or promote distance-1 to a penalty) would be blunt and half-complete — it
+over-penalizes genuinely-fine adjacent candidates (the analytical foundation
+transfers) and still lacks the dispositive-core signal needed to penalize only
+when the specialized subfamily is the role. The correct reweight needs Stage 3's
+**LLM profile-side inference + a two-axis core-capability flag** to have the
+signal it depends on.
+
+**Recon detail for pickup:**
+- Emission: `scoring.ts:1478-1514` (distance≥2 → medium penalty −6.6/−9.9;
+  distance==1 → low, weight 0).
+- Weight config: `policy.ts:232-237` (`finance_subfamily_mismatch`: severity 3 ×
+  multiplier 2.2 = 6.6).
+- Distance table: `SUBFAMILY_DISTANCE` `extract.ts:3529-3536`.
+- Verdict path: feeds `applyRiskDowngrades` only (`decision.ts:23-51`) — blocks
+  Priority Apply at distance≥2 (medium), nil at distance==1; never reaches
+  `applyEvidenceGuardrails` (high-severity only). Not referenced by name in
+  `decision.ts`.
