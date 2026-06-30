@@ -33,6 +33,7 @@ import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFr
 import type { StructuredProfileSignals } from "../jobfit/signals"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { scoreCoherence, type CoherenceResult } from "@/lib/positioning/v2/coherence"
+import { computeFreeScanPerception } from "@/lib/jobfit/freeScanPerception"
 
 export const runtime = "nodejs"
 export const maxDuration = 90
@@ -329,6 +330,29 @@ export async function POST(req: NextRequest) {
     // is byte-identical to today's output in that case.
     const coherence = await coherencePromise
 
+    // ── Free-scan perception bridge (Path A, TEMPORARY) ──────────────────
+    // Derives the perception-archetype read for the new free-scan UI from
+    // today's legacy engine output. Fails open to null (UI falls back to the
+    // existing decision/score render; never blocks the scan). Additive: the
+    // existing results page ignores result.perception. Replaced later by
+    // engineContract's LensProjection. See lib/jobfit/freeScanPerception.ts.
+    let perception = null
+    try {
+      perception = await computeFreeScanPerception({
+        resumeText,
+        jobText,
+        decision: raw.decision,
+        gateTriggered: raw.gate_triggered,
+        riskCodes: raw.risk_codes ?? [],
+        whyStructured: raw.why_structured ?? [],
+      })
+    } catch (perceptionErr: any) {
+      console.error(
+        "[jobfit-run-trial-open] perception bridge failed:",
+        perceptionErr?.message || String(perceptionErr)
+      )
+    }
+
     const successResponse = {
       status: "ok" as const,
       locked: false,
@@ -351,6 +375,7 @@ export async function POST(req: NextRequest) {
         cover_letter_strategy: raw.cover_letter_strategy ?? null,
         positioning_strategy: raw.positioning_strategy ?? null,
         networking_strategy: raw.networking_strategy ?? null,
+        perception,
         ...(coherenceEnabled ? { coherence } : {}),
       },
       locks,
