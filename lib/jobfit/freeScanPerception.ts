@@ -75,7 +75,12 @@ const POSITIONING_RISK_CODES = [
   "RISK_CONTENT_ROLE_CONFLICT",
 ] as const
 
-function deriveArchetype(args: ComputeFreeScanPerceptionArgs): FreeScanArchetype {
+// Stage 1 (deterministic spine). Three HARD results — NEVER overridden by the LLM
+// — plus one FALLBACK bucket whose WRONG_FIELD-vs-MISPOSITIONED split the LLM's
+// `wrong_field` boolean resolves in stage 2 (see computeFreeScanPerception).
+type Stage1 = { archetype: FreeScanArchetype; isFallbackBucket: boolean }
+
+function deriveStage1(args: ComputeFreeScanPerceptionArgs): Stage1 {
   const codes = new Set(
     (args.riskCodes ?? [])
       .map((r) => (r && typeof r.code === "string" ? r.code : null))
@@ -84,13 +89,21 @@ function deriveArchetype(args: ComputeFreeScanPerceptionArgs): FreeScanArchetype
   const fieldGate =
     args.gateTriggered?.type === "force_pass" &&
     args.gateTriggered?.gateCode === "GATE_FIELD_MISMATCH"
-  if (fieldGate) return "WRONG_FIELD"
+  if (fieldGate) return { archetype: "WRONG_FIELD", isFallbackBucket: false } // HARD
 
   const hasPositioningRisk = POSITIONING_RISK_CODES.some((c) => codes.has(c))
   const isApply = args.decision === "Apply" || args.decision === "Priority Apply"
-  if (isApply && !hasPositioningRisk) return "STRONG_FIT"
-  if (hasPositioningRisk || args.decision === "Review") return "MISPOSITIONED"
-  return "MISPOSITIONED" // Pass, no field gate
+  if (isApply && !hasPositioningRisk) return { archetype: "STRONG_FIT", isFallbackBucket: false } // HARD
+  if (hasPositioningRisk || args.decision === "Review")
+    return { archetype: "MISPOSITIONED", isFallbackBucket: false } // HARD
+
+  // FALLBACK bucket — Pass, or a force_pass credential/other gate (e.g.
+  // GATE_CREDENTIAL_REQUIRED), with NO positioning risk and NOT Apply. The
+  // deterministic spine can't tell WRONG_FIELD from MISPOSITIONED here (the RN-vs-
+  // finance case fired GATE_CREDENTIAL_REQUIRED, not GATE_FIELD_MISMATCH, and
+  // emitted no RISK_FAMILY_MISMATCH). Tentatively MISPOSITIONED; stage 2 flips it
+  // to WRONG_FIELD on llm.wrong_field === true.
+  return { archetype: "MISPOSITIONED", isFallbackBucket: true }
 }
 
 // ── (2) STRENGTHS — deterministic, cap 3 ───────────────────────────────────────
@@ -111,10 +124,12 @@ function buildStrengths(
 // ── (3) Haiku call ─────────────────────────────────────────────────────────────
 export const FREE_SCAN_PERCEPTION_SYSTEM_PROMPT = `You are a sharp, experienced recruiter giving a candidate the honest 7-second read on their resume against one job. You speak plainly and directly, like a real person who screens hundreds of resumes — warm but unsentimental, never corporate, never a cheerleader. You name what you actually see.
 
-You receive: the candidate's RESUME (verbatim), the JOB DESCRIPTION, the engine's DECISION, and a precomputed ARCHETYPE for this scan (STRONG_FIT, MISPOSITIONED, or WRONG_FIELD). Write your read to match that archetype:
+You receive: the candidate's RESUME (verbatim), the JOB DESCRIPTION, the engine's DECISION, and an ARCHETYPE for this scan. The ARCHETYPE is one of STRONG_FIT, MISPOSITIONED, or WRONG_FIELD — or UNDETERMINED, meaning you must decide between MISPOSITIONED and WRONG_FIELD yourself (see WRONG-FIELD JUDGMENT below). Write your read to match the archetype (or, when UNDETERMINED, the one you decide):
 - STRONG_FIT: right field, right work, and the resume proves it. Confident and encouraging — "go apply, you don't need me for this one."
 - MISPOSITIONED: the candidate can likely do the job, but the resume leads with the wrong story, reads as something else, or buries the relevant proof. The problem is the page, not the person.
 - WRONG_FIELD: this is a different career. The candidate may be genuinely strong, but not for THIS role, and a rewrite will not fix it. Be honest and kind, and redirect — never pretend a wording change closes the gap.
+
+WRONG-FIELD JUDGMENT (the "wrong_field" boolean): set "wrong_field": true ONLY when this is a genuinely different career and no resume rewrite closes the gap — the candidate's field/background does not match the role's field. Set it false when the candidate is in the right field, even if they are mispositioned or missing a specific credential. A missing credential in the SAME field (e.g. a finance candidate missing a Series 7 for a finance role) is NOT wrong_field; a finance candidate applying to a nursing role IS wrong_field. Judge it from the resume vs the JD's field, not from whether a credential is required. Always include "wrong_field" in the output.
 
 HARD GROUNDING RULES (absolute):
 1. Every string in "marked_lines" MUST be copied VERBATIM from the RESUME — an exact, character-for-character substring of a real resume line (whitespace aside). NEVER invent, paraphrase, summarize, or stitch together lines. If you are not certain a line appears verbatim in the resume, leave it out.
@@ -125,16 +140,23 @@ HARD GROUNDING RULES (absolute):
 6. "cta_lead" is ONE sentence leading into the next step, matched to the archetype (fix the positioning / find roles you actually win / polish it and apply).
 
 Return ONLY a JSON object — no preamble, no commentary, no markdown — exactly this shape:
-{"perception": string, "marked_lines": [{"line": string, "mark": "underline"|"circle", "tone": "positive"|"problem"}], "margin_notes": [{"text": string, "tone": "positive"|"problem"|"neutral"}], "verdict_line": string, "cta_lead": string}`
+{"perception": string, "marked_lines": [{"line": string, "mark": "underline"|"circle", "tone": "positive"|"problem"}], "margin_notes": [{"text": string, "tone": "positive"|"problem"|"neutral"}], "verdict_line": string, "cta_lead": string, "wrong_field": boolean}`
 
 function buildUserPrompt(args: {
   resumeText: string
   jobText: string
   decision: string
   archetype: FreeScanArchetype
+  isFallbackBucket: boolean
   riskCodes: string[]
 }): string {
-  return `ARCHETYPE: ${args.archetype}
+  // For the fallback bucket the deterministic spine cannot tell WRONG_FIELD from
+  // MISPOSITIONED, so do NOT assert one (asserting MISPOSITIONED would bias the
+  // wrong_field judgment). Tell the model to decide from resume vs JD field.
+  const archetypeLine = args.isFallbackBucket
+    ? `ARCHETYPE: UNDETERMINED — decide wrong_field yourself from the resume vs the job's field (see WRONG-FIELD JUDGMENT), and write your read to match the result.`
+    : `ARCHETYPE: ${args.archetype}`
+  return `${archetypeLine}
 ENGINE DECISION: ${args.decision}
 RISK CODES: ${args.riskCodes.length ? args.riskCodes.join(", ") : "(none)"}
 
@@ -157,6 +179,15 @@ interface LLMPerceptionRaw {
   margin_notes?: unknown
   verdict_line?: unknown
   cta_lead?: unknown
+  wrong_field?: unknown
+}
+
+// Coerce the LLM's wrong_field to a strict boolean; default false on anything
+// missing/odd (a JSON true is the only positive; a "true" string is tolerated).
+function coerceBool(v: unknown): boolean {
+  if (typeof v === "boolean") return v
+  if (typeof v === "string") return v.trim().toLowerCase() === "true"
+  return false
 }
 
 function parsePerception(rawText: string): LLMPerceptionRaw | null {
@@ -182,6 +213,7 @@ async function callPerceptionLLM(args: {
   jobText: string
   decision: string
   archetype: FreeScanArchetype
+  isFallbackBucket: boolean
   riskCodes: string[]
 }): Promise<LLMPerceptionRaw | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -281,7 +313,7 @@ export async function computeFreeScanPerception(
     const cached = PERCEPTION_CACHE[key]
     if (cached) return cached
 
-    const archetype = deriveArchetype(args)
+    const stage1 = deriveStage1(args)
     const strengths = buildStrengths(args.whyStructured)
     const riskCodeList = (args.riskCodes ?? [])
       .map((r) => (r && typeof r.code === "string" ? r.code : null))
@@ -291,10 +323,19 @@ export async function computeFreeScanPerception(
       resumeText,
       jobText,
       decision: String(args.decision ?? ""),
-      archetype,
+      archetype: stage1.archetype,
+      isFallbackBucket: stage1.isFallbackBucket,
       riskCodes: riskCodeList,
     })
     if (!llm || typeof llm.perception !== "string") return null
+
+    // Stage 2: ONLY the fallback bucket consults the LLM's wrong_field. The three
+    // HARD stage-1 results are never overridden.
+    const archetype: FreeScanArchetype = stage1.isFallbackBucket
+      ? coerceBool(llm.wrong_field)
+        ? "WRONG_FIELD"
+        : "MISPOSITIONED"
+      : stage1.archetype
 
     const result: FreeScanPerception = {
       archetype,
