@@ -610,6 +610,18 @@ export async function POST(req: NextRequest) {
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        // Client hints must match UA_CHROME's major version (Chrome 124).
+        "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        // Direct navigation fingerprint — no Referer (Sec-Fetch-Site: none
+        // implies the user typed/opened the URL; a Referer would contradict it).
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-User": "?1",
+        "Sec-Fetch-Dest": "document",
+        "Upgrade-Insecure-Requests": "1",
       },
       signal: controller.signal,
     })
@@ -618,6 +630,25 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       console.error(`[parse-job-url] fetch failed: ${res.status} ${rawUrl}`)
+
+      // Diagnostic capture: read the upstream body + key headers so the next
+      // failed attempt tells us whether this is a bot challenge (Cloudflare/
+      // DataDome) or a plain origin 403. Safe to read res.text() here because
+      // every branch below returns — the body is never consumed on the !ok path
+      // otherwise.
+      try {
+        const diagBody = await res.text()
+        console.log("[parse-job-url] BLOCKED_DIAG", {
+          status: res.status,
+          url: rawUrl,
+          server: res.headers.get("server"),
+          cf_mitigated: res.headers.get("cf-mitigated"),
+          cf_ray: res.headers.get("cf-ray"),
+          body_snippet: diagBody.slice(0, 500),
+        })
+      } catch (diagErr: any) {
+        console.log("[parse-job-url] BLOCKED_DIAG read error:", diagErr?.message)
+      }
 
       // Indeed now blocks server-side fetches (401). Give the same
       // paste-text guidance that LinkedIn gets.
