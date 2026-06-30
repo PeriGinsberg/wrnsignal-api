@@ -342,6 +342,8 @@ export async function POST(req: NextRequest) {
         resumeText,
         jobText,
         decision: raw.decision,
+        score: raw.score,
+        nextStep: raw.next_step,
         gateTriggered: raw.gate_triggered,
         riskCodes: raw.risk_codes ?? [],
         whyStructured: raw.why_structured ?? [],

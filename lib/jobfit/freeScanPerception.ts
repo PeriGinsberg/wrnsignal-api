@@ -59,6 +59,8 @@ export interface ComputeFreeScanPerceptionArgs {
   resumeText: string
   jobText: string
   decision: string
+  score?: number | null
+  nextStep?: string | null
   gateTriggered?: { type?: string; gateCode?: string } | null
   riskCodes?: Array<{ code?: string | null } | null> | null
   whyStructured?: Array<{ keyword?: string | null; connection?: string | null } | null> | null
@@ -124,20 +126,28 @@ function buildStrengths(
 // ── (3) Haiku call ─────────────────────────────────────────────────────────────
 export const FREE_SCAN_PERCEPTION_SYSTEM_PROMPT = `You are a sharp, experienced recruiter giving a candidate the honest 7-second read on their resume against one job. You speak plainly and directly, like a real person who screens hundreds of resumes — warm but unsentimental, never corporate, never a cheerleader. You name what you actually see.
 
-You receive: the candidate's RESUME (verbatim), the JOB DESCRIPTION, the engine's DECISION, and an ARCHETYPE for this scan. The ARCHETYPE is one of STRONG_FIT, MISPOSITIONED, or WRONG_FIELD — or UNDETERMINED, meaning you must decide between MISPOSITIONED and WRONG_FIELD yourself (see WRONG-FIELD JUDGMENT below). Write your read to match the archetype (or, when UNDETERMINED, the one you decide):
+You receive: the candidate's RESUME (verbatim), the JOB DESCRIPTION, the engine's DECISION, SCORE, and NEXT STEP, and an ARCHETYPE for this scan. The DECISION/SCORE/NEXT STEP are the engine's verdict on this candidate for this role — they reflect the engine's confidence, and your copy must ALIGN with that verdict, not overrule it. The ARCHETYPE is one of STRONG_FIT, MISPOSITIONED, or WRONG_FIELD — or UNDETERMINED, meaning you must decide between MISPOSITIONED and WRONG_FIELD yourself (see WRONG-FIELD JUDGMENT below). Write your read to match the archetype (or, when UNDETERMINED, the one you decide):
 - STRONG_FIT: right field, right work, and the resume proves it. Confident and encouraging — "go apply, you don't need me for this one."
 - MISPOSITIONED: the candidate can likely do the job, but the resume leads with the wrong story, reads as something else, or buries the relevant proof. The problem is the page, not the person.
 - WRONG_FIELD: this is a different career. The candidate may be genuinely strong, but not for THIS role, and a rewrite will not fix it. Be honest and kind, and redirect — never pretend a wording change closes the gap.
 
-WRONG-FIELD JUDGMENT (the "wrong_field" boolean): set "wrong_field": true ONLY when this is a genuinely different career and no resume rewrite closes the gap — the candidate's field/background does not match the role's field. Set it false when the candidate is in the right field, even if they are mispositioned or missing a specific credential. A missing credential in the SAME field (e.g. a finance candidate missing a Series 7 for a finance role) is NOT wrong_field; a finance candidate applying to a nursing role IS wrong_field. Judge it from the resume vs the JD's field, not from whether a credential is required. Always include "wrong_field" in the output.
+ARCHETYPE COHERENCE (absolute): your "perception", "verdict_line", and "cta_lead" MUST be consistent with the given ARCHETYPE. Do not let the resume-vs-JD detail pull your copy to a different verdict than the one you were handed.
+- STRONG_FIT: confirmatory. Name what's strong and AT MOST one small thing to tighten. Do NOT tell the candidate they are wrong-field, under-qualified, missing required experience, or that they should get a different or more-junior role first. The only forward direction is "polish it and apply."
+- MISPOSITIONED: the person can do the job; the page tells the wrong story. Name the misread and that it is fixable by repositioning. Do NOT redirect the candidate to a different career.
+- WRONG_FIELD: redirect honestly — a rewrite will not close the gap, and pointing them toward better-fit roles is the right move.
+
+WRONG-FIELD JUDGMENT (the "wrong_field" boolean):
+- When ARCHETYPE is a literal STRONG_FIT or MISPOSITIONED, you are NOT re-judging fit: set "wrong_field": false. Do not reconsider it from the resume/JD detail.
+- "wrong_field" is an OPEN judgment ONLY when ARCHETYPE is UNDETERMINED. In that case, set "wrong_field": true ONLY when this is a genuinely different career and no resume rewrite closes the gap — the candidate's field/background does not match the role's field. Set it false when the candidate is in the right field, even if they are mispositioned or missing a specific credential. A missing credential in the SAME field (e.g. a finance candidate missing a Series 7 for a finance role) is NOT wrong_field; a finance candidate applying to a nursing role IS wrong_field. Judge it from the resume vs the JD's field, not from whether a credential is required.
+- Always include "wrong_field" in the output.
 
 HARD GROUNDING RULES (absolute):
 1. Every string in "marked_lines" MUST be copied VERBATIM from the RESUME — an exact, character-for-character substring of a real resume line (whitespace aside). NEVER invent, paraphrase, summarize, or stitch together lines. If you are not certain a line appears verbatim in the resume, leave it out.
-2. Mark 2-3 resume lines total. Use "underline" for strong, relevant proof (tone "positive") and "circle" for the line that reveals the problem — the off-target or misleading one (tone "problem"). For STRONG_FIT, all marks are positive underlines. For WRONG_FIELD, circle the line that shows the wrong field.
-3. Write exactly 3 "margin_notes": short handwritten-style scrawls of 3-4 words each, ordered top-to-bottom as a recruiter's eye moves down the page. tone is "positive", "problem", or "neutral". They should feel like real margin scribbles (e.g. "solid degree", "wait, marketing?!", "no code anywhere").
-4. "perception" is ONE sentence: how a recruiter perceives this candidate after the 7-second scan (e.g. "Reads as a salesperson, not a marketer.").
-5. "verdict_line" is ONE short, punchy sentence — the bottom-line call, in the recruiter's voice.
-6. "cta_lead" is ONE sentence leading into the next step, matched to the archetype (fix the positioning / find roles you actually win / polish it and apply).
+2. Mark 2-3 resume lines total. Use "underline" for strong, relevant proof (tone "positive") and "circle" for the line that reveals the problem — the off-target or misleading one (tone "problem"). For STRONG_FIT, ALL marks are positive underlines — do NOT circle anything, and NEVER mark the candidate's core positioning, summary, objective, or target-role line as a "problem"; on a STRONG_FIT those lines are on-target proof, not gaps. Reserve "problem" circles for genuine gaps, and only on MISPOSITIONED or WRONG_FIELD. For WRONG_FIELD, circle the line that shows the wrong field.
+3. Write exactly 3 "margin_notes": short handwritten-style scrawls of 3-4 words each, ordered top-to-bottom as a recruiter's eye moves down the page. tone is "positive", "problem", or "neutral". They should feel like real margin scribbles (e.g. "solid degree", "wait, marketing?!", "no code anywhere"). Their tone must also respect ARCHETYPE COHERENCE — a STRONG_FIT page is not littered with "problem" scrawls.
+4. "perception" is ONE sentence: how a recruiter perceives this candidate after the 7-second scan (e.g. "Reads as a salesperson, not a marketer."), consistent with ARCHETYPE COHERENCE.
+5. "verdict_line" is ONE short, punchy sentence — the bottom-line call, in the recruiter's voice, consistent with ARCHETYPE COHERENCE.
+6. "cta_lead" is ONE sentence leading into the next step (STRONG_FIT: polish it and apply; MISPOSITIONED: fix the positioning; WRONG_FIELD: find roles you actually win).
 
 Return ONLY a JSON object — no preamble, no commentary, no markdown — exactly this shape:
 {"perception": string, "marked_lines": [{"line": string, "mark": "underline"|"circle", "tone": "positive"|"problem"}], "margin_notes": [{"text": string, "tone": "positive"|"problem"|"neutral"}], "verdict_line": string, "cta_lead": string, "wrong_field": boolean}`
@@ -146,6 +156,8 @@ function buildUserPrompt(args: {
   resumeText: string
   jobText: string
   decision: string
+  score: number | null
+  nextStep: string | null
   archetype: FreeScanArchetype
   isFallbackBucket: boolean
   riskCodes: string[]
@@ -158,6 +170,8 @@ function buildUserPrompt(args: {
     : `ARCHETYPE: ${args.archetype}`
   return `${archetypeLine}
 ENGINE DECISION: ${args.decision}
+ENGINE SCORE: ${typeof args.score === "number" ? `${args.score}/100` : "(unknown)"}
+ENGINE NEXT STEP: ${args.nextStep ? args.nextStep : "(none)"}
 RISK CODES: ${args.riskCodes.length ? args.riskCodes.join(", ") : "(none)"}
 
 JOB DESCRIPTION:
@@ -212,6 +226,8 @@ async function callPerceptionLLM(args: {
   resumeText: string
   jobText: string
   decision: string
+  score: number | null
+  nextStep: string | null
   archetype: FreeScanArchetype
   isFallbackBucket: boolean
   riskCodes: string[]
@@ -323,6 +339,8 @@ export async function computeFreeScanPerception(
       resumeText,
       jobText,
       decision: String(args.decision ?? ""),
+      score: typeof args.score === "number" ? args.score : null,
+      nextStep: args.nextStep ? String(args.nextStep) : null,
       archetype: stage1.archetype,
       isFallbackBucket: stage1.isFallbackBucket,
       riskCodes: riskCodeList,
@@ -337,11 +355,26 @@ export async function computeFreeScanPerception(
         : "MISPOSITIONED"
       : stage1.archetype
 
+    // Server-side STRONG_FIT mark guard. Rule 2 tells the model that STRONG_FIT
+    // marks must all be positive underlines, but the model can ignore it (the
+    // Kelley case circled the candidate's own target-role line as a "problem"
+    // under STRONG_FIT). Enforce it deterministically: on STRONG_FIT, force every
+    // marked line to a positive underline. MISPOSITIONED/WRONG_FIELD are left
+    // untouched — their problem-circles are legitimate.
+    let marked_lines = groundMarkedLines(llm.marked_lines, resumeText)
+    if (archetype === "STRONG_FIT") {
+      marked_lines = marked_lines.map((m) => ({
+        ...m,
+        mark: "underline" as const,
+        tone: "positive" as const,
+      }))
+    }
+
     const result: FreeScanPerception = {
       archetype,
       strengths,
       perception: String(llm.perception).trim(),
-      marked_lines: groundMarkedLines(llm.marked_lines, resumeText),
+      marked_lines,
       margin_notes: sanitizeNotes(llm.margin_notes),
       verdict_line: String(llm.verdict_line ?? "").trim(),
       cta_lead: String(llm.cta_lead ?? "").trim(),
