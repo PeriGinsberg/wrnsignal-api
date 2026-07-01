@@ -110,14 +110,50 @@ export async function GET(req: NextRequest) {
       priorityFilter = requested
     }
 
-    // Fetch notes. Filtering by coach_profile_id alone is sufficient — the
-    // RLS policy + service-role read both restrict to this coach's rows,
-    // and ownership-by-coach equals ownership of the row. Active scope only
-    // (open + not soft-deleted action items).
+    // Shape-1 collaboration: this cross-client feed is no longer "items I
+    // authored" — it's "open action items on clients I coach", from any coach.
+    // Build the coach_client_id set from two anchors, both gated by the caller's
+    // own rows so nothing leaks from clients the caller doesn't coach:
+    //   (1) the caller's OWN rows (any status) — preserves all their authored
+    //       items incl. prospect items whose client_profile_id is NULL (those
+    //       key off coach_client_id, not client_profile_id); and
+    //   (2) ALL rows (any coach) on the clients the caller ACTIVELY coaches.
+    // A client the caller was revoked from is not in (2), so the remaining
+    // coaches' items there don't surface here — while decision-2 still holds
+    // (the revoked coach's authored notes persist for the REMAINING coaches via
+    // their own set (2)). Reads run via service-role, bypassing the
+    // coach_profile_id=own RLS policy so other coaches' rows are visible.
+    const { data: myRows, error: myErr } = await supabase
+      .from("coach_clients")
+      .select("id, client_profile_id, status")
+      .eq("coach_profile_id", coachProfileId)
+    if (myErr) throw new Error(`coach_clients (self) lookup failed: ${myErr.message}`)
+    const myCoachClientIds = (myRows ?? []).map((r) => r.id as string)
+    const myActiveLinkedClientIds = Array.from(
+      new Set(
+        (myRows ?? [])
+          .filter((r) => r.status === "active" && r.client_profile_id)
+          .map((r) => r.client_profile_id as string),
+      ),
+    )
+
+    let sharedCoachClientIds: string[] = []
+    if (myActiveLinkedClientIds.length > 0) {
+      const { data: sharedRows, error: shErr } = await supabase
+        .from("coach_clients")
+        .select("id")
+        .in("client_profile_id", myActiveLinkedClientIds)
+      if (shErr) throw new Error(`coach_clients (shared) lookup failed: ${shErr.message}`)
+      sharedCoachClientIds = (sharedRows ?? []).map((r) => r.id as string)
+    }
+
+    const finalSet = Array.from(new Set([...myCoachClientIds, ...sharedCoachClientIds]))
+
+    // Active scope only (open + not soft-deleted action items).
     let q = supabase
       .from("coach_client_notes")
       .select("id, body, priority, created_at, client_profile_id, coach_client_id")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_client_id", finalSet)
       .eq("type", "action_item")
       .is("completed_at", null)
       .is("deleted_at", null)
