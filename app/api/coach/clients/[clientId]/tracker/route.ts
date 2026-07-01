@@ -112,7 +112,10 @@ export async function GET(
 
     const appIds = (applications || []).map((a: any) => a.id)
 
-    // Fetch coach annotations for these applications
+    // Fetch coach annotations for these applications. Shape-1 collaboration:
+    // scope by client_profile_id (not the caller's coach_profile_id) so BOTH
+    // coaches' annotations show on the shared tracker. Byte-identical for a
+    // solo client — only that one coach has annotations on this client.
     let annotationsByApp: Record<string, any[]> = {}
     if (appIds.length > 0) {
       const { data: annotations } = await supabase
@@ -120,7 +123,7 @@ export async function GET(
         .select("*")
         .in("target_id", appIds)
         .eq("target_type", "application")
-        .eq("coach_profile_id", profileId)
+        .eq("client_profile_id", clientProfileId)
         .order("created_at", { ascending: false })
 
       for (const ann of annotations || []) {
