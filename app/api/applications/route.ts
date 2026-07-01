@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { logStatusChange } from "../_lib/applicationStatusHistory"
+import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryBoundary"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -76,11 +77,13 @@ export async function GET(req: NextRequest) {
     const { userId, email } = await getAuthedUser(req)
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
+    const boundaryAt = await getHistoryBoundary(supabase, profileId)
 
-    const { data, error } = await supabase
+    const q = supabase
       .from("signal_applications")
       .select("*, signal_interviews(id), client_personas(name), jobfit_runs!jobfit_run_id(job_description)")
       .eq("profile_id", profileId)
+    const { data, error } = await applyHistoryBoundary(q, boundaryAt)
       .order("created_at", { ascending: false })
 
     if (error) throw new Error(`Applications lookup failed: ${error.message}`)

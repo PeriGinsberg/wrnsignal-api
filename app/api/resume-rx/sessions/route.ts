@@ -5,6 +5,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { getHistoryBoundary, applyHistoryBoundary } from "../../_lib/clientHistoryBoundary"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -78,11 +79,13 @@ export async function GET(req: NextRequest) {
     const { userId, email } = await getAuthedUser(req)
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
+    const boundaryAt = await getHistoryBoundary(supabase, profileId)
 
-    const { data, error } = await supabase
+    const q = supabase
       .from("resume_rx_sessions")
       .select("id, status, mode, target_field, year_in_school, diagnosis, coaching_summary, pdf_url, created_at")
       .eq("profile_id", profileId)
+    const { data, error } = await applyHistoryBoundary(q, boundaryAt)
       .order("created_at", { ascending: false })
 
     if (error) throw new Error(`Sessions lookup failed: ${error.message}`)

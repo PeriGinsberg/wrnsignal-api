@@ -4,6 +4,7 @@ import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryBoundary"
 import { getCandidateTargeting } from "@/lib/candidateTargeting"
 import { extractGraduationDate } from "@/lib/resume/extractGraduationDate"
 import { computeStatus, type CandidateStatus } from "@/lib/profile/computeStatus"
@@ -507,11 +508,13 @@ export async function POST(req: Request) {
     const { fingerprint_hash, fingerprint_code } =
       buildCoverletterFingerprint(fingerprintPayload)
 
-    const { data: existingRun, error: findErr } = await supabaseAdmin
+    const boundaryAt = await getHistoryBoundary(supabaseAdmin, profileId)
+    const clQ = supabaseAdmin
       .from("coverletter_runs")
       .select("result_json, created_at")
       .eq("client_profile_id", profileId)
       .eq("fingerprint_hash", fingerprint_hash)
+    const { data: existingRun, error: findErr } = await applyHistoryBoundary(clQ, boundaryAt)
       .maybeSingle()
 
     if (findErr) console.warn("coverletter_runs lookup failed:", findErr.message)

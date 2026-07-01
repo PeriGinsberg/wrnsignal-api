@@ -19,6 +19,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryBoundary"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -90,10 +91,12 @@ export async function GET(req: NextRequest) {
     const profile = await getProfile(userId, email)
     const supabase = getSupabaseAdmin()
 
-    const { data, error } = await supabase
+    const boundaryAt = await getHistoryBoundary(supabase, profile.id)
+    const q = supabase
       .from("client_personas")
       .select(PERSONA_SELECT)
       .eq("profile_id", profile.id)
+    const { data, error } = await applyHistoryBoundary(q, boundaryAt)
       .order("display_order", { ascending: true })
 
     if (error) throw new Error(`Personas lookup failed: ${error.message}`)

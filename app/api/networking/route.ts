@@ -2,6 +2,7 @@ import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryBoundary"
 import { getCandidateTargeting } from "@/lib/candidateTargeting"
 import { invokeClaude } from "@/lib/positioning/v2/phase2/anthropicClient"
 import { centsForUsage } from "@/lib/positioning/v2/phase2/costPolicy"
@@ -496,6 +497,10 @@ export async function POST(req: Request) {
       return withCorsJson(req, { error: "Missing job" }, 400)
     }
 
+    // Returning-client clean slate: seeds must not pull last season's hidden
+    // runs. Resolved once; null = show all (no-op for every non-returning user).
+    const boundaryAt = await getHistoryBoundary(supabaseAdmin, profileId)
+
     // ── Context plumbing (networking_v5) ─────────────────────────────────
     // Replaces the always-{} jobfit/positioning context with real data
     // looked up by this profile + this JD. PROMPT INSTRUCTIONS unchanged in
@@ -511,11 +516,12 @@ export async function POST(req: Request) {
     // JobFit context — exact JD match on jobfit_runs.
     let jobfitContext: any = {}
     {
-      const { data: jfRow } = await supabaseAdmin
+      const jfQ = supabaseAdmin
         .from("jobfit_runs")
         .select("id, verdict, result_json, created_at")
         .eq("client_profile_id", profileId)
         .eq("job_description", job)
+      const { data: jfRow } = await applyHistoryBoundary(jfQ, boundaryAt)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -554,11 +560,12 @@ export async function POST(req: Request) {
     // Positioning context — v2 first (exact JD match), else v1 (24h recency).
     let positioningContext: any = {}
     {
-      const { data: v2Row } = await supabaseAdmin
+      const v2Q = supabaseAdmin
         .from("positioning_runs_v2")
         .select("case_assigned, case_reasoning, result_json, created_at")
         .eq("profile_id", profileId)
         .eq("job_description", job)
+      const { data: v2Row } = await applyHistoryBoundary(v2Q, boundaryAt)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -666,11 +673,12 @@ export async function POST(req: Request) {
     const { fingerprint_hash, fingerprint_code } =
       buildNetworkingFingerprint(fingerprintPayload)
 
-    const { data: existingRun, error: findErr } = await supabaseAdmin
+    const nrQ = supabaseAdmin
       .from("networking_runs")
       .select("result_json, fingerprint_code, fingerprint_hash, created_at")
       .eq("client_profile_id", profileId)
       .eq("fingerprint_hash", fingerprint_hash)
+    const { data: existingRun, error: findErr } = await applyHistoryBoundary(nrQ, boundaryAt)
       .maybeSingle()
 
     if (findErr) {
