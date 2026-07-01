@@ -159,7 +159,7 @@ export async function POST(
     // existence-probing). Returns the row's columns we need below.
     const { data: ccRow } = await supabase
       .from("coach_clients")
-      .select("id, lifecycle_status, client_profile_id, invited_email, name, job_type, target_roles, target_locations, preferred_locations, timeline")
+      .select("id, lifecycle_status, client_profile_id, invited_email, name, is_returning, job_type, target_roles, target_locations, preferred_locations, timeline")
       .eq("id", coachClientId)
       .eq("coach_profile_id", coachProfileId)
       .eq("status", "active")
@@ -223,6 +223,19 @@ export async function POST(
         .eq("id", coachClientId)
       if (linkErr) {
         throw new Error(`Failed to link profile to coach_clients: ${linkErr.message}`)
+      }
+
+      // Returning-client clean slate: this engagement starts fresh. The old
+      // profile's runs stay intact but are hidden from the CLIENT's own view by
+      // the created_at >= history_boundary_at filter (coach view is unaffected).
+      // Only link-existing stamps — a create-new returning client has no prior
+      // SIGNAL history, so its boundary stays NULL.
+      if (ccRow.is_returning) {
+        const { error: boundaryErr } = await supabase
+          .from("client_profiles")
+          .update({ history_boundary_at: new Date().toISOString() })
+          .eq("id", profileId)
+        if (boundaryErr) console.warn("[send-invite] history_boundary stamp failed:", boundaryErr.message)
       }
     } else {
       // ── Branch: create-new ───────────────────────────────────────

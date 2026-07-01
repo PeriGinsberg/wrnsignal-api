@@ -560,6 +560,16 @@ export async function PATCH(
       updates.lifecycle_status = body.lifecycle_status
     }
 
+    // Return-customer flag (coach marks a prospect/client as a returning
+    // customer). Drives reporting + gates the history_boundary_at stamp the
+    // invite flow applies. Boolean-only; NOT NULL DEFAULT false in schema.
+    if ("is_returning" in body) {
+      if (typeof body.is_returning !== "boolean") {
+        return withCorsJson(req, { ok: false, error: "is_returning must be boolean" }, 400)
+      }
+      updates.is_returning = body.is_returning
+    }
+
     // ── v0.2 capture fields (allow-listed; omitted = unchanged, null/empty =
     //    clear). Typed fields (years_experience_approx, grad_date) are
     //    validated so bad input 400s rather than reaching the column. ──
