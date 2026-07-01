@@ -14,6 +14,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { coachClientIdsForClient } from "../../../../_lib/coachClientIds"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -131,16 +132,18 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "Invalid type filter" }, 400)
     }
 
-    // Filter by coach_client_id (canonical relationship id) instead of
-    // the (coach_profile_id, client_profile_id) pair. access.id came from
-    // verifyCoachAccess above which already enforced ownership at both
-    // sides, so coach_client_id uniquely identifies the right row scope.
-    // Forward-compatible with prospect notes where client_profile_id is
-    // NULL (canonicalized 2026-05-23, Prospects v0.1 Commit 2a).
+    // Shape-1 collaboration: scope to the SET of coach_client_id rows for this
+    // client (ALL statuses — a soft-revoked coach's authored notes persist),
+    // so every collaborating coach reads one shared feed. Byte-identical for a
+    // solo client (exactly one coach_clients row per the (coach_profile_id,
+    // client_profile_id) unique constraint). Scoping by the coach_client_id set
+    // — not client_profile_id — also keeps prospect-era notes whose
+    // client_profile_id is NULL: they live on a coach_client_id in the set.
+    const ccIds = await coachClientIdsForClient(supabase, clientProfileId)
     let q = supabase
       .from("coach_client_notes")
       .select("id, type, body, priority, completed_at, created_at, updated_at")
-      .eq("coach_client_id", access.id)
+      .in("coach_client_id", ccIds)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
 

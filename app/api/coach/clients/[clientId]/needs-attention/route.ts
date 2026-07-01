@@ -24,6 +24,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { coachClientIdsForClient } from "../../../../_lib/coachClientIds"
 import {
   runHeuristics,
   type HeuristicClient,
@@ -140,17 +141,17 @@ export async function GET(
     //   engagementSignals system-detected R1-R6 signals (new)
     // Sole consumer NeedsAttentionSection.tsx is updated in the same
     // commit. The legacy `items` key is no longer returned.
+    // Shape-1 collaboration: scope to the SET of coach_client_id rows for this
+    // client (ALL statuses — revoked coach's notes persist). Byte-identical for
+    // a solo client; keeps prospect-era NULL-client_profile_id notes (they live
+    // on a coach_client_id in the set).
+    const ccIds = await coachClientIdsForClient(supabase, clientProfileId)
+
     const [notesResult, clientProfileResult] = await Promise.all([
-      // Filter by coach_client_id (canonical relationship id) instead of
-      // the (coach_profile_id, client_profile_id) pair. access.id came
-      // from verifyCoachAccess above and uniquely identifies the
-      // coach-client pair. Forward-compatible with prospect notes where
-      // client_profile_id is NULL (canonicalized 2026-05-23, Prospects
-      // v0.1 Commit 2a).
       supabase
         .from("coach_client_notes")
         .select("id, body, priority, created_at, completed_at")
-        .eq("coach_client_id", access.id)
+        .in("coach_client_id", ccIds)
         .eq("type", "action_item")
         .is("deleted_at", null)
         .is("completed_at", null),
