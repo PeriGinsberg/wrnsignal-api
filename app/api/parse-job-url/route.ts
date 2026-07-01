@@ -507,6 +507,52 @@ ${stripped}`
   }
 }
 
+// ── ScrapingBee escalation (challenge-blocked fetches only) ──
+// Mirrors claudeFallback's shape: inline key read, own try/catch + 15s
+// AbortController, returns an HTML string or null. Only invoked after a Vercel
+// Security Checkpoint 403 — cooperative ATS fetches never reach here. Both
+// render_js AND the stealth residential proxy are required to clear the
+// checkpoint; neither alone works. No-op (returns null) when the key is unset.
+async function scrapingBeeFetch(targetUrl: string): Promise<string | null> {
+  const key = process.env.SCRAPINGBEE_API_KEY
+  if (!key) return null
+
+  const params = new URLSearchParams({
+    api_key: key,
+    url: targetUrl,
+    render_js: "true",
+    // ScrapingBee's stealth residential proxy (their toughest anti-bot tier;
+    // requires render_js). Returns raw rendered HTML in the response body —
+    // no JSON wrapper, so cheerio can consume it directly.
+    stealth_proxy: "true",
+  })
+
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
+    const res = await fetch(
+      `https://app.scrapingbee.com/api/v1/?${params.toString()}`,
+      { signal: controller.signal }
+    )
+    clearTimeout(timer)
+
+    if (!res.ok) {
+      // ScrapingBee returns the plan/param error in the body (e.g. stealth
+      // proxy not available on this plan) — log a snippet so the first test
+      // surfaces the exact cause instead of a bare status code.
+      const errBody = await res.text().catch(() => "")
+      console.error("[parse-job-url] ScrapingBee error:", res.status, errBody.slice(0, 200))
+      return null
+    }
+
+    const html = await res.text()
+    return html.length > 0 ? html : null
+  } catch (err: any) {
+    console.error("[parse-job-url] ScrapingBee fetch error:", err?.message)
+    return null
+  }
+}
+
 // ── CORS OPTIONS ──
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
@@ -597,7 +643,11 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. All other platforms: fetch with Chrome UA, 10s timeout
-  let html: string
+  let html = ""
+  // Set true when the direct fetch was challenge-blocked but ScrapingBee
+  // rescued the HTML — gates the success-path read (so it can't overwrite the
+  // rescued HTML) and the fetch_method telemetry tag below.
+  let recovered = false
   // Captured for PARSE_FAILED telemetry below. When the fetch succeeds
   // we record the 2xx status code; the BLOCKED paths return earlier.
   let fetchStatus = 0
@@ -631,13 +681,13 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       console.error(`[parse-job-url] fetch failed: ${res.status} ${rawUrl}`)
 
-      // Diagnostic capture: read the upstream body + key headers so the next
-      // failed attempt tells us whether this is a bot challenge (Cloudflare/
-      // DataDome) or a plain origin 403. Safe to read res.text() here because
-      // every branch below returns — the body is never consumed on the !ok path
-      // otherwise.
+      // Diagnostic capture: read the upstream body + key headers so we can tell
+      // a bot challenge (Cloudflare/DataDome/Vercel) apart from a plain origin
+      // 403. diagBody is hoisted so the checkpoint-detection gate below can read
+      // it; on a successful rescue we do NOT return, so the body is consumed here.
+      let diagBody = ""
       try {
-        const diagBody = await res.text()
+        diagBody = await res.text()
         console.log("[parse-job-url] BLOCKED_DIAG", {
           status: res.status,
           url: rawUrl,
@@ -650,32 +700,49 @@ export async function POST(req: NextRequest) {
         console.log("[parse-job-url] BLOCKED_DIAG read error:", diagErr?.message)
       }
 
-      // Indeed now blocks server-side fetches (401). Give the same
-      // paste-text guidance that LinkedIn gets.
-      if (platform === "indeed") {
+      // Escalation: a Vercel Security Checkpoint is a JS bot challenge a direct
+      // fetch can never clear. Retry the SAME url through ScrapingBee
+      // (residential + JS render), then reuse the existing parser unchanged.
+      // Cooperative ATS blocks don't contain this string, so they fall straight
+      // through to the error returns. No-op when SCRAPINGBEE_API_KEY is unset.
+      if (diagBody.includes("Vercel Security Checkpoint")) {
+        const rescued = await scrapingBeeFetch(rawUrl)
+        if (rescued) {
+          console.log("[parse-job-url] SCRAPINGBEE_RECOVERED", { url: rawUrl })
+          html = rescued
+          recovered = true
+        }
+      }
+
+      if (!recovered) {
+        // Indeed now blocks server-side fetches (401). Give the same
+        // paste-text guidance that LinkedIn gets.
+        if (platform === "indeed") {
+          return withCorsJson(
+            req,
+            {
+              error: "Indeed is blocking automated access. Please paste the job description text directly.",
+              code: "INDEED_BLOCKED",
+              suggestion: "paste_text",
+            },
+            422
+          )
+        }
+
         return withCorsJson(
           req,
           {
-            error: "Indeed is blocking automated access. Please paste the job description text directly.",
-            code: "INDEED_BLOCKED",
+            error: `Could not fetch page (HTTP ${res.status})`,
+            code: "BLOCKED",
             suggestion: "paste_text",
           },
           422
         )
       }
-
-      return withCorsJson(
-        req,
-        {
-          error: `Could not fetch page (HTTP ${res.status})`,
-          code: "BLOCKED",
-          suggestion: "paste_text",
-        },
-        422
-      )
     }
 
-    html = await res.text()
+    // Don't overwrite HTML rescued by ScrapingBee with the blocked response body.
+    if (!recovered) html = await res.text()
   } catch (err: any) {
     console.error("[parse-job-url] fetch error:", err?.message)
     return withCorsJson(
@@ -696,6 +763,7 @@ export async function POST(req: NextRequest) {
       ...ld,
       source: platform,
       method: "jsonld",
+      fetch_method: recovered ? "scrapingbee" : "direct",
       originalUrl: rawUrl,
     })
   }
@@ -781,6 +849,7 @@ export async function POST(req: NextRequest) {
     jobType: parsed.jobType,
     source: platform,
     method,
+    fetch_method: recovered ? "scrapingbee" : "direct",
     originalUrl: rawUrl,
   })
 }
