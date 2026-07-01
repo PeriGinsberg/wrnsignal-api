@@ -242,6 +242,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -251,7 +252,6 @@
         "jobTitle": "Director of Human Resources",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [],
@@ -336,7 +336,8 @@
         "targetFamilies": [
           "Consulting",
           "Engineering",
-          "Healthcare"
+          "Healthcare",
+          "LifeSciences"
         ],
         "targetRolesRaw": "associate scientist, vaccines associate, entry-level research associate, healthcare consultant, analytical sciences associate, life sciences & healthtech analyst/associate, clinical trials associate, process development associate, chemist i, life sciences consulting, entry level scientist, biologist, biomedical engineer, medical devices, research and development, cosmetics research and development, quality control",
         "tools": [
@@ -747,6 +748,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -756,7 +758,6 @@
         "jobTitle": "Scientist I",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [
@@ -846,7 +847,8 @@
         "targetFamilies": [
           "Consulting",
           "Engineering",
-          "Healthcare"
+          "Healthcare",
+          "LifeSciences"
         ],
         "targetRolesRaw": "associate scientist, vaccines associate, entry-level research associate, healthcare consultant, analytical sciences associate, life sciences & healthtech analyst/associate, clinical trials associate, process development associate, chemist i, life sciences consulting, entry level scientist, biologist, biomedical engineer, medical devices, research and development, cosmetics research and development, quality control",
         "tools": [
@@ -1130,6 +1132,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -1139,7 +1142,6 @@
         "jobTitle": "Chemist I",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -1224,7 +1226,8 @@
         "targetFamilies": [
           "Consulting",
           "Engineering",
-          "Healthcare"
+          "Healthcare",
+          "LifeSciences"
         ],
         "targetRolesRaw": "associate scientist, vaccines associate, entry-level research associate, healthcare consultant, analytical sciences associate, life sciences & healthtech analyst/associate, clinical trials associate, process development associate, chemist i, life sciences consulting, entry level scientist, biologist, biomedical engineer, medical devices, research and development, cosmetics research and development, quality control",
         "tools": [
@@ -1490,6 +1493,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -1499,7 +1503,6 @@
         "jobTitle": "Analytical Scientist I",
         "location": {
           "city": "Miami",
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -1586,7 +1589,8 @@
         "targetFamilies": [
           "Consulting",
           "Engineering",
-          "Healthcare"
+          "Healthcare",
+          "LifeSciences"
         ],
         "targetRolesRaw": "associate scientist, vaccines associate, entry-level research associate, healthcare consultant, analytical sciences associate, life sciences & healthtech analyst/associate, clinical trials associate, process development associate, chemist i, life sciences consulting, entry level scientist, biologist, biomedical engineer, medical devices, research and development, cosmetics research and development, quality control",
         "tools": [
@@ -1879,6 +1883,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -1888,7 +1893,6 @@
         "jobTitle": "QC Analyst I",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -1973,7 +1977,8 @@
         "targetFamilies": [
           "Consulting",
           "Engineering",
-          "Healthcare"
+          "Healthcare",
+          "LifeSciences"
         ],
         "targetRolesRaw": "associate scientist, vaccines associate, entry-level research associate, healthcare consultant, analytical sciences associate, life sciences & healthtech analyst/associate, clinical trials associate, process development associate, chemist i, life sciences consulting, entry level scientist, biologist, biomedical engineer, medical devices, research and development, cosmetics research and development, quality control",
         "tools": [
@@ -2652,6 +2657,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": true,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": true,
@@ -2661,7 +2667,6 @@
         "jobTitle": "Social Media Associate",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -3521,6 +3526,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -3530,7 +3536,6 @@
         "jobTitle": "Social Coordinator",
         "location": {
           "city": "New York City",
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [],
@@ -4562,6 +4567,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -4571,7 +4577,6 @@
         "jobTitle": "Public Relations Assistant",
         "location": {
           "city": "New York City",
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [
@@ -5315,6 +5320,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": true,
@@ -5324,7 +5330,6 @@
         "jobTitle": "Account Coordinator",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -6075,6 +6080,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -6084,7 +6090,6 @@
         "jobTitle": "Media Strategist",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -6551,6 +6556,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -6560,7 +6566,6 @@
         "jobTitle": "HR Manager",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [
@@ -6904,6 +6909,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -6913,7 +6919,6 @@
         "jobTitle": "Director of People Services",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -7403,6 +7408,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -7412,7 +7418,6 @@
         "jobTitle": "Growth Strategy Director",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -7799,6 +7804,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -7808,7 +7814,6 @@
         "jobTitle": "Finance Strategy & Department Lead",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -8298,6 +8303,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -8307,7 +8313,6 @@
         "jobTitle": "Strategy and Operations Consultant",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -8869,6 +8874,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -8878,7 +8884,6 @@
         "jobTitle": "Associate to the Chairman",
         "location": {
           "city": "Miami",
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [],
@@ -9619,6 +9624,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -9628,7 +9634,6 @@
         "jobTitle": "Software Engineer",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -10059,6 +10064,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -10068,7 +10074,6 @@
         "jobTitle": "Software Engineer",
         "location": {
           "city": "New York City",
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [],
@@ -10731,6 +10736,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -10740,7 +10746,6 @@
         "jobTitle": "Early Career Software Engineer",
         "location": {
           "city": "New York City",
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [
@@ -11256,6 +11261,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -11265,7 +11271,6 @@
         "jobTitle": "Cyber Security Associate",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -11731,6 +11736,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": true,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -11740,7 +11746,6 @@
         "jobTitle": "Cyber Intelligence Analyst",
         "location": {
           "city": "New York City",
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [],
@@ -12316,6 +12321,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -12325,7 +12331,6 @@
         "jobTitle": "Client Service Associate",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [
@@ -12828,6 +12833,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": true,
@@ -12837,7 +12843,6 @@
         "jobTitle": "Investment Associate",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [],
@@ -13281,6 +13286,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -13290,7 +13296,6 @@
         "jobTitle": "Senior Manager, Strategy and Business Operations",
         "location": {
           "city": "Miami",
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [
@@ -13664,6 +13669,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -13673,7 +13679,6 @@
         "jobTitle": "Legal Intern",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -14222,6 +14227,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -14231,7 +14237,6 @@
         "jobTitle": "Pharmaceutical Sales Representative",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "mentionsPharmaTraining": true,
@@ -14904,6 +14909,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -14913,7 +14919,6 @@
         "jobTitle": "Paralegal",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [],
@@ -15013,7 +15018,7 @@
     "id": "synthetic-0410-senior-mgr",
     "label": "[synthetic] 0410-senior-mgr — Jamie Rivera / Operations Manager",
     "decision": "Apply",
-    "score": 79,
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -15154,11 +15159,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -15184,6 +15184,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
@@ -15193,7 +15194,6 @@
         "jobTitle": "Operations Manager",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -15256,7 +15256,7 @@
         "tools": [
           "excel"
         ],
-        "yearsExperienceApprox": 2
+        "yearsExperienceApprox": 3
       }
     },
     "score_breakdown": {
@@ -15264,12 +15264,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
@@ -15278,12 +15278,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 97,
+      "clamped_score": 95
     }
   },
   "synthetic-0410a": {
@@ -15915,6 +15915,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -15924,7 +15925,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -16320,6 +16320,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -16329,7 +16330,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -16395,7 +16395,7 @@
         "tools": [
           "spss"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -16895,6 +16895,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -16904,7 +16905,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -17237,6 +17237,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -17246,7 +17247,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -17314,7 +17314,7 @@
           "indesign",
           "photoshop"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -17715,6 +17715,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -17724,7 +17725,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -18436,6 +18436,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -18445,7 +18446,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -19231,6 +19231,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -19240,7 +19241,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "remote"
         },
         "preferredTools": [
@@ -20107,6 +20107,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -20116,7 +20117,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -20633,6 +20633,7 @@
         "isContract": false,
         "isGovernment": true,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -20642,7 +20643,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -21507,6 +21507,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -21516,7 +21517,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -22411,6 +22411,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -22420,7 +22421,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -22893,6 +22893,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -22902,7 +22903,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [],
@@ -23369,6 +23369,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -23378,7 +23379,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "remote"
         },
         "preferredTools": [
@@ -24501,6 +24501,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -24510,7 +24511,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -25025,6 +25025,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -25034,7 +25035,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -25944,6 +25944,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -25953,7 +25954,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "remote"
         },
         "preferredTools": [
@@ -26844,6 +26844,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -26853,7 +26854,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -27421,6 +27421,7 @@
         "isContract": false,
         "isGovernment": true,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -27430,7 +27431,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -28167,6 +28167,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -28176,7 +28177,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": "Miami",
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -29217,6 +29217,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -29226,7 +29227,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "in_person"
         },
         "preferredTools": [
@@ -29556,6 +29556,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -29565,7 +29566,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [],
@@ -30091,6 +30091,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -30100,7 +30101,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [
@@ -30174,7 +30174,7 @@
           "sql",
           "tableau"
         ],
-        "yearsExperienceApprox": 3
+        "yearsExperienceApprox": 4
       }
     },
     "score_breakdown": {
@@ -30209,7 +30209,7 @@
     "id": "synthetic-0410i",
     "label": "[synthetic] 0410i — Isabella Martinez / (no title)",
     "decision": "Pass",
-    "score": 31,
+    "score": 38,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -30379,11 +30379,6 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -30427,6 +30422,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -30436,7 +30432,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "remote"
         },
         "preferredTools": [
@@ -30510,7 +30505,7 @@
           "indesign",
           "photoshop"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -30532,12 +30527,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 31,
-      "clamped_score": 31
+      "raw_score": 38,
+      "clamped_score": 38
     }
   },
   "synthetic-0410j": {
@@ -30764,6 +30759,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -30773,7 +30769,6 @@
         "jobTitle": null,
         "location": {
           "city": "Austin",
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [
@@ -31468,6 +31463,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -31477,7 +31473,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -31590,9 +31585,9 @@
     "schema_version": 2,
     "id": "synthetic-0410l",
     "label": "[synthetic] 0410l — Priya Nair / (no title)",
-    "decision": "Pass",
-    "score": 25,
-    "gateType": "force_pass",
+    "decision": "Review",
+    "score": 68,
+    "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -32349,7 +32344,44 @@
         "profile_unit_id": "ee97160002d2fdcc"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 100,
+        "match_strength": "direct",
+        "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "clinical_patient_work"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 100,
+        "match_strength": "direct",
+        "match_key": "drafting_documentation"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 94,
+        "match_strength": "direct",
+        "match_key": "python"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 60,
+        "match_strength": "direct",
+        "match_key": "r"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_DOMAIN_EXPERIENCE",
@@ -32386,6 +32418,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -32395,7 +32428,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -32460,6 +32492,7 @@
         },
         "targetFamilies": [
           "Analytics",
+          "LifeSciences",
           "PreMed"
         ],
         "targetRolesRaw": "clinical research associate, clinical data analyst, biostatistician",
@@ -32487,12 +32520,12 @@
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -32501,7 +32534,7 @@
         }
       ],
       "raw_score": 68,
-      "clamped_score": 25
+      "clamped_score": 68
     }
   },
   "synthetic-0410m": {
@@ -33052,6 +33085,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -33061,7 +33095,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -33548,6 +33581,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -33557,7 +33591,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -34093,6 +34126,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -34102,7 +34136,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -34867,6 +34900,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -34876,7 +34910,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -35226,6 +35259,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -35235,7 +35269,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [
@@ -36182,6 +36215,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -36191,7 +36225,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -36541,6 +36574,7 @@
         "isContract": false,
         "isGovernment": true,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -36550,7 +36584,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -36624,7 +36657,7 @@
           "indesign",
           "photoshop"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -36838,6 +36871,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": true,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -36847,7 +36881,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [],
@@ -37762,6 +37795,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": true,
@@ -37771,7 +37805,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -38120,6 +38153,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -38129,7 +38163,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "remote"
         },
         "preferredTools": [],
@@ -39150,6 +39183,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -39159,7 +39193,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -39680,6 +39713,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -39689,7 +39723,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "remote"
         },
         "preferredTools": [
@@ -40326,6 +40359,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -40335,7 +40369,6 @@
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
@@ -41040,6 +41073,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
+        "isPartTime": false,
         "isSalesHeavy": true,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -41049,7 +41083,6 @@
         "jobTitle": null,
         "location": {
           "city": null,
-          "constrained": false,
           "mode": "unclear"
         },
         "preferredTools": [
