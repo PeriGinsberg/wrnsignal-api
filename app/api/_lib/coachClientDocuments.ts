@@ -141,12 +141,12 @@ export async function isCategoryOwnedActive(
 export async function listApiDocuments(
   supabase: SupabaseClient,
   coachProfileId: string,
-  coachClientId: string,
+  coachClientIds: string[],
 ) {
   const { data: docsData, error } = await supabase
     .from("coach_client_documents")
     .select(DOCUMENT_SELECT)
-    .eq("coach_client_id", coachClientId)
+    .in("coach_client_id", coachClientIds)
     .is("deleted_at", null)
   if (error) throw new Error(`Failed to read documents: ${error.message}`)
   const docs = (docsData ?? []) as DocumentRow[]

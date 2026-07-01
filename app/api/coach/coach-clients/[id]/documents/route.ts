@@ -15,6 +15,7 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { coachClientIdsForClient } from "../../../../_lib/coachClientIds"
 import {
   getSupabaseAdmin,
   resolveCoach,
@@ -53,7 +54,14 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
 
-    const documents = await listApiDocuments(supabase, coachProfileId, id)
+    // Shape-1 collaboration: list docs across ALL coach_client_id rows for this
+    // client so both coaches share the library. Byte-identical for a solo client
+    // (one row). A not-yet-linked relationship (client_profile_id NULL) can hold
+    // no docs, so fall back to [id] — byte-identical, empty either way.
+    const ccIds = rel.client_profile_id
+      ? await coachClientIdsForClient(supabase, rel.client_profile_id)
+      : [id]
+    const documents = await listApiDocuments(supabase, coachProfileId, ccIds)
     return withCorsJson(req, { ok: true, documents })
   } catch (e: any) {
     return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))
@@ -124,11 +132,15 @@ export async function POST(
       return withCorsJson(req, { ok: false, error: "Category not found" }, 404)
     }
 
-    // Next sort_order = this relationship's current max active doc + 1.
+    // Next sort_order = current max active doc across the CLIENT's shared
+    // library (all coaches' coach_client_id rows) + 1, so numbering is
+    // per-client not per-coach-row. rel.client_profile_id is non-null here
+    // (guarded above).
+    const ccIds = await coachClientIdsForClient(supabase, rel.client_profile_id)
     const { data: maxRow, error: maxErr } = await supabase
       .from("coach_client_documents")
       .select("sort_order")
-      .eq("coach_client_id", id)
+      .in("coach_client_id", ccIds)
       .is("deleted_at", null)
       .order("sort_order", { ascending: false })
       .limit(1)
