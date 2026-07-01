@@ -113,7 +113,7 @@ function regexShadow(jobText: string, title?: string) {
       jobFamily: rx.jobFamily, financeSubFamily: rx.financeSubFamily, salesSubFamily: rx.salesSubFamily,
       jobArchetype: rx.jobArchetype, jobIndustry: rx.jobIndustry, detectedDomain: rx.detectedDomain,
       analytics: { isHeavy: rx.analytics?.isHeavy ?? false },
-      location: { mode: rx.location?.mode, constrained: rx.location?.constrained, city: rx.location?.city ?? null },
+      location: { mode: rx.location?.mode, city: rx.location?.city ?? null },
       yearsRequired: rx.yearsRequired, gradYearHint: rx.gradYearHint,
       isGovernment: rx.isGovernment, isSalesHeavy: rx.isSalesHeavy, isContract: rx.isContract, isHourly: rx.isHourly,
       isPartTime: rx.isPartTime ?? null, // regex never sets it → null (dead-gate finding)

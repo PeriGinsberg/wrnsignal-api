@@ -137,7 +137,7 @@ export type LLMJobScalars = {
   jobIndustry: string | null
   detectedDomain: string | null
   analytics: { isHeavy: boolean }
-  location: { mode: LocationMode; constrained: boolean; city: string | null }
+  location: { mode: LocationMode; city: string | null }
   yearsRequired: number | null
   gradYearHint: number | null
   isGovernment: boolean
@@ -240,10 +240,9 @@ export const EXTRACTION_JSON_SCHEMA = {
           properties: { isHeavy: { type: "boolean" } },
         },
         location: {
-          type: "object", additionalProperties: false, required: ["mode", "constrained", "city"],
+          type: "object", additionalProperties: false, required: ["mode", "city"],
           properties: {
             mode: { enum: ["in_person", "hybrid", "remote", "unclear"] },
-            constrained: { type: "boolean" },
             city: { anyOf: [{ type: "string" }, { type: "null" }] },
           },
         },

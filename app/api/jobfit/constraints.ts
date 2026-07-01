@@ -15,6 +15,7 @@ const HARD_TECHNICAL_FAMILIES = new Set([
   "IT_Software",
   "Healthcare",
   "Trades",
+  "LifeSciences",
 ])
 
 // Business/generalist families — profiles in these families should not match
@@ -203,7 +204,7 @@ if (job.credentialRequired) {
   }
 
   // Hard no part-time — candidate explicitly wants full-time only
-  if ((profile.constraints as any).hardNoPartTime && (job as any).isPartTime) {
+  if (profile.constraints.hardNoPartTime && job.isPartTime) {
     return {
       type: "force_pass",
       gateCode: "GATE_PARTTIME_MISMATCH",

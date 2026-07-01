@@ -221,7 +221,6 @@ export function llmJobExtractionToSignals(
     function_tags,
     location: {
       mode: s.location?.mode ?? "unclear",
-      constrained: s.location?.constrained ?? false,
       city: s.location?.city ?? null,
       evidence: null, // scoring-inert
     },
@@ -229,6 +228,7 @@ export function llmJobExtractionToSignals(
     isSalesHeavy: s.isSalesHeavy,
     isContract: s.isContract,
     isHourly: s.isHourly,
+    isPartTime: s.isPartTime,
     // Clamp to the regex-path rule (extract.ts extractYearsRequired :2566): a
     // value in (0, 20] is a real minimum; 0 / negative / >20 / null collapse to
     // null. Mirrors "0 min = entry-level → no requirement" so a range low-end of
@@ -264,7 +264,5 @@ export function llmJobExtractionToSignals(
     jobArchetype: s.jobArchetype,
     isContentExecutionHeavy: s.isContentExecutionHeavy,
     jobIndustry: s.jobIndustry,
-    // NOTE: s.isPartTime is emitted by the LLM but StructuredJobSignals has no
-    // field for it yet — intentionally not mapped (spine field-add deferred).
   }
 }

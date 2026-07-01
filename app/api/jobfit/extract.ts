@@ -2662,22 +2662,14 @@ function extractCity(t: string): string | null {
 
 function detectLocationMode(jobText: string): {
   mode: LocationMode
-  constrained: boolean
   city: string | null
   evidence: string | null
 } {
   const t = norm(jobText)
 
-  const constrainedPhrases = asStringArray((POLICY as any)?.extraction?.location?.constrainedPhrases).map(norm)
   const remotePhrases = asStringArray((POLICY as any)?.extraction?.location?.remotePhrases).map(norm)
   const hybridPhrases = asStringArray((POLICY as any)?.extraction?.location?.hybridPhrases).map(norm)
   const onsitePhrases = asStringArray((POLICY as any)?.extraction?.location?.onsitePhrases).map(norm)
-
-  const constrained =
-    includesAny(t, constrainedPhrases) ||
-    t.includes("must be in") ||
-    t.includes("required to be in") ||
-    t.includes("local candidates only")
 
   // Check for remote but exclude false positives from:
   //   1. "remote-work technology/tools/solutions" — describes tools, not the role
@@ -2705,7 +2697,7 @@ function detectLocationMode(jobText: string): {
       /\b(remote|hybrid|in-person|in person|new york city|nyc office)\b/i.test(line)
     ) || null
 
-  return { mode, constrained, city, evidence: evidenceLine }
+  return { mode, city, evidence: evidenceLine }
 }
 
 function detectAnalytics(jobText: string, tags: FunctionTag[], jobUnits: JobRequirementUnit[]): { isHeavy: boolean; isLight: boolean } {
@@ -4697,6 +4689,9 @@ return {
     isSalesHeavy,
     isContract,
     isHourly,
+    isPartTime: false, // regex declines part-time detection: GATE_PARTTIME_MISMATCH
+    // is force_pass and bare-keyword "part-time" over-fires. The LLM path is the
+    // judgment-based activator; regex stays byte-identical / gate-dormant.
     yearsRequired,
     degrees,
     credentialRequired,

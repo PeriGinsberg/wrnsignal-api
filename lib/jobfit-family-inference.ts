@@ -106,6 +106,34 @@ export function inferTargetFamilies(
     out.push("Healthcare")
   }
 
+  // ── Life Sciences (wet-lab / bench / R&D science) ──────────────────────
+  // Mirrors the JD-side LifeSciences family (associate scientist, cell
+  // culture / microbiology / assay lab work, process development, biotech
+  // R&D). Without this a life-sciences-targeting candidate fell through to
+  // ["Other"] and took a RISK_FAMILY_MISMATCH penalty against a LifeSciences
+  // JD that was, in fact, their stated target field. Additive OR-membership,
+  // so it can only prevent a mismatch, never create one.
+  if (
+    roles.includes("associate scientist") ||
+    roles.includes("research associate") ||
+    roles.includes("research scientist") ||
+    roles.includes("cell culture") ||
+    roles.includes("microbiology") ||
+    roles.includes("molecular biology") ||
+    roles.includes("biochemistry") ||
+    roles.includes("biotech") ||
+    roles.includes("biotechnology") ||
+    roles.includes("process development") ||
+    roles.includes("bioprocess") ||
+    roles.includes("assay development") ||
+    roles.includes("lab technician") ||
+    roles.includes("research technician") ||
+    roles.includes("life sciences") ||
+    roles.includes("wet lab")
+  ) {
+    out.push("LifeSciences")
+  }
+
   // ── Consulting (incl. Strategy, CoS, Business Ops, HRBP) ───────────────
   // Covers strategy, business operations, chief of staff, and HR business
   // partner roles because the scoring engine currently has no dedicated
@@ -411,6 +439,7 @@ export function inferTargetFamilies(
     if (text.includes("attorney") || text.includes("paralegal")) out.push("Legal")
     if (text.includes("software engineer") || text.includes("full stack")) out.push("IT_Software")
     if (text.includes("mechanical engineer") || text.includes("biomedical engineer")) out.push("Engineering")
+    if (text.includes("cell culture") || text.includes("microbiology") || text.includes("biotech")) out.push("LifeSciences")
     if (text.includes("electrician") || text.includes("plumber")) out.push("Trades")
   }
 

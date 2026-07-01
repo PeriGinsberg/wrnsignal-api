@@ -789,7 +789,7 @@ function computeBaseScore(job: StructuredJobSignals, profile: StructuredProfileS
   if (familyMatch) base += 10
 
   // Hard technical families get a steeper penalty for mismatch
-  const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades"])
+  const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades", "LifeSciences"])
   const isTechnicalJob = HARD_TECH.has(job.jobFamily)
 
   if (!familyMatch && profile.targetFamilies.length > 0) {
@@ -1603,7 +1603,7 @@ export function scoreJobFit(
   const strongTitleMatch = titleMatchForFamily.matched && titleMatchForFamily.overlap >= 0.5
 
   if (!familyMatch && profile.targetFamilies.length > 0 && !strongTitleMatch) {
-    const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades"])
+    const HARD_TECH = new Set(["Engineering", "IT_Software", "Healthcare", "Trades", "LifeSciences"])
     const isTechnicalJob = HARD_TECH.has(job.jobFamily)
     // Expose the actual hidden penalty magnitude so the user understands
     // why their score dropped. Previously weight was 0 which made this

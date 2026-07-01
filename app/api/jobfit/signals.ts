@@ -211,7 +211,6 @@ export type StructuredJobSignals = {
   }
   location: {
     mode: LocationMode
-    constrained: boolean
     city: string | null
     evidence: string | null
   }
@@ -219,6 +218,7 @@ export type StructuredJobSignals = {
   isSalesHeavy: boolean
   isContract: boolean
   isHourly: boolean
+  isPartTime: boolean
   yearsRequired: number | null
   degrees: DegreeRequirement[]
 credentialRequired: boolean

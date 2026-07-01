@@ -18,7 +18,6 @@ export type PenaltyKey =
   | "missing_ownership_scope_proof"
   | "credential_requirement_mismatch"
   | "finance_subfamily_mismatch"
-  | "role_archetype_mismatch"
   | "content_role_conflict"
   | "degree_in_progress"
   | "degree_unknown"
@@ -231,12 +230,6 @@ export const POLICY: JobFitPolicy = {
     },
     finance_subfamily_mismatch: {
       label: "Finance sub-family mismatch (e.g. IB vs FP&A)",
-      severity: 3,
-      multiplier: 2.2,
-      maxStackCount: 1,
-    },
-    role_archetype_mismatch: {
-      label: "Role type mismatch with stated interests",
       severity: 3,
       multiplier: 2.2,
       maxStackCount: 1,
