@@ -61,6 +61,7 @@ type CoachClientRow = {
   // sub-status. Both nullable (added by the pipeline migration).
   current_stage_key: string | null
   prospect_status: string | null
+  is_returning: boolean
   // v0.2 capture fields (all nullable).
   linkedin_url: string | null
   current_title: string | null
@@ -105,6 +106,7 @@ const PROSPECT_SELECT_COLS = [
   "client_profile_id",
   "current_stage_key",
   "prospect_status",
+  "is_returning",
   "linkedin_url",
   "current_title",
   "current_company",
@@ -314,6 +316,7 @@ function buildProspectListItem(
     client_profile_id: row.client_profile_id,
     current_stage_key: row.current_stage_key,
     prospect_status: row.prospect_status,
+    is_returning: row.is_returning,
     // v0.2 capture fields.
     linkedin_url: row.linkedin_url,
     current_title: row.current_title,

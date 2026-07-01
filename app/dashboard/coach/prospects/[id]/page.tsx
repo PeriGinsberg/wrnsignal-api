@@ -208,6 +208,7 @@ type Prospect = {
   preferred_locations: string | null
   timeline: string | null
   tags: string | null
+  is_returning: boolean
   last_activity_at: string | null
   created_at: string | null
   notes: ProspectNote[]
@@ -502,7 +503,7 @@ function StageTracker({
 // button reveals the full editable form — editing is preserved. formatDate +
 // the card grid + the Section wrapper now live in shared coach modules.
 
-type ProspectUpdate = Record<string, string | null>
+type ProspectUpdate = Record<string, string | null | boolean>
 
 type Draft = {
   source_category: SourceCategory | ""
@@ -523,7 +524,12 @@ type Draft = {
   target_locations: string
   timeline: string
   tags: string
+  is_returning: boolean
 }
+
+// String-valued Draft keys only — excludes the boolean is_returning so the
+// field() text-input helper and the trim-diff loop stay string-typed.
+type DraftStringKey = Exclude<keyof Draft, "is_returning">
 
 function draftFromProspect(p: Prospect): Draft {
   return {
@@ -545,6 +551,7 @@ function draftFromProspect(p: Prospect): Draft {
     target_locations: p.target_locations ?? "",
     timeline: p.timeline ?? "",
     tags: p.tags ?? "",
+    is_returning: p.is_returning ?? false,
   }
 }
 
@@ -593,7 +600,7 @@ function ProspectInfoBlock({
     // source_category is a chip (always valid here); send the value on change.
     if (draft.source_category !== base.source_category) updates.source_category = draft.source_category
     // All other fields: send trimmed value on change ("" clears server-side).
-    const keys: (keyof Draft)[] = [
+    const keys: DraftStringKey[] = [
       "source_detail", "invited_email", "phone", "linkedin_url",
       "current_title", "current_company", "location", "education_status",
       "university", "field_of_study", "grad_date", "years_experience_approx",
@@ -604,6 +611,7 @@ function ProspectInfoBlock({
       const next = draft[k].trim()
       if (next !== (base[k] as string)) updates[k] = next
     }
+    if (draft.is_returning !== base.is_returning) updates.is_returning = draft.is_returning
     if (Object.keys(updates).length === 0) { setEditing(false); setSaving(false); return }
     const res = await onSave(updates)
     setSaving(false)
@@ -702,7 +710,7 @@ function ProspectInfoBlock({
   // <Component/>. Defining a component inside render and mounting it would give
   // it a new identity each keystroke → remount → input focus loss. Calling it
   // as a function returns the elements directly, so React reconciles in place.
-  const field = (k: keyof Draft, labelText: string, opts?: { placeholder?: string; type?: string }) => (
+  const field = (k: DraftStringKey, labelText: string, opts?: { placeholder?: string; type?: string }) => (
     <div>
       <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>{labelText}</span>
       <input type={opts?.type ?? "text"} style={input} value={draft[k]} onChange={(e) => set(k, e.target.value)} placeholder={opts?.placeholder} />
@@ -812,6 +820,14 @@ function ProspectInfoBlock({
 
       {/* Other */}
       {field("tags", "TAGS", { placeholder: "comma, separated, tags" })}
+      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 6 }}>
+        <input
+          type="checkbox"
+          checked={draft.is_returning}
+          onChange={(e) => setDraft((d) => ({ ...d, is_returning: e.target.checked }))}
+        />
+        <span style={{ ...label, color: T.WRN_BLUE }}>RETURN CUSTOMER</span>
+      </label>
 
       {error && (
         <div style={{ padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
@@ -1584,7 +1600,7 @@ export default function ProspectDetailPage() {
   }
 
   async function handleSourceUpdate(
-    updates: Record<string, string | null>,
+    updates: Record<string, string | null | boolean>,
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     if (!prospect) return { ok: false, error: "No prospect loaded" }
     try {
