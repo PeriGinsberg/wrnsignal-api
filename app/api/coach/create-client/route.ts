@@ -82,14 +82,16 @@ export async function POST(req: NextRequest) {
     // Block creation when the coach is at/over their client_seat_cap. Runs
     // before any auth user / profile rows are created (STEP 4+), so a rejection
     // needs no cleanup/rollback. NULL cap = unlimited. Fails OPEN on a count
-    // error — transient infra shouldn't block a legitimate create. Counts ALL
-    // coach_clients rows the coach owns (any status, incl. prospects).
+    // error — transient infra shouldn't block a legitimate create. Counts
+    // active + pending rows (prospects are active; a sent invite reserves a
+    // seat); revoked rows are excluded so removing a client frees the seat.
     const seatCap = (coach as any).client_seat_cap ?? null
     if (seatCap !== null) {
       const { count, error: countErr } = await supabase
         .from("coach_clients")
         .select("id", { count: "exact", head: true })
         .eq("coach_profile_id", coach.id)
+        .neq("status", "revoked")
       if (countErr) {
         console.warn("[create-client] seat-cap count failed, allowing creation:", countErr.message)
       } else if ((count ?? 0) >= seatCap) {

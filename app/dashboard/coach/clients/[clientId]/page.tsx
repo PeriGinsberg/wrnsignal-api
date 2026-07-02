@@ -593,7 +593,7 @@ export default function CoachClientPage() {
   }
 
   async function handleRemoveClient() {
-    if (!confirm(`Remove ${clientProfile?.name || clientProfile?.email || "this client"} from your roster? This cannot be undone.`)) {
+    if (!confirm(`Remove ${clientProfile?.name || clientProfile?.email || "this client"} from your roster? This frees your seat and removes them from your dashboard. Their account is preserved and can be restored by an admin.`)) {
       return
     }
     setRemovingClient(true)
