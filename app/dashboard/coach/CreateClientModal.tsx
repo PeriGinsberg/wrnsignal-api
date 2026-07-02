@@ -14,7 +14,6 @@ const SUBTLE = "#C9A0B8"
 const BORDER = "#EDD5E0"
 const BG_HOVER = "#F8F0F5"
 const SUCCESS = "#0F6E56"
-const WARN = "#854F0B"
 
 /* ── Shared styles ───────────────────────────────────────────── */
 const sectionLabel: React.CSSProperties = {
@@ -83,7 +82,7 @@ export default function CreateClientModal({
   const [submitting, setSubmitting] = useState(false)
   const [emailConflict, setEmailConflict] = useState("")
   const [generalError, setGeneralError] = useState("")
-  const [result, setResult] = useState<{ ok: boolean; emailSent?: boolean } | null>(null)
+  const [result, setResult] = useState<{ ok: boolean } | null>(null)
 
   const showEducationDetails = educationStatus === "in_school" || educationStatus === "graduated"
 
@@ -186,13 +185,8 @@ export default function CreateClientModal({
         return
       }
 
-      setResult({ ok: true, emailSent: data.emailSent })
-
-      if (data.emailSent === false) {
-        setTimeout(() => { onSuccess() }, 4000)
-      } else {
-        setTimeout(() => { onSuccess() }, 2000)
-      }
+      setResult({ ok: true })
+      setTimeout(() => { onSuccess() }, 2000)
     } catch {
       setGeneralError("Something went wrong. Please try again.")
     } finally {
@@ -489,14 +483,9 @@ export default function CreateClientModal({
           position: "sticky", bottom: 0, background: "#ffffff",
         }}>
           <div>
-            {result?.ok && result.emailSent !== false && (
+            {result?.ok && (
               <span style={{ fontSize: 12, color: SUCCESS, fontStyle: "italic" }}>
-                Account created &middot; invite sent
-              </span>
-            )}
-            {result?.ok && result.emailSent === false && (
-              <span style={{ fontSize: 12, color: WARN }}>
-                Account created but invite failed — contact client directly
+                Account created &middot; invite not yet sent
               </span>
             )}
             {generalError && !result && (

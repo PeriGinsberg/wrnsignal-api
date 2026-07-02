@@ -2,8 +2,6 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
-import { sendClientInvite } from "../../../../lib/email/sendClientInvite"
-import { getAppUrl } from "@/lib/urls"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
 export const runtime = "nodejs"
@@ -277,7 +275,12 @@ export async function POST(req: NextRequest) {
         invited_email: email,
         access_level: "full",
         status: "active",
-        accepted_at: new Date().toISOString(),
+        // Invite decoupled: the account is created now but the email is sent
+        // later. accepted_at stays NULL (nothing accepted — no invite, no
+        // login), and invited_at is explicitly NULL (overriding the column's
+        // DEFAULT NOW()) so `invited_at IS NULL` reads as "not yet invited".
+        accepted_at: null,
+        invited_at: null,
       })
 
     if (linkErr) {
@@ -285,61 +288,16 @@ export async function POST(req: NextRequest) {
       // Non-fatal — profile exists, coach can re-invite
     }
 
-    // ── STEP 7: Generate magic link ──
-    const { data: linkData, error: magicErr } = await supabase.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: {
-        redirectTo: `${getAppUrl(req)}/dashboard/welcome`,
-      },
-    })
-
-    if (magicErr) {
-      console.error("[create-client] Magic link generation failed:", magicErr.message)
-      return withCorsJson(req, {
-        ok: true,
-        message: "Account created but invite link failed — client can use magic link login",
-        clientId: createdProfileId,
-        emailSent: false,
-      })
-    }
-
-    const magicLink = (linkData as any)?.properties?.action_link
-    if (!magicLink) {
-      console.error("[create-client] Missing action_link from generateLink")
-      return withCorsJson(req, {
-        ok: true,
-        message: "Account created but invite link missing — client can use magic link login",
-        clientId: createdProfileId,
-        emailSent: false,
-      })
-    }
-
-    // ── STEP 8: Send invite email ──
-    let emailSent = true
-    try {
-      await sendClientInvite({
-        clientFirstName: firstName,
-        clientEmail: email,
-        targetRoles,
-        targetLocations,
-        timeframe,
-        magicLink,
-        coachName: coach.name || coach.coach_org || "Your coach",
-      })
-    } catch (emailErr: any) {
-      console.error("[create-client] Email send failed:", emailErr?.message)
-      emailSent = false
-    }
-
-    // ── STEP 9: Return success ──
+    // ── STEP 7: Return success (invite email deferred) ──
+    // The invite is NOT sent here. The coach sends it later from the client
+    // screen via POST /api/coach/clients/[clientId]/send-invite, which
+    // generates the magic link, emails it, and stamps invited_at. The account
+    // is fully created and usable now; invited_at IS NULL = "not yet invited".
     return withCorsJson(req, {
       ok: true,
-      message: emailSent
-        ? "Account created and invite sent"
-        : "Account created but email failed to send — client can log in via magic link",
+      message: "Account created — invite not yet sent",
       clientId: createdProfileId,
-      emailSent,
+      invited: false,
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
