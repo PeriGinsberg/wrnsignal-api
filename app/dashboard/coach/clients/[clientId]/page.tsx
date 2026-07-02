@@ -275,6 +275,14 @@ export default function CoachClientPage() {
   // Prospect-capture columns from the profile GET `capture` namespace (Commit 1),
   // rendered as the read-only "Client Information" card (arc 1).
   const [capture, setCapture] = useState<Capture | null>(null)
+  // invited_at is the single source of truth for the invite badge + button.
+  // create-client defers the invite email; the coach sends it from here. Seeded
+  // from the profile GET `capture` namespace and updated in place on a
+  // successful send so badge + button flip (Send→Re-send, "not yet
+  // invited"→"Invited {date}") without a page reload.
+  const [invitedAt, setInvitedAt] = useState<string | null>(null)
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
   const [clientApps, setClientApps] = useState<ClientApplication[]>([])
   const [loading, setLoading] = useState(true)
@@ -368,6 +376,7 @@ export default function CoachClientPage() {
       setAcceptedAt(profileData.accepted_at ?? null)
       setLifecycleStatus((profileData.lifecycle_status as LifecycleStatus) ?? "Active")
       setCapture((profileData.capture as Capture | null) ?? null)
+      setInvitedAt((profileData.capture as Capture | null)?.invited_at ?? null)
       setClientApps(trackerData.applications || [])
       setCoachRecs(trackerData.recommendations || [])
 
@@ -612,6 +621,33 @@ export default function CoachClientPage() {
     }
   }
 
+  // Send (or re-send) the deferred SIGNAL invite. The account already exists
+  // (create-client provisioned it); this endpoint generates the magic link,
+  // emails it, stamps invited_at, and writes the audit trail. Re-send-capable
+  // (no 409). On success we flip invited_at locally so the badge/button update
+  // without a reload. Mirrors the prospect send-invite handler.
+  async function handleSendInvite() {
+    if (sendingInvite) return
+    setSendingInvite(true)
+    setInviteError(null)
+    try {
+      const res = await authFetch(`/api/coach/clients/${clientId}/send-invite`, {
+        method: "POST",
+        body: "{}",
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) {
+        setInvitedAt(j.invited_at ?? new Date().toISOString())
+      } else {
+        setInviteError(j?.error || "Couldn't send invite — try again")
+      }
+    } catch {
+      setInviteError("Network error — try again")
+    } finally {
+      setSendingInvite(false)
+    }
+  }
+
   if (loading) return <LoadingShell />
 
   if (error) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
@@ -672,6 +708,10 @@ export default function CoachClientPage() {
           }}
           lifecycleStatus={lifecycleStatus}
           getToken={getToken}
+          invitedAt={invitedAt}
+          onSendInvite={handleSendInvite}
+          sendingInvite={sendingInvite}
+          inviteError={inviteError}
           onAddNote={() => setAddNoteOpen(true)}
           onSourceJob={() => setTab("source")}
           onRemoveClient={() => {

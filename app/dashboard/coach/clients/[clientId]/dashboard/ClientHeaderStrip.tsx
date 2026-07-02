@@ -31,6 +31,13 @@ type Props = {
   profile: ClientHeaderProfile
   lifecycleStatus: LifecycleStatus
   getToken: () => Promise<string | null>
+  // Invite state. invited_at is the single source of truth: NULL = the deferred
+  // invite has not been sent yet (create-client provisions the account but
+  // doesn't email); non-null = sent, and the button re-sends.
+  invitedAt: string | null
+  onSendInvite: () => void
+  sendingInvite: boolean
+  inviteError?: string | null
   onAddNote: () => void
   onSourceJob: () => void
   onRemoveClient: () => void
@@ -43,6 +50,10 @@ export function ClientHeaderStrip({
   profile,
   lifecycleStatus,
   getToken,
+  invitedAt,
+  onSendInvite,
+  sendingInvite,
+  inviteError,
   onAddNote,
   onSourceJob,
   onRemoveClient,
@@ -62,6 +73,14 @@ export function ClientHeaderStrip({
   // JOB TYPE rows directly below this strip (arc 1, Commit 4).
   const engagementStart = profile.engagement_started_at
     ? new Date(profile.engagement_started_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null
+
+  const invitedDate = invitedAt
+    ? new Date(invitedAt).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -113,11 +132,16 @@ export function ClientHeaderStrip({
                 Client since {engagementStart}
               </span>
             )}
+            <InvitePill invitedDate={invitedDate} />
           </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <ActionButton onClick={onSendInvite} accent="orange" disabled={sendingInvite}>
+          {sendingInvite ? "Sending…" : invitedAt ? "Re-send invite" : "Send SIGNAL invite"}
+        </ActionButton>
         <ActionButton onClick={onSourceJob} accent="orange">
           Source a Job
         </ActionButton>
@@ -191,8 +215,41 @@ export function ClientHeaderStrip({
             </>
           )}
         </div>
+        </div>
+        {inviteError && (
+          <span style={{ color: "#f87171", fontSize: 11, fontWeight: 700, maxWidth: 260, textAlign: "right" }}>
+            {inviteError}
+          </span>
+        )}
       </div>
     </div>
+  )
+}
+
+// Invite status pill in the header meta row. Amber "Not yet invited" (matching
+// the prospect "Awaiting SIGNAL Setup" style) when the deferred invite hasn't
+// been sent; subdued teal "Invited {date}" once it has.
+function InvitePill({ invitedDate }: { invitedDate: string | null }) {
+  const s = invitedDate
+    ? { bg: "rgba(45,165,141,0.15)", color: "#2CA58D", border: "1px solid rgba(45,165,141,0.3)" }
+    : { bg: "rgba(255,149,0,0.15)", color: "#FF9500", border: "1px solid rgba(255,149,0,0.3)" }
+  return (
+    <span
+      style={{
+        background: s.bg,
+        color: s.color,
+        border: s.border,
+        fontSize: 11,
+        fontWeight: 900,
+        padding: "4px 11px",
+        borderRadius: 999,
+        whiteSpace: "nowrap",
+        letterSpacing: 0.6,
+        textTransform: "uppercase",
+      }}
+    >
+      {invitedDate ? `Invited ${invitedDate}` : "Not yet invited"}
+    </span>
   )
 }
 
