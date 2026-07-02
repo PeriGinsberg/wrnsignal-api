@@ -28,6 +28,7 @@ export const COACH_CLIENT_EVENT_TYPES = [
   "engagement_detached",
   "activity_completed",
   "invite_sent",
+  "account_created",
 ] as const
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]
 

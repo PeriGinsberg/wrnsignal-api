@@ -860,6 +860,8 @@ export default function CoachClientPostConversionPage() {
     | null
   >(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [settingUp, setSettingUp] = useState(false)
+  const [setupError, setSetupError] = useState<string | null>(null)
 
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -931,6 +933,37 @@ export default function CoachClientPostConversionPage() {
       setInviteError("Network error — try again")
     } finally {
       setSending(false)
+    }
+  }
+
+  // Set up the account WITHOUT inviting — the deferred-invite twin of the
+  // client-side create-client decoupling. Creates + links the account (server
+  // nulls invited_at), then navigates straight to the client detail screen,
+  // where the shipped Send SIGNAL invite button takes over. The self-guard
+  // (:889-901) would also redirect on refetch; direct nav is snappier.
+  async function handleSetupAccount() {
+    if (!record || settingUp) return
+    if (!record.invited_email) {
+      setSetupError("No email on record. Add an email to the prospect first.")
+      return
+    }
+    setSettingUp(true)
+    setSetupError(null)
+    try {
+      const res = await authFetch(`/api/coach/coach-clients/${record.id}/setup-account`, {
+        method: "POST",
+        body: "{}",
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok && j.client_profile_id) {
+        router.push(`/dashboard/coach/clients/${j.client_profile_id}`)
+      } else {
+        setSetupError(j?.error || "Couldn't set up account — try again")
+      }
+    } catch {
+      setSetupError("Network error — try again")
+    } finally {
+      setSettingUp(false)
     }
   }
 
@@ -1118,6 +1151,42 @@ export default function CoachClientPostConversionPage() {
                   {sending && <SavingSpinner />}
                   {sending ? "Sending..." : "Send Invite →"}
                 </button>
+                <button
+                  onClick={handleSetupAccount}
+                  disabled={settingUp || sending || !record.invited_email}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    color: T.TEXT,
+                    borderRadius: 10,
+                    padding: "12px 22px",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: settingUp || sending || !record.invited_email ? "default" : "pointer",
+                    border: `1px solid ${T.BORDER_SOFT}`,
+                    fontFamily: "inherit",
+                    opacity: settingUp || sending || !record.invited_email ? 0.55 : 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginLeft: 10,
+                  }}
+                >
+                  {settingUp && <SavingSpinner />}
+                  {settingUp ? "Setting up..." : "Set up account (no invite)"}
+                </button>
+                {setupError && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: 10,
+                      background: "rgba(248,113,113,0.1)",
+                      border: "1px solid rgba(248,113,113,0.3)",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{setupError}</span>
+                  </div>
+                )}
                 {inviteError && (
                   <div
                     style={{
