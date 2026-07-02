@@ -142,7 +142,7 @@ export async function GET(
     const ccIds = await coachClientIdsForClient(supabase, clientProfileId)
     let q = supabase
       .from("coach_client_notes")
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
+      .select("id, type, body, priority, completed_at, created_at, updated_at, coach_profile_id")
       .in("coach_client_id", ccIds)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -152,7 +152,27 @@ export async function GET(
     const { data, error } = await q
     if (error) throw new Error(`Notes list failed: ${error.message}`)
 
-    return withCorsJson(req, { ok: true, notes: data ?? [] })
+    // Author attribution (additive display). Batch-resolve coach_profile_id →
+    // client_profiles.name. LEFT-join-safe: rows come from the notes query and
+    // are only annotated, so an author that fails to resolve is just
+    // author_name: null (UI falls back to initials) — the note is never dropped.
+    // is_self lets the UI render "you" vs the other coach's name.
+    const notesRows = data ?? []
+    const authorIds = Array.from(
+      new Set(notesRows.map((n: any) => n.coach_profile_id as string).filter(Boolean)),
+    )
+    const authorNameById = new Map<string, string | null>()
+    if (authorIds.length > 0) {
+      const { data: authors } = await supabase.from("client_profiles").select("id, name").in("id", authorIds)
+      for (const a of authors ?? []) authorNameById.set(a.id as string, (a.name as string | null) ?? null)
+    }
+    const notes = notesRows.map((n: any) => ({
+      ...n,
+      author_name: authorNameById.get(n.coach_profile_id as string) ?? null,
+      is_self: n.coach_profile_id === profileId,
+    }))
+
+    return withCorsJson(req, { ok: true, notes })
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500

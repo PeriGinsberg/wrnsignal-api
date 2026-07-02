@@ -152,7 +152,7 @@ export async function GET(req: NextRequest) {
     // Active scope only (open + not soft-deleted action items).
     let q = supabase
       .from("coach_client_notes")
-      .select("id, body, priority, created_at, client_profile_id, coach_client_id")
+      .select("id, body, priority, created_at, client_profile_id, coach_client_id, coach_profile_id")
       .in("coach_client_id", finalSet)
       .eq("type", "action_item")
       .is("completed_at", null)
@@ -219,6 +219,22 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Author attribution (additive). Batch-resolve coach_profile_id →
+    // client_profiles.name; LEFT-join-safe — rows come from `notes` and are
+    // never dropped, so an unresolved author is just author_name: null.
+    const authorIds = Array.from(
+      new Set((notes ?? []).map((n) => n.coach_profile_id as string).filter(Boolean)),
+    )
+    const authorNameById = new Map<string, string | null>()
+    if (authorIds.length > 0) {
+      const { data: authors, error: authErr } = await supabase
+        .from("client_profiles")
+        .select("id, name")
+        .in("id", authorIds)
+      if (authErr) throw new Error(`Author lookup failed: ${authErr.message}`)
+      for (const a of authors ?? []) authorNameById.set(a.id as string, (a.name as string | null) ?? null)
+    }
+
     const items = (notes ?? [])
       .map((n) => {
         const cc = coachClientById.get(n.coach_client_id as string)
@@ -234,6 +250,8 @@ export async function GET(req: NextRequest) {
           coach_client_id: n.coach_client_id as string,
           client_name: name,
           client_email: email,
+          author_name: authorNameById.get(n.coach_profile_id as string) ?? null,
+          is_self: n.coach_profile_id === coachProfileId,
         }
       })
       .sort((a, b) => {
