@@ -1803,6 +1803,15 @@ function NewHandwritingResults(props: {
         }
     }, [])
 
+    const [isMobile, setIsMobile] = React.useState(false)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
+
     const notes = (p.margin_notes || []).slice(0, 3)
     const noteRot = [-4, 2, -2]
     const marks = (p.marked_lines || []).slice(0, 3)
@@ -1812,7 +1821,7 @@ function NewHandwritingResults(props: {
         <div
             style={{
                 padding: "32px 24px 56px",
-                maxWidth: 560,
+                maxWidth: isMobile ? 560 : 760,
                 margin: "0 auto",
             }}
         >
