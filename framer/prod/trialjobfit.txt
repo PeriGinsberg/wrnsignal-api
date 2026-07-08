@@ -148,7 +148,8 @@ const FONT = "'Inter',system-ui,sans-serif"
 // prod Framer project, the hostname check still hides the banner.
 const DEV_MODE = false
 
-const APP_STORE_URL = "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
+const APP_STORE_URL =
+    "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
 function DevBanner() {
     const [hostname, setHostname] = React.useState("")
     const [shouldShow, setShouldShow] = React.useState(false)
@@ -185,10 +186,24 @@ function DevBanner() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
             }}
         >
-            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: 4, textTransform: "uppercase" as const }}>
+            <span
+                style={{
+                    fontWeight: 900,
+                    fontSize: 16,
+                    letterSpacing: 4,
+                    textTransform: "uppercase" as const,
+                }}
+            >
                 DEV
             </span>
-            <span style={{ fontWeight: 600, fontSize: 12, letterSpacing: 1, opacity: 0.7 }}>
+            <span
+                style={{
+                    fontWeight: 600,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    opacity: 0.7,
+                }}
+            >
                 · {hostname || "…"}
             </span>
         </div>
@@ -241,7 +256,9 @@ function PageShell() {
         <>
             <DevBanner />
             <AppStoreBadge />
-            {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
+            {DEV_MODE ? (
+                <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" />
+            ) : null}
         </>
     )
 }
@@ -276,6 +293,28 @@ type NetworkingStrategy = {
     outreach_angle: string
 }
 
+// Free-scan perception (open-flow scans only). Produced by the engine's
+// freeScanPerception bridge; rides on result.perception. Drives the new
+// handwriting results UI. Absent on gated-flow scans and on fail-open.
+type PerceptionMark = {
+    line: string
+    mark: "underline" | "circle"
+    tone: "positive" | "problem"
+}
+type PerceptionNote = {
+    text: string
+    tone: "positive" | "problem" | "neutral"
+}
+type FreeScanPerception = {
+    archetype: "STRONG_FIT" | "MISPOSITIONED" | "WRONG_FIELD"
+    strengths: string[]
+    perception: string
+    marked_lines: PerceptionMark[]
+    margin_notes: PerceptionNote[]
+    verdict_line: string
+    cta_lead: string
+}
+
 type TrialResult = {
     decision: string
     score: number
@@ -285,6 +324,7 @@ type TrialResult = {
     risk_structured?: RiskBullet[]
     cover_letter_strategy?: CoverLetterStrategy | null
     networking_strategy?: NetworkingStrategy | null
+    perception?: FreeScanPerception
 }
 
 type LockEntry = { label: string; stripe_url: string }
@@ -379,7 +419,8 @@ export default function SignalTrialJobFit() {
         setLoading(true)
 
         try {
-            const sessionId = localStorage.getItem("jobfit_session_id") || undefined
+            const sessionId =
+                localStorage.getItem("jobfit_session_id") || undefined
             const endpoint = useOpenEndpoint
                 ? "/api/jobfit-run-trial-open"
                 : "/api/jobfit-run-trial"
@@ -432,9 +473,7 @@ export default function SignalTrialJobFit() {
             // completions, not on cache restore (which doesn't reach here).
             // Verdict + score included so we can segment funnel by outcome.
             const sr =
-                data && "result" in data && data.result
-                    ? data.result
-                    : null
+                data && "result" in data && data.result ? data.result : null
             if (sr) {
                 const verdict = String(sr.decision || "").toUpperCase()
                 const score = typeof sr.score === "number" ? sr.score : null
@@ -442,7 +481,7 @@ export default function SignalTrialJobFit() {
                 const viewEventId = genEventId()
                 try {
                     if (typeof window !== "undefined" && (window as any).fbq) {
-                        (window as any).fbq(
+                        ;(window as any).fbq(
                             "track",
                             "ViewContent",
                             {
@@ -469,7 +508,7 @@ export default function SignalTrialJobFit() {
                 })
                 try {
                     if (typeof window !== "undefined" && (window as any).gtag) {
-                        (window as any).gtag("event", "scan_result_viewed", {
+                        ;(window as any).gtag("event", "scan_result_viewed", {
                             event_category: "funnel",
                             verdict,
                             score,
@@ -628,7 +667,7 @@ export default function SignalTrialJobFit() {
         const addToCartEventId = genEventId()
         try {
             if (typeof window !== "undefined" && (window as any).fbq) {
-                (window as any).fbq(
+                ;(window as any).fbq(
                     "track",
                     "AddToCart",
                     {
@@ -659,7 +698,7 @@ export default function SignalTrialJobFit() {
         })
         try {
             if (typeof window !== "undefined" && (window as any).gtag) {
-                (window as any).gtag("event", "upgrade_clicked", {
+                ;(window as any).gtag("event", "upgrade_clicked", {
                     event_category: "funnel",
                     cta_source: source,
                     verdict,
@@ -675,7 +714,7 @@ export default function SignalTrialJobFit() {
             const initEventId = genEventId()
             try {
                 if (typeof window !== "undefined" && (window as any).fbq) {
-                    (window as any).fbq(
+                    ;(window as any).fbq(
                         "track",
                         "InitiateCheckout",
                         {
@@ -704,7 +743,7 @@ export default function SignalTrialJobFit() {
             })
             try {
                 if (typeof window !== "undefined" && (window as any).gtag) {
-                    (window as any).gtag("event", "checkout_initiated", {
+                    ;(window as any).gtag("event", "checkout_initiated", {
                         event_category: "funnel",
                         verdict,
                         score,
@@ -714,7 +753,7 @@ export default function SignalTrialJobFit() {
             } catch {}
             try {
                 if (typeof window !== "undefined" && (window as any).gtag) {
-                    (window as any).gtag("event", "conversion", {
+                    ;(window as any).gtag("event", "conversion", {
                         send_to: "AW-11125129027/AMw8CMHsraUcEMP-77gp",
                         value: 99.0,
                         currency: "USD",
@@ -845,6 +884,13 @@ export default function SignalTrialJobFit() {
                         onAnalyze={handleAnalyze}
                         isOpenFlow={isOpenFlow}
                     />
+                ) : response?.result?.perception ? (
+                    <NewHandwritingResults
+                        perception={response.result.perception}
+                        onUpgrade={handleUpgrade}
+                        upgradeLoading={upgradeLoading}
+                        onStartOver={handleStartOver}
+                    />
                 ) : (
                     <ResultsView
                         response={response}
@@ -872,7 +918,16 @@ function InputView(props: {
     onAnalyze: () => void
     isOpenFlow: boolean
 }) {
-    const { email, resume, setResume, jd, setJd, error, onAnalyze, isOpenFlow } = props
+    const {
+        email,
+        resume,
+        setResume,
+        jd,
+        setJd,
+        error,
+        onAnalyze,
+        isOpenFlow,
+    } = props
 
     const resumeReady = resume.trim().length >= MIN_RESUME_CHARS
     const jdReady = jd.trim().length >= MIN_JD_CHARS
@@ -883,7 +938,12 @@ function InputView(props: {
     return (
         <>
             {/* HERO */}
-            <div style={{ padding: "44px 24px 12px", textAlign: "center" as const }}>
+            <div
+                style={{
+                    padding: "44px 24px 12px",
+                    textAlign: "center" as const,
+                }}
+            >
                 <div style={eyebrow}>
                     <span style={dot(C.orange)} />
                     FREE SIGNAL ANALYSIS · ONE JOB · NO CARD
@@ -923,7 +983,13 @@ function InputView(props: {
             </div>
 
             {/* FORM CARD */}
-            <div style={{ padding: "0 24px 32px", maxWidth: 720, margin: "0 auto" }}>
+            <div
+                style={{
+                    padding: "0 24px 32px",
+                    maxWidth: 720,
+                    margin: "0 auto",
+                }}
+            >
                 <div style={glassCard}>
                     <div style={stepLabel}>STEP 1 OF 1</div>
                     <div style={cardTitle}>
@@ -1106,7 +1172,13 @@ function SuccessView(props: {
     const ns = result.networking_strategy
 
     return (
-        <div style={{ padding: "24px 24px 56px", maxWidth: 1100, margin: "0 auto" }}>
+        <div
+            style={{
+                padding: "24px 24px 56px",
+                maxWidth: 1100,
+                margin: "0 auto",
+            }}
+        >
             {/* Cached-repeat notice */}
             {locked ? (
                 <div style={cachedBanner}>
@@ -1116,9 +1188,9 @@ function SuccessView(props: {
                             Your free SIGNAL analysis on this job
                         </div>
                         <div style={cachedSub}>
-                            You've already used your one free trial run on
-                            this exact job — this is the original result. Run
-                            another job, or unlock everything below.
+                            You've already used your one free trial run on this
+                            exact job — this is the original result. Run another
+                            job, or unlock everything below.
                         </div>
                     </div>
                 </div>
@@ -1137,7 +1209,14 @@ function SuccessView(props: {
                 />
                 <div style={{ padding: "26px 28px" }}>
                     <div style={eyebrowSm}>SIGNAL DECISION</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 28, flexWrap: "wrap" as const }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "baseline",
+                            gap: 28,
+                            flexWrap: "wrap" as const,
+                        }}
+                    >
                         <div
                             style={{
                                 fontSize: 52,
@@ -1151,7 +1230,13 @@ function SuccessView(props: {
                             {decision}
                         </div>
                         {score > 0 ? (
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "baseline",
+                                    gap: 4,
+                                }}
+                            >
                                 <div
                                     style={{
                                         fontSize: 38,
@@ -1162,7 +1247,13 @@ function SuccessView(props: {
                                 >
                                     {score}
                                 </div>
-                                <div style={{ fontSize: 14, color: C.dim, fontWeight: 700 }}>
+                                <div
+                                    style={{
+                                        fontSize: 14,
+                                        color: C.dim,
+                                        fontWeight: 700,
+                                    }}
+                                >
                                     /100
                                 </div>
                             </div>
@@ -1232,7 +1323,11 @@ function SuccessView(props: {
                         fontSize: 13,
                         background: upgradeLoading
                             ? "#3A3A3A"
-                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
+                            : "linear-gradient(90deg," +
+                              C.orangeDeep +
+                              "," +
+                              C.orange +
+                              ")",
                     }}
                 >
                     {upgradeLoading
@@ -1253,7 +1348,9 @@ function SuccessView(props: {
                 {why.length > 0 ? (
                     <SectionCard
                         accent={C.green}
-                        eyebrow={isPass ? "STRENGTHS" : "WHY YOU'RE COMPETITIVE"}
+                        eyebrow={
+                            isPass ? "STRENGTHS" : "WHY YOU'RE COMPETITIVE"
+                        }
                     >
                         {why.map((w, i) => (
                             <BulletRow
@@ -1269,7 +1366,10 @@ function SuccessView(props: {
                 ) : null}
 
                 {risk.length > 0 ? (
-                    <SectionCard accent={C.red} eyebrow="RISKS BEFORE YOU APPLY">
+                    <SectionCard
+                        accent={C.red}
+                        eyebrow="RISKS BEFORE YOU APPLY"
+                    >
                         {risk.map((r, i) => (
                             <BulletRow
                                 key={i}
@@ -1366,9 +1466,9 @@ function SuccessView(props: {
                         <NetworkingTeaser ns={ns} />
                     ) : (
                         <GenericLockText>
-                            Who to reach inside this company, what to lead
-                            with, and copy-paste outreach messages that don't
-                            sound like a template.
+                            Who to reach inside this company, what to lead with,
+                            and copy-paste outreach messages that don't sound
+                            like a template.
                         </GenericLockText>
                     )}
                 </LockCard>
@@ -1398,8 +1498,8 @@ function SuccessView(props: {
                 >
                     <GenericLockText>
                         Every role you analyze, score, and apply to — in one
-                        dashboard. Interview rate, score distribution,
-                        SIGNAL decision breakdown, and pattern insights.
+                        dashboard. Interview rate, score distribution, SIGNAL
+                        decision breakdown, and pattern insights.
                     </GenericLockText>
                 </LockCard>
 
@@ -1453,23 +1553,33 @@ function OutOfCreditsView(props: {
 }) {
     const { upgrade, locks, onUpgrade, upgradeLoading } = props
     return (
-        <div style={{ padding: "44px 24px 56px", maxWidth: 920, margin: "0 auto" }}>
+        <div
+            style={{
+                padding: "44px 24px 56px",
+                maxWidth: 920,
+                margin: "0 auto",
+            }}
+        >
             <div style={{ textAlign: "center" as const, marginBottom: 28 }}>
                 <div style={eyebrow}>
                     <span style={dot(C.yellow)} />
                     FREE TRIAL ALREADY USED
                 </div>
                 <div style={heroTitle}>
-                    <div style={{ color: C.text }}>One free analysis per email.</div>
+                    <div style={{ color: C.text }}>
+                        One free analysis per email.
+                    </div>
                     <div>
                         <span style={{ color: C.orange }}>Unlock</span>{" "}
-                        <span style={{ color: C.text }}>full SIGNAL to keep going.</span>
+                        <span style={{ color: C.text }}>
+                            full SIGNAL to keep going.
+                        </span>
                     </div>
                 </div>
                 <div style={heroSub}>
-                    You've already used your free SIGNAL analysis on a
-                    different job. To run this one — and every job after —
-                    upgrade to full SIGNAL.
+                    You've already used your free SIGNAL analysis on a different
+                    job. To run this one — and every job after — upgrade to full
+                    SIGNAL.
                 </div>
             </div>
 
@@ -1546,6 +1656,614 @@ function OutOfCreditsView(props: {
 }
 
 // ============================================================================
+// NEW HANDWRITING RESULTS — renders result.perception (open-flow scans only).
+// archetype → chrome, marked_lines → paper marks (no full résumé parse),
+// margin_notes → scrawls, strengths → ticks, perception/verdict_line → verdict
+// block, cta_lead → CTA. CTA fires the EXISTING upgrade handoff via onUpgrade.
+// ============================================================================
+
+const HW = {
+    navy: "#13294A",
+    paper: "#F7F5EF",
+    inkBlue: "#51ADE5",
+    slate: "#8FA8C4",
+    teal: "#218C8C",
+    greenDk: "#0F6E56",
+    greenLt: "#5DCAA5",
+    orange: "#E08A2B",
+    orangeDk: "#C2410C",
+    orangeLt: "#FEB06A",
+    pink: "#FF7BC2",
+    paperTxt: "#2A3647",
+}
+const HW_CAVEAT = "'Caveat', cursive"
+const HW_RULED =
+    "repeating-linear-gradient(to bottom, transparent 0, transparent 20px, rgba(90,80,60,0.07) 20px, rgba(90,80,60,0.07) 21px)"
+
+const markColor = (tone: string) => (tone === "problem" ? HW.orange : HW.teal)
+const noteColor = (tone: string) =>
+    tone === "problem" ? HW.orangeDk : tone === "neutral" ? HW.navy : HW.greenDk
+
+const HW_CHROME: Record<
+    FreeScanPerception["archetype"],
+    {
+        workingLabel: string
+        variant: "green" | "amber"
+        blockLabel: string
+        emphasisUnderline: string
+        button: string
+        subline: string
+    }
+> = {
+    STRONG_FIT: {
+        workingLabel: "what's working",
+        variant: "green",
+        blockLabel: "the verdict",
+        emphasisUnderline: HW.greenLt,
+        button: "Polish it and leave nothing to chance",
+        subline:
+            "The full read polishes your resume, cover letter, and networking plan so every piece pulls its weight.",
+    },
+    MISPOSITIONED: {
+        workingLabel: "what's working",
+        variant: "amber",
+        blockLabel: "WHERE IT LOST ME",
+        emphasisUnderline: HW.inkBlue,
+        button: "Fix it and get hired",
+        subline:
+            "The full read works your resume, cover letter, and outreach until they tell one clear story.",
+    },
+    WRONG_FIELD: {
+        workingLabel: "what's real here",
+        variant: "amber",
+        blockLabel: "THE HONEST PART",
+        emphasisUnderline: HW.orangeLt,
+        button: "Find the jobs you actually win",
+        subline:
+            "The full read maps where your background fits, then builds the resume, cover letter, and networking plan to land it.",
+    },
+}
+
+function HwPenUnderline(props: { color: string }) {
+    return (
+        <svg
+            viewBox="0 0 200 7"
+            preserveAspectRatio="none"
+            style={{
+                position: "absolute" as const,
+                left: 0,
+                right: 0,
+                bottom: -3,
+                width: "100%",
+                height: 7,
+                overflow: "visible",
+                pointerEvents: "none" as const,
+            }}
+        >
+            <path
+                d="M2,4 C 28,1.5 54,5.5 80,3.5 S 132,2 158,4 S 188,5.5 198,3"
+                fill="none"
+                stroke={props.color}
+                strokeWidth={2}
+                strokeLinecap="round"
+            />
+        </svg>
+    )
+}
+function HwPenCircle(props: { color: string }) {
+    // Hand-drawn loop with near-vertical sides (not a tight ellipse): with
+    // preserveAspectRatio="none" + height tracking the wrapped block, the sides
+    // stay at the left/right edges across the FULL height, so a 2-3 line wrapped
+    // marked_line is fully encircled — not just the first line.
+    return (
+        <svg
+            viewBox="0 0 200 60"
+            preserveAspectRatio="none"
+            style={{
+                position: "absolute" as const,
+                left: -8,
+                top: -6,
+                width: "calc(100% + 16px)",
+                height: "calc(100% + 12px)",
+                overflow: "visible",
+                pointerEvents: "none" as const,
+            }}
+        >
+            <path
+                d="M14,9 C 70,3 140,4 190,9 C 198,22 198,40 191,52 C 138,58 60,57 11,52 C 3,40 3,21 10,9 C 16,5 34,4 52,5"
+                fill="none"
+                stroke={props.color}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+            />
+        </svg>
+    )
+}
+
+function NewHandwritingResults(props: {
+    perception: FreeScanPerception
+    onUpgrade: (source: string) => void
+    upgradeLoading: boolean
+    onStartOver: () => void
+}) {
+    const p = props.perception
+    const chrome = HW_CHROME[p.archetype] || HW_CHROME.MISPOSITIONED
+
+    React.useEffect(() => {
+        const id = "signal-caveat-font"
+        if (typeof document !== "undefined" && !document.getElementById(id)) {
+            const link = document.createElement("link")
+            link.id = id
+            link.rel = "stylesheet"
+            link.href =
+                "https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap"
+            document.head.appendChild(link)
+        }
+    }, [])
+
+    const notes = (p.margin_notes || []).slice(0, 3)
+    const noteRot = [-4, 2, -2]
+    const marks = (p.marked_lines || []).slice(0, 3)
+    const strengths = (p.strengths || []).slice(0, 3)
+
+    return (
+        <div
+            style={{
+                padding: "32px 24px 56px",
+                maxWidth: 560,
+                margin: "0 auto",
+            }}
+        >
+            <div
+                style={{
+                    background: HW.navy,
+                    borderRadius: 24,
+                    padding: "24px 22px 26px",
+                    boxSizing: "border-box" as const,
+                    color: "#fff",
+                    fontFamily: "sans-serif",
+                }}
+            >
+                {/* Header */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 20,
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                        }}
+                    >
+                        <span
+                            style={{
+                                width: 9,
+                                height: 9,
+                                background: HW.inkBlue,
+                                borderRadius: "50%",
+                                display: "inline-block",
+                            }}
+                        />
+                        <span
+                            style={{
+                                color: "#fff",
+                                fontWeight: 500,
+                                fontSize: 14,
+                                letterSpacing: 2,
+                            }}
+                        >
+                            SIGNAL
+                        </span>
+                    </div>
+                    <span
+                        style={{
+                            color: HW.slate,
+                            fontSize: 12,
+                            fontFamily: "monospace",
+                        }}
+                    >
+                        7.0s read
+                    </span>
+                </div>
+                <p
+                    style={{
+                        color: "#fff",
+                        fontSize: 21,
+                        fontWeight: 500,
+                        lineHeight: 1.25,
+                        margin: "0 0 4px",
+                    }}
+                >
+                    A recruiter just read your resume.
+                </p>
+                <p
+                    style={{
+                        color: HW.slate,
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        margin: "0 0 20px",
+                    }}
+                >
+                    Here's what caught their eye, in the order they saw it.
+                </p>
+
+                {/* Paper — marked_lines only (no full résumé parse); each margin
+                    note scrawled inline beneath its line, never over the text */}
+                {marks.length > 0 ? (
+                    <div
+                        style={{
+                            position: "relative" as const,
+                            background: HW.paper,
+                            backgroundImage: HW_RULED,
+                            borderRadius: 4,
+                            padding: "18px 17px 16px",
+                            transform: "rotate(-1deg)",
+                            boxShadow: "0 10px 26px rgba(0,0,0,0.34)",
+                            marginBottom: 22,
+                        }}
+                    >
+                        <p
+                            style={{
+                                color: "#6A6253",
+                                fontSize: 9,
+                                letterSpacing: 0.8,
+                                fontWeight: 700,
+                                margin: "0 0 8px",
+                            }}
+                        >
+                            FROM YOUR RESUME
+                        </p>
+                        {marks.map((m, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    marginBottom: i < marks.length - 1 ? 14 : 0,
+                                }}
+                            >
+                                <p
+                                    style={{
+                                        color: HW.paperTxt,
+                                        fontSize: 11.5,
+                                        lineHeight: 1.5,
+                                        margin: 0,
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            position: "relative" as const,
+                                            display: "inline-block",
+                                        }}
+                                    >
+                                        {m.line}
+                                        {m.mark === "circle" ? (
+                                            <HwPenCircle
+                                                color={markColor(m.tone)}
+                                            />
+                                        ) : (
+                                            <HwPenUnderline
+                                                color={markColor(m.tone)}
+                                            />
+                                        )}
+                                    </span>
+                                </p>
+                                {notes[i] ? (
+                                    <div
+                                        style={{
+                                            textAlign: "right" as const,
+                                            margin: "4px 0 0",
+                                        }}
+                                    >
+                                        <span
+                                            style={{
+                                                fontFamily: HW_CAVEAT,
+                                                color: noteColor(notes[i].tone),
+                                                fontSize: 16,
+                                                fontWeight:
+                                                    notes[i].tone === "problem"
+                                                        ? 700
+                                                        : 600,
+                                                lineHeight: 1.1,
+                                                display: "inline-block",
+                                                transform: `rotate(${noteRot[i % noteRot.length]}deg)`,
+                                                transformOrigin: "right center",
+                                                maxWidth: "85%",
+                                            }}
+                                        >
+                                            {notes[i].text}
+                                        </span>
+                                    </div>
+                                ) : null}
+                            </div>
+                        ))}
+                        {notes.length > marks.length
+                            ? notes.slice(marks.length).map((n, j) => (
+                                  <div
+                                      key={"extra-" + j}
+                                      style={{
+                                          textAlign: "right" as const,
+                                          margin: "4px 0 0",
+                                      }}
+                                  >
+                                      <span
+                                          style={{
+                                              fontFamily: HW_CAVEAT,
+                                              color: noteColor(n.tone),
+                                              fontSize: 16,
+                                              fontWeight:
+                                                  n.tone === "problem"
+                                                      ? 700
+                                                      : 600,
+                                              lineHeight: 1.1,
+                                              display: "inline-block",
+                                              transform: `rotate(${noteRot[(marks.length + j) % noteRot.length]}deg)`,
+                                              transformOrigin: "right center",
+                                              maxWidth: "85%",
+                                          }}
+                                      >
+                                          {n.text}
+                                      </span>
+                                  </div>
+                              ))
+                            : null}
+                    </div>
+                ) : null}
+
+                {/* what's working / what's real here — strengths → ticks */}
+                {strengths.length > 0 ? (
+                    <div style={{ marginBottom: 18 }}>
+                        <p
+                            style={{
+                                color: HW.greenLt,
+                                fontSize: 19,
+                                fontWeight: 700,
+                                margin: "0 0 8px",
+                                fontFamily: HW_CAVEAT,
+                            }}
+                        >
+                            {chrome.workingLabel}
+                        </p>
+                        {strengths.map((s, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    alignItems: "flex-start",
+                                    marginBottom:
+                                        i < strengths.length - 1 ? 9 : 0,
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        fontFamily: HW_CAVEAT,
+                                        color: HW.greenLt,
+                                        fontSize: 19,
+                                        fontWeight: 700,
+                                        lineHeight: 1,
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    ✓
+                                </span>
+                                <span
+                                    style={{
+                                        color: "#D6DEE8",
+                                        fontSize: 12.5,
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    {s}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
+
+                {/* Verdict block — perception → body, verdict_line → emphasis */}
+                {chrome.variant === "green" ? (
+                    <div style={{ marginBottom: 18 }}>
+                        <p
+                            style={{
+                                color: HW.greenLt,
+                                fontSize: 19,
+                                fontWeight: 700,
+                                margin: "0 0 8px",
+                                fontFamily: HW_CAVEAT,
+                            }}
+                        >
+                            {chrome.blockLabel}
+                        </p>
+                        {p.perception ? (
+                            <p
+                                style={{
+                                    color: "#fff",
+                                    fontSize: 14.5,
+                                    lineHeight: 1.55,
+                                    margin: "0 0 10px",
+                                }}
+                            >
+                                {p.perception}
+                            </p>
+                        ) : null}
+                        {p.verdict_line ? (
+                            <p
+                                style={{
+                                    color: "#fff",
+                                    fontSize: 15,
+                                    fontWeight: 500,
+                                    margin: 0,
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        position: "relative" as const,
+                                        display: "inline-block",
+                                    }}
+                                >
+                                    {p.verdict_line}
+                                    <HwPenUnderline
+                                        color={chrome.emphasisUnderline}
+                                    />
+                                </span>
+                            </p>
+                        ) : null}
+                        <p
+                            style={{
+                                color: HW.slate,
+                                fontSize: 11,
+                                margin: "12px 0 0",
+                            }}
+                        >
+                            — the recruiter, more or less
+                        </p>
+                    </div>
+                ) : (
+                    <div
+                        style={{
+                            background: "rgba(255,255,255,0.06)",
+                            borderRadius: 12,
+                            padding: "15px 16px",
+                            marginBottom: 18,
+                        }}
+                    >
+                        <p
+                            style={{
+                                color: HW.orangeLt,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                letterSpacing: 1.5,
+                                margin: "0 0 8px",
+                            }}
+                        >
+                            {chrome.blockLabel}
+                        </p>
+                        {p.perception ? (
+                            <p
+                                style={{
+                                    color: "#fff",
+                                    fontSize: 14.5,
+                                    lineHeight: 1.55,
+                                    margin: "0 0 10px",
+                                }}
+                            >
+                                {p.perception}
+                            </p>
+                        ) : null}
+                        {p.verdict_line ? (
+                            <p
+                                style={{
+                                    color: "#fff",
+                                    fontSize: 15,
+                                    fontWeight: 500,
+                                    margin: 0,
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        position: "relative" as const,
+                                        display: "inline-block",
+                                    }}
+                                >
+                                    {p.verdict_line}
+                                    <HwPenUnderline
+                                        color={chrome.emphasisUnderline}
+                                    />
+                                </span>
+                            </p>
+                        ) : null}
+                        <p
+                            style={{
+                                color: HW.slate,
+                                fontSize: 11,
+                                margin: "12px 0 0",
+                            }}
+                        >
+                            — the recruiter, more or less
+                        </p>
+                    </div>
+                )}
+
+                {/* CTA — cta_lead + pink button → existing upgrade handoff */}
+                <div
+                    style={{
+                        borderTop: "1px dashed rgba(255,255,255,0.18)",
+                        paddingTop: 16,
+                    }}
+                >
+                    {p.cta_lead ? (
+                        <p
+                            style={{
+                                color: "#fff",
+                                fontSize: 13.5,
+                                lineHeight: 1.55,
+                                margin: "0 0 14px",
+                            }}
+                        >
+                            {p.cta_lead}
+                        </p>
+                    ) : null}
+                    <button
+                        type="button"
+                        onClick={() => props.onUpgrade("trial_handwriting_cta")}
+                        disabled={props.upgradeLoading}
+                        style={{
+                            width: "100%",
+                            background: props.upgradeLoading
+                                ? "#3A3A3A"
+                                : HW.pink,
+                            color: HW.navy,
+                            border: "none",
+                            borderRadius: 12,
+                            padding: 13,
+                            fontSize: 14,
+                            fontWeight: 600,
+                            cursor: props.upgradeLoading ? "wait" : "pointer",
+                            fontFamily: "sans-serif",
+                        }}
+                    >
+                        {props.upgradeLoading
+                            ? "Setting up checkout..."
+                            : chrome.button}
+                    </button>
+                    <p
+                        style={{
+                            color: HW.slate,
+                            fontSize: 11,
+                            textAlign: "center" as const,
+                            margin: "9px 0 0",
+                        }}
+                    >
+                        {chrome.subline}
+                    </p>
+                    <div
+                        style={{ textAlign: "center" as const, marginTop: 14 }}
+                    >
+                        <span
+                            onClick={props.onStartOver}
+                            style={{
+                                color: HW.slate,
+                                fontSize: 11,
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                            }}
+                        >
+                            ← Start over
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
 
@@ -1574,9 +2292,7 @@ function Topbar(props: {
                     gap: 14,
                 }}
             >
-                {email ? (
-                    <span style={{ color: C.muted }}>{email}</span>
-                ) : null}
+                {email ? <span style={{ color: C.muted }}>{email}</span> : null}
                 {hasResult ? (
                     <span
                         style={{ color: C.blue, cursor: "pointer" }}
@@ -1639,7 +2355,12 @@ function BulletRow(props: {
     actionLabel?: string
 }) {
     return (
-        <div style={{ padding: "10px 0", borderBottom: "0.5px solid " + C.borderSoft }}>
+        <div
+            style={{
+                padding: "10px 0",
+                borderBottom: "0.5px solid " + C.borderSoft,
+            }}
+        >
             <div
                 style={{
                     fontSize: 9,
@@ -1913,8 +2634,7 @@ function UpgradeBox(props: {
                         lineHeight: 1.2,
                     }}
                 >
-                    Unlock full{" "}
-                    <span style={{ color: C.orange }}>SIGNAL</span>
+                    Unlock full <span style={{ color: C.orange }}>SIGNAL</span>
                 </div>
                 <div
                     style={{
@@ -1925,10 +2645,10 @@ function UpgradeBox(props: {
                         maxWidth: 460,
                     }}
                 >
-                    Every role you analyze, scored against your real
-                    background. Cover letters in your voice. Networking plays
-                    with copy-paste messages. Resume rewrites that match what
-                    each company filters on. All in one tracker.
+                    Every role you analyze, scored against your real background.
+                    Cover letters in your voice. Networking plays with
+                    copy-paste messages. Resume rewrites that match what each
+                    company filters on. All in one tracker.
                 </div>
                 <div
                     style={{
@@ -1953,8 +2673,7 @@ function UpgradeBox(props: {
                                 borderRadius: 20,
                                 background: (col as string) + "18",
                                 color: col as string,
-                                border:
-                                    "0.5px solid " + (col as string) + "44",
+                                border: "0.5px solid " + (col as string) + "44",
                             }}
                         >
                             {lbl}
@@ -2002,7 +2721,11 @@ function UpgradeBox(props: {
                         ...primaryBtn,
                         background: upgradeLoading
                             ? "#3A3A3A"
-                            : "linear-gradient(90deg," + C.orangeDeep + "," + C.orange + ")",
+                            : "linear-gradient(90deg," +
+                              C.orangeDeep +
+                              "," +
+                              C.orange +
+                              ")",
                     }}
                 >
                     {upgradeLoading
@@ -2056,9 +2779,7 @@ function CharHint(props: { count: number; min: number; ready: boolean }) {
             }}
         >
             {props.count} chars{" "}
-            {props.ready
-                ? "· ready"
-                : `· need ${props.min - props.count} more`}
+            {props.ready ? "· ready" : `· need ${props.min - props.count} more`}
         </div>
     )
 }
@@ -2099,14 +2820,8 @@ function ThreeStageLoader() {
 
     return (
         <div style={loaderContainer}>
-            <LoaderStage
-                label="Reading your resume"
-                status={statusFor(0)}
-            />
-            <LoaderStage
-                label="Analyzing the job"
-                status={statusFor(1)}
-            />
+            <LoaderStage label="Reading your resume" status={statusFor(0)} />
+            <LoaderStage label="Analyzing the job" status={statusFor(1)} />
             <LoaderStage
                 label="Generating your SIGNAL report"
                 status={statusFor(2)}
@@ -2121,11 +2836,7 @@ function ThreeStageLoader() {
 function LoaderStage(props: { label: string; status: StageStatus }) {
     const { label, status } = props
     const color =
-        status === "complete"
-            ? C.green
-            : status === "active"
-              ? C.orange
-              : C.dim
+        status === "complete" ? C.green : status === "active" ? C.orange : C.dim
     return (
         <div style={stageRow}>
             <div
@@ -2224,7 +2935,13 @@ function LoaderStage(props: { label: string; status: StageStatus }) {
 function LoadingValueContent() {
     return (
         <div style={loadingContentWrap}>
-            <div style={{ ...eyebrow, justifyContent: "center" as const, marginBottom: 12 }}>
+            <div
+                style={{
+                    ...eyebrow,
+                    justifyContent: "center" as const,
+                    marginBottom: 12,
+                }}
+            >
                 <span style={dot(C.orange)} />
                 WHILE WE WORK
             </div>
@@ -2259,23 +2976,33 @@ function LoadingValueContent() {
                     <div style={tipItem}>
                         <span style={tipBullet}>→</span>
                         <span>
-                            Read your <strong style={{ color: C.green }}>WHY codes</strong> before
-                            you write your cover letter — they're your strongest opening lines.
+                            Read your{" "}
+                            <strong style={{ color: C.green }}>
+                                WHY codes
+                            </strong>{" "}
+                            before you write your cover letter — they're your
+                            strongest opening lines.
                         </span>
                     </div>
                     <div style={tipItem}>
                         <span style={tipBullet}>→</span>
                         <span>
-                            Read your <strong style={{ color: C.yellow }}>RISK codes</strong> before
-                            the interview — these are the objections to preempt.
+                            Read your{" "}
+                            <strong style={{ color: C.yellow }}>
+                                RISK codes
+                            </strong>{" "}
+                            before the interview — these are the objections to
+                            preempt.
                         </span>
                     </div>
                     <div style={tipItem}>
                         <span style={tipBullet}>→</span>
                         <span>
-                            The <strong style={{ color: C.orange }}>score</strong> reflects this
-                            specific job, not your career. Different postings will score
-                            differently — that's the point.
+                            The{" "}
+                            <strong style={{ color: C.orange }}>score</strong>{" "}
+                            reflects this specific job, not your career.
+                            Different postings will score differently — that's
+                            the point.
                         </span>
                     </div>
                 </div>
@@ -2286,14 +3013,15 @@ function LoadingValueContent() {
             <div style={socialProofRow}>
                 <div style={quoteCard}>
                     <div style={quoteText}>
-                        "Stopped wasting hours on roles SIGNAL flagged Pass. Best application
-                        filter I've used."
+                        "Stopped wasting hours on roles SIGNAL flagged Pass.
+                        Best application filter I've used."
                     </div>
                     <div style={quoteAttr}>— Ellie G., Cornell '25</div>
                 </div>
                 <div style={quoteCard}>
                     <div style={quoteText}>
-                        "Addressed every RISK code in my interview prep. Got the offer."
+                        "Addressed every RISK code in my interview prep. Got the
+                        offer."
                     </div>
                     <div style={quoteAttr}>— Ryan R., FSU '26</div>
                 </div>
@@ -2386,9 +3114,7 @@ function MetricBox(props: { color: string; number: string; label: string }) {
             >
                 {props.number}
             </div>
-            <div
-                style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}
-            >
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
                 {props.label}
             </div>
         </div>
@@ -2398,8 +3124,18 @@ function MetricBox(props: { color: string; number: string; label: string }) {
 function Orbs(props: { hasResult: boolean }) {
     return (
         <>
-            <Orb size={500} top={-150} right={-100} color="rgba(81,173,229,0.10)" />
-            <Orb size={400} top={300} left={-120} color="rgba(254,176,106,0.07)" />
+            <Orb
+                size={500}
+                top={-150}
+                right={-100}
+                color="rgba(81,173,229,0.10)"
+            />
+            <Orb
+                size={400}
+                top={300}
+                left={-120}
+                color="rgba(254,176,106,0.07)"
+            />
             <Orb
                 size={300}
                 bottom={100}
@@ -2549,9 +3285,7 @@ function genEventId(): string {
         }
     } catch {}
     return (
-        Date.now().toString(36) +
-        "-" +
-        Math.random().toString(36).slice(2, 10)
+        Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10)
     )
 }
 
