@@ -26,7 +26,7 @@ const API_BASE = "https://wrnsignal-api.vercel.app"
 
 // Relative paths so navigation stays on the user's current origin —
 // sessionStorage is per-origin and the Framer site is published on
-// multiple domains (stopapplyingblind.com + wrnsignal.workforcereadynow.com).
+// multiple domains.
 const TRIAL_RESULT_URL = "/signal/jobfit-run-trial"
 
 const LANDING_URL = "/signal"
@@ -535,18 +535,17 @@ const VARIANTS: Record<VariantKey, Variant> = {
         headlineLead: "Closeable — ",
         headlinePunch: "not automatic.",
         defaultMove: "Tailor hard. Address the gaps. Then apply with confidence.",
-        bridgeEyebrow: "THE GAP IS BRIDGEABLE",
-        bridgeHeadline: "Not far. But not by default.",
+        bridgeEyebrow: "YOUR RESUME ISN'T SHOWING EVERYTHING",
+        bridgeHeadline: "The page is selling you short.",
         bridgeBody: (
             <>
-                A 62 with the right framing reads as a 75 to a recruiter. A 62 submitted
-                blind reads as a 55.{" "}
+                The recruiter can only judge what's on the page. Right now your resume
+                isn't showing everything you've got, and that's costing you interviews.{" "}
                 <strong>
-                    The difference is everything we just flagged — and the work to address
-                    it.
+                    That part's fixable, honestly, without making anything up.
                 </strong>{" "}
                 Full SIGNAL gives you the rewrites, the cover letter angle, and the
-                networking plays to close the gap on this job and the next 30.
+                networking plays to close the gap on this job and the next one.
             </>
         ),
         mathEyebrow: "THE MATH",
@@ -593,13 +592,13 @@ const VARIANTS: Record<VariantKey, Variant> = {
                 type: "networking",
                 icon: "🤝",
                 label: "NETWORKING",
-                title: "Get a champion inside — before the resume hits the pile.",
+                title: "Get someone inside to vouch for you, before your resume hits the pile.",
                 text: (
                     <>
-                        Stretch resumes need a champion. We'll tell you which roles inside the
-                        company are worth reaching, what to say to each one, and how to ask for
-                        a referral without sounding like every other applicant. Referrals turn
-                        62s into interviews.
+                        Knowing someone inside changes everything. We'll tell you which people
+                        at the company are worth reaching out to, exactly what to say to each
+                        one, and how to ask for a referral without sounding like everyone else.
+                        Someone vouching for you gets you read instead of filtered.
                     </>
                 ),
             },
