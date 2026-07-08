@@ -3549,7 +3549,30 @@ export function extractJobTitle(rawLines: string[]): string | null {
   // First pass: find a line that looks like a real job title (has role keywords)
   const roleWords = /\b(intern|analyst|associate|manager|director|coordinator|specialist|engineer|consultant|developer|designer|strategist|assistant|representative|officer|lead|head|fellow)\b/i
   const prefixStrip = /^(?:Title|Position|Role|Job Title)\s*[:]\s*/i
-  const sectionWords = /^(position overview|about|overview|description|summary|responsibilities|qualifications|requirements|key responsibilities|how to apply|benefits|compensation|job details|role overview|company description|job description|role description)\b/i
+  const sectionWords = /^(position overview|university overview|company overview|organization overview|employer overview|who we are|about|overview|description|summary|responsibilities|qualifications|requirements|key responsibilities|how to apply|benefits|compensation|job details|role overview|company description|job description|role description)\b/i
+
+  // Pass 0 (authoritative): a labeled title field anywhere in the JD. Workday /
+  // PennJobs-style postings carry "Posted Job Title:" (or "Position Title:" /
+  // "Job Title:") — the real title, often far below institutional boilerplate
+  // the first-N-lines heuristic would otherwise grab. Value may sit on the same
+  // line after the colon, or on the next non-empty line (label-only line).
+  const labeledTitle = /^\s*(?:Posted Job Title|Position Title|Job Title)\s*:\s*(.*)$/i
+  for (let i = 0; i < rawLines.length; i++) {
+    const m = rawLines[i].match(labeledTitle)
+    if (!m) continue
+    let val = (m[1] || "").trim()
+    if (val.length === 0) {
+      for (let j = i + 1; j < rawLines.length; j++) {
+        const nxt = rawLines[j].trim()
+        if (nxt.length > 0) { val = nxt; break }
+      }
+    }
+    // The field is explicitly labeled as the job title, so it is authoritative
+    // — do NOT apply the location filter here (comma-form titles like "Director,
+    // Athletic Communications" trip the "City, State" heuristic).
+    if (val.length > 0 && val.length <= 120) return val
+  }
+
   for (const line of rawLines.slice(0, 10)) {
     let trimmed = line.trim()
     if (trimmed.length === 0 || trimmed.length > 120 || looksLikeLocation(trimmed)) continue
@@ -3583,6 +3606,13 @@ function looksLikeLocation(s: string): boolean {
 }
 
 function extractCompanyName(rawText: string, rawLines: string[]): string | null {
+  // Bare generic org nouns that must NOT be harvested as a company name. Guards
+  // the "The [Company] <verb>" boilerplate pattern below from returning "The
+  // University" / "The Company" from institutional prose. A real multi-word
+  // name ("University of Pennsylvania") is not a single generic word, so it
+  // passes.
+  const GENERIC_ORG = /^(university|college|company|organization|organisation|team|firm|group|institution|department|division|office|agency|program|programme|school|foundation|employer|business|position|role|opportunity)$/i
+
   // Pattern: "About [Company]" section header (case-insensitive for "The")
   const aboutMatch = rawText.match(/\bAbout\s+([A-Z][A-Za-z0-9 &'.,-]{1,60})(?:\s*\n|$)/m)
   if (aboutMatch) {
@@ -3611,11 +3641,12 @@ function extractCompanyName(rawText: string, rawLines: string[]): string | null 
   const theCompanyMatch = rawText.match(/\b[Tt]he\s+([A-Z][A-Za-z0-9 &'.,-]{2,50})\s+(?:is\s+(?:seeking|hiring|looking)|seeks|offers|provides|has an opening)\b/)
   if (theCompanyMatch) {
     const candidate = theCompanyMatch[0].replace(/\s+(?:is\s+(?:seeking|hiring|looking)|seeks|offers|provides|has an opening).*/, "").replace(/^[Tt]he\s+/, "The ").trim()
-    if (!looksLikeLocation(candidate)) return candidate
+    const bareNoun = candidate.replace(/^The\s+/i, "").trim()
+    if (!looksLikeLocation(candidate) && !GENERIC_ORG.test(bareNoun)) return candidate
   }
 
   // Fallback: second non-empty line (many postings put company name on line 2)
-  const sectionHeaderPattern = /^(position|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|what you|what we|the role|the team|the position|the opportunity|job details|role overview|key responsibilities|how to apply|benefits|compensation|title|location|department|reports to|job type|employment type|company description|job description|role description)\b/i
+  const sectionHeaderPattern = /^(position|university overview|company overview|organization overview|employer overview|about|overview|description|summary|responsibilities|qualifications|requirements|who we are|what you|what we|the role|the team|the position|the opportunity|job details|role overview|key responsibilities|how to apply|benefits|compensation|title|location|department|reports to|job type|employment type|company description|job description|role description)\b/i
   let nonEmptyCount = 0
   for (const line of rawLines) {
     const trimmed = line.trim()
