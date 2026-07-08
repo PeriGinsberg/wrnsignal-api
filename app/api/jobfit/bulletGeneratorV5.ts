@@ -87,6 +87,18 @@ const MODEL = "claude-haiku-4-5-20251001"
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
+// Current-date anchor for the prompt: "July 2026 (2026-07)". Gives the model a
+// reference point so it never reads a past graduation date as future.
+function currentDateLabel(): string {
+  const d = new Date()
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ]
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0")
+  return `${months[d.getUTCMonth()]} ${d.getUTCFullYear()} (${d.getUTCFullYear()}-${mm})`
+}
+
 function buildPrompt(out: EvalOutput): string {
   const profileText =
     String((out as any).profile_text || (out as any).profileText || "").trim() ||
@@ -95,6 +107,11 @@ function buildPrompt(out: EvalOutput): string {
   const jobText =
     String((out as any).job_text || (out as any).jobText || "").trim() ||
     "(job description not provided)"
+
+  // Engine-computed degree status, passed to the LLM as authoritative ground
+  // truth so it never contradicts a completed degree (the "still in school"
+  // future-date misread). "unknown" when profile signals are absent.
+  const degreeStatus = (out.profile_signals?.degreeStatus as string) ?? "unknown"
 
   return `You are a career coach generating JobFit analysis bullets for SIGNAL, a career decision engine for college students.
 
@@ -113,6 +130,12 @@ ${JSON.stringify(out.risk_codes ?? [], null, 2)}
 ## DECISION
 ${out.decision} (score: ${out.score})
 
+## TODAY'S DATE
+${currentDateLabel()}
+
+## DEGREE STATUS (authoritative)
+${degreeStatus}
+
 ---
 
 ## CRITICAL INSTRUCTIONS
@@ -123,6 +146,10 @@ ${out.decision} (score: ${out.score})
 - If the profile_fact mentions a metric, that number MUST appear in the bullet.
 - No comma-separated lists inside a sentence. Pick the single strongest detail.
 - CRITICAL: Never confuse the two employers in this prompt. The student worked at their past employer(s) named in the STUDENT PROFILE. The company they are applying to is named in the JOB DESCRIPTION. These are always different companies. Never attribute the student's work experience to the target employer, and never say the student worked at the company in the job description.
+
+### On dates and degree status
+- DEGREE STATUS above is the engine's ground truth for whether the candidate has completed their degree. You MUST NOT contradict it. If "has_degree", never describe the candidate as still in school, still finishing a degree, or future-dated; a recent completion may be called a "recent grad" but the degree is complete. If "in_progress", treat the degree as not yet finished. If "no_degree" or "unknown", do not assert either way.
+- Use TODAY'S DATE as the reference for any temporal phrasing (past vs upcoming, how recent). A date before today is in the past; do not assume a date is in the future without comparing it to today. Do not re-decide degree completion from resume dates; DEGREE STATUS governs that.
 
 ### On transferable skills
 - Make the translation explicit. Show them their experience in the hiring manager's language.

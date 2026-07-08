@@ -64,6 +64,22 @@ export interface ComputeFreeScanPerceptionArgs {
   gateTriggered?: { type?: string; gateCode?: string } | null
   riskCodes?: Array<{ code?: string | null } | null> | null
   whyStructured?: Array<{ keyword?: string | null; connection?: string | null } | null> | null
+  // Engine-computed degree status, passed to the LLM as authoritative ground
+  // truth so it never contradicts a completed degree (the "still in school"
+  // future-date misread). "unknown" when profile signals are absent.
+  degreeStatus?: string | null
+}
+
+// Current-date anchor for the LLM prompt: "July 2026 (2026-07)". Gives the
+// model a reference point so it never reads a past graduation date as future.
+function currentDateLabel(): string {
+  const d = new Date()
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ]
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0")
+  return `${months[d.getUTCMonth()]} ${d.getUTCFullYear()} (${d.getUTCFullYear()}-${mm})`
 }
 
 // ── (1) ARCHETYPE — deterministic ──────────────────────────────────────────────
@@ -151,6 +167,13 @@ HARD GROUNDING RULES (absolute):
 
 7. PUNCTUATION (absolute): Do NOT use em dashes or en dashes (— or –) anywhere in "perception", "verdict_line", "cta_lead", or "margin_notes". Use a period, comma, colon, or parentheses instead. This is a hard style rule with no exceptions.
 
+DEGREE & DATES (authoritative):
+- The user message gives TODAY'S DATE and an engine-computed DEGREE STATUS. DEGREE STATUS is the ground truth for whether the degree is complete; you MUST NOT contradict it.
+  - has_degree: the degree is COMPLETED. Never say the candidate is "still in school," "still finishing their degree," "future-dated," or a current student. A completion within the last several months may be phrased as "recent grad," but the degree is done.
+  - in_progress: the degree is NOT yet complete; the candidate is currently finishing it.
+  - no_degree / unknown: do not assert completion either way.
+- Do NOT re-decide completed-vs-pending from resume dates yourself. Use TODAY'S DATE only for relative temporal phrasing (how recent a graduation is), never to override DEGREE STATUS.
+
 Return ONLY a JSON object (no preamble, no commentary, no markdown), in exactly this shape:
 {"perception": string, "marked_lines": [{"line": string, "mark": "underline"|"circle", "tone": "positive"|"problem"}], "margin_notes": [{"text": string, "tone": "positive"|"problem"|"neutral"}], "verdict_line": string, "cta_lead": string, "wrong_field": boolean}`
 
@@ -163,6 +186,7 @@ function buildUserPrompt(args: {
   archetype: FreeScanArchetype
   isFallbackBucket: boolean
   riskCodes: string[]
+  degreeStatus: string | null
 }): string {
   // For the fallback bucket the deterministic spine cannot tell WRONG_FIELD from
   // MISPOSITIONED, so do NOT assert one (asserting MISPOSITIONED would bias the
@@ -175,6 +199,8 @@ ENGINE DECISION: ${args.decision}
 ENGINE SCORE: ${typeof args.score === "number" ? `${args.score}/100` : "(unknown)"}
 ENGINE NEXT STEP: ${args.nextStep ? args.nextStep : "(none)"}
 RISK CODES: ${args.riskCodes.length ? args.riskCodes.join(", ") : "(none)"}
+TODAY'S DATE: ${currentDateLabel()}
+DEGREE STATUS (authoritative, from the engine): ${args.degreeStatus ?? "unknown"}
 
 JOB DESCRIPTION:
 """
@@ -233,6 +259,7 @@ async function callPerceptionLLM(args: {
   archetype: FreeScanArchetype
   isFallbackBucket: boolean
   riskCodes: string[]
+  degreeStatus: string | null
 }): Promise<LLMPerceptionRaw | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return null
@@ -346,6 +373,7 @@ export async function computeFreeScanPerception(
       archetype: stage1.archetype,
       isFallbackBucket: stage1.isFallbackBucket,
       riskCodes: riskCodeList,
+      degreeStatus: args.degreeStatus ?? null,
     })
     if (!llm || typeof llm.perception !== "string") return null
 

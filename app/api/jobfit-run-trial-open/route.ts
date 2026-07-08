@@ -347,6 +347,7 @@ export async function POST(req: NextRequest) {
         gateTriggered: raw.gate_triggered,
         riskCodes: raw.risk_codes ?? [],
         whyStructured: raw.why_structured ?? [],
+        degreeStatus: raw.profile_signals?.degreeStatus ?? null,
       })
     } catch (perceptionErr: any) {
       console.error(
