@@ -15013,7 +15013,7 @@
     "id": "synthetic-0410-senior-mgr",
     "label": "[synthetic] 0410-senior-mgr — Jamie Rivera / Operations Manager",
     "decision": "Apply",
-    "score": 79,
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -15154,11 +15154,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -15256,7 +15251,7 @@
         "tools": [
           "excel"
         ],
-        "yearsExperienceApprox": 2
+        "yearsExperienceApprox": 3
       }
     },
     "score_breakdown": {
@@ -15264,12 +15259,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
@@ -15278,12 +15273,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 97,
+      "clamped_score": 95
     }
   },
   "synthetic-0410a": {
@@ -16395,7 +16390,7 @@
         "tools": [
           "spss"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -17314,7 +17309,7 @@
           "indesign",
           "photoshop"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -30174,7 +30169,7 @@
           "sql",
           "tableau"
         ],
-        "yearsExperienceApprox": 3
+        "yearsExperienceApprox": 4
       }
     },
     "score_breakdown": {
@@ -30209,7 +30204,7 @@
     "id": "synthetic-0410i",
     "label": "[synthetic] 0410i — Isabella Martinez / (no title)",
     "decision": "Pass",
-    "score": 31,
+    "score": 38,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -30379,11 +30374,6 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -30510,7 +30500,7 @@
           "indesign",
           "photoshop"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -30532,12 +30522,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 31,
-      "clamped_score": 31
+      "raw_score": 38,
+      "clamped_score": 38
     }
   },
   "synthetic-0410j": {
@@ -36624,7 +36614,7 @@
           "indesign",
           "photoshop"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
