@@ -418,6 +418,16 @@ const STYLES = `
   .wrn-proof-headline { font-size: 21px; }
   .wrn-plug-close { font-size: 22px; }
 }
+
+/* Desktop readability (min-width:769px). Larger hero body copy and a
+   capped measure on the left column so lines stay short on wide
+   screens. Mobile (<=768px) keeps the base values above, untouched. */
+@media (min-width: 769px) {
+  .wrn-body { font-size: 17px; line-height: 1.55; max-width: 480px; }
+  .wrn-empathy { max-width: 480px; }
+  .wrn-empathy-lead { font-size: 18px; }
+  .wrn-empathy-body { font-size: 17px; line-height: 1.55; }
+}
 `
 
 // ─────────────────────────────────────────────────────────────────────────
