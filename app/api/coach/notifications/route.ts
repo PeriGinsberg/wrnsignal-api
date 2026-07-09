@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
     // Unseen coach job recommendations for this client
     const { data: unseenRecs, error: recsErr } = await supabase
       .from("coach_job_recommendations")
-      .select("id, coach_profile_id, job_title, company_name, jobfit_decision, jobfit_score, coach_note, created_at, notification_seen")
+      .select("id, coach_profile_id, job_title, company_name, signal_decision, signal_score, coaching_note, created_at, notification_seen")
       .eq("client_profile_id", profileId)
       .eq("notification_seen", false)
       .order("created_at", { ascending: false })
