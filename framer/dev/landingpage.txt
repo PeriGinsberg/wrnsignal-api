@@ -310,6 +310,43 @@ const STYLES = `
 .wrn-demo-link:hover { color: ${NAVY}; }
 .wrn-demo-note { font-family: ${F_BODY}; font-style: italic; font-size: 12px; color: ${MUTED}; margin: 0; }
 
+/* Free-scan preview: recruiter's-read draw-in animation. Marks stroke-draw
+   in reading order (underline, then circle); each Caveat note fades in just
+   after its mark. Hidden by default so there is no flash of the finished
+   state before the card scrolls into view. The .wrn-draw class (added on
+   scroll-in via IntersectionObserver) runs the sequence; keying .wrn-paper
+   on drawId remounts it so replay restarts cleanly. prefers-reduced-motion
+   shows the final state with no motion. */
+.wrn-preview-card .wrn-mark path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.wrn-preview-card .wrn-scrawl { opacity: 0; transform: translateY(4px); }
+.wrn-preview-card.wrn-draw .wrn-mark-underline path {
+  animation: wrn-draw-mark 1.2s ease forwards; animation-delay: 0.5s;
+}
+.wrn-preview-card.wrn-draw .wrn-scrawl-green {
+  animation: wrn-note-in 0.6s ease forwards; animation-delay: 1.9s;
+}
+.wrn-preview-card.wrn-draw .wrn-mark-circle path {
+  animation: wrn-draw-mark 1.2s ease forwards; animation-delay: 4.8s;
+}
+.wrn-preview-card.wrn-draw .wrn-scrawl-orange {
+  animation: wrn-note-in 0.6s ease forwards; animation-delay: 6.2s;
+}
+@keyframes wrn-draw-mark { to { stroke-dashoffset: 0; } }
+@keyframes wrn-note-in { to { opacity: 1; transform: translateY(0); } }
+.wrn-replay {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 14px 0 0; padding: 6px 12px; cursor: pointer;
+  font-family: ${F_BODY}; font-weight: 600; font-size: 12px;
+  color: #8FA0B8; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 999px;
+  transition: color .15s ease, border-color .15s ease;
+}
+.wrn-replay:hover { color: ${WHITE}; border-color: rgba(255,255,255,0.28); }
+@media (prefers-reduced-motion: reduce) {
+  .wrn-preview-card .wrn-mark path { stroke-dashoffset: 0 !important; animation: none !important; }
+  .wrn-preview-card .wrn-scrawl { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
+
 /* Peri credibility */
 .wrn-peri { background: ${CREAM}; padding: 72px 32px; }
 .wrn-peri-inner { max-width: 640px; margin: 0 auto; text-align: center; }
@@ -718,6 +755,42 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
             document.body.style.overflow = prevOverflow
         }
     }, [showVideo])
+
+    // Free-scan preview draw-in. drawId 0 = untouched (marks hidden); a
+    // scroll-in (IntersectionObserver, once at >=40% visible) or the replay
+    // button bumps it, which adds the .wrn-draw class and remounts the paper
+    // (via key={drawId}) so the CSS stroke-draw sequence restarts cleanly.
+    // prefers-reduced-motion is handled entirely in CSS (final state, no JS).
+    const previewCardRef = React.useRef<HTMLDivElement | null>(null)
+    const [drawId, setDrawId] = React.useState(0)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return
+        const el = previewCardRef.current
+        if (!el) return
+        // No IntersectionObserver support: play once instead of leaving the
+        // marks hidden forever.
+        if (typeof IntersectionObserver === "undefined") {
+            setDrawId((n) => (n === 0 ? 1 : n))
+            return
+        }
+        const io = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+                        setDrawId((n) => (n === 0 ? 1 : n))
+                        io.disconnect()
+                        break
+                    }
+                }
+            },
+            { threshold: [0, 0.4, 1] }
+        )
+        io.observe(el)
+        return () => io.disconnect()
+    }, [])
+    function replayPreview() {
+        setDrawId((n) => n + 1)
+    }
 
     // Inject the stylesheet once.
     React.useEffect(() => {
@@ -1152,14 +1225,17 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
                         Real verdict. Real strengths. Real risks. Real next step. In under 30 seconds.
                     </p>
 
-                    <div className="wrn-preview-card">
+                    <div
+                        className={"wrn-preview-card" + (drawId > 0 ? " wrn-draw" : "")}
+                        ref={previewCardRef}
+                    >
                         <div className="wrn-preview-top">
                             <span className="wrn-preview-brand">SIGNAL</span>
                             <span className="wrn-preview-read">7.0s read</span>
                         </div>
                         <p className="wrn-preview-line1">A recruiter just read your resume.</p>
 
-                        <div className="wrn-paper">
+                        <div className="wrn-paper" key={drawId}>
                             <p className="wrn-paper-label">FROM YOUR RESUME</p>
 
                             {/* Marked line 1: green underline (strength) */}
@@ -1173,6 +1249,7 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
                                     >
                                         <path
                                             d="M2,4 C 28,1.5 54,5.5 80,3.5 S 132,2 158,4 S 188,5.5 198,3"
+                                            pathLength={1}
                                             fill="none"
                                             stroke="#1F8A4C"
                                             strokeWidth={2}
@@ -1195,12 +1272,12 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
                                     >
                                         <path
                                             d="M14,9 C 70,3 140,4 190,9 C 198,22 198,40 191,52 C 138,58 60,57 11,52 C 3,40 3,21 10,9 C 16,5 34,4 52,5"
+                                            pathLength={1}
                                             fill="none"
                                             stroke={PEACH_DEEP}
                                             strokeWidth={1.8}
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
-                                            vectorEffect="non-scaling-stroke"
                                         />
                                     </svg>
                                 </span>
@@ -1215,6 +1292,17 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
                                 Strong campaign proof, but it reads B2B for a consumer role. Reframe the
                                 wins as cross-segment, and the fit gets a lot clearer.
                             </p>
+                        </div>
+
+                        <div style={{ textAlign: "right" as const }}>
+                            <button
+                                type="button"
+                                className="wrn-replay"
+                                onClick={replayPreview}
+                                aria-label="Replay the animation"
+                            >
+                                ↻ Replay
+                            </button>
                         </div>
                     </div>
 
