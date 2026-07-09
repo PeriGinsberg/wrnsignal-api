@@ -3476,7 +3476,7 @@ const loadingHeading: React.CSSProperties = {
 
 const loadingCardGrid: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))",
     gap: 12,
     marginBottom: 28,
     textAlign: "left" as const,
@@ -3521,7 +3521,7 @@ const tipBullet: React.CSSProperties = {
 
 const socialProofRow: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
     gap: 12,
     textAlign: "left" as const,
 }

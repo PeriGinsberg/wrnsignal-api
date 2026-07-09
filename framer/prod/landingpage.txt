@@ -1,18 +1,19 @@
 import * as React from "react"
+import { addPropertyControls, ControlType } from "framer"
 
 /**
- * SIGNAL Landing Page — v2 squeeze design
+ * SIGNAL Landing Page — warm redesign
  *
- *   - Hero + on-page form (PDF resume upload + JD paste textarea)
- *   - Authority strip, JobFit demo, Peri bio, four-pillar strip, final CTA
- *   - On submit:
+ *   - Hero + on-page scan form (PDF resume upload + JD paste textarea)
+ *   - Stats band, free-scan preview (recruiter's read), Peri bio, full-SIGNAL plug
+ *   - On submit (UNCHANGED functional flow):
  *       1. POST resume file to /api/resume-upload → returns extracted text
  *       2. Stash {resume_text, job_description, ts} in sessionStorage
  *       3. Navigate to TRIAL_RESULT_URL (trialjobfit page) which auto-runs
  *          POST /api/jobfit-run-trial-open and renders the result inline.
  *
- *   - Anchor CTAs (header "Try FREE", final CTA) scroll to #form, not
- *     navigation — analytics conversion fires only on real form submit.
+ *   - The hero form is the ONE real scan form. The closing CTA scrolls to it
+ *     (#form); conversion analytics fire only on the real form submit.
  *
  * @framerSupportedLayoutWidth any
  * @framerSupportedLayoutHeight any
@@ -23,9 +24,9 @@ const API_BASE = "https://wrnsignal-api.vercel.app"
 // Destination for the auto-run trial result page (trialjobfit.txt).
 // Relative path on purpose — keeps the navigation on the user's current
 // origin so the sessionStorage handoff survives. The Framer site is
-// published on multiple domains (stopapplyingblind.com and
-// wrnsignal.workforcereadynow.com) and an absolute URL pinned to one
-// origin breaks the cross-domain flow.
+// published on multiple domains (genuine-times-909123.framer.app in
+// dev, stopapplyingblind.com / wrnsignal.workforcereadynow.com in prod)
+// and an absolute URL pinned to one origin breaks the cross-domain flow.
 const TRIAL_RESULT_URL = "/signal/jobfit-run-trial"
 
 // Existing member login destination. Relative to current origin so it
@@ -52,229 +53,388 @@ const RESUME_CARRYOVER_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour
 // script watches for.
 const FREE_TRIAL_TRACK_PATH = "/signal/jobfit-run-trial"
 
-const STYLES = [
-    "* { box-sizing: border-box; }",
-    "html, body { margin: 0; width: 100%; overflow-x: hidden; }",
+// ─────────────────────────────────────────────────────────────────────────
+// Palette (warm redesign)
+// ─────────────────────────────────────────────────────────────────────────
+const CREAM = "#FFF6EC"
+const WHITE = "#FFFFFF"
+const COOL_BLUE = "#E6F3FC"
+const NAVY = "#13294A"
+const NAVY_DEEP = "#0E1F38"
+const PEACH = "#FEB06A"
+const PEACH_DEEP = "#F2963B"
+const WRN_BLUE = "#51ADE5"
+const WRN_BLUE_DEEP = "#1B72A8"
+const BODY = "#5B6472"
+const INK = "#1A2233"
+const MUTED = "#8A93A1"
+const BORDER = "#ECEEF1"
+const PAPER = "#F6F4EF"
 
-    ".v2-page { background: #0A1628; color: #E5E9F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; width: 100%; }",
-    ".v2-page a { color: inherit; }",
-    ".v2-page button { font-family: inherit; cursor: pointer; }",
-    ".v2-page textarea { font-family: inherit; resize: vertical; }",
-
-    // Header
-    ".v2-site-header { background: #0A1628; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); }",
-    ".v2-brand { display: flex; flex-direction: column; }",
-    ".v2-brand-mark { color: #fff; font-size: 15px; font-weight: 600; font-style: italic; letter-spacing: 0.5px; }",
-    ".v2-brand-mark .dash { color: rgba(255,255,255,0.5); font-weight: 400; }",
-    ".v2-brand-tag { color: #2CA58D; font-size: 9px; font-weight: 500; letter-spacing: 1.5px; margin-top: 2px; }",
-    ".v2-header-actions { display: flex; gap: 10px; align-items: center; }",
-    ".v2-header-btn { font-size: 12px; text-decoration: none; padding: 7px 14px; border-radius: 6px; }",
-    ".v2-header-btn-teal { color: #2CA58D; border: 1px solid rgba(44,165,141,0.4); }",
-    ".v2-header-btn-white { color: #fff; border: 1px solid rgba(255,255,255,0.2); }",
-
-    // Hero
-    ".v2-hero { padding: 56px 24px 24px; max-width: 760px; margin: 0 auto; text-align: center; }",
-    ".v2-eyebrow { color: #F4A261; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin-bottom: 28px; }",
-    ".v2-hero-headline { font-size: 48px; font-weight: 700; font-style: italic; line-height: 1.05; margin: 0 0 4px; color: #fff; letter-spacing: -0.5px; }",
-    ".v2-hero-headline-grad { font-size: 48px; font-weight: 700; font-style: italic; line-height: 1.15; margin: 0 0 24px; padding-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(90deg, #F4A261 0%, #F4A261 40%, #2CA58D 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #F4A261; }",
-    ".v2-hero-diagnosis { font-size: 18px; color: rgba(255,255,255,0.85); line-height: 1.5; margin: 0 0 8px; font-weight: 500; }",
-    ".v2-hero-diagnosis .accent { color: #F4A261; font-weight: 600; }",
-    ".v2-hero-body { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; margin: 0 auto 36px; max-width: 540px; }",
-
-    // Form card
-    ".v2-form-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 22px; max-width: 540px; margin: 0 auto; text-align: left; }",
-    ".v2-form-label { color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 14px; }",
-    ".v2-form-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }",
-    ".v2-step-num { background: #2CA58D; color: #042C25; font-weight: 700; font-size: 12px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 4px; }",
-
-    ".v2-upload-box { flex: 1; border: 1.5px dashed rgba(255,255,255,0.2); background: rgba(255,255,255,0.02); border-radius: 6px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: border-color 0.2s, background 0.2s; }",
-    ".v2-upload-box:hover { border-color: rgba(44,165,141,0.4); background: rgba(44,165,141,0.04); }",
-    ".v2-upload-box.has-file { border-color: rgba(44,165,141,0.5); background: rgba(44,165,141,0.06); border-style: solid; }",
-    ".v2-upload-box.uploading { opacity: 0.7; cursor: wait; }",
-    ".v2-upload-label { font-size: 13px; font-weight: 500; color: #fff; }",
-    ".v2-upload-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }",
-    ".v2-upload-btn { background: rgba(44,165,141,0.15); color: #2CA58D; font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(44,165,141,0.3); white-space: nowrap; }",
-
-    ".v2-textarea-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; }",
-    ".v2-textarea-label-row { display: flex; justify-content: space-between; align-items: baseline; }",
-    ".v2-textarea-label { color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 600; letter-spacing: 1px; }",
-    ".v2-textarea-helper { font-size: 10px; color: rgba(255,255,255,0.35); }",
-    ".v2-jd-textarea { width: 100%; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); border-radius: 6px; padding: 12px 14px; font-size: 13px; color: #fff; min-height: 110px; line-height: 1.5; }",
-    ".v2-jd-textarea::placeholder { color: rgba(255,255,255,0.4); }",
-    ".v2-jd-textarea:focus { outline: none; border-color: rgba(44,165,141,0.4); background: rgba(255,255,255,0.06); }",
-    ".v2-char-count { text-align: right; font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }",
-    ".v2-char-count.met { color: #2CA58D; }",
-
-    ".v2-form-error { font-size: 12px; color: #FF7676; margin-top: 10px; text-align: center; }",
-    ".v2-cta-primary { width: 100%; background: linear-gradient(90deg, #F4A261 0%, #E8915A 100%); color: #2C1810; border: none; border-radius: 6px; padding: 14px; font-size: 14px; font-weight: 700; font-style: italic; letter-spacing: 0.3px; margin-top: 6px; }",
-    ".v2-cta-primary:disabled { opacity: 0.6; cursor: wait; }",
-
-    ".v2-trust-inline { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }",
-    ".v2-trust-inline-text { font-size: 11px; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.4; text-align: center; }",
-    ".v2-trust-inline-text a { color: rgba(255,255,255,0.7); text-decoration: underline; text-decoration-color: rgba(255,255,255,0.3); }",
-    ".v2-trust-strip { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; flex-wrap: wrap; }",
-    ".v2-trust-item { font-size: 11px; color: rgba(255,255,255,0.45); }",
-    ".v2-trust-dot { width: 3px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 50%; }",
-    ".v2-login-link { font-size: 12px; color: rgba(255,255,255,0.4); margin: 14px 0 0; text-align: center; }",
-    ".v2-login-link a { color: #2CA58D; text-decoration: none; }",
-
-    // Authority strip
-    ".v2-authority { padding: 16px 24px 8px; max-width: 760px; margin: 0 auto; }",
-    ".v2-authority-text { font-size: 12px; color: rgba(255,255,255,0.5); text-align: center; margin: 0; line-height: 1.7; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); }",
-    ".v2-authority-text strong { color: #fff; font-weight: 600; }",
-
-    // Testimonials strip
-    ".v2-testimonials-strip { padding: 16px 24px 28px; max-width: 760px; margin: 0 auto; }",
-    ".v2-testimonials-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }",
-    ".v2-testimonial-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px 18px; }",
-    ".v2-testimonial-quote { font-size: 13px; color: #fff; font-style: italic; margin: 0 0 10px; line-height: 1.55; font-weight: 500; }",
-    ".v2-testimonial-attr { font-size: 11px; color: rgba(255,255,255,0.45); }",
-
-    // Demo section
-    ".v2-demo-section { background: #060F1C; padding: 64px 24px 32px; border-top: 1px solid rgba(255,255,255,0.06); }",
-    ".v2-demo-inner { max-width: 880px; margin: 0 auto; }",
-    ".v2-demo-header { text-align: center; margin-bottom: 36px; }",
-    ".v2-demo-title { font-size: 28px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 10px; line-height: 1.25; }",
-    ".v2-demo-sub { font-size: 14px; color: rgba(255,255,255,0.55); margin: 0; }",
-
-    ".v2-job-bar { background: #0F1F3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }",
-    ".v2-job-title { color: #fff; font-weight: 700; font-size: 13px; }",
-    ".v2-job-company { color: rgba(255,255,255,0.5); font-size: 13px; }",
-
-    ".v2-verdict-panel { background: #0F1F3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 24px; margin-bottom: 12px; border-top: 3px solid #2CA58D; }",
-    ".v2-verdict-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }",
-    ".v2-verdict-label { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 1.5px; font-weight: 600; margin-bottom: 8px; }",
-    ".v2-verdict-decision { font-size: 56px; font-weight: 800; font-style: italic; color: #2CA58D; line-height: 1; letter-spacing: -1px; }",
-    ".v2-score-display { text-align: right; }",
-    ".v2-score-num { font-size: 44px; font-weight: 800; font-style: italic; color: #2CA58D; line-height: 1; }",
-    ".v2-score-total { font-size: 14px; color: rgba(255,255,255,0.4); margin-left: 2px; }",
-    ".v2-score-bar { width: 60px; height: 3px; background: #2CA58D; margin-top: 4px; margin-left: auto; border-radius: 2px; }",
-
-    ".v2-your-move { background: rgba(44,165,141,0.08); border-left: 3px solid #2CA58D; padding: 16px 18px; border-radius: 0 4px 4px 0; margin-bottom: 16px; }",
-    ".v2-your-move-label { font-size: 10px; color: #2CA58D; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 10px; }",
-    ".v2-your-move-action { font-size: 14px; color: #fff; margin: 0 0 10px; font-weight: 600; line-height: 1.5; }",
-    ".v2-your-move-principle { font-size: 13px; color: rgba(255,255,255,0.75); margin: 0 0 12px; line-height: 1.6; font-style: italic; }",
-    ".v2-your-move-principle .punch { color: #F4A261; font-weight: 600; font-style: normal; }",
-    ".v2-product-hook { display: inline-flex; align-items: center; gap: 6px; background: rgba(31,58,95,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px 9px; }",
-    ".v2-product-hook-icon { font-size: 10px; }",
-    ".v2-product-hook-text { font-size: 10px; color: rgba(255,255,255,0.7); letter-spacing: 0.3px; }",
-
-    ".v2-new-job-stub { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px; text-align: center; color: rgba(255,255,255,0.5); font-size: 13px; }",
-
-    // Coaching block
-    ".v2-coaching-block { background: linear-gradient(135deg, rgba(244,162,97,0.10) 0%, rgba(244,162,97,0.03) 100%); border: 1px solid rgba(244,162,97,0.25); border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }",
-    ".v2-coaching-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }",
-    ".v2-coaching-text { flex: 1; min-width: 220px; }",
-    ".v2-coaching-eyebrow-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }",
-    ".v2-coaching-icon { color: #F4A261; font-size: 16px; line-height: 1; }",
-    ".v2-coaching-eyebrow { font-size: 9px; color: #F4A261; letter-spacing: 2px; font-weight: 700; }",
-    ".v2-coaching-headline { font-size: 18px; color: #fff; font-weight: 700; font-style: italic; margin: 0; line-height: 1.2; letter-spacing: 0.2px; }",
-    ".v2-coaching-headline .punch { color: #F4A261; }",
-    ".v2-coaching-setup { font-size: 11px; color: rgba(255,255,255,0.6); margin: 6px 0 0; line-height: 1.5; }",
-    ".v2-coaching-setup strong { color: #fff; font-weight: 600; }",
-    ".v2-coaching-cards { display: flex; gap: 8px; flex-shrink: 0; }",
-    ".v2-coaching-card { background: rgba(31,58,95,0.6); border: 1px solid rgba(244,162,97,0.2); border-radius: 6px; padding: 10px 12px; text-align: center; min-width: 90px; }",
-    ".v2-coaching-card-num { font-size: 14px; font-weight: 800; font-style: italic; color: #F4A261; line-height: 1; margin-bottom: 3px; }",
-    ".v2-coaching-card-text { font-size: 10px; color: #fff; font-weight: 500; line-height: 1.3; }",
-
-    // Columns
-    ".v2-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }",
-    ".v2-col-panel { background: #0F1F3A; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 20px; }",
-    ".v2-col-strengths { border-top: 3px solid #2CA58D; }",
-    ".v2-col-risks { border-top: 3px solid #F4A261; }",
-    ".v2-col-header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }",
-    ".v2-col-icon-circle { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }",
-    ".v2-col-icon-strengths { background: rgba(44,165,141,0.15); border: 1px solid rgba(44,165,141,0.4); color: #2CA58D; }",
-    ".v2-col-icon-risks { background: rgba(244,162,97,0.15); border: 1px solid rgba(244,162,97,0.4); color: #F4A261; }",
-    ".v2-col-title-strengths { color: #2CA58D; font-weight: 700; font-size: 14px; }",
-    ".v2-col-title-risks { color: #F4A261; font-weight: 700; font-size: 14px; }",
-    ".v2-col-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0 0 14px 34px; }",
-    ".v2-strength-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }",
-    ".v2-strength-item:last-child { margin-bottom: 0; }",
-    ".v2-strength-check { color: #2CA58D; font-size: 14px; margin-top: 1px; }",
-    ".v2-strength-text { font-size: 12px; color: rgba(255,255,255,0.78); margin: 0; line-height: 1.55; }",
-    ".v2-strength-arrow { color: #2CA58D; }",
-    ".v2-risk-item { margin-bottom: 14px; }",
-    ".v2-risk-item:last-child { margin-bottom: 0; }",
-    ".v2-risk-header { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 4px; }",
-    ".v2-risk-warn { color: #F4A261; font-size: 12px; margin-top: 1px; }",
-    ".v2-risk-label { color: #F4A261; font-weight: 700; font-size: 11px; letter-spacing: 0.5px; }",
-    ".v2-risk-text { font-size: 12px; color: rgba(255,255,255,0.78); margin: 0 0 6px 20px; line-height: 1.55; }",
-    ".v2-risk-text .emphasis { color: #F4A261; font-weight: 500; }",
-    ".v2-risk-hook { margin: 0 0 0 20px; }",
-
-    ".v2-sample-disclaimer { font-size: 12px; color: rgba(255,255,255,0.4); text-align: center; margin: 24px 0 14px; font-style: italic; }",
-    ".v2-demo-link-wrap { text-align: center; padding-top: 6px; margin-top: -8px; }",
-    ".v2-demo-link { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px; }",
-    ".v2-play-circle { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: rgba(44,165,141,0.15); border: 1px solid rgba(44,165,141,0.4); border-radius: 50%; color: #2CA58D; font-size: 8px; padding-left: 2px; }",
-    ".v2-demo-link-duration { color: #2CA58D; font-weight: 500; }",
-
-    // Peri bio
-    ".v2-peri-section { background: #060F1C; padding: 28px 24px 40px; border-top: 1px solid rgba(255,255,255,0.06); }",
-    ".v2-peri-inner { max-width: 540px; margin: 0 auto; display: flex; align-items: center; gap: 18px; }",
-    ".v2-peri-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #F4A261 0%, #E8915A 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: #2C1810; flex-shrink: 0; }",
-    ".v2-peri-eyebrow { font-size: 11px; color: #2CA58D; font-weight: 600; letter-spacing: 1.5px; margin: 0 0 4px; }",
-    ".v2-peri-headline { font-size: 14px; color: #fff; margin: 0 0 6px; line-height: 1.5; font-weight: 500; }",
-    ".v2-peri-body { font-size: 13px; color: rgba(255,255,255,0.6); margin: 0; line-height: 1.5; }",
-
-    // Pillars
-    ".v2-pillars-section { padding: 56px 24px 24px; max-width: 880px; margin: 0 auto; }",
-    ".v2-pillars-header { text-align: center; margin-bottom: 28px; }",
-    ".v2-pillars-eyebrow { color: rgba(255,255,255,0.45); font-size: 11px; font-weight: 600; letter-spacing: 2px; margin-bottom: 8px; }",
-    ".v2-pillars-sub { font-size: 14px; color: rgba(255,255,255,0.55); margin: 0 auto; line-height: 1.6; max-width: 540px; }",
-    ".v2-pillars-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }",
-    ".v2-pillar-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 18px 14px; text-align: center; }",
-    ".v2-pillar-icon { font-size: 18px; margin-bottom: 8px; }",
-    ".v2-pillar-title { color: #fff; font-weight: 600; font-size: 12px; margin-bottom: 4px; }",
-    ".v2-pillar-body { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.45; }",
-    ".v2-pillars-closer { font-size: 11px; color: rgba(255,255,255,0.35); text-align: center; margin: 18px 0 0; font-style: italic; }",
-
-    // Final CTA
-    ".v2-final-cta { padding: 24px 24px 56px; text-align: center; max-width: 760px; margin: 0 auto; }",
-    ".v2-final-cta-title { font-size: 28px; font-weight: 700; font-style: italic; color: #fff; margin: 0 0 12px; line-height: 1.25; }",
-    ".v2-final-cta-sub { font-size: 15px; color: rgba(255,255,255,0.65); margin: 0 0 28px; line-height: 1.55; }",
-    ".v2-cta-final-btn { background: linear-gradient(90deg, #F4A261 0%, #E8915A 100%); color: #2C1810; border: none; border-radius: 6px; padding: 16px 36px; font-size: 14px; font-weight: 700; font-style: italic; letter-spacing: 0.5px; }",
-    ".v2-final-cta-trust { font-size: 11px; color: rgba(255,255,255,0.4); margin: 14px 0 0; letter-spacing: 0.5px; }",
-
-    // Footer
-    ".v2-footer { background: #060F1C; padding: 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); }",
-    ".v2-footer-text { font-size: 11px; color: rgba(255,255,255,0.3); margin: 0; }",
-    ".v2-footer-text a { color: rgba(255,255,255,0.4); text-decoration: none; }",
-
-    // Responsive
-    "@media (max-width: 768px) {",
-    "  .v2-hero-headline, .v2-hero-headline-grad { font-size: 34px; }",
-    "  .v2-verdict-decision { font-size: 42px; }",
-    "  .v2-score-num { font-size: 34px; }",
-    "  .v2-columns { grid-template-columns: 1fr; }",
-    "  .v2-coaching-cards { width: 100%; }",
-    "  .v2-coaching-card { flex: 1; min-width: 0; }",
-    "  .v2-pillars-grid { grid-template-columns: repeat(2, 1fr); }",
-    "  .v2-demo-title, .v2-final-cta-title { font-size: 22px; }",
-    "  .v2-site-header { padding: 14px 18px; }",
-    "  .v2-header-btn { font-size: 11px; padding: 6px 10px; }",
-    "  .v2-testimonials-grid { grid-template-columns: 1fr; }",
-    "}",
-
-    "@media (max-width: 480px) {",
-    "  .v2-hero { padding: 40px 18px 32px; }",
-    "  .v2-hero-headline, .v2-hero-headline-grad { font-size: 28px; }",
-    "  .v2-demo-section { padding: 48px 18px 24px; }",
-    "  .v2-pillars-grid { grid-template-columns: 1fr 1fr; }",
-    "  .v2-header-btn-teal { display: none; }",
-    "  .v2-jd-textarea { min-height: 130px; }",
-    "}",
-].join("\n")
+// Fonts. Loaded at runtime via an injected Google Fonts link (see the
+// font-load effect in the component), mirroring trialjobfit.txt's approach.
+const F_HEAD = "'Inter Tight', system-ui, sans-serif"
+const F_BODY = "'Inter', system-ui, sans-serif"
+const F_HAND = "'Caveat', cursive"
 
 // ─────────────────────────────────────────────────────────────────────────
-// Dev banner + App Store badge — shown only in dev (hostname allowlist
-// in DevBanner is the runtime fail-safe). When mirroring to framer/prod
-// flip DEV_MODE to false.
+// Styles. Injected once into <head> as a <style> tag (see effect below).
+// Class-based so @media breakpoints handle fine responsive tuning; the
+// hero column split is driven by the isMobile hook.
+// ─────────────────────────────────────────────────────────────────────────
+const STYLES = `
+.wrn-page * { box-sizing: border-box; }
+.wrn-page {
+  font-family: ${F_BODY};
+  color: ${INK};
+  background: ${CREAM};
+  width: 100%;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.wrn-page a { text-decoration: none; }
+
+/* Header */
+.wrn-header {
+  height: 56px;
+  background: ${WHITE};
+  border-bottom: 1px solid ${BORDER};
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+}
+.wrn-logo {
+  font-family: ${F_HEAD};
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: ${NAVY};
+}
+.wrn-logo-img { height: 30px; width: auto; display: block; }
+.wrn-login {
+  font-family: ${F_BODY};
+  font-weight: 600;
+  font-size: 14px;
+  color: ${WRN_BLUE_DEEP};
+}
+
+/* Hero */
+.wrn-hero {
+  position: relative;
+  background: ${CREAM};
+  padding: 64px 32px 72px;
+  overflow: hidden;
+}
+.wrn-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 48px;
+  align-items: start;
+}
+.wrn-eyebrow {
+  font-family: ${F_BODY};
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: ${WRN_BLUE_DEEP};
+  margin: 0 0 14px;
+}
+.wrn-h1 {
+  font-family: ${F_HEAD};
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1.05;
+  color: ${NAVY};
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+.wrn-h1-peach { color: ${PEACH_DEEP}; }
+.wrn-callout-wrap { position: relative; display: inline-block; }
+.wrn-callout-underline {
+  position: absolute; left: 0; right: 0; bottom: -8px;
+  width: 100%; height: 14px; overflow: visible; pointer-events: none;
+}
+.wrn-sub {
+  font-family: ${F_HEAD};
+  font-weight: 600;
+  font-size: 22px;
+  color: ${NAVY};
+  margin: 22px 0 0;
+}
+.wrn-sub-peach { color: ${PEACH}; }
+.wrn-body {
+  font-family: ${F_BODY};
+  font-size: 16px;
+  line-height: 1.6;
+  color: ${BODY};
+  margin: 18px 0 26px;
+  max-width: 460px;
+}
+.wrn-empathy { margin: 22px 0; max-width: 460px; }
+.wrn-empathy-lead {
+  font-family: ${F_BODY};
+  font-weight: 700;
+  font-size: 16.5px;
+  line-height: 1.4;
+  color: ${INK};
+  margin: 0 0 8px;
+}
+.wrn-empathy-body {
+  font-family: ${F_BODY};
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.55;
+  color: ${BODY};
+  margin: 0;
+}
+.wrn-trust { display: flex; flex-direction: column; gap: 10px; }
+.wrn-trust-item {
+  display: flex; align-items: center; gap: 10px;
+  font-family: ${F_BODY}; font-size: 14px; font-weight: 500; color: ${INK};
+}
+.wrn-check {
+  flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+  background: ${WRN_BLUE}; color: ${WHITE};
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+
+/* Scan form card */
+.wrn-form-card {
+  background: ${WHITE};
+  border: 1px solid ${BORDER};
+  border-radius: 18px;
+  padding: 26px 24px;
+  box-shadow: 0 18px 46px rgba(19,41,74,0.10);
+}
+.wrn-form-label {
+  font-family: ${F_BODY}; font-weight: 700; font-size: 12px;
+  letter-spacing: 1.4px; color: ${WRN_BLUE_DEEP}; margin: 0 0 16px;
+}
+.wrn-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.wrn-step-num {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: ${NAVY}; color: ${WHITE};
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: ${F_HEAD}; font-weight: 700; font-size: 12px; margin-top: 2px;
+}
+.wrn-step-body { flex: 1; }
+.wrn-step-title {
+  font-family: ${F_BODY}; font-weight: 600; font-size: 13px; color: ${INK}; margin: 0 0 8px;
+}
+.wrn-upload {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: ${COOL_BLUE};
+  border: 1px dashed ${WRN_BLUE};
+  border-radius: 12px; padding: 14px 14px; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.wrn-upload.has-file { border-style: solid; }
+.wrn-upload.uploading { opacity: 0.8; }
+.wrn-upload-label { font-family: ${F_BODY}; font-weight: 600; font-size: 13px; color: ${INK}; }
+.wrn-upload-sub { font-family: ${F_BODY}; font-size: 12px; color: ${MUTED}; margin-top: 2px; }
+.wrn-upload-btn {
+  flex-shrink: 0; font-family: ${F_BODY}; font-weight: 600; font-size: 12px;
+  color: ${WRN_BLUE_DEEP}; background: ${WHITE};
+  border: 1px solid ${WRN_BLUE}; border-radius: 8px; padding: 8px 12px;
+}
+.wrn-textarea-wrap { margin-top: 10px; }
+.wrn-textarea-helper { font-family: ${F_BODY}; font-size: 12px; color: ${MUTED}; }
+.wrn-textarea {
+  width: 100%; margin-top: 6px; resize: vertical; min-height: 88px;
+  font-family: ${F_BODY}; font-size: 13px; line-height: 1.5; color: ${INK};
+  background: ${WHITE}; border: 1px solid ${BORDER}; border-radius: 10px; padding: 10px 12px;
+}
+.wrn-textarea:focus { outline: none; border-color: ${WRN_BLUE}; }
+.wrn-charcount { font-family: ${F_BODY}; font-size: 11px; color: ${MUTED}; margin-top: 6px; }
+.wrn-charcount.met { color: ${WRN_BLUE_DEEP}; font-weight: 600; }
+.wrn-cta {
+  width: 100%; margin-top: 18px; cursor: pointer;
+  font-family: ${F_HEAD}; font-weight: 700; font-size: 16px; color: ${NAVY};
+  background: ${PEACH}; border: none; border-radius: 12px; padding: 15px 18px;
+  animation: wrn-glow 2.6s ease-in-out infinite;
+  transition: transform .12s ease, background .15s ease;
+}
+.wrn-cta:hover { background: ${PEACH_DEEP}; transform: translateY(-1px); }
+.wrn-cta:disabled { background: #C9CDD3; color: ${WHITE}; cursor: wait; animation: none; }
+.wrn-fineprint { font-family: ${F_BODY}; font-size: 12px; color: ${MUTED}; text-align: center; margin: 12px 0 0; }
+.wrn-error { font-family: ${F_BODY}; font-size: 13px; color: #C0392B; margin-top: 10px; }
+
+/* Floating hero blobs */
+.wrn-blob { position: absolute; border-radius: 50%; filter: blur(60px); z-index: 1; pointer-events: none; }
+.wrn-blob-a { width: 360px; height: 360px; background: ${PEACH}; opacity: 0.16; top: -80px; left: -60px; animation: wrn-float 14s ease-in-out infinite; }
+.wrn-blob-b { width: 320px; height: 320px; background: ${WRN_BLUE}; opacity: 0.14; bottom: -100px; right: -40px; animation: wrn-float 18s ease-in-out infinite reverse; }
+
+/* Stats band (dark) */
+.wrn-stats { background: ${NAVY}; padding: 40px 32px; }
+.wrn-stats-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.wrn-stat { text-align: center; }
+.wrn-stat-num { font-family: ${F_HEAD}; font-weight: 800; font-size: 40px; color: ${WHITE}; line-height: 1; }
+.wrn-stat-unit { color: ${PEACH}; }
+.wrn-stat-label { font-family: ${F_BODY}; font-size: 13px; color: #9AA3B2; margin-top: 8px; }
+
+/* Free-scan preview */
+.wrn-preview { background: ${WHITE}; padding: 72px 32px; }
+.wrn-preview-inner { max-width: 720px; margin: 0 auto; text-align: center; }
+.wrn-preview-eyebrow { font-family: ${F_BODY}; font-weight: 700; font-size: 13px; letter-spacing: 2px; color: ${PEACH_DEEP}; margin: 0 0 12px; }
+.wrn-preview-headline { font-family: ${F_HEAD}; font-weight: 800; font-size: 32px; color: ${NAVY}; margin: 0 0 12px; letter-spacing: -0.3px; }
+.wrn-preview-sub { font-family: ${F_BODY}; font-size: 15px; line-height: 1.6; color: ${BODY}; margin: 0 auto 32px; max-width: 520px; }
+.wrn-preview-card {
+  background: ${NAVY_DEEP}; border-radius: 20px; padding: 26px 22px; text-align: left;
+  box-shadow: 0 24px 60px rgba(14,31,56,0.35);
+}
+.wrn-preview-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.wrn-preview-brand { font-family: ${F_BODY}; font-weight: 600; font-size: 13px; letter-spacing: 1px; color: ${WHITE}; }
+.wrn-preview-read { font-family: monospace; font-size: 12px; color: #8FA0B8; }
+.wrn-preview-line1 { font-family: ${F_HEAD}; font-weight: 700; font-size: 18px; color: ${WHITE}; margin: 0 0 16px; }
+.wrn-paper {
+  position: relative; background: ${PAPER}; border-radius: 8px; padding: 18px 16px;
+  transform: rotate(-0.8deg); box-shadow: 0 12px 28px rgba(0,0,0,0.34);
+}
+.wrn-paper-label { font-family: ${F_BODY}; font-weight: 700; font-size: 9px; letter-spacing: 0.8px; color: #6A6253; margin: 0 0 10px; }
+.wrn-paper-line { position: relative; font-family: ${F_BODY}; font-size: 12px; line-height: 1.5; color: #2E2A22; margin: 0 0 18px; }
+.wrn-mark { position: absolute; overflow: visible; pointer-events: none; }
+.wrn-mark-underline { left: 0; right: 0; bottom: -4px; width: 100%; height: 7px; }
+.wrn-mark-circle { left: -8px; top: -6px; width: calc(100% + 16px); height: calc(100% + 12px); }
+.wrn-scrawl { font-family: ${F_HAND}; font-size: 16px; line-height: 1.1; display: inline-block; margin-top: 4px; }
+.wrn-scrawl-green { color: #1F8A4C; }
+.wrn-scrawl-orange { color: ${PEACH_DEEP}; }
+.wrn-lostme { margin-top: 4px; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; }
+.wrn-lostme-label { font-family: ${F_BODY}; font-weight: 600; font-size: 11px; letter-spacing: 1.5px; color: ${PEACH}; margin: 0 0 6px; }
+.wrn-lostme-text { font-family: ${F_BODY}; font-size: 13px; line-height: 1.5; color: #C7D0DD; margin: 0; }
+.wrn-demo-link { display: inline-block; margin: 26px 0 8px; font-family: ${F_BODY}; font-weight: 600; font-size: 14px; color: ${WRN_BLUE_DEEP}; background: none; border: none; padding: 0; cursor: pointer; }
+.wrn-demo-link:hover { color: ${NAVY}; }
+.wrn-demo-note { font-family: ${F_BODY}; font-style: italic; font-size: 12px; color: ${MUTED}; margin: 0; }
+
+/* Peri credibility */
+.wrn-peri { background: ${CREAM}; padding: 72px 32px; }
+.wrn-peri-inner { max-width: 640px; margin: 0 auto; text-align: center; }
+.wrn-peri-avatar {
+  width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 18px;
+  background: ${PEACH}; color: ${NAVY};
+  display: flex; align-items: center; justify-content: center;
+  font-family: ${F_HEAD}; font-weight: 800; font-size: 24px; letter-spacing: 1px;
+}
+.wrn-peri-eyebrow { font-family: ${F_BODY}; font-weight: 700; font-size: 13px; letter-spacing: 2px; color: ${PEACH_DEEP}; margin: 0 0 10px; }
+.wrn-peri-headline { font-family: ${F_HEAD}; font-weight: 800; font-size: 30px; color: ${NAVY}; margin: 0 0 14px; letter-spacing: -0.3px; }
+.wrn-peri-body { font-family: ${F_BODY}; font-size: 16px; line-height: 1.65; color: ${BODY}; margin: 0; }
+
+/* Full-SIGNAL plug */
+.wrn-plug { background: ${WHITE}; padding: 72px 32px 84px; }
+.wrn-plug-inner { max-width: 1000px; margin: 0 auto; text-align: center; }
+.wrn-plug-eyebrow { font-family: ${F_BODY}; font-weight: 700; font-size: 13px; letter-spacing: 2px; color: ${WRN_BLUE_DEEP}; margin: 0 0 10px; }
+.wrn-plug-headline { font-family: ${F_HEAD}; font-weight: 800; font-size: 30px; line-height: 1.15; color: ${NAVY}; margin: 0 0 14px; letter-spacing: -0.3px; }
+.wrn-plug-sub { font-family: ${F_BODY}; font-size: 16px; line-height: 1.6; color: ${BODY}; margin: 0 auto 40px; max-width: 560px; }
+
+/* System loop */
+.wrn-loop { max-width: 620px; margin: 0 auto 44px; text-align: left; }
+.wrn-loop-step { display: flex; gap: 18px; }
+.wrn-loop-rail { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.wrn-loop-chip {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: ${F_HEAD}; font-weight: 800; font-size: 16px; color: ${NAVY};
+}
+.wrn-loop-connector { width: 2px; flex: 1; min-height: 26px; margin: 6px 0; border-radius: 2px; }
+.wrn-loop-content { padding-bottom: 28px; }
+.wrn-loop-step:last-child .wrn-loop-content { padding-bottom: 0; }
+.wrn-loop-label { font-family: ${F_BODY}; font-weight: 700; font-size: 12px; letter-spacing: 1.2px; margin: 5px 0 8px; }
+.wrn-loop-headline { font-family: ${F_HEAD}; font-weight: 700; font-size: 20px; line-height: 1.25; color: ${NAVY}; margin: 0 0 8px; letter-spacing: -0.2px; }
+.wrn-loop-body { font-family: ${F_BODY}; font-size: 15px; line-height: 1.55; color: ${BODY}; margin: 0; }
+
+/* Proof band (dark) */
+.wrn-proof { background: ${NAVY}; border-radius: 16px; padding: 32px 28px; max-width: 720px; margin: 0 auto 48px; text-align: center; }
+.wrn-proof-headline { font-family: ${F_HEAD}; font-weight: 800; font-size: 24px; line-height: 1.3; color: ${WHITE}; margin: 0 0 12px; letter-spacing: -0.2px; }
+.wrn-proof-sub { font-family: ${F_BODY}; font-size: 15px; line-height: 1.6; color: #B9C2D0; margin: 0; }
+.wrn-plug-close { font-family: ${F_HEAD}; font-weight: 800; font-size: 26px; color: ${NAVY}; margin: 0 auto 22px; max-width: 560px; letter-spacing: -0.3px; }
+.wrn-plug-cta {
+  display: inline-block; cursor: pointer;
+  font-family: ${F_HEAD}; font-weight: 700; font-size: 16px; color: ${NAVY};
+  background: ${PEACH}; border: none; border-radius: 12px; padding: 15px 30px;
+  animation: wrn-glow 2.6s ease-in-out infinite;
+}
+.wrn-plug-cta:hover { background: ${PEACH_DEEP}; }
+.wrn-plug-secondary { display: block; margin-top: 16px; font-family: ${F_BODY}; font-size: 14px; color: ${MUTED}; }
+.wrn-plug-secondary a { color: ${WRN_BLUE_DEEP}; font-weight: 600; }
+
+/* Motion */
+.wrn-fadeup { opacity: 0; animation: wrn-fadeup .7s ease forwards; }
+@keyframes wrn-fadeup { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes wrn-glow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(242,150,59,0.32); }
+  50% { box-shadow: 0 12px 36px rgba(242,150,59,0.58); }
+}
+@keyframes wrn-float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(14px, -18px); }
+}
+@keyframes wrn-underline-sweep { from { stroke-dashoffset: 220; } to { stroke-dashoffset: 0; } }
+.wrn-callout-underline path { stroke-dasharray: 220; stroke-dashoffset: 220; animation: wrn-underline-sweep 1s ease .5s forwards; }
+
+/* Video modal */
+.wrn-modal-scrim {
+  position: fixed; inset: 0; z-index: 11000;
+  background: rgba(19,41,74,0.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: wrn-modal-fade .2s ease both;
+}
+.wrn-modal-dialog { position: relative; width: 100%; max-width: 880px; }
+.wrn-modal-close {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: ${NAVY}; color: ${WHITE}; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.wrn-modal-video {
+  position: relative; width: 100%; padding-top: 56.25%;
+  border-radius: 14px; overflow: hidden; background: #000;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.wrn-modal-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+@keyframes wrn-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wrn-header { padding: 0 18px; }
+  .wrn-hero { padding: 40px 18px 52px; }
+  .wrn-hero-inner { gap: 32px; }
+  .wrn-h1 { font-size: 34px; }
+  .wrn-sub { font-size: 19px; }
+  .wrn-stats-inner { grid-template-columns: 1fr; gap: 22px; }
+  .wrn-preview { padding: 52px 18px; }
+  .wrn-preview-headline { font-size: 26px; }
+  .wrn-peri { padding: 52px 18px; }
+  .wrn-peri-headline { font-size: 25px; }
+  .wrn-plug { padding: 52px 18px 64px; }
+  .wrn-plug-headline { font-size: 25px; }
+  .wrn-loop-headline { font-size: 18px; }
+  .wrn-proof-headline { font-size: 21px; }
+  .wrn-plug-close { font-size: 22px; }
+}
+
+/* Desktop readability (min-width:769px). Larger hero body copy and a
+   capped measure on the left column so lines stay short on wide
+   screens. Mobile (<=768px) keeps the base values above, untouched. */
+@media (min-width: 769px) {
+  .wrn-body { font-size: 17px; line-height: 1.55; max-width: 480px; }
+  .wrn-empathy { max-width: 480px; }
+  .wrn-empathy-lead { font-size: 18px; }
+  .wrn-empathy-body { font-size: 17px; line-height: 1.55; }
+}
+`
+
+// ─────────────────────────────────────────────────────────────────────────
+// Dev banner — shown only in dev (hostname allowlist in DevBanner is the
+// runtime fail-safe). When mirroring to framer/prod flip DEV_MODE to false.
 // ─────────────────────────────────────────────────────────────────────────
 const DEV_MODE = false
-
-const APP_STORE_URL =
-    "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
 
 function DevBanner() {
     const [hostname, setHostname] = React.useState("")
@@ -328,47 +488,10 @@ function DevBanner() {
     )
 }
 
-function AppStoreBadge() {
-    const [isMobile, setIsMobile] = React.useState(false)
-    React.useEffect(() => {
-        if (typeof window === "undefined") return
-        const check = () => setIsMobile(window.innerWidth < 768)
-        check()
-        window.addEventListener("resize", check)
-        return () => window.removeEventListener("resize", check)
-    }, [])
-    const bannerOffset = DEV_MODE ? 40 : 0
-    return (
-        <a
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Download SIGNAL on the App Store"
-            style={{
-                position: "fixed" as const,
-                top: (isMobile ? 16 : 24) + bannerOffset,
-                right: isMobile ? 16 : 32,
-                zIndex: 9999,
-                display: "block",
-                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
-            }}
-        >
-            <img
-                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
-                alt="Download on the App Store"
-                width={isMobile ? 108 : 135}
-                height={isMobile ? 32 : 40}
-                style={{ display: "block" }}
-            />
-        </a>
-    )
-}
-
 function PageShell() {
     return (
         <>
             <DevBanner />
-            <AppStoreBadge />
             {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
         </>
     )
@@ -538,58 +661,9 @@ function fireFreeTrialCtaClick() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Sample data for the static "What you get — FREE" demo section. These are
-// the exact strings from the v2 HTML mockup; they never reach the engine.
-// ─────────────────────────────────────────────────────────────────────────
-const SAMPLE_STRENGTHS: Array<{ text: string; arrow: string }> = [
-    {
-        text:
-            "Your summer internship at a regional consumer brand involved campaign tracking and copy support — TechFlow's role names exactly those tasks.",
-        arrow:
-            "→ Lead your resume top-third with the internship and the most measurable outcome (open rate, signups, anything quantified).",
-    },
-    {
-        text:
-            "Your senior capstone required market research, audience segmentation, and a pitch deck — the same deliverables this role produces.",
-        arrow:
-            "→ Keep it under Academic Experience, but describe it the way you'd describe professional work: name the deliverable, the audience, and the outcome.",
-    },
-]
-
-type SampleRisk = {
-    label: string
-    text: React.ReactNode
-    hook?: { icon: string; text: string }
-}
-
-const SAMPLE_RISKS: SampleRisk[] = [
-    {
-        label: "NO PAID-MEDIA EXPERIENCE",
-        text:
-            "The role lists Google Ads as preferred. Your background is organic content. Address directly in cover letter — frame your willingness to learn paid.",
-        hook: { icon: "✉", text: "SIGNAL Cover Letter will draft this for you" },
-    },
-    {
-        label: "EXCEL NOT ON YOUR RESUME",
-        text: (
-            <>
-                The role lists Excel as required. It's not on your resume — but if you used it in your internship or coursework,{" "}
-                <span className="emphasis">now is the time to add it.</span> The system can't credit what it can't see.
-            </>
-        ),
-        hook: { icon: "📐", text: "SIGNAL Positioning will rewrite this for you" },
-    },
-    {
-        label: "B2C VS. B2B POSITIONING",
-        text:
-            "Your campaigns were B2B SaaS; the role is B2C consumer. Reframe your wins as cross-segment insights, not just B2B-specific results.",
-    },
-]
-
-// ─────────────────────────────────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────────────────────────────────
-export default function SignalLandingPage(props: { style?: React.CSSProperties }) {
+export default function SignalLandingPage(props: { style?: React.CSSProperties; logo?: string }) {
     const [resumeText, setResumeText] = React.useState("")
     const [resumeLabel, setResumeLabel] = React.useState("Upload your resume")
     const [resumeSub, setResumeSub] = React.useState("PDF (DOCX accepted)")
@@ -602,8 +676,52 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
 
     const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
+    // Responsive: hero splits two-column on desktop, stacks on mobile.
+    // Mirrors trialjobfit.txt's isMobile hook.
+    const [isMobile, setIsMobile] = React.useState(false)
     React.useEffect(() => {
-        const id = "v2-landing-styles"
+        if (typeof window === "undefined") return
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
+
+    // Hero "32" count-up on load (0 -> 32).
+    const [heroCount, setHeroCount] = React.useState(0)
+    React.useEffect(() => {
+        let n = 0
+        const id = setInterval(() => {
+            n += 1
+            setHeroCount(n)
+            if (n >= 32) clearInterval(id)
+        }, 45)
+        return () => clearInterval(id)
+    }, [])
+
+    // Demo video lightbox. Conditionally rendered on showVideo so the iframe
+    // unmounts on close (an iframe left mounted keeps playing audio). While
+    // open: Escape closes it and body scroll is locked; both are restored on
+    // close via the effect cleanup.
+    const [showVideo, setShowVideo] = React.useState(false)
+    React.useEffect(() => {
+        if (!showVideo) return
+        if (typeof window === "undefined") return
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setShowVideo(false)
+        }
+        window.addEventListener("keydown", onKey)
+        const prevOverflow = document.body.style.overflow
+        document.body.style.overflow = "hidden"
+        return () => {
+            window.removeEventListener("keydown", onKey)
+            document.body.style.overflow = prevOverflow
+        }
+    }, [showVideo])
+
+    // Inject the stylesheet once.
+    React.useEffect(() => {
+        const id = "wrn-landing-styles"
         let el = document.getElementById(id) as HTMLStyleElement | null
         if (!el) {
             el = document.createElement("style")
@@ -611,6 +729,20 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
             document.head.appendChild(el)
         }
         el.textContent = STYLES
+    }, [])
+
+    // Load Inter Tight / Inter / Caveat via an injected Google Fonts link,
+    // mirroring trialjobfit.txt's font-load pattern.
+    React.useEffect(() => {
+        const id = "wrn-landing-fonts"
+        if (typeof document !== "undefined" && !document.getElementById(id)) {
+            const link = document.createElement("link")
+            link.id = id
+            link.rel = "stylesheet"
+            link.href =
+                "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap"
+            document.head.appendChild(link)
+        }
     }, [])
 
     // Resume carryover — hydrated when the user clicked Start Over on
@@ -706,7 +838,7 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
         e.preventDefault()
         setSubmitError("")
         if (resumeUploading) {
-            setSubmitError("Hang on — your resume is still uploading.")
+            setSubmitError("Hang on. Your resume is still uploading.")
             return
         }
         if (!resumeText || resumeText.length < 100) {
@@ -714,7 +846,7 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
             return
         }
         if (jdText.trim().length < 100) {
-            setSubmitError("Paste the full job description — at least 100 characters.")
+            setSubmitError("Paste the full job description. At least 100 characters.")
             return
         }
         setSubmitting(true)
@@ -808,437 +940,437 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties }
         } catch {}
     }
 
+    function scrollToForm() {
+        if (typeof document === "undefined") return
+        const el = document.getElementById("form")
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+
     const jdChars = jdText.length
     const jdMet = jdChars >= 100
-    const charCountClass = "v2-char-count" + (jdMet ? " met" : "")
+    const charCountClass = "wrn-charcount" + (jdMet ? " met" : "")
     const charCountText = jdMet
         ? jdChars + " chars · ready"
         : jdChars + " chars · need " + (100 - jdChars) + " more"
 
     const resumeChars = resumeText.length
     const resumeMet = resumeChars >= 100
-    const resumeCountClass = "v2-char-count" + (resumeMet ? " met" : "")
+    const resumeCountClass = "wrn-charcount" + (resumeMet ? " met" : "")
     const resumeCountText = resumeMet
         ? resumeChars + " chars · ready"
         : resumeChars + " chars · need " + (100 - resumeChars) + " more"
 
     const uploadBoxClass =
-        "v2-upload-box" +
+        "wrn-upload" +
         (resumeUploading ? " uploading" : "") +
         (resumeText ? " has-file" : "")
 
     return (
-        <div style={{ width: "100%", ...props.style }}>
+        <div className="wrn-page" style={{ width: "100%", ...props.style }}>
             <PageShell />
-            <div className="v2-page">
-                {/* ===== HEADER ===== */}
-                <header className="v2-site-header">
-                    <div className="v2-brand">
-                        <div className="v2-brand-mark">
-                            SIGNAL <span className="dash">—</span>
+
+            {/* ===== HEADER ===== */}
+            <header className="wrn-header">
+                {/* Drop your navy SIGNAL logo in the "Logo" image control in
+                    Framer's properties panel. Falls back to the text wordmark
+                    until a logo is set. */}
+                {props.logo ? (
+                    <img src={props.logo} alt="SIGNAL" className="wrn-logo-img" />
+                ) : (
+                    <div className="wrn-logo">SIGNAL</div>
+                )}
+                <a href={LOGIN_URL} className="wrn-login">Log in</a>
+            </header>
+
+            {/* ===== HERO ===== */}
+            <section className="wrn-hero">
+                <div className="wrn-blob wrn-blob-a" aria-hidden="true" />
+                <div className="wrn-blob wrn-blob-b" aria-hidden="true" />
+                <div
+                    className="wrn-hero-inner"
+                    style={{ gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}
+                >
+                    {/* Left: hook */}
+                    <div>
+                        <div className="wrn-eyebrow wrn-fadeup" style={{ animationDelay: "0s" }}>
+                            THE REAL MATH
                         </div>
-                        <div className="v2-brand-tag">BY WORKFORCE READY NOW</div>
+                        <h1 className="wrn-h1 wrn-fadeup" style={{ animationDelay: ".08s" }}>
+                            You sent {heroCount} applications.
+                        </h1>
+                        <h1
+                            className="wrn-h1 wrn-h1-peach wrn-fadeup"
+                            style={{ animationDelay: ".16s" }}
+                        >
+                            <span className="wrn-callout-wrap">
+                                You got 2 callbacks.
+                                <svg
+                                    className="wrn-callout-underline"
+                                    viewBox="0 0 220 12"
+                                    preserveAspectRatio="none"
+                                >
+                                    <path
+                                        d="M4,7 C 40,2 80,10 120,5 S 190,3 216,7"
+                                        fill="none"
+                                        stroke={PEACH_DEEP}
+                                        strokeWidth={3}
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </span>
+                        </h1>
+                        <p className="wrn-sub wrn-fadeup" style={{ animationDelay: ".24s" }}>
+                            That's not your resume. <span className="wrn-sub-peach">That's targeting.</span>
+                        </p>
+                        <div className="wrn-empathy wrn-fadeup" style={{ animationDelay: ".28s" }}>
+                            <p className="wrn-empathy-lead">
+                                You've got the degree. You're applying everywhere. And you're still getting ghosted.
+                            </p>
+                            <p className="wrn-empathy-body">
+                                It's not you. No one ever told you how a recruiter actually reads a resume, they spend about seven seconds, and most applications get filtered before a human ever looks. SIGNAL shows you exactly what they see, so you stop guessing why you never hear back.
+                            </p>
+                        </div>
+                        <p className="wrn-body wrn-fadeup" style={{ animationDelay: ".3s" }}>
+                            Paste your resume and the job. In about 30 seconds, see how a recruiter
+                            actually reads you for that role.
+                        </p>
+                        <div className="wrn-trust wrn-fadeup" style={{ animationDelay: ".36s" }}>
+                            <div className="wrn-trust-item">
+                                <span className="wrn-check">✓</span> No account, no credit card
+                            </div>
+                            <div className="wrn-trust-item">
+                                <span className="wrn-check">✓</span> Built from 30 years on the hiring side
+                            </div>
+                        </div>
                     </div>
-                    <div className="v2-header-actions">
-                        <a href="#form" className="v2-header-btn v2-header-btn-teal">
-                            ● Try FREE Job Analysis
-                        </a>
-                        <a href={LOGIN_URL} className="v2-header-btn v2-header-btn-white">
-                            Log in
-                        </a>
-                    </div>
-                </header>
 
-                {/* ===== HERO ===== */}
-                <section className="v2-hero">
-                    <div className="v2-eyebrow">THE REAL MATH</div>
-                    <h1 className="v2-hero-headline">You sent 32 applications.</h1>
-                    <h1 className="v2-hero-headline-grad">You got 2 callbacks.</h1>
-                    <p className="v2-hero-diagnosis">
-                        That's not your resume. <span className="accent">That's targeting.</span>
-                    </p>
-                    <p className="v2-hero-body">
-                        Most early-career applicants apply to jobs they were never competitive
-                        for. SIGNAL tells you which jobs are worth your Saturday — before you
-                        spend it.
-                    </p>
+                    {/* Right: THE REAL SCAN FORM (functional wiring preserved) */}
+                    <form
+                        className="wrn-form-card wrn-fadeup"
+                        id="form"
+                        onSubmit={handleSubmit}
+                        style={{ animationDelay: ".2s" }}
+                    >
+                        <div className="wrn-form-label">RUN A FREE ANALYSIS · UNDER 30 SECONDS</div>
 
-                    <form className="v2-form-card" id="form" onSubmit={handleSubmit}>
-                        <div className="v2-form-label">RUN A FREE ANALYSIS · UNDER 2 MINUTES</div>
-
-                        <div className="v2-form-step">
-                            <div className="v2-step-num">1</div>
-                            <label htmlFor="resume-upload" className={uploadBoxClass}>
-                                <div>
-                                    <div className="v2-upload-label">{resumeLabel}</div>
-                                    <div className="v2-upload-sub">{resumeSub}</div>
+                        <div className="wrn-step">
+                            <div className="wrn-step-num">1</div>
+                            <div className="wrn-step-body">
+                                <div className="wrn-step-title">Add your resume</div>
+                                <label htmlFor="resume-upload" className={uploadBoxClass}>
+                                    <div>
+                                        <div className="wrn-upload-label">{resumeLabel}</div>
+                                        <div className="wrn-upload-sub">{resumeSub}</div>
+                                    </div>
+                                    <div className="wrn-upload-btn">
+                                        {resumeUploading ? "Reading…" : resumeText ? "Replace" : "Upload"}
+                                    </div>
+                                    <input
+                                        id="resume-upload"
+                                        ref={fileInputRef}
+                                        type="file"
+                                        name="resume"
+                                        accept=".pdf,.doc,.docx"
+                                        style={{ display: "none" }}
+                                        onChange={handleFileChange}
+                                    />
+                                </label>
+                                <div className="wrn-textarea-wrap">
+                                    <span className="wrn-textarea-helper">or paste your resume text</span>
+                                    <textarea
+                                        className="wrn-textarea"
+                                        placeholder="Paste your full resume text here: name, education, work experience, skills."
+                                        value={resumeText}
+                                        onChange={handleResumePaste}
+                                    />
+                                    <div className={resumeCountClass}>{resumeCountText}</div>
                                 </div>
-                                <div className="v2-upload-btn">
-                                    {resumeUploading ? "Reading…" : resumeText ? "Replace" : "Choose file"}
-                                </div>
-                                <input
-                                    id="resume-upload"
-                                    ref={fileInputRef}
-                                    type="file"
-                                    name="resume"
-                                    accept=".pdf,.doc,.docx"
-                                    style={{ display: "none" }}
-                                    onChange={handleFileChange}
-                                />
-                            </label>
+                                {resumeError ? (
+                                    <div className="wrn-error">{resumeError}</div>
+                                ) : null}
+                            </div>
                         </div>
-                        <div className="v2-textarea-wrap">
-                            <span className="v2-textarea-helper">or paste your resume text</span>
-                            <textarea
-                                className="v2-jd-textarea"
-                                placeholder="Paste your full resume text here: name, education, work experience, skills."
-                                value={resumeText}
-                                onChange={handleResumePaste}
-                            />
-                            <div className={resumeCountClass}>{resumeCountText}</div>
-                        </div>
-                        {resumeError ? (
-                            <div className="v2-form-error">{resumeError}</div>
-                        ) : null}
 
-                        <div className="v2-form-step">
-                            <div className="v2-step-num">2</div>
-                            <div className="v2-textarea-wrap">
-                                <div className="v2-textarea-label-row">
-                                    <span className="v2-textarea-label">JOB DESCRIPTION</span>
-                                    <span className="v2-textarea-helper">paste full posting</span>
+                        <div className="wrn-step">
+                            <div className="wrn-step-num">2</div>
+                            <div className="wrn-step-body">
+                                <div className="wrn-step-title">Paste the job description</div>
+                                <div className="wrn-textarea-wrap">
+                                    <textarea
+                                        className="wrn-textarea"
+                                        id="jd-textarea"
+                                        name="job_description"
+                                        placeholder="Paste the full job description here: requirements, responsibilities, qualifications, everything."
+                                        value={jdText}
+                                        onChange={(e) => setJdText(e.target.value)}
+                                    />
+                                    <div className={charCountClass}>{charCountText}</div>
                                 </div>
-                                <textarea
-                                    className="v2-jd-textarea"
-                                    id="jd-textarea"
-                                    name="job_description"
-                                    placeholder="Paste the full job description here — requirements, responsibilities, qualifications, everything."
-                                    value={jdText}
-                                    onChange={(e) => setJdText(e.target.value)}
-                                />
-                                <div className={charCountClass}>{charCountText}</div>
                             </div>
                         </div>
 
                         <button
                             type="submit"
-                            className="v2-cta-primary"
+                            className="wrn-cta"
                             disabled={submitting || resumeUploading}
                         >
-                            {submitting ? "Starting analysis…" : "RUN FREE ANALYSIS →"}
+                            {submitting ? "Starting analysis…" : "Run free analysis →"}
                         </button>
                         {submitError ? (
-                            <div className="v2-form-error">{submitError}</div>
+                            <div className="wrn-error">{submitError}</div>
                         ) : null}
 
-                        <div className="v2-trust-inline">
-                            <span style={{ color: "#2CA58D", fontSize: 11 }}>🔒</span>
-                            <p className="v2-trust-inline-text">
-                                Your resume stays yours. We never sell or share your data.{" "}
-                                <a href="/privacy">Privacy</a>
-                            </p>
-                        </div>
+                        <p className="wrn-fineprint">Results in ~30 seconds · No account needed</p>
                     </form>
+                </div>
+            </section>
 
-                    <div className="v2-trust-strip">
-                        <div className="v2-trust-item">No account</div>
-                        <div className="v2-trust-dot" />
-                        <div className="v2-trust-item">No credit card</div>
-                        <div className="v2-trust-dot" />
-                        <div className="v2-trust-item">Results in ~30 seconds</div>
+            {/* ===== STATS BAND (dark) ===== */}
+            <section className="wrn-stats">
+                <div className="wrn-stats-inner">
+                    <div className="wrn-stat">
+                        <div className="wrn-stat-num">30 <span className="wrn-stat-unit">yrs</span></div>
+                        <div className="wrn-stat-label">hiring experience</div>
                     </div>
-
-                    <p className="v2-login-link">
-                        Already a member? <a href={LOGIN_URL}>Log in to your dashboard</a>
-                    </p>
-                </section>
-
-                {/* ===== AUTHORITY STRIP ===== */}
-                <section className="v2-authority">
-                    <p className="v2-authority-text">
-                        Built from <strong>30 years of hiring experience</strong> · Conversations
-                        with <strong>thousands of hiring managers</strong> ·{" "}
-                        <strong>20,000+ lines of recruitment intelligence</strong> that no general
-                        AI tool can replicate
-                    </p>
-                </section>
-
-                {/* ===== TESTIMONIALS ===== */}
-                <section className="v2-testimonials-strip">
-                    <div className="v2-testimonials-grid">
-                        <div className="v2-testimonial-card">
-                            <p className="v2-testimonial-quote">
-                                "Stopped wasting hours on roles SIGNAL flagged Pass. Best
-                                application filter I've used."
-                            </p>
-                            <p className="v2-testimonial-attr">— Ellie G., Cornell '25</p>
-                        </div>
-                        <div className="v2-testimonial-card">
-                            <p className="v2-testimonial-quote">
-                                "Addressed every RISK code in my interview prep. Got the offer."
-                            </p>
-                            <p className="v2-testimonial-attr">— Ryan R., FSU '26</p>
-                        </div>
+                    <div className="wrn-stat">
+                        <div className="wrn-stat-num">20k<span className="wrn-stat-unit">+</span></div>
+                        <div className="wrn-stat-label">lines of recruitment intelligence</div>
                     </div>
-                </section>
+                    <div className="wrn-stat">
+                        <div className="wrn-stat-num"><span className="wrn-stat-unit">~</span>30s</div>
+                        <div className="wrn-stat-label">to a real verdict</div>
+                    </div>
+                </div>
+            </section>
 
-                {/* ===== JOB FIT DEMO SECTION ===== */}
-                <section className="v2-demo-section">
-                    <div className="v2-demo-inner">
-                        <div className="v2-demo-header">
-                            <div className="v2-eyebrow" style={{ marginBottom: 8 }}>
-                                WHAT YOU GET — FREE
-                            </div>
-                            <h2 className="v2-demo-title">
-                                This is what your free analysis looks like.
-                            </h2>
-                            <p className="v2-demo-sub">
-                                Real verdict. Real strengths. Real risks. Real next step.
-                            </p>
+            {/* ===== FREE-SCAN PREVIEW ===== */}
+            <section className="wrn-preview">
+                <div className="wrn-preview-inner">
+                    <div className="wrn-preview-eyebrow">WHAT YOU GET, FREE</div>
+                    <h2 className="wrn-preview-headline">Watch a recruiter read your resume.</h2>
+                    <p className="wrn-preview-sub">
+                        Real verdict. Real strengths. Real risks. Real next step. In under 30 seconds.
+                    </p>
+
+                    <div className="wrn-preview-card">
+                        <div className="wrn-preview-top">
+                            <span className="wrn-preview-brand">SIGNAL</span>
+                            <span className="wrn-preview-read">7.0s read</span>
                         </div>
+                        <p className="wrn-preview-line1">A recruiter just read your resume.</p>
 
-                        <div className="v2-job-bar">
-                            <span className="v2-job-title">Marketing Coordinator</span>
-                            <span className="v2-job-company"> at TechFlow Inc.</span>
-                        </div>
+                        <div className="wrn-paper">
+                            <p className="wrn-paper-label">FROM YOUR RESUME</p>
 
-                        <div className="v2-verdict-panel">
-                            <div className="v2-verdict-row">
-                                <div>
-                                    <div className="v2-verdict-label">SIGNAL DECISION</div>
-                                    <div className="v2-verdict-decision">APPLY</div>
-                                </div>
-                                <div className="v2-score-display">
-                                    <div className="v2-verdict-label">FIT SCORE</div>
-                                    <div>
-                                        <span className="v2-score-num">71</span>
-                                        <span className="v2-score-total">/100</span>
-                                    </div>
-                                    <div className="v2-score-bar" />
-                                </div>
-                            </div>
-
-                            <div className="v2-your-move">
-                                <div className="v2-your-move-label">YOUR MOVE</div>
-                                <p className="v2-your-move-action">
-                                    Apply this week — and not blind. Sharpen your resume to this job. Write a cover letter that closes. Get to the right people inside.
-                                </p>
-                                <p className="v2-your-move-principle">
-                                    Applying and waiting is not a strategy.{" "}
-                                    <span className="punch">Refuse to be ignored.</span>
-                                </p>
-                                <div className="v2-product-hook">
-                                    <span className="v2-product-hook-icon">🤝</span>
-                                    <span className="v2-product-hook-text">
-                                        SIGNAL Networking will build your outreach plan
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="v2-new-job-stub">Run New Job →</div>
-                        </div>
-
-                        <div className="v2-coaching-block">
-                            <div className="v2-coaching-row">
-                                <div className="v2-coaching-text">
-                                    <div className="v2-coaching-eyebrow-row">
-                                        <div className="v2-coaching-icon">⚡</div>
-                                        <div className="v2-coaching-eyebrow">
-                                            READ THIS BEFORE YOU APPLY
-                                        </div>
-                                    </div>
-                                    <p className="v2-coaching-headline">
-                                        One shot. 7 seconds.{" "}
-                                        <span className="punch">Get rid of the noise.</span>
-                                    </p>
-                                    <p className="v2-coaching-setup">
-                                        Tell <strong>one story</strong> that answers three questions:
-                                    </p>
-                                </div>
-                                <div className="v2-coaching-cards">
-                                    <div className="v2-coaching-card">
-                                        <div className="v2-coaching-card-num">01</div>
-                                        <div className="v2-coaching-card-text">Who you are</div>
-                                    </div>
-                                    <div className="v2-coaching-card">
-                                        <div className="v2-coaching-card-num">02</div>
-                                        <div className="v2-coaching-card-text">Why you want it</div>
-                                    </div>
-                                    <div className="v2-coaching-card">
-                                        <div className="v2-coaching-card-num">03</div>
-                                        <div className="v2-coaching-card-text">Why you're qualified</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="v2-columns">
-                            <div className="v2-col-panel v2-col-strengths">
-                                <div className="v2-col-header">
-                                    <div className="v2-col-icon-circle v2-col-icon-strengths">✓</div>
-                                    <div className="v2-col-title-strengths">
-                                        Strengths to Lead With
-                                    </div>
-                                </div>
-                                <p className="v2-col-sub">Lead with these in your application</p>
-                                {SAMPLE_STRENGTHS.map((s, i) => (
-                                    <div className="v2-strength-item" key={i}>
-                                        <div className="v2-strength-check">✓</div>
-                                        <p className="v2-strength-text">
-                                            {s.text}{" "}
-                                            <span className="v2-strength-arrow">{s.arrow}</span>
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="v2-col-panel v2-col-risks">
-                                <div className="v2-col-header">
-                                    <div className="v2-col-icon-circle v2-col-icon-risks">!</div>
-                                    <div className="v2-col-title-risks">Your Risks</div>
-                                </div>
-                                <p className="v2-col-sub">Address these before you apply</p>
-                                {SAMPLE_RISKS.map((r, i) => (
-                                    <div className="v2-risk-item" key={i}>
-                                        <div className="v2-risk-header">
-                                            <div className="v2-risk-warn">⚠</div>
-                                            <div className="v2-risk-label">{r.label}</div>
-                                        </div>
-                                        <p className="v2-risk-text">{r.text}</p>
-                                        {r.hook ? (
-                                            <div className="v2-risk-hook">
-                                                <div className="v2-product-hook">
-                                                    <span className="v2-product-hook-icon">
-                                                        {r.hook.icon}
-                                                    </span>
-                                                    <span className="v2-product-hook-text">
-                                                        {r.hook.text}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <p className="v2-sample-disclaimer">
-                            Sample result · Your actual analysis is built from your resume and
-                            your job.
-                        </p>
-
-                        <div className="v2-demo-link-wrap">
-                            <a href="#" className="v2-demo-link">
-                                <span className="v2-play-circle">▶</span>
-                                <span>
-                                    Watch SIGNAL in action —{" "}
-                                    <span className="v2-demo-link-duration">45-second demo</span>
+                            {/* Marked line 1: green underline (strength) */}
+                            <p className="wrn-paper-line">
+                                <span style={{ position: "relative", display: "inline-block" }}>
+                                    Led a 6-week campaign that grew signups 38%.
+                                    <svg
+                                        className="wrn-mark wrn-mark-underline"
+                                        viewBox="0 0 200 7"
+                                        preserveAspectRatio="none"
+                                    >
+                                        <path
+                                            d="M2,4 C 28,1.5 54,5.5 80,3.5 S 132,2 158,4 S 188,5.5 198,3"
+                                            fill="none"
+                                            stroke="#1F8A4C"
+                                            strokeWidth={2}
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
                                 </span>
-                            </a>
-                        </div>
-                    </div>
-                </section>
+                                <br />
+                                <span className="wrn-scrawl wrn-scrawl-green">real campaign work, good</span>
+                            </p>
 
-                {/* ===== PERI BIO ===== */}
-                <section className="v2-peri-section">
-                    <div className="v2-peri-inner">
-                        <div className="v2-peri-avatar">PG</div>
-                        <div>
-                            <p className="v2-peri-eyebrow">BUILT BY PERI GINSBERG</p>
-                            <p className="v2-peri-headline">30 years on the hiring side.</p>
-                            <p className="v2-peri-body">
-                                20 as a hiring manager. 10 as an executive recruiter. SIGNAL is
-                                what she'd tell you on the phone — at scale.
+                            {/* Marked line 2: orange circle (risk) */}
+                            <p className="wrn-paper-line">
+                                <span style={{ position: "relative", display: "inline-block" }}>
+                                    Focused on enterprise B2B SaaS accounts.
+                                    <svg
+                                        className="wrn-mark wrn-mark-circle"
+                                        viewBox="0 0 200 60"
+                                        preserveAspectRatio="none"
+                                    >
+                                        <path
+                                            d="M14,9 C 70,3 140,4 190,9 C 198,22 198,40 191,52 C 138,58 60,57 11,52 C 3,40 3,21 10,9 C 16,5 34,4 52,5"
+                                            fill="none"
+                                            stroke={PEACH_DEEP}
+                                            strokeWidth={1.8}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            vectorEffect="non-scaling-stroke"
+                                        />
+                                    </svg>
+                                </span>
+                                <br />
+                                <span className="wrn-scrawl wrn-scrawl-orange">but this role is B2C</span>
                             </p>
                         </div>
-                    </div>
-                </section>
 
-                {/* ===== FOUR PILLARS ===== */}
-                <section className="v2-pillars-section">
-                    <div className="v2-pillars-header">
-                        <div className="v2-pillars-eyebrow">
-                            THE FREE ANALYSIS IS ONE PART OF SIGNAL
-                        </div>
-                        <p className="v2-pillars-sub">
-                            Members get the full SIGNAL system — on web and mobile.
-                        </p>
-                    </div>
-                    <div className="v2-pillars-grid">
-                        <div className="v2-pillar-card">
-                            <div className="v2-pillar-icon">🎯</div>
-                            <div className="v2-pillar-title">Job Fit</div>
-                            <p className="v2-pillar-body">
-                                Unlimited scans on every job before you apply.
+                        <div className="wrn-lostme">
+                            <p className="wrn-lostme-label">WHERE IT LOST ME</p>
+                            <p className="wrn-lostme-text">
+                                Strong campaign proof, but it reads B2B for a consumer role. Reframe the
+                                wins as cross-segment, and the fit gets a lot clearer.
                             </p>
                         </div>
-                        <div className="v2-pillar-card">
-                            <div className="v2-pillar-icon">📐</div>
-                            <div className="v2-pillar-title">Positioning</div>
-                            <p className="v2-pillar-body">
-                                Tailored resume guidance for each role.
-                            </p>
-                        </div>
-                        <div className="v2-pillar-card">
-                            <div className="v2-pillar-icon">✉</div>
-                            <div className="v2-pillar-title">Cover Letter</div>
-                            <p className="v2-pillar-body">Drafted from your fit, not a template.</p>
-                        </div>
-                        <div className="v2-pillar-card">
-                            <div className="v2-pillar-icon">🤝</div>
-                            <div className="v2-pillar-title">Networking</div>
-                            <p className="v2-pillar-body">The right people. The right message.</p>
-                        </div>
                     </div>
-                    <p className="v2-pillars-closer">
-                        Try the free analysis first. We'll show you the rest after.
+
+                    <button
+                        type="button"
+                        className="wrn-demo-link"
+                        onClick={() => setShowVideo(true)}
+                    >
+                        ▶ Watch the 45-second demo
+                    </button>
+                    <p className="wrn-demo-note">
+                        Sample result. Your actual analysis is built from your resume and your job.
                     </p>
-                </section>
+                </div>
+            </section>
 
-                {/* ===== FINAL CTA ===== */}
-                <section className="v2-final-cta">
-                    <h2 className="v2-final-cta-title">
-                        Try it on the next job you were about to apply to.
+            {/* ===== PERI CREDIBILITY ===== */}
+            <section className="wrn-peri">
+                <div className="wrn-peri-inner">
+                    <div className="wrn-peri-avatar">PG</div>
+                    <div className="wrn-peri-eyebrow">BUILT BY PERI GINSBERG</div>
+                    <h2 className="wrn-peri-headline">30 years on the hiring side.</h2>
+                    <p className="wrn-peri-body">
+                        20 as a hiring manager. 10 as an executive recruiter. SIGNAL is what she'd
+                        tell you on the phone, at scale.
+                    </p>
+                </div>
+            </section>
+
+            {/* ===== FULL-SIGNAL PLUG ===== */}
+            <section className="wrn-plug">
+                <div className="wrn-plug-inner">
+                    <div className="wrn-plug-eyebrow">THE FREE SCAN IS ONE PART OF SIGNAL</div>
+                    <h2 className="wrn-plug-headline">
+                        The free scan tells you where you stand.<br />
+                        SIGNAL gets you hired.
                     </h2>
-                    <p className="v2-final-cta-sub">
-                        Upload your resume, paste the job description, see your fit. Free.
+                    <p className="wrn-plug-sub">
+                        One system for the whole search. Every step, on every job, until they can't pass on you.
                     </p>
-                    <a href="#form">
-                        <button className="v2-cta-final-btn">RUN FREE ANALYSIS →</button>
-                    </a>
-                    <p className="v2-final-cta-trust">
-                        No account · No credit card · ~30-second results
-                    </p>
-                    <div style={{ marginTop: 20 }}>
-                        <span
-                            style={{
-                                display: "block",
-                                color: "rgba(255,255,255,0.4)",
-                                fontSize: 12,
-                                marginBottom: 10,
-                            }}
-                        >
-                            or
-                        </span>
-                        <a
-                            href={UPGRADE_URL + "?src=landing_secondary"}
-                            target="_top"
-                            className="v2-header-btn v2-header-btn-white"
-                            onClick={handleSecondaryUpgradeClick}
-                        >
-                            Already sold? Unlock SIGNAL now, $99 →
-                        </a>
-                    </div>
-                </section>
 
-                {/* ===== FOOTER ===== */}
-                <footer className="v2-footer">
-                    <p className="v2-footer-text">
-                        © 2026 Workforce Ready Now · <a href="/privacy">Privacy</a> ·{" "}
-                        <a href="/terms">Terms</a>
-                    </p>
-                </footer>
-            </div>
+                    <div className="wrn-loop">
+                        <div className="wrn-loop-step">
+                            <div className="wrn-loop-rail">
+                                <div className="wrn-loop-chip" style={{ background: PEACH }}>1</div>
+                                <div
+                                    className="wrn-loop-connector"
+                                    style={{ background: `linear-gradient(180deg, ${PEACH} 0%, ${WRN_BLUE} 100%)` }}
+                                />
+                            </div>
+                            <div className="wrn-loop-content">
+                                <div className="wrn-loop-label" style={{ color: PEACH_DEEP }}>JOB FIT · SCAN ANY JOB</div>
+                                <h3 className="wrn-loop-headline">Know if it's worth applying, before you waste the Saturday.</h3>
+                                <p className="wrn-loop-body">Unlimited scans. Stop firing off 30 applications and hoping. See your real odds on each one first.</p>
+                            </div>
+                        </div>
+                        <div className="wrn-loop-step">
+                            <div className="wrn-loop-rail">
+                                <div className="wrn-loop-chip" style={{ background: WRN_BLUE }}>2</div>
+                                <div
+                                    className="wrn-loop-connector"
+                                    style={{ background: `linear-gradient(180deg, ${WRN_BLUE} 0%, ${PEACH} 100%)` }}
+                                />
+                            </div>
+                            <div className="wrn-loop-content">
+                                <div className="wrn-loop-label" style={{ color: WRN_BLUE_DEEP }}>POSITIONING · FIX THE RESUME</div>
+                                <h3 className="wrn-loop-headline">Get past the filter and in front of a human.</h3>
+                                <p className="wrn-loop-body">Rewrites in this job's language that surface what you've already done. Honestly, nothing invented.</p>
+                            </div>
+                        </div>
+                        <div className="wrn-loop-step">
+                            <div className="wrn-loop-rail">
+                                <div className="wrn-loop-chip" style={{ background: PEACH }}>3</div>
+                                <div
+                                    className="wrn-loop-connector"
+                                    style={{ background: `linear-gradient(180deg, ${PEACH} 0%, ${WRN_BLUE} 100%)` }}
+                                />
+                            </div>
+                            <div className="wrn-loop-content">
+                                <div className="wrn-loop-label" style={{ color: PEACH_DEEP }}>COVER LETTER · MAKE THE CASE</div>
+                                <h3 className="wrn-loop-headline">A letter that names the gap and closes it.</h3>
+                                <p className="wrn-loop-body">Drafted from your actual fit, not a template every other applicant is using too.</p>
+                            </div>
+                        </div>
+                        <div className="wrn-loop-step">
+                            <div className="wrn-loop-rail">
+                                <div className="wrn-loop-chip" style={{ background: WRN_BLUE }}>4</div>
+                            </div>
+                            <div className="wrn-loop-content">
+                                <div className="wrn-loop-label" style={{ color: WRN_BLUE_DEEP }}>NETWORKING · GET REFERRED</div>
+                                <h3 className="wrn-loop-headline">Someone inside, vouching for you.</h3>
+                                <p className="wrn-loop-body">Who to reach, what to say, how to ask. A referral gets you read instead of filtered.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="wrn-proof">
+                        <h3 className="wrn-proof-headline">Students on SIGNAL send fewer applications and get more callbacks.</h3>
+                        <p className="wrn-proof-sub">Because they stop applying blind. One fee, every tool, every job from here.</p>
+                    </div>
+
+                    <h3 className="wrn-plug-close">
+                        Try it on the next job you were about to apply to.
+                    </h3>
+                    <button type="button" className="wrn-plug-cta" onClick={scrollToForm}>
+                        Run free analysis →
+                    </button>
+                    <span className="wrn-plug-secondary">
+                        or already sold?{" "}
+                        <a href={UPGRADE_URL} onClick={handleSecondaryUpgradeClick}>
+                            Unlock SIGNAL now, $99 →
+                        </a>
+                    </span>
+                </div>
+            </section>
+
+            {/* ===== DEMO VIDEO MODAL ===== */}
+            {showVideo ? (
+                <div
+                    className="wrn-modal-scrim"
+                    role="dialog"
+                    aria-modal="true"
+                    onClick={() => setShowVideo(false)}
+                >
+                    <div
+                        className="wrn-modal-dialog"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="wrn-modal-close"
+                            aria-label="Close video"
+                            onClick={() => setShowVideo(false)}
+                        >
+                            ×
+                        </button>
+                        <div className="wrn-modal-video">
+                            <iframe
+                                src="https://www.youtube.com/embed/uB6pQjSgd04?rel=0&modestbranding=1&playsinline=1&autoplay=1"
+                                title="SIGNAL demo"
+                                allow="autoplay; encrypted-media; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     )
 }
+
+// Framer property controls. Exposes a "Logo" image slot in the properties
+// panel so the real navy SIGNAL PNG can be dropped in without editing code.
+addPropertyControls(SignalLandingPage, {
+    logo: {
+        type: ControlType.Image,
+        title: "Logo",
+    },
+})
