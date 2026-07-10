@@ -79,8 +79,8 @@ const F_HAND = "'Caveat', cursive"
 
 // ─────────────────────────────────────────────────────────────────────────
 // Styles. Injected once into <head> as a <style> tag (see effect below).
-// Class-based so @media breakpoints handle fine responsive tuning; the
-// hero column split is driven by the isMobile hook.
+// Class-based so @media breakpoints handle responsive tuning, including
+// the hero column split (two-column desktop, single-column mobile).
 // ─────────────────────────────────────────────────────────────────────────
 const STYLES = `
 .wrn-page * { box-sizing: border-box; }
@@ -132,6 +132,7 @@ const STYLES = `
   max-width: 1120px;
   margin: 0 auto;
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 48px;
   align-items: start;
 }
@@ -441,7 +442,7 @@ const STYLES = `
 @media (max-width: 768px) {
   .wrn-header { padding: 0 18px; }
   .wrn-hero { padding: 40px 18px 52px; }
-  .wrn-hero-inner { gap: 32px; }
+  .wrn-hero-inner { gap: 32px; grid-template-columns: 1fr; }
   .wrn-h1 { font-size: 34px; }
   .wrn-sub { font-size: 19px; }
   .wrn-stats-inner { grid-template-columns: 1fr; gap: 22px; }
@@ -712,20 +713,6 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
     const [submitError, setSubmitError] = React.useState("")
 
     const fileInputRef = React.useRef<HTMLInputElement | null>(null)
-
-    // Responsive: hero splits two-column on desktop, stacks on mobile.
-    // Lazy-initialized from window so the FIRST render already matches the
-    // device, avoiding a desktop-layout flash on mobile before the effect runs.
-    const [isMobile, setIsMobile] = React.useState(
-        () => typeof window !== "undefined" && window.innerWidth < 768
-    )
-    React.useEffect(() => {
-        if (typeof window === "undefined") return
-        const check = () => setIsMobile(window.innerWidth < 768)
-        check()
-        window.addEventListener("resize", check)
-        return () => window.removeEventListener("resize", check)
-    }, [])
 
     // Hero "32" count-up on load (0 -> 32).
     const [heroCount, setHeroCount] = React.useState(0)
@@ -1062,10 +1049,7 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
             <section className="wrn-hero">
                 <div className="wrn-blob wrn-blob-a" aria-hidden="true" />
                 <div className="wrn-blob wrn-blob-b" aria-hidden="true" />
-                <div
-                    className="wrn-hero-inner"
-                    style={{ gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}
-                >
+                <div className="wrn-hero-inner">
                     {/* Left: hook */}
                     <div>
                         <div className="wrn-eyebrow wrn-fadeup" style={{ animationDelay: "0s" }}>
