@@ -530,32 +530,6 @@ export default function SignalUpgradePage(props: {
         return () => window.removeEventListener("resize", check)
     }, [])
 
-    // Inject the stylesheet once.
-    React.useEffect(() => {
-        const id = "up-upgrade-styles"
-        let el = document.getElementById(id) as HTMLStyleElement | null
-        if (!el) {
-            el = document.createElement("style")
-            el.id = id
-            document.head.appendChild(el)
-        }
-        el.textContent = STYLES
-    }, [])
-
-    // Load Inter Tight / Inter / Caveat via an injected Google Fonts link,
-    // mirroring landingpage.txt / trialjobfit.txt.
-    React.useEffect(() => {
-        const id = "up-upgrade-fonts"
-        if (typeof document !== "undefined" && !document.getElementById(id)) {
-            const link = document.createElement("link")
-            link.id = id
-            link.rel = "stylesheet"
-            link.href =
-                "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@600;700;800&display=swap"
-            document.head.appendChild(link)
-        }
-    }, [])
-
     React.useEffect(() => {
         if (typeof window === "undefined") return
         try {
@@ -790,6 +764,19 @@ export default function SignalUpgradePage(props: {
 
     return (
         <div className="up-page" style={{ width: "100%", ...props.style }}>
+            {/* Stylesheet + fonts rendered inline so they ship with the page
+                render instead of being injected by a client-side effect,
+                removing the flash of unstyled layout. */}
+            <style dangerouslySetInnerHTML={{ __html: STYLES }} />
+            <link
+                rel="preconnect"
+                href="https://fonts.gstatic.com"
+                crossOrigin="anonymous"
+            />
+            <link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@600;700;800&display=swap"
+            />
             <PageShell />
 
             {/* ===== HEADER ===== */}

@@ -782,32 +782,6 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
         setDrawId((n) => n + 1)
     }
 
-    // Inject the stylesheet once.
-    React.useEffect(() => {
-        const id = "wrn-landing-styles"
-        let el = document.getElementById(id) as HTMLStyleElement | null
-        if (!el) {
-            el = document.createElement("style")
-            el.id = id
-            document.head.appendChild(el)
-        }
-        el.textContent = STYLES
-    }, [])
-
-    // Load Inter Tight / Inter / Caveat via an injected Google Fonts link,
-    // mirroring trialjobfit.txt's font-load pattern.
-    React.useEffect(() => {
-        const id = "wrn-landing-fonts"
-        if (typeof document !== "undefined" && !document.getElementById(id)) {
-            const link = document.createElement("link")
-            link.id = id
-            link.rel = "stylesheet"
-            link.href =
-                "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap"
-            document.head.appendChild(link)
-        }
-    }, [])
-
     // Resume carryover — hydrated when the user clicked Start Over on
     // the trial result page. Pre-fills resumeText state and updates the
     // upload box copy so the user knows their resume is already attached
@@ -1030,6 +1004,20 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
 
     return (
         <div className="wrn-page" style={{ width: "100%", ...props.style }}>
+            {/* Stylesheet + fonts rendered inline so they ship in the SSR HTML
+                instead of being injected by a client-side effect. This removes
+                the flash of unstyled hero (default fonts, unconstrained widths)
+                that appeared before hydration on both mobile and desktop. */}
+            <style dangerouslySetInnerHTML={{ __html: STYLES }} />
+            <link
+                rel="preconnect"
+                href="https://fonts.gstatic.com"
+                crossOrigin="anonymous"
+            />
+            <link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap"
+            />
             <PageShell />
 
             {/* ===== HEADER ===== */}
