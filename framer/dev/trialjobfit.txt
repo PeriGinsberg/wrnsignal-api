@@ -882,6 +882,19 @@ export default function SignalTrialJobFit(props: { logo?: string }) {
                     .hw-cta { animation: none !important; }
                 }
             `}</style>
+            {/* Fonts rendered inline in the SSR-served main return (not injected
+                by a client effect in the results component) so Caveat / Inter
+                Tight start loading on page load and are ready when results
+                render, avoiding a font swap on the handwriting view. */}
+            <link
+                rel="preconnect"
+                href="https://fonts.gstatic.com"
+                crossOrigin="anonymous"
+            />
+            <link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap"
+            />
             <Orbs hasResult={!!response} />
             <div style={{ position: "relative" as const, zIndex: 1 }}>
                 <Topbar
@@ -1853,18 +1866,6 @@ function NewHandwritingResults(props: {
 }) {
     const p = props.perception
     const chrome = HW_CHROME[p.archetype] || HW_CHROME.MISPOSITIONED
-
-    React.useEffect(() => {
-        const id = "signal-hw-fonts"
-        if (typeof document !== "undefined" && !document.getElementById(id)) {
-            const link = document.createElement("link")
-            link.id = id
-            link.rel = "stylesheet"
-            link.href =
-                "https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap"
-            document.head.appendChild(link)
-        }
-    }, [])
 
     const [isMobile, setIsMobile] = React.useState(false)
     React.useEffect(() => {
