@@ -714,8 +714,11 @@ export default function SignalLandingPage(props: { style?: React.CSSProperties; 
     const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
     // Responsive: hero splits two-column on desktop, stacks on mobile.
-    // Mirrors trialjobfit.txt's isMobile hook.
-    const [isMobile, setIsMobile] = React.useState(false)
+    // Lazy-initialized from window so the FIRST render already matches the
+    // device, avoiding a desktop-layout flash on mobile before the effect runs.
+    const [isMobile, setIsMobile] = React.useState(
+        () => typeof window !== "undefined" && window.innerWidth < 768
+    )
     React.useEffect(() => {
         if (typeof window === "undefined") return
         const check = () => setIsMobile(window.innerWidth < 768)
