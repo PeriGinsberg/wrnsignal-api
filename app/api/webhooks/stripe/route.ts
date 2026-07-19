@@ -126,6 +126,29 @@ export async function POST(req: NextRequest) {
 async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session
 ): Promise<PurchaseSignals | null> {
+  // Product guard. This Stripe account is shared with the wrn-courses store,
+  // so checkout.session.completed also fires for course purchases. Only
+  // SIGNAL's own price should trigger SIGNAL fulfillment (profile access,
+  // magic link, purchases row, CAPI). Everything else is ignored.
+  // NOTE: the event's session object omits line_items — must fetch them.
+  const signalPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
+  if (!signalPriceId) {
+    console.error("[stripe-webhook] Missing NEXT_PUBLIC_STRIPE_PRICE_ID; cannot verify product")
+    return null
+  }
+  try {
+    const stripe = getStripe()
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 100 })
+    const isSignal = lineItems.data.some((li) => li.price?.id === signalPriceId)
+    if (!isSignal) {
+      console.log("[stripe-webhook] Ignoring non-SIGNAL checkout:", session.id)
+      return null
+    }
+  } catch (err: any) {
+    console.error("[stripe-webhook] listLineItems failed for", session.id, err.message)
+    return null // fail closed: can't confirm it's SIGNAL's → do not fulfill
+  }
+
   const email = (
     session.customer_details?.email || session.customer_email || ""
   ).trim().toLowerCase()
