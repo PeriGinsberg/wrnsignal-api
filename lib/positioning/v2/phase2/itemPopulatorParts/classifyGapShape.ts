@@ -56,7 +56,7 @@ import {
   type ClassifyGapShapeInput,
   type ClassifyGapShapeResult,
 } from "../aiClient"
-import { centsForUsage } from "../costPolicy"
+import { centsForUsage } from "@/lib/ai/costPolicy"
 
 /**
  * Dependency-injection override for the LLM call. Match the aiClient

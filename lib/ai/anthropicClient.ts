@@ -1,4 +1,4 @@
-// lib/positioning/v2/phase2/anthropicClient.ts
+// lib/ai/anthropicClient.ts
 //
 // Low-level Claude API helper for Phase 2. Wraps a single fetch call to
 // Anthropic's /v1/messages endpoint with the request shape Phase 2 needs:

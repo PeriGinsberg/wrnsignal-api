@@ -8,7 +8,7 @@ import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryB
 import { getCandidateTargeting } from "@/lib/candidateTargeting"
 import { extractGraduationDate } from "@/lib/resume/extractGraduationDate"
 import { computeStatus, type CandidateStatus } from "@/lib/profile/computeStatus"
-import { centsForUsage } from "@/lib/positioning/v2/phase2/costPolicy"
+import { centsForUsage } from "@/lib/ai/costPolicy"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

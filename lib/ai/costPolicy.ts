@@ -1,4 +1,4 @@
-// lib/positioning/v2/phase2/costPolicy.ts
+// lib/ai/costPolicy.ts
 //
 // Centralized AI cost constants for Phase 2. Extracted from the route
 // handler + groundingValidator + aiClient so cost policy lives in one

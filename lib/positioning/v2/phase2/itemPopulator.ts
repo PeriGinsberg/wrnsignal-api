@@ -64,7 +64,7 @@ import {
   type ClassifyGapShapeAiImpl,
   type ClassifyGapShapeOrchestratorResult,
 } from "./itemPopulatorParts/classifyGapShape"
-import { centsForUsage, MAX_COST_CENTS } from "./costPolicy"
+import { centsForUsage, MAX_COST_CENTS } from "@/lib/ai/costPolicy"
 
 /** Maximum bullet items emitted per run. */
 const MAX_BULLETS = 3

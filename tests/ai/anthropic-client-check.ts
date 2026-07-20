@@ -18,12 +18,12 @@ import {
   InvokeClaudeError,
   MODEL,
   ANTHROPIC_VERSION,
-} from "@/lib/positioning/v2/phase2/anthropicClient"
+} from "@/lib/ai/anthropicClient"
 import {
   centsForUsage,
   HAIKU_INPUT_CENTS_PER_MTOK,
   HAIKU_OUTPUT_CENTS_PER_MTOK,
-} from "@/lib/positioning/v2/phase2/costPolicy"
+} from "@/lib/ai/costPolicy"
 
 const failures: string[] = []
 

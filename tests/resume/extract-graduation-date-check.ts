@@ -35,7 +35,7 @@ import {
 import type {
   InvokeClaudeInput,
   InvokeClaudeResult,
-} from "../../lib/positioning/v2/phase2/anthropicClient"
+} from "../../lib/ai/anthropicClient"
 
 let failures = 0
 

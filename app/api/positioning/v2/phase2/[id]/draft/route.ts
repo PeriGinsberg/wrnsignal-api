@@ -75,7 +75,7 @@ import {
 import {
   MAX_COST_CENTS,
   centsForUsage,
-} from "@/lib/positioning/v2/phase2/costPolicy"
+} from "@/lib/ai/costPolicy"
 import type {
   PhaseTwoBulletItem,
   PhaseTwoGapItem,

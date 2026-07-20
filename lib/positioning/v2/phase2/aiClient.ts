@@ -48,7 +48,7 @@ import {
   invokeClaude as defaultInvokeClaude,
   type InvokeClaudeInput,
   type InvokeClaudeResult,
-} from "./anthropicClient"
+} from "@/lib/ai/anthropicClient"
 import { SYSTEM_PROMPT } from "./prompts/systemPrompt"
 import {
   buildHeadlinePrompt,

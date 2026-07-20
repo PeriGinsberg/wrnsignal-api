@@ -39,7 +39,7 @@ import {
   invokeClaude as defaultInvokeClaude,
   type InvokeClaudeInput,
   type InvokeClaudeResult,
-} from "@/lib/positioning/v2/phase2/anthropicClient"
+} from "@/lib/ai/anthropicClient"
 
 // ============================================================================
 // Tuning
