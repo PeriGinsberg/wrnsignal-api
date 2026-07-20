@@ -900,6 +900,11 @@ Return JSON only. No markdown. No extra text.
     const { error: insertErr } = await supabaseAdmin.from("positioning_runs").insert({
       client_profile_id: profileId,
       job_url: null,
+      // Direct link to the upstream JobFit run, from the client-supplied
+      // jobfit_result. Null-safe: standalone positioning (no jobfit_result)
+      // stamps null. Lets GET /api/runs/[id] resolve this-job positioning by
+      // jobfit_run_id instead of the dead cross-function fingerprint join.
+      jobfit_run_id: jobfitResult?.jobfit_run_id ?? null,
       fingerprint_hash,
       fingerprint_code,
       result_json: finalResult,

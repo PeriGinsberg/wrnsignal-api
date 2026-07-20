@@ -102,8 +102,32 @@ export async function GET(
       return withCorsJson(req, { error: "Forbidden" }, 403)
     }
 
-    // Parallel fetch related runs by fingerprint.
-    // Each table may not exist yet — catch silently and return null.
+    // Positioning: resolve v1 positioning_runs by the direct jobfit_run_id
+    // link (stamped at positioning write — 20260720 migration). `run.id` is the
+    // deep-link jobfit run id, so this is a precise this-job match, replacing
+    // the dead cross-function fingerprint join. Latest if multiple (re-runs).
+    // Capture run.id in the outer (post-null-guard) scope — TS narrowing of
+    // `run` doesn't carry into the closure.
+    const jobfitRunId = run.id
+    async function fetchPositioning(): Promise<any> {
+      try {
+        const { data } = await supabase
+          .from("positioning_runs")
+          .select("result_json")
+          .eq("jobfit_run_id", jobfitRunId)
+          .eq("client_profile_id", profileId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        return data?.result_json ?? null
+      } catch {
+        return null
+      }
+    }
+
+    // Cover letter + networking still resolve by shared fingerprint_hash —
+    // known-dead today (each function fingerprints independently). Left
+    // untouched; fixed in their own slices.
     const fpHash = run.fingerprint_hash
     async function fetchRelated(table: string): Promise<any> {
       try {
@@ -120,7 +144,7 @@ export async function GET(
     }
 
     const [posRes, clRes, netRes] = await Promise.all([
-      fetchRelated("positioning_runs"),
+      fetchPositioning(),
       fetchRelated("coverletter_runs"),
       fetchRelated("networking_runs"),
     ])
