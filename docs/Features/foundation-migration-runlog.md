@@ -2602,3 +2602,29 @@ signal it depends on.
   Priority Apply at distance≥2 (medium), nil at distance==1; never reaches
   `applyEvidenceGuardrails` (high-severity only). Not referenced by name in
   `decision.ts`.
+
+## 2026-07-20 — Positioning Phase 2 removed
+
+Permanently deleted the Phase 2 "Resume Reframing Workflow" (parked since
+2026-05-29, non-functional end-to-end). Two operations on `dev`:
+
+- **Op 1 (SHA 1c3dc4ba):** relocated shared infra `anthropicClient.ts` +
+  `costPolicy.ts` from `lib/positioning/v2/phase2/` → `lib/ai/` (still used by
+  cover-letter + networking + the grad-date extractor). Pure move + import
+  rewire, zero behavior change.
+- **Op 2 (this commit):** deleted the Phase 2 tree — 5 API endpoints, the
+  frontend prototype (`app/positioning/*`, incl. `layout.tsx`),
+  `lib/positioning-prototype.ts`, the remaining `lib/positioning/v2/phase2/*`
+  (~22 files), all `tests/positioning-v2/phase2/*` (~19), 4 dev scripts, the
+  FRD + state-check doc, and the `20260516_phase2_runs.sql` migration. Phase 1
+  positioning (`app/api/positioning/v2/start`, `lib/positioning/v2/*` outside
+  `phase2/`) untouched. Gate: `tsc` + `next build` clean (45 pages, was 47).
+
+**DB — `phase2_runs` DROP (manual, separate, via SQL Editor):** table exists on
+**BOTH dev (`zydrqckpwidipwbhrfgd`, had rows) and prod (`ejhnokcnahauvrcbcmic`,
+0 rows — 2026-05-25 drift-repair collateral)**. Leaf table, nothing FKs to it.
+Run dev first:
+
+    DROP TABLE IF EXISTS public.phase2_runs;
+
+[ ] dev dropped: ____   [ ] prod dropped: ____

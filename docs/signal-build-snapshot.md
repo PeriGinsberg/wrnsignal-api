@@ -12,9 +12,9 @@ This doc captures current state of the SIGNAL platform build. Update after major
 Production-grade. Working end-to-end. Includes positioning_runs_v2, jobfit_runs, case_determination with tuned bullet content, cover letter strategy generation. Peri's evaluation: working well. This is the current production-grade surface for all testing and any near-term feedback capture.
 
 ### Phase 2 — Resume Reframing Workflow
-**Status: parked as of 2026-05-29.**
+**Status: REMOVED 2026-07-20.**
 
-No active development. The Stage 2b real itemPopulator was canned (not deferred). Endpoints and frontend prototype remain in the codebase but are non-functional end-to-end for real users (itemPopulator returns `[]`). The `phase2_runs` table exists on both dev and prod (it landed on prod 2026-05-25 as collateral in a drift-repair sync, not an intentional promotion); with Phase 2 parked it's orphaned and unused on prod. See runlog entry 2026-05-29 for full parking detail. The Phase 2 FRD remains as a forward-looking spec but is not authoritative for current product behavior.
+Permanently deleted 2026-07-20 (was parked/non-functional since 2026-05-29). All code removed — the 5 API endpoints, the frontend prototype (`app/positioning/*`, incl. `layout.tsx`), `lib/positioning-prototype.ts`, the remaining `lib/positioning/v2/phase2/*`, all `tests/positioning-v2/phase2/*`, dev scripts, the FRD + state-check doc, and the `20260516_phase2_runs.sql` migration. The two shared modules (`anthropicClient`, `costPolicy`) were relocated to `lib/ai/` first (Op 1, SHA `1c3dc4ba`). The `phase2_runs` table is being **dropped from BOTH dev (`zydrqckpwidipwbhrfgd`) and prod (`ejhnokcnahauvrcbcmic`)** separately via SQL Editor (leaf table, nothing depends on it). Phase 1 positioning is untouched and live. See runlog entry 2026-07-20.
 
 ### Mobile app
 TestFlight only. Working but not the current focus.
@@ -57,7 +57,7 @@ Not scoped for immediate work. Captured for future surfacing.
 
 ## Key references
 
-- Phase 2 FRD: `docs/Features/positioning-phase2-frd.md` (forward-looking spec; not authoritative for current behavior)
+- Positioning Phase 2: **removed 2026-07-20** — all code + FRD deleted, `phase2_runs` dropped on dev + prod. See `docs/Features/foundation-migration-runlog.md` (2026-07-20 entry).
 - Foundation runlog: `docs/Features/foundation-migration-runlog.md`
 - Repo: PeriGinsberg/wrnsignal-api, working branch `dev`
 - Staging: https://wrnsignal-api-staging.vercel.app (points at dev Supabase)
@@ -71,7 +71,7 @@ Not scoped for immediate work. Captured for future surfacing.
 
 - **Test user:** peri+test100@workforcereadynow.com
 - **Primary persona:** f283397c-f26d-43bc-9095-0f77c7d9cea9 (Catherine Lees, OSU Strategic Communication, 3,694 char resume)
-- Phase 2 fixture runs (9d5ebb75, e12c8b08, d20210b7, 426f306d) remain on dev for any future ad-hoc inspection but are not active test targets
+- Phase 2 fixture runs (9d5ebb75, e12c8b08, d20210b7, 426f306d) were removed with the `phase2_runs` table drop (2026-07-20, dev + prod)
 
 ---
 
