@@ -1,24 +1,35 @@
 "use client"
 
 // JobDetailPanel — one slide-in panel per job, opened from a Job Tracker row's
-// "Full Jobfit" / "Cover Letter" link. Shows BOTH sections (collapsible); opens
-// focused on whichever link was clicked. Loads full content lazily from the
-// coach-gated per-job detail endpoint:
-//   GET /api/coach/clients/[clientId]/applications/[applicationId]/detail
-//   → { ok, jobfit: result_json|null, coverLetter: { letter, contact, ... }|null }
-// Access is enforced server-side (application owner → shared lib/collab view
-// check); this component adds no access logic. Sets up for coach notes: a
-// per-(job, section) panel is the natural home for a notes thread later.
+// "Full Jobfit" / "Cover Letter" link. Shows BOTH artifact sections
+// (collapsible), opens focused on whichever link was clicked, and under each
+// artifact a coach can read + write notes about that artifact.
+//
+// Reads:
+//   GET  /api/coach/clients/[clientId]/applications/[applicationId]/detail  (content)
+//   GET  /api/coach/clients/[clientId]/applications/[applicationId]/notes   (this job's notes)
+// Writes:
+//   POST /api/coach/clients/[clientId]/applications/[applicationId]/notes   ({ artifact_type, body, visibility })
+// All three are coach-gated server-side (application owner -> lib/collab check);
+// this component adds no access logic.
 //
 // getToken/authFetch inlined per the coach-route client convention.
 
 import { useCallback, useEffect, useState } from "react"
-import { T, btnSecondary, eyebrow } from "../../../../../lib/dashboard-theme"
+import { T, btnPrimary, btnSecondary, eyebrow, textarea } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 
 export type PanelSection = "jobfit" | "coverletter"
 
 type Detail = { jobfit: any; coverLetter: any }
+type Note = {
+  id: string
+  artifact_type: PanelSection
+  body: string
+  visibility: "private" | "shared"
+  author_role: string
+  created_at: string
+}
 
 async function getToken(): Promise<string | null> {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -30,7 +41,7 @@ async function authFetch(url: string, opts: RequestInit = {}): Promise<Response>
   return fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` } })
 }
 
-// ── render helpers (ported from the retired Full Analysis renderers) ──
+// ── render helpers ──
 function pickArray(a: unknown, b: unknown): any[] {
   if (Array.isArray(a)) return a
   if (Array.isArray(b)) return b
@@ -41,6 +52,10 @@ function decisionTint(decision: string | null): { bg: string; color: string } {
   if (d.includes("pass")) return { bg: T.SUCCESS_BG, color: T.SUCCESS }
   if (d.includes("fail") || d.includes("no")) return { bg: T.ERROR_BG, color: T.ERROR }
   return { bg: T.WARNING_BG, color: T.WRN_ORANGE }
+}
+function fmtDate(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString()
 }
 const subLabel: React.CSSProperties = {
   fontSize: 10, fontWeight: 900, letterSpacing: 1.5,
@@ -142,6 +157,132 @@ function Collapsible({ title, accent, open, onToggle, children }: {
   )
 }
 
+// ── Notes ──
+function VisibilityChip({ active, label, color, disabled, onClick }: {
+  active: boolean; label: string; color: string; disabled?: boolean; onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 999,
+        cursor: disabled ? "default" : "pointer",
+        border: `1px solid ${active ? color : T.BORDER_SOFT}`,
+        background: active ? `${color}22` : "transparent",
+        color: active ? color : T.MUTED,
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+function NoteRow({ note }: { note: Note }) {
+  const shared = note.visibility === "shared"
+  return (
+    <div style={{ paddingLeft: 8, borderLeft: `2px solid ${shared ? T.WRN_TEAL : T.DIM}` }}>
+      <div style={{ fontSize: 12, color: T.TEXT, lineHeight: "17px", whiteSpace: "pre-wrap" }}>{note.body}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+        <span style={{
+          fontSize: 9, fontWeight: 900, letterSpacing: 0.5, padding: "1px 6px", borderRadius: 999,
+          border: `1px solid ${T.BORDER_SOFT}`, color: shared ? T.WRN_TEAL : T.DIM,
+        }}>
+          {shared ? "SHARED" : "PRIVATE"}
+        </span>
+        <span style={{ fontSize: 10, color: T.DIM }}>{fmtDate(note.created_at)}</span>
+      </div>
+    </div>
+  )
+}
+
+function NotesBlock({ artifactType, notes, loading, onSave }: {
+  artifactType: PanelSection
+  notes: Note[]
+  loading: boolean
+  onSave: (artifactType: PanelSection, body: string, visibility: "private" | "shared") => Promise<{ ok: boolean; error?: string }>
+}) {
+  const [text, setText] = useState("")
+  const [visibility, setVisibility] = useState<"private" | "shared">("private")
+  const [confirming, setConfirming] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const label = artifactType === "jobfit" ? "jobfit" : "cover letter"
+
+  async function doSave() {
+    const body = text.trim()
+    if (!body) { setError("Write a note first."); return }
+    setSaving(true); setError(null)
+    const res = await onSave(artifactType, body, visibility)
+    setSaving(false)
+    if (!res.ok) { setError(res.error || "Couldn't save the note."); return }
+    setText(""); setVisibility("private"); setConfirming(false)
+  }
+
+  function onSaveClick() {
+    const body = text.trim()
+    if (!body) { setError("Write a note first."); return }
+    setError(null)
+    // Shared needs an explicit confirm; private saves straight away.
+    if (visibility === "shared") { setConfirming(true); return }
+    void doSave()
+  }
+
+  return (
+    <div style={{ marginTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 12 }}>
+      <div style={subLabel}>Notes</div>
+
+      {loading ? (
+        <div style={{ fontSize: 12, color: T.DIM, marginBottom: 10 }}>Loading notes…</div>
+      ) : notes.length === 0 ? (
+        <div style={{ fontSize: 12, color: T.DIM, marginBottom: 10 }}>No notes yet.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+          {notes.map((n) => <NoteRow key={n.id} note={n} />)}
+        </div>
+      )}
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={`Add a note about the ${label}…`}
+        disabled={saving}
+        style={{ ...textarea, minHeight: 56, fontSize: 12 }}
+      />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+        <VisibilityChip active={visibility === "private"} label="Private" color={T.DIM} disabled={saving || confirming} onClick={() => setVisibility("private")} />
+        <VisibilityChip active={visibility === "shared"} label="Shared" color={T.WRN_TEAL} disabled={saving || confirming} onClick={() => setVisibility("shared")} />
+        <button
+          type="button"
+          onClick={onSaveClick}
+          disabled={saving || confirming}
+          style={{ ...btnPrimary, padding: "8px 16px", fontSize: 12, marginLeft: "auto", opacity: saving || confirming ? 0.6 : 1 }}
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+      </div>
+
+      {confirming && (
+        <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, border: `1px solid ${T.WRN_TEAL}55`, background: `${T.WRN_TEAL}14` }}>
+          <div style={{ fontSize: 12, color: T.TEXT }}>Share with client? This can&apos;t be undone.</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button type="button" onClick={() => void doSave()} disabled={saving} style={{ ...btnPrimary, padding: "7px 14px", fontSize: 12 }}>
+              {saving ? "Sharing…" : "Share note"}
+            </button>
+            <button type="button" onClick={() => setConfirming(false)} disabled={saving} style={{ ...btnSecondary, padding: "7px 14px", fontSize: 12 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <div style={{ fontSize: 11, color: T.ERROR, marginTop: 6 }}>{error}</div>}
+    </div>
+  )
+}
+
 export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, initialSection }: {
   open: boolean
   onClose: () => void
@@ -154,6 +295,8 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
   const [error, setError] = useState<string | null>(null)
   const [jobfitOpen, setJobfitOpen] = useState(true)
   const [coverOpen, setCoverOpen] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [notesLoading, setNotesLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!applicationId) return
@@ -170,13 +313,48 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
     }
   }, [clientProfileId, applicationId])
 
-  // On each open: focus the clicked section, collapse the other, (re)fetch.
+  const loadNotes = useCallback(async () => {
+    if (!applicationId) { setNotes([]); return }
+    setNotesLoading(true)
+    try {
+      const res = await authFetch(`/api/coach/clients/${clientProfileId}/applications/${applicationId}/notes`)
+      const j = await res.json().catch(() => ({}))
+      setNotes(res.ok && j?.ok && Array.isArray(j.notes) ? j.notes : [])
+    } catch {
+      setNotes([])
+    } finally {
+      setNotesLoading(false)
+    }
+  }, [clientProfileId, applicationId])
+
+  const saveNote = useCallback(
+    async (artifactType: PanelSection, body: string, visibility: "private" | "shared") => {
+      if (!applicationId) return { ok: false, error: "No application" }
+      try {
+        const res = await authFetch(`/api/coach/clients/${clientProfileId}/applications/${applicationId}/notes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ artifact_type: artifactType, body, visibility }),
+        })
+        const j = await res.json().catch(() => ({}))
+        if (!res.ok || !j?.ok) return { ok: false, error: j?.error || `Save failed (${res.status})` }
+        await loadNotes()
+        return { ok: true }
+      } catch {
+        return { ok: false, error: "Network error — try again" }
+      }
+    },
+    [clientProfileId, applicationId, loadNotes],
+  )
+
+  // On each open: focus the clicked section, collapse the other, (re)fetch both.
   useEffect(() => {
     if (!open) return
     setJobfitOpen(initialSection !== "coverletter")
     setCoverOpen(initialSection === "coverletter")
     void load()
-  }, [open, initialSection, load])
+    void loadNotes()
+  }, [open, initialSection, load, loadNotes])
 
   // Escape closes.
   useEffect(() => {
@@ -231,9 +409,21 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
             <>
               <Collapsible title="FULL JOBFIT" accent={T.WRN_BLUE} open={jobfitOpen} onToggle={() => setJobfitOpen((o) => !o)}>
                 <JobfitSection jobfit={data.jobfit} />
+                <NotesBlock
+                  artifactType="jobfit"
+                  notes={notes.filter((n) => n.artifact_type === "jobfit")}
+                  loading={notesLoading}
+                  onSave={saveNote}
+                />
               </Collapsible>
               <Collapsible title="COVER LETTER" accent={T.WRN_TEAL} open={coverOpen} onToggle={() => setCoverOpen((o) => !o)}>
                 <CoverLetterSection coverLetter={data.coverLetter} />
+                <NotesBlock
+                  artifactType="coverletter"
+                  notes={notes.filter((n) => n.artifact_type === "coverletter")}
+                  loading={notesLoading}
+                  onSave={saveNote}
+                />
               </Collapsible>
             </>
           )}
