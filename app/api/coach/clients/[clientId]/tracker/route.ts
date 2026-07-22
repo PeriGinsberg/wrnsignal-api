@@ -132,12 +132,33 @@ export async function GET(
       }
     }
 
+    // Which of these apps' jobfit runs have a cover letter? Batch lookup by
+    // jobfit_run_id so a tracker row can show/hide the "Cover letter" link
+    // without loading any cover-letter content (that loads lazily in the panel).
+    const jobfitRunIds = Array.from(
+      new Set((applications || []).map((a: any) => a.jobfit_run_id).filter(Boolean)),
+    )
+    const coverLetterRunIds = new Set<string>()
+    if (jobfitRunIds.length > 0) {
+      const { data: clRows } = await supabase
+        .from("coverletter_runs")
+        .select("jobfit_run_id")
+        .in("jobfit_run_id", jobfitRunIds)
+      for (const row of clRows || []) {
+        if (row.jobfit_run_id) coverLetterRunIds.add(row.jobfit_run_id as string)
+      }
+    }
+
     const enrichedApps = (applications || []).map((app: any) => ({
       ...app,
       interview_count: Array.isArray(app.signal_interviews) ? app.signal_interviews.length : 0,
       persona_name: app.client_personas?.name || null,
       // Read-only JD captured at scoring time (see /api/applications GET).
       job_description: app.jobfit_runs?.job_description ?? null,
+      // Panel links: jobfit available when a run is linked; cover letter only
+      // when a coverletter_run exists for this app's jobfit_run_id.
+      has_jobfit: !!app.jobfit_run_id,
+      has_cover_letter: app.jobfit_run_id ? coverLetterRunIds.has(app.jobfit_run_id) : false,
       signal_interviews: undefined,
       client_personas: undefined,
       jobfit_runs: undefined,
