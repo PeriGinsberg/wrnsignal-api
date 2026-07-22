@@ -112,7 +112,10 @@ export async function GET(
         .select("id, artifact_type, body, visibility, author_role, created_at")
         .eq("jobfit_run_id", authz.jobfitRunId)
         .eq("client_profile_id", authz.ownerClientId)
-        .eq("coach_profile_id", authz.coachProfileId) // the caller's own notes
+        // The caller coach's OWN notes (any visibility) OR client notes that are
+        // SHARED. Client PRIVATE notes match neither branch and are excluded;
+        // another coach's notes fail the coach branch (coach_profile_id = caller).
+        .or(`and(author_role.eq.coach,coach_profile_id.eq.${authz.coachProfileId}),and(author_role.eq.client,visibility.eq.shared)`)
         .order("created_at", { ascending: false })
       if (error) throw new Error(`Notes lookup failed: ${error.message}`)
       notes = data ?? []
