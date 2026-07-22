@@ -29,7 +29,7 @@ import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
 import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
-import { FullAnalysisTab } from "./FullAnalysisTab"
+import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
 // History) tab was removed entirely — its surface no longer ships in the
@@ -37,7 +37,7 @@ import { FullAnalysisTab } from "./FullAnalysisTab"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "analysis-full" | "engagements" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -72,6 +72,8 @@ type ClientApplication = {
   job_url: string | null
   job_description: string | null
   created_at: string | null
+  has_jobfit?: boolean
+  has_cover_letter?: boolean
   coach_annotations: any[]
 }
 
@@ -298,6 +300,10 @@ export default function CoachClientPage() {
   const [selectedPersona, setSelectedPersona] = useState("")
   const [running, setRunning] = useState(false)
   const [runResult, setRunResult] = useState<any>(null)
+  // Per-job detail side panel, opened from a Job Tracker row's links.
+  const [jobPanelOpen, setJobPanelOpen] = useState(false)
+  const [jobPanelAppId, setJobPanelAppId] = useState<string | null>(null)
+  const [jobPanelSection, setJobPanelSection] = useState<PanelSection>("jobfit")
 
   // Annotation state (sent with run)
   const [annPriority, setAnnPriority] = useState("this_week")
@@ -585,7 +591,6 @@ export default function CoachClientPage() {
     { id: "dashboard", label: "Dashboard" },
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
-    { id: "analysis-full", label: "Full Analysis" },
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
@@ -1053,6 +1058,28 @@ export default function CoachClientPage() {
                       {/* Expanded content */}
                       {isOpen && (
                         <div style={{ marginTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 14 }}>
+                          {/* Per-job detail links — open the side panel focused on the
+                              clicked section. Cover Letter shows only when one was run. */}
+                          {(app.has_jobfit || app.has_cover_letter) && (
+                            <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+                              {app.has_jobfit && (
+                                <button
+                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.WRN_BLUE, textDecoration: "underline" }}
+                                >
+                                  Full Jobfit
+                                </button>
+                              )}
+                              {app.has_cover_letter && (
+                                <button
+                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
+                                >
+                                  Cover Letter
+                                </button>
+                              )}
+                            </div>
+                          )}
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                             <div style={{ fontSize: 12, color: T.DIM }}>
                               <span style={{ color: T.MUTED, fontWeight: 700 }}>URL: </span>
@@ -1799,9 +1826,15 @@ export default function CoachClientPage() {
       {/* TAB 7 — History (read-only event timeline) */}
       {tab === "history" && <HistoryTab coachClientId={coachClientId} />}
 
-      {/* Full Analysis — full jobfit + cover-letter content via the gated
-          client-runs reader. clientId IS the client_profile_id. */}
-      {tab === "analysis-full" && <FullAnalysisTab clientProfileId={clientId} />}
+      {/* Per-job detail side panel — opened from a Job Tracker row's
+          "Full Jobfit" / "Cover Letter" link. Mounted once; slides in on open. */}
+      <JobDetailPanel
+        open={jobPanelOpen}
+        onClose={() => setJobPanelOpen(false)}
+        clientProfileId={clientId}
+        applicationId={jobPanelAppId}
+        initialSection={jobPanelSection}
+      />
 
       {/* Slide-in Add Note panel — overlays current tab without navigation */}
       <AddNotePanel
