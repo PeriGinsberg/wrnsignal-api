@@ -5,6 +5,7 @@ import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, card, eyebrow, headline, input, textarea, btnPrimary, btnSecondary, label } from "../../../lib/dashboard-theme"
 import { FRAMER_URL } from "../../../lib/urls"
 import { APP_STATUSES, APP_STATUS_STYLE as STATUS_STYLE } from "../../_lib/applicationStatuses"
+import { ClientJobNotes } from "./ClientJobNotes"
 
 // ── Status + Decision color maps ────────────────────────────
 // STATUS_STYLE is imported above as APP_STATUS_STYLE — single source of
@@ -1043,6 +1044,11 @@ export default function TrackerPage() {
                             Delete Application
                           </button>
                         </div>
+                        {/* Two-way job notes (NEW client notes API). Separate from
+                            the old "FROM YOUR COACH" coach_annotations panel above —
+                            its own blue "JOB NOTES" heading + container so the two
+                            aren't confused while both systems coexist. */}
+                        <ClientJobNotes applicationId={a.id} jobfitRunId={a.jobfit_run_id ?? null} />
                       </div>
                     )}
                   </div>
