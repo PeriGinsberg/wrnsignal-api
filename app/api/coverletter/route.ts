@@ -682,12 +682,44 @@ Return JSON only. No markdown. No commentary.
       },
     }
 
+    // Resolve the jobfit run this letter is for, most-reliable-source first:
+    //   1) jobfit_result.jobfit_run_id — the EXACT run whose analysis and
+    //      cover_letter_strategy drove THIS letter, and the same run the Job
+    //      Tracker application is keyed to (both come from that one jobfit run).
+    //      Authoritative when present.
+    //   2) Fallback that does NOT depend on the caller: the client's own
+    //      jobfit_runs row for this identical job posting (client_profile_id +
+    //      exact job_description), newest first. Exact-text match => same job,
+    //      so it can never attach a different job's run; on no match we leave it
+    //      null rather than guess (a wrong id simply wouldn't link, never mis-links).
+    let jobfitRunId: string | null =
+      typeof jobfitResult?.jobfit_run_id === "string" && jobfitResult.jobfit_run_id.trim()
+        ? jobfitResult.jobfit_run_id.trim()
+        : null
+    if (!jobfitRunId && jobText) {
+      const { data: jfMatch } = await supabaseAdmin
+        .from("jobfit_runs")
+        .select("id")
+        .eq("client_profile_id", profileId)
+        .eq("job_description", jobText)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      jobfitRunId = (jfMatch?.id as string) ?? null
+    }
+
     const { error: upsertErr } = await supabaseAdmin
       .from("coverletter_runs")
       .upsert(
         {
           client_profile_id: profileId,
           job_url: null,
+          // Link to the upstream JobFit run (resolved above; primary source is
+          // jobfit_result.jobfit_run_id, fallback is an exact job_description
+          // match). Lets the coach tracker + detail panel and GET /api/runs/[id]
+          // find this-job cover letter by jobfit_run_id. Null only when neither
+          // source resolved (e.g. a truly standalone cover letter).
+          jobfit_run_id: jobfitRunId,
           fingerprint_hash,
           fingerprint_code,
           result_json: finalResult,
