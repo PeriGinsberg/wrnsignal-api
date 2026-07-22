@@ -29,6 +29,7 @@ import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
 import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
+import { FullAnalysisTab } from "./FullAnalysisTab"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
 // History) tab was removed entirely — its surface no longer ships in the
@@ -36,7 +37,7 @@ import { HistoryTab } from "./HistoryTab"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "analysis-full" | "engagements" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -584,6 +585,7 @@ export default function CoachClientPage() {
     { id: "dashboard", label: "Dashboard" },
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
+    { id: "analysis-full", label: "Full Analysis" },
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
@@ -1796,6 +1798,10 @@ export default function CoachClientPage() {
 
       {/* TAB 7 — History (read-only event timeline) */}
       {tab === "history" && <HistoryTab coachClientId={coachClientId} />}
+
+      {/* Full Analysis — full jobfit + cover-letter content via the gated
+          client-runs reader. clientId IS the client_profile_id. */}
+      {tab === "analysis-full" && <FullAnalysisTab clientProfileId={clientId} />}
 
       {/* Slide-in Add Note panel — overlays current tab without navigation */}
       <AddNotePanel

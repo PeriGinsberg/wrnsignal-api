@@ -5,103 +5,17 @@
 // networking) for one client, with per-function display fields and this
 // coach's private notes attached. Auth mirrors coach/recommend-job.
 import { type NextRequest } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
+import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { verifyCoachAccess } from "@/lib/collab/access"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}
-
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  const token = m?.[1]?.trim()
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  return token
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
-async function getProfileId(userId: string, email: string | null) {
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase
-    .from("client_profiles")
-    .select("id, user_id")
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (error) throw new Error(`Profile lookup failed: ${error.message}`)
-  if (data) return data.id as string
-
-  if (email) {
-    const { data: byEmail, error: emailErr } = await supabase
-      .from("client_profiles")
-      .select("id, user_id")
-      .eq("email", email)
-      .maybeSingle()
-    if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
-    if (byEmail) {
-      if (byEmail.user_id !== userId) {
-        const { error: attachErr } = await supabase
-          .from("client_profiles")
-          .update({ user_id: userId, updated_at: new Date().toISOString() })
-          .eq("id", byEmail.id)
-        if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
-      }
-      return byEmail.id as string
-    }
-  }
-
-  throw new Error("Profile not found")
-}
-
-async function verifyCoach(profileId: string, supabase: any): Promise<boolean> {
-  const { data } = await supabase
-    .from("client_profiles")
-    .select("is_coach")
-    .eq("id", profileId)
-    .single()
-  return data?.is_coach === true
-}
-
-async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: string, supabase: any) {
-  const levels: Record<string, string[]> = { view: ["view", "annotate", "full"], annotate: ["annotate", "full"], full: ["full"] }
-  const { data } = await supabase
-    .from("coach_clients")
-    .select("id, access_level, status")
-    .eq("coach_profile_id", coachProfileId)
-    .eq("client_profile_id", clientProfileId)
-    .eq("status", "active")
-    .maybeSingle()
-  if (!data) return null
-  if (!levels[requiredLevel]?.includes(data.access_level)) return null
-  return data
-}
-
-// First non-empty line of a body of text, truncated — used for the
-// coverletter preview (no title/status is persisted on the run row).
-function firstLine(text: unknown, max = 120): string | null {
-  if (typeof text !== "string") return null
-  const line = text.trim().split(/\r?\n/)[0]?.trim() ?? ""
-  if (!line) return null
-  return line.length > max ? line.slice(0, max) + "…" : line
-}
+// Identity ("who is calling" -> { profileId, isCoach }) and the coach-access
+// check (coach_clients status='active' + view/annotate/full) are centralized
+// in lib/collab. Imported above; the previous inline copies were byte-identical
+// to those, so this is a pure centralization refactor with no behavior change.
 
 type RunCard = {
   function_type: string
@@ -126,11 +40,9 @@ export async function GET(
       return withCorsJson(req, { ok: false, error: "client_profile_id is required" }, 400)
     }
 
-    const { userId, email } = await getAuthedUser(req)
-    const coachProfileId = await getProfileId(userId, email)
+    const { profileId: coachProfileId, isCoach } = await resolveCaller(req)
     const supabase = getSupabaseAdmin()
 
-    const isCoach = await verifyCoach(coachProfileId, supabase)
     if (!isCoach) {
       return withCorsJson(req, { ok: false, error: "Forbidden: caller is not a coach" }, 403)
     }
@@ -152,21 +64,17 @@ export async function GET(
         .eq("client_profile_id", clientProfileId)
       if (error) console.warn("[client-runs] jobfit_runs query failed:", error.message)
       for (const r of (data ?? []) as any[]) {
-        const rj: any = r.result_json ?? {}
-        const js: any = rj?.job_signals ?? {}
         runs.push({
           function_type: "jobfit",
           run_id: r.id,
           created_at: r.created_at,
           owner: r.sourced_by_coach_id ? "coach" : "client",
-          display: {
-            verdict: r.verdict ?? null,
-            decision: typeof rj?.decision === "string" ? rj.decision : null,
-            score: typeof rj?.score === "number" ? rj.score : null,
-            jobTitle: typeof js?.jobTitle === "string" ? js.jobTitle : null,
-            companyName: typeof js?.companyName === "string" ? js.companyName : null,
-            jobFamily: typeof js?.jobFamily === "string" ? js.jobFamily : null,
-          },
+          // Full jobfit content, matching the client's own view: GET /api/runs/[id]
+          // returns result_json decorated with jobfit_run_id (same as POST /api/jobfit).
+          display:
+            r.result_json && typeof r.result_json === "object"
+              ? { ...(r.result_json as any), jobfit_run_id: r.id }
+              : r.result_json,
           notes: [],
         })
       }
@@ -212,7 +120,10 @@ export async function GET(
           created_at: r.created_at,
           owner: "client",
           display: {
-            letter_preview: firstLine(rj?.letter),
+            // Full cover-letter content, matching the client's own view
+            // (coverletter_runs.result_json = { letter, contact, context_used }).
+            letter: rj?.letter ?? null,
+            contact: rj?.contact ?? null,
             context_used: rj?.context_used ?? null,
           },
           notes: [],
