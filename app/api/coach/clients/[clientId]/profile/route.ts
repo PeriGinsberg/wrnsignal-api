@@ -228,9 +228,14 @@ export async function GET(
 
 // Editable fields on client_profiles when a coach patches the row from
 // the Profile & Personas tab. Anything outside this allowlist is ignored.
-// `email`, `resume_text`, and `profile_text` are intentionally excluded —
-// those flow through other paths (auth, persona sync, intake). `name` is
-// editable (the coach profile editor manages it; client-side blocks blank).
+// Three fields stay OUT on purpose:
+//   • email        — it is the auth identity (joins client_profiles↔auth.users);
+//                    editing here would desync login + invite delivery.
+//   • resume_text  — owned by the persona sync path (default persona → profile).
+//   • profile_text — intake-derived narrative, rebuilt by the intake/self-serve
+//                    writers; a coach edit here would be clobbered.
+// `name` stays editable (the coach profile editor manages it; client-side
+// blocks blank). Contact/education fields mirror the direct Create Client flow.
 const COACH_EDITABLE_PROFILE_FIELDS = new Set([
   "name",
   "job_type",
@@ -241,6 +246,32 @@ const COACH_EDITABLE_PROFILE_FIELDS = new Set([
   "coach_notes_avoid",
   "coach_notes_strengths",
   "coach_notes_concerns",
+  "phone",
+  "linkedin_url",
+  "education_status",
+  "university",
+  "grad_date",
+])
+
+// Columns that ALSO exist on the coach_clients row as denormalized prospect-
+// capture copies. The Client Information card (buildClientInfoGroups in the
+// client page) reads `capture ?? profile`, i.e. it PREFERS the coach_clients
+// copy — so a client_profiles-only edit is invisible there whenever the
+// capture column is non-null. On a successful profile edit we mirror the
+// intersecting fields onto coach_clients so the card reflects the change.
+// coach_notes_* are absent here (they have no coach_clients column).
+const COACH_CLIENTS_CAPTURE_COLUMNS = new Set([
+  "name",
+  "job_type",
+  "target_roles",
+  "target_locations",
+  "preferred_locations",
+  "timeline",
+  "phone",
+  "linkedin_url",
+  "education_status",
+  "university",
+  "grad_date",
 ])
 
 export async function PATCH(
@@ -281,6 +312,28 @@ export async function PATCH(
         updates.job_type = r.value
         continue
       }
+      if (k === "education_status") {
+        // Mirror the DB CHECK (and the direct Create Client guard) at the API
+        // so a coach gets a clean 400, not a Postgres constraint 500.
+        const s = v === null ? null : String(v).trim()
+        const val = s && s.length ? s : null
+        if (val && !["in_school", "graduated", "na"].includes(val)) {
+          return withCorsJson(req, { ok: false, error: "Invalid education_status" }, 400)
+        }
+        updates.education_status = val
+        continue
+      }
+      if (k === "grad_date") {
+        // Same format the direct-create path enforces (YYYY-MM-DD), so a bad
+        // date fails at the API rather than the date cast.
+        const s = v === null ? null : String(v).trim()
+        const val = s && s.length ? s : null
+        if (val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          return withCorsJson(req, { ok: false, error: "Invalid grad_date (expected YYYY-MM-DD)" }, 400)
+        }
+        updates.grad_date = val
+        continue
+      }
       // Empty string → null (so coach can clear a field by blanking it)
       const str = v === null ? null : String(v)
       updates[k] = str !== null && str.trim().length === 0 ? null : str
@@ -300,6 +353,28 @@ export async function PATCH(
       .single()
 
     if (updateErr) throw new Error(`Profile update failed: ${updateErr.message}`)
+
+    // Write-through to the denormalized coach_clients capture copy. The Client
+    // Information card reads `capture ?? profile` (capture-preferred), so a
+    // client_profiles-only edit is invisible there when the capture column is
+    // non-null. client_profiles is the source of truth (written above); this
+    // mirror is best-effort — a failure is logged and the request still
+    // returns 200 with the profile result (no fail on capture-copy drift).
+    // Interim measure: flipping the card's read precedence to profile-first is
+    // logged debt; until then write-through keeps the card consistent.
+    const captureUpdates: Record<string, any> = {}
+    for (const k of Object.keys(updates)) {
+      if (COACH_CLIENTS_CAPTURE_COLUMNS.has(k)) captureUpdates[k] = updates[k]
+    }
+    if (Object.keys(captureUpdates).length > 0) {
+      const { error: captureErr } = await supabase
+        .from("coach_clients")
+        .update(captureUpdates)
+        .eq("id", access.id)
+      if (captureErr) {
+        console.warn("[coach profile PATCH] coach_clients capture write-through failed:", captureErr.message)
+      }
+    }
 
     return withCorsJson(req, { ok: true, profile: updated })
   } catch (err: any) {
