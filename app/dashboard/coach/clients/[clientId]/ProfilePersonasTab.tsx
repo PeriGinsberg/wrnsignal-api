@@ -32,6 +32,11 @@ export type ClientProfileFull = {
   // Optional: carried by the route's select("*") + the parent's clientProfile
   // at runtime; optional on the type so the parent assignment is unaffected.
   preferred_locations?: string | null
+  phone?: string | null
+  linkedin_url?: string | null
+  education_status?: string | null
+  university?: string | null
+  grad_date?: string | null
   coach_notes_avoid: string | null
   coach_notes_strengths: string | null
   coach_notes_concerns: string | null
@@ -59,6 +64,11 @@ type EditableField =
   | "target_roles"
   | "target_locations"
   | "timeline"
+  | "phone"
+  | "linkedin_url"
+  | "education_status"
+  | "university"
+  | "grad_date"
   | "coach_notes_avoid"
   | "coach_notes_strengths"
   | "coach_notes_concerns"
@@ -71,6 +81,11 @@ const EDITABLE_FIELDS: EditableField[] = [
   "target_roles",
   "target_locations",
   "timeline",
+  "phone",
+  "linkedin_url",
+  "education_status",
+  "university",
+  "grad_date",
   "coach_notes_avoid",
   "coach_notes_strengths",
   "coach_notes_concerns",
@@ -142,6 +157,11 @@ export default function ProfilePersonasTab({
     target_roles: p.target_roles ?? "",
     target_locations: p.target_locations ?? "",
     timeline: p.timeline ?? "",
+    phone: p.phone ?? "",
+    linkedin_url: p.linkedin_url ?? "",
+    education_status: p.education_status ?? "",
+    university: p.university ?? "",
+    grad_date: p.grad_date ?? "",
     coach_notes_avoid: p.coach_notes_avoid ?? "",
     coach_notes_strengths: p.coach_notes_strengths ?? "",
     coach_notes_concerns: p.coach_notes_concerns ?? "",
@@ -482,6 +502,59 @@ export default function ProfilePersonasTab({
             />
           </FieldRow>
 
+        </div>
+
+        {/* Contact & education — mirrors the fields captured by the direct
+            Create Client flow. Same draft-then-Save wiring as above. */}
+        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <FieldRow labelText="Phone">
+            <input
+              type="text"
+              style={input}
+              value={drafts.phone}
+              onChange={(e) => setDrafts((d) => ({ ...d, phone: e.target.value }))}
+            />
+          </FieldRow>
+
+          <FieldRow labelText="LinkedIn URL">
+            <input
+              type="text"
+              style={input}
+              value={drafts.linkedin_url}
+              onChange={(e) => setDrafts((d) => ({ ...d, linkedin_url: e.target.value }))}
+            />
+          </FieldRow>
+
+          <FieldRow labelText="Education Status">
+            <select
+              style={input}
+              value={drafts.education_status}
+              onChange={(e) => setDrafts((d) => ({ ...d, education_status: e.target.value }))}
+            >
+              <option value="">—</option>
+              <option value="in_school">In school</option>
+              <option value="graduated">Graduated</option>
+              <option value="na">N/A</option>
+            </select>
+          </FieldRow>
+
+          <FieldRow labelText="University">
+            <input
+              type="text"
+              style={input}
+              value={drafts.university}
+              onChange={(e) => setDrafts((d) => ({ ...d, university: e.target.value }))}
+            />
+          </FieldRow>
+
+          <FieldRow labelText="Grad Date">
+            <input
+              type="date"
+              style={input}
+              value={drafts.grad_date}
+              onChange={(e) => setDrafts((d) => ({ ...d, grad_date: e.target.value }))}
+            />
+          </FieldRow>
         </div>
 
         {/* Coaching notes (full width each) */}
