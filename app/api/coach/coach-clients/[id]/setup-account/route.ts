@@ -140,7 +140,7 @@ export async function POST(
     // ── Gate 6: row exists + owned by caller + active ("full") ─────
     const { data: ccRow } = await supabase
       .from("coach_clients")
-      .select("id, lifecycle_status, client_profile_id, invited_email, name, is_returning, access_level, job_type, target_roles, target_locations, preferred_locations, timeline")
+      .select("id, lifecycle_status, client_profile_id, invited_email, name, is_returning, access_level, job_type, target_roles, target_locations, preferred_locations, timeline, phone, linkedin_url, education_status, university, grad_date")
       .eq("id", coachClientId)
       .eq("coach_profile_id", coachProfileId)
       .eq("status", "active")
@@ -245,6 +245,13 @@ export async function POST(
       if (ccRow.target_locations) carryover.target_locations = ccRow.target_locations
       if (ccRow.preferred_locations) carryover.preferred_locations = ccRow.preferred_locations
       if (ccRow.timeline) carryover.timeline = ccRow.timeline
+      // Contact/education capture fields — mirror the direct Create Client flow
+      // so a converted prospect keeps them instead of dropping to null.
+      if (ccRow.phone) carryover.phone = ccRow.phone
+      if (ccRow.linkedin_url) carryover.linkedin_url = ccRow.linkedin_url
+      if (ccRow.education_status) carryover.education_status = ccRow.education_status
+      if (ccRow.university) carryover.university = ccRow.university
+      if (ccRow.grad_date) carryover.grad_date = ccRow.grad_date
 
       const { data: newProfile, error: profileErr } = await supabase
         .from("client_profiles")
