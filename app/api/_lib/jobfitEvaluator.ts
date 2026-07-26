@@ -353,6 +353,21 @@ export async function runJobFit(args: {
   // severity, so it no longer needs to live in the number.
   const gateScore = capScoreForDecision(scoreAfterBoost, decisionFinal)
 
+  // Per-scan detector confirmation (dev only — needEv is true iff a detector flag
+  // is on, which only happens via nonProdDetectorFlags in dev). If this line is
+  // ABSENT from the server logs, the scan ran with detectors OFF. resume_source
+  // "regex" means the LLM extractor fell open (e.g. missing ANTHROPIC_API_KEY).
+  if (needEv) {
+    const DETECTOR_CODES = /DOMAIN_GAP|OWNERSHIP_VERB|PEOPLE_MGMT|CRM_ABSENT|REVENUE_METRICS|STALE_SKILL|SCOPE_INVERSION|HARD_CREDENTIAL|ADJACENCY/
+    console.log("[jobfitEvaluator] DETECTORS ON —", {
+      resume_source: resumeEv?.source,
+      gate_ledger_entries: gateLedger?.length ?? 0,
+      ledger_blockers: ledgerBlockers.map((e) => e.gate_id),
+      detector_risk_codes: riskCodes.filter((r) => DETECTOR_CODES.test(r.code)).map((r) => r.code),
+      decision_final: decisionFinal,
+    })
+  }
+
   const baseOut: EvalOutput = {
     decision: decisionFinal,
     score: gateScore,
