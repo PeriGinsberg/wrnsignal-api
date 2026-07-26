@@ -128,8 +128,13 @@ const MGMT_VERBS = new Set(["hired", "hire", "managed", "manage", "led", "lead",
 const PEOPLE_NOUNS = ["team", "analyst", "analysts", "engineer", "engineers", "report", "reports", "staff", "manager", "managers", "people"]
 // A large owned span the JD demands (org/budget/manage-managers).
 const LARGE_SPAN_DEMAND = /manag(?:e|ing) managers|\b\d{2,}[- ]person\b|org-level|8-figure|headcount and budget|bench of .{0,25}managers/i
-// A scope-SIZE citation in a résumé bullet (team size / dollar span).
-const SCOPE_SIZE = /\b\d{2,}[- ]person\b|\bteam of \d{2,}\b|\$\s?\d+\s?[mb]\b/i
+// A scope-SIZE citation in a résumé bullet — HEADCOUNT / span-of-control ONLY.
+// The dollar clause ($Nm/$Nb) was dropped: a financial magnitude (portfolio/AUM/
+// revenue/deal size) is the size of the ASSETS or WORK, not the person's span of
+// control. A finance analyst citing "$17B portfolio" / "$400M AUM" is not
+// claiming to have managed 17B people — dollars ≠ headcount. Span inversion is a
+// PEOPLE/org signal: N-person, team of N, org of N, managed N people/reports.
+const SCOPE_SIZE = /\b\d{2,}[- ]person\b|\bteam of \d{2,}\b|\borg(?:anization)? of \d{2,}\b|\bmanag(?:ed|ing|es)?\s+\d{2,}\+?\s+(?:people|reports|employees|staff)\b|\bbench of \d{2,}\b/i
 // Tools the engine's adjacency graph credits as ~equivalent to a named tool.
 const TOOL_ADJACENCY: Record<string, string[]> = { dbt: ["tableau", "looker"] }
 
