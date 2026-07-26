@@ -27,6 +27,18 @@ export function applyRiskDowngrades(
 ): Decision {
   if (!POLICY.downgrade.enabled) return decision
 
+  // Defect #2: the ownership evidence-verb mismatch is a hard downgrade — a
+  // strong-looking candidate whose ownership evidence is contribution-only caps
+  // at REVIEW (never Apply/Priority Apply), but does NOT gate. Targeted to this
+  // code, which is only present when the opt-in verb-mismatch risk is enabled,
+  // so prod (flag off) behavior is unchanged.
+  if (
+    (decision === "Apply" || decision === "Priority Apply") &&
+    riskCodes.some((r) => r.code === "RISK_OWNERSHIP_VERB_MISMATCH")
+  ) {
+    return "Review"
+  }
+
   // Medium/high-severity risk blocks Priority Apply. Low-severity
   // "heads-up" risks (e.g., RISK_LOCATION_UNCLEAR, RISK_LOCATION_UNDISCLOSED)
   // are informational and should not downgrade a near-perfect match.

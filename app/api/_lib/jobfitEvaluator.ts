@@ -18,6 +18,13 @@ import {
   type VerdictLog,
 } from "../jobfit/semanticRelevance"
 import { decisionFromScore, applyGateOverrides, applyRiskDowngrades, applyEvidenceGuardrails, capScoreForDecision } from "../jobfit/decision"
+import { buildGateLedger, applyLedgerCap, type GateLedgerEntry } from "../jobfit/gateLedger"
+import { classifyRequirements } from "../jobfit/gateClassifier"
+import { extractProfileEvidence } from "../jobfit/profileEvidence"
+import { extractVerbEvidence } from "../jobfit/verbEvidence"
+import { detectOwnershipVerbMismatch } from "../jobfit/verbMismatch"
+import { detectPresenceRisks, detectSemanticRisks, bumpSeniorityIfExtreme } from "../jobfit/riskDetectors"
+import { resolveResumeEvidence, type ResumeExtractCache } from "../jobfit/llmResumeExtractor"
 import type {
   EvalOutput,
   StructuredProfileSignals,
@@ -93,6 +100,24 @@ export async function runJobFit(args: {
   // harness uses it to feed LLM-adapted signals through the same spine. Omit for
   // byte-identical behavior (cf. includeEngineTrace precedent).
   jobSignalsOverride?: StructuredJobSignals
+  // Per-requirement gate ledger (defect #1). Opt-in, OFF by default: computes
+  // the ledger and FLOORS the verdict to PASS on any unmet required gate. Left
+  // off on the prod path until the résumé-side extractor is prod-hardened
+  // (DESIGN §5a); the golden harness passes true.
+  applyGateLedger?: boolean
+  // Ownership evidence-verb mismatch RISK (defect #2). Opt-in, OFF by default —
+  // same prod-off posture as applyGateLedger (résumé-side extractor is
+  // corpus-fitted, DESIGN-verb-classifier §6). The golden harness passes true.
+  applyVerbMismatchRisk?: boolean
+  // Risk under-detection detectors (defect #3): domain_gap, crm_pipeline_absent,
+  // revenue_metrics_absent, stale_skill, people_mgmt_absent, scope_inversion,
+  // adjacency_inflation, + a seniority severity bump. Opt-in, OFF by default —
+  // corpus-fitted (DESIGN-risk-detectors §Prod). Golden harness passes true.
+  applyRiskDetectors?: boolean
+  // LLM résumé extractor (§5a/§6 hardening). When provided, résumé evidence is
+  // read by the span-grounded LLM extractor (frozen cache in the harness); when
+  // omitted, the deterministic regex extractor is used (fail-open / prod today).
+  resumeExtractor?: { cache: ResumeExtractCache; allowLive: boolean }
 }): Promise<
   EvalOutput & {
     icon: string
@@ -203,37 +228,113 @@ export async function runJobFit(args: {
     )
   }
 
+  // Ownership evidence-verb mismatch RISK (defect #2). Opt-in / OFF by default.
+  // When it fires, append RISK_OWNERSHIP_VERB_MISMATCH (HIGH) so it composes
+  // through applyRiskDowngrades below — a RISK, never a gate; a targeted
+  // Apply→Review cap for this code lives in decision.ts. Computed AFTER the
+  // boost so the boost still keys on the original zero-risk shape.
+  // Résumé evidence (defect #1–#3 consumers), computed ONCE. LLM extractor when
+  // args.resumeExtractor is provided (frozen in the harness), else regex
+  // fail-open. Same ProfileEvidence + VerbBullet[] shapes either way.
+  const needEv = args.applyGateLedger || args.applyVerbMismatchRisk || args.applyRiskDetectors
+  const resumeEv = needEv
+    ? await resolveResumeEvidence(args.profileText || "", args.resumeExtractor ? { llm: args.resumeExtractor } : undefined)
+    : undefined
+
+  let riskCodes = scored.riskCodes
+  if (args.applyVerbMismatchRisk) {
+    const vm = detectOwnershipVerbMismatch(args.jobText || "", resumeEv!.verbBullets)
+    if (vm.fires) {
+      riskCodes = [
+        ...scored.riskCodes,
+        {
+          code: "RISK_OWNERSHIP_VERB_MISMATCH",
+          job_fact: `Requirement demands ownership of ${vm.firedOn}`,
+          profile_fact: "résumé evidence for it is contribution verbs only (partnered/supported/assisted)",
+          risk: "Ownership requirement substantiated only by contribution verbs, not ownership verbs (owned/built/led/drove).",
+          severity: "high",
+        },
+      ]
+    }
+  }
+
+  // Risk under-detection detectors (defect #3). Opt-in / OFF by default. Append
+  // the detected risks and apply the seniority severity bump, then let the
+  // existing applyRiskDowngrades / guardrails cascade consume the fuller set.
+  if (args.applyRiskDetectors) {
+    const jobText = args.jobText || ""
+    const profileText = args.profileText || ""
+    const candidates = classifyRequirements(jobText)
+    const evidence = resumeEv!.profileEvidence
+    const verbBullets = resumeEv!.verbBullets
+    const detected = [
+      ...detectPresenceRisks({ jobText, profileText, candidates, evidence }),
+      ...detectSemanticRisks({ jobText, profileText, candidates, evidence, verbBullets }),
+    ]
+    riskCodes = bumpSeniorityIfExtreme([...riskCodes, ...detected], {
+      yearsRequired: jobSignals.yearsRequired,
+      yearsExperience: profileSignals.yearsExperienceApprox,
+      jobText,
+    })
+  }
+
   const decisionInitial = decisionFromScore(scoreAfterBoost)
   const decisionAfterGate = applyGateOverrides(decisionInitial, gate)
-  const decisionAfterRisk = applyRiskDowngrades(decisionAfterGate, scored.penaltySum, scored.riskCodes)
+  const decisionAfterRisk = applyRiskDowngrades(decisionAfterGate, scored.penaltySum, riskCodes)
   // Evidence guardrails: cap decision when the underlying evidence is
   // too thin or the risk load is too heavy, regardless of raw score.
   // Prevents "Apply" with zero WHY codes or 4+ high-severity risks.
-  const guardrail = applyEvidenceGuardrails(decisionAfterRisk, scored.whyCodes, scored.riskCodes, {
+  const guardrail = applyEvidenceGuardrails(decisionAfterRisk, scored.whyCodes, riskCodes, {
     yearsRequired: jobSignals.yearsRequired,
     yearsExperienceApprox: profileSignals.yearsExperienceApprox,
   })
-  const decisionFinal = guardrail.decision
+  const decisionPreLedger = guardrail.decision
 
-  // When a hard gate fires, the raw score is misleading — a candidate who
-  // cannot get an interview should never see a 60+ score. Cap gate scores
-  // at 25 so the number clearly matches the Pass decision.
-  const gateScore = gate.type === "force_pass"
-    ? Math.min(scored.score, 25)
-    : capScoreForDecision(scoreAfterBoost, decisionFinal)
+  // Per-requirement gate ledger (defect #1). COMPOSES with the coarse gate +
+  // risk cascade above — it can only FLOOR the verdict to PASS when a required
+  // gate is not MET; it never raises a verdict and never rewrites the score
+  // math (the existing capScoreForDecision below consumes the final decision as
+  // it always has). Opt-in / OFF by default (see args.applyGateLedger).
+  let gateLedger: GateLedgerEntry[] | undefined
+  let decisionFinal: Decision = decisionPreLedger
+  if (args.applyGateLedger) {
+    gateLedger = buildGateLedger(
+      classifyRequirements(args.jobText || ""),
+      resumeEv!.profileEvidence,
+    )
+    decisionFinal = applyLedgerCap(decisionPreLedger, gateLedger) as Decision
+  }
+
+  // Gate-reason line. §3b decision: a ledger knockout shows a MID score (~55,
+  // via capScoreForDecision's Pass band below — NOT the coarse gate's 25). A 55
+  // sits near the Apply band, so the candidate MUST see WHICH required gate
+  // blocked them. Prepend an unmistakable "Blocked on" line naming the unmet
+  // requirement(s); renders as next_step (the candidate's "your move").
+  const ledgerBlockers = (gateLedger || []).filter((e) => e.required && e.status !== "MET")
+  const nextStep = ledgerBlockers.length
+    ? `Blocked on unmet required gate(s): ${ledgerBlockers.map((e) => `${e.requirement} [${e.status}]`).join("; ")}. ${decisionNextStep(decisionFinal)}`
+    : decisionNextStep(decisionFinal)
+
+  // §3b (one score authority): ANY gate block — coarse force_pass OR a ledger
+  // unmet gate — shows the SAME mid ceiling via capScoreForDecision (a
+  // force_pass forces decisionFinal="Pass", so this is ≤55). The old
+  // coarse-only ≤25 tier is RETIRED; the "Blocked on" reason line above carries
+  // severity, so it no longer needs to live in the number.
+  const gateScore = capScoreForDecision(scoreAfterBoost, decisionFinal)
 
   const baseOut: EvalOutput = {
     decision: decisionFinal,
     score: gateScore,
     bullets: [],
     risk_flags: [],
-    next_step: decisionNextStep(decisionFinal),
+    next_step: nextStep,
     location_constraint: locationConstraintFromProfile(args.profileOverrides),
     why_codes: gate.type === "force_pass" ? [] : scored.whyCodes,
-    risk_codes: scored.riskCodes,
+    risk_codes: riskCodes,
     gate_triggered: gate,
     job_signals: jobSignals,
     profile_signals: profileSignals,
+    gate_ledger: gateLedger,
     score_breakdown: {
       raw_score: scored.score,
       clamped_score: gateScore,

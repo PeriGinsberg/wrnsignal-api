@@ -1,0 +1,1161 @@
+{
+  "re_awh9w7": {
+    "roles": [
+      {
+        "title": "Senior Marketing Analyst",
+        "company": "Northbrook Consumer Group",
+        "startYear": 2023,
+        "endYear": null,
+        "domains": [
+          "consumer"
+        ],
+        "grounding_span": "Senior Marketing Analyst — Northbrook Consumer Group (2023–Present)",
+        "bullets": [
+          {
+            "text": "Supported a 12-person growth marketing team across paid social, search, and CRM for a $400M portfolio of household brands",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "a 12-person growth marketing team across paid social, search, and CRM",
+            "objectHeadNoun": "team",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "$400M portfolio"
+            ],
+            "grounding_span": "Supported a 12-person growth marketing team across paid social, search, and CRM for a $400M portfolio of household brands"
+          },
+          {
+            "text": "Partnered with media agency to develop quarterly performance dashboards in Tableau; contributed to reporting reviewed by senior leadership",
+            "leadingVerb": "Partnered",
+            "verbClass": "contribution",
+            "objectPhrase": "quarterly performance dashboards in Tableau",
+            "objectHeadNoun": "dashboards",
+            "scope": "task",
+            "tools": [
+              "tableau"
+            ],
+            "metrics": [],
+            "grounding_span": "Partnered with media agency to develop quarterly performance dashboards in Tableau; contributed to reporting reviewed by senior leadership"
+          },
+          {
+            "text": "Assisted in the rollout of a marketing mix model in collaboration with an external analytics vendor",
+            "leadingVerb": "Assisted",
+            "verbClass": "contribution",
+            "objectPhrase": "the rollout of a marketing mix model",
+            "objectHeadNoun": "rollout",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Assisted in the rollout of a marketing mix model in collaboration with an external analytics vendor"
+          },
+          {
+            "text": "Collaborated cross-functionally with brand, creative, and media teams on campaign readouts",
+            "leadingVerb": "Collaborated",
+            "verbClass": "contribution",
+            "objectPhrase": "campaign readouts",
+            "objectHeadNoun": "readouts",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Collaborated cross-functionally with brand, creative, and media teams on campaign readouts"
+          }
+        ]
+      },
+      {
+        "title": "Marketing Analyst",
+        "company": "Northbrook Consumer Group",
+        "startYear": 2021,
+        "endYear": 2023,
+        "domains": [
+          "consumer"
+        ],
+        "grounding_span": "Marketing Analyst — Northbrook Consumer Group (2021–2023)",
+        "bullets": [
+          {
+            "text": "Built recurring reporting on paid media performance across Meta, Google, and retail media networks",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "recurring reporting on paid media performance across Meta, Google, and retail media networks",
+            "objectHeadNoun": "reporting",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Built recurring reporting on paid media performance across Meta, Google, and retail media networks"
+          },
+          {
+            "text": "Helped analyze A/B tests on landing pages and email creative",
+            "leadingVerb": "Helped",
+            "verbClass": "contribution",
+            "objectPhrase": "A/B tests on landing pages and email creative",
+            "objectHeadNoun": "tests",
+            "scope": "task",
+            "tools": [
+              "ab_testing"
+            ],
+            "metrics": [],
+            "grounding_span": "Helped analyze A/B tests on landing pages and email creative"
+          },
+          {
+            "text": "Maintained campaign taxonomy and UTM governance",
+            "leadingVerb": "Maintained",
+            "verbClass": "ownership",
+            "objectPhrase": "campaign taxonomy and UTM governance",
+            "objectHeadNoun": "taxonomy",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Maintained campaign taxonomy and UTM governance"
+          }
+        ]
+      },
+      {
+        "title": "Marketing Analytics Intern",
+        "company": "Halverson Retail",
+        "startYear": 2020,
+        "endYear": 2021,
+        "domains": [
+          "consumer"
+        ],
+        "grounding_span": "Marketing Analytics Intern — Halverson Retail (2020–2021)",
+        "bullets": [
+          {
+            "text": "Supported weekly sales and promotion reporting",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "weekly sales and promotion reporting",
+            "objectHeadNoun": "reporting",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Supported weekly sales and promotion reporting"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "SQL",
+        "location": "experience",
+        "grounding_span": "SQL"
+      },
+      {
+        "name": "tableau",
+        "location": "experience",
+        "grounding_span": "Tableau"
+      },
+      {
+        "name": "ab_testing",
+        "location": "experience",
+        "grounding_span": "A/B testing"
+      }
+    ],
+    "skillsSpan": "SQL, Tableau, Google Analytics 4, Excel, Meta Ads Manager, Google Ads,\nA/B testing, marketing mix modeling, campaign measurement",
+    "credentials": {
+      "degree": {
+        "value": "BS, Business Analytics",
+        "grounding_span": "BS, Business Analytics — University of Illinois, 2020"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_1fw0ig2": {
+    "roles": [
+      {
+        "title": "Senior Backend Engineer",
+        "company": "Cascade Data",
+        "startYear": 2021,
+        "endYear": null,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Senior Backend Engineer — Cascade Data (2021–Present)",
+        "bullets": [
+          {
+            "text": "Designed and built the company's event-streaming platform (Go, Kafka, gRPC) handling 400k events/sec",
+            "leadingVerb": "Designed",
+            "verbClass": "ownership",
+            "objectPhrase": "event-streaming platform",
+            "objectHeadNoun": "platform",
+            "scope": "function",
+            "tools": [
+              "kafka"
+            ],
+            "metrics": [
+              "400k events/sec"
+            ],
+            "grounding_span": "Designed and built the company's event-streaming platform (Go, Kafka, gRPC) handling 400k events/sec"
+          },
+          {
+            "text": "Led migration from a monolith to 30+ services; owned the service mesh and deployment tooling",
+            "leadingVerb": "Led",
+            "verbClass": "ownership",
+            "objectPhrase": "migration from a monolith to 30+ services",
+            "objectHeadNoun": "migration",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "30+ services"
+            ],
+            "grounding_span": "Led migration from a monolith to 30+ services; owned the service mesh and deployment tooling"
+          },
+          {
+            "text": "Architected the multi-region failover system; cut p99 latency 60%",
+            "leadingVerb": "Architected",
+            "verbClass": "ownership",
+            "objectPhrase": "multi-region failover system",
+            "objectHeadNoun": "system",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "p99 latency 60%"
+            ],
+            "grounding_span": "Architected the multi-region failover system; cut p99 latency 60%"
+          }
+        ]
+      },
+      {
+        "title": "Backend Engineer",
+        "company": "Loop Payments",
+        "startYear": 2019,
+        "endYear": 2021,
+        "domains": [
+          "fintech"
+        ],
+        "grounding_span": "Backend Engineer — Loop Payments (2019–2021)",
+        "bullets": [
+          {
+            "text": "Built the ledger reconciliation service (Rust) processing $2B/yr",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "ledger reconciliation service",
+            "objectHeadNoun": "service",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "$2B/yr"
+            ],
+            "grounding_span": "Built the ledger reconciliation service (Rust) processing $2B/yr"
+          },
+          {
+            "text": "Owned on-call for the core transaction path",
+            "leadingVerb": "Owned",
+            "verbClass": "ownership",
+            "objectPhrase": "on-call for the core transaction path",
+            "objectHeadNoun": "path",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Owned on-call for the core transaction path"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Go",
+        "location": "experience",
+        "grounding_span": "Go, Rust, Kafka, gRPC, PostgreSQL, Kubernetes, Terraform, AWS, distributed systems"
+      },
+      {
+        "name": "Rust",
+        "location": "experience",
+        "grounding_span": "Go, Rust, Kafka, gRPC, PostgreSQL, Kubernetes, Terraform, AWS, distributed systems"
+      },
+      {
+        "name": "kafka",
+        "location": "experience",
+        "grounding_span": "Go, Rust, Kafka, gRPC, PostgreSQL, Kubernetes, Terraform, AWS, distributed systems"
+      }
+    ],
+    "skillsSpan": "Go, Rust, Kafka, gRPC, PostgreSQL, Kubernetes, Terraform, AWS, distributed systems",
+    "credentials": {
+      "degree": null,
+      "citizenship": null,
+      "waiverOnFile": null,
+      "clearancesHeld": [],
+      "licensesHeld": []
+    },
+    "managementBullets": []
+  },
+  "re_whewgr": {
+    "roles": [
+      {
+        "title": "Software Engineer",
+        "company": "Brightloop",
+        "startYear": 2023,
+        "endYear": null,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Software Engineer — Brightloop (2023–Present)",
+        "bullets": [
+          {
+            "text": "Build and maintain features across a React/TypeScript frontend and Node/Postgres backend",
+            "leadingVerb": "Build",
+            "verbClass": "contribution",
+            "objectPhrase": "features across a React/TypeScript frontend and Node/Postgres backend",
+            "objectHeadNoun": "features",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Build and maintain features across a React/TypeScript frontend and Node/Postgres backend"
+          },
+          {
+            "text": "Shipped the billing integration and the in-app notifications system",
+            "leadingVerb": "Shipped",
+            "verbClass": "ownership",
+            "objectPhrase": "the billing integration and the in-app notifications system",
+            "objectHeadNoun": "integration",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Shipped the billing integration and the in-app notifications system"
+          },
+          {
+            "text": "Participated in architecture discussions and code review",
+            "leadingVerb": "Participated",
+            "verbClass": "contribution",
+            "objectPhrase": "in architecture discussions and code review",
+            "objectHeadNoun": "discussions",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Participated in architecture discussions and code review"
+          },
+          {
+            "text": "Mentored one intern over a summer",
+            "leadingVerb": "Mentored",
+            "verbClass": "contribution",
+            "objectPhrase": "one intern over a summer",
+            "objectHeadNoun": "intern",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Mentored one intern over a summer"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "React",
+        "location": "experience",
+        "grounding_span": "React"
+      },
+      {
+        "name": "TypeScript",
+        "location": "experience",
+        "grounding_span": "TypeScript"
+      },
+      {
+        "name": "Node.js",
+        "location": "experience",
+        "grounding_span": "Node.js"
+      },
+      {
+        "name": "PostgreSQL",
+        "location": "experience",
+        "grounding_span": "PostgreSQL"
+      },
+      {
+        "name": "AWS",
+        "location": "experience",
+        "grounding_span": "AWS"
+      }
+    ],
+    "skillsSpan": "React, TypeScript, Node.js, PostgreSQL, AWS, CI/CD, system design, Agile,\nteam leadership, stakeholder management",
+    "credentials": {
+      "degree": {
+        "value": "BS, Computer Science — Colorado State, 2023",
+        "grounding_span": "BS, Computer Science — Colorado State, 2023"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Mentored one intern over a summer",
+        "peopleNoun": "intern"
+      }
+    ]
+  },
+  "re_4vl491": {
+    "roles": [
+      {
+        "title": "Senior Frontend Engineer",
+        "company": "Kestrel Software",
+        "startYear": 2019,
+        "endYear": null,
+        "domains": [],
+        "grounding_span": "Senior Frontend Engineer — Kestrel Software (2019–Present)",
+        "bullets": [
+          {
+            "text": "Own the React/Next.js web application; led the migration to the App Router",
+            "leadingVerb": "Own",
+            "verbClass": "ownership",
+            "objectPhrase": "the React/Next.js web application",
+            "objectHeadNoun": "application",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Own the React/Next.js web application; led the migration to the App Router"
+          },
+          {
+            "text": "Built the design-system component library in React and Storybook",
+            "leadingVerb": "Built",
+            "verbClass": "contribution",
+            "objectPhrase": "the design-system component library",
+            "objectHeadNoun": "library",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Built the design-system component library in React and Storybook"
+          },
+          {
+            "text": "Set frontend testing standards (Jest, Playwright)",
+            "leadingVerb": "Set",
+            "verbClass": "contribution",
+            "objectPhrase": "frontend testing standards",
+            "objectHeadNoun": "standards",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Set frontend testing standards (Jest, Playwright)"
+          }
+        ]
+      },
+      {
+        "title": "Frontend Engineer",
+        "company": "Anders Media",
+        "startYear": 2016,
+        "endYear": 2019,
+        "domains": [],
+        "grounding_span": "Frontend Engineer — Anders Media (2016–2019)",
+        "bullets": [
+          {
+            "text": "Built and maintained large single-page apps in AngularJS and Angular 2–5",
+            "leadingVerb": "Built",
+            "verbClass": "contribution",
+            "objectPhrase": "large single-page apps",
+            "objectHeadNoun": "apps",
+            "scope": "task",
+            "tools": [
+              "angularjs",
+              "angular"
+            ],
+            "metrics": [],
+            "grounding_span": "Built and maintained large single-page apps in AngularJS and Angular 2–5"
+          },
+          {
+            "text": "Owned the Angular component architecture and RxJS data layer for the flagship product",
+            "leadingVerb": "Owned",
+            "verbClass": "ownership",
+            "objectPhrase": "the Angular component architecture and RxJS data layer",
+            "objectHeadNoun": "architecture",
+            "scope": "function",
+            "tools": [
+              "angular"
+            ],
+            "metrics": [],
+            "grounding_span": "Owned the Angular component architecture and RxJS data layer for the flagship product"
+          },
+          {
+            "text": "Migrated legacy jQuery views to Angular",
+            "leadingVerb": "Migrated",
+            "verbClass": "contribution",
+            "objectPhrase": "legacy jQuery views",
+            "objectHeadNoun": "views",
+            "scope": "task",
+            "tools": [
+              "angular"
+            ],
+            "metrics": [],
+            "grounding_span": "Migrated legacy jQuery views to Angular"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "angular",
+        "location": "experience",
+        "grounding_span": "Angular"
+      }
+    ],
+    "skillsSpan": "React, Next.js, TypeScript, Angular, RxJS, Redux, Jest, Playwright, Storybook, CSS",
+    "credentials": {
+      "degree": {
+        "value": "BS, Information Systems",
+        "grounding_span": "BS, Information Systems — Oregon State, 2015"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_1ir3hcg": {
+    "roles": [
+      {
+        "title": "Data Engineer",
+        "company": "Summit Digital",
+        "startYear": 2021,
+        "endYear": null,
+        "domains": [],
+        "grounding_span": "Data Engineer — Summit Digital (2021–Present)",
+        "bullets": [
+          {
+            "text": "Leveraged industry-leading technologies to deliver impactful data solutions",
+            "leadingVerb": "Leveraged",
+            "verbClass": "contribution",
+            "objectPhrase": "industry-leading technologies",
+            "objectHeadNoun": "technologies",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Leveraged industry-leading technologies to deliver impactful data solutions"
+          },
+          {
+            "text": "Drove synergy across cross-functional stakeholders to enable data-driven outcomes",
+            "leadingVerb": "Drove",
+            "verbClass": "contribution",
+            "objectPhrase": "synergy across cross-functional stakeholders",
+            "objectHeadNoun": "synergy",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Drove synergy across cross-functional stakeholders to enable data-driven outcomes"
+          },
+          {
+            "text": "Utilized best-in-class tooling to optimize pipelines and enhance performance",
+            "leadingVerb": "Utilized",
+            "verbClass": "contribution",
+            "objectPhrase": "best-in-class tooling",
+            "objectHeadNoun": "tooling",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Utilized best-in-class tooling to optimize pipelines and enhance performance"
+          },
+          {
+            "text": "Contributed to a culture of data excellence and continuous improvement",
+            "leadingVerb": "Contributed",
+            "verbClass": "contribution",
+            "objectPhrase": "a culture of data excellence and continuous improvement",
+            "objectHeadNoun": "culture",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Contributed to a culture of data excellence and continuous improvement"
+          }
+        ]
+      },
+      {
+        "title": "Analyst",
+        "company": "Brightpath",
+        "startYear": 2019,
+        "endYear": 2021,
+        "domains": [],
+        "grounding_span": "Analyst — Brightpath (2019–2021)",
+        "bullets": [
+          {
+            "text": "Supported reporting and analytics initiatives",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "reporting and analytics initiatives",
+            "objectHeadNoun": "initiatives",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Supported reporting and analytics initiatives"
+          },
+          {
+            "text": "Assisted with various data tasks as needed",
+            "leadingVerb": "Assisted",
+            "verbClass": "contribution",
+            "objectPhrase": "various data tasks",
+            "objectHeadNoun": "tasks",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Assisted with various data tasks as needed"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "snowflake",
+        "location": "experience",
+        "grounding_span": "Snowflake"
+      },
+      {
+        "name": "dbt",
+        "location": "experience",
+        "grounding_span": "dbt"
+      },
+      {
+        "name": "airflow",
+        "location": "experience",
+        "grounding_span": "Airflow"
+      },
+      {
+        "name": "spark",
+        "location": "experience",
+        "grounding_span": "Spark"
+      },
+      {
+        "name": "kafka",
+        "location": "experience",
+        "grounding_span": "Kafka"
+      },
+      {
+        "name": "looker",
+        "location": "experience",
+        "grounding_span": "Looker"
+      },
+      {
+        "name": "tableau",
+        "location": "experience",
+        "grounding_span": "Tableau"
+      }
+    ],
+    "skillsSpan": "Snowflake, dbt, Airflow, Spark, Kafka, Fivetran, Databricks, BigQuery, Redshift, Looker, Tableau, Python, SQL, Scala, Terraform, Docker, Kubernetes, AWS, GCP, Azure, Kinesis, Flink, Hadoop, Hive, Presto",
+    "credentials": {
+      "degree": {
+        "value": "BA, Economics",
+        "grounding_span": "BA, Economics — 2019"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_1jboou6": {
+    "roles": [
+      {
+        "title": "Product Manager",
+        "company": "Aperture",
+        "startYear": 2022,
+        "endYear": null,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Product Manager — Aperture (2022–Present)",
+        "bullets": [
+          {
+            "text": "Supported the launch of our workflow-automation product line",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "the launch of our workflow-automation product line",
+            "objectHeadNoun": "launch",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Supported the launch of our workflow-automation product line"
+          },
+          {
+            "text": "Contributed to the quarterly roadmap alongside two senior PMs",
+            "leadingVerb": "Contributed",
+            "verbClass": "contribution",
+            "objectPhrase": "to the quarterly roadmap",
+            "objectHeadNoun": "roadmap",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Contributed to the quarterly roadmap alongside two senior PMs"
+          },
+          {
+            "text": "Participated in product strategy sessions with design and engineering",
+            "leadingVerb": "Participated",
+            "verbClass": "contribution",
+            "objectPhrase": "in product strategy sessions",
+            "objectHeadNoun": "sessions",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Participated in product strategy sessions with design and engineering"
+          },
+          {
+            "text": "Helped define requirements for the reporting module",
+            "leadingVerb": "Helped",
+            "verbClass": "contribution",
+            "objectPhrase": "define requirements for the reporting module",
+            "objectHeadNoun": "requirements",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Helped define requirements for the reporting module"
+          },
+          {
+            "text": "Assisted the GTM team on positioning for the v2 release",
+            "leadingVerb": "Assisted",
+            "verbClass": "contribution",
+            "objectPhrase": "the GTM team on positioning for the v2 release",
+            "objectHeadNoun": "team",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Assisted the GTM team on positioning for the v2 release"
+          }
+        ]
+      },
+      {
+        "title": "Associate Product Manager",
+        "company": "Corda",
+        "startYear": 2020,
+        "endYear": 2022,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Associate Product Manager — Corda (2020–2022)",
+        "bullets": [
+          {
+            "text": "Worked on the onboarding flow with the growth pod",
+            "leadingVerb": "Worked",
+            "verbClass": "contribution",
+            "objectPhrase": "on the onboarding flow",
+            "objectHeadNoun": "flow",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Worked on the onboarding flow with the growth pod"
+          },
+          {
+            "text": "Gathered user feedback and helped prioritize the backlog",
+            "leadingVerb": "Gathered",
+            "verbClass": "contribution",
+            "objectPhrase": "user feedback and helped prioritize the backlog",
+            "objectHeadNoun": "feedback",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Gathered user feedback and helped prioritize the backlog"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "ab_testing",
+        "location": "experience",
+        "grounding_span": "A/B testing"
+      }
+    ],
+    "skillsSpan": "Product strategy, roadmapping, user research, A/B testing, SQL, Figma, Jira",
+    "credentials": {
+      "degree": {
+        "value": "BA, Cognitive Science",
+        "grounding_span": "BA, Cognitive Science — 2020"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_8heqhb": {
+    "roles": [
+      {
+        "title": "Marketing Analytics Lead",
+        "company": "Loomtree",
+        "startYear": 2022,
+        "endYear": null,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Marketing Analytics Lead — Loomtree (B2B SaaS, 2022–Present)",
+        "bullets": [
+          {
+            "text": "Built the marketing data warehouse and dbt models from scratch; owned the BI layer end to end",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "the marketing data warehouse and dbt models",
+            "objectHeadNoun": "warehouse",
+            "scope": "function",
+            "tools": [
+              "dbt",
+              "snowflake"
+            ],
+            "metrics": [],
+            "grounding_span": "Built the marketing data warehouse and dbt models from scratch; owned the BI layer end to end"
+          },
+          {
+            "text": "Owned CAC, LTV, payback, and pipeline-velocity reporting delivered monthly to the exec team and board",
+            "leadingVerb": "Owned",
+            "verbClass": "ownership",
+            "objectPhrase": "CAC, LTV, payback, and pipeline-velocity reporting",
+            "objectHeadNoun": "reporting",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "CAC",
+              "LTV",
+              "payback",
+              "pipeline-velocity"
+            ],
+            "grounding_span": "Owned CAC, LTV, payback, and pipeline-velocity reporting delivered monthly to the exec team and board"
+          },
+          {
+            "text": "Defined SQL lead-scoring and pipeline-stage logic jointly with RevOps in HubSpot",
+            "leadingVerb": "Defined",
+            "verbClass": "contribution",
+            "objectPhrase": "SQL lead-scoring and pipeline-stage logic",
+            "objectHeadNoun": "logic",
+            "scope": "task",
+            "tools": [
+              "hubspot"
+            ],
+            "metrics": [],
+            "grounding_span": "Defined SQL lead-scoring and pipeline-stage logic jointly with RevOps in HubSpot"
+          },
+          {
+            "text": "Hired and manage one junior analyst; set the team's roadmap",
+            "leadingVerb": "Hired",
+            "verbClass": "ownership",
+            "objectPhrase": "one junior analyst",
+            "objectHeadNoun": "analyst",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Hired and manage one junior analyst; set the team's roadmap"
+          }
+        ]
+      },
+      {
+        "title": "Marketing Analyst",
+        "company": "Cardinal Cloud",
+        "startYear": 2020,
+        "endYear": 2022,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Marketing Analyst — Cardinal Cloud (B2B SaaS, 2020–2022)",
+        "bullets": [
+          {
+            "text": "Built attribution reporting from first touch to closed-won across Salesforce data",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "attribution reporting from first touch to closed-won",
+            "objectHeadNoun": "reporting",
+            "scope": "function",
+            "tools": [
+              "salesforce"
+            ],
+            "metrics": [],
+            "grounding_span": "Built attribution reporting from first touch to closed-won across Salesforce data"
+          },
+          {
+            "text": "Owned the paid-acquisition efficiency model used in budget planning",
+            "leadingVerb": "Owned",
+            "verbClass": "ownership",
+            "objectPhrase": "the paid-acquisition efficiency model",
+            "objectHeadNoun": "model",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Owned the paid-acquisition efficiency model used in budget planning"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "dbt",
+        "location": "experience",
+        "grounding_span": "dbt"
+      },
+      {
+        "name": "snowflake",
+        "location": "experience",
+        "grounding_span": "Snowflake"
+      },
+      {
+        "name": "hubspot",
+        "location": "experience",
+        "grounding_span": "HubSpot"
+      },
+      {
+        "name": "salesforce",
+        "location": "experience",
+        "grounding_span": "Salesforce"
+      },
+      {
+        "name": "looker",
+        "location": "experience",
+        "grounding_span": "Looker"
+      }
+    ],
+    "skillsSpan": "SQL, dbt, Snowflake, Looker, HubSpot, Salesforce, attribution modeling, pipeline forecasting, CAC/LTV, Python",
+    "credentials": {
+      "degree": {
+        "value": "BS, Statistics — UT Austin, 2020",
+        "grounding_span": "BS, Statistics — UT Austin, 2020"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Hired and manage one junior analyst; set the team's roadmap",
+        "peopleNoun": "junior analyst"
+      }
+    ]
+  },
+  "re_14i4380": {
+    "roles": [
+      {
+        "title": "Senior Data Scientist",
+        "company": "Vela",
+        "startYear": 2021,
+        "endYear": null,
+        "domains": [
+          "consumer",
+          "ml_in_prod"
+        ],
+        "grounding_span": "Senior Data Scientist — Vela (2021–Present)",
+        "bullets": [
+          {
+            "text": "Built and own the churn-prediction models in production (Python, scikit-learn, XGBoost)",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "churn-prediction models in production",
+            "objectHeadNoun": "models",
+            "scope": "function",
+            "tools": [
+              "scikit-learn",
+              "pytorch"
+            ],
+            "metrics": [],
+            "grounding_span": "Built and own the churn-prediction models in production (Python, scikit-learn, XGBoost)"
+          },
+          {
+            "text": "Designed and led the experimentation framework; own the A/B testing platform end to end",
+            "leadingVerb": "Designed",
+            "verbClass": "ownership",
+            "objectPhrase": "experimentation framework and A/B testing platform",
+            "objectHeadNoun": "framework",
+            "scope": "function",
+            "tools": [
+              "ab_testing"
+            ],
+            "metrics": [],
+            "grounding_span": "Designed and led the experimentation framework; own the A/B testing platform end to end"
+          },
+          {
+            "text": "Partnered with product on model deployment; own the full model lifecycle from training to monitoring",
+            "leadingVerb": "Partnered",
+            "verbClass": "contribution",
+            "objectPhrase": "model deployment and full model lifecycle",
+            "objectHeadNoun": "lifecycle",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Partnered with product on model deployment; own the full model lifecycle from training to monitoring"
+          }
+        ]
+      },
+      {
+        "title": "Data Scientist",
+        "company": "Halcyon",
+        "startYear": 2018,
+        "endYear": 2021,
+        "domains": [
+          "consumer",
+          "ml_in_prod"
+        ],
+        "grounding_span": "Data Scientist — Halcyon (2018–2021)",
+        "bullets": [
+          {
+            "text": "Built recommendation models serving 2M users",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "recommendation models",
+            "objectHeadNoun": "models",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "2M users"
+            ],
+            "grounding_span": "Built recommendation models serving 2M users"
+          },
+          {
+            "text": "Owned the feature pipeline and offline evaluation",
+            "leadingVerb": "Owned",
+            "verbClass": "ownership",
+            "objectPhrase": "feature pipeline and offline evaluation",
+            "objectHeadNoun": "pipeline",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Owned the feature pipeline and offline evaluation"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "scikit-learn",
+        "location": "experience",
+        "grounding_span": "scikit-learn"
+      },
+      {
+        "name": "ab_testing",
+        "location": "experience",
+        "grounding_span": "A/B testing"
+      }
+    ],
+    "skillsSpan": "Python, scikit-learn, XGBoost, SQL, A/B testing, experimentation, TensorFlow,\nmodel deployment, MLflow",
+    "credentials": {
+      "degree": {
+        "value": "MS, Statistics",
+        "grounding_span": "MS, Statistics — 2018"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_1145rml": {
+    "roles": [
+      {
+        "title": "Marketing Analyst",
+        "company": "Loomtree",
+        "startYear": 2022,
+        "endYear": null,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Marketing Analyst — Loomtree (B2B SaaS, 2022–Present)",
+        "bullets": [
+          {
+            "text": "Supported the build of the marketing data warehouse and dbt models; contributed to the BI layer alongside the analytics lead",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "the build of the marketing data warehouse and dbt models",
+            "objectHeadNoun": "warehouse",
+            "scope": "function",
+            "tools": [
+              "dbt"
+            ],
+            "metrics": [],
+            "grounding_span": "Supported the build of the marketing data warehouse and dbt models; contributed to the BI layer alongside the analytics lead"
+          },
+          {
+            "text": "Partnered with RevOps on CAC, LTV, payback, and pipeline-velocity reporting delivered monthly to the exec team and board",
+            "leadingVerb": "Partnered",
+            "verbClass": "contribution",
+            "objectPhrase": "CAC, LTV, payback, and pipeline-velocity reporting",
+            "objectHeadNoun": "reporting",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "CAC",
+              "LTV",
+              "payback",
+              "pipeline-velocity"
+            ],
+            "grounding_span": "Partnered with RevOps on CAC, LTV, payback, and pipeline-velocity reporting delivered monthly to the exec team and board"
+          },
+          {
+            "text": "Assisted in defining SQL lead-scoring and pipeline-stage logic with RevOps in HubSpot",
+            "leadingVerb": "Assisted",
+            "verbClass": "contribution",
+            "objectPhrase": "SQL lead-scoring and pipeline-stage logic",
+            "objectHeadNoun": "logic",
+            "scope": "function",
+            "tools": [
+              "hubspot"
+            ],
+            "metrics": [],
+            "grounding_span": "Assisted in defining SQL lead-scoring and pipeline-stage logic with RevOps in HubSpot"
+          },
+          {
+            "text": "Collaborated with a senior analyst on the team's measurement roadmap",
+            "leadingVerb": "Collaborated",
+            "verbClass": "contribution",
+            "objectPhrase": "the team's measurement roadmap",
+            "objectHeadNoun": "roadmap",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Collaborated with a senior analyst on the team's measurement roadmap"
+          },
+          {
+            "text": "Hired and manage one junior analyst; set the team's roadmap",
+            "leadingVerb": "Hired",
+            "verbClass": "ownership",
+            "objectPhrase": "one junior analyst",
+            "objectHeadNoun": "analyst",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Hired and manage one junior analyst; set the team's roadmap"
+          }
+        ]
+      },
+      {
+        "title": "Marketing Analyst",
+        "company": "Cardinal Cloud",
+        "startYear": 2020,
+        "endYear": 2022,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Marketing Analyst — Cardinal Cloud (B2B SaaS, 2020–2022)",
+        "bullets": [
+          {
+            "text": "Helped build attribution reporting from first touch to closed-won across Salesforce data",
+            "leadingVerb": "Helped",
+            "verbClass": "contribution",
+            "objectPhrase": "attribution reporting from first touch to closed-won",
+            "objectHeadNoun": "reporting",
+            "scope": "function",
+            "tools": [
+              "salesforce"
+            ],
+            "metrics": [],
+            "grounding_span": "Helped build attribution reporting from first touch to closed-won across Salesforce data"
+          },
+          {
+            "text": "Contributed to the paid-acquisition efficiency model used in budget planning",
+            "leadingVerb": "Contributed",
+            "verbClass": "contribution",
+            "objectPhrase": "the paid-acquisition efficiency model",
+            "objectHeadNoun": "model",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Contributed to the paid-acquisition efficiency model used in budget planning"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "dbt",
+        "location": "experience",
+        "grounding_span": "dbt"
+      },
+      {
+        "name": "snowflake",
+        "location": "experience",
+        "grounding_span": "Snowflake"
+      },
+      {
+        "name": "looker",
+        "location": "experience",
+        "grounding_span": "Looker"
+      },
+      {
+        "name": "hubspot",
+        "location": "experience",
+        "grounding_span": "HubSpot"
+      },
+      {
+        "name": "salesforce",
+        "location": "experience",
+        "grounding_span": "Salesforce"
+      }
+    ],
+    "skillsSpan": "SQL, dbt, Snowflake, Looker, HubSpot, Salesforce, attribution modeling, pipeline forecasting, CAC/LTV, Python",
+    "credentials": {
+      "degree": {
+        "value": "BS, Statistics",
+        "grounding_span": "BS, Statistics — UT Austin, 2020"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Hired and manage one junior analyst; set the team's roadmap",
+        "peopleNoun": "junior analyst"
+      }
+    ]
+  }
+}

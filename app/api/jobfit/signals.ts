@@ -4,6 +4,8 @@
 // Evidence-first WHY pipeline.
 // Deterministic only. No prose generation logic here.
 
+import type { GateLedgerEntry } from "./gateLedger"
+
 export type Decision = "Priority Apply" | "Apply" | "Review" | "Pass"
 export type LocationConstraint = "constrained" | "not_constrained" | "unclear"
 
@@ -319,6 +321,10 @@ export type EvalOutput = {
   job_signals?: StructuredJobSignals
   profile_signals?: StructuredProfileSignals
   score_breakdown?: ScoreBreakdown
+  // Per-requirement gate ledger (defect #1). Present only when runJobFit is
+  // called with applyGateLedger:true (the golden harness). Absent on the prod
+  // path until the résumé-side extractor is prod-hardened (see DESIGN §5a).
+  gate_ledger?: GateLedgerEntry[]
 }
 
 export function emptyEvalOutput(): EvalOutput {

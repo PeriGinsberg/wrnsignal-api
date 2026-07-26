@@ -1,0 +1,209 @@
+# SIGNAL Golden Set — expected results (the assertion side).
+#
+# The harness sends only cases/case-XX.input.md to the engine, gets a verdict +
+# risk flags back, then checks it against the block below. Never show this file
+# (or the planted-defect notes) to the engine before it scores. Cold only.
+#
+# HOW ASSERTIONS WORK
+#   expected_verdict : the single intended verdict.
+#   must_not_be      : verdicts that count as a HARD FAILURE if returned.
+#                      Every adversarial case forbids APPLY. That is the whole
+#                      point of the set — a false APPLY is the bug we are hunting.
+#   discriminator    : true = this case must match expected_verdict exactly.
+#                      The three controls (01 as PASS-anchor, 07, 08) plus the
+#                      clean knockouts are discriminators. Non-discriminators
+#                      pass on any verdict that isn't in must_not_be.
+#   gates            : gate_id -> required status the engine must report.
+#                      An unmet gate must CAP the verdict below APPLY regardless
+#                      of score. UNKNOWN means "not stated in resume" and must be
+#                      treated as not-satisfied for a required gate, not assumed.
+#   risks            : each flag the engine MUST raise, by stable id, with the
+#                      MINIMUM acceptable severity. Assert the SET by id — never a
+#                      bare count. A count of 6 passes on 6 wrong flags; a set
+#                      tells you which defect regressed.
+#   your_move_must_not: substrings/behaviors the "Your Move" advice must avoid.
+#                      Pointing the recruiter at the candidate's weakest evidence
+#                      is defect #6 and is a failure even if the verdict is right.
+#
+# RISK-FLAG VOCABULARY (stable ids — reuse across cases so regressions are
+# attributable; add here, don't invent per-case strings):
+#   domain_gap                    required industry/domain experience absent
+#   ownership_via_contribution_verbs   ownership req backed only by contribution verbs
+#   crm_pipeline_absent           no Salesforce/HubSpot pipeline experience
+#   revenue_metrics_absent        no CAC/LTV/pipeline/revenue ownership shown
+#   people_mgmt_absent            management req unmet
+#   scope_inversion               moving to smaller scope/support than claimed history
+#   adjacency_inflation           different skill credited as equivalent to a named one
+#   hard_credential_absent        clearance/degree/license/citizenship gate unmet
+#   seniority_gap                 level/YOE/span-of-control far below the role
+#   stale_skill                   required skill present but not recent
+#   unsupported_skill_claim       skill listed but never evidenced in experience
+#   preferred_item_missing        a nice-to-have (NOT a knockout) is absent
+
+verdict_scale: [APPLY, REVIEW, PASS]
+
+cases:
+
+  "01":
+    name: Jordan Alvarez vs Threadline
+    targets: [knockout_gate, verb_inversion, adjacency_inflation, scope_inversion, risk_under_detection, harmful_advice]
+    expected_verdict: PASS
+    must_not_be: [APPLY]
+    discriminator: true          # anchors the PASS end; must sort strictly below 08 (REVIEW) and 07 (APPLY)
+    gates:
+      b2b_saas_3yr: UNMET        # the single most important assertion in the set
+    risks:
+      - {id: domain_gap, min_severity: HIGH}                    # zero B2B SaaS
+      - {id: ownership_via_contribution_verbs, min_severity: HIGH}
+      - {id: crm_pipeline_absent, min_severity: HIGH}
+      - {id: revenue_metrics_absent, min_severity: HIGH}
+      - {id: people_mgmt_absent, min_severity: MEDIUM}
+      - {id: scope_inversion, min_severity: MEDIUM}
+      - {id: adjacency_inflation, min_severity: MEDIUM}         # MMM/Tableau credited as dbt-equivalent
+    your_move_must_not:
+      - "lead with the media-agency dashboard partnership"
+      - "frame partnered/supported/assisted work as ownership"
+
+  "02":
+    name: Priya Ramanathan vs Meridian (cleared)
+    targets: [knockout_gate]
+    expected_verdict: PASS
+    must_not_be: [APPLY, REVIEW]   # an absent clearance is not "worth a look" — it's a wall
+    discriminator: true
+    gates:
+      ts_sci_clearance: UNMET
+      us_citizenship: UNKNOWN      # not stated -> must NOT be assumed satisfied
+      degree_or_waiver: UNMET
+    risks:
+      - {id: hard_credential_absent, min_severity: HIGH}
+    your_move_must_not:
+      - "suggest applying anyway despite the clearance gate"
+      - "imply the clearance can be obtained after applying"
+
+  "03":
+    name: Marcus Bell vs Vantail (Director)
+    targets: [seniority_inversion, scope_inversion]
+    expected_verdict: PASS
+    must_not_be: [APPLY]
+    discriminator: false           # PASS or a very-low REVIEW both acceptable; APPLY is the failure
+    gates:
+      yoe_10: UNMET
+      manager_of_managers_5yr: UNMET
+    risks:
+      - {id: seniority_gap, min_severity: HIGH}
+      - {id: people_mgmt_absent, min_severity: HIGH}
+      - {id: scope_inversion, min_severity: MEDIUM}   # ~2yr IC -> 40-person org, 8-figure budget
+    your_move_must_not:
+      - "encourage applying to a Director role on stack overlap"
+
+  "04":
+    name: Dana Whitfield vs Corvel (recent Angular)
+    targets: [recency]
+    expected_verdict: REVIEW
+    must_not_be: [APPLY]
+    discriminator: false           # REVIEW is the honest call; PASS also acceptable, APPLY is not
+    gates:
+      recent_angular_v14_3yr: UNMET   # skill present but last used 2016–2019
+    risks:
+      - {id: stale_skill, min_severity: MEDIUM}
+    your_move_must_not:
+      - "present the Angular experience as current"
+
+  "05":
+    name: Tyler Osei vs Highfield (stuffed skills)
+    targets: [keyword_stuffing]
+    expected_verdict: PASS
+    must_not_be: [APPLY]
+    discriminator: false           # REVIEW acceptable; APPLY is the failure
+    gates:
+      # the four required tools appear only in the SKILLS blob, never evidenced:
+      snowflake_handson: UNMET
+      dbt_handson: UNMET
+      airflow_handson: UNMET
+      spark_handson: UNMET
+    risks:
+      - {id: unsupported_skill_claim, min_severity: HIGH}
+    your_move_must_not:
+      - "credit the skills-list tools as demonstrated experience"
+
+  "06":
+    name: Sofia Marchetti vs Nimbus (verb inversion #2)
+    targets: [verb_inversion]
+    expected_verdict: REVIEW
+    must_not_be: [APPLY]
+    discriminator: false
+    gates: {}                      # ownership is a signal, not a binary credential -> no hard gate;
+                                   # the verb-class rule must downgrade it, capping at REVIEW
+    risks:
+      - {id: ownership_via_contribution_verbs, min_severity: HIGH}
+    your_move_must_not:
+      - "claim she owned or drove the roadmap"
+    note: >
+      Discriminating check: 06 must be strictly worse than 07. If the fix passes
+      Jordan (01) but not this, the verb-class rule is overfit to Jordan's wording.
+
+  "07":
+    name: Reyna Cortez vs Threadline (CONTROL, strong fit)
+    targets: [over_correction_guard]
+    expected_verdict: APPLY
+    must_not_be: [REVIEW, PASS]    # rejecting the honest candidate = the correction overshot
+    discriminator: true
+    gates:
+      b2b_saas_3yr: MET
+      dbt_handson: MET
+      crm_pipeline: MET
+      # ownership_of_measurement_function REMOVED: ownership is graded, not binary.
+      # It's judged by defect #2's verb classifier (absence-of-risk), not a gate.
+      # Reyna's ownership shows up as the ABSENCE of ownership_via_contribution_verbs.
+    risks: []                      # no HIGH/MEDIUM risks expected (incl. no ownership-verb risk)
+    your_move_must_not: []
+
+  "08":
+    name: Omar Haddad vs Fernwood (CONTROL, borderline)
+    targets: [middle_band, preferred_vs_required]
+    expected_verdict: REVIEW
+    must_not_be: [APPLY, PASS]     # missing a PREFERRED item lowers score but is NOT a knockout;
+                                   # one adjacent skill (TensorFlow vs required PyTorch) pulls APPLY->REVIEW
+    discriminator: true
+    gates:
+      ml_in_prod_5yr: MET
+      # full_model_lifecycle_ownership REMOVED: ownership is graded, not binary ->
+      # deferred to defect #2, same as case 07. Omar's lifecycle ownership shows
+      # up as the absence of an ownership-verb risk, not a gate.
+      experimentation_ab_testing: MET   # stays: hands-on EXPERIENCE gate, not ownership
+      # pytorch is PREFERRED, not required -> it is NOT a gate. Its absence must
+      # not fire hard_credential_absent or a knockout.
+    risks:
+      - {id: preferred_item_missing, min_severity: LOW}     # PyTorch; must stay non-blocking
+    your_move_must_not:
+      - "treat the missing PyTorch preference as a disqualifier"
+  "09":
+    name: Alex Chen vs Threadline (VERB-CAP GUARD, should REVIEW)
+    targets: [verb_cap_downgrade, over_correction_guard]
+    expected_verdict: REVIEW
+    must_not_be: [APPLY, PASS]   # APPLY = the Apply->Review verb cap broke;
+                                 # PASS  = a gate wrongly fired (this case CLEARS all gates)
+    discriminator: true          # must be exactly REVIEW
+    gates:                       # all MET -> the verb cap, not a gate, is what downgrades it
+      b2b_saas_3yr: MET
+      dbt_handson: MET
+      crm_pipeline: MET
+    risks:
+      - {id: ownership_via_contribution_verbs, min_severity: HIGH}
+    # your_move_must_not omitted: not validated against Alex's rendered bullets yet.
+
+# ---------------------------------------------------------------------------
+# CROSS-CASE INVARIANTS (assert these relationships, not just per-case verdicts)
+# ---------------------------------------------------------------------------
+invariants:
+  # The strength ordering the whole set exists to enforce:
+  verdict_ordering:
+    - "07 (APPLY) strictly stronger than 08 (REVIEW)"
+    - "08 (REVIEW) strictly stronger than 01 (PASS)"
+    - "07 strictly stronger than 06  # honest ownership beats contribution-verb ownership, same-ish domain"
+  # Same posting, opposite candidates — the core discriminator:
+  jordan_vs_reyna:
+    - "01 and 07 share the Threadline posting; their verdicts MUST differ (PASS vs APPLY)"
+  # Preferred vs required must never collapse:
+  gate_semantics:
+    - "a missing PREFERRED item (08) must not cap the verdict the way an unmet REQUIRED gate does (01,02,03)"
