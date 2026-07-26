@@ -13,7 +13,7 @@ import { extractProfileEvidence } from "./profileEvidence"
 import { extractVerbEvidence } from "./verbEvidence"
 import {
   verifyGrounding, normalizeForGrounding,
-  type RawResumeExtraction, type RawBullet,
+  type RawResumeExtraction, type RawBullet, type RawRole,
 } from "./resumeExtraction"
 
 const CURRENT_YEAR = 2026
@@ -134,6 +134,30 @@ export function rawToVerbBullets(raw: RawResumeExtraction): VerbBullet[] {
   return out
 }
 
+// Fix 1 — genuine-SaaS floor. The b2b_saas slug tags ONLY a software/product
+// company (builds/sells software), never any enterprise/corporate employer.
+// Kept when the role text shows an explicit SaaS/software signal (Loomtree states
+// "B2B SaaS"; a "Software Engineer" role) OR software-building work (React/deploy/
+// backend). Un-tags finance/insurance/services employers the LLM over-tagged
+// (AWAC insurance, Watson relocation); keeps real SaaS (Teladoc, Loomtree).
+const SAAS_EMPLOYER_SIGNAL = /\bsaas\b|\bsoftware\b|software-as-a-service/
+const SOFTWARE_BUILD_SIGNAL = /\b(react|node\.?js|typescript|angular|ruby on rails|docker|kubernetes|microservices?|graphql|full-?stack|back-?end|front-?end|api endpoints?|sdk)\b/
+function roleSupportsSaas(r: RawRole): boolean {
+  const txt = normalizeForGrounding([r.grounding_span, ...(r.bullets ?? []).map((b) => b.grounding_span)].join(" "))
+  return SAAS_EMPLOYER_SIGNAL.test(txt) || SOFTWARE_BUILD_SIGNAL.test(txt)
+}
+// Effective (vocab-normalized, SaaS-floored) domains for a role.
+function effectiveDomains(r: RawRole): string[] {
+  const out: string[] = []
+  for (const raw of r.domains ?? []) {
+    const d = normDomain(raw)
+    if (!d) continue // outside controlled vocab → dropped, not freelanced
+    if (d === "b2b_saas" && !roleSupportsSaas(r)) continue // Fix 1 floor
+    out.push(d)
+  }
+  return out
+}
+
 export function rawToProfileEvidence(raw: RawResumeExtraction): ProfileEvidence {
   const cred = raw.credentials ?? { clearancesHeld: [], licensesHeld: [] }
   // Roles most-recent-first for recency indices.
@@ -142,12 +166,13 @@ export function rawToProfileEvidence(raw: RawResumeExtraction): ProfileEvidence 
 
   const domainYears: Record<string, number> = {}
   for (const r of roles) {
-    for (const raw of r.domains ?? []) {
-      const d = normDomain(raw)
-      if (!d) continue // outside controlled vocab → dropped, not freelanced
+    for (const d of effectiveDomains(r)) {
       domainYears[d] = (domainYears[d] ?? 0) + roleYears(r)
     }
   }
+  // Domains of the MOST-RECENT role — the recency exemption for fix 2's
+  // years-aware domain_gap (a junior CURRENTLY in the domain isn't "missing" it).
+  const currentDomains = roles.length ? effectiveDomains(roles[0]) : []
 
   // Tools: deterministic grounded scan over the LLM's segmentation. Experience =
   // all bullet spans; skills-only = the skills-section span minus experience.
@@ -177,6 +202,7 @@ export function rawToProfileEvidence(raw: RawResumeExtraction): ProfileEvidence 
   return {
     totalYears: roles.length ? roles.reduce((s, r) => s + roleYears(r), 0) : null,
     domainYears,
+    currentDomains,
     managerOfManagersYears: mgr ? 5 : 0,
     toolsInExperience,
     toolsInSkillsOnly,

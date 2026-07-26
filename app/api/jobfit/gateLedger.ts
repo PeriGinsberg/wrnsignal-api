@@ -67,6 +67,7 @@ export type GateLedgerEntry = {
 export type ProfileEvidence = {
   totalYears: number | null
   domainYears: Record<string, number> // {"b2b_saas": 5}; absent key => none in that domain
+  currentDomains?: string[] // domains of the MOST-RECENT role (recency exemption for domain_gap)
   managerOfManagersYears: number | null
   toolsInExperience: string[] // tools evidenced in EXPERIENCE bullets
   toolsInSkillsOnly: string[] // named only in the SKILLS blob

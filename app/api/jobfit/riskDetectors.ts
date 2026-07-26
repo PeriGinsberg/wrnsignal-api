@@ -38,13 +38,22 @@ export function detectPresenceRisks(input: RiskDetectorInput): RiskCode[] {
   const resume = profileText.toLowerCase()
   const jd = jobText.toLowerCase()
 
-  // 1. domain_gap (HIGH) — a required NON-recency domain is entirely absent.
-  // (Recency-qualified domains are handled by stale_skill; presence ≠ absence.)
+  // 1. domain_gap (HIGH) — years-aware (fix 2). Fire when the required domain is
+  // absent OR present only below a meaningful SHARE of the required years — so a
+  // stray incidental tag (e.g. a finance analyst mis-credited 1yr of b2b_saas)
+  // can't suppress a real multi-year gap. Recency exemption: never fire when the
+  // domain is the candidate's CURRENT (most-recent) role — a junior who IS in the
+  // domain but hasn't accrued the years yet isn't "missing" it (the Teladoc new-
+  // grad SWE). (Recency-qualified domains are handled by stale_skill.)
+  const MIN_DOMAIN_SHARE = 0.5
   for (const c of candidates) {
     if (c.spec.kind === "experience" && typeof c.spec.scope === "object" && !c.spec.recency) {
       const domain = c.spec.scope.domain
-      if (evidence.domainYears[domain] === undefined) {
-        out.push(rc("RISK_DOMAIN_GAP", "high", `Requires experience in ${domain}`, `No experience in the required domain (${domain}).`))
+      const have = evidence.domainYears[domain] ?? 0
+      const req = c.spec.years
+      const isCurrent = (evidence.currentDomains ?? []).includes(domain)
+      if (have < req * MIN_DOMAIN_SHARE && !isCurrent) {
+        out.push(rc("RISK_DOMAIN_GAP", "high", `Requires ${req}+ yrs in ${domain}`, `Insufficient experience in the required domain (${domain}): ${have} of ${req} yrs.`))
       }
     }
   }

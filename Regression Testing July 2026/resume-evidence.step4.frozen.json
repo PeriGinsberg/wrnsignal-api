@@ -1,0 +1,1654 @@
+{
+  "re_l1vj21": {
+    "roles": [
+      {
+        "title": "Relocation Assistant",
+        "company": "Watson Relocation Services",
+        "startYear": 2023,
+        "endYear": null,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Relocation Assistant | Watson Relocation Services - Jacksonville, FL   May 2023 – Present",
+        "bullets": [
+          {
+            "text": "Manage and track 20+ real estate referral transactions daily across two CRM platforms (eRelocation, ReloXchange), ensuring accurate updates, file closure, and timely reporting.",
+            "leadingVerb": "Manage",
+            "verbClass": "ownership",
+            "objectPhrase": "20+ real estate referral transactions daily across two CRM platforms",
+            "objectHeadNoun": "transactions",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "20+"
+            ],
+            "grounding_span": "Manage and track 20+ real estate referral transactions daily across two CRM platforms (eRelocation, ReloXchange), ensuring accurate updates, file closure, and timely reporting."
+          },
+          {
+            "text": "Built and now manage company's social media presence (Instagram, LinkedIn, Facebook), building some platforms from ground up, and responsible for content creation, monthly calendars, and performance tracking using Meta Business Suite Analytics.",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "company's social media presence",
+            "objectHeadNoun": "presence",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Built and now manage company's social media presence (Instagram, LinkedIn, Facebook), building some platforms from ground up, and responsible for content creation, monthly calendars, and performance tracking using Meta Business Suite Analytics."
+          },
+          {
+            "text": "Partner with HR and internal teams supporting corporate relocations, military rebate programs, and agent training.",
+            "leadingVerb": "Partner",
+            "verbClass": "contribution",
+            "objectPhrase": "corporate relocations, military rebate programs, and agent training",
+            "objectHeadNoun": "relocations",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Partner with HR and internal teams supporting corporate relocations, military rebate programs, and agent training."
+          },
+          {
+            "text": "Develop training materials and digital modules for relocation agents using Synthesia and Canva.",
+            "leadingVerb": "Develop",
+            "verbClass": "ownership",
+            "objectPhrase": "training materials and digital modules for relocation agents",
+            "objectHeadNoun": "materials",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Develop training materials and digital modules for relocation agents using Synthesia and Canva."
+          }
+        ]
+      },
+      {
+        "title": "Professional Development Assistant",
+        "company": "Watson School of Real Estate",
+        "startYear": 2022,
+        "endYear": 2023,
+        "domains": [
+          "education"
+        ],
+        "grounding_span": "Professional Development Assistant | Watson School of Real Estate - Jacksonville, FL   Mar 2022 – May 2023",
+        "bullets": [
+          {
+            "text": "Coordinated pre-licensing and post-licensing courses for real estate agents, managing instructor schedules, student registrations, and classroom logistics.",
+            "leadingVerb": "Coordinated",
+            "verbClass": "ownership",
+            "objectPhrase": "pre-licensing and post-licensing courses for real estate agents",
+            "objectHeadNoun": "courses",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Coordinated pre-licensing and post-licensing courses for real estate agents, managing instructor schedules, student registrations, and classroom logistics."
+          },
+          {
+            "text": "Served as a liaison between newly licensed agents and hiring managers.",
+            "leadingVerb": "Served",
+            "verbClass": "contribution",
+            "objectPhrase": "liaison between newly licensed agents and hiring managers",
+            "objectHeadNoun": "liaison",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Served as a liaison between newly licensed agents and hiring managers."
+          }
+        ]
+      },
+      {
+        "title": "Assistant Director, Undergraduate Education Services",
+        "company": "Stetson University",
+        "startYear": 2021,
+        "endYear": 2022,
+        "domains": [
+          "education"
+        ],
+        "grounding_span": "Assistant Director, Undergraduate Education Services | Stetson University - Deland, FL   Jul 2021 – Mar 2022",
+        "bullets": [
+          {
+            "text": "Oversaw academic compliance and licensing readiness for 200+ Education majors.",
+            "leadingVerb": "Oversaw",
+            "verbClass": "ownership",
+            "objectPhrase": "academic compliance and licensing readiness for 200+ Education majors",
+            "objectHeadNoun": "compliance",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "200+"
+            ],
+            "grounding_span": "Oversaw academic compliance and licensing readiness for 200+ Education majors."
+          },
+          {
+            "text": "Tracked and reported student progress, coordinated internships, and managed state exam logistics.",
+            "leadingVerb": "Tracked",
+            "verbClass": "ownership",
+            "objectPhrase": "student progress, internships, and state exam logistics",
+            "objectHeadNoun": "progress",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Tracked and reported student progress, coordinated internships, and managed state exam logistics."
+          }
+        ]
+      },
+      {
+        "title": "Employment Specialist",
+        "company": "Florida United Methodist Children's Home",
+        "startYear": 2020,
+        "endYear": 2021,
+        "domains": [],
+        "grounding_span": "Employment Specialist | Florida United Methodist Children's Home - Enterprise, FL   Jun 2020 – Jul 2021",
+        "bullets": [
+          {
+            "text": "Led background and compliance process for 250+ employees, volunteers, and contractors across 10+ programs statewide.",
+            "leadingVerb": "Led",
+            "verbClass": "ownership",
+            "objectPhrase": "background and compliance process for 250+ employees, volunteers, and contractors across 10+ programs statewide",
+            "objectHeadNoun": "process",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "250+",
+              "10+"
+            ],
+            "grounding_span": "Led background and compliance process for 250+ employees, volunteers, and contractors across 10+ programs statewide."
+          },
+          {
+            "text": "Developed SOPs and training guides to streamline hiring workflows.",
+            "leadingVerb": "Developed",
+            "verbClass": "ownership",
+            "objectPhrase": "SOPs and training guides",
+            "objectHeadNoun": "SOPs",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Developed SOPs and training guides to streamline hiring workflows."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "salesforce",
+        "location": "experience",
+        "grounding_span": "eRelocation, ReloXchange"
+      }
+    ],
+    "skillsSpan": "CRM & Platforms: Relo Systems | ProfitPower | Pro Link Plus | Synthesia | Meta Business Suite\nTools: Canva | Microsoft Office (Excel, Outlook, PowerPoint) | Google Workspace | Zoom | Teams",
+    "credentials": {},
+    "managementBullets": []
+  },
+  "re_1rh3ieo": {
+    "roles": [
+      {
+        "title": "Investment Analyst",
+        "company": "AWAC Services Company (Fairfax Financial)",
+        "startYear": 2025,
+        "endYear": null,
+        "domains": [
+          "fintech",
+          "b2b_saas"
+        ],
+        "grounding_span": "Investment Analyst | AWAC Services Company (Fairfax Financial) | New York Metro Area   Sept 2025 – Present",
+        "bullets": [
+          {
+            "text": "Analyze and report on a $17B multi-asset portfolio spanning private credit, derivatives, public fixed income, equities, and alternatives across 6 U.S. entities.",
+            "leadingVerb": "Analyze",
+            "verbClass": "contribution",
+            "objectPhrase": "a $17B multi-asset portfolio spanning private credit, derivatives, public fixed income, equities, and alternatives across 6 U.S. entities",
+            "objectHeadNoun": "portfolio",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "$17B"
+            ],
+            "grounding_span": "Analyze and report on a $17B multi-asset portfolio spanning private credit, derivatives, public fixed income, equities, and alternatives across 6 U.S. entities."
+          },
+          {
+            "text": "Own private credit reporting (Schedule B) across commercial, residential, and student-housing mortgage portfolios and derivatives reporting (Schedule DB).",
+            "leadingVerb": "Own",
+            "verbClass": "ownership",
+            "objectPhrase": "private credit reporting (Schedule B) across commercial, residential, and student-housing mortgage portfolios and derivatives reporting (Schedule DB)",
+            "objectHeadNoun": "reporting",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Own private credit reporting (Schedule B) across commercial, residential, and student-housing mortgage portfolios and derivatives reporting (Schedule DB)."
+          },
+          {
+            "text": "Track private equity and hedge fund limited-partnership positions at cost and market value, booking capital calls and clearing unrealized gains.",
+            "leadingVerb": "Track",
+            "verbClass": "contribution",
+            "objectPhrase": "private equity and hedge fund limited-partnership positions at cost and market value, booking capital calls and clearing unrealized gains",
+            "objectHeadNoun": "positions",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Track private equity and hedge fund limited-partnership positions at cost and market value, booking capital calls and clearing unrealized gains."
+          },
+          {
+            "text": "Calculate other-than-temporary impairments (OTTI) in an Excel-based credit-impairment model; reconcile 15+ custodian statements to the PAM asset-management system and SUN general ledger.",
+            "leadingVerb": "Calculate",
+            "verbClass": "contribution",
+            "objectPhrase": "other-than-temporary impairments (OTTI) in an Excel-based credit-impairment model; reconcile 15+ custodian statements to the PAM asset-management system and SUN general ledger",
+            "objectHeadNoun": "impairments",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "15+"
+            ],
+            "grounding_span": "Calculate other-than-temporary impairments (OTTI) in an Excel-based credit-impairment model; reconcile 15+ custodian statements to the PAM asset-management system and SUN general ledger."
+          }
+        ]
+      },
+      {
+        "title": "Sector Head",
+        "company": "Stony Brook University Fourier Fund",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [
+          "education"
+        ],
+        "grounding_span": "Sector Head | Stony Brook University Fourier Fund | Stony Brook, NY   Sept 2024 – May 2025",
+        "bullets": [
+          {
+            "text": "Led a team of analysts in sector research for a student-run SRI fund.",
+            "leadingVerb": "Led",
+            "verbClass": "ownership",
+            "objectPhrase": "a team of analysts in sector research for a student-run SRI fund",
+            "objectHeadNoun": "team",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Led a team of analysts in sector research for a student-run SRI fund."
+          },
+          {
+            "text": "Directed development of equity and fixed-income pitches, conducting valuation and financial modeling.",
+            "leadingVerb": "Directed",
+            "verbClass": "ownership",
+            "objectPhrase": "development of equity and fixed-income pitches, conducting valuation and financial modeling",
+            "objectHeadNoun": "development",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Directed development of equity and fixed-income pitches, conducting valuation and financial modeling."
+          },
+          {
+            "text": "Mentored analysts on investment strategy, valuation methods, and long-term portfolio management.",
+            "leadingVerb": "Mentored",
+            "verbClass": "contribution",
+            "objectPhrase": "analysts on investment strategy, valuation methods, and long-term portfolio management",
+            "objectHeadNoun": "analysts",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Mentored analysts on investment strategy, valuation methods, and long-term portfolio management."
+          }
+        ]
+      },
+      {
+        "title": "Consultant, Executive in Residence Program",
+        "company": "Broadridge Financial Solutions",
+        "startYear": 2024,
+        "endYear": 2024,
+        "domains": [
+          "fintech",
+          "b2b_saas"
+        ],
+        "grounding_span": "Consultant, Executive in Residence Program | Broadridge Financial Solutions | Stony Brook, NY   Aug 2024 – Dec 2024",
+        "bullets": [
+          {
+            "text": "Consulted for a Fortune 500 fintech firm on strategies to optimize wealth-management portfolios.",
+            "leadingVerb": "Consulted",
+            "verbClass": "contribution",
+            "objectPhrase": "for a Fortune 500 fintech firm on strategies to optimize wealth-management portfolios",
+            "objectHeadNoun": "firm",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Consulted for a Fortune 500 fintech firm on strategies to optimize wealth-management portfolios."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "DCF valuation",
+        "location": "skills-only",
+        "grounding_span": "DCF valuation"
+      },
+      {
+        "name": "comparable-company analysis",
+        "location": "skills-only",
+        "grounding_span": "comparable-company analysis"
+      },
+      {
+        "name": "financial modeling",
+        "location": "skills-only",
+        "grounding_span": "financial modeling"
+      },
+      {
+        "name": "credit analysis",
+        "location": "skills-only",
+        "grounding_span": "credit analysis"
+      },
+      {
+        "name": "Bloomberg",
+        "location": "skills-only",
+        "grounding_span": "Bloomberg"
+      }
+    ],
+    "skillsSpan": "Analysis & Modeling: DCF valuation, comparable-company analysis, financial modeling, credit analysis\nSystems & Tools: Bloomberg, Microsoft Excel (advanced), PAM (asset management), SUN general ledger",
+    "credentials": {
+      "degree": {
+        "value": "Bachelor of Science in Business Management, Concentration in Finance",
+        "grounding_span": "Bachelor of Science in Business Management, Concentration in Finance"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Led a team of analysts in sector research for a student-run SRI fund.",
+        "peopleNoun": "team"
+      }
+    ]
+  },
+  "re_1hyq859": {
+    "roles": [
+      {
+        "title": "Assistant Manager",
+        "company": "Zips Dry Cleaners",
+        "startYear": 2017,
+        "endYear": null,
+        "domains": [],
+        "grounding_span": "Assistant Manager | Zips Dry Cleaners – Warminster, PA   September 2017 – Current",
+        "bullets": [
+          {
+            "text": "Supported daily store operations by assisting with workflow coordination, order prioritization, and quality control.",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "daily store operations",
+            "objectHeadNoun": "operations",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Supported daily store operations by assisting with workflow coordination, order prioritization, and quality control."
+          },
+          {
+            "text": "Maintained accurate order tracking and documentation using proprietary systems.",
+            "leadingVerb": "Maintained",
+            "verbClass": "ownership",
+            "objectPhrase": "accurate order tracking and documentation",
+            "objectHeadNoun": "tracking",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Maintained accurate order tracking and documentation using proprietary systems."
+          }
+        ]
+      },
+      {
+        "title": "Data Analyst Intern",
+        "company": "Main Street Media",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Data Analyst Intern | Main Street Media – Richboro, PA   Summers 2024 – 2025",
+        "bullets": [
+          {
+            "text": "Researched and gathered data on potential clients, including company information and decision-makers, resulting in account growth and new client acquisition.",
+            "leadingVerb": "Researched",
+            "verbClass": "contribution",
+            "objectPhrase": "data on potential clients",
+            "objectHeadNoun": "data",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "account growth",
+              "new client acquisition"
+            ],
+            "grounding_span": "Researched and gathered data on potential clients, including company information and decision-makers, resulting in account growth and new client acquisition."
+          },
+          {
+            "text": "Compiled and organized data into Excel spreadsheets, streamlining access to critical information for executives.",
+            "leadingVerb": "Compiled",
+            "verbClass": "contribution",
+            "objectPhrase": "data into Excel spreadsheets",
+            "objectHeadNoun": "data",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Compiled and organized data into Excel spreadsheets, streamlining access to critical information for executives."
+          },
+          {
+            "text": "Analyzed market trends and lead data, contributing valuable insights that informed business development strategies.",
+            "leadingVerb": "Analyzed",
+            "verbClass": "contribution",
+            "objectPhrase": "market trends and lead data",
+            "objectHeadNoun": "trends",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Analyzed market trends and lead data, contributing valuable insights that informed business development strategies."
+          }
+        ]
+      },
+      {
+        "title": "Security Systems Technician Intern",
+        "company": "Eagle Eye Video Security",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [],
+        "grounding_span": "Security Systems Technician Intern | Eagle Eye Video Security – Philadelphia, PA   Summers 2024 – 2025",
+        "bullets": [
+          {
+            "text": "Installed, serviced, and repaired security systems at commercial client sites.",
+            "leadingVerb": "Installed",
+            "verbClass": "ownership",
+            "objectPhrase": "security systems at commercial client sites",
+            "objectHeadNoun": "systems",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Installed, serviced, and repaired security systems at commercial client sites."
+          },
+          {
+            "text": "Assisted with troubleshooting and maintenance.",
+            "leadingVerb": "Assisted",
+            "verbClass": "contribution",
+            "objectPhrase": "troubleshooting and maintenance",
+            "objectHeadNoun": "troubleshooting",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Assisted with troubleshooting and maintenance."
+          },
+          {
+            "text": "Collaborated with senior technicians to configure and test security equipment.",
+            "leadingVerb": "Collaborated",
+            "verbClass": "contribution",
+            "objectPhrase": "security equipment",
+            "objectHeadNoun": "equipment",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Collaborated with senior technicians to configure and test security equipment."
+          }
+        ]
+      },
+      {
+        "title": "EV Recycling App Developer",
+        "company": "Academic Project",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "EV Recycling App – Wireless Communication Industry",
+        "bullets": [
+          {
+            "text": "Collaborated on the development of an EV battery recycling app with a focus on user adoption and stakeholder engagement.",
+            "leadingVerb": "Collaborated",
+            "verbClass": "contribution",
+            "objectPhrase": "EV battery recycling app",
+            "objectHeadNoun": "app",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Collaborated on the development of an EV battery recycling app with a focus on user adoption and stakeholder engagement."
+          },
+          {
+            "text": "Design solutions for real-time data sharing between EV manufacturers, recycling facilities, and supply chain vendors.",
+            "leadingVerb": "Design",
+            "verbClass": "ownership",
+            "objectPhrase": "solutions for real-time data sharing",
+            "objectHeadNoun": "solutions",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Design solutions for real-time data sharing between EV manufacturers, recycling facilities, and supply chain vendors."
+          }
+        ]
+      }
+    ],
+    "skills": [],
+    "skillsSpan": null,
+    "credentials": {
+      "degree": {
+        "value": "Bachelor of Arts in Telecommunication",
+        "grounding_span": "Bachelor of Arts in Telecommunication"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_4dydjk": {
+    "roles": [
+      {
+        "title": "Legal Intern",
+        "company": "StudioIP",
+        "startYear": 2026,
+        "endYear": null,
+        "domains": [
+          "consumer"
+        ],
+        "grounding_span": "StudioIP   Denver, CO\nLegal Intern   May 2026 – Present",
+        "bullets": [
+          {
+            "text": "Conduct trademark search and clearance analyses and assist with U.S. trademark registration for consumer brands.",
+            "leadingVerb": "Conduct",
+            "verbClass": "contribution",
+            "objectPhrase": "trademark search and clearance analyses",
+            "objectHeadNoun": "analyses",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Conduct trademark search and clearance analyses and assist with U.S. trademark registration for consumer brands."
+          },
+          {
+            "text": "Research and draft legal memoranda and assist in researching, writing, and editing responses to motions across trademark and copyright matters.",
+            "leadingVerb": "Research",
+            "verbClass": "contribution",
+            "objectPhrase": "legal memoranda and responses to motions",
+            "objectHeadNoun": "memoranda",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Research and draft legal memoranda and assist in researching, writing, and editing responses to motions across trademark and copyright matters."
+          },
+          {
+            "text": "Draft and edit Terms of Service and Privacy Policies for beauty and skincare, healthcare, education, and other consumer-packaged-goods (CPG) clients.",
+            "leadingVerb": "Draft",
+            "verbClass": "contribution",
+            "objectPhrase": "Terms of Service and Privacy Policies",
+            "objectHeadNoun": "Policies",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Draft and edit Terms of Service and Privacy Policies for beauty and skincare, healthcare, education, and other consumer-packaged-goods (CPG) clients."
+          }
+        ]
+      },
+      {
+        "title": "Legal Extern",
+        "company": "The Office of the DeKalb County Solicitor-General",
+        "startYear": 2026,
+        "endYear": 2026,
+        "domains": [
+          "government"
+        ],
+        "grounding_span": "The Office of the DeKalb County Solicitor-General   Decatur, GA\nLegal Extern   Jan 2026 – May 2026",
+        "bullets": [
+          {
+            "text": "Drafted briefs, memoranda, and motions and conducted legal research for active prosecutions under the supervision of Assistant Solicitors-General.",
+            "leadingVerb": "Drafted",
+            "verbClass": "contribution",
+            "objectPhrase": "briefs, memoranda, and motions",
+            "objectHeadNoun": "briefs",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Drafted briefs, memoranda, and motions and conducted legal research for active prosecutions under the supervision of Assistant Solicitors-General."
+          },
+          {
+            "text": "Observed multiple bench and jury trials from voir dire through verdict.",
+            "leadingVerb": "Observed",
+            "verbClass": "neutral",
+            "objectPhrase": "bench and jury trials",
+            "objectHeadNoun": "trials",
+            "scope": "unknown",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Observed multiple bench and jury trials from voir dire through verdict."
+          }
+        ]
+      },
+      {
+        "title": "Law Clerk (Freelance)",
+        "company": "The Landau Group",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [],
+        "grounding_span": "The Landau Group   New York, NY\nLaw Clerk (Freelance)   Aug 2025 – Oct 2025",
+        "bullets": [
+          {
+            "text": "Supported plaintiff-side litigation in a copyright-infringement action.",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "plaintiff-side litigation",
+            "objectHeadNoun": "litigation",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Supported plaintiff-side litigation in a copyright-infringement action."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Westlaw",
+        "location": "experience",
+        "grounding_span": "Research Tools: Westlaw, LexisNexis, Midpage AI"
+      },
+      {
+        "name": "LexisNexis",
+        "location": "experience",
+        "grounding_span": "Research Tools: Westlaw, LexisNexis, Midpage AI"
+      }
+    ],
+    "skillsSpan": "",
+    "credentials": {
+      "degree": {
+        "value": "Juris Doctor, Candidate",
+        "grounding_span": "Candidate for Juris Doctor   Expected May 2027"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_1dig8a9": {
+    "roles": [
+      {
+        "title": "Public Relations Intern",
+        "company": "Kanterman Communications Associates",
+        "startYear": 2026,
+        "endYear": 2026,
+        "domains": [
+          "healthtech"
+        ],
+        "grounding_span": "Public Relations Intern | Kanterman Communications Associates | Boca Raton, FL   Jul 2026 – Aug 2026",
+        "bullets": [
+          {
+            "text": "Support media relations, client communications, and campaign deliverables for healthcare and pharmaceutical clients.",
+            "leadingVerb": "Support",
+            "verbClass": "contribution",
+            "objectPhrase": "media relations, client communications, and campaign deliverables",
+            "objectHeadNoun": "deliverables",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Support media relations, client communications, and campaign deliverables for healthcare and pharmaceutical clients."
+          }
+        ]
+      },
+      {
+        "title": "Social Media Manager",
+        "company": "UF Takeover",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [],
+        "grounding_span": "Social Media Manager | UF Takeover | Gainesville, FL   Sep 2024 – Mar 2025",
+        "bullets": [
+          {
+            "text": "Managed all Instagram content for 1,000+ students (2–3 posts/week), using engagement analytics to refine content strategy.",
+            "leadingVerb": "Managed",
+            "verbClass": "ownership",
+            "objectPhrase": "all Instagram content",
+            "objectHeadNoun": "content",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "1,000+ students",
+              "2–3 posts/week"
+            ],
+            "grounding_span": "Managed all Instagram content for 1,000+ students (2–3 posts/week), using engagement analytics to refine content strategy."
+          },
+          {
+            "text": "Drove the company's highest-attended event by building a Greek organization ambassador network and negotiating on-site logistics.",
+            "leadingVerb": "Drove",
+            "verbClass": "ownership",
+            "objectPhrase": "the company's highest-attended event",
+            "objectHeadNoun": "event",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "highest-attended event"
+            ],
+            "grounding_span": "Drove the company's highest-attended event by building a Greek organization ambassador network and negotiating on-site logistics."
+          }
+        ]
+      },
+      {
+        "title": "Office Administrator",
+        "company": "Barclay Performing Arts Theater Company",
+        "startYear": 2026,
+        "endYear": 2026,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Office Administrator (2026)",
+        "bullets": [
+          {
+            "text": "Manage front-office operations for the summer camp season.",
+            "leadingVerb": "Manage",
+            "verbClass": "ownership",
+            "objectPhrase": "front-office operations",
+            "objectHeadNoun": "operations",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Manage front-office operations for the summer camp season."
+          }
+        ]
+      },
+      {
+        "title": "Assistant Production Manager",
+        "company": "Barclay Performing Arts Theater Company",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Assistant Production Manager (2024 & 2025)",
+        "bullets": [
+          {
+            "text": "Coordinated end-to-end logistics for 4–5 annual productions with 20+ performers.",
+            "leadingVerb": "Coordinated",
+            "verbClass": "ownership",
+            "objectPhrase": "end-to-end logistics for 4–5 annual productions",
+            "objectHeadNoun": "logistics",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "4–5 annual productions",
+              "20+ performers"
+            ],
+            "grounding_span": "Coordinated end-to-end logistics for 4–5 annual productions with 20+ performers."
+          }
+        ]
+      },
+      {
+        "title": "Lead Counselor, Summer Mini Camp",
+        "company": "Barclay Performing Arts Theater Company",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Lead Counselor, Summer Mini Camp (2025)",
+        "bullets": [
+          {
+            "text": "Directed 6-week summer program for 70+ campers.",
+            "leadingVerb": "Directed",
+            "verbClass": "ownership",
+            "objectPhrase": "6-week summer program",
+            "objectHeadNoun": "program",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "6-week",
+              "70+ campers"
+            ],
+            "grounding_span": "Directed 6-week summer program for 70+ campers."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Media Relations",
+        "location": "skills-only",
+        "grounding_span": "Media Relations"
+      },
+      {
+        "name": "Crisis Communications",
+        "location": "skills-only",
+        "grounding_span": "Crisis Communications"
+      },
+      {
+        "name": "Brand Messaging",
+        "location": "skills-only",
+        "grounding_span": "Brand Messaging"
+      },
+      {
+        "name": "Campaign Management",
+        "location": "skills-only",
+        "grounding_span": "Campaign Management"
+      }
+    ],
+    "skillsSpan": "Public Relations: Media Relations | Crisis Communications | Brand Messaging | Campaign Management\nPlatforms: Instagram | TikTok | LinkedIn | Canva | Adobe Photoshop | Adobe Premiere Pro",
+    "credentials": {
+      "degree": {
+        "value": "BS Public Relations",
+        "grounding_span": "BS Public Relations"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Co-led Spring Rush securing 8 new pledges from 150+ candidates.",
+        "peopleNoun": "pledges"
+      },
+      {
+        "grounding_span": "Grew membership 20% through targeted recruitment.",
+        "peopleNoun": "membership"
+      },
+      {
+        "grounding_span": "Directed 6-week summer program for 70+ campers.",
+        "peopleNoun": "campers"
+      }
+    ]
+  },
+  "re_1lrvvhp": {
+    "roles": [
+      {
+        "title": "Business Development & Marketing Intern",
+        "company": "Premier Athlete Agency",
+        "startYear": 2026,
+        "endYear": null,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Business Development & Marketing Intern | Premier Athlete Agency, Los Angeles, CA (Remote)Apr 2026 – Present",
+        "bullets": [
+          {
+            "text": "Research brands and companies to identify partnership and endorsement opportunities for a roster of 7+ professional athletes, working directly with the agency CEO.",
+            "leadingVerb": "Research",
+            "verbClass": "contribution",
+            "objectPhrase": "partnership and endorsement opportunities",
+            "objectHeadNoun": "opportunities",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "7+"
+            ],
+            "grounding_span": "Research brands and companies to identify partnership and endorsement opportunities for a roster of 7+ professional athletes, working directly with the agency CEO."
+          },
+          {
+            "text": "Analyze market trends and competitor activity to surface brand-partnership opportunities.",
+            "leadingVerb": "Analyze",
+            "verbClass": "contribution",
+            "objectPhrase": "market trends and competitor activity",
+            "objectHeadNoun": "trends",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Analyze market trends and competitor activity to surface brand-partnership opportunities."
+          },
+          {
+            "text": "Built a targeted prospect list of corporate sponsors for an international client.",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "targeted prospect list of corporate sponsors",
+            "objectHeadNoun": "list",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Built a targeted prospect list of corporate sponsors for an international client."
+          }
+        ]
+      },
+      {
+        "title": "Marketing Intern",
+        "company": "City & State Magazine",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Marketing Intern | City & State Magazine, New York, NY   Jun 2025 – Aug 2025",
+        "bullets": [
+          {
+            "text": "Partnered with the VP of Digital Growth to manage and analyze prospect data, driving outreach strategy.",
+            "leadingVerb": "Partnered",
+            "verbClass": "contribution",
+            "objectPhrase": "prospect data",
+            "objectHeadNoun": "data",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Partnered with the VP of Digital Growth to manage and analyze prospect data, driving outreach strategy."
+          },
+          {
+            "text": "Maintained and enhanced multi-year datasets used for campaign targeting.",
+            "leadingVerb": "Maintained",
+            "verbClass": "ownership",
+            "objectPhrase": "multi-year datasets",
+            "objectHeadNoun": "datasets",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Maintained and enhanced multi-year datasets used for campaign targeting."
+          }
+        ]
+      },
+      {
+        "title": "Research Intern",
+        "company": "City & State Magazine",
+        "startYear": 2023,
+        "endYear": 2023,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Research Intern | City & State Magazine, New York, NY   Jun 2023 – Aug 2023",
+        "bullets": [
+          {
+            "text": "Researched and compiled targeted audience lists and built structured datasets.",
+            "leadingVerb": "Researched",
+            "verbClass": "ownership",
+            "objectPhrase": "targeted audience lists and structured datasets",
+            "objectHeadNoun": "lists",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Researched and compiled targeted audience lists and built structured datasets."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Market Research",
+        "location": "experience",
+        "grounding_span": "Market Research"
+      },
+      {
+        "name": "Competitor Analysis",
+        "location": "experience",
+        "grounding_span": "Competitor Analysis"
+      },
+      {
+        "name": "Campaign Targeting",
+        "location": "experience",
+        "grounding_span": "Campaign Targeting"
+      },
+      {
+        "name": "Brand Partnerships",
+        "location": "experience",
+        "grounding_span": "Brand Partnerships"
+      },
+      {
+        "name": "Microsoft Excel",
+        "location": "skills-only",
+        "grounding_span": "Microsoft Excel"
+      },
+      {
+        "name": "R / RStudio",
+        "location": "skills-only",
+        "grounding_span": "R / RStudio"
+      },
+      {
+        "name": "PowerPoint",
+        "location": "skills-only",
+        "grounding_span": "PowerPoint"
+      },
+      {
+        "name": "Data Analysis",
+        "location": "skills-only",
+        "grounding_span": "Data Analysis"
+      },
+      {
+        "name": "Regression Analysis",
+        "location": "skills-only",
+        "grounding_span": "Regression Analysis"
+      }
+    ],
+    "skillsSpan": "Research & Marketing: Market Research | Competitor Analysis | Campaign Targeting | Brand Partnerships\nAnalytical & Technical: Microsoft Excel | R / RStudio | PowerPoint | Data Analysis | Regression Analysis",
+    "credentials": {
+      "degree": {
+        "value": "B.S. in Industrial and Labor Relations, Concentration in Economics",
+        "grounding_span": "B.S. in Industrial and Labor Relations, Concentration in Economics"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_qlyhrx": {
+    "roles": [
+      {
+        "title": "Event Operations Crew",
+        "company": "San Diego Padres",
+        "startYear": 2026,
+        "endYear": null,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "Event Operations Crew | San Diego Padres | San Diego, CA   Mar 2026 – Present",
+        "bullets": [
+          {
+            "text": "Coordinate front-of-house event operations across the full Padres home schedule at Petco Park.",
+            "leadingVerb": "Coordinate",
+            "verbClass": "contribution",
+            "objectPhrase": "front-of-house event operations across the full Padres home schedule at Petco Park",
+            "objectHeadNoun": "operations",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Coordinate front-of-house event operations across the full Padres home schedule at Petco Park."
+          },
+          {
+            "text": "Selected to mentor new hires after consistently exceeding performance metrics; train incoming crew.",
+            "leadingVerb": "mentor",
+            "verbClass": "ownership",
+            "objectPhrase": "new hires",
+            "objectHeadNoun": "hires",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "performance metrics"
+            ],
+            "grounding_span": "Selected to mentor new hires after consistently exceeding performance metrics; train incoming crew."
+          }
+        ]
+      },
+      {
+        "title": "Game Day Representative",
+        "company": "Legends & ASM Global (FSU Football)",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "Game Day Representative | Legends & ASM Global (FSU Football) | Tallahassee, FL   Aug 2025 – Nov 2025",
+        "bullets": [
+          {
+            "text": "Executed gameday operations for Division I football events serving 60,000+ fans.",
+            "leadingVerb": "Executed",
+            "verbClass": "contribution",
+            "objectPhrase": "gameday operations for Division I football events serving 60,000+ fans",
+            "objectHeadNoun": "operations",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "60,000+ fans"
+            ],
+            "grounding_span": "Executed gameday operations for Division I football events serving 60,000+ fans."
+          },
+          {
+            "text": "Coordinated vendor and sponsor load-ins.",
+            "leadingVerb": "Coordinated",
+            "verbClass": "contribution",
+            "objectPhrase": "vendor and sponsor load-ins",
+            "objectHeadNoun": "load-ins",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Coordinated vendor and sponsor load-ins."
+          }
+        ]
+      },
+      {
+        "title": "League Coordinator Intern",
+        "company": "Caribbean Baseball Organization",
+        "startYear": 2024,
+        "endYear": 2024,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "League Coordinator Intern | Caribbean Baseball Organization | Miami, FL   Feb 2024 – Aug 2024",
+        "bullets": [
+          {
+            "text": "Led multi-channel recruitment outreach to high school and college baseball players, building a summer league roster of 50+ players.",
+            "leadingVerb": "Led",
+            "verbClass": "ownership",
+            "objectPhrase": "multi-channel recruitment outreach to high school and college baseball players, building a summer league roster of 50+ players",
+            "objectHeadNoun": "outreach",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "50+ players"
+            ],
+            "grounding_span": "Led multi-channel recruitment outreach to high school and college baseball players, building a summer league roster of 50+ players."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Microsoft Excel",
+        "location": "experience",
+        "grounding_span": "Microsoft Excel"
+      },
+      {
+        "name": "Microsoft Word",
+        "location": "experience",
+        "grounding_span": "Word"
+      },
+      {
+        "name": "Microsoft PowerPoint",
+        "location": "experience",
+        "grounding_span": "PowerPoint"
+      },
+      {
+        "name": "Canva",
+        "location": "experience",
+        "grounding_span": "Canva"
+      },
+      {
+        "name": "PCRecruiter",
+        "location": "experience",
+        "grounding_span": "PCRecruiter"
+      }
+    ],
+    "skillsSpan": "Baseball Operations: Gameday execution | Roster recruitment & onboarding | League scheduling\nTools: Microsoft Excel, Word, PowerPoint | Canva | PCRecruiter | R Studio, Python and SQL (currently enrolled)",
+    "credentials": {
+      "degree": {
+        "value": "Bachelor of Science, Sport Management",
+        "grounding_span": "Bachelor of Science, Sport Management | Florida State University | Tallahassee, FL   Dec 2025"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Selected to mentor new hires after consistently exceeding performance metrics; train incoming crew.",
+        "peopleNoun": "new hires"
+      }
+    ]
+  },
+  "re_6t0vvd": {
+    "roles": [
+      {
+        "title": "News Intern, Assignment Desk Editor",
+        "company": "WCJB TV20 & Telemundo Gainesville",
+        "startYear": 2026,
+        "endYear": null,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "News Intern, Assignment Desk Editor | WCJB TV20 & Telemundo Gainesville | Gainesville, FL   May 2026 – Present",
+        "bullets": [
+          {
+            "text": "Select, write, and publish approximately 12 web stories per week, deciding which stories run and prioritizing homepage placement.",
+            "leadingVerb": "Select",
+            "verbClass": "ownership",
+            "objectPhrase": "web stories",
+            "objectHeadNoun": "stories",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "12 web stories per week"
+            ],
+            "grounding_span": "Select, write, and publish approximately 12 web stories per week, deciding which stories run and prioritizing homepage placement."
+          },
+          {
+            "text": "Design supporting graphics in Canva and package each story for distribution across Instagram, X, and Facebook.",
+            "leadingVerb": "Design",
+            "verbClass": "contribution",
+            "objectPhrase": "supporting graphics",
+            "objectHeadNoun": "graphics",
+            "scope": "task",
+            "tools": [
+              "canva"
+            ],
+            "metrics": [],
+            "grounding_span": "Design supporting graphics in Canva and package each story for distribution across Instagram, X, and Facebook."
+          }
+        ]
+      },
+      {
+        "title": "Content Creator",
+        "company": "Dillard's Campus Collective",
+        "startYear": 2026,
+        "endYear": 2026,
+        "domains": [
+          "consumer"
+        ],
+        "grounding_span": "Content Creator | Dillard's Campus Collective | Gainesville, FL   Jan 2026 – May 2026",
+        "bullets": [
+          {
+            "text": "Produced a weekly multi-format content package styling and featuring merchandise.",
+            "leadingVerb": "Produced",
+            "verbClass": "contribution",
+            "objectPhrase": "weekly multi-format content package",
+            "objectHeadNoun": "package",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Produced a weekly multi-format content package styling and featuring merchandise."
+          },
+          {
+            "text": "Earned Top 5 weekly engagement among ~50 creators twice, including a SKIMS collaboration post that drew 18K+ views.",
+            "leadingVerb": "Earned",
+            "verbClass": "neutral",
+            "objectPhrase": "Top 5 weekly engagement",
+            "objectHeadNoun": "engagement",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "Top 5 weekly engagement among ~50 creators",
+              "18K+ views"
+            ],
+            "grounding_span": "Earned Top 5 weekly engagement among ~50 creators twice, including a SKIMS collaboration post that drew 18K+ views."
+          }
+        ]
+      },
+      {
+        "title": "Content Creator",
+        "company": "Gator Chicks (Barstool Sports) & ESPN WRUF",
+        "startYear": 2026,
+        "endYear": null,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Content Creator | Gator Chicks (Barstool Sports) & ESPN WRUF | Gainesville, FL   Jun 2026 – Present",
+        "bullets": [
+          {
+            "text": "Create social media content and produce tailgate interview videos.",
+            "leadingVerb": "Create",
+            "verbClass": "contribution",
+            "objectPhrase": "social media content and tailgate interview videos",
+            "objectHeadNoun": "content",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Create social media content and produce tailgate interview videos."
+          }
+        ]
+      },
+      {
+        "title": "Anchor | Reporter | Editor",
+        "company": "WUFT News",
+        "startYear": 2023,
+        "endYear": null,
+        "domains": [
+          "media"
+        ],
+        "grounding_span": "Anchor | Reporter | Editor | WUFT News | Gainesville, FL   Aug 2023 – Present",
+        "bullets": [
+          {
+            "text": "Main anchor of the flagship 5 PM newscast for five semesters.",
+            "leadingVerb": "anchor",
+            "verbClass": "ownership",
+            "objectPhrase": "flagship 5 PM newscast",
+            "objectHeadNoun": "newscast",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "five semesters"
+            ],
+            "grounding_span": "Main anchor of the flagship 5 PM newscast for five semesters."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Social Media Strategy",
+        "location": "experience",
+        "grounding_span": "Social Media Strategy"
+      },
+      {
+        "name": "Content Calendars",
+        "location": "experience",
+        "grounding_span": "Content Calendars"
+      },
+      {
+        "name": "Engagement Analytics",
+        "location": "experience",
+        "grounding_span": "Engagement Analytics"
+      },
+      {
+        "name": "Story Pitching",
+        "location": "experience",
+        "grounding_span": "Story Pitching"
+      }
+    ],
+    "skillsSpan": "Content & Strategy: Social Media Strategy | Content Calendars | Engagement Analytics | Story Pitching\nProduction: Adobe Premiere Pro | Lightroom | Final Cut Pro | Canva",
+    "credentials": {
+      "degree": {
+        "value": "B.A. Journalism, Minor in Innovation, Media Sales Certificate",
+        "grounding_span": "B.A. Journalism, Minor in Innovation, Media Sales Certificate"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_i9988d": {
+    "roles": [
+      {
+        "title": "Payload Team Lead, Manufacturing Lead, and Secretary",
+        "company": "Technology and Aerospace Club (TAC), FAU",
+        "startYear": 2024,
+        "endYear": 2026,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "Technology and Aerospace Club (TAC), FAU | Boca Raton, FL   2024 – 2026\nPayload Team Lead, Manufacturing Lead, and Secretary",
+        "bullets": [
+          {
+            "text": "Led payload and manufacturing for FAU's first IREC vehicle, a 10-ft, 63-lb fiberglass rocket; coordinated fabrication, integration, and testing to a 6th-place finish among 140+ international teams.",
+            "leadingVerb": "Led",
+            "verbClass": "ownership",
+            "objectPhrase": "payload and manufacturing for FAU's first IREC vehicle",
+            "objectHeadNoun": "payload",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "6th-place finish among 140+ international teams"
+            ],
+            "grounding_span": "Led payload and manufacturing for FAU's first IREC vehicle, a 10-ft, 63-lb fiberglass rocket; coordinated fabrication, integration, and testing to a 6th-place finish among 140+ international teams."
+          },
+          {
+            "text": "Developed LILA, a 3U CubeSat-form-factor environmental-control payload integrating temperature, CO2, light, and pressure sensing.",
+            "leadingVerb": "Developed",
+            "verbClass": "ownership",
+            "objectPhrase": "LILA, a 3U CubeSat-form-factor environmental-control payload",
+            "objectHeadNoun": "payload",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Developed LILA, a 3U CubeSat-form-factor environmental-control payload integrating temperature, CO2, light, and pressure sensing."
+          },
+          {
+            "text": "Machined all major bulkheads and produced fabrication tooling.",
+            "leadingVerb": "Machined",
+            "verbClass": "ownership",
+            "objectPhrase": "all major bulkheads and fabrication tooling",
+            "objectHeadNoun": "bulkheads",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Machined all major bulkheads and produced fabrication tooling."
+          }
+        ]
+      },
+      {
+        "title": "Vice President (2025 - 2026) | Secretary (2024 - 2025)",
+        "company": "Aerospace Experimental Association (AXA), FAU",
+        "startYear": 2024,
+        "endYear": 2026,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "Aerospace Experimental Association (AXA), FAU | Boca Raton, FL   2024 – 2026\nVice President (2025 - 2026) | Secretary (2024 - 2025)",
+        "bullets": [
+          {
+            "text": "Contributed to a 6U NASA CubeSat Launch Initiative spacecraft for plant-growth research.",
+            "leadingVerb": "Contributed",
+            "verbClass": "contribution",
+            "objectPhrase": "to a 6U NASA CubeSat Launch Initiative spacecraft",
+            "objectHeadNoun": "spacecraft",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Contributed to a 6U NASA CubeSat Launch Initiative spacecraft for plant-growth research."
+          },
+          {
+            "text": "Led design and integration of a high-altitude-balloon payload bus.",
+            "leadingVerb": "Led",
+            "verbClass": "ownership",
+            "objectPhrase": "design and integration of a high-altitude-balloon payload bus",
+            "objectHeadNoun": "design",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Led design and integration of a high-altitude-balloon payload bus."
+          },
+          {
+            "text": "Grew AXA from ~5-7 to ~25 active multidisciplinary members in one semester; led soldering and Fusion 360 workshops.",
+            "leadingVerb": "Grew",
+            "verbClass": "ownership",
+            "objectPhrase": "AXA from ~5-7 to ~25 active multidisciplinary members",
+            "objectHeadNoun": "AXA",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "~5-7 to ~25 active multidisciplinary members in one semester"
+            ],
+            "grounding_span": "Grew AXA from ~5-7 to ~25 active multidisciplinary members in one semester; led soldering and Fusion 360 workshops."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Fusion 360",
+        "location": "experience",
+        "grounding_span": "Fusion 360"
+      },
+      {
+        "name": "MATLAB",
+        "location": "experience",
+        "grounding_span": "MATLAB"
+      },
+      {
+        "name": "Python",
+        "location": "experience",
+        "grounding_span": "Python"
+      }
+    ],
+    "skillsSpan": "CAD & Analysis: Fusion 360, Onshape, OpenRocket, requirements definition, systems integration, test planning\nManufacturing & Test: FDM 3D printing, manual lathe, CNC mill, soldering, fiberglass/composites\nProgramming & Tools: MATLAB, C, Arduino/C++, Python, Microsoft Excel",
+    "credentials": {
+      "degree": {
+        "value": "B.S. Mechanical Engineering and B.S. Aerospace Engineering",
+        "grounding_span": "B.S. Mechanical Engineering and B.S. Aerospace Engineering"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Grew AXA from ~5-7 to ~25 active multidisciplinary members in one semester",
+        "peopleNoun": "members"
+      }
+    ]
+  },
+  "re_1t7qwpl": {
+    "roles": [
+      {
+        "title": "Software Engineering Intern — Clinical Platforms Team",
+        "company": "Teladoc Health",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [
+          "healthtech",
+          "b2b_saas"
+        ],
+        "grounding_span": "Teladoc Health · Manhattan, NY   Jun 2025 – Aug 2025\nSoftware Engineering Intern — Clinical Platforms Team",
+        "bullets": [
+          {
+            "text": "Developed reusable React and JavaScript UI components for the Provider Performance Navigator — a provider-facing dashboard surfacing clinical performance metrics and weekly schedule insights.",
+            "leadingVerb": "Developed",
+            "verbClass": "contribution",
+            "objectPhrase": "reusable React and JavaScript UI components for the Provider Performance Navigator",
+            "objectHeadNoun": "components",
+            "scope": "function",
+            "tools": [
+              "React"
+            ],
+            "metrics": [],
+            "grounding_span": "Developed reusable React and JavaScript UI components for the Provider Performance Navigator — a provider-facing dashboard surfacing clinical performance metrics and weekly schedule insights."
+          },
+          {
+            "text": "Configured GitHub repository and local development environment from scratch; built dynamic data visualizations integrated with backend APIs for real-time performance tracking.",
+            "leadingVerb": "Configured",
+            "verbClass": "contribution",
+            "objectPhrase": "GitHub repository and local development environment",
+            "objectHeadNoun": "environment",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Configured GitHub repository and local development environment from scratch; built dynamic data visualizations integrated with backend APIs for real-time performance tracking."
+          },
+          {
+            "text": "Deployed features using Ruby on Rails and Docker; participated in full Agile sprint cycle with backend engineers, product managers, and UI/UX designers.",
+            "leadingVerb": "Deployed",
+            "verbClass": "contribution",
+            "objectPhrase": "features using Ruby on Rails and Docker",
+            "objectHeadNoun": "features",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Deployed features using Ruby on Rails and Docker; participated in full Agile sprint cycle with backend engineers, product managers, and UI/UX designers."
+          },
+          {
+            "text": "Delivered complete frontend component architecture for the metrics tab.",
+            "leadingVerb": "Delivered",
+            "verbClass": "contribution",
+            "objectPhrase": "complete frontend component architecture for the metrics tab",
+            "objectHeadNoun": "architecture",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Delivered complete frontend component architecture for the metrics tab."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "React",
+        "location": "experience",
+        "grounding_span": "React"
+      },
+      {
+        "name": "pytorch",
+        "location": "skills-only",
+        "grounding_span": "PyTorch"
+      }
+    ],
+    "skillsSpan": "LANGUAGES: JavaScript · TypeScript · Python · Java · C++ · SQL · HTML/CSS\nFRAMEWORKS & LIBRARIES: React · Node.js · Ruby on Rails · MongoDB · GraphQL · Vite · PyTorch · Pandas · NumPy · scikit-learn · Express\nTOOLS & PLATFORMS: Docker · Git · GitHub · Supabase · Vercel · Linux/Unix · Agile/Scrum",
+    "credentials": {
+      "degree": {
+        "value": "Bachelor of Science in Computer Science",
+        "grounding_span": "Bachelor of Science in Computer Science"
+      }
+    },
+    "managementBullets": []
+  },
+  "re_1hhblum": {
+    "roles": [
+      {
+        "title": "Data & Analytics Team Intern",
+        "company": "City Furniture",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "City Furniture | Data & Analytics Team Intern – Tamarac FL   May 2025 – Jul 2025",
+        "bullets": [
+          {
+            "text": "Upgraded and optimized legacy SQL scripts to align with a new order-tracking system, improving the accuracy and efficiency of order management and supply chain processes.",
+            "leadingVerb": "Upgraded",
+            "verbClass": "contribution",
+            "objectPhrase": "legacy SQL scripts",
+            "objectHeadNoun": "scripts",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Upgraded and optimized legacy SQL scripts to align with a new order-tracking system, improving the accuracy and efficiency of order management and supply chain processes."
+          },
+          {
+            "text": "Deployed production updates using DBeaver and Cognos, ensuring smooth data integration across multiple business units.",
+            "leadingVerb": "Deployed",
+            "verbClass": "contribution",
+            "objectPhrase": "production updates",
+            "objectHeadNoun": "updates",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Deployed production updates using DBeaver and Cognos, ensuring smooth data integration across multiple business units."
+          },
+          {
+            "text": "Partnered with analysts to visualize performance data in Excel, benchmarking team progress against company goals.",
+            "leadingVerb": "Partnered",
+            "verbClass": "contribution",
+            "objectPhrase": "performance data",
+            "objectHeadNoun": "data",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Partnered with analysts to visualize performance data in Excel, benchmarking team progress against company goals."
+          }
+        ]
+      },
+      {
+        "title": "Intern",
+        "company": "Neuberger Berman",
+        "startYear": 2023,
+        "endYear": 2024,
+        "domains": [
+          "fintech"
+        ],
+        "grounding_span": "Neuberger Berman | Intern – New York, NY   Jun 2023 – Jul 2024",
+        "bullets": [
+          {
+            "text": "Developed full-stack web applications with JavaScript, Express, jQuery, Bootstrap, and PostgreSQL to display data for stakeholders.",
+            "leadingVerb": "Developed",
+            "verbClass": "ownership",
+            "objectPhrase": "full-stack web applications",
+            "objectHeadNoun": "applications",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Developed full-stack web applications with JavaScript, Express, jQuery, Bootstrap, and PostgreSQL to display data for stakeholders."
+          },
+          {
+            "text": "Managed application registration and security in Azure, implementing on-prem and cloud solutions including networking, databases, and security.",
+            "leadingVerb": "Managed",
+            "verbClass": "ownership",
+            "objectPhrase": "application registration and security",
+            "objectHeadNoun": "security",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Managed application registration and security in Azure, implementing on-prem and cloud solutions including networking, databases, and security."
+          },
+          {
+            "text": "Utilized Azure Active Directory for RBAC, VNETs, and OAuth.",
+            "leadingVerb": "Utilized",
+            "verbClass": "contribution",
+            "objectPhrase": "Azure Active Directory",
+            "objectHeadNoun": "Directory",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Utilized Azure Active Directory for RBAC, VNETs, and OAuth."
+          }
+        ]
+      },
+      {
+        "title": "IT Intern",
+        "company": "L7 Solutions",
+        "startYear": 2021,
+        "endYear": 2021,
+        "domains": [
+          "other"
+        ],
+        "grounding_span": "L7 Solutions | IT Intern – Sunrise, FL   Jun 2021 – Aug 2021",
+        "bullets": [
+          {
+            "text": "Set up and secured computers and user accounts for multiple companies.",
+            "leadingVerb": "Set up",
+            "verbClass": "contribution",
+            "objectPhrase": "computers and user accounts",
+            "objectHeadNoun": "accounts",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Set up and secured computers and user accounts for multiple companies."
+          },
+          {
+            "text": "Provided Level 1 tech support, addressing technical issues for 3-4 companies.",
+            "leadingVerb": "Provided",
+            "verbClass": "contribution",
+            "objectPhrase": "Level 1 tech support",
+            "objectHeadNoun": "support",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Provided Level 1 tech support, addressing technical issues for 3-4 companies."
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Python",
+        "location": "skills-only",
+        "grounding_span": "Python"
+      },
+      {
+        "name": "JavaScript",
+        "location": "experience",
+        "grounding_span": "JavaScript"
+      },
+      {
+        "name": "PostgreSQL",
+        "location": "experience",
+        "grounding_span": "PostgreSQL"
+      }
+    ],
+    "skillsSpan": "Microsoft Office Suite | Python | C++ | JavaScript | Express | jQuery | Bootstrap | PostgreSQL | Azure | SFML | HTML | GitHub",
+    "credentials": {
+      "degree": {
+        "value": "Bachelor of Science in Computer Science",
+        "grounding_span": "Bachelor of Science in Computer Science"
+      }
+    },
+    "managementBullets": []
+  }
+}
