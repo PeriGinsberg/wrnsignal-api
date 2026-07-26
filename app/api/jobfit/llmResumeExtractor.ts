@@ -31,6 +31,17 @@ const TASK_NOUN_DENYLIST = ["report", "reports", "reporting", "dashboard", "dash
 // data platform's dashboards" is still platform-level).
 const FUNCTION_NOUN_HINT = ["system", "platform", "stack", "warehouse", "infrastructure", "function", "model", "pipeline", "roadmap", "strategy", "org", "line"]
 
+// Defect 1 — a function-scope QUALIFIER: organizational/strategic BREADTH that
+// makes a task-noun deliverable ("reporting") a FUNCTION-level one ("the reporting
+// function, across fund strategies / for institutional portfolios"). Deliberately
+// TIGHT — matches genuine breadth (strategies / portfolios / business units /
+// divisions / entities / "the X function" / firm-wide) but NOT loose phrases that
+// sit on ordinary task bullets ("for clients", "across teams", "for the project",
+// "across Meta/Google/networks"). A missed upgrade is safe (stays task); a loose
+// upgrade would false-clear a faker. See project_jobfit_ownership_reporting_scope_falsefire.
+const FUNCTION_QUALIFIER_RX =
+  /\b(?:across|spanning|for|over)\s+(?:[a-z]+\s+){0,2}(?:strateg(?:y|ies)|portfolios?|business\s+units?|business\s+lines?|lines?\s+of\s+business|asset\s+classes|divisions?|entit(?:y|ies))\b|\bthe\s+[a-z]+\s+function\b|\bthe\s+(?:firm|organi[sz]ation|org|company|enterprise|business)\b|\b(?:firm|company|org(?:anization)?|enterprise)[-\s]wide\b/i
+
 // Which noun classes appear in an object phrase (word-boundary matched).
 function objectNouns(objectPhrase: string): { hasFn: boolean; hasTask: boolean } {
   const o = normalizeForGrounding(objectPhrase)
@@ -52,17 +63,22 @@ export function applyDenylists(raw: RawResumeExtraction): { raw: RawResumeExtrac
         overrides.push(`verb "${b.leadingVerb}" ownership→contribution (denylist)`)
         verbClass = "contribution"
       }
-      // Deterministic scope decision, both directions (the LLM segments; the
-      // clear-direction calls are ours). DOWNGRADE: a task noun with no function
-      // noun demotes an over-claimed function. UPGRADE (Fix B): a function noun
-      // with no task noun promotes an under-claimed task — e.g. "the rollout of
-      // a marketing mix model" (head "rollout") is function-level via "model".
+      // Deterministic scope decision (the LLM segments; the clear-direction calls
+      // are ours). DOWNGRADE: a task noun with no function signal demotes an
+      // over-claimed function. UPGRADE (Fix B): a function noun in the object
+      // promotes an under-claimed task ("the rollout of a marketing mix model").
+      // UPGRADE (Defect 1): a function-scope QUALIFIER on an OWNERSHIP bullet
+      // credits a task-noun deliverable as function-level ("Built reporting across
+      // fund strategies"). Verb-gated to ownership so it only adds CLEARING power
+      // for genuine owners — a contribution bullet ("Supported reporting across
+      // fund strategies") is NEVER upgraded, so it can't false-trigger or clear.
       const { hasFn, hasTask } = objectNouns(b.objectPhrase)
-      if (scope === "function" && hasTask && !hasFn) {
+      const ownQualifier = verbClass === "ownership" && FUNCTION_QUALIFIER_RX.test(b.text)
+      if (scope === "function" && hasTask && !hasFn && !ownQualifier) {
         overrides.push(`object "${b.objectPhrase.slice(0, 30)}" function→task (denylist)`)
         scope = "task"
-      } else if (scope === "task" && hasFn && !hasTask) {
-        overrides.push(`object "${b.objectPhrase.slice(0, 30)}" task→function (function-noun upgrade)`)
+      } else if (scope === "task" && ((hasFn && !hasTask) || ownQualifier)) {
+        overrides.push(`object "${b.objectPhrase.slice(0, 30)}" task→function (${ownQualifier ? "ownership+qualifier" : "function-noun"} upgrade)`)
         scope = "function"
       }
       return { ...b, verbClass, scope }

@@ -5,7 +5,7 @@
 //   ANTHROPIC_API_KEY=... NODE_OPTIONS=--use-system-ca \
 //     npx tsx "Regression Testing July 2026/freeze-resume-evidence.ts"
 
-import { readFileSync, writeFileSync } from "node:fs"
+import { readFileSync, writeFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { resolveResumeEvidence, type ResumeExtractCache } from "../app/api/jobfit/llmResumeExtractor"
 
@@ -24,8 +24,10 @@ function profileTextOf(n: string): string {
 }
 
 ;(async () => {
-  const cache: ResumeExtractCache = {}
-  for (const n of ["01", "02", "03", "04", "05", "06", "07", "08", "09"]) {
+  // Seed from the existing fixture so a re-run only makes a live call for NEW
+  // cases (a cache hit skips live) — existing entries are preserved byte-for-byte.
+  const cache: ResumeExtractCache = existsSync(FIXTURE) ? JSON.parse(readFileSync(FIXTURE, "utf8")) : {}
+  for (const n of ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]) {
     const r = await resolveResumeEvidence(profileTextOf(n), { llm: { cache, allowLive: true } })
     console.log(`case ${n}: source=${r.source}`)
     if (r.source !== "llm") console.log(`  ⚠ case ${n} did NOT use the LLM (check key / API)`)

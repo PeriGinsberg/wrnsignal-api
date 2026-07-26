@@ -240,6 +240,11 @@ def grade(cid, c, out):
             fails.append(f"missing risk {r['id']} (>= {r['min_severity']})")
         elif got[r["id"]] < need:
             fails.append(f"risk {r['id']} severity too low (< {r['min_severity']})")
+    # risks that MUST NOT fire — a false-fire regression guard (case 10). If any
+    # listed risk id is present, that is a HARD failure.
+    for rid in c.get("risks_must_not_fire", []):
+        if rid in got:
+            fails.append(f"risk {rid} MUST NOT fire but did")
     ym = (out.get("your_move") or "").lower()
     for bad in c.get("your_move_must_not", []):
         # substring heuristic; tighten per your advice format

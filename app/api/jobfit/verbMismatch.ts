@@ -30,8 +30,17 @@ const CONCEPT_EXPANSION: Array<{ match: RegExp; tokens: string[] }> = [
   },
 ]
 
+// Defect 2 — stopwords dropped from conceptTokens so objectOverlaps can't match
+// on junk. A greedy capture like "…function and drive the build-out…" otherwise
+// leaves tokens "and"/"the"/"our" that match ANY bullet, making the fire
+// punctuation-fragile. See project_jobfit_ownership_reporting_scope_falsefire.
+const OBJECT_STOPWORDS = new Set([
+  "and", "the", "our", "your", "its", "their", "out", "for", "with", "across", "over",
+  "into", "onto", "from", "that", "this", "these", "those", "per", "via",
+  "drive", "build", "lead", "driving", "building", "leading", "own", "owning",
+])
 function tokenize(s: string): string[] {
-  return s.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2)
+  return s.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && !OBJECT_STOPWORDS.has(w))
 }
 
 function conceptTokensFor(object: string): string[] {
@@ -56,9 +65,13 @@ export function extractOwnershipRequirements(jobText: string): OwnershipRequirem
     seen.add(obj)
     out.push({ text: text.trim(), object: obj, conceptTokens: conceptTokensFor(obj) })
   }
+  // Defect 2 — stop the capture at CLAUSE boundaries (" and ") so a run-on
+  // ("…function and drive the build-out…") is cut to its noun phrase, and strip
+  // leading determiners/possessives (the/a/an/our/my/your) so the object is the
+  // noun phrase, not a stopword-led run-on.
   const patterns = [
-    /(?:demonstrated\s+)?ownership of (?:a |an |the )?([a-z][a-z /-]*?)(?=,|\.|;|\(| not | end to end|$)/gi,
-    /\bown(?:s|ed|ing)? (?:the |a |an )?([a-z][a-z /-]*?)(?=,|\.|;| end to end| for | from |$)/gi,
+    /(?:demonstrated\s+)?ownership of (?:a |an |the |our |my |your )?([a-z][a-z /-]*?)(?=,|\.|;|\(| and | not | end to end|$)/gi,
+    /\bown(?:s|ed|ing)? (?:the |a |an |our |my |your )?([a-z][a-z /-]*?)(?=,|\.|;| and | end to end| for | from |$)/gi,
     /driving ([a-z][a-z /-]*?) you personally defined/gi,
   ]
   for (const re of patterns) {

@@ -192,6 +192,22 @@ cases:
       - {id: ownership_via_contribution_verbs, min_severity: HIGH}
     # your_move_must_not omitted: not validated against Alex's rendered bullets yet.
 
+  "10":
+    name: Jordan Bergman vs Reporting Lead, Investments (ownership-scope guard)
+    targets: [ownership_scope_falsefire]
+    expected_verdict: REVIEW    # non-discriminator; the risk-absence is the point
+    must_not_be: []
+    discriminator: false
+    # THE guard: real Jordan OWNS the reporting/IRR-MOIC function ("Built and
+    # maintained performance reporting … across multiple fund strategies"). The
+    # function-qualifier scope upgrade must credit that genuine function-ownership
+    # on a task-noun ("reporting") bullet, so ownership_via_contribution_verbs
+    # must NOT fire. Guards the most dangerous class found: real ownership wrongly
+    # excluded by task-noun scope. (Verdict is REVIEW for an unrelated reason —
+    # RISK_FAMILY_MISMATCH — not the ownership risk.)
+    risks_must_not_fire:
+      - ownership_via_contribution_verbs
+
 # ---------------------------------------------------------------------------
 # CROSS-CASE INVARIANTS (assert these relationships, not just per-case verdicts)
 # ---------------------------------------------------------------------------

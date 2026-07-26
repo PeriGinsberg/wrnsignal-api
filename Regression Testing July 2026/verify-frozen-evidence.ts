@@ -25,7 +25,7 @@ import { extractVerbEvidence } from "../app/api/jobfit/verbEvidence"
 import { detectOwnershipVerbMismatch } from "../app/api/jobfit/verbMismatch"
 
 const DIR = __dirname
-const CASES = ["01", "02", "03", "04", "05", "06", "07", "08", "09"]
+const CASES = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
 const frozen = JSON.parse(readFileSync(join(DIR, "resume-evidence.frozen.json"), "utf8"))
 
 function splitCase(n: string) {
@@ -79,7 +79,7 @@ async function main() {
   const passLine = out.match(/(\d+)\/(\d+) cases pass/)
   const failing = [...out.matchAll(/^\[FAIL\] case (\d+)/gm)].map((m) => m[1])
   console.log(`  [golden] ${passLine ? passLine[0] : "NO PASS LINE FOUND"}; failing cases: [${failing.join(", ") || "none"}]`)
-  if (!passLine || passLine[1] !== "8" || passLine[2] !== "9") fails.push(`golden set is ${passLine ? passLine[0] : "unparseable"}, expected 8/9`)
+  if (!passLine || passLine[1] !== "9" || passLine[2] !== "10") fails.push(`golden set is ${passLine ? passLine[0] : "unparseable"}, expected 9/10`)
   const unexpected = failing.filter((c) => c !== "08")
   if (unexpected.length) fails.push(`unexpected golden failures beyond case 08: [${unexpected.join(", ")}]`)
 

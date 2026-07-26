@@ -1157,5 +1157,206 @@
         "peopleNoun": "junior analyst"
       }
     ]
+  },
+  "re_17o1a7x": {
+    "roles": [
+      {
+        "title": "Summer Analyst, Investments",
+        "company": "Northfield Investment Partners",
+        "startYear": 2025,
+        "endYear": 2025,
+        "domains": [
+          "b2b_saas"
+        ],
+        "grounding_span": "Summer Analyst, Investments | June 2025 to August 2025",
+        "bullets": [
+          {
+            "text": "Built and maintained performance reporting for institutional portfolios, calculating IRR, MOIC, and time-weighted returns across multiple fund strategies",
+            "leadingVerb": "Built",
+            "verbClass": "ownership",
+            "objectPhrase": "performance reporting for institutional portfolios",
+            "objectHeadNoun": "reporting",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "IRR",
+              "MOIC",
+              "time-weighted returns"
+            ],
+            "grounding_span": "Built and maintained performance reporting for institutional portfolios, calculating IRR, MOIC, and time-weighted returns across multiple fund strategies"
+          },
+          {
+            "text": "Prepared quarterly investment committee materials, including PowerPoint presentations summarizing portfolio holdings, performance, and asset allocation for senior investment staff",
+            "leadingVerb": "Prepared",
+            "verbClass": "contribution",
+            "objectPhrase": "quarterly investment committee materials",
+            "objectHeadNoun": "materials",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Prepared quarterly investment committee materials, including PowerPoint presentations summarizing portfolio holdings, performance, and asset allocation for senior investment staff"
+          },
+          {
+            "text": "Reconciled position and cash activity across portfolio accounts against custodian records to ensure reporting accuracy",
+            "leadingVerb": "Reconciled",
+            "verbClass": "contribution",
+            "objectPhrase": "position and cash activity across portfolio accounts",
+            "objectHeadNoun": "activity",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Reconciled position and cash activity across portfolio accounts against custodian records to ensure reporting accuracy"
+          },
+          {
+            "text": "Supported operational processing of new investment subscriptions and capital activity, coordinating documentation across internal teams",
+            "leadingVerb": "Supported",
+            "verbClass": "contribution",
+            "objectPhrase": "operational processing of new investment subscriptions and capital activity",
+            "objectHeadNoun": "processing",
+            "scope": "function",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Supported operational processing of new investment subscriptions and capital activity, coordinating documentation across internal teams"
+          },
+          {
+            "text": "Analyzed holdings and market data using advanced Excel, including pivot tables, VLOOKUP, and financial models",
+            "leadingVerb": "Analyzed",
+            "verbClass": "contribution",
+            "objectPhrase": "holdings and market data",
+            "objectHeadNoun": "data",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Analyzed holdings and market data using advanced Excel, including pivot tables, VLOOKUP, and financial models"
+          }
+        ]
+      },
+      {
+        "title": "Analyst",
+        "company": "Dartmouth Student Investment Fund",
+        "startYear": 2023,
+        "endYear": 2025,
+        "domains": [],
+        "grounding_span": "Analyst | 2023 to 2025",
+        "bullets": [
+          {
+            "text": "Researched and presented equity investment recommendations to a student-managed portfolio of over $1M",
+            "leadingVerb": "Researched",
+            "verbClass": "contribution",
+            "objectPhrase": "equity investment recommendations",
+            "objectHeadNoun": "recommendations",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "$1M"
+            ],
+            "grounding_span": "Researched and presented equity investment recommendations to a student-managed portfolio of over $1M"
+          },
+          {
+            "text": "Tracked portfolio performance and prepared holdings and performance summaries for fund meetings",
+            "leadingVerb": "Tracked",
+            "verbClass": "contribution",
+            "objectPhrase": "portfolio performance",
+            "objectHeadNoun": "performance",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Tracked portfolio performance and prepared holdings and performance summaries for fund meetings"
+          }
+        ]
+      },
+      {
+        "title": "Treasurer",
+        "company": "Beta Theta Pi, Dartmouth College",
+        "startYear": 2024,
+        "endYear": 2025,
+        "domains": [],
+        "grounding_span": "Treasurer | 2024 to 2025",
+        "bullets": [
+          {
+            "text": "Managed an annual operating budget exceeding $80,000, overseeing cash management, expense tracking, and account reconciliation",
+            "leadingVerb": "Managed",
+            "verbClass": "ownership",
+            "objectPhrase": "annual operating budget",
+            "objectHeadNoun": "budget",
+            "scope": "function",
+            "tools": [],
+            "metrics": [
+              "$80,000"
+            ],
+            "grounding_span": "Managed an annual operating budget exceeding $80,000, overseeing cash management, expense tracking, and account reconciliation"
+          },
+          {
+            "text": "Processed payments and reimbursements with detailed recordkeeping and on-time financial reporting to membership and national organization",
+            "leadingVerb": "Processed",
+            "verbClass": "contribution",
+            "objectPhrase": "payments and reimbursements",
+            "objectHeadNoun": "payments",
+            "scope": "task",
+            "tools": [],
+            "metrics": [],
+            "grounding_span": "Processed payments and reimbursements with detailed recordkeeping and on-time financial reporting to membership and national organization"
+          },
+          {
+            "text": "Coordinated event budgeting and vendor payments for a 60-member chapter in a fast-paced environment",
+            "leadingVerb": "Coordinated",
+            "verbClass": "contribution",
+            "objectPhrase": "event budgeting and vendor payments",
+            "objectHeadNoun": "budgeting",
+            "scope": "task",
+            "tools": [],
+            "metrics": [
+              "60-member"
+            ],
+            "grounding_span": "Coordinated event budgeting and vendor payments for a 60-member chapter in a fast-paced environment"
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "name": "Financial analysis",
+        "location": "experience",
+        "grounding_span": "Financial analysis"
+      },
+      {
+        "name": "Performance reporting",
+        "location": "experience",
+        "grounding_span": "Performance reporting (IRR, MOIC, TWR)"
+      },
+      {
+        "name": "Portfolio reconciliation",
+        "location": "experience",
+        "grounding_span": "Portfolio reconciliation"
+      },
+      {
+        "name": "PowerPoint",
+        "location": "experience",
+        "grounding_span": "PowerPoint"
+      },
+      {
+        "name": "Investment research",
+        "location": "experience",
+        "grounding_span": "Investment research"
+      },
+      {
+        "name": "Financial documentation",
+        "location": "experience",
+        "grounding_span": "Financial documentation"
+      }
+    ],
+    "skillsSpan": "Financial analysis | Performance reporting (IRR, MOIC, TWR) | Portfolio reconciliation | Advanced Microsoft Excel (financial modeling, pivot tables, VLOOKUP) | PowerPoint | Investment research | Financial documentation",
+    "credentials": {
+      "degree": {
+        "value": "Bachelor of Arts in Economics, Minor in Mathematics",
+        "grounding_span": "Bachelor of Arts in Economics, Minor in Mathematics"
+      }
+    },
+    "managementBullets": [
+      {
+        "grounding_span": "Managed an annual operating budget exceeding $80,000, overseeing cash management, expense tracking, and account reconciliation",
+        "peopleNoun": null
+      }
+    ]
   }
 }
