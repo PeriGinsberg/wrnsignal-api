@@ -25,6 +25,7 @@ import { extractVerbEvidence } from "../jobfit/verbEvidence"
 import { detectOwnershipVerbMismatch } from "../jobfit/verbMismatch"
 import { detectPresenceRisks, detectSemanticRisks, bumpSeniorityIfExtreme } from "../jobfit/riskDetectors"
 import { resolveResumeEvidence, type ResumeExtractCache } from "../jobfit/llmResumeExtractor"
+import { isDevEnvironment } from "../../../lib/devOnly"
 import type {
   EvalOutput,
   StructuredProfileSignals,
@@ -46,6 +47,36 @@ console.log("[jobfitEvaluator] loaded:", JOBFIT_EVAL_WRAPPER_STAMP)
 // (warm-instance reuse on Fluid Compute, repopulated on cold start). No durable
 // backing yet; see commit follow-up note (Supabase-backed ExtractionCache).
 const EXTRACTION_CACHE: ExtractionCache = {}
+
+// Warm-instance résumé-extraction cache for the non-prod detector path (mirrors
+// EXTRACTION_CACHE / the semantic layer's cache; repopulated on cold start).
+const RESUME_EXTRACT_CACHE: ResumeExtractCache = {}
+
+// Non-prod opt-in for the defect #1–#3 detectors + the LLM résumé extractor.
+// Returns the runJobFit flags ONLY when BOTH guards pass:
+//   • JOBFIT_DETECTORS === "on" — explicit opt-in (lets you A/B detectors off/on),
+//     mirrors the JOBFIT_LLM_EXTRACTION pattern.
+//   • isDevEnvironment() — keyed to the dev Supabase ref (lib/devOnly.ts). In prod
+//     — and on Vercel preview, which uses prod Supabase env — this is FALSE, so
+//     even JOBFIT_DETECTORS=on cannot enable detectors against prod. Failsafe:
+//     the guard tracks the DB the app points at, not VERCEL_ENV.
+// When either guard fails it returns {}, so the runJobFit call is byte-identical
+// to today's prod behavior (regex fail-open, no live LLM call, no ledger/risks).
+// allowLive:true because real user inputs won't be in any frozen cache.
+export function nonProdDetectorFlags(): {
+  applyGateLedger?: boolean
+  applyVerbMismatchRisk?: boolean
+  applyRiskDetectors?: boolean
+  resumeExtractor?: { cache: ResumeExtractCache; allowLive: boolean }
+} {
+  if (process.env.JOBFIT_DETECTORS !== "on" || !isDevEnvironment()) return {}
+  return {
+    applyGateLedger: true,
+    applyVerbMismatchRisk: true,
+    applyRiskDetectors: true,
+    resumeExtractor: { cache: RESUME_EXTRACT_CACHE, allowLive: true },
+  }
+}
 
 function iconForDecision(decision: Decision) {
   if (decision === "Priority Apply") return "🔥"

@@ -36,7 +36,7 @@
 import crypto from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { runJobFit } from "./jobfitEvaluator"
+import { runJobFit, nonProdDetectorFlags } from "./jobfitEvaluator"
 import { mapClientProfileToOverrides } from "./jobfitProfileAdapter"
 import { enforceClientFacingRules } from "../jobfit/enforceClientFacingRules"
 import type { StructuredProfileSignals } from "../jobfit/signals"
@@ -348,6 +348,10 @@ export async function runJobFitForProfile(params: {
     profileOverrides: assembled.profileOverrides,
     userJobTitle: jobTitle || undefined,
     userCompanyName: companyName || undefined,
+    // Defect #1–#3 detectors + LLM résumé extractor — ON only in the dev
+    // environment with JOBFIT_DETECTORS=on (see nonProdDetectorFlags). Prod
+    // gets {} → byte-identical to today.
+    ...nonProdDetectorFlags(),
     // These extra fields are cast-through to match /api/jobfit's historical
     // call shape. runJobFit's actual signature ignores them, but some
     // downstream debug telemetry may read them off `args` via `as any`.
