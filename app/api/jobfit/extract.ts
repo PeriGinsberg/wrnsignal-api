@@ -3916,8 +3916,29 @@ export function extractJobSignals(
   // direction. (Decision: ship full keyword set, 2026-06.)
   const SENIOR_ROLE_RX =
     /\b(senior|lead|manager|director|vp|vice president|head of|principal|associate director|associate manager)\b/i
+  // Entry-level override: an EXPLICIT junior / low-YOE signal DEFEATS a senior
+  // keyword match, so a stray "Senior Manager" in a JD blurb doesn't flag a role
+  // the posting itself calls entry-level ("0-2 years, recent grads welcome").
+  // The yearsRequired-based RISK_EXPERIENCE path (scoring.ts) is independent, so
+  // a "5+ years" role still gates regardless of this keyword tag. Only low ranges
+  // (0-2/0-3/1-2/1-3, up-to-3), never 2-4/5+/8+. See
+  // project_jobfit_seniorrole_entrylevel_falsefire.
+  //
+  // BODY signals (scanned across the whole JD — the low-YOE clause usually sits
+  // in Requirements, past the first 300 chars). UNAMBIGUOUS phrases ONLY —
+  // deliberately EXCLUDES bare "junior"/"intern", which match "manages junior
+  // staff" / "intern program" in SENIOR JDs (the role describing people it
+  // oversees, not its own level — the real-corpus false-negative). "junior-level"
+  // is unambiguous and kept.
+  const JUNIOR_BODY_RX =
+    /\b(?:recent|new)\s+grad(?:uate)?s?\b|\bentry[-\s]?level\b|\bearly[-\s]?career\b|\bjunior[-\s]level\b|\bno\s+(?:prior\s+)?experience\s+(?:required|necessary|needed)\b|\b[01]\s*(?:[-–—]|to)\s*[123]\+?\s*years?\b|\bup\s+to\s+(?:one|two|three|[123])\s+years?\b/i
+  // TITLE signals — bare "junior"/"jr"/"intern" ARE unambiguous in a TITLE (a job
+  // title never says "manages junior staff"), so allow them here in addition.
+  const JUNIOR_TITLE_RX =
+    /\b(?:junior|jr\.?|intern(?:ship)?)\b|\b(?:recent|new)\s+grad(?:uate)?s?\b|\bentry[-\s]?level\b|\bearly[-\s]?career\b|\bno\s+(?:prior\s+)?experience\s+(?:required|necessary|needed)\b|\b[01]\s*(?:[-–—]|to)\s*[123]\+?\s*years?\b|\bup\s+to\s+(?:one|two|three|[123])\s+years?\b/i
+  const jdIsEntryLevel = JUNIOR_TITLE_RX.test(userTitleNorm) || JUNIOR_BODY_RX.test(normalized)
   const isSeniorRole =
-    SENIOR_ROLE_RX.test(userTitleNorm) || SENIOR_ROLE_RX.test(normalized.slice(0, 300))
+    (SENIOR_ROLE_RX.test(userTitleNorm) || SENIOR_ROLE_RX.test(normalized.slice(0, 300))) && !jdIsEntryLevel
 
   // Inject default finance units when title signals Finance but body extracted nothing finance-related
   if (jobTitleIsFinance) {
