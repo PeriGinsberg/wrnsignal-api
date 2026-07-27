@@ -1883,7 +1883,15 @@ export function filterJobTextToRequirements(raw: string): {
   }
 }
 
-function splitEvidenceLines(text: string): string[] {
+// `jdVerbs` opts INTO present-tense imperative segmentation. Off by default
+// because this splitter serves both sides: the JD unit builder AND the résumé
+// unit builder (see the profile call site). Applying JD verbs to résumé text
+// re-splits long résumé chunks, which changes unit snippets, their content-
+// hash ids, and therefore which CAPABILITY_RULES still see their keywords in a
+// single snippet — measured as 12 prod cases churning and synthetic-0410f
+// silently losing its consumer_insights_research tag. Only the JD path passes
+// this flag; every other caller keeps byte-identical historical behavior.
+function splitEvidenceLines(text: string, opts?: { jdVerbs?: boolean }): string[] {
   const raw = String(text || "")
   if (!raw.trim()) return []
 
@@ -1909,9 +1917,9 @@ function splitEvidenceLines(text: string): string[] {
   const JD_VERBS =
     "Works|Work|Collaborate|Develop|Manage|Provide|Negotiate|Support|Oversee|Maintain|Deliver|Ensure|Coordinate|Execute|Establish|Define|Implement|Assist|Create|Contribute|Facilitate|Identify|Communicate|Engage|Evaluate|Perform|Promote|Respond|Conduct|Analyze|Prepare|Review|Draft|Research"
 
-  const actionSplit = new RegExp(
-    `(?=\\b(?:${RESUME_VERBS})\\b)|(?=\\b(?:${JD_VERBS})\\s+[a-z0-9])`
-  )
+  const actionSplit = opts?.jdVerbs
+    ? new RegExp(`(?=\\b(?:${RESUME_VERBS})\\b)|(?=\\b(?:${JD_VERBS})\\s+[a-z0-9])`)
+    : new RegExp(`(?=\\b(?:${RESUME_VERBS})\\b)`)
 
   const chunks = raw
     .split(/\r?\n+/)
@@ -3758,7 +3766,9 @@ export function extractJobSignals(
     console.log(`[extract] Section filter dropped: ${Array.from(droppedKinds).join(", ")}`)
   }
 
-  const lines = splitEvidenceLines(filteredJobText)
+  // JD side: opt into present-tense imperative segmentation so a run-on
+  // posting still yields per-requirement evidence lines (DEF-005).
+  const lines = splitEvidenceLines(filteredJobText, { jdVerbs: true })
   const built = buildUnitsFromLines(lines, "job")
 
   const fallback = built.jobUnits.length === 0 ? buildFallbackJobUnits(lines) : { units: [], functionTags: [], hits: {} }
