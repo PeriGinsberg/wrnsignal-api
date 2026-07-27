@@ -311,6 +311,8 @@ function dedupeByMatch(items: WhyEvidenceMatch[]): WhyEvidenceMatch[] {
   return out
 }
 
+const SEVERITY_RANK: Record<string, number> = { low: 0, medium: 1, high: 2 }
+
 function dedupeRiskCodes(risks: RiskCode[]): RiskCode[] {
   const seen = new Set<string>()
   const out: RiskCode[] = []
@@ -332,9 +334,22 @@ function dedupeRiskCodes(risks: RiskCode[]): RiskCode[] {
       risk.code === "RISK_MISSING_PROOF"
         ? `${risk.code}|${risk.job_fact}`
         : `${risk.code}|${risk.job_fact}|${risk.profile_fact || ""}|${risk.risk}`
-    if (seen.has(key)) continue
+    if (seen.has(key)) {
+      // The two emitters can assign DIFFERENT severities to the same
+      // capability — buildMajorGapRisks from requiredness, the penalty loop
+      // from capabilitySeverity(). Collapsing must not silently downgrade the
+      // gap: merge to the highest severity either path assigned, while
+      // keeping the first (weight-bearing) copy so the score stays explained.
+      if (risk.code === "RISK_MISSING_PROOF") {
+        const kept = out.find((r) => `${r.code}|${r.job_fact}` === key)
+        if (kept && SEVERITY_RANK[risk.severity] > SEVERITY_RANK[kept.severity]) {
+          kept.severity = risk.severity
+        }
+      }
+      continue
+    }
     seen.add(key)
-    out.push(risk)
+    out.push({ ...risk })
   }
 
   return out
