@@ -273,6 +273,21 @@ function jobFactFromUnit(unit: JobRequirementUnit): string {
     .replace(/^to\s+/i, "")
     .trim()
 
+  // Length is a FORMATTING property of the posting, not a statement about
+  // evidence quality — so an over-long snippet must never cost the candidate
+  // the match. selectWhyMatches rejects any job_fact over 700 chars
+  // (badJobFact), and when a badly-segmented JD gives every requirement_unit
+  // the same mega-snippet that rejection zeroes the entire WHY set, which the
+  // evidence guardrail then converts into an automatic Pass. Truncating here
+  // keeps the match alive with a readable fact instead. Threshold is pinned to
+  // badJobFact's ceiling so this is a no-op for every fact that already
+  // passes — only previously-discarded ones change.
+  if (text.length > 700) {
+    const cut = text.slice(0, 690)
+    const lastSpace = cut.lastIndexOf(" ")
+    text = (lastSpace > 400 ? cut.slice(0, lastSpace) : cut).trim() + "…"
+  }
+
   return text || unit.label
 }
 

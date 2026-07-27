@@ -1887,8 +1887,31 @@ function splitEvidenceLines(text: string): string[] {
   const raw = String(text || "")
   if (!raw.trim()) return []
 
-  const actionSplit =
-    /(?=\b(Conducted|Reviewed|Drafted|Prepared|Presented|Analyzed|Researched|Coordinated|Supported|Executed|Created|Developed|Managed|Led|Produced|Tracked|Wrote|Collaborated|Applied|Organized|Observed|Supervised|Empower|Teach|Demonstrate|Build)\b)/
+  // Résumé-style past-tense openers. Unconstrained (historical behavior).
+  const RESUME_VERBS =
+    "Conducted|Reviewed|Drafted|Prepared|Presented|Analyzed|Researched|Coordinated|Supported|Executed|Created|Developed|Managed|Led|Produced|Tracked|Wrote|Collaborated|Applied|Organized|Observed|Supervised|Empower|Teach|Demonstrate|Build"
+
+  // JD-style present-tense imperative openers. A job posting writes "Develop
+  // and execute event plans", never "Developed", so the résumé list above
+  // cannot segment a responsibilities block. When a JD arrives as one
+  // paragraph (newlines stripped in transport) and its bullets carry no
+  // terminal punctuation, the sentence splitter above is also a no-op — the
+  // whole block survives as a single ~1900-char evidence line, every
+  // requirement_unit inherits it as its snippet, and selectWhyMatches then
+  // discards every match on badJobFact's length ceiling. Net effect was a
+  // formatting-triggered Pass: same JD scored Apply/89 with newlines and
+  // Pass/55 without. See tests/jobfit-regression/retest-nodal-runon.ts.
+  //
+  // Constrained by a following lowercase word/digit so noun uses of the same
+  // token do not false-split: "Develop and execute" splits, "Design Team" and
+  // "Customer Support Manager" do not. Kept as a SEPARATE alternation so the
+  // résumé list keeps its exact historical matching behavior.
+  const JD_VERBS =
+    "Works|Work|Collaborate|Develop|Manage|Provide|Negotiate|Support|Oversee|Maintain|Deliver|Ensure|Coordinate|Execute|Establish|Define|Implement|Assist|Create|Contribute|Facilitate|Identify|Communicate|Engage|Evaluate|Perform|Promote|Respond|Conduct|Analyze|Prepare|Review|Draft|Research"
+
+  const actionSplit = new RegExp(
+    `(?=\\b(?:${RESUME_VERBS})\\b)|(?=\\b(?:${JD_VERBS})\\s+[a-z0-9])`
+  )
 
   const chunks = raw
     .split(/\r?\n+/)
