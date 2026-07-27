@@ -1851,11 +1851,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -3491,11 +3486,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -5282,11 +5272,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.78
       },
       {
@@ -7023,8 +7008,8 @@
     "schema_version": 2,
     "id": "batch-40926m",
     "label": "40926m — Josselyn Chavez / Growth Strategy Director",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -7370,11 +7355,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": -3.6399999999999997
       }
@@ -7506,7 +7486,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -7515,7 +7495,7 @@
         }
       ],
       "raw_score": 83,
-      "clamped_score": 55
+      "clamped_score": 74
     }
   },
   "batch-40926n": {
@@ -8839,11 +8819,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -14185,11 +14160,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.78
       },
       {
@@ -16024,7 +15994,7 @@
     "id": "synthetic-0410aa",
     "label": "[synthetic] 0410aa — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 25,
+    "score": 35,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -16417,7 +16387,7 @@
         }
       ],
       "raw_score": 35,
-      "clamped_score": 25
+      "clamped_score": 35
     }
   },
   "synthetic-0410ab": {
@@ -22524,7 +22494,7 @@
     "id": "synthetic-0410ak",
     "label": "[synthetic] 0410ak — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 25,
+    "score": 39,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -22856,11 +22826,6 @@
         "weight": -8.399999999999999
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
@@ -22994,7 +22959,7 @@
         }
       ],
       "raw_score": 39,
-      "clamped_score": 25
+      "clamped_score": 39
     }
   },
   "synthetic-0410al": {
@@ -24990,11 +24955,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       }
@@ -26807,11 +26767,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -28134,11 +28089,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -29666,7 +29616,7 @@
     "id": "synthetic-0410h",
     "label": "[synthetic] 0410h — Nathan Chen / (no title)",
     "decision": "Pass",
-    "score": 25,
+    "score": 41,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -30196,7 +30146,7 @@
         }
       ],
       "raw_score": 41,
-      "clamped_score": 25
+      "clamped_score": 41
     }
   },
   "synthetic-0410i": {
@@ -31581,7 +31531,7 @@
     "id": "synthetic-0410l",
     "label": "[synthetic] 0410l — Priya Nair / (no title)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -32491,7 +32441,7 @@
         }
       ],
       "raw_score": 68,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "synthetic-0410m": {
@@ -34971,7 +34921,7 @@
     "id": "synthetic-0410q",
     "label": "[synthetic] 0410q — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 25,
+    "score": 27,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -35326,7 +35276,7 @@
         }
       ],
       "raw_score": 27,
-      "clamped_score": 25
+      "clamped_score": 27
     }
   },
   "synthetic-0410r": {
@@ -36796,11 +36746,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       }
@@ -38219,7 +38164,7 @@
     "id": "synthetic-0410w",
     "label": "[synthetic] 0410w — Jordan Williams / (no title)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -39264,7 +39209,7 @@
         }
       ],
       "raw_score": 55,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "synthetic-0410x": {

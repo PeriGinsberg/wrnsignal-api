@@ -1575,11 +1575,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -4416,16 +4411,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -8031,7 +8016,7 @@
     "id": "prod-04f90305-a550-4e75-abda-68d5a713ca25",
     "label": "prod 04f90305 — Quantitative Investment Engineer @ HarbourVest (2026-05-17)",
     "decision": "Pass",
-    "score": 25,
+    "score": 35,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -8748,7 +8733,7 @@
         }
       ],
       "raw_score": 35,
-      "clamped_score": 25
+      "clamped_score": 35
     }
   },
   "prod-05929d4e-1bfb-4f38-87be-c049f771c064": {
@@ -12354,11 +12339,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -13222,14 +13202,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "0282682eaac61ae6",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 10,
-        "label": "content and channel execution",
-        "requiredness": "core"
-      },
-      {
         "id": "26ff801f888dbe70",
         "key": "operations_execution",
         "kind": "execution",
@@ -13302,7 +13274,15 @@
         "requiredness": "supporting"
       },
       {
-        "id": "9863ac40d6faf7fa",
+        "id": "b7e453480934483e",
+        "key": "content_execution",
+        "kind": "function",
+        "strength": 10,
+        "label": "content and channel execution",
+        "requiredness": "core"
+      },
+      {
+        "id": "bd03fddbf9299226",
         "key": "analysis_reporting",
         "kind": "execution",
         "strength": 10,
@@ -15240,7 +15220,7 @@
     "id": "prod-0a6b50db-ecc4-48b4-96c1-c546913964fc",
     "label": "prod 0a6b50db — Jr. IT Administrator @ Dew Wealth Management (2026-06-13)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -15573,22 +15553,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -8.399999999999999
       }
     ],
     "scalars": {
@@ -15613,7 +15583,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "IT_Software",
@@ -15720,7 +15690,7 @@
         }
       ],
       "raw_score": 66,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-0a7c6a0f-c7bc-4bec-b134-3622bc52e83d": {
@@ -16672,11 +16642,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -16957,11 +16922,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -19348,11 +19308,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -20056,11 +20011,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -22273,11 +22223,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -22300,7 +22245,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
@@ -22908,11 +22853,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -25919,11 +25859,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -29020,11 +28955,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -29679,7 +29609,7 @@
     "id": "prod-13c23a00-9c29-4478-9aed-950469f250a2",
     "label": "prod 13c23a00 — Summer Analyst, Product, Business Strategy & Operations @ Genesys (2026-05-04)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -30178,7 +30108,7 @@
         }
       ],
       "raw_score": 92,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-13d65f56-fbad-4ab5-9d4b-46f10dfa2adb": {
@@ -30345,7 +30275,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
@@ -30858,11 +30788,6 @@
         "weight": -7.800000000000001
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -31008,7 +30933,7 @@
     "id": "prod-16d335dd-6053-44d7-a1e1-de2cc2777d3c",
     "label": "prod 16d335dd — 12-Month Corporate Brand Intern @ L'Oréal USA (2026-06-18)",
     "decision": "Review",
-    "score": 71,
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -31514,11 +31439,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -31559,7 +31479,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
@@ -31653,12 +31573,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -31667,12 +31587,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 89,
+      "clamped_score": 74
     }
   },
   "prod-17d94eea-e517-4322-812d-827dec8dc9d7": {
@@ -32503,11 +32423,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -35261,8 +35176,8 @@
     "schema_version": 2,
     "id": "prod-1b317427-0288-41dc-bb40-2895efa9694b",
     "label": "prod 1b317427 — Leasing Intern / Summer Associate @ Freestone Property Group (2026-05-03)",
-    "decision": "Pass",
-    "score": 44,
+    "decision": "Review",
+    "score": 62,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -35731,11 +35646,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -35762,7 +35672,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Analytics",
@@ -35846,26 +35756,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 44,
-      "clamped_score": 44
+      "raw_score": 62,
+      "clamped_score": 62
     }
   },
   "prod-1d40a73e-a4c3-45da-b783-2f9c3548c620": {
@@ -39726,7 +39636,7 @@
     "id": "prod-1f6b7ce2-d900-4809-9711-10b2f357bab1",
     "label": "prod 1f6b7ce2 — Video Design Intern @ FIRST (2026-04-14)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -40487,7 +40397,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-1fabb15b-4fd3-47f8-b841-99e4008c59ea": {
@@ -45246,8 +45156,8 @@
     "schema_version": 2,
     "id": "prod-224d94b0-8d12-4db9-a54c-e997c2b62d39",
     "label": "prod 224d94b0 — Facilities and Field Services (FFS) Real Estate Analyst @ O&R and CECONY (2026-06-09)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -45614,11 +45524,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -45748,7 +45653,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -45757,7 +45662,7 @@
         }
       ],
       "raw_score": 85,
-      "clamped_score": 74
+      "clamped_score": 85
     }
   },
   "prod-22f9b04c-d508-421c-a2c5-80280eb31cb8": {
@@ -51629,11 +51534,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -52418,11 +52318,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -53652,11 +53547,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -53799,7 +53689,7 @@
     "id": "prod-28f3a1a9-c15b-437d-a0b8-5e6d0737cbf3",
     "label": "prod 28f3a1a9 — Public Relations @ Skadden (2026-04-11)",
     "decision": "Pass",
-    "score": 25,
+    "score": 54,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -54246,11 +54136,6 @@
         "weight": -8.399999999999999
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
@@ -54385,7 +54270,7 @@
         }
       ],
       "raw_score": 54,
-      "clamped_score": 25
+      "clamped_score": 54
     }
   },
   "prod-294bdaa1-7036-4d78-9335-edf1c7e6733b": {
@@ -58789,11 +58674,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -59689,11 +59569,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -60672,8 +60547,8 @@
     "schema_version": 2,
     "id": "prod-2e80fb67-8754-4d7a-9710-8055f94f1fc7",
     "label": "prod 2e80fb67 — Wealth Management Client Service Associate @ Jefferies (2026-05-28)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 78,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -60959,11 +60834,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -61091,7 +60961,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -61100,7 +60970,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 74
+      "clamped_score": 78
     }
   },
   "prod-2fade48a-ae63-4ba3-88ec-3055c18ee944": {
@@ -61108,7 +60978,7 @@
     "id": "prod-2fade48a-ae63-4ba3-88ec-3055c18ee944",
     "label": "prod 2fade48a — Director of Partnership Strategy @ Brooklyn Sports & Entertainment (2026-04-25)",
     "decision": "Pass",
-    "score": 25,
+    "score": 52,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -61790,7 +61660,7 @@
         }
       ],
       "raw_score": 52,
-      "clamped_score": 25
+      "clamped_score": 52
     }
   },
   "prod-2fb3325b-1f7a-4159-ae2d-31bf76760aad": {
@@ -62070,11 +61940,6 @@
         "weight": -7.800000000000001
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
@@ -62220,7 +62085,7 @@
     "id": "prod-2fb654cc-bcfb-4423-bb68-c8b9995bc303",
     "label": "prod 2fb654cc — Event Partnership Specialist @ SportsRecruits (2026-04-30)",
     "decision": "Pass",
-    "score": 35,
+    "score": 53,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -62542,11 +62407,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -62577,7 +62437,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
@@ -62665,12 +62525,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 35,
-      "clamped_score": 35
+      "raw_score": 53,
+      "clamped_score": 53
     }
   },
   "prod-2ff17995-40f1-4798-bef3-afd351bf62e2": {
@@ -65846,7 +65706,7 @@
     "id": "prod-3142ce30-8828-4f1f-bb02-f4fa04191cdf",
     "label": "prod 3142ce30 — Digital Communications Specialist @ HiringCafe: Job Search Engine (2026-05-28)",
     "decision": "Review",
-    "score": 60,
+    "score": 66,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -65867,19 +65727,19 @@
         "requiredness": "supporting"
       },
       {
-        "id": "63b2f47c76e3c29f",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 10,
-        "label": "content and channel execution",
-        "requiredness": "core"
-      },
-      {
         "id": "794672cd82b30318",
         "key": "policy_regulatory_research",
         "kind": "function",
         "strength": 5,
         "label": "legal, policy, and regulatory research",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "7e2f022d980fc4da",
+        "key": "content_execution",
+        "kind": "function",
+        "strength": 5,
+        "label": "content and channel execution",
         "requiredness": "supporting"
       }
     ],
@@ -66284,8 +66144,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 60,
+        "weight": 78,
+        "coverageScore": 56,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66293,8 +66153,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
+        "weight": 79,
+        "coverageScore": 57,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66302,8 +66162,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
+        "weight": 79,
+        "coverageScore": 57,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66311,8 +66171,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
+        "weight": 79,
+        "coverageScore": 57,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66320,8 +66180,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
+        "weight": 79,
+        "coverageScore": 57,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66329,8 +66189,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 84,
+        "weight": 98,
+        "coverageScore": 80,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66338,8 +66198,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 108,
-        "coverageScore": 85,
+        "weight": 99,
+        "coverageScore": 81,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66347,8 +66207,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 108,
-        "coverageScore": 85,
+        "weight": 99,
+        "coverageScore": 81,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66356,8 +66216,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 108,
-        "coverageScore": 85,
+        "weight": 99,
+        "coverageScore": 81,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66365,8 +66225,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
+        "weight": 79,
+        "coverageScore": 57,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -66514,6 +66374,12 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 98,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
@@ -66655,8 +66521,8 @@
           "note": "7"
         }
       ],
-      "raw_score": 60,
-      "clamped_score": 60
+      "raw_score": 66,
+      "clamped_score": 66
     }
   },
   "prod-3148a834-ca0d-478c-83fb-5a997f0e77f1": {
@@ -66824,11 +66690,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -70990,11 +70851,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -71990,11 +71846,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -72780,7 +72631,7 @@
     "id": "prod-37168237-4e5b-4442-b0eb-b1bbcf23414a",
     "label": "prod 37168237 — Associate Data Scientist @ Xcel Energy (2026-05-04)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -73037,7 +72888,7 @@
         }
       ],
       "raw_score": 73,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-37250bd0-c65f-4fc6-af5e-56eb4e675401": {
@@ -75164,11 +75015,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -77101,11 +76947,11 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "23a620e0f7a5e378",
-        "key": "brand_messaging",
-        "kind": "function",
-        "strength": 5,
-        "label": "brand messaging and campaign work",
+        "id": "2a383d46dcd9d662",
+        "key": "stakeholder_coordination",
+        "kind": "stakeholder",
+        "strength": 4,
+        "label": "stakeholder coordination and cross-functional execution",
         "requiredness": "core"
       },
       {
@@ -77117,20 +76963,20 @@
         "requiredness": "core"
       },
       {
-        "id": "7e20c1cef3e472ec",
-        "key": "stakeholder_coordination",
-        "kind": "stakeholder",
-        "strength": 4,
-        "label": "stakeholder coordination and cross-functional execution",
-        "requiredness": "core"
-      },
-      {
         "id": "80bda489ec738d30",
         "key": "coaching_instruction_facilitation",
         "kind": "deliverable",
         "strength": 6,
         "label": "coaching, instruction, and fundamentals-based facilitation",
         "requiredness": "supporting"
+      },
+      {
+        "id": "83e0de734ebd434c",
+        "key": "brand_messaging",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand messaging and campaign work",
+        "requiredness": "core"
       },
       {
         "id": "9b78016b858f2a7c",
@@ -78040,11 +77886,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -78443,11 +78284,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -80269,11 +80105,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
       }
     ],
@@ -82325,11 +82156,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -82464,8 +82290,8 @@
     "schema_version": 2,
     "id": "prod-3b823334-eaf4-4af3-85ff-8f4ede83efb9",
     "label": "prod 3b823334 — Corporate Development Intern @ Loenbro, LLC (2026-05-04)",
-    "decision": "Pass",
-    "score": 50,
+    "decision": "Review",
+    "score": 68,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -82985,11 +82811,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -83003,11 +82824,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -83044,7 +82860,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": true,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
@@ -83127,26 +82943,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -36,
-          "note": "35.519999999999996"
+          "points": -18,
+          "note": "17.8"
         }
       ],
-      "raw_score": 50,
-      "clamped_score": 50
+      "raw_score": 68,
+      "clamped_score": 68
     }
   },
   "prod-3beecbb7-d148-4edd-b0ac-e01dc1f8aa7f": {
@@ -83277,11 +83093,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -83709,7 +83520,7 @@
     "id": "prod-3d486b05-1dd2-4b49-9d17-221445223544",
     "label": "prod 3d486b05 — Machine Learning Engineer (or Intern) @ memQ (2026-05-27)",
     "decision": "Pass",
-    "score": 25,
+    "score": 37,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -83935,7 +83746,7 @@
         }
       ],
       "raw_score": 37,
-      "clamped_score": 25
+      "clamped_score": 37
     }
   },
   "prod-3d55c0b0-41a5-4e92-824c-2f08a36dd8f6": {
@@ -83943,7 +83754,7 @@
     "id": "prod-3d55c0b0-41a5-4e92-824c-2f08a36dd8f6",
     "label": "prod 3d55c0b0 — CT Systems Scientist @ GE HealthCare (2026-05-06)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -84245,7 +84056,7 @@
         }
       ],
       "raw_score": 58,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-3da90911-68ac-4a89-8d65-1f76a59a1d3a": {
@@ -84402,11 +84213,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -84568,11 +84374,11 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "23a620e0f7a5e378",
-        "key": "brand_messaging",
-        "kind": "function",
-        "strength": 5,
-        "label": "brand messaging and campaign work",
+        "id": "2a383d46dcd9d662",
+        "key": "stakeholder_coordination",
+        "kind": "stakeholder",
+        "strength": 4,
+        "label": "stakeholder coordination and cross-functional execution",
         "requiredness": "core"
       },
       {
@@ -84592,11 +84398,11 @@
         "requiredness": "core"
       },
       {
-        "id": "7e20c1cef3e472ec",
-        "key": "stakeholder_coordination",
-        "kind": "stakeholder",
-        "strength": 4,
-        "label": "stakeholder coordination and cross-functional execution",
+        "id": "83e0de734ebd434c",
+        "key": "brand_messaging",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand messaging and campaign work",
         "requiredness": "core"
       },
       {
@@ -85516,11 +85322,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -87560,11 +87361,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -89984,11 +89780,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -93713,7 +93504,7 @@
     "id": "prod-43e09d74-743f-4102-8965-3ad5c5308747",
     "label": "prod 43e09d74 — Public Realm Designer, OLS @ New York City (2026-04-17)",
     "decision": "Pass",
-    "score": 25,
+    "score": 35,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -94264,11 +94055,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -94402,7 +94188,7 @@
         }
       ],
       "raw_score": 35,
-      "clamped_score": 25
+      "clamped_score": 35
     }
   },
   "prod-443ea22f-d41f-42f5-b5fd-50a39d780835": {
@@ -94795,8 +94581,8 @@
     "schema_version": 2,
     "id": "prod-44491cdf-4cc3-4ac4-90ac-3778e7bb2d4a",
     "label": "prod 44491cdf — External Communications Coordinator @ Macy's (2026-05-28)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 87,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -95609,11 +95395,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -95732,7 +95513,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -95741,7 +95522,7 @@
         }
       ],
       "raw_score": 87,
-      "clamped_score": 74
+      "clamped_score": 87
     }
   },
   "prod-454bb990-3850-4047-b836-116bb6d49f6e": {
@@ -95749,7 +95530,7 @@
     "id": "prod-454bb990-3850-4047-b836-116bb6d49f6e",
     "label": "prod 454bb990 — Summer 2026 Internship – Creator Management (Digital Marketing/Social Media and Influencer Marketing) @ rag & bone (2026-04-28)",
     "decision": "Review",
-    "score": 61,
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -96032,11 +95813,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -96064,7 +95840,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
@@ -96141,12 +95917,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -96155,12 +95931,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 61,
-      "clamped_score": 61
+      "raw_score": 79,
+      "clamped_score": 74
     }
   },
   "prod-45e9f82f-d9a6-40fd-9a17-b18906b602c2": {
@@ -96327,11 +96103,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       },
       {
@@ -100221,11 +99992,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -100362,7 +100128,7 @@
     "id": "prod-483a3e7b-6f15-4d79-b412-4e97a95665b0",
     "label": "prod 483a3e7b — Energy and Sustainability Intern @ Ameresco (2026-04-22)",
     "decision": "Pass",
-    "score": 25,
+    "score": 39,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -100653,7 +100419,7 @@
         }
       ],
       "raw_score": 39,
-      "clamped_score": 25
+      "clamped_score": 39
     }
   },
   "prod-48846fff-f06f-4556-b057-1a323c882d49": {
@@ -108463,11 +108229,6 @@
         "weight": -8.399999999999999
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
@@ -109552,11 +109313,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -110834,11 +110590,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -112538,11 +112289,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -113041,11 +112787,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -114073,11 +113814,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -114848,8 +114584,8 @@
     "schema_version": 2,
     "id": "prod-551ba3de-3c98-42a5-99bd-1e6aec6b9a6a",
     "label": "prod 551ba3de — Business Development Internship @ Tiff Investment Management (2026-04-14)",
-    "decision": "Review",
-    "score": 62,
+    "decision": "Apply",
+    "score": 80,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -115239,11 +114975,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -115286,7 +115017,7 @@
         "isGovernment": false,
         "isHourly": true,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
@@ -115370,26 +115101,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -22,
-          "note": "22"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 62
+      "raw_score": 80,
+      "clamped_score": 80
     }
   },
   "prod-556d81aa-be33-4c0e-852f-7995ca427f26": {
@@ -116063,7 +115794,7 @@
     "id": "prod-55fb7fe1-8e43-4ded-9e0d-d08b04ee1f5e",
     "label": "prod 55fb7fe1 — Junior Marketing Manager @ Court 15 (2026-05-18)",
     "decision": "Review",
-    "score": 71,
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -117178,8 +116909,8 @@
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
+        "severity": "high",
+        "weight": -11
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -117217,7 +116948,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
@@ -117323,12 +117054,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -117337,12 +117068,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26"
+          "points": -19,
+          "note": "19"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 78,
+      "clamped_score": 74
     }
   },
   "prod-561ab7d4-48f7-416d-ac04-e93427e633ce": {
@@ -119995,11 +119726,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -120923,8 +120649,8 @@
     "schema_version": 2,
     "id": "prod-58ce167b-ee39-4341-88d4-ef4410f29312",
     "label": "prod 58ce167b — Summer 2026 - Real Estate Intern @ HUGO BOSS (2026-05-02)",
-    "decision": "Review",
-    "score": 62,
+    "decision": "Apply",
+    "score": 80,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -121596,11 +121322,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -121633,7 +121354,7 @@
         "isGovernment": false,
         "isHourly": true,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
@@ -121721,26 +121442,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -20,
-          "note": "19.6"
+          "points": -2,
+          "note": "1.6"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 62
+      "raw_score": 80,
+      "clamped_score": 80
     }
   },
   "prod-58d30d71-794e-4454-b08f-d2313546d00a": {
@@ -127588,7 +127309,7 @@
     "id": "prod-5cc38a75-e863-4571-8e8c-f4f06ed601e0",
     "label": "prod 5cc38a75 — Integrated Campaign Specialist @ First Due (2026-06-07)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -128567,7 +128288,7 @@
         }
       ],
       "raw_score": 67,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-5ccb400d-40c5-4ca2-ab99-bf84a9e867b7": {
@@ -132048,19 +131769,19 @@
         "requiredness": "core"
       },
       {
-        "id": "c1e58cf3ae0fc003",
-        "key": "client_commercial_work",
-        "kind": "stakeholder",
-        "strength": 10,
-        "label": "generic client-facing or commercial support work",
-        "requiredness": "core"
-      },
-      {
         "id": "c52b620e5e591713",
         "key": "powerpoint",
         "kind": "tool",
         "strength": 5,
         "label": "powerpoint tool usage",
+        "requiredness": "core"
+      },
+      {
+        "id": "ffe554cc72178adc",
+        "key": "client_commercial_work",
+        "kind": "stakeholder",
+        "strength": 10,
+        "label": "generic client-facing or commercial support work",
         "requiredness": "core"
       }
     ],
@@ -133671,7 +133392,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": true,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
@@ -138582,8 +138303,8 @@
     "schema_version": 2,
     "id": "prod-64e26ce9-bec6-4baa-bdc7-645774718953",
     "label": "prod 64e26ce9 — Summer 2026 - Real Estate Intern @ HUGO BOSS (2026-05-02)",
-    "decision": "Review",
-    "score": 62,
+    "decision": "Apply",
+    "score": 80,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -139255,11 +138976,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -139292,7 +139008,7 @@
         "isGovernment": false,
         "isHourly": true,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
@@ -139380,26 +139096,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -20,
-          "note": "19.6"
+          "points": -2,
+          "note": "1.6"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 62
+      "raw_score": 80,
+      "clamped_score": 80
     }
   },
   "prod-6536200a-0799-4de8-ad32-f4866607b11a": {
@@ -139555,11 +139271,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -145397,11 +145108,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -147571,11 +147277,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -149814,11 +149515,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -149954,8 +149650,8 @@
     "schema_version": 2,
     "id": "prod-6ee98be5-cc85-477f-9612-de4103cd1bd6",
     "label": "prod 6ee98be5 — Communications Associate @ Action Against Hunger USA (2026-05-28)",
-    "decision": "Review",
-    "score": 71,
+    "decision": "Apply",
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -150643,19 +150339,9 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -150681,7 +150367,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
@@ -150766,26 +150452,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26.4"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-6ef865a2-da73-45d0-b662-540499dbc69a": {
@@ -151891,22 +151577,17 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -152037,7 +151718,7 @@
     "id": "prod-6f759e55-3a8f-4d0e-95f3-7feb0f0e0d20",
     "label": "prod 6f759e55 — Social Media Content Creator @ PETA (2026-06-14)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -152538,7 +152219,7 @@
         }
       ],
       "raw_score": 57,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-6f8ea846-1722-4469-8c5f-3060859ef295": {
@@ -152838,11 +152519,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -156490,11 +156166,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -157759,11 +157430,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -160570,11 +160236,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -164129,11 +163790,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -164309,18 +163965,18 @@
         "requiredness": "core"
       },
       {
-        "id": "31262466089ae2fd",
+        "id": "165467bd1ee06d4b",
         "key": "analysis_reporting",
         "kind": "execution",
-        "strength": 6,
+        "strength": 4,
         "label": "analysis, reporting, and measurement work",
         "requiredness": "supporting"
       },
       {
-        "id": "79c8cd3d50c6b9b9",
+        "id": "19fc2b228ec58b09",
         "key": "operations_execution",
         "kind": "execution",
-        "strength": 10,
+        "strength": 8,
         "label": "operations, process, and workflow execution",
         "requiredness": "core"
       },
@@ -164387,7 +164043,7 @@
     "matches": [
       {
         "match_strength": "direct",
-        "weight": 97,
+        "weight": 96,
         "coverageScore": 79,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -164396,7 +164052,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 85,
+        "weight": 84,
         "coverageScore": 59,
         "match_kind": "execution",
         "match_key": "operations_execution",
@@ -164407,13 +164063,13 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 97,
+        "weight": 96,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 85,
+        "weight": 84,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
       }
@@ -164427,17 +164083,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
+        "weight": -8.399999999999999
       },
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": -3.9199999999999995
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -164569,11 +164220,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "14.92"
+          "points": -19,
+          "note": "19.4"
         }
       ],
-      "raw_score": 80,
+      "raw_score": 75,
       "clamped_score": 74
     }
   },
@@ -165423,7 +165074,7 @@
     "id": "prod-7bc15d27-fa72-4b68-a137-0b6920bda8d0",
     "label": "prod 7bc15d27 — Coordinator, Digital Marketing and Content @ Make-A-Wish (2026-06-08)",
     "decision": "Apply",
-    "score": 75,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -165831,7 +165482,7 @@
       {
         "code": "RISK_EXPERIENCE",
         "severity": "medium",
-        "weight": -18
+        "weight": -7
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -165863,7 +165514,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": true,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
@@ -165966,12 +165617,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -22,
-          "note": "22"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 75,
-      "clamped_score": 75
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "prod-7be369d0-af7b-427c-b768-1c1f3b930320": {
@@ -166798,11 +166449,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -167064,11 +166710,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -168826,21 +168467,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -168997,7 +168623,7 @@
     "id": "prod-7d0c4cb8-8f38-463c-9cf3-d8b5a3cbf98b",
     "label": "prod 7d0c4cb8 — 12-Month Corporate Brand Intern @ L'Oréal USA (2026-06-05)",
     "decision": "Review",
-    "score": 71,
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -169503,11 +169129,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -169548,7 +169169,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
@@ -169642,12 +169263,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -169656,12 +169277,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 89,
+      "clamped_score": 74
     }
   },
   "prod-7d5149a6-ede9-440e-b5a7-567dbea00dfb": {
@@ -171627,11 +171248,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -176486,11 +176102,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -176784,11 +176395,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -180373,11 +179979,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -181502,11 +181103,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -181772,11 +181368,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -183151,11 +182742,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -184494,7 +184080,7 @@
     "id": "prod-86f8c8c2-cdee-45ac-a667-7a6f6c008c36",
     "label": "prod 86f8c8c2 — Director, Group Sales & Service @ Miami Marlins (2026-05-07)",
     "decision": "Pass",
-    "score": 25,
+    "score": 31,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -185012,7 +184598,7 @@
         }
       ],
       "raw_score": 31,
-      "clamped_score": 25
+      "clamped_score": 31
     }
   },
   "prod-874118f4-5039-4243-b99f-f6e39c6ed298": {
@@ -186707,16 +186293,7 @@
     "score": 55,
     "gateType": "none",
     "traceMissing": false,
-    "requirement_units": [
-      {
-        "id": "483d79b68a186631",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work",
-        "requiredness": "core"
-      }
-    ],
+    "requirement_units": [],
     "profile_evidence_units": [
       {
         "id": "020eb4e4e45bff96",
@@ -186866,82 +186443,14 @@
         "label": "prospecting, outreach, and pipeline management"
       }
     ],
-    "matches": [
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "020eb4e4e45bff96"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "1b46ecdcb73943a5"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 81,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "6554659df2fde04c"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "7e818b416769beb0"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "82ebc4bcf393041e"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "856d00fe3748982d"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "ab37535ffe4dea39"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 82,
-        "match_kind": "function",
-        "match_key": "strategy_problem_solving",
-        "job_unit_key": "strategy_problem_solving",
-        "profile_unit_id": "df70fbee4717c3fd"
-      }
-    ],
+    "matches": [],
     "why_codes": [],
     "risk_codes": [
+      {
+        "code": "RISK_AMBIGUOUS_ROLE",
+        "severity": "low",
+        "weight": 0
+      },
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
@@ -186959,9 +186468,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
-        "function_tags": [
-          "consulting_strategy"
-        ],
+        "function_tags": [],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
@@ -187065,7 +186572,7 @@
           "note": "0"
         }
       ],
-      "raw_score": 88,
+      "raw_score": 86,
       "clamped_score": 55
     }
   },
@@ -188197,7 +187704,7 @@
     "id": "prod-892d5f77-147a-4dbb-9bce-bcc7dfb49107",
     "label": "prod 892d5f77 — Proposal Writer @ Learning Care (2026-06-23)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -188905,11 +188412,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       },
       {
@@ -189060,7 +188562,7 @@
         }
       ],
       "raw_score": 75,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-89d646b8-4c09-4f70-b4d5-205f906fc908": {
@@ -190571,8 +190073,8 @@
     "schema_version": 2,
     "id": "prod-8a834c62-b818-4769-8c1b-b893e7fada26",
     "label": "prod 8a834c62 — Junior Account Executive - Design, Arts & Culture @ PURPLE (2026-05-12)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -190898,11 +190400,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -191029,7 +190526,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -191038,7 +190535,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 55
+      "clamped_score": 74
     }
   },
   "prod-8aeddf5a-8856-4374-9aab-05492130cba4": {
@@ -191059,14 +190556,6 @@
         "requiredness": "core"
       },
       {
-        "id": "6b3b2ed031e53d30",
-        "key": "accounting_operations",
-        "kind": "function",
-        "strength": 10,
-        "label": "accounting and financial operations work",
-        "requiredness": "core"
-      },
-      {
         "id": "7c9a170457d5de39",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -191081,6 +190570,14 @@
         "strength": 6,
         "label": "analysis, reporting, and measurement work",
         "requiredness": "supporting"
+      },
+      {
+        "id": "de6cba341ea689dc",
+        "key": "accounting_operations",
+        "kind": "function",
+        "strength": 10,
+        "label": "accounting and financial operations work",
+        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -192257,11 +191754,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -192632,11 +192124,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -193717,11 +193204,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -195793,11 +195275,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -196883,11 +196360,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -197331,22 +196803,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.78
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -7.800000000000001
       }
     ],
     "scalars": {
@@ -197908,11 +197370,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       },
@@ -198294,7 +197751,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": true,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
@@ -200444,11 +199901,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -201694,8 +201146,8 @@
     "schema_version": 2,
     "id": "prod-92f98db3-42af-4ec2-9d05-fc5ccc77d883",
     "label": "prod 92f98db3 — Account Manager, Partnership Services @ Atlanta National League Baseball Club, LLC (2026-05-26)",
-    "decision": "Pass",
-    "score": 46,
+    "decision": "Review",
+    "score": 66,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -201737,14 +201189,6 @@
         "kind": "stakeholder",
         "strength": 10,
         "label": "customer service, guest experience, and issue resolution",
-        "requiredness": "core"
-      },
-      {
-        "id": "d22d97376e85f2c6",
-        "key": "account_management",
-        "kind": "stakeholder",
-        "strength": 8,
-        "label": "account support and account management",
         "requiredness": "core"
       },
       {
@@ -202020,42 +201464,6 @@
     "matches": [
       {
         "match_strength": "adjacent",
-        "weight": 83,
-        "coverageScore": 60,
-        "match_kind": "stakeholder",
-        "match_key": "account_management",
-        "job_unit_key": "account_management",
-        "profile_unit_id": "078d54aee84382c4"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 83,
-        "coverageScore": 60,
-        "match_kind": "stakeholder",
-        "match_key": "account_management",
-        "job_unit_key": "account_management",
-        "profile_unit_id": "394238136bc3be14"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 61,
-        "match_kind": "stakeholder",
-        "match_key": "account_management",
-        "job_unit_key": "account_management",
-        "profile_unit_id": "64ed1aa6caf9122e"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 82,
-        "coverageScore": 59,
-        "match_kind": "stakeholder",
-        "match_key": "account_management",
-        "job_unit_key": "account_management",
-        "profile_unit_id": "ca1065be08dfc999"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 79,
         "coverageScore": 56,
         "match_kind": "function",
@@ -202262,30 +201670,9 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "operations_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 84,
-        "match_strength": "adjacent",
-        "match_key": "account_management"
       }
     ],
     "risk_codes": [
-      {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": -3.78
-      },
       {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
@@ -202305,8 +201692,7 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -202314,7 +201700,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
@@ -202392,26 +201778,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -30,
-          "note": "29.78"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 46,
-      "clamped_score": 46
+      "raw_score": 66,
+      "clamped_score": 66
     }
   },
   "prod-92fdc6be-7644-432e-8583-20ae0c2d8190": {
@@ -202759,11 +202145,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -205974,11 +205355,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -208009,12 +207385,20 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "58ac0181b6a70e2b",
+        "id": "1accd7a31df99ac1",
+        "key": "analysis_reporting",
+        "kind": "execution",
+        "strength": 4,
+        "label": "analysis, reporting, and measurement work",
+        "requiredness": "core"
+      },
+      {
+        "id": "9350fa96abb6ead5",
         "key": "customer_service_guest_experience",
         "kind": "stakeholder",
         "strength": 6,
         "label": "customer service, guest experience, and issue resolution",
-        "requiredness": "core"
+        "requiredness": "supporting"
       },
       {
         "id": "cb305a20363f78f9",
@@ -208031,14 +207415,6 @@
         "strength": 5,
         "label": "content and channel execution",
         "requiredness": "supporting"
-      },
-      {
-        "id": "fb95ecb74df3fc55",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 6,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -208133,8 +207509,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 101,
-        "coverageScore": 83,
+        "weight": 95,
+        "coverageScore": 79,
         "match_kind": "stakeholder",
         "match_key": "customer_service_guest_experience",
         "job_unit_key": "customer_service_guest_experience",
@@ -208147,23 +207523,19 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 95,
+        "match_strength": "direct",
+        "match_key": "customer_service_guest_experience"
       }
     ],
     "risk_codes": [
       {
-        "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -208794,11 +208166,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -210116,11 +209483,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -210538,7 +209900,7 @@
     "id": "prod-9b0168cf-f5f6-435b-91ef-94b7d268bbcf",
     "label": "prod 9b0168cf — Research Associate, Cell Culture Process Development @ Teva (2026-06-03)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -210816,7 +210178,7 @@
         }
       ],
       "raw_score": 86,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-9b50ff4b-4e98-4a70-b842-9b76e4af0c21": {
@@ -218281,11 +217643,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -219117,11 +218474,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -219812,11 +219164,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -222674,11 +222021,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -224197,8 +223539,8 @@
     "schema_version": 2,
     "id": "prod-a4fb97f0-a552-4552-951c-0b50c7be501e",
     "label": "prod a4fb97f0 — Membership Coordinator @ Volo Sports (2026-04-21)",
-    "decision": "Pass",
-    "score": 46,
+    "decision": "Review",
+    "score": 64,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -224775,11 +224117,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -224806,7 +224143,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
@@ -224880,26 +224217,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 46,
-      "clamped_score": 46
+      "raw_score": 64,
+      "clamped_score": 64
     }
   },
   "prod-a54afee4-5cce-48ec-bc3a-70423bc0de38": {
@@ -225193,8 +224530,8 @@
     "schema_version": 2,
     "id": "prod-a58fe54f-97b7-4a29-bffc-1556609ebfa2",
     "label": "prod a58fe54f — Membership Coordinator @ Volo Sports (2026-05-03)",
-    "decision": "Pass",
-    "score": 46,
+    "decision": "Review",
+    "score": 64,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -225771,11 +225108,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -225802,7 +225134,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
@@ -225876,34 +225208,34 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 46,
-      "clamped_score": 46
+      "raw_score": 64,
+      "clamped_score": 64
     }
   },
   "prod-a6cfc664-1a4b-4af0-ab58-88b3842c41a4": {
     "schema_version": 2,
     "id": "prod-a6cfc664-1a4b-4af0-ab58-88b3842c41a4",
     "label": "prod a6cfc664 — Intern, Corporate Development & Strategy @ ASM Global LLC. (2026-04-14)",
-    "decision": "Review",
-    "score": 69,
+    "decision": "Apply",
+    "score": 87,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -226504,11 +225836,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FINANCIAL_MODELING",
         "severity": "medium",
         "weight": -6
@@ -226553,7 +225880,7 @@
         "isGovernment": false,
         "isHourly": true,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Consulting",
@@ -226637,26 +225964,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -28,
-          "note": "28"
+          "points": -10,
+          "note": "10"
         }
       ],
-      "raw_score": 69,
-      "clamped_score": 69
+      "raw_score": 87,
+      "clamped_score": 87
     }
   },
   "prod-a792fbe0-de71-4760-b255-9de7be6483b0": {
@@ -227510,7 +226837,7 @@
     "id": "prod-a7a19ab1-aa58-4e27-b092-923e06c8a19d",
     "label": "prod a7a19ab1 — Social Media Coordinator @ Indy Ignite - Major League Volleyball (2026-06-01)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -228260,11 +227587,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -228395,7 +227717,7 @@
         }
       ],
       "raw_score": 89,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-a8b4a5f8-4134-410d-90dc-f853730206db": {
@@ -228403,7 +227725,7 @@
     "id": "prod-a8b4a5f8-4134-410d-90dc-f853730206db",
     "label": "prod a8b4a5f8 — Power Generation Engineer @ We Energies (WEC Energy Group) (2026-05-03)",
     "decision": "Pass",
-    "score": 25,
+    "score": 33,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -228513,11 +227835,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -228650,7 +227967,7 @@
         }
       ],
       "raw_score": 33,
-      "clamped_score": 25
+      "clamped_score": 33
     }
   },
   "prod-a8c2dc35-1474-4f82-aed1-c056893f43be": {
@@ -229266,7 +228583,7 @@
     "id": "prod-a99fa295-f412-4425-949e-054a56c33510",
     "label": "prod a99fa295 — Programmatic Media Coordinator @ Razorfish (2026-06-14)",
     "decision": "Review",
-    "score": 62,
+    "score": 73,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -229641,7 +228958,7 @@
       {
         "code": "RISK_EXPERIENCE",
         "severity": "medium",
-        "weight": -18
+        "weight": -7
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -229683,7 +229000,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
@@ -229786,12 +229103,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -22,
-          "note": "22"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 62
+      "raw_score": 73,
+      "clamped_score": 73
     }
   },
   "prod-abd762af-2a75-44d5-99ef-b48117282771": {
@@ -234650,11 +233967,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -234796,11 +234108,11 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "23a620e0f7a5e378",
-        "key": "brand_messaging",
-        "kind": "function",
-        "strength": 5,
-        "label": "brand messaging and campaign work",
+        "id": "2a383d46dcd9d662",
+        "key": "stakeholder_coordination",
+        "kind": "stakeholder",
+        "strength": 4,
+        "label": "stakeholder coordination and cross-functional execution",
         "requiredness": "core"
       },
       {
@@ -234820,11 +234132,11 @@
         "requiredness": "core"
       },
       {
-        "id": "7e20c1cef3e472ec",
-        "key": "stakeholder_coordination",
-        "kind": "stakeholder",
-        "strength": 4,
-        "label": "stakeholder coordination and cross-functional execution",
+        "id": "83e0de734ebd434c",
+        "key": "brand_messaging",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand messaging and campaign work",
         "requiredness": "core"
       },
       {
@@ -236298,16 +235610,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -236704,11 +236006,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -241267,8 +240564,8 @@
     "schema_version": 2,
     "id": "prod-b3e99f67-b91f-4722-ad54-2c9eace0064b",
     "label": "prod b3e99f67 — Consumer Growth Marketing Associate @ Via (2026-06-15)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -241647,22 +240944,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -7.800000000000001
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -241790,7 +241077,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -241799,7 +241086,7 @@
         }
       ],
       "raw_score": 74,
-      "clamped_score": 55
+      "clamped_score": 74
     }
   },
   "prod-b474000b-79e6-4534-906d-c0f1f576aac5": {
@@ -241938,11 +241225,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -245520,7 +244802,7 @@
     "id": "prod-b6a04008-6c11-4d1c-9f21-02da07f38d6d",
     "label": "prod b6a04008 — Engineering Support Specialist - HVAC Systems @ University of Minnesota, Twin Cities (2026-05-07)",
     "decision": "Pass",
-    "score": 25,
+    "score": 38,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -245799,7 +245081,7 @@
         }
       ],
       "raw_score": 38,
-      "clamped_score": 25
+      "clamped_score": 38
     }
   },
   "prod-b6a17f7e-8c5c-4ca1-9633-3fad6503d0ce": {
@@ -246930,11 +246212,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -249367,11 +248644,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -251000,7 +250272,7 @@
     "id": "prod-b73ed5f4-f4f2-4d9b-8997-c33808462095",
     "label": "prod b73ed5f4 — Mergers & Acquisitions Group - New Joiner @ Kroll (2026-04-21)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -251454,7 +250726,7 @@
         }
       ],
       "raw_score": 68,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-b7d3c05f-33b9-4ace-a0d0-85ad2f0288a4": {
@@ -252963,11 +252235,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -255038,11 +254305,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -255849,11 +255111,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -256378,11 +255635,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       },
@@ -256517,7 +255769,7 @@
     "id": "prod-bc49882e-8f0c-4799-ae51-96ceab2044b2",
     "label": "prod bc49882e — RAM Analysis Specialist @ Black & Veatch (2026-04-14)",
     "decision": "Pass",
-    "score": 25,
+    "score": 33,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -256792,7 +256044,7 @@
         }
       ],
       "raw_score": 33,
-      "clamped_score": 25
+      "clamped_score": 33
     }
   },
   "prod-bc62edac-04ce-47f0-8ade-1d369b944cc0": {
@@ -257464,21 +256716,11 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
+        "severity": "high",
         "weight": -3.9199999999999995
       }
     ],
@@ -257745,11 +256987,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -259375,8 +258612,8 @@
     "schema_version": 2,
     "id": "prod-be49b83a-1935-42f9-afaf-6923768af454",
     "label": "prod be49b83a — Digital Content Manager @ Peter Millar (2026-06-01)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 63,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -260590,11 +259827,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -260725,7 +259957,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -260734,7 +259966,7 @@
         }
       ],
       "raw_score": 63,
-      "clamped_score": 55
+      "clamped_score": 63
     }
   },
   "prod-be5cfa27-98a3-4793-ae3a-d7112cfa0570": {
@@ -262221,27 +261453,17 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
+        "severity": "high",
         "weight": -3.78
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -267501,11 +266723,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -270548,11 +269765,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -271782,11 +270994,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -275239,11 +274446,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -275266,7 +274468,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
@@ -276012,16 +275214,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -276519,11 +275711,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -276648,10 +275835,18 @@
     "id": "prod-cd7b5be3-bce7-47ca-8d46-fff1df43c04a",
     "label": "prod cd7b5be3 — Account Executive @ Taylor Strategy (2026-05-11)",
     "decision": "Apply",
-    "score": 79,
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
+      {
+        "id": "13129d54970ddc9a",
+        "key": "brand_messaging",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand messaging and campaign work",
+        "requiredness": "core"
+      },
       {
         "id": "1b206dcefc9a53b0",
         "key": "analysis_reporting",
@@ -276661,11 +275856,11 @@
         "requiredness": "core"
       },
       {
-        "id": "97dfc6ffef95abb6",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
+        "id": "afe0ecee06c82e7c",
+        "key": "content_execution",
+        "kind": "function",
         "strength": 10,
-        "label": "drafting, documentation, and written deliverables",
+        "label": "content and channel execution",
         "requiredness": "core"
       },
       {
@@ -276677,19 +275872,11 @@
         "requiredness": "supporting"
       },
       {
-        "id": "cf35e86dcbf75eff",
-        "key": "content_execution",
-        "kind": "function",
+        "id": "c8e7a8838db1850e",
+        "key": "drafting_documentation",
+        "kind": "deliverable",
         "strength": 10,
-        "label": "content and channel execution",
-        "requiredness": "core"
-      },
-      {
-        "id": "d6ea56ce0941cd4c",
-        "key": "brand_messaging",
-        "kind": "function",
-        "strength": 10,
-        "label": "brand messaging and campaign work",
+        "label": "drafting, documentation, and written deliverables",
         "requiredness": "core"
       }
     ],
@@ -277450,6 +276637,12 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 108,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 105,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
@@ -277465,11 +276658,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -277596,16 +276784,16 @@
           "note": "15.399999999999999"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-cdae93c3-7217-4fac-af36-3e1074492f6a": {
     "schema_version": 2,
     "id": "prod-cdae93c3-7217-4fac-af36-3e1074492f6a",
     "label": "prod cdae93c3 — Advisor Development Program Client Associate @ Merrill Wealth Management (2026-05-22)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -278333,16 +277521,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_SUBFAMILY_MISMATCH",
         "severity": "low",
         "weight": 0
@@ -278472,7 +277650,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -278481,7 +277659,7 @@
         }
       ],
       "raw_score": 74,
-      "clamped_score": 55
+      "clamped_score": 74
     }
   },
   "prod-ce7734e7-f37c-402f-944a-2cb4fd665261": {
@@ -278742,17 +277920,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
+        "weight": -3.9199999999999995
       },
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": -3.9199999999999995
       }
     ],
     "scalars": {
@@ -279560,11 +278733,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -281861,11 +281029,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -284213,11 +283376,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       }
@@ -284808,22 +283966,17 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.78
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -285219,11 +284372,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -286216,11 +285364,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -294542,11 +293685,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -302109,11 +301247,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -302603,11 +301736,6 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       },
@@ -302899,11 +302027,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -303548,11 +302671,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -304929,11 +304047,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -305802,11 +304915,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -307129,11 +306237,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -310625,11 +309728,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -310915,11 +310013,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -313501,7 +312594,7 @@
     "id": "prod-e267227c-81aa-4a64-89d4-a259e3406238",
     "label": "prod e267227c — Wealth Management Advisor @ The LifeWealth Group (2026-05-07)",
     "decision": "Pass",
-    "score": 25,
+    "score": 50,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -313968,7 +313061,7 @@
         }
       ],
       "raw_score": 50,
-      "clamped_score": 25
+      "clamped_score": 50
     }
   },
   "prod-e2df6130-16ac-40e8-8516-246d0f0642aa": {
@@ -317455,27 +316548,17 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
+        "severity": "high",
         "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -319544,11 +318627,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -319979,11 +319057,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -320276,11 +319349,6 @@
         "weight": -8.100000000000001
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
@@ -320441,7 +319509,7 @@
     "id": "prod-e610b7cf-9bdf-478f-83ff-f67cb27e85d1",
     "label": "prod e610b7cf — Recruiter-Talent Acquisition (USA) @ DAMAC Properties (2026-05-26)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -320965,7 +320033,7 @@
         }
       ],
       "raw_score": 58,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-e6eaaa1a-1a83-4591-9bad-5f3a27ccd3b2": {
@@ -321138,16 +320206,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -321591,11 +320649,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
       }
     ],
@@ -322820,7 +321873,7 @@
     "id": "prod-e7fbe128-1ea0-4223-abe9-fe4928b87a61",
     "label": "prod e7fbe128 — Public Relations Specialist @ Geographic Solutions (2026-05-28)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -323718,15 +322771,15 @@
         }
       ],
       "raw_score": 83,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-e851bee9-fa1f-42e1-a6fe-b3ab65add14e": {
     "schema_version": 2,
     "id": "prod-e851bee9-fa1f-42e1-a6fe-b3ab65add14e",
     "label": "prod e851bee9 — Senior Engineer, Customer Service Platform @ Netflix (2026-06-02)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 63,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -324280,11 +323333,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -324423,7 +323471,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -324432,7 +323480,7 @@
         }
       ],
       "raw_score": 63,
-      "clamped_score": 55
+      "clamped_score": 63
     }
   },
   "prod-e9099511-289b-492d-bbaa-fabbf2edbdf3": {
@@ -326077,8 +325125,8 @@
     "schema_version": 2,
     "id": "prod-e9d9f562-060d-4f92-b5b5-927e70604a88",
     "label": "prod e9d9f562 — Brand Marketing Intern @ Tabañero Holdings (2026-05-28)",
-    "decision": "Review",
-    "score": 73,
+    "decision": "Apply",
+    "score": 91,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -326812,11 +325860,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_HOURLY",
         "severity": "medium",
         "weight": -1.6
@@ -326824,11 +325867,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -326856,7 +325894,7 @@
         "isGovernment": false,
         "isHourly": true,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
@@ -326941,26 +325979,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -24,
-          "note": "23.52"
+          "points": -6,
+          "note": "5.52"
         }
       ],
-      "raw_score": 73,
-      "clamped_score": 73
+      "raw_score": 91,
+      "clamped_score": 91
     }
   },
   "prod-ea0de07f-efa8-4879-b7e1-dd2efc9641f7": {
@@ -327577,6 +326615,11 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
+        "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
         "weight": -7.800000000000001
       },
       {
@@ -327588,16 +326631,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": -3.9199999999999995
       }
     ],
     "scalars": {
@@ -328623,7 +327656,7 @@
     "id": "prod-ebe47f8e-aec2-4269-ac69-4741bac87441",
     "label": "prod ebe47f8e — Manager, Events @ Major League Soccer (2026-04-30)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -329507,7 +328540,7 @@
         }
       ],
       "raw_score": 60,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-ec1a6558-e416-465e-ae17-05304a92c4fe": {
@@ -329924,7 +328957,7 @@
     "id": "prod-ec3524e4-02ca-4836-9fd8-0ee5c8969b63",
     "label": "prod ec3524e4 — Assistant Director, Communications @ University of Pittsburgh (2026-05-28)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -330801,7 +329834,7 @@
         }
       ],
       "raw_score": 75,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-ec49ccc8-7151-4304-a391-b96dd91d1451": {
@@ -332462,7 +331495,7 @@
     "id": "prod-ed5e50b0-003e-49e7-9fbb-796b13fe5b5e",
     "label": "prod ed5e50b0 — Associate, Social Media Strategist @ Manhattan Strategies (2026-05-12)",
     "decision": "Apply",
-    "score": 75,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -332855,16 +331888,11 @@
       {
         "code": "RISK_EXPERIENCE",
         "severity": "medium",
-        "weight": -18
+        "weight": -7
       },
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -332892,7 +331920,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
@@ -332991,12 +332019,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -22,
-          "note": "21.919999999999998"
+          "points": -11,
+          "note": "10.92"
         }
       ],
-      "raw_score": 75,
-      "clamped_score": 75
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "prod-eef8edae-4889-4278-ae45-bd7fd6cc35ae": {
@@ -334607,7 +333635,7 @@
     "id": "prod-ef991f0c-b907-44cd-97fd-bc3de2afcd10",
     "label": "prod ef991f0c — Senior Analyst, Logistics & Transportation @ Serena & Lily (2026-05-11)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -335142,7 +334170,7 @@
         }
       ],
       "raw_score": 75,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-f08f2224-4eee-476a-850d-92be2d215b4e": {
@@ -335618,7 +334646,7 @@
     "id": "prod-f192b2de-65fc-41ec-9b32-cc16d4f01122",
     "label": "prod f192b2de — Clinical Engineer (System Admin) @ Johns Hopkins Health System (2026-06-01)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -335913,7 +334941,7 @@
         }
       ],
       "raw_score": 59,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-f19f835f-9b18-4988-a858-1be30ec58f29": {
@@ -336221,11 +335249,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.9199999999999995
       }
     ],
@@ -336369,7 +335392,7 @@
     "id": "prod-f1ee8bb1-0397-4c8b-8af2-e27348667e0b",
     "label": "prod f1ee8bb1 — Social Media Specialist @ Lowes Foods (2026-05-26)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -337212,7 +336235,7 @@
         }
       ],
       "raw_score": 79,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-f2ae3eed-014f-4617-b11c-47cb62959e07": {
@@ -337220,7 +336243,7 @@
     "id": "prod-f2ae3eed-014f-4617-b11c-47cb62959e07",
     "label": "prod f2ae3eed — Senior Battery Energy Storage Engineer @ BlackRock Resources LLC (2026-04-30)",
     "decision": "Pass",
-    "score": 25,
+    "score": 38,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -337319,11 +336342,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -337459,7 +336477,7 @@
         }
       ],
       "raw_score": 38,
-      "clamped_score": 25
+      "clamped_score": 38
     }
   },
   "prod-f2f7c9a8-c38b-4815-b6b0-325ee1dc5d6f": {
@@ -338704,17 +337722,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
+        "weight": -3.6399999999999997
       },
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": -3.6399999999999997
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -339825,11 +338838,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -340784,11 +339792,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -340914,7 +339917,7 @@
     "id": "prod-f4d8f6d0-8dc0-4725-ae78-21d0f8520a05",
     "label": "prod f4d8f6d0 — Research Associate, Cell Culture Process Development @ Teva Pharmaceuticals (2026-06-03)",
     "decision": "Pass",
-    "score": 25,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -341206,7 +340209,7 @@
         }
       ],
       "raw_score": 68,
-      "clamped_score": 25
+      "clamped_score": 55
     }
   },
   "prod-f5ba5cc8-f434-48d2-8e17-53bb44f1534b": {
@@ -341856,11 +340859,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.78
       }
     ],
@@ -342171,11 +341169,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -343850,8 +342843,8 @@
     "schema_version": 2,
     "id": "prod-f87cffb2-6685-4181-ac7f-5772cc5cc58d",
     "label": "prod f87cffb2 — Operations Associate @ ViewTrade Securities (2026-05-11)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Apply",
+    "score": 78,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -344213,16 +343206,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -344347,7 +343330,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -344356,7 +343339,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 55
+      "clamped_score": 78
     }
   },
   "prod-fa105938-04eb-41e5-932e-891d16e16cd1": {
@@ -346732,7 +345715,7 @@
     "id": "prod-fbdbc049-7c77-4345-aebf-8de6ed53e7dd",
     "label": "prod fbdbc049 — Energy and Sustainability Intern @ Ameresco (2026-04-22)",
     "decision": "Pass",
-    "score": 25,
+    "score": 39,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -347023,7 +346006,7 @@
         }
       ],
       "raw_score": 39,
-      "clamped_score": 25
+      "clamped_score": 39
     }
   },
   "prod-fc25fe18-28e5-4126-a86f-d56907a8b9da": {
@@ -349381,11 +348364,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -350121,8 +349099,8 @@
     "schema_version": 2,
     "id": "prod-fe2bfe0e-c9eb-45d2-8aef-9f99affede87",
     "label": "prod fe2bfe0e — Marketing Specialist - Yacht Division @ OneWater Marine (2026-05-27)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -351117,11 +350095,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -351258,7 +350231,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -351267,7 +350240,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 55
+      "clamped_score": 74
     }
   },
   "prod-fe5df953-8a08-43dd-afda-6811393175d0": {
