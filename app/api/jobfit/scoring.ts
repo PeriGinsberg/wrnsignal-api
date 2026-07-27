@@ -316,7 +316,22 @@ function dedupeRiskCodes(risks: RiskCode[]): RiskCode[] {
   const out: RiskCode[] = []
 
   for (const risk of risks) {
-    const key = `${risk.code}|${risk.job_fact}|${risk.profile_fact || ""}|${risk.risk}`
+    // RISK_MISSING_PROOF is emitted from TWO places for the same gap:
+    // buildMajorGapRisks (display, weight 0) and the uncovered-capability
+    // penalty loop (weight-bearing). They word the `risk` sentence
+    // differently, so the full-tuple key below treats them as distinct and
+    // BOTH survive — the user sees one gap twice, and each copy counts
+    // separately toward the high-severity ceilings in applyEvidenceGuardrails,
+    // which is enough to move a verdict a band (prod-7adf78ff, Review→Pass).
+    //
+    // For this code the capability IS the identity; the prose is presentation.
+    // Key on (code, job_fact) so one capability yields one risk. Callers merge
+    // penalty-bearing risks FIRST, so first-wins keeps the copy that carries
+    // the weight and the score stays explained.
+    const key =
+      risk.code === "RISK_MISSING_PROOF"
+        ? `${risk.code}|${risk.job_fact}`
+        : `${risk.code}|${risk.job_fact}|${risk.profile_fact || ""}|${risk.risk}`
     if (seen.has(key)) continue
     seen.add(key)
     out.push(risk)
@@ -1563,10 +1578,21 @@ export function scoreJobFit(
   }
 
   // New engine-level uncovered capability penalties
+  //
+  // One capability = one penalty. This loop is per requirement UNIT, and a
+  // posting that states the same capability on several lines yields several
+  // units sharing a key — all uncovered by the same missing evidence. Without
+  // this guard the candidate is charged for it once per unit. Currently a
+  // no-op on the corpus (no case has two uncovered core units on one key),
+  // but the DEF-005 segmentation fix produces more per-line units, so this is
+  // the invariant that keeps the penalty from scaling with JD formatting.
+  const penalizedKeys = new Set<string>()
   for (const c of coverage) {
     if (c.adequate) continue
   if (c.jobUnit.requiredness !== "core") continue
     if (c.jobUnit.kind === "tool") continue
+    if (penalizedKeys.has(c.jobUnit.key)) continue
+    penalizedKeys.add(c.jobUnit.key)
 
     const key = capabilityPenaltyKey(c.jobUnit.key)
     const amt = computePenaltyAmount(key) * (c.nearMiss ? 0.35 : 0.75)
