@@ -52,24 +52,41 @@ const EXTRACTION_CACHE: ExtractionCache = {}
 // EXTRACTION_CACHE / the semantic layer's cache; repopulated on cold start).
 const RESUME_EXTRACT_CACHE: ResumeExtractCache = {}
 
-// Non-prod opt-in for the defect #1–#3 detectors + the LLM résumé extractor.
-// Returns the runJobFit flags ONLY when BOTH guards pass:
-//   • JOBFIT_DETECTORS === "on" — explicit opt-in (lets you A/B detectors off/on),
-//     mirrors the JOBFIT_LLM_EXTRACTION pattern.
-//   • isDevEnvironment() — keyed to the dev Supabase ref (lib/devOnly.ts). In prod
-//     — and on Vercel preview, which uses prod Supabase env — this is FALSE, so
-//     even JOBFIT_DETECTORS=on cannot enable detectors against prod. Failsafe:
-//     the guard tracks the DB the app points at, not VERCEL_ENV.
-// When either guard fails it returns {}, so the runJobFit call is byte-identical
-// to today's prod behavior (regex fail-open, no live LLM call, no ledger/risks).
+// PER-PATH detector gate for the defect #1–#3 detectors + LLM résumé extractor.
+// Each scoring path ("free" = jobfit-run-trial-open, "paid" = runJobFitForProfile)
+// is flipped INDEPENDENTLY, so prod can run detectors on FREE while PAID stays
+// byte-identical to today. A path turns on when EITHER guard passes:
+//
+//   • Dev master switch — JOBFIT_DETECTORS === "on" AND isDevEnvironment()
+//     (keyed to the dev Supabase ref, lib/devOnly.ts). Turns BOTH paths on.
+//     This is the UNCHANGED existing dev/local behavior — the manual testers and
+//     any dev A/B keep working exactly as before.
+//
+//   • Per-path prod switch — JOBFIT_DETECTORS_FREE === "on"  (free path only)
+//                            JOBFIT_DETECTORS_PAID === "on"  (paid path only)
+//     These work in ANY environment (incl. prod) and are how the staged flip is
+//     done, one path at a time. They read DIFFERENT variables, so enabling FREE
+//     can never enable PAID — the failsafe for the un-flipped path is that its
+//     var is simply absent.
+//
+// Failsafe posture: with no per-path var set, prod returns {} for every path
+// (byte-identical to today — regex fail-open, no live LLM, no ledger/risks). The
+// old global JOBFIT_DETECTORS=on does NOTHING in prod by itself (it needs
+// isDevEnvironment), so a stale global value can never light up a prod path.
+// A prod path activates ONLY via its explicit JOBFIT_DETECTORS_<PATH>=on.
 // allowLive:true because real user inputs won't be in any frozen cache.
-export function nonProdDetectorFlags(): {
+export type DetectorPath = "free" | "paid"
+
+export function detectorFlagsForPath(path: DetectorPath): {
   applyGateLedger?: boolean
   applyVerbMismatchRisk?: boolean
   applyRiskDetectors?: boolean
   resumeExtractor?: { cache: ResumeExtractCache; allowLive: boolean }
 } {
-  if (process.env.JOBFIT_DETECTORS !== "on" || !isDevEnvironment()) return {}
+  const devMaster = process.env.JOBFIT_DETECTORS === "on" && isDevEnvironment()
+  const perPathVar = path === "free" ? "JOBFIT_DETECTORS_FREE" : "JOBFIT_DETECTORS_PAID"
+  const perPathOn = process.env[perPathVar] === "on"
+  if (!devMaster && !perPathOn) return {}
   return {
     applyGateLedger: true,
     applyVerbMismatchRisk: true,
@@ -353,10 +370,10 @@ export async function runJobFit(args: {
   // severity, so it no longer needs to live in the number.
   const gateScore = capScoreForDecision(scoreAfterBoost, decisionFinal)
 
-  // Per-scan detector confirmation (dev only — needEv is true iff a detector flag
-  // is on, which only happens via nonProdDetectorFlags in dev). If this line is
-  // ABSENT from the server logs, the scan ran with detectors OFF. resume_source
-  // "regex" means the LLM extractor fell open (e.g. missing ANTHROPIC_API_KEY).
+  // Per-scan detector confirmation — needEv is true iff a detector flag is on,
+  // which happens via detectorFlagsForPath (dev master, or a per-path prod flip).
+  // If this line is ABSENT from the server logs, the scan ran with detectors OFF.
+  // resume_source "regex" means the LLM extractor fell open (e.g. missing ANTHROPIC_API_KEY).
   if (needEv) {
     const DETECTOR_CODES = /DOMAIN_GAP|OWNERSHIP_VERB|PEOPLE_MGMT|CRM_ABSENT|REVENUE_METRICS|STALE_SKILL|SCOPE_INVERSION|HARD_CREDENTIAL|ADJACENCY/
     console.log("[jobfitEvaluator] DETECTORS ON —", {

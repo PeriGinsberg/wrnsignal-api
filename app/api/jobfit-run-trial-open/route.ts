@@ -26,7 +26,7 @@
 import crypto from "crypto"
 import { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { runJobFit, nonProdDetectorFlags } from "../_lib/jobfitEvaluator"
+import { runJobFit, detectorFlagsForPath } from "../_lib/jobfitEvaluator"
 import type { VerdictCache, VerdictLog } from "../jobfit/semanticRelevance"
 import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
@@ -289,10 +289,10 @@ export async function POST(req: NextRequest) {
           allowLive: true,
           onVerdict: (log) => semanticVerdictLogs.push(log),
         },
-        // Defect #1–#3 detectors + LLM résumé extractor — ON only in the dev
-        // environment with JOBFIT_DETECTORS=on (see nonProdDetectorFlags). Prod
-        // gets {} → byte-identical to today.
-        ...nonProdDetectorFlags(),
+        // Detectors for the FREE path. Dev: JOBFIT_DETECTORS=on. Prod: flipped
+        // independently via JOBFIT_DETECTORS_FREE=on (paid unaffected). Otherwise
+        // {} → byte-identical to today. See detectorFlagsForPath.
+        ...detectorFlagsForPath("free"),
       })
     } catch (err: any) {
       console.error("[jobfit-run-trial-open] runJobFit failed:", err?.message || String(err))

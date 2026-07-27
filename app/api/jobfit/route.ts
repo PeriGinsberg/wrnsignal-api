@@ -16,7 +16,7 @@
 import crypto from "crypto"
 import { type NextRequest } from "next/server"
 
-import { runJobFit, nonProdDetectorFlags } from "../_lib/jobfitEvaluator"
+import { runJobFit, detectorFlagsForPath } from "../_lib/jobfitEvaluator"
 import { getAuthedProfileText } from "../_lib/authProfile"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { logStatusChange } from "../_lib/applicationStatusHistory"
@@ -137,10 +137,11 @@ export async function POST(req: NextRequest) {
         jobText,
         mode: mode || "test",
         debug: debugFlag,
-        // Local bypass tester: exercise the detector engine on a pasted résumé
-        // (dev + JOBFIT_DETECTORS=on only; prod gets {}). This path is already
-        // local-only (isBypassAllowed is false in prod).
-        ...nonProdDetectorFlags(),
+        // Local bypass tester: exercise the detector engine on a pasted résumé.
+        // Uses the "paid" path gate, but its real prod block is the route guard
+        // (isBypassAllowed is false in prod) — this handler never runs in prod
+        // regardless of JOBFIT_DETECTORS_PAID.
+        ...detectorFlagsForPath("paid"),
       } as any)
 
       const result = enforceClientFacingRules(raw as any)
