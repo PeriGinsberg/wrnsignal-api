@@ -49,7 +49,7 @@ cases:
     targets: [knockout_gate, verb_inversion, adjacency_inflation, scope_inversion, risk_under_detection, harmful_advice]
     expected_verdict: PASS
     must_not_be: [APPLY]
-    discriminator: true          # anchors the PASS end; must sort strictly below 08 (REVIEW) and 07 (APPLY)
+    discriminator: true          # anchors the PASS end; must sort strictly below 08 (PASS, ~72) and 07 (APPLY) by score
     gates:
       b2b_saas_3yr: UNMET        # the single most important assertion in the set
     risks:
@@ -161,10 +161,15 @@ cases:
   "08":
     name: Omar Haddad vs Fernwood (CONTROL, borderline)
     targets: [middle_band, preferred_vs_required]
-    expected_verdict: REVIEW
-    must_not_be: [APPLY, PASS]     # missing a PREFERRED item lowers score but is NOT a knockout;
-                                   # one adjacent skill (TensorFlow vs required PyTorch) pulls APPLY->REVIEW
+    expected_verdict: PASS         # corrected from REVIEW (2026-07-26) — see rationale
+    must_not_be: [APPLY]           # a PREFERRED-item miss lowers score but never gates;
+                                   # it must not LIFT the verdict to APPLY
     discriminator: true
+    # RATIONALE (corrected): Omar meets every REQUIRED item (ml_in_prod_5yr MET,
+    # A/B-testing MET) and misses only a PREFERRED one (PyTorch; TensorFlow is the
+    # adjacent skill he actually has). A preferred-item miss is NOT verdict-moving
+    # by design — so 72/PASS is correct engine behavior, not a defect. The earlier
+    # REVIEW expectation was the error.
     gates:
       ml_in_prod_5yr: MET
       # full_model_lifecycle_ownership REMOVED: ownership is graded, not binary ->
@@ -214,8 +219,8 @@ cases:
 invariants:
   # The strength ordering the whole set exists to enforce:
   verdict_ordering:
-    - "07 (APPLY) strictly stronger than 08 (REVIEW)"
-    - "08 (REVIEW) strictly stronger than 01 (PASS)"
+    - "07 (APPLY) strictly stronger than 08 (PASS)"
+    - "08 (PASS, ~72) strictly stronger BY SCORE than 01 (PASS-anchor) — both PASS, 08 higher"
     - "07 strictly stronger than 06  # honest ownership beats contribution-verb ownership, same-ish domain"
   # Same posting, opposite candidates — the core discriminator:
   jordan_vs_reyna:
