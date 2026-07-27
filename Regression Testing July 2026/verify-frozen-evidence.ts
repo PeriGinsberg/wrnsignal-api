@@ -12,9 +12,9 @@
 //     on its own. Divergence is expected (e.g. domainYears is richer under LLM).
 //
 //   PART 2 (AUTHORITY): behavioral. Hard asserts on the fires the golden set
-//     depends on, PLUS the full `validate.py --run` verdict gate (8/9, and the
-//     only permitted failure is case 08's known, out-of-scope verdict-band
-//     defect). If PART 2 fails, the freeze is rejected regardless of PART 1.
+//     depends on, PLUS the full `validate.py --run` verdict gate (10/10, no
+//     permitted misses — the golden set is fully green). If PART 2 fails, the
+//     freeze is rejected regardless of PART 1.
 
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -73,15 +73,14 @@ async function main() {
   console.log(`  [assert] case 02 degreeHeld === false (→ degree_or_waiver UNMET): ${e02.profileEvidence.degreeHeld === false}`)
   if (e02.profileEvidence.degreeHeld !== false) fails.push(`case 02 degreeHeld is ${JSON.stringify(e02.profileEvidence.degreeHeld)}, expected false`)
 
-  // (b) full golden verdict run — the authority. 8/9, and 08 is the ONLY allowed miss.
+  // (b) full golden verdict run — the authority. 10/10, no permitted misses.
   const run = spawnSync("python", ["validate.py", "--run"], { cwd: DIR, encoding: "utf8", env: { ...process.env, PYTHONIOENCODING: "utf-8" } })
   const out = (run.stdout || "") + (run.stderr || "")
   const passLine = out.match(/(\d+)\/(\d+) cases pass/)
   const failing = [...out.matchAll(/^\[FAIL\] case (\d+)/gm)].map((m) => m[1])
   console.log(`  [golden] ${passLine ? passLine[0] : "NO PASS LINE FOUND"}; failing cases: [${failing.join(", ") || "none"}]`)
-  if (!passLine || passLine[1] !== "9" || passLine[2] !== "10") fails.push(`golden set is ${passLine ? passLine[0] : "unparseable"}, expected 9/10`)
-  const unexpected = failing.filter((c) => c !== "08")
-  if (unexpected.length) fails.push(`unexpected golden failures beyond case 08: [${unexpected.join(", ")}]`)
+  if (!passLine || passLine[1] !== "10" || passLine[2] !== "10") fails.push(`golden set is ${passLine ? passLine[0] : "unparseable"}, expected 10/10`)
+  if (failing.length) fails.push(`golden failures (expected none): [${failing.join(", ")}]`)
 
   console.log(fails.length ? `\n✗ FREEZE REJECTED:\n  - ${fails.join("\n  - ")}` : "\n✓ FREEZE ACCEPTED (behavioral authority passed)")
   process.exit(fails.length ? 1 : 0)
