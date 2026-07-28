@@ -1,0 +1,140 @@
+// app/dashboard/network/vocab.ts
+// Single source of truth for the v3 display vocabulary shared across the
+// network UI (worklist row, roster, contact record, action log). Keeping these
+// in one file avoids the label drift that comes from re-declaring maps per
+// component. Engine/DB vocabulary lives in lib/network-tracker/reminder-engine.ts
+// and the migration; this is purely presentational.
+
+import { pillStyle, type PhaseKey } from "../../../lib/dashboard-theme"
+
+// Display labels only — the KEYS are the DB/engine stage values (unchanged); the
+// VALUES are plain-English UI copy. Every surface (stepper, roster, worklist,
+// filters, dropdowns, prose) reads from here — never hardcode a stage's wording.
+export const STAGE_LABELS: Record<string, string> = {
+  identified: "Not contacted",
+  intro_requested: "Intro requested",
+  sequence_active: "Message sent",
+  replied: "They replied",
+  chat_scheduled: "Chat scheduled",
+  chat_done: "Chat happened",
+  nurture: "Keeping in touch",
+  ask_made: "Asked for referral",
+  outcome: "Outcome",
+  dormant_no_answer: "No answer",
+  dormant_declined: "Declined",
+}
+
+// Stage → PHASE GROUP. The single source of truth for how a stage is coloured
+// anywhere it appears: the spreadsheet's stage pill, the dashboard funnel, and
+// any future surface. Colour by group, never one colour per stage — 11 colours
+// is noise. The palette itself (fg/bg per phase) is in lib/dashboard-theme.ts
+// `PHASE`; this file only decides which stage belongs to which group.
+//
+// Replaces the former STAGE_COLOR map, which assigned per-stage colours on a
+// different grouping and was referenced nowhere.
+export const STAGE_PHASE: Record<string, PhaseKey> = {
+  identified: "idle",              // not started
+  intro_requested: "active",       // in progress
+  sequence_active: "active",
+  replied: "alive",                // alive
+  chat_scheduled: "momentum",      // momentum
+  chat_done: "momentum",
+  nurture: "longgame",             // long game
+  ask_made: "longgame",
+  outcome: "won",                  // won
+  dormant_no_answer: "resting",    // resting
+  dormant_declined: "resting",
+}
+
+// Convenience for the common case: give me the pill styling for this stage.
+// Unknown/absent stage falls back to the neutral group rather than throwing.
+export function stagePillStyle(stage: string): React.CSSProperties {
+  return pillStyle(STAGE_PHASE[stage] ?? "idle")
+}
+
+// Display names for the seven groups. The dashboard funnel and the stage pill
+// both read these, so the two surfaces can never drift apart in wording.
+export const PHASE_LABELS: Record<PhaseKey, string> = {
+  idle: "Not started",
+  active: "In progress",
+  alive: "Replied",
+  momentum: "Talking",
+  longgame: "Nurture & ask",
+  won: "Outcome",
+  resting: "Resting",
+}
+
+// Canonical order. `resting` is last and is deliberately NOT a step of
+// progress — dormant contacts haven't advanced, they've stopped — so the
+// dashboard renders it BESIDE the funnel as a count rather than as a bar.
+// It still belongs in the shared mapping because it's a real state that needs
+// its own colour; excluding it is what let the pill and the funnel disagree.
+export const PHASE_ORDER: PhaseKey[] = ["idle", "active", "alive", "momentum", "longgame", "won", "resting"]
+export const FUNNEL_PHASES: PhaseKey[] = PHASE_ORDER.filter((p) => p !== "resting")
+
+// Stages belonging to a phase — what the funnel deep-links into when a group is
+// clicked (Contacts filtered to those stages).
+export function stagesInPhase(phase: PhaseKey): string[] {
+  return Object.entries(STAGE_PHASE).filter(([, p]) => p === phase).map(([stage]) => stage)
+}
+
+// What "Logged it" writes for a given due reason (worklist quick action).
+export const REASON_TO_ACTION: Record<string, string> = {
+  touch_2: "touch_2",
+  touch_3: "touch_3",
+  intro_chase: "intro_request",
+  reply: "note_logged",
+  thank_you: "thank_you",
+  nurture_recurring: "note_logged",
+  ask_followup: "note_logged",
+  resurface_no_answer: "touch_1",
+  resurface_declined: "touch_1",
+  poke: "touch_1",
+  manual: "note_logged",
+}
+
+// Display labels for the due reason — imperative ("what to do next"), since the
+// worklist shows this as the action. Keys are engine values (unchanged).
+export const REASON_LABELS: Record<string, string> = {
+  touch_2: "Send follow-up",
+  touch_3: "Send final follow-up",
+  intro_chase: "Follow up on intro request",
+  reply: "Send a reply",
+  thank_you: "Send thank-you",
+  nurture_recurring: "Send a check-in",
+  ask_followup: "Follow up on referral ask",
+  resurface_no_answer: "Time to try again",
+  resurface_declined: "Time to reconnect",
+  poke: "Reach out",
+  manual: "Your reminder",
+}
+
+export const RELATIONSHIP_LABEL: Record<string, string> = {
+  personal: "Personal",
+  affinity: "Affinity",
+  referred: "Referred",
+  cold: "Cold",
+  recruiter: "Recruiter",
+}
+
+export const RELATIONSHIPS = ["personal", "affinity", "referred", "cold", "recruiter"] as const
+export const PRIORITIES = ["A", "B", "C"] as const
+
+// Action-log dropdown (the type vocabulary in the migration).
+export const ACTION_TYPE_OPTIONS: { key: string; label: string }[] = [
+  { key: "touch_1", label: "Touch 1 (first outreach)" },
+  { key: "touch_2", label: "Touch 2" },
+  { key: "touch_3", label: "Touch 3" },
+  { key: "intro_request", label: "Intro request" },
+  { key: "thank_you", label: "Thank-you" },
+  { key: "connection_request", label: "Connection request" },
+  { key: "engage_on_post", label: "Engaged on a post" },
+  { key: "chat_scheduled", label: "Chat scheduled" },
+  { key: "chat_done", label: "Chat done" },
+  { key: "ask", label: "Ask" },
+  { key: "note_logged", label: "Note" },
+  { key: "other", label: "Other" },
+]
+export const ACTION_TYPE_LABEL: Record<string, string> = Object.fromEntries(
+  ACTION_TYPE_OPTIONS.map((o) => [o.key, o.label]),
+)

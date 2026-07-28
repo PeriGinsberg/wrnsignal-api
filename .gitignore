@@ -43,3 +43,5 @@ Apple/
 *.pem
 # Real client resumes — used as local test fixtures, never commit
 Resumes/
+# Real client contact lists — local import test fixtures, never commit
+network-import-fixtures/

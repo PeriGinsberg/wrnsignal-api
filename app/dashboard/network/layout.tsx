@@ -1,0 +1,62 @@
+"use client"
+
+// Shared shell for the Network Tracker area: a tab strip across the three
+// lenses on the same data. The URL is the state — the active tab is derived
+// from the pathname, and each tab is a real route (deep-linkable, and the
+// dashboard nav-highlight works). Children render their own <main>.
+//   Today     /dashboard/network              — the daily worklist (front door)
+//   Contacts  /dashboard/network/contacts     — full roster, standalone included
+//   Companies /dashboard/network/companies    — board by priority (Phase 5b)
+
+import { usePathname } from "next/navigation"
+import { T } from "../../../lib/dashboard-theme"
+
+const TABS = [
+  { href: "/dashboard/network", label: "Today", exact: true },
+  { href: "/dashboard/network/contacts", label: "Contacts", exact: false },
+  { href: "/dashboard/network/companies", label: "Companies", exact: false },
+]
+
+export default function NetworkLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
+  function isActive(href: string, exact: boolean) {
+    if (exact) return pathname === href
+    return pathname === href || pathname.startsWith(href + "/")
+  }
+
+  return (
+    <div>
+      <nav
+        style={{
+          display: "flex",
+          gap: 4,
+          borderBottom: `1px solid ${T.BORDER_SOFT}`,
+          padding: "0 24px",
+        }}
+      >
+        {TABS.map((t) => {
+          const active = isActive(t.href, t.exact)
+          return (
+            <a
+              key={t.href}
+              href={t.href}
+              style={{
+                padding: "14px 14px 12px",
+                fontSize: 13,
+                fontWeight: 800,
+                color: active ? T.TEXT : T.MUTED,
+                textDecoration: "none",
+                borderBottom: `2px solid ${active ? T.WRN_ORANGE : "transparent"}`,
+                marginBottom: -1,
+              }}
+            >
+              {t.label}
+            </a>
+          )
+        })}
+      </nav>
+      {children}
+    </div>
+  )
+}
