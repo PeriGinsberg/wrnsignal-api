@@ -79,9 +79,16 @@ then GET-ing shows it as `source: 'override'`.
 A pure function, unit-tested like the reminder engine. This is where silent wrongness lives,
 so it gets the same mutation-test treatment.
 
-`renderTemplate(body, profile, contact) → { text, unresolved: string[] }`
+`renderTemplate(body, profile, contact) → { text, unresolved: string[], toFill: string[] }`
 
-Two kinds of variable:
+**BUILT: THREE kinds of variable, not two.** This section originally described two; the third
+is documented in `template-variables.md` (which says "add to TEMPLATES.md §8b") and is now
+implemented. Fill-at-send prompts — `[MUTUAL]`, `[ONE SPECIFIC QUESTION]`, `[OPTION 1..3]`,
+`[ARTICLE / NEWS ABOUT THEIR FIRM]` — are prompts to the WRITER, never resolved from data,
+and go to `toFill[]` rather than `unresolved[]`. Counting them as errors would make S1
+(scheduling) and C2 (cold follow-up) permanently look broken.
+
+The first two kinds:
 - **From the client profile** (same in every message): `[CLIENT_FIRST]`, `[SCHOOL]`,
   `[TARGET_ROLE]`, `[TARGET_FIELD]`, `[CITY]`, `[AFFINITY_1..3]`, `[KEY_STRENGTH]`,
   `[ELEVATOR_PITCH]`, `[CALENDAR_LINK]`, `[RESUME_LINK]`, etc. Note `[CURRENT_ROLE]` resolves
@@ -97,8 +104,15 @@ Rules:
 - Unknown variables (a bracket matching no known key) are surfaced as unresolved, not left in
   or silently dropped — a typo'd `[TARGETROLE]` should be caught, not shipped.
 
+Fill-at-send prompts KEEP their `[PROMPT]` text in `text` — blanking `[ONE SPECIFIC QUESTION]`
+to `_____` would destroy the only clue about what belongs there. The UI turns them into
+editable inputs and **8d's copy step is what must warn while `toFill` is non-empty**; the
+renderer does not gate copying.
+
 **8b is done when** the renderer resolves a known set correctly, lists unresolved ones, and
-the mutation tests confirm an unfilled variable never leaks as raw brackets.
+the mutation tests confirm an unfilled variable never leaks as raw brackets. DONE — four
+mutations verified: leaking a raw bracket, treating fill-at-send as ordinary, mapping
+`[CURRENT_ROLE]` by naive lower-casing, and dropping an unknown token silently.
 
 ---
 

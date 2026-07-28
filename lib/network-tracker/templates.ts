@@ -106,3 +106,115 @@ export function extractVariables(body: string): string[] {
   const found = body.match(/\[([^\]]+)\]/g) ?? []
   return [...new Set(found.map((m) => m.slice(1, -1)))]
 }
+
+// ─── 8b — the renderer ───────────────────────────────────────────────────────
+
+/** Token → column on network_client_profile. Written out rather than derived by
+ *  lower-casing, because [CURRENT_ROLE] resolves from `current_role_title` — the
+ *  column was renamed to dodge the SQL reserved word and the TOKEN did not
+ *  follow. A naive UPPER_SNAKE→lower_snake transform silently breaks that one. */
+const PROFILE_VAR_TO_COLUMN: Record<string, string> = {
+  CLIENT_FIRST: "client_first",
+  CURRENT_ROLE: "current_role_title",   // <- the exception
+  CURRENT_EMPLOYER: "current_employer",
+  SCHOOL: "school",
+  GRAD_YEAR: "grad_year",
+  DEGREE: "degree",
+  TARGET_FIELD: "target_field",
+  TARGET_ROLE: "target_role",
+  TIMEFRAME: "timeframe",
+  CITY: "city",
+  AFFINITY_1: "affinity_1",
+  AFFINITY_2: "affinity_2",
+  AFFINITY_3: "affinity_3",
+  KEY_STRENGTH: "key_strength",
+  RESUME_LINK: "resume_link",
+  CALENDAR_LINK: "calendar_link",
+  ELEVATOR_PITCH: "elevator_pitch",
+}
+
+export type RenderProfile = Record<string, string | null | undefined>
+export type RenderContact = {
+  first_name?: string | null
+  company_name?: string | null
+  additional_info?: string | null
+}
+
+/**
+ * What an unresolved variable becomes in the output text.
+ *
+ * NEVER the raw bracket. A message with a literal [TARGET_ROLE] in it is one a
+ * client can copy and send, and it reads as a mail-merge failure to the person
+ * receiving it. A visible blank is obviously unfinished to the sender and
+ * harmless if it somehow escapes.
+ */
+export const UNRESOLVED_PLACEHOLDER = "_____"
+
+export type RenderResult = {
+  text: string
+  /** Profile/contact variables with no value, plus unknown tokens. Real gaps —
+   *  warn before copy. */
+  unresolved: string[]
+  /** Fill-at-send prompts. NOT errors: the writer completes these by hand. */
+  toFill: string[]
+}
+
+/**
+ * Substitute a template body against a client profile and a contact.
+ *
+ * Three outcomes per bracket, and keeping them apart is the whole point:
+ *   • profile/contact variable WITH a value  → substituted silently
+ *   • profile/contact variable WITHOUT one   → UNRESOLVED_PLACEHOLDER + unresolved[]
+ *   • fill-at-send prompt                    → left as [PROMPT] + toFill[]
+ *
+ * Fill-at-send prompts deliberately keep their bracket text. They are the
+ * instruction to the writer — blanking [ONE SPECIFIC QUESTION] to "_____" would
+ * destroy the only clue about what belongs there. The UI turns them into
+ * editable inputs (8c/8d) and the copy step is what must refuse or warn while
+ * toFill is non-empty; that is 8d's job, not the renderer's.
+ *
+ * Unknown tokens ([TARGETROLE], a typo) land in unresolved rather than being
+ * left in or dropped, so a mistake in an edited template is caught rather than
+ * shipped.
+ *
+ * Substitution is per whole bracket — a variable is all-or-nothing, never
+ * partially resolved.
+ */
+export function renderTemplate(
+  body: string,
+  profile: RenderProfile | null | undefined,
+  contact: RenderContact | null | undefined,
+): RenderResult {
+  const unresolved: string[] = []
+  const toFill: string[] = []
+  const p = profile ?? {}
+  const c = contact ?? {}
+
+  const value = (token: string): string | null => {
+    if (classifyVariable(token) === "contact") {
+      const v =
+        token === "NAME" ? c.first_name :
+        token === "FIRM" ? c.company_name :
+        token === "ADDITIONAL_INFO" ? c.additional_info :
+        null
+      return v && v.trim() ? v.trim() : null
+    }
+    const col = PROFILE_VAR_TO_COLUMN[token]
+    if (!col) return null                       // unknown token -> a real gap
+    const v = p[col]
+    return v && String(v).trim() ? String(v).trim() : null
+  }
+
+  const text = body.replace(/\[([^\]]+)\]/g, (whole, token: string) => {
+    if (classifyVariable(token) === "fill") {
+      if (!toFill.includes(token)) toFill.push(token)
+      return whole                              // keep the prompt legible
+    }
+    const v = value(token)
+    if (v !== null) return v
+    if (!unresolved.includes(token)) unresolved.push(token)
+    return UNRESOLVED_PLACEHOLDER
+  })
+
+  return { text, unresolved, toFill }
+}
