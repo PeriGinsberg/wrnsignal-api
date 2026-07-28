@@ -36,19 +36,42 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 9 — Dashboard ("Today" as metrics) | funnel, reply/chat rates, what's-working split, needs-attention | 📋 specced (DASHBOARD Part 1) |
 | 10 — Coach layer + heat map | universal coach comments, coach view/edit | 📋 specced |
 
-**The tracker is URL-only — and the thing that was blocking it is now gone.** It is still **not
-linked from the dashboard nav** (the D2C nav in `app/dashboard/layout.tsx` has no Network Tracker
-entry); you reach it by typing `/dashboard/network`. That was deliberate: the tab strip
-(`layout.tsx`) shows three tabs — **Today · Contacts · Companies** — and the Companies tab used to
-render but 404, so surfacing the tracker would have shipped a visibly broken tab.
+**The tracker is LIVE in the dashboard nav (dev).** It is no longer URL-only. `D2C_NAV` in
+`app/dashboard/layout.tsx` carries a **Networking** entry beside My Account and Job Tracker
+(`matchPrefix`, so it stays highlighted across all three sub-tabs), added in `2f69ae50`. Real
+clients on dev can reach it, use it, and put their own data in.
 
-**Phase 5b closed that in `9671d02e`.** All three tabs now resolve. The remaining question is no
-longer "is it broken?" but a product call: **should the tracker go into the dashboard nav?** What
-that decision now rests on is the first-run experience — a brand-new account has zero contacts, so
-whoever clicks the nav entry lands on three empty screens. Those empty states have to read as
-inviting rather than broken, and the two ways a real user gets data in (the import wizard and the
-Add-a-contact form) have to work from cold. Neither is a code blocker; both are worth eyeballing
-before the tracker is put in front of everyone.
+What unblocked it: the Companies tab used to render but 404, so surfacing the tracker would have
+shipped a visibly broken tab. Phase 5b closed that (`9671d02e`). All three views resolve, the two
+ways in both work from a cold account — the **Add-a-contact form** (`POST /api/network/contacts`)
+and the **import wizard** (`POST /api/network/import/commit`), the only two writers to
+`network_contacts` — and the three empty states are pinned by
+`app/dashboard/network/emptyStates.test.tsx`, which renders the real pages against empty payloads
+and fails if one ever degrades into something error-shaped.
+
+> ### ⚠️ LIVE BUT INCOMPLETE — read this before assuming a gap is a bug
+>
+> Being in the nav does not mean the tracker is finished. A user can run the full loop today —
+> add or import contacts, work the daily worklist, log touches and notes, move stages, manage the
+> company board — and will still find these missing, **by plan, not by defect**:
+>
+> - **Phase 7b — Client Profile.** `network_client_profile` exists (16 merge vars + elevator
+>   pitch) with **no UI and no route**. Nothing fills it.
+> - **Phase 8 — Templates.** The 24 coach-loaded outreach templates and "copy & mark as sent" are
+>   specced (RECONCILIATION §8/§8.1) and unbuilt. This is the biggest felt gap: the tracker tells
+>   a user *who* to contact today and gives them nothing to *send*.
+> - **Phase 9 — Dashboard.** "Today" is a worklist, not the metrics view. The funnel, reply/chat
+>   rates, what's-working split and needs-attention rows are specced in DASHBOARD Part 1 and
+>   unbuilt. The 7-group phase mapping the funnel needs already exists and is already used by the
+>   contact record's phase bar (`STAGE_PHASE` / `PHASE`), so the funnel has a source of truth
+>   waiting for it.
+> - **Phase 10 — Coach layer.** Coach comments and coach view/edit are specced and unbuilt. Note
+>   the locked decision in §3: coaches can *never* mutate the pipeline; every write route is
+>   owner-only and returns 403 for a coach. The coach layer is view/annotate, and that is a
+>   deliberate constraint rather than an unimplemented feature.
+>
+> Also still true: **prod has none of this schema** (see §4 — dev-only, four migrations plus
+> `20260727_network_note_action_type.sql`). Live means live *on dev*.
 
 ---
 
