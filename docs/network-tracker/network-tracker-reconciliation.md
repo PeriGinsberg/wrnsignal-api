@@ -196,7 +196,7 @@ drops off the worklist, and the reply-rate denominator is understated. One butto
 ## 9. Metrics — SUPERSEDED
 
 **This section is replaced in full by `network-tracker-dashboard.md`** (the two-view design:
-Today-as-dashboard + Contacts-as-spreadsheet). See that doc for the funnel groups, the
+Dashboard + Contacts-as-spreadsheet). See that doc for the funnel groups, the
 "or beyond" reply/chat definitions, the relationship/segment split, and the phase order
 (dashboard lands after CSV import; the spreadsheet view ships first). The three
 `first_*_at` milestone columns it needs are added by

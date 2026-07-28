@@ -12,16 +12,20 @@
 // client-side. Filter state can arrive via URL query params so the (future)
 // dashboard can deep-link here pre-filtered.
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { T, headline, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
 import {
-  STAGE_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES, FIELD_LABELS,
+  STAGE_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
 } from "../vocab"
 import { Row, dueOf, type Contact } from "./ContactRow"
+import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS } from "../vocab"
+import { isStalled, STALLED_DAYS } from "../dashboardMetrics"
 
 const STANDALONE = "__standalone__"
+const NO_RELATIONSHIP = "__none__"
 
 // Read initial filter state from the URL (deep-link support). Client-only.
 function urlParam(name: string): string {
@@ -29,7 +33,17 @@ function urlParam(name: string): string {
   return new URLSearchParams(window.location.search).get(name) ?? ""
 }
 
+// useSearchParams() requires a Suspense boundary — without one Next fails the
+// build for any statically-prerendered route that reads it.
 export default function ContactsSpreadsheetPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactsSpreadsheetInner />
+    </Suspense>
+  )
+}
+
+function ContactsSpreadsheetInner() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,16 +65,54 @@ export default function ContactsSpreadsheetPage() {
     }
   }, [])
 
-  // Filters (initialised from the URL, then local state).
-  const [fStage, setFStage] = useState(urlParam("stage"))
-  const [fRelationship, setFRelationship] = useState(urlParam("relationship"))
-  const [fSegment, setFSegment] = useState(urlParam("segment"))
-  const [fPriority, setFPriority] = useState(urlParam("priority"))
-  const [fCompany, setFCompany] = useState(() => {
-    if (urlParam("standalone")) return STANDALONE
-    return urlParam("company_id")
-  })
-  const [fStatus, setFStatus] = useState(urlParam("status")) // overdue | due_today | not_started
+  // THE URL IS THE FILTER STATE. Previously these were seven useState values
+  // seeded from window.location.search at mount and never re-read, so a filter
+  // only ever applied on a full page load. Arriving from the dashboard is a
+  // CLIENT navigation — the query string changes without the component being
+  // remounted — so the deep-links pointed at the right URL and then did nothing.
+  // Refreshing "fixed" it because a refresh is a mount.
+  //
+  // Deriving from useSearchParams() makes them reactive by construction: there
+  // is no second copy that can go stale. It also fixes browser back/forward for
+  // free, and makes a filtered view a shareable link.
+  const sp = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const fStage = sp.get("stage") ?? ""
+  const fPhase = sp.get("phase") ?? ""
+  const fRelationship = sp.get("relationship") ?? ""
+  const fSegment = sp.get("segment") ?? ""
+  const fPriority = sp.get("priority") ?? ""
+  const fStatus = sp.get("status") ?? ""   // overdue | due_today | not_started | stalled
+  // Company is two params behind one control: an explicit id, or the standalone flag.
+  const fCompany = sp.get("standalone") ? STANDALONE : (sp.get("company_id") ?? "")
+
+  // Writing back to the URL is what keeps the dropdowns working now that they no
+  // longer own the state. `replace`, not `push`, so tweaking a filter does not
+  // stack history entries the back button has to chew through.
+  const setParam = useCallback((key: string, value: string) => {
+    const next = new URLSearchParams(sp.toString())
+    if (value) next.set(key, value)
+    else next.delete(key)
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [sp, router, pathname])
+
+  const setFStage = useCallback((v: string) => setParam("stage", v), [setParam])
+  const setFPhase = useCallback((v: string) => setParam("phase", v), [setParam])
+  const setFRelationship = useCallback((v: string) => setParam("relationship", v), [setParam])
+  const setFSegment = useCallback((v: string) => setParam("segment", v), [setParam])
+  const setFPriority = useCallback((v: string) => setParam("priority", v), [setParam])
+  const setFStatus = useCallback((v: string) => setParam("status", v), [setParam])
+  const setFCompany = useCallback((v: string) => {
+    const next = new URLSearchParams(sp.toString())
+    next.delete("standalone"); next.delete("company_id")
+    if (v === STANDALONE) next.set("standalone", "1")
+    else if (v) next.set("company_id", v)
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [sp, router, pathname])
 
   // Frozen render order. The server sorts (no-activity first, then most-recent —
   // route.ts `.order("last_action_at"…)`), and a stage change or logged touch
@@ -121,7 +173,11 @@ export default function ContactsSpreadsheetPage() {
   const filtered = useMemo(() => {
     return contacts.filter((c) => {
       if (fStage && c.stage !== fStage) return false
-      if (fRelationship && c.relationship !== fRelationship) return false
+      if (fPhase && (STAGE_PHASE[c.stage] ?? "idle") !== fPhase) return false
+      // NO_RELATIONSHIP is a real filter value, not "unset" — an empty filter
+      // means "all", so "none" needs its own sentinel to be expressible at all.
+      if (fRelationship === NO_RELATIONSHIP) { if (c.relationship) return false }
+      else if (fRelationship && c.relationship !== fRelationship) return false
       if (fSegment && c.segment !== fSegment) return false
       if (fPriority && c.priority !== fPriority) return false
       if (fCompany === STANDALONE && c.company_id) return false
@@ -131,10 +187,13 @@ export default function ContactsSpreadsheetPage() {
         if (fStatus === "overdue" && kind !== "overdue") return false
         if (fStatus === "due_today" && kind !== "due_today") return false
         if (fStatus === "not_started" && c.stage !== "identified") return false
+        // Same definition the dashboard's "stalled" row counts with — imported,
+        // not restated, so the row and the link can never disagree.
+        if (fStatus === "stalled" && !isStalled(c, new Date())) return false
       }
       return true
     })
-  }, [contacts, fStage, fRelationship, fSegment, fPriority, fCompany, fStatus])
+  }, [contacts, fStage, fPhase, fRelationship, fSegment, fPriority, fCompany, fStatus])
 
   // Apply the frozen order to whatever survived filtering. Selection logic below
   // deliberately keeps using `filtered` — it is set-based and order-independent.
@@ -155,9 +214,14 @@ export default function ContactsSpreadsheetPage() {
     return contacts.some((c, i) => rank.get(c.id) !== i)
   }, [contacts, orderIds])
 
-  const anyFilter = fStage || fRelationship || fSegment || fPriority || fCompany || fStatus
+  const anyFilter = fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus
   function clearFilters() {
-    setFStage(""); setFRelationship(""); setFSegment(""); setFPriority(""); setFCompany(""); setFStatus("")
+    // One replace, not seven — seven sequential calls would each read a stale
+    // `sp` and the last would win, clearing only one filter.
+    const next = new URLSearchParams(sp.toString())
+    for (const k of ["stage", "phase", "relationship", "segment", "priority", "status", "company_id", "standalone"]) next.delete(k)
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }
 
   // Selection is scoped to the VISIBLE (filtered) rows — "select all" means the
@@ -203,7 +267,7 @@ export default function ContactsSpreadsheetPage() {
     <main style={{ padding: "24px", margin: "0 auto", maxWidth: 1280 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h1 style={headline}>Contacts</h1>
+          <h1 style={headline}>{VIEW_LABELS.contacts.heading}</h1>
           <p style={{ color: T.MUTED, fontSize: 13, marginTop: 6 }}>
             {loading ? "Loading…" : `${filtered.length}${filtered.length !== contacts.length ? ` of ${contacts.length}` : ""} contact${contacts.length === 1 ? "" : "s"}`}
           </p>
@@ -258,7 +322,11 @@ export default function ContactsSpreadsheetPage() {
         <Filter value={fStage} onChange={setFStage} allLabel="All stages">
           {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k} style={selectOption}>{v}</option>)}
         </Filter>
+        <Filter value={fPhase} onChange={setFPhase} allLabel="All phases">
+          {PHASE_ORDER.map((p) => <option key={p} value={p} style={selectOption}>{PHASE_LABELS[p]}</option>)}
+        </Filter>
         <Filter value={fRelationship} onChange={setFRelationship} allLabel="All relationships">
+          <option value={NO_RELATIONSHIP} style={selectOption}>No relationship set</option>
           {RELATIONSHIPS.map((r) => <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABEL[r]}</option>)}
         </Filter>
         <Filter value={fSegment} onChange={setFSegment} allLabel="All segments">
@@ -275,6 +343,7 @@ export default function ContactsSpreadsheetPage() {
           <option value="overdue" style={selectOption}>Overdue</option>
           <option value="due_today" style={selectOption}>Due today</option>
           <option value="not_started" style={selectOption}>Not started</option>
+          <option value="stalled" style={selectOption}>Stalled {STALLED_DAYS}+ days</option>
         </Filter>
         {anyFilter && <button onClick={clearFilters} style={ghostBtn}>Clear</button>}
         {/* Re-sort gives the ranking back on demand. Only shown once the frozen

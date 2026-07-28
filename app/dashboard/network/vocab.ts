@@ -117,6 +117,17 @@ export const FIELD_LABELS = {
   segment: "Segment",
 } as const
 
+// The three lenses. `tab` is the strip, which wants one word so the three read
+// as siblings; `heading` is the page H1, which has room to say what the view
+// actually is. Both live here so the strip and the page can never drift — the
+// tab saying one thing while the heading says another is precisely the drift
+// this file exists to prevent.
+export const VIEW_LABELS = {
+  dashboard: { tab: "Dashboard", heading: "Networking Dashboard" },
+  contacts: { tab: "Contacts", heading: "Contacts" },
+  companies: { tab: "Companies", heading: "Companies" },
+} as const
+
 export const STATUS_LABELS: Record<string, string> = {
   researching: "Researching",
   actively_working: "Actively working",

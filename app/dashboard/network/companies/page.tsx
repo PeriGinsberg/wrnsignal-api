@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { T, headline, btnPrimary, input, select as selectStyle, selectOption, fieldLabel, fieldWrap } from "../../../../lib/dashboard-theme"
 import { authFetch } from "../authFetch"
-import { TIER_ORDER, TIER_GROUP_LABELS, TIER_LABELS, UNSORTED_TIER, FIELD_LABELS } from "../vocab"
+import { TIER_ORDER, TIER_GROUP_LABELS, TIER_LABELS, UNSORTED_TIER, FIELD_LABELS, VIEW_LABELS } from "../vocab"
 import { CompanyCard, type Company } from "./CompanyCard"
 import { DeleteCompanyConfirm } from "./DeleteCompanyConfirm"
 
@@ -94,7 +94,7 @@ export default function CompaniesBoardPage() {
   return (
     <main style={{ padding: "22px 26px 60px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <h1 style={headline}>Companies</h1>
+        <h1 style={headline}>{VIEW_LABELS.companies.heading}</h1>
         {standaloneCount !== null && standaloneCount > 0 && (
           <Link
             href="/dashboard/network/contacts?standalone=1"

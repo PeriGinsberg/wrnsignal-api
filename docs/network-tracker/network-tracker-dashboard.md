@@ -3,15 +3,35 @@
 Add to `docs/network-tracker/` as `DASHBOARD.md`. Extends the reconciliation doc (§9
 Metrics), which this replaces in full.
 
-Two views, no new tabs. The strip stays **Today · Contacts · Companies**.
+Two views, no new tabs. The strip is **Dashboard · Contacts · Companies**.
 
-- **Today** (`/dashboard/network`) becomes the dashboard.
+- **Dashboard** (`/dashboard/network`) — the worklist with metrics beneath it. The tab was
+  called "Today" when this was written; renamed so the three tabs read as siblings.
 - **Contacts** (`/dashboard/network/contacts`) becomes the spreadsheet view, **replacing**
   the current roster.
 
 ---
 
-## Part 1 — Today, as a dashboard
+## Part 1 — the Dashboard view
+
+> **BUILT (Phase 9).** Four things changed between spec and build; this document
+> records the built behaviour, not the original intent:
+> 1. **Seven phase groups, not six.** `resting` is a full group rendered inline in the
+>    funnel, not a sidebar count — same grouping and colours as the contact record's
+>    phase bar and the stage pills, all reading `STAGE_PHASE` / `PHASE_ORDER`.
+> 2. **Client-side, not an aggregate route.** No `GET /api/network/summary`. The page
+>    fetches the contacts list it already has access to and computes everything in
+>    `app/dashboard/network/dashboardMetrics.ts` (pure functions). Four columns were
+>    added to the contacts select to support it — `first_touch_at`, `first_replied_at`,
+>    `first_chat_at`, `outcome_type` — additively, no migration. Extract a route later
+>    only if it gets slow.
+> 3. **"Follow-ups completed this week" is DEFERRED.** `touch_2`/`touch_3` counts live in
+>    `network_actions`, which the dashboard deliberately does not fetch. The first-touch
+>    half against the 5–8 target ships, derived from `first_touch_at >= Monday`.
+> 4. **The benchmark line gates on `reached >= 10`,** not on "≥10 contacts finished all
+>    three touches" — per-contact touch counts need `network_actions` for the same
+>    reason. Reached is an honest proxy and the copy says so ("Once you've reached 10+
+>    contacts…"), keeping the targeting-vs-messaging interpretive line intact.
 
 **The founding rule still holds: the due list is the product.** It stays the dominant
 element. Metrics sit *below* it, not above. A user who opens this page must see who to
@@ -25,8 +45,10 @@ actions inline. This is most of the screen.
 **2. This week — the activity bar.** The spreadsheet's target: *5-8 new first touches per
 week, plus every follow-up that comes due.*
 
-- `touch_1` actions logged since Monday, against a target of 5-8, as a progress bar
-- Follow-ups completed this week (touch_2 + touch_3)
+- First touches since Monday, against a target of 5-8, as a progress bar. **BUILT** from
+  `first_touch_at`, which is stamped once on the first touch — no actions fetch needed.
+- ~~Follow-ups completed this week (touch_2 + touch_3)~~ — **DEFERRED**, needs
+  `network_actions`. Revisit with the aggregate route, if one is ever extracted.
 - One line of plain feedback: "3 of 5 first touches this week" / "Target met — 6 first
   touches"
 
@@ -54,15 +76,24 @@ constant; it must never be re-declared. Supporting exports: `PHASE_LABELS` (disp
 names), `PHASE_ORDER` (canonical order), `FUNNEL_PHASES` (order minus `resting`), and
 `stagesInPhase(phase)` (for deep-link filters).
 
-`dormant_no_answer` and `dormant_declined` still sit **beside** the funnel, not inside
-it — they aren't a stage of progress, they're where progress stopped. Show a combined
-count plus how many resurface in the next 7 days. But they are a full member of the
-colour mapping (`resting`), because colouring dormant the same grey as "not started"
-misleads: one has never been contacted, the other has been contacted and gone quiet.
-That distinction is exactly why this is seven groups and not six.
+**BUILT: `dormant_no_answer` and `dormant_declined` render INSIDE the funnel** as the
+seventh group, not beside it. The original "beside" placement predates the seven-group
+decision; keeping them out would have meant the funnel and the phase bar showing the
+same contact in different places. How many resurface in the next 7 days survives as a
+needs-attention row rather than a sidebar count.
 
-Every group is clickable and deep-links to Contacts filtered to those stages
-(`stagesInPhase`).
+They are a full member of the colour mapping (`resting`) because colouring dormant the
+same grey as "not started" misleads: one has never been contacted, the other has been
+contacted and gone quiet. That distinction is exactly why this is seven groups, not six.
+
+Every group is clickable and deep-links to Contacts as **`?phase=<key>`** — a single
+query param filtering on `STAGE_PHASE[c.stage]`, not an expansion of `stagesInPhase()`
+into a stage list. The Contacts filter takes one stage at a time, so a group of several
+stages could not be expressed by the existing `?stage=` param; `?phase=` reads the same
+shared constant the funnel counts with, so a deep-linked group always shows exactly the
+people it counted. Phase 9 also added `?relationship=__none__` and `?status=stalled` for
+the needs-attention rows, for the same reason: a row you cannot click is a fact you
+cannot act on.
 
 **4. Conversion — three numbers with denominators that are actually defined.**
 
@@ -78,9 +109,10 @@ current stage would show a reply rate that falls as things go well.
 
 Show the spreadsheet's benchmark inline, since it's the interpretive key: *fewer than 1
 reply in 10 after all three touches usually means the targeting was too broad, not that
-the messages were bad.* Only show it once ≥10 contacts have finished all three touches —
-before that the number is noise, and should be labelled as such rather than displayed as
-a rate.
+the messages were bad.* **BUILT: gated on `reached >= 10`** (see the note at the top of
+Part 1 — touch counts are not available client-side). Below the gate the panel says to
+reach 10+ before reading much into the rate, rather than displaying a number that swings
+on a single reply.
 
 **5. What's working — the split that earns its keep.**
 

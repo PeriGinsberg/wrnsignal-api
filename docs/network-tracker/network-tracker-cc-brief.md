@@ -24,7 +24,7 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 0 — Recon | Stack decisions (§7) | ✅ |
 | 1 — Schema + engine | `lib/network-tracker/reminder-engine.ts` (`computeNextDue`, pure) + 25 unit tests | ✅ done & verified |
 | 2 — Spine | `lib/network-tracker/access.ts` + 6 routes (`worklist`, `companies` GET, `contacts` GET/POST, `contacts/[id]` GET/PATCH/DELETE, `.../actions`, `.../stage`, `.../reminder`) | ✅ verified by `spine-smoke.ts` |
-| 3 — Worklist ("Today") | `app/dashboard/network/page.tsx` + `WorklistRow.tsx` + tab-strip `layout.tsx` | ✅ built · 🔶 **not in dashboard nav** |
+| 3 — Worklist (the Dashboard tab) | `app/dashboard/network/page.tsx` + `WorklistRow.tsx` + tab-strip `layout.tsx` | ✅ built · ✅ **in the dashboard nav** (`2f69ae50`) |
 | 4 — Contact record | `contacts/[contactId]/page.tsx` + `PipelineStepper.tsx` (7-segment phase bar + 11-stage dropdown, `e014af84`) + `ActionLog.tsx` + `NotesLog.tsx`; running notes, "About this person", additional-info, details, snooze, delete | ✅ |
 | 4.5 — Add contact | `POST /api/network/contacts` + `AddContactForm.tsx` | ✅ |
 | 5a — Contacts spreadsheet | `contacts/page.tsx` — dense table, filters, inline log/stage, bulk-select + delete | ✅ (replaced the old roster) |
@@ -33,7 +33,7 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 7 — Delete | single `DELETE /contacts/[id]` + batch `POST /contacts/delete` + record & spreadsheet UI | ✅ verified |
 | 7b — Client Profile | `network_client_profile` table exists (16 merge vars + elevator pitch) | 🔶 table only, no UI/route |
 | 8 — Templates | 24 coach-loaded templates keyed `(client, template_id)`; "copy & mark as sent" | 📋 specced (RECONCILIATION §8/§8.1) |
-| 9 — Dashboard ("Today" as metrics) | funnel, reply/chat rates, what's-working split, needs-attention | 📋 specced (DASHBOARD Part 1) |
+| 9 — Dashboard (metrics under the worklist) | 7-group funnel, reply/chat rates, what's-working splits, needs-attention — all client-side in `dashboardMetrics.ts`, every group and row deep-linking into filtered Contacts | ✅ built |
 | 10 — Coach layer + heat map | universal coach comments, coach view/edit | 📋 specced |
 
 **The tracker is LIVE in the dashboard nav (dev).** It is no longer URL-only. `D2C_NAV` in
@@ -60,11 +60,11 @@ and fails if one ever degrades into something error-shaped.
 > - **Phase 8 — Templates.** The 24 coach-loaded outreach templates and "copy & mark as sent" are
 >   specced (RECONCILIATION §8/§8.1) and unbuilt. This is the biggest felt gap: the tracker tells
 >   a user *who* to contact today and gives them nothing to *send*.
-> - **Phase 9 — Dashboard.** "Today" is a worklist, not the metrics view. The funnel, reply/chat
->   rates, what's-working split and needs-attention rows are specced in DASHBOARD Part 1 and
->   unbuilt. The 7-group phase mapping the funnel needs already exists and is already used by the
->   contact record's phase bar (`STAGE_PHASE` / `PHASE`), so the funnel has a source of truth
->   waiting for it.
+> - **Phase 9 — Dashboard.** BUILT. Two carve-outs remain, both because the dashboard does not
+>   fetch `network_actions`: "follow-ups completed this week" is deferred (the weekly bar counts
+>   first touches only, so a week spent entirely on follow-ups reads as zero effort), and the
+>   benchmark line gates on `reached >= 10` rather than on contacts who finished all three
+>   touches. Both are the first things an aggregate route would buy back. See DASHBOARD Part 1.
 > - **Phase 10 — Coach layer.** Coach comments and coach view/edit are specced and unbuilt. Note
 >   the locked decision in §3: coaches can *never* mutate the pipeline; every write route is
 >   owner-only and returns 403 for a coach. The coach layer is view/annotate, and that is a
@@ -85,7 +85,7 @@ A cold reader must know which file to trust when they disagree. Precedence, high
    intervals, the two dormants, the `relationship`/`segment`/`priority` fields, the
    `tier` rename, `network_client_profile`, and the Phase 8 template design (§8, §8.1).
 2. **`network-tracker-dashboard.md`** — replaces RECONCILIATION §9 (metrics). The two-view
-   design: Today-as-dashboard (Part 1, unbuilt) + Contacts-as-spreadsheet (Part 2, built).
+   design: Dashboard (Part 1, built) + Contacts-as-spreadsheet (Part 2, built).
 3. **`network-tracker-import.md`** — **overrides `data-model.md`'s import-mapping section.** The
    upload → guess → preview → confirm import. Header detection, synonym mapping, name-splitting,
    non-person rows, email-isn't-unique, deliberately-blank fields, the parser decision.

@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { T, card, headline } from "../../../lib/dashboard-theme"
 import { authFetch } from "./authFetch"
+import { DashboardSection } from "./DashboardPanels"
+import { VIEW_LABELS } from "./vocab"
 import { WorklistRow, type WorklistContact } from "./WorklistRow"
 import { AddContactForm } from "./AddContactForm"
 
@@ -45,7 +47,7 @@ export default function NetworkWorklistPage() {
     <main style={{ padding: "28px 24px", maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h1 style={{ ...headline }}>Your networking today</h1>
+          <h1 style={{ ...headline }}>{VIEW_LABELS.dashboard.heading}</h1>
           <p style={{ color: T.MUTED, fontSize: 13, marginTop: 6 }}>
             {loading
               ? "Loading…"
@@ -147,6 +149,10 @@ export default function NetworkWorklistPage() {
           ))}
         </div>
       )}
+    
+      {/* Metrics sit BELOW the worklist, never above it: the due list is the
+          product, and a user must see who to contact before any number. */}
+      <DashboardSection />
     </main>
   )
 }

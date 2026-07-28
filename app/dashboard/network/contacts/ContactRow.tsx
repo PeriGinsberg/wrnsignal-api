@@ -26,6 +26,12 @@ export type Contact = {
   last_action_at: string | null
   company_id: string | null
   network_companies?: { name: string } | null
+  // Milestone stamps + outcome, used by the dashboard. Optional because the row
+  // itself never reads them and older callers do not send them.
+  first_touch_at?: string | null
+  first_replied_at?: string | null
+  first_chat_at?: string | null
+  outcome_type?: string | null
 }
 
 const DAY = 86400000

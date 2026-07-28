@@ -4,7 +4,7 @@
 // lenses on the same data. The URL is the state — the active tab is derived
 // from the pathname, and each tab is a real route (deep-linkable, and the
 // dashboard nav-highlight works). Children render their own <main>.
-//   Today     /dashboard/network              — the daily worklist (front door)
+//   Dashboard /dashboard/network              — worklist + metrics (front door)
 //   Contacts  /dashboard/network/contacts     — full roster, standalone included
 //   Companies /dashboard/network/companies    — board by priority (Phase 5b)
 
@@ -12,11 +12,12 @@ import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { T } from "../../../lib/dashboard-theme"
 import { rememberOrigin } from "./backTarget"
+import { VIEW_LABELS } from "./vocab"
 
 const TABS = [
-  { href: "/dashboard/network", label: "Today", exact: true },
-  { href: "/dashboard/network/contacts", label: "Contacts", exact: false },
-  { href: "/dashboard/network/companies", label: "Companies", exact: false },
+  { href: "/dashboard/network", label: VIEW_LABELS.dashboard.tab, exact: true },
+  { href: "/dashboard/network/contacts", label: VIEW_LABELS.contacts.tab, exact: false },
+  { href: "/dashboard/network/companies", label: VIEW_LABELS.companies.tab, exact: false },
 ]
 
 export default function NetworkLayout({ children }: { children: React.ReactNode }) {

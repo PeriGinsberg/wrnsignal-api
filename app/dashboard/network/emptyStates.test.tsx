@@ -13,6 +13,15 @@ import WorklistPage from "./page"
 import ContactsPage from "./contacts/page"
 import CompaniesPage from "./companies/page"
 
+// The Contacts page derives its filters from the URL, so it needs the router
+// context. Stubbed with an empty query string — the first-run case is by
+// definition an unfiltered arrival.
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+  usePathname: () => "/dashboard/network/contacts",
+}))
+
 const authFetchMock = vi.fn()
 vi.mock("./authFetch", () => ({
   authFetch: (...args: unknown[]) => authFetchMock(...args),
