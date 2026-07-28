@@ -17,6 +17,7 @@ export type Contact = {
   first_name: string
   last_name: string
   title: string | null
+  email?: string | null   // not rendered in the row; searched by the spreadsheet
   stage: string
   relationship: string | null
   priority: string | null

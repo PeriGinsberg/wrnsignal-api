@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       // list (no aggregate route in v1). The milestone stamps are what give reply and
       // chat rates their "or beyond" semantics — stamped once, never recomputed, so a
       // contact now at nurture still counts as having replied.
-      "id, first_name, last_name, title, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type")
+      "id, first_name, last_name, title, email, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type")
       .eq("client_profile_id", target)
 
     // optional filters

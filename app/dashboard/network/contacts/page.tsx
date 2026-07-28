@@ -21,6 +21,7 @@ import {
   STAGE_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
 } from "../vocab"
 import { Row, dueOf, type Contact } from "./ContactRow"
+import { matchesQuery } from "./search"
 import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS } from "../vocab"
 import { isStalled, STALLED_DAYS } from "../dashboardMetrics"
 
@@ -85,6 +86,9 @@ function ContactsSpreadsheetInner() {
   const fSegment = sp.get("segment") ?? ""
   const fPriority = sp.get("priority") ?? ""
   const fStatus = sp.get("status") ?? ""   // overdue | due_today | not_started | stalled
+  // Free text, same URL-as-source-of-truth model as the dropdowns: a searched
+  // view is shareable, survives back/forward, and needs no second copy of state.
+  const fQuery = sp.get("q") ?? ""
   // Company is two params behind one control: an explicit id, or the standalone flag.
   const fCompany = sp.get("standalone") ? STANDALONE : (sp.get("company_id") ?? "")
 
@@ -105,6 +109,7 @@ function ContactsSpreadsheetInner() {
   const setFSegment = useCallback((v: string) => setParam("segment", v), [setParam])
   const setFPriority = useCallback((v: string) => setParam("priority", v), [setParam])
   const setFStatus = useCallback((v: string) => setParam("status", v), [setParam])
+  const setFQuery = useCallback((v: string) => setParam("q", v), [setParam])
   const setFCompany = useCallback((v: string) => {
     const next = new URLSearchParams(sp.toString())
     next.delete("standalone"); next.delete("company_id")
@@ -172,6 +177,10 @@ function ContactsSpreadsheetInner() {
 
   const filtered = useMemo(() => {
     return contacts.filter((c) => {
+      // Search composes with the dropdowns rather than overriding them: it is
+      // one more predicate in the same chain, so "litig" inside an active
+      // stage filter narrows that stage, it does not search past it.
+      if (!matchesQuery(c, fQuery)) return false
       if (fStage && c.stage !== fStage) return false
       if (fPhase && (STAGE_PHASE[c.stage] ?? "idle") !== fPhase) return false
       // NO_RELATIONSHIP is a real filter value, not "unset" — an empty filter
@@ -193,7 +202,7 @@ function ContactsSpreadsheetInner() {
       }
       return true
     })
-  }, [contacts, fStage, fPhase, fRelationship, fSegment, fPriority, fCompany, fStatus])
+  }, [contacts, fQuery, fStage, fPhase, fRelationship, fSegment, fPriority, fCompany, fStatus])
 
   // Apply the frozen order to whatever survived filtering. Selection logic below
   // deliberately keeps using `filtered` — it is set-based and order-independent.
@@ -214,12 +223,12 @@ function ContactsSpreadsheetInner() {
     return contacts.some((c, i) => rank.get(c.id) !== i)
   }, [contacts, orderIds])
 
-  const anyFilter = fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus
+  const anyFilter = fQuery || fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus
   function clearFilters() {
     // One replace, not seven — seven sequential calls would each read a stale
     // `sp` and the last would win, clearing only one filter.
     const next = new URLSearchParams(sp.toString())
-    for (const k of ["stage", "phase", "relationship", "segment", "priority", "status", "company_id", "standalone"]) next.delete(k)
+    for (const k of ["q", "stage", "phase", "relationship", "segment", "priority", "status", "company_id", "standalone"]) next.delete(k)
     const qs = next.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }
@@ -319,6 +328,19 @@ function ContactsSpreadsheetInner() {
           nothing, taking the controls needed to clear that filter with it. */}
       {contacts.length > 0 && (
       <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          type="search"
+          value={fQuery}
+          onChange={(e) => setFQuery(e.target.value)}
+          placeholder="Search name, company, title, email"
+          aria-label="Search contacts"
+          data-testid="contacts-search"
+          style={{
+            ...selectStyle, width: 260, height: 34, fontSize: 12,
+            // selectStyle carries a dropdown arrow background; a text input must not.
+            background: T.GLASS, backgroundImage: "none", appearance: "none",
+          }}
+        />
         <Filter value={fStage} onChange={setFStage} allLabel="All stages">
           {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k} style={selectOption}>{v}</option>)}
         </Filter>
