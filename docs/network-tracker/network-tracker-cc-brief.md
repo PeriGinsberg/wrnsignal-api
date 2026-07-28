@@ -31,7 +31,8 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 5b — Company board | `companies/page.tsx` grouped by `tier`, expandable company cards with lazy-loaded contacts, `POST`/`PATCH`/`DELETE` company routes, zero-contact wishlist firms | ✅ built (`9671d02e`) |
 | 6 — CSV/XLSX import | `import/preview` + `import/commit` routes + `import/page.tsx` wizard; `read-excel-file` + `papaparse` | ✅ verified (CSV smoke + `import-parse.test.ts`) |
 | 7 — Delete | single `DELETE /contacts/[id]` + batch `POST /contacts/delete` + record & spreadsheet UI | ✅ verified |
-| 7b — Client Profile | `network_client_profile` table exists (16 merge vars + elevator pitch) | 🔶 table only, no UI/route |
+| 7a — Profile source map | Traced which of the 16 merge vars SIGNAL already stores, and where | ✅ done (see §3 seed rules) |
+| 7b — Client Profile | `profile/page.tsx` + `GET/PATCH /api/network/profile` + `lib/network-tracker/client-profile-seed.ts`; seeded from client_profiles, auto-fills blanks, X-of-17 completeness meter | ✅ built |
 | 8 — Templates | 24 coach-loaded templates keyed `(client, template_id)`; "copy & mark as sent" | 📋 specced (RECONCILIATION §8/§8.1) |
 | 9 — Dashboard (metrics under the worklist) | 7-group funnel, reply/chat rates, what's-working splits, needs-attention — all client-side in `dashboardMetrics.ts`, every group and row deep-linking into filtered Contacts | ✅ built |
 | 10 — Coach layer + heat map | universal coach comments, coach view/edit | 📋 specced |
@@ -55,8 +56,11 @@ and fails if one ever degrades into something error-shaped.
 > add or import contacts, work the daily worklist, log touches and notes, move stages, manage the
 > company board — and will still find these missing, **by plan, not by defect**:
 >
-> - **Phase 7b — Client Profile.** `network_client_profile` exists (16 merge vars + elevator
->   pitch) with **no UI and no route**. Nothing fills it.
+> - **Phase 7b — Client Profile.** BUILT. Two of the 17 fields have no honest source and start
+>   blank by design: `city` (the only stored location is where the client wants to WORK, which
+>   would be wrong-but-plausible in a box meaning where they ARE) and `degree`
+>   (`education_status` is only in_school/graduated/na). `affinity_1..3`, `calendar_link` and
+>   `elevator_pitch` are genuinely new and always client-entered.
 > - **Phase 8 — Templates.** The 24 coach-loaded outreach templates and "copy & mark as sent" are
 >   specced (RECONCILIATION §8/§8.1) and unbuilt. This is the biggest felt gap: the tracker tells
 >   a user *who* to contact today and gives them nothing to *send*.
@@ -119,6 +123,17 @@ one place), `supabase/migrations/2026072*_network_*.sql` (schema), `lib/network-
   overdue* — stuck on the worklist forever, un-workable. The engine takes `pipelineActivity` and
   returns `clearOverride`; the actions and stage routes null the column. The reminder route does
   NOT pass it (that's where the override is *set*).
+- **Coaches cannot mutate the PIPELINE — but the networking PROFILE is coach-writable, on
+  purpose.** These sit next to each other deliberately, because read together they look like a
+  contradiction and are not. The pipeline (stage, actions, reminders, contact edits, deletes) is
+  the client's own work record: a coach editing it would corrupt the client's due-dates and
+  history, so every one of those routes is owner-only and returns 403 for a coach.
+  `network_client_profile` is a different kind of thing — it is shared outreach copy (the 16
+  merge variables + elevator pitch) that a coach is expected to help write, so
+  `/api/network/profile` PATCH gates on `assertBoardAccess(..., "full")` and both client and
+  coach may edit it, last save wins. The test is *whose record is it*: the pipeline records what
+  the client DID and only they may change it; the profile is what gets SENT and the coach helps
+  draft it. Note there is no `"edit"` access level — the levels are `view | annotate | full`.
 - **`cycle_started_at` exists.** Stamped on any transition INTO `sequence_active`. The engine
   counts only touches with `action_date >= cycle_started_at`. Reason: without it, re-engaging a
   contact that went dormant after touch 3 would re-count the *old* cycle's touches and flip it
@@ -185,8 +200,8 @@ one place), `supabase/migrations/2026072*_network_*.sql` (schema), `lib/network-
   from Excel, drop both in `network-import-fixtures/`, and `import-parse.test.ts` auto-covers them
   (it iterates the dir, skips when absent). "This file class is the target, so one passing file
   isn't proof."
-- **The tracker is URL-only** (see §1). Blocked on Phase 5b.
-- **`network_client_profile` has no UI/route** (Phase 7b) — the table's there, nothing fills it.
+- ~~The tracker is URL-only, blocked on Phase 5b~~ — RESOLVED: 5b shipped (`9671d02e`) and the
+  tracker is in the dashboard nav (`2f69ae50`). See §1.
 - **Companies tab 404s** — visible in the strip, no page. Fix in 5b (or hide it interim).
 - **`node_modules` is tracked in git and shouldn't be.** 22,377 files are in the index even
   though `node_modules/` is listed in `.gitignore` line 7 — they were committed before that rule

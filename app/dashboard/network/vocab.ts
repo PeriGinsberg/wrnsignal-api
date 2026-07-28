@@ -126,6 +126,7 @@ export const VIEW_LABELS = {
   dashboard: { tab: "Dashboard", heading: "Networking Dashboard" },
   contacts: { tab: "Contacts", heading: "Contacts" },
   companies: { tab: "Companies", heading: "Companies" },
+  profile: { tab: "Profile", heading: "Your networking profile" },
 } as const
 
 export const STATUS_LABELS: Record<string, string> = {

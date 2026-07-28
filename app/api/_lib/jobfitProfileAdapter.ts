@@ -193,7 +193,7 @@ function pickAllowedCities(args: {
 // bare-"strategy" over-matching). Consolidating eliminates that drift.
 import { inferTargetFamilies as sharedInferTargetFamilies } from "../../../lib/jobfit-family-inference"
 
-function inferTargetFamilies(profileText: string, targetRoles?: string | null): JobFamily[] {
+export function inferTargetFamilies(profileText: string, targetRoles?: string | null): JobFamily[] {
   return sharedInferTargetFamilies(targetRoles, profileText)
 }/* ------------------------------ constraints inference ------------------------------ */
 

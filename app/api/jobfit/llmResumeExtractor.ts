@@ -296,6 +296,24 @@ async function getRawExtraction(resumeText: string, cache: ResumeExtractCache, a
   return raw
 }
 
+// Roles only, for callers that want the résumé's employment history rather than
+// scoring evidence — the network client profile seeds current_role/current_employer
+// from it (Phase 7b). Deliberately a thin read of the SAME cached extraction the
+// scoring path uses: no second prompt, no persisted pipeline, and it fails open to
+// null so a missing key or a bad parse leaves those two fields blank and editable
+// rather than failing the whole seed.
+export async function extractResumeRoles(
+  resumeText: string,
+  opts: { cache: ResumeExtractCache; allowLive: boolean },
+): Promise<RawRole[] | null> {
+  try {
+    const raw = await getRawExtraction(resumeText, opts.cache, opts.allowLive)
+    return raw ? raw.roles : null
+  } catch {
+    return null
+  }
+}
+
 // ── Dispatcher: LLM (verified + denylisted) when available, else regex ────────
 export type ResumeEvidence = { profileEvidence: ProfileEvidence; verbBullets: VerbBullet[]; source: "llm" | "regex" }
 
