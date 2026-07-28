@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { T, card, btnPrimary, btnSecondary, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
 import { authFetch } from "../../authFetch"
 import { pickTemplate, REASON_TO_ACTION, ACTION_TYPE_LABEL } from "../../vocab"
-import { renderTemplate, type MergedTemplate } from "../../../../../lib/network-tracker/templates"
+import { renderTemplate, extractVariables, classifyVariable, UNRESOLVED_PLACEHOLDER, type MergedTemplate } from "../../../../../lib/network-tracker/templates"
 
 type Contact = {
   id: string
@@ -34,6 +34,13 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
   const [loading, setLoading] = useState(true)
   const [chosenId, setChosenId] = useState<string | null>(null)
   const [busy, setBusy] = useState<null | "send" | "copy">(null)
+  // Per-contact scratchpad. null = untouched, so the box shows the freshly
+  // rendered template. EPHEMERAL BY DESIGN: this is a place to add one specific
+  // line for one specific person before pasting, not a saved customisation.
+  // Anything worth keeping belongs in the template itself (8a), which is a
+  // different action with a different blast radius — editing the template
+  // changes every future message, editing here changes exactly one.
+  const [draft, setDraft] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,6 +72,11 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
   const activeId = chosenId ?? suggestedId
   const active = templates.find((t) => t.template_id === activeId) ?? null
 
+  // Discard the draft whenever the underlying message changes out from under it.
+  // Keeping it would silently paste an edit written against a DIFFERENT template
+  // or a different person — the worst possible failure for a copy-paste tool.
+  useEffect(() => { setDraft(null) }, [chosenId, suggestedId, contact.id])
+
   const rendered = useMemo(() => {
     if (!active) return null
     return renderTemplate(active.body, profile, {
@@ -77,6 +89,25 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
   // Same derivation as the inline Log button (ContactRow), deliberately: the two
   // must log the same action for the same due reason or the pipeline disagrees
   // with itself depending on which button the user happened to press.
+  // What is actually in the box, and therefore what gets copied.
+  const messageText = draft ?? rendered?.text ?? ""
+  const isEdited = draft !== null && rendered != null && draft !== rendered.text
+
+  // Warnings track the EDITED text, not the original render. Filling in
+  // [MUTUAL] by hand must clear its warning, and typing a raw [CITY] back in
+  // must raise one — otherwise the warning describes a message the user is no
+  // longer sending.
+  const gapsNow = useMemo(() => {
+    const brackets = extractVariables(messageText)
+    const toFill = brackets.filter((v) => classifyVariable(v) === "fill")
+    // A non-fill bracket in the box means the user typed one back in by hand.
+    const typedBack = brackets.filter((v) => classifyVariable(v) !== "fill")
+    // The named unresolved variables stay useful only while their blanks remain;
+    // once the user has typed over every "_____" there is nothing left to warn about.
+    const stillBlank = messageText.includes(UNRESOLVED_PLACEHOLDER) ? (rendered?.unresolved ?? []) : []
+    return { unresolved: [...stillBlank, ...typedBack], toFill }
+  }, [messageText, rendered])
+
   const reason = contact.next_due_reason ?? null
   const actionType = reason ? (REASON_TO_ACTION[reason] ?? "note_logged") : null
 
@@ -92,11 +123,11 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
   const copyOnly = useCallback(async () => {
     if (!rendered) return
     setBusy("copy"); setError(null); setConfirmation(null)
-    const okCopy = await copyText(rendered.text)
+    const okCopy = await copyText(messageText)
     setBusy(null)
     if (!okCopy) { setError("Could not reach the clipboard — select the message and copy manually."); return }
     setConfirmation("Copied. Nothing logged — mark it sent when you've actually sent it.")
-  }, [rendered])
+  }, [rendered, messageText])
 
   const copyAndSend = useCallback(async () => {
     if (!rendered || !actionType) return
@@ -104,7 +135,7 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
     // Copy FIRST. If the clipboard fails we must not log an outreach that never
     // left the building — a false "sent" is worse than a failed copy, because it
     // silently advances the due date and the contact goes quiet in the tracker.
-    const okCopy = await copyText(rendered.text)
+    const okCopy = await copyText(messageText)
     if (!okCopy) {
       setBusy(null)
       setError("Could not reach the clipboard — nothing was logged. Copy manually, then use Log.")
@@ -125,11 +156,11 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
     } finally {
       setBusy(null)
     }
-  }, [rendered, actionType, contact.id, onLogged])
+  }, [rendered, messageText, actionType, contact.id, onLogged])
 
   if (loading) return <div style={{ color: T.DIM, fontSize: 12 }}>Loading templates…</div>
 
-  const gaps = rendered ? [...rendered.unresolved, ...rendered.toFill] : []
+  const gaps = rendered ? [...gapsNow.unresolved, ...gapsNow.toFill] : []
 
   return (
     <div style={{ ...card, padding: "16px 18px" }} data-testid="send-panel">
@@ -169,14 +200,39 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
 
       {rendered && (
         <>
-          <pre
+          <textarea
             data-testid="rendered-message"
+            aria-label="Message"
+            value={messageText}
+            onChange={(e) => setDraft(e.target.value)}
+            spellCheck
+            rows={Math.min(24, Math.max(6, messageText.split("\n").length + 1))}
             style={{
+              display: "block", width: "100%", boxSizing: "border-box", resize: "vertical",
               whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 13, lineHeight: "20px",
-              color: T.TEXT, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`,
-              borderRadius: 12, padding: "12px 14px", margin: "0 0 12px",
+              color: T.TEXT, background: T.GLASS, border: `1px solid ${isEdited ? T.WRN_BLUE : T.BORDER_SOFT}`,
+              borderRadius: 12, padding: "12px 14px", margin: "0 0 6px",
             }}
-          >{rendered.text}</pre>
+          />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 20, marginBottom: 10 }}>
+            {isEdited && (
+              <>
+                <span style={{ color: T.MUTED, fontSize: 11.5 }} data-testid="edited-note">
+                  Edited for {contact.first_name} — this copy only, not saved to the template.
+                </span>
+                <button
+                  onClick={() => setDraft(null)}
+                  style={{
+                    background: "none", border: "none", padding: 0, cursor: "pointer",
+                    color: T.WRN_BLUE, fontSize: 11.5, fontWeight: 700, textDecoration: "underline",
+                  }}
+                >
+                  Revert to suggestion
+                </button>
+              </>
+            )}
+          </div>
 
           {gaps.length > 0 && (
             // Warn, never block. Someone may well finish the sentence in Gmail,
@@ -189,15 +245,15 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
                 color: T.TEXT, fontSize: 12, lineHeight: "18px",
               }}
             >
-              {rendered.unresolved.length > 0 && (
+              {gapsNow.unresolved.length > 0 && (
                 <div>
-                  Still unfilled: {rendered.unresolved.map((v) => `[${v}]`).join(", ")} — fill your
+                  Still unfilled: {gapsNow.unresolved.map((v) => `[${v}]`).join(", ")} — fill your
                   networking profile, or edit before sending.
                 </div>
               )}
-              {rendered.toFill.length > 0 && (
-                <div style={{ marginTop: rendered.unresolved.length ? 4 : 0 }}>
-                  Fill in {rendered.toFill.map((v) => `[${v}]`).join(", ")} before sending — these
+              {gapsNow.toFill.length > 0 && (
+                <div style={{ marginTop: gapsNow.unresolved.length ? 4 : 0 }}>
+                  Fill in {gapsNow.toFill.map((v) => `[${v}]`).join(", ")} before sending — these
                   are yours to write.
                 </div>
               )}

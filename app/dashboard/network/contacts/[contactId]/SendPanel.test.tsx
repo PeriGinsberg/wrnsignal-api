@@ -57,6 +57,9 @@ function api(over: Record<string, unknown> = {}) {
   }
 }
 
+// The message is an editable box, so its content is `value`, never textContent.
+const box = () => screen.getByTestId("rendered-message") as HTMLTextAreaElement
+
 afterEach(cleanup)
 beforeEach(() => {
   authFetchMock.mockReset()
@@ -73,7 +76,7 @@ describe("the full loop", () => {
     expect(screen.getByTestId("active-template").textContent).toMatch(/^C2 ·/)
 
     // …8b filled it in. A contact variable resolved, and no bracket survived.
-    const msg = screen.getByTestId("rendered-message").textContent ?? ""
+    const msg = box().value
     expect(msg).toContain("Priya")
     expect(msg).not.toMatch(/\[(NAME|FIRM|TARGET_ROLE|CURRENT_ROLE)\]/)
     expect(msg).not.toBe(DEFAULTS_BY_ID.C2.body) // it actually rendered
@@ -83,7 +86,7 @@ describe("the full loop", () => {
     const onLogged = vi.fn()
     render(<SendPanel contact={COLD_DUE_T2} onLogged={onLogged} />)
     await waitFor(() => screen.getByTestId("rendered-message"))
-    const msg = screen.getByTestId("rendered-message").textContent ?? ""
+    const msg = box().value
 
     fireEvent.click(screen.getByRole("button", { name: /Copy and mark as sent/i }))
 
@@ -157,7 +160,103 @@ describe("warnings before copy", () => {
     const warn = screen.getByTestId("gap-warning")
     expect(warn.textContent).toMatch(/Still unfilled/)
     // And the message shows blanks, never raw brackets.
-    expect(screen.getByTestId("rendered-message").textContent).not.toMatch(/\[TARGET_ROLE\]/)
+    expect(box().value).not.toMatch(/\[TARGET_ROLE\]/)
+  })
+})
+
+describe("the per-contact scratchpad", () => {
+  it("copies what is IN THE BOX, not what was rendered into it", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} />)
+    await waitFor(() => screen.getByTestId("rendered-message"))
+    const original = box().value
+
+    const edited = original + "\n\nP.S. Congrats on the Series B."
+    fireEvent.change(box(), { target: { value: edited } })
+
+    fireEvent.click(screen.getByRole("button", { name: /Copy and mark as sent/i }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+
+    // The whole point: the personalised line reaches the clipboard.
+    expect(writeText.mock.calls[0][0]).toBe(edited)
+    expect(writeText.mock.calls[0][0]).not.toBe(original)
+
+    // And the edit does not disturb the logging — still the due reason's action.
+    const logCall = authFetchMock.mock.calls.find((c) => String(c[0]).includes("/actions"))
+    expect(JSON.parse(logCall![1].body).type).toBe("touch_2")
+  })
+
+  it("Copy only also copies the edit", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} />)
+    await waitFor(() => screen.getByTestId("rendered-message"))
+    fireEvent.change(box(), { target: { value: "hand-written" } })
+
+    fireEvent.click(screen.getByRole("button", { name: /Copy only/i }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    expect(writeText.mock.calls[0][0]).toBe("hand-written")
+  })
+
+  it("switching templates DISCARDS the edit — an edit written for C2 must never ride along to C3", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} />)
+    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toMatch(/^C2 ·/))
+    fireEvent.change(box(), { target: { value: "written against C2" } })
+    expect(box().value).toBe("written against C2")
+
+    fireEvent.change(screen.getByLabelText("Template"), { target: { value: "C3" } })
+    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toMatch(/^C3 ·/))
+
+    // Back to a clean render of the NEW template.
+    expect(box().value).not.toBe("written against C2")
+    expect(box().value).toContain("Priya")
+    expect(screen.queryByTestId("edited-note")).toBeNull()
+  })
+
+  it("revert restores the freshly rendered suggestion", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} />)
+    await waitFor(() => screen.getByTestId("rendered-message"))
+    const original = box().value
+
+    fireEvent.change(box(), { target: { value: "scratch" } })
+    expect(screen.getByTestId("edited-note")).toBeTruthy()
+
+    fireEvent.click(screen.getByRole("button", { name: /Revert to suggestion/i }))
+    expect(box().value).toBe(original)
+    expect(screen.queryByTestId("edited-note")).toBeNull()
+  })
+
+  it("writes NOTHING to the override table — the scratchpad is ephemeral", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} />)
+    await waitFor(() => screen.getByTestId("rendered-message"))
+    fireEvent.change(box(), { target: { value: "one-off wording" } })
+    fireEvent.click(screen.getByRole("button", { name: /Copy and mark as sent/i }))
+    await waitFor(() => screen.getByTestId("confirmation"))
+
+    // The only template traffic is the initial GET. No PATCH, no DELETE, no
+    // per-template URL — editing here must not change the next person's message.
+    const templateCalls = authFetchMock.mock.calls.filter((c) => String(c[0]).includes("/templates"))
+    expect(templateCalls.length).toBe(1)
+    expect(String(templateCalls[0][0])).toBe("/api/network/templates")
+    expect(templateCalls[0][1]).toBeUndefined() // a bare GET
+  })
+
+  it("fill-at-send warnings track the EDITED text, not the original render", async () => {
+    // R1 carries [MUTUAL]; the warning must clear once it is actually written.
+    const referred = { ...COLD_DUE_T2, relationship: "referred", next_due_reason: null, stage: "identified" }
+    render(<SendPanel contact={referred} />)
+    await waitFor(() => screen.getByTestId("rendered-message"))
+    expect(screen.getByTestId("gap-warning").textContent).toMatch(/\[MUTUAL\]/)
+
+    // R1 carries [MUTUAL] TWICE. Replacing one and having the warning persist is
+    // the correct behaviour, so replace both before expecting it to clear.
+    fireEvent.change(box(), { target: { value: box().value.replace("[MUTUAL]", "Dana Reyes") } })
+    expect(screen.getByTestId("gap-warning").textContent).toMatch(/\[MUTUAL\]/)
+
+    fireEvent.change(box(), { target: { value: box().value.replaceAll("[MUTUAL]", "Dana Reyes") } })
+    expect(screen.queryByTestId("gap-warning")).toBeNull()
+
+    // And it comes back if the user pastes a raw variable in by hand — the
+    // warning describes the message being sent, not the one first rendered.
+    fireEvent.change(box(), { target: { value: "Hi [NAME], quick question." } })
+    expect(screen.getByTestId("gap-warning").textContent).toMatch(/\[NAME\]/)
   })
 })
 
