@@ -25,10 +25,10 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 1 — Schema + engine | `lib/network-tracker/reminder-engine.ts` (`computeNextDue`, pure) + 25 unit tests | ✅ done & verified |
 | 2 — Spine | `lib/network-tracker/access.ts` + 6 routes (`worklist`, `companies` GET, `contacts` GET/POST, `contacts/[id]` GET/PATCH/DELETE, `.../actions`, `.../stage`, `.../reminder`) | ✅ verified by `spine-smoke.ts` |
 | 3 — Worklist ("Today") | `app/dashboard/network/page.tsx` + `WorklistRow.tsx` + tab-strip `layout.tsx` | ✅ built · 🔶 **not in dashboard nav** |
-| 4 — Contact record | `contacts/[contactId]/page.tsx` + `PipelineStepper.tsx` (11-stage) + `ActionLog.tsx`; notes, additional-info, details, snooze, delete | ✅ |
+| 4 — Contact record | `contacts/[contactId]/page.tsx` + `PipelineStepper.tsx` (7-segment phase bar + 11-stage dropdown, `e014af84`) + `ActionLog.tsx` + `NotesLog.tsx`; running notes, "About this person", additional-info, details, snooze, delete | ✅ |
 | 4.5 — Add contact | `POST /api/network/contacts` + `AddContactForm.tsx` | ✅ |
 | 5a — Contacts spreadsheet | `contacts/page.tsx` — dense table, filters, inline log/stage, bulk-select + delete | ✅ (replaced the old roster) |
-| **5b — Company board** | `companies/page.tsx` grouped by `tier`, company drawer, company create/edit routes, zero-contact wishlist firms | 📋 **not built — see below** |
+| 5b — Company board | `companies/page.tsx` grouped by `tier`, expandable company cards with lazy-loaded contacts, `POST`/`PATCH`/`DELETE` company routes, zero-contact wishlist firms | ✅ built (`9671d02e`) |
 | 6 — CSV/XLSX import | `import/preview` + `import/commit` routes + `import/page.tsx` wizard; `read-excel-file` + `papaparse` | ✅ verified (CSV smoke + `import-parse.test.ts`) |
 | 7 — Delete | single `DELETE /contacts/[id]` + batch `POST /contacts/delete` + record & spreadsheet UI | ✅ verified |
 | 7b — Client Profile | `network_client_profile` table exists (16 merge vars + elevator pitch) | 🔶 table only, no UI/route |
@@ -36,14 +36,19 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 9 — Dashboard ("Today" as metrics) | funnel, reply/chat rates, what's-working split, needs-attention | 📋 specced (DASHBOARD Part 1) |
 | 10 — Coach layer + heat map | universal coach comments, coach view/edit | 📋 specced |
 
-**Why the whole tracker is URL-only.** It is **not linked from the dashboard nav** (the D2C nav
-in `app/dashboard/layout.tsx` was deliberately left without a Network Tracker entry). You reach
-it by typing `/dashboard/network`. The gate holding it back from the nav is **Phase 5b**: the
-tab strip (`layout.tsx`) shows three tabs — **Today · Contacts · Companies** — and the
-**Companies tab currently renders but 404s** because `companies/page.tsx` doesn't exist. Until
-5b builds the company board, surfacing the tracker in the nav would ship a visibly broken tab.
-(Cheap interim option if 5b slips: hide the Companies tab in `layout.tsx` and surface Today +
-Contacts.) This is the single most important thing blocking "make it real."
+**The tracker is URL-only — and the thing that was blocking it is now gone.** It is still **not
+linked from the dashboard nav** (the D2C nav in `app/dashboard/layout.tsx` has no Network Tracker
+entry); you reach it by typing `/dashboard/network`. That was deliberate: the tab strip
+(`layout.tsx`) shows three tabs — **Today · Contacts · Companies** — and the Companies tab used to
+render but 404, so surfacing the tracker would have shipped a visibly broken tab.
+
+**Phase 5b closed that in `9671d02e`.** All three tabs now resolve. The remaining question is no
+longer "is it broken?" but a product call: **should the tracker go into the dashboard nav?** What
+that decision now rests on is the first-run experience — a brand-new account has zero contacts, so
+whoever clicks the nav entry lands on three empty screens. Those empty states have to read as
+inviting rather than broken, and the two ways a real user gets data in (the import wizard and the
+Add-a-contact form) have to work from cold. Neither is a code blocker; both are worth eyeballing
+before the tracker is put in front of everyone.
 
 ---
 
