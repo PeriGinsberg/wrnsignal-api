@@ -104,6 +104,22 @@ export const selectOption: React.CSSProperties = {
   color: T.BG,
 }
 
+// Small caption above a control, naming the FIELD so the control's value is not
+// mistaken for the field name. Shared so every labelled control looks identical.
+// Pair with FIELD_LABELS for the text.
+export const fieldLabel: React.CSSProperties = {
+  color: T.MUTED,
+  fontSize: 10,
+  fontWeight: 800,
+  letterSpacing: 0.3,
+  whiteSpace: "nowrap",
+}
+export const fieldWrap: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+}
+
 export const btnPrimary: React.CSSProperties = {
   background: T.GRAD_PRIMARY,
   color: "#04060F",

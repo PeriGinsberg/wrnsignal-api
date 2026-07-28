@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { T, input as inputStyle, select as selectStyle, selectOption } from "../../../lib/dashboard-theme"
 import { authFetch } from "./authFetch"
-import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABEL, STAGE_LABELS } from "./vocab"
+import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABEL, STAGE_LABELS, FIELD_LABELS } from "./vocab"
 
 // "Add a contact" — a small modal form. Company is OPTIONAL (leave it blank for a
 // standalone contact). The new contact starts at not_contacted with no due date;
@@ -108,7 +108,7 @@ export function AddContactForm({ onClose, onCreated }: { onClose: () => void; on
                 the product treats as most important — so it leads this row. */}
             <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "flex-end" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-                <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>Relationship (picks the sequence)</span>
+                <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.relationship} (picks the sequence)</span>
                 <select value={relationship} onChange={(e) => setRelationship(e.target.value)} style={{ ...selectStyle, height: 40 }}>
                   <option value="" style={selectOption}>—</option>
                   {RELATIONSHIPS.map((r) => (
@@ -117,7 +117,7 @@ export function AddContactForm({ onClose, onCreated }: { onClose: () => void; on
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: 4, width: 90 }}>
-                <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>Priority</span>
+                <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.priority}</span>
                 <select value={priority} onChange={(e) => setPriority(e.target.value)} style={{ ...selectStyle, height: 40 }}>
                   <option value="" style={selectOption}>—</option>
                   {PRIORITIES.map((p) => (

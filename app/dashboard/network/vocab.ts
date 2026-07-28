@@ -78,6 +78,58 @@ export function stagesInPhase(phase: PhaseKey): string[] {
   return Object.entries(STAGE_PHASE).filter(([, p]) => p === phase).map(([stage]) => stage)
 }
 
+// ─── Company board ───────────────────────────────────────────────────────────
+// TIER is company-level: how much the client wants to work there. Distinct from
+// contact-level PRIORITY (A/B/C) — one word each, no collision. UI label "Tier".
+// DISPLAY ONLY. The DB values stay dream/strong/backup — the CHECK constraint,
+// the routes, and every stored row are untouched. Renaming here is a pure
+// relabel, exactly like STAGE_LABELS maps `identified` to "Not contacted".
+export const TIER_LABELS: Record<string, string> = {
+  dream: "Tier 1",
+  strong: "Tier 2",
+  backup: "Tier 3",
+}
+
+// `tier` is nullable, so the board always has an untiered bucket. UNSORTED is a
+// UI-only key — it is never written to the DB, it stands for `tier IS NULL`.
+export const UNSORTED_TIER = "__unsorted__"
+export const TIER_GROUP_LABELS: Record<string, string> = {
+  [UNSORTED_TIER]: "Not Categorized",
+  ...TIER_LABELS,
+}
+
+// "Not Categorized" sits FIRST, deliberately. A company with no tier is
+// untriaged, not low-value; putting it at the bottom would bury it forever. Top
+// reads as "sort me" — the same reasoning that floats no-activity contacts to
+// the top of the roster. TIER_ORDER holds KEYS; the wording lives in
+// TIER_GROUP_LABELS above, so ordering and labelling never drift apart.
+export const TIER_ORDER: string[] = [UNSORTED_TIER, "dream", "strong", "backup"]
+
+// Names of the FIELDS themselves, as distinct from the values inside them.
+// A pill showing "Tier 1" says nothing about which field it is; the label beside
+// it does. One source so "Tier" can't read "Tier" here and "Priority" there.
+export const FIELD_LABELS = {
+  tier: "Tier",
+  status: "Status",
+  stage: "Stage",
+  relationship: "Relationship",
+  priority: "Priority",
+  segment: "Segment",
+} as const
+
+export const STATUS_LABELS: Record<string, string> = {
+  researching: "Researching",
+  actively_working: "Actively working",
+  paused: "Paused",
+  closed: "Closed",
+}
+
+// `status` is nullable too. Blank renders as an em dash — NOT defaulted to
+// "Researching", because the board must not assert something the user never said.
+export function statusLabel(status: string | null | undefined): string {
+  return status ? (STATUS_LABELS[status] ?? status) : "—"
+}
+
 // What "Logged it" writes for a given due reason (worklist quick action).
 export const REASON_TO_ACTION: Record<string, string> = {
   touch_2: "touch_2",

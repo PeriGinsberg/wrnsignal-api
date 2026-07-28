@@ -160,6 +160,18 @@ one place), `supabase/migrations/2026072*_network_*.sql` (schema), `lib/network-
 - **The tracker is URL-only** (see §1). Blocked on Phase 5b.
 - **`network_client_profile` has no UI/route** (Phase 7b) — the table's there, nothing fills it.
 - **Companies tab 404s** — visible in the strip, no page. Fix in 5b (or hide it interim).
+- **`node_modules` is tracked in git and shouldn't be.** 22,377 files are in the index even
+  though `node_modules/` is listed in `.gitignore` line 7 — they were committed before that rule
+  existed, and git keeps tracking what's already indexed. It was never deliberate vendoring: the
+  files arrived incidentally inside two unrelated March 2026 commits (`c11f580c` 1,299 files,
+  `406873e7` 82 files), and the snapshot is partial and stale (291 of 479 top-level packages,
+  with ~90 tracked files already deleted on disk). Every real dependency commit in this repo's
+  history — `4047cdee`, `8f8f62ab`, `ae4db00f`, `026e2f53`, `735d0148`, `602777d0`, `8995f92b` —
+  commits `package.json` + `package-lock.json` only, which is the correct pattern and the one to
+  keep following. Vercel installs from the lockfile and never reads the vendored copy.
+  **Cleanup:** `git rm -r --cached node_modules` as a **standalone ~22k-file commit at a quiet
+  moment** — never mixed with feature work. Benefit: `git status` stops being ~150 lines of
+  vendor noise and vendored diffs stop leaking into feature commits (it has happened twice).
 
 ---
 

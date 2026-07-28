@@ -8,8 +8,10 @@
 //   Contacts  /dashboard/network/contacts     — full roster, standalone included
 //   Companies /dashboard/network/companies    — board by priority (Phase 5b)
 
+import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { T } from "../../../lib/dashboard-theme"
+import { rememberOrigin } from "./backTarget"
 
 const TABS = [
   { href: "/dashboard/network", label: "Today", exact: true },
@@ -19,6 +21,15 @@ const TABS = [
 
 export default function NetworkLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+
+  // Record where the user is so a contact record can send them back there.
+  // Done in the LAYOUT so every lens is covered by one hook — including any
+  // added later — rather than instrumenting each list page and forgetting one.
+  // Reads location directly instead of useSearchParams() so the layout does not
+  // need a Suspense boundary; this only ever runs client-side in an effect.
+  useEffect(() => {
+    rememberOrigin(window.location.pathname + window.location.search)
+  }, [pathname])
 
   function isActive(href: string, exact: boolean) {
     if (exact) return pathname === href

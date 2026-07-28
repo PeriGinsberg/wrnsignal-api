@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { T, input as inputStyle, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
+import { T, input as inputStyle, select as selectStyle, selectOption, fieldLabel } from "../../../../../lib/dashboard-theme"
 import { authFetch } from "../../authFetch"
 import { ACTION_TYPE_OPTIONS, ACTION_TYPE_LABEL } from "../../vocab"
 
@@ -98,11 +98,11 @@ export function ActionLog({
           />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 180px" }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>NOTE (optional)</span>
+          <span style={fieldLabel}>Details (optional)</span>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="What happened?"
+            placeholder="Context for this touch"
             style={{ ...inputStyle, height: 40 }}
           />
         </label>

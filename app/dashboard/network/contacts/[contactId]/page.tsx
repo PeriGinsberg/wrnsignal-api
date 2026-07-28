@@ -12,7 +12,9 @@ import { T, card, eyebrow, headline, input as inputStyle, select as selectStyle,
 import { authFetch } from "../../authFetch"
 import { PipelineStepper } from "./PipelineStepper"
 import { ActionLog } from "./ActionLog"
-import { REASON_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES } from "../../vocab"
+import { NotesLog } from "./NotesLog"
+import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
+import { FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES } from "../../vocab"
 
 type Contact = {
   id: string
@@ -41,6 +43,11 @@ function fmt(iso: string): string {
 
 export default function ContactRecordPage({ params }: { params: Promise<{ contactId: string }> }) {
   const { contactId } = usePromise(params)
+  // Resolved in an effect: sessionStorage does not exist during SSR, so the
+  // first paint uses the default and swaps to the recorded origin on mount.
+  const [backHref, setBackHref] = useState(DEFAULT_BACK)
+  useEffect(() => { setBackHref(readBackTarget()) }, [])
+
   const [contact, setContact] = useState<Contact | null>(null)
   const [actions, setActions] = useState<Action[]>([])
   const [loading, setLoading] = useState(true)
@@ -69,7 +76,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
   if (error || !contact)
     return (
       <main style={wrap}>
-        <a href="/dashboard/network" style={backLink}>← Back to worklist</a>
+        <a href={backHref} style={backLink}>← Back</a>
         <div style={{ ...card, marginTop: 16, padding: 20, background: T.ERROR_BG, borderColor: "rgba(255,120,120,0.35)" }}>
           <div style={{ color: T.ERROR, fontSize: 13 }}>{error || "Contact not found."}</div>
         </div>
@@ -80,7 +87,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
 
   return (
     <main style={wrap}>
-      <a href="/dashboard/network" style={backLink}>← Back to worklist</a>
+      <a href={backHref} style={backLink}>← Back</a>
 
       {/* header */}
       <div style={{ marginTop: 14 }}>
@@ -131,13 +138,25 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         <ActionLog contactId={contact.id} actions={actions} onChanged={load} />
       </Section>
 
-      {/* notes */}
-      <Section title="Notes">
+      {/* Pinned summary — durable facts about the person (how you met, what they
+          care about), NOT dated events. Kept as the network_contacts.notes
+          column; only the label changed. Sits above the running log. */}
+      <Section title="About this person">
         <TextFieldEditor
           contactId={contact.id}
           field="notes"
           value={contact.notes}
-          placeholder="Private notes on this contact…"
+          placeholder="Durable context — how you met, what they care about…"
+          onSaved={load}
+        />
+      </Section>
+
+      {/* Running notes log — type='note' rows from the same actions the log
+          above renders. One source, two views. */}
+      <Section title="Notes">
+        <NotesLog
+          contactId={contact.id}
+          notes={actions.filter((a) => a.type === "note")}
           onSaved={load}
         />
       </Section>
@@ -254,7 +273,7 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>RELATIONSHIP</span>
+          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.relationship}</span>
           <select value={relationship} onChange={(e) => setRelationship(e.target.value)} style={{ ...selectStyle, width: 180, height: 40 }}>
             <option value="" style={selectOption}>—</option>
             {RELATIONSHIPS.map((r) => (
@@ -263,7 +282,7 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
           </select>
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>PRIORITY</span>
+          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.priority}</span>
           <select value={priority} onChange={(e) => setPriority(e.target.value)} style={{ ...selectStyle, width: 90, height: 40 }}>
             <option value="" style={selectOption}>—</option>
             {PRIORITIES.map((p) => (

@@ -7,16 +7,12 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { computeNextDue } from "@/lib/network-tracker/reminder-engine"
+import { ACTION_TYPES, isPipelineAction } from "@/lib/network-tracker/action-semantics"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-// v3 vocabulary: touch_1/2/3 replace initial_contact + follow_up_*; chat_*
-// replace meeting_*. The engine counts touch_2/touch_3 in-cycle.
-const ACTION_TYPES = new Set([
-  "touch_1", "touch_2", "touch_3", "intro_request", "thank_you",
-  "connection_request", "engage_on_post", "chat_scheduled", "chat_done", "ask", "note_logged", "other",
-])
+
 
 export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req.headers.get("origin")) }
 
@@ -50,7 +46,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     })
     if (insErr) throw new Error(`Log failed: ${insErr.message}`)
 
-    // 2) reload actions, run the engine ONCE (the only place due dates are computed)
+    // 2) INERT types stop here. No engine run, no contact patch — the row is the
+    // whole point. Returning the contact UNREAD (rather than re-selecting it)
+    // keeps this path incapable of writing to network_contacts at all, which is
+    // a stronger guarantee than remembering not to.
+    if (!isPipelineAction(type)) {
+      return withCorsJson(req, { ok: true, action: { type, action_date: actionDate.toISOString(), note } }, 201)
+    }
+
+    // 3) reload actions, run the engine ONCE (the only place due dates are computed)
     // action_date is required: the engine scopes follow-up counting to the current cycle.
     const { data: acts } = await supabase.from("network_actions").select("type, action_date").eq("contact_id", contactId)
     const due = computeNextDue({
@@ -61,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       pipelineActivity: true,   // acting satisfies a snooze -> engine consumes the override
     })
 
-    // 3) save (last_action_at + engine result, incl. reached_out->dormant flip)
+    // 4) save (last_action_at + engine result, incl. reached_out->dormant flip)
     const patch: Record<string, any> = {
       last_action_at: actionDate.toISOString(),
       next_due_at: due.nextDueAt ? due.nextDueAt.toISOString() : null,

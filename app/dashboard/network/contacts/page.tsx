@@ -17,7 +17,7 @@ import { T, headline, select as selectStyle, selectOption } from "../../../../li
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
 import {
-  STAGE_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES,
+  STAGE_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES, FIELD_LABELS,
 } from "../vocab"
 import { Row, dueOf, type Contact } from "./ContactRow"
 
@@ -295,7 +295,7 @@ export default function ContactsSpreadsheetPage() {
                 <th style={{ ...th, width: 34, textAlign: "center" }}>
                   <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Select all" style={{ cursor: "pointer" }} />
                 </th>
-                {["Company", "Name", "Title", "Relationship", "Priority", "Stage", "Last touch", "Due", ""].map((h, i) => (
+                {["Company", "Name", "Title", FIELD_LABELS.relationship, FIELD_LABELS.priority, FIELD_LABELS.stage, "Last touch", "Due", ""].map((h, i) => (
                   <th key={i} style={th}>{h}</th>
                 ))}
               </tr>
