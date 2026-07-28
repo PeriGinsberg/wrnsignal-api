@@ -178,8 +178,21 @@ If the template has unresolved variables, warn before the copy — "This message
 unfilled [SCHOOL]. Fill your profile or edit before sending" — but don't hard-block; someone
 may fill it by hand in Gmail.
 
+**BUILT.** Two behaviours worth recording because they are not obvious from the spec:
+
+- **The copy happens FIRST, and a failed copy logs nothing.** A false "sent" is worse than a
+  failed copy: it silently advances the due date and consumes the override, so the contact
+  goes quiet in the tracker while the message never left the building. If the clipboard is
+  unavailable the panel says so and logs nothing.
+- **The primary button only appears when something is DUE.** The action type is derived from
+  `next_due_reason` exactly as the inline Log button derives it, so with no due reason there
+  is no action to log — inventing one would put a touch on the record the engine never asked
+  for. With nothing due, only "copy only" is offered.
+
 **8d is done when** clicking it on a due contact copies the right rendered template AND
-advances the pipeline in one action, and copy-only copies without logging.
+advances the pipeline in one action, and copy-only copies without logging. DONE — 7 component
+tests, three mutations verified (copy the raw template instead of the rendered text; log
+despite a failed copy; make copy-only log).
 
 ---
 

@@ -13,6 +13,7 @@ import { authFetch } from "../../authFetch"
 import { PipelineStepper } from "./PipelineStepper"
 import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
+import { SendPanel } from "./SendPanel"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
 import { FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES } from "../../vocab"
 
@@ -131,6 +132,13 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
       {/* pipeline */}
       <Section title="Pipeline">
         <PipelineStepper contact={contact} onChanged={load} />
+      </Section>
+
+      {/* 8d — the payoff: the suggested message, ready to copy and log in one
+          action. Sits ABOVE the action log: composing is what the user came to
+          do; the log is the record of having done it. */}
+      <Section title="Message">
+        <SendPanel contact={contact as never} onLogged={load} />
       </Section>
 
       {/* action log */}
