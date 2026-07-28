@@ -62,6 +62,29 @@ describe("first-run empty states", () => {
     expect(text).not.toMatch(ALARM)
     // The empty state must point at the action, not just report emptiness.
     expect(text).toMatch(/add/i)
+    // …and must NOT lead with the filter machinery. Six dropdowns of stages and
+    // relationships above "No contacts yet" is the least inviting thing a new
+    // user can meet.
+    expect(text).not.toMatch(/All stages/)
+    expect(text).not.toMatch(/All relationships/)
+  })
+
+  it("contacts: the filter bar RETURNS once there is something to filter", async () => {
+    authFetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: true, status: 200,
+        json: async () => ({ ok: true, contacts: [{
+          id: "c1", first_name: "Jordan", last_name: "Alvarez", title: null, stage: "identified",
+          relationship: "personal", priority: "A", segment: null, next_due_at: null,
+          next_due_reason: null, last_action_at: null, company_id: null, network_companies: null,
+        }] }),
+      } as unknown as Response),
+    )
+    const text = await textOf(<ContactsPage />)
+    expect(text).toMatch(/All stages/)
+    // Guarded on total contacts, not filtered ones — filtering to zero results
+    // must never hide the controls needed to undo that filter.
+    expect(text).toMatch(/Jordan Alvarez/)
   })
 
   it("company board: invites rather than alarms, and says a contact is not required", async () => {

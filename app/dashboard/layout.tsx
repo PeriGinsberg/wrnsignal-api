@@ -36,6 +36,9 @@ const D2C_NAV: NavGroup[] = [
     items: [
       { href: "/dashboard", label: "My Account" },
       { href: "/dashboard/tracker", label: "Job Tracker" },
+      // matchPrefix so the whole tracker keeps the nav highlighted — its own tab
+      // strip owns Today / Contacts / Companies underneath this one entry.
+      { href: "/dashboard/network", label: "Networking", matchPrefix: true },
     ],
   },
 ]

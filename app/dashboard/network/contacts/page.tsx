@@ -245,7 +245,15 @@ export default function ContactsSpreadsheetPage() {
         />
       )}
 
-      {/* filter bar */}
+      {/* Filter bar, hidden until there is something to filter. On a brand-new
+          account six dropdowns and ~40 options sat above the words "No contacts
+          yet", so the first thing a new user met was machinery rather than the
+          invitation.
+
+          Guarded on contacts.length, NOT filtered.length — keying it on the
+          filtered set would make the bar vanish the moment a filter matched
+          nothing, taking the controls needed to clear that filter with it. */}
+      {contacts.length > 0 && (
       <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
         <Filter value={fStage} onChange={setFStage} allLabel="All stages">
           {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k} style={selectOption}>{v}</option>)}
@@ -278,6 +286,7 @@ export default function ContactsSpreadsheetPage() {
           </button>
         )}
       </div>
+      )}
 
       {error && <div style={{ color: T.ERROR, fontSize: 13, marginTop: 16 }}>{error}</div>}
 
