@@ -33,11 +33,11 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 7 — Delete | single `DELETE /contacts/[id]` + batch `POST /contacts/delete` + record & spreadsheet UI | ✅ verified |
 | 7a — Profile source map | Traced which of the 16 merge vars SIGNAL already stores, and where | ✅ done (see §3 seed rules) |
 | 7b — Client Profile | `profile/page.tsx` + `GET/PATCH /api/network/profile` + `lib/network-tracker/client-profile-seed.ts`; seeded from client_profiles, auto-fills blanks, X-of-17 completeness meter | ✅ built |
-| 8 — Templates | 24 coach-loaded templates keyed `(client, template_id)`; "copy & mark as sent" | 📋 specced (RECONCILIATION §8/§8.1) |
+| 8 — Templates | 24 defaults in `lib/network-tracker/template-defaults.ts` + `network_templates` overrides (8a); `renderTemplate` (8b); `pickTemplate` contact→template join (8c); `SendPanel` copy-and-mark-as-sent (8d) | ✅ built (`ef378e1a`…`6ba0a1c8`) |
 | 9 — Dashboard (metrics under the worklist) | 7-group funnel, reply/chat rates, what's-working splits, needs-attention — all client-side in `dashboardMetrics.ts`, every group and row deep-linking into filtered Contacts | ✅ built |
 | 10 — Coach layer + heat map | universal coach comments, coach view/edit | 📋 specced |
 
-**The tracker is LIVE in the dashboard nav (dev).** It is no longer URL-only. `D2C_NAV` in
+**The tracker is FEATURE-COMPLETE except Phase 10, and LIVE in the dashboard nav (dev).** Phases 0–9 are built; the coach layer is the only phase left, and prod has none of the schema yet (§4). It is no longer URL-only. `D2C_NAV` in
 `app/dashboard/layout.tsx` carries a **Networking** entry beside My Account and Job Tracker
 (`matchPrefix`, so it stays highlighted across all three sub-tabs), added in `2f69ae50`. Real
 clients on dev can reach it, use it, and put their own data in.
@@ -52,30 +52,42 @@ and fails if one ever degrades into something error-shaped.
 
 > ### ⚠️ LIVE BUT INCOMPLETE — read this before assuming a gap is a bug
 >
-> Being in the nav does not mean the tracker is finished. A user can run the full loop today —
-> add or import contacts, work the daily worklist, log touches and notes, move stages, manage the
-> company board — and will still find these missing, **by plan, not by defect**:
+> **The loop is complete.** A user can run the whole thing today: import or add contacts, work
+> the daily worklist, open a due contact and find the right template already filled in with their
+> profile and the contact's details, copy it and mark it sent in one action (which advances the
+> pipeline), log notes and touches, move stages, manage the company board, and read the dashboard
+> for what is working.
+>
+> **Phase 10 (coach layer) is the only unbuilt phase**, and prod promotion is the only unfinished
+> operational step. Everything below is a deliberate carve-out, **by plan, not by defect**:
 >
 > - **Phase 7b — Client Profile.** BUILT. Two of the 17 fields have no honest source and start
 >   blank by design: `city` (the only stored location is where the client wants to WORK, which
 >   would be wrong-but-plausible in a box meaning where they ARE) and `degree`
 >   (`education_status` is only in_school/graduated/na). `affinity_1..3`, `calendar_link` and
 >   `elevator_pitch` are genuinely new and always client-entered.
-> - **Phase 8 — Templates.** The 24 coach-loaded outreach templates and "copy & mark as sent" are
->   specced (RECONCILIATION §8/§8.1) and unbuilt. This is the biggest felt gap: the tracker tells
->   a user *who* to contact today and gives them nothing to *send*.
+> - **Phase 8 — Templates.** BUILT. Two of the 24 are never auto-suggested by design: S1
+>   (scheduling) and S5 (post-referral thanks) correspond to no due reason the engine raises, so
+>   `pickTemplate` returns null and the user picks them from the full list. Fill-at-send prompts
+>   (`[MUTUAL]`, `[ONE SPECIFIC QUESTION]`, `[OPTION 1..3]`) are deliberately left in the rendered
+>   text as the writer's instruction — they warn before copy but never block it.
 > - **Phase 9 — Dashboard.** BUILT. Two carve-outs remain, both because the dashboard does not
 >   fetch `network_actions`: "follow-ups completed this week" is deferred (the weekly bar counts
 >   first touches only, so a week spent entirely on follow-ups reads as zero effort), and the
 >   benchmark line gates on `reached >= 10` rather than on contacts who finished all three
 >   touches. Both are the first things an aggregate route would buy back. See DASHBOARD Part 1.
 > - **Phase 10 — Coach layer.** Coach comments and coach view/edit are specced and unbuilt. Note
->   the locked decision in §3: coaches can *never* mutate the pipeline; every write route is
->   owner-only and returns 403 for a coach. The coach layer is view/annotate, and that is a
->   deliberate constraint rather than an unimplemented feature.
+>   the locked decision in §3: coaches can *never* mutate the PIPELINE — stage, actions,
+>   reminders, contact edits and deletes are owner-only and return 403 for a coach. The two
+>   exceptions are the outbound copy built in Phases 7b and 8a (the networking profile and the
+>   template overrides), which a coach IS meant to help write. So the coach layer proper is
+>   view/annotate over the pipeline, and that is a deliberate constraint rather than an
+>   unimplemented feature.
 >
-> Also still true: **prod has none of this schema** (see §4 — dev-only, four migrations plus
-> `20260727_network_note_action_type.sql`). Live means live *on dev*.
+> Also still true: **prod has none of this schema.** Seven migrations now, all dev-only — the four
+> in §4 plus `20260727_network_note_action_type`, `20260728_network_client_profile_seed_tracking`
+> and `20260728_network_templates`. Live means live *on dev*, and prod promotion stays a separate,
+> human-reviewed step.
 
 ---
 
@@ -123,27 +135,28 @@ one place), `supabase/migrations/2026072*_network_*.sql` (schema), `lib/network-
   overdue* — stuck on the worklist forever, un-workable. The engine takes `pipelineActivity` and
   returns `clearOverride`; the actions and stage routes null the column. The reminder route does
   NOT pass it (that's where the override is *set*).
-- **Coaches cannot mutate the PIPELINE — but the networking PROFILE is coach-writable, on
+- **Coaches cannot mutate the PIPELINE — but the OUTBOUND COPY is coach-writable, on
   purpose.** These sit next to each other deliberately, because read together they look like a
   contradiction and are not. The pipeline (stage, actions, reminders, contact edits, deletes) is
   the client's own work record: a coach editing it would corrupt the client's due-dates and
   history, so every one of those routes is owner-only and returns 403 for a coach.
-  `network_client_profile` is a different kind of thing — it is shared outreach copy (the 16
-  merge variables + elevator pitch) that a coach is expected to help write, so
-  `/api/network/profile` PATCH gates on `assertBoardAccess(..., "full")` and both client and
-  coach may edit it, last save wins. The test is *whose record is it*: the pipeline records what
-  the client DID and only they may change it; the profile is what gets SENT and the coach helps
-  draft it. Note there is no `"edit"` access level — the levels are `view | annotate | full`.
+  TWO surfaces are a different kind of thing, and both carve out the same exception:
+  `network_client_profile` (the 16 merge variables + elevator pitch, Phase 7b) and
+  `network_templates` (per-client overrides of the 24 outreach templates, Phase 8a). Both are
+  shared outreach copy a coach is expected to help write, so `/api/network/profile` PATCH and
+  `/api/network/templates/[templateId]` PATCH/DELETE gate on `assertBoardAccess(..., "full")`
+  — client and coach may both edit, last save wins, and `edited_by` records which. The test is
+  *whose record is it*: the pipeline records what the client DID and only they may change it;
+  the profile and the templates are what gets SENT, and the coach helps draft it. Note there is
+  no `"edit"` access level — the levels are `view | annotate | full`.
+
+  The owner-only routes this covers, concretely: contact create, stage, actions, reminder,
+  contact PATCH, and both deletes — all gated `client_profile_id === caller`, 403 for a coach.
 - **`cycle_started_at` exists.** Stamped on any transition INTO `sequence_active`. The engine
   counts only touches with `action_date >= cycle_started_at`. Reason: without it, re-engaging a
   contact that went dormant after touch 3 would re-count the *old* cycle's touches and flip it
   straight back to dormant — you could never work someone a second time. NULL = count all (first
   cycle / never re-engaged).
-- **Coaches cannot mutate the pipeline.** Every write route is owner-only (`client_profile_id ===
-  caller`), returns 403 for a coach. Reason: the pipeline is the client's own work record; a coach
-  editing stages/actions/deletes would corrupt the client's due-dates and history. Coach access is
-  view/annotate only (the future Coach Layer). This applies to create, stage, actions, reminder,
-  PATCH, and both deletes.
 - **Dedup is case-insensitive EXPRESSION indexes, not table `UNIQUE`s.** Three partial unique
   indexes on `lower(...)`. Reason: a table-level `UNIQUE` can't hold `lower()`, and "GBQ"/"gbq"
   or "Dana"/"dana" are the same entity. Contacts split into two indexes (company-attached vs
@@ -181,14 +194,18 @@ one place), `supabase/migrations/2026072*_network_*.sql` (schema), `lib/network-
 
 ## 4. Outstanding items
 
-- **Prod promotion — nothing is in prod.** All schema is DEV-only (`zydrqckpwidipwbhrfgd`). Four
-  migration files exist; prod has none:
+- **Prod promotion — nothing is in prod.** All schema is DEV-only (`zydrqckpwidipwbhrfgd`). SEVEN
+  migration files exist; prod has none. The first four:
   1. `20260723_network_tracker.sql` (v1)
   2. `20260723_network_tracker_v3_reconcile.sql` (v3 — a **clean re-drop**, recreates everything)
   3. `20260724_network_first_milestones.sql` (adds `first_touch_at`/`first_replied_at`/`first_chat_at`)
   4. `20260724_network_additional_info.sql` (adds `additional_info`)
 
-  For prod, the effective path is **v3_reconcile → first_milestones → additional_info** (v1 is
+  Then, added during Phases 7–8: `20260727_network_note_action_type.sql`,
+  `20260728_network_client_profile_seed_tracking.sql`, `20260728_network_templates.sql`.
+
+  For prod, the effective path is **v3_reconcile → first_milestones → additional_info → the three
+  Phase 7–8 migrations in filename order** (v1 is
   superseded by the v3 re-drop; running all four in filename order also works — v3 just drops and
   recreates v1's tables). Apply in the Supabase SQL Editor, **then run the schema-reload NOTIFY
   (§5)**. Prod promotion is a separate, human-reviewed step — never auto-applied.
@@ -202,7 +219,6 @@ one place), `supabase/migrations/2026072*_network_*.sql` (schema), `lib/network-
   isn't proof."
 - ~~The tracker is URL-only, blocked on Phase 5b~~ — RESOLVED: 5b shipped (`9671d02e`) and the
   tracker is in the dashboard nav (`2f69ae50`). See §1.
-- **Companies tab 404s** — visible in the strip, no page. Fix in 5b (or hide it interim).
 - **`node_modules` is tracked in git and shouldn't be.** 22,377 files are in the index even
   though `node_modules/` is listed in `.gitignore` line 7 — they were committed before that rule
   existed, and git keeps tracking what's already indexed. It was never deliberate vendoring: the
