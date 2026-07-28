@@ -254,6 +254,23 @@ smoke against a prod-pointed throwaway, then decide on nav surfacing.
 
 ## 8. Future ideas — NOT scoped, NOT decided
 
+**Bring back relationship-aware stage dimming.** The old 11-node stepper greyed the stages a
+given relationship typically skips — `intro_requested` for a personal/affinity/cold contact,
+`intro_requested` + `ask_made` for a recruiter — while leaving them fully clickable. It was
+presentation only, never a restriction, and it was a genuinely good affordance: it told you what
+the normal path looked like for *this* contact without ever getting in the way.
+
+It did not survive the move to a `<select>` in the phase-bar rework — a native `<option>` cannot
+carry that styling, and faking it with text markers inside the option labels would clutter the
+one control that has to stay scannable. The mapping itself is not lost; it was
+`SKIPPED_BY_RELATIONSHIP` in the pre-rework PipelineStepper (see git history at `9671d02e`).
+
+Two plausible routes back: a **custom (non-native) dropdown** that can style its own rows, which
+buys the dimming plus the phase colours in the open list too; or a **hint beside the phase bar**
+("Personal contacts usually skip Intro requested") which is far cheaper and gets most of the
+value without owning a bespoke listbox and its keyboard behaviour. The hint is the one to try
+first — writing a custom dropdown to recover a presentation nicety is a poor trade.
+
 **Contact discovery.** Help clients find *new* people to reach out to, driven by what the tracker
 already knows: companies on the board with zero contacts (dream firms with nobody in them),
 segments with a high reply rate ("do more of what's working"), and "find more like this contact"
