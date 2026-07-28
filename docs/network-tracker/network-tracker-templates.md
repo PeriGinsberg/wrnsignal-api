@@ -133,12 +133,28 @@ This is the piece nothing else can do, because only the tracker knows both halve
 - No relationship set → return null, and the UI says "set a relationship to get a suggested
   template" (which is also the dashboard's "needs attention" nudge — same gap, two surfaces).
 
+**BUILT — the null rule is scoped to FAMILY derivation, not to the S/IN cases.** Relationship
+picks the family for a *first message*; once someone has replied, the S templates read
+identically whoever they are addressed to. So a contact with no relationship who is due a
+thank-you resolves to `S2`, not null — withholding that suggestion over a blank field would be
+unhelpful, and the message would be word-for-word the same once the field was filled. `IN` is
+relationship-independent for the same reason: asking a mutual for an intro is not a message to
+the contact at all. Only the family path (`C2`, `P1`, `X3` …) returns null without a
+relationship, because there the family *is* the relationship.
+
+Resolution order is therefore: `intro_requested → IN`, then an S reply, then family + touch
+number. The order is load-bearing, and exactly one case distinguishes it — a contact with NO
+relationship and an S-reason. With a relationship present both orderings agree, so that is the
+case a test has to cover or it proves nothing.
+
 So a cold contact due for touch 2 resolves to `C2`, rendered with the client's profile and
 that contact's name already filled in. On the worklist and the contact record, name the
 template and show it ready.
 
 **8c is done when** a seeded contact's relationship + due reason resolves to the right
-template id, verified across all five families and the S/IN cases.
+template id, verified across all five families and the S/IN cases. DONE — 40 assertions:
+5 families x 3 touch numbers, S2/S3/S4, IN, and the three intended nulls (S1/S5 are
+manual-only and never auto-suggested; no relationship on a first message).
 
 ---
 

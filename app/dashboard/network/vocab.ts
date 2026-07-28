@@ -6,6 +6,7 @@
 // and the migration; this is purely presentational.
 
 import { pillStyle, type PhaseKey } from "../../../lib/dashboard-theme"
+import { isKnownTemplateId } from "../../../lib/network-tracker/templates"
 
 // Display labels only — the KEYS are the DB/engine stage values (unchanged); the
 // VALUES are plain-English UI copy. Every surface (stepper, roster, worklist,
@@ -140,6 +141,85 @@ export const STATUS_LABELS: Record<string, string> = {
 // "Researching", because the board must not assert something the user never said.
 export function statusLabel(status: string | null | undefined): string {
   return status ? (STATUS_LABELS[status] ?? status) : "—"
+}
+
+// ─── Phase 8c — the join: which template does this contact need next? ────────
+//
+// Lives beside STAGE_PHASE and REASON_TO_ACTION because all three are maps off
+// the same two engine values (stage, next_due_reason). One place for the reason
+// vocabulary means a new reason cannot be added to one map and forgotten in
+// another.
+
+/** relationship → template family. This is the whole reason `relationship` is a
+ *  first-class field rather than a note. */
+export const RELATIONSHIP_TO_FAMILY: Record<string, string> = {
+  personal: "P",
+  affinity: "A",
+  referred: "R",
+  cold: "C",
+  recruiter: "X",
+}
+
+/**
+ * next_due_reason → an S-family template, for the replies that are the same
+ * whoever you are writing to.
+ *
+ * S1 (scheduling) and S5 (post-referral thanks) are DELIBERATELY absent. Neither
+ * corresponds to a due reason the engine raises — you schedule when someone
+ * replies offering times, and you thank a referrer when a referral lands, and
+ * the tracker knows about neither moment. pickTemplate returns null and the user
+ * picks them from the full list. That is intended, not a gap: mapping them to
+ * the nearest-looking reason would suggest the wrong template with confidence.
+ */
+export const REASON_TO_TEMPLATE: Record<string, string> = {
+  thank_you: "S2",
+  nurture_recurring: "S3",
+  ask_followup: "S4",
+}
+
+/** Touch position from the due reason. Anything that is not explicitly a second
+ *  or third touch is a first outreach — including a resurfaced dormant contact,
+ *  who is being approached fresh. */
+export function touchNumber(reason: string | null | undefined): 1 | 2 | 3 {
+  if (reason === "touch_2") return 2
+  if (reason === "touch_3") return 3
+  return 1
+}
+
+export type PickableContact = {
+  relationship?: string | null
+  stage?: string | null
+  next_due_reason?: string | null
+}
+
+/**
+ * The suggested template for a contact, or null when there is no honest answer.
+ *
+ * Order matters:
+ *   1. stage intro_requested → IN. Asking a mutual for an intro is a different
+ *      act from writing to the contact, so it outranks the family sequence.
+ *   2. an S-family reply → S2/S3/S4. These read the same whoever the contact
+ *      is, so they do NOT require a relationship to be set.
+ *   3. family + touch number → C2, P1, X3 …  Requires a relationship, because
+ *      the family IS the relationship.
+ *
+ * null means "no suggestion", never "no template exists" — the user picks from
+ * the full 24. Returned for S1/S5 moments, for a contact with no relationship,
+ * and for any stage the sequence does not cover.
+ */
+export function pickTemplate(contact: PickableContact): string | null {
+  if (contact.stage === "intro_requested") return "IN"
+
+  const s = REASON_TO_TEMPLATE[contact.next_due_reason ?? ""]
+  if (s) return s
+
+  const family = RELATIONSHIP_TO_FAMILY[contact.relationship ?? ""]
+  if (!family) return null                       // UI: "set a relationship…"
+
+  const id = `${family}${touchNumber(contact.next_due_reason)}`
+  // Guard rather than trust: if a family/number pair ever names a template that
+  // does not exist, suggest nothing instead of a broken id.
+  return isKnownTemplateId(id) ? id : null
 }
 
 // What "Logged it" writes for a given due reason (worklist quick action).
