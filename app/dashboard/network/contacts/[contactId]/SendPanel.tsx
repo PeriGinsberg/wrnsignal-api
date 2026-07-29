@@ -12,7 +12,7 @@
 // supplies the wording, and renderTemplate fills it in.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { T, card, btnPrimary, btnSecondary, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
+import { T, btnPrimary, btnSecondary, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
 import { authFetch } from "../../authFetch"
 import { pickTemplate, REASON_TO_ACTION, ACTION_TYPE_LABEL } from "../../vocab"
 import { renderTemplate, extractVariables, classifyVariable, UNRESOLVED_PLACEHOLDER, type MergedTemplate } from "../../../../../lib/network-tracker/templates"
@@ -109,7 +109,18 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
   }, [messageText, rendered])
 
   const reason = contact.next_due_reason ?? null
-  const actionType = reason ? (REASON_TO_ACTION[reason] ?? "note_logged") : null
+  // Normally the due reason names the action, which is how this panel and the
+  // inline Log button (ContactRow) stay in agreement about what a touch is.
+  //
+  // ONE exception, and it is the point of the redesign: a contact at
+  // `identified` has NO due reason — the engine schedules nothing there — so on
+  // the old derivation the primary button never appeared and the first message
+  // could not be sent from the screen built for sending. Treat first outreach as
+  // the due action at that stage. The server applies the matching stage move
+  // (stageAfterAction), so the two cannot disagree about what just happened.
+  const actionType = reason
+    ? (REASON_TO_ACTION[reason] ?? "note_logged")
+    : contact.stage === "identified" ? "touch_1" : null
 
   async function copyText(text: string): Promise<boolean> {
     try {
@@ -163,12 +174,22 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
   const gaps = rendered ? [...gapsNow.unresolved, ...gapsNow.toFill] : []
 
   return (
-    <div style={{ ...card, padding: "16px 18px" }} data-testid="send-panel">
+    <div data-testid="send-panel">
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-        <h2 style={{ ...fieldLabel, textTransform: "uppercase", margin: 0 }}>Send</h2>
         {active && <span style={{ color: T.MUTED, fontSize: 12 }} data-testid="active-template">
           {active.template_id} · {active.label}
         </span>}
+        {active && (
+          // The bridge to the permanent editor. Deliberately a LINK away rather
+          // than an editor here: wanting to change this wording everywhere is a
+          // different intent from tweaking this one message, and 8d's whole
+          // point is that those two do not share a surface.
+          <a href={`/dashboard/network/templates?id=${active.template_id}`}
+            data-testid="edit-template-link"
+            style={{ color: T.WRN_BLUE, fontSize: 11.5, fontWeight: 700, textDecoration: "underline" }}>
+            Edit this template
+          </a>
+        )}
       </div>
 
       {!suggestedId && !chosenId && (

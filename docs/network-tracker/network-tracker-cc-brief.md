@@ -25,7 +25,7 @@ Status legend: **✅ done & verified** (green in the smoke / unit tests) · **�
 | 1 — Schema + engine | `lib/network-tracker/reminder-engine.ts` (`computeNextDue`, pure) + 25 unit tests | ✅ done & verified |
 | 2 — Spine | `lib/network-tracker/access.ts` + 6 routes (`worklist`, `companies` GET, `contacts` GET/POST, `contacts/[id]` GET/PATCH/DELETE, `.../actions`, `.../stage`, `.../reminder`) | ✅ verified by `spine-smoke.ts` |
 | 3 — Worklist (the Dashboard tab) | `app/dashboard/network/page.tsx` + `WorklistRow.tsx` + tab-strip `layout.tsx` | ✅ built · ✅ **in the dashboard nav** (`2f69ae50`) |
-| 4 — Contact record | `contacts/[contactId]/page.tsx` + `PipelineStepper.tsx` (7-segment phase bar + 11-stage dropdown, `e014af84`) + `ActionLog.tsx` + `NotesLog.tsx`; running notes, "About this person", additional-info, details, snooze, delete | ✅ |
+| 4 — Contact record | RESTRUCTURED (UX-CONTACT-RECORD). `contacts/[contactId]/page.tsx` + `ActionBox.tsx` (SendPanel at the top, accent-bordered) + `QuickActions.tsx` (two frequent moves) + `ChangeStage.tsx` (all 11 stages, folded away; outcome type + the Referred suggestion ride with it) + `Collapsible.tsx` (Details / History / Notes / Danger zone) + `ActionLog.tsx` + `NotesLog.tsx`. `PipelineStepper.tsx` retired — the phase bar’s job moved to the header stage pill. Nothing was removed; the four text areas consolidated into two drawers | ✅ |
 | 4.5 — Add contact | `POST /api/network/contacts` + `AddContactForm.tsx` | ✅ |
 | 5a — Contacts spreadsheet | `contacts/page.tsx` — dense table, filters, inline log/stage, bulk-select + delete | ✅ (replaced the old roster) |
 | 5b — Company board | `companies/page.tsx` grouped by `tier`, expandable company cards with lazy-loaded contacts, `POST`/`PATCH`/`DELETE` company routes, zero-contact wishlist firms | ✅ built (`9671d02e`) |
@@ -323,9 +323,11 @@ It did not survive the move to a `<select>` in the phase-bar rework — a native
 carry that styling, and faking it with text markers inside the option labels would clutter the
 one control that has to stay scannable. The mapping itself is not lost; it was
 `SKIPPED_BY_RELATIONSHIP` in the pre-rework PipelineStepper (see git history at `9671d02e`).
+Note the component itself is now gone too — the stage dropdown lives in `ChangeStage.tsx`, which
+is where either route back would land.
 
 Two plausible routes back: a **custom (non-native) dropdown** that can style its own rows, which
-buys the dimming plus the phase colours in the open list too; or a **hint beside the phase bar**
+buys the dimming plus the phase colours in the open list too; or a **hint beside the stage control** (the phase bar it originally sat beside is gone)
 ("Personal contacts usually skip Intro requested") which is far cheaper and gets most of the
 value without owning a bespoke listbox and its keyboard behaviour. The hint is the one to try
 first — writing a custom dropdown to recover a presentation nicety is a poor trade.

@@ -10,7 +10,7 @@
 // The end-to-end claim (the DB row genuinely unchanged) needs a real database
 // and is covered by the smoke, not here.
 
-import { isPipelineAction, ACTION_TYPES } from "./action-semantics"
+import { isPipelineAction, ACTION_TYPES, stageAfterAction } from "./action-semantics"
 
 let pass = 0
 let fail = 0
@@ -50,6 +50,27 @@ ok(`exactly one inert type, and it is 'note' (got: ${JSON.stringify(inert)})`,
 // before it ever reaches the branch.
 ok("'note' is an accepted action type", ACTION_TYPES.has("note"))
 ok("'note_logged' is still an accepted action type", ACTION_TYPES.has("note_logged"))
+
+// ─── stageAfterAction — the one place an action moves the stage ──────────────
+// The reminder engine never ADVANCES a stage; its only stage write is the
+// sequence_active -> dormant_no_answer flip. Without this rule a contact at
+// `identified` had no due reason, so the send box had no action to log, so the
+// screen built for sending could not send the first message.
+
+ok("first outreach from 'identified' advances to 'sequence_active'",
+  stageAfterAction("identified", "touch_1") === "sequence_active")
+
+// Only from identified. A touch_1 logged against a contact who has already
+// replied or talked must never drag them backwards down the pipeline.
+for (const stage of ["sequence_active", "replied", "chat_done", "nurture", "outcome", "dormant_no_answer"]) {
+  ok(`touch_1 at '${stage}' leaves the stage alone`, stageAfterAction(stage, "touch_1") === null)
+}
+
+// Only touch_1. Nothing else at `identified` means "I sent the first message" —
+// and 'note' especially must not, since recording an observation is not acting.
+for (const type of ["touch_2", "touch_3", "note", "note_logged", "chat_done", "ask", "other"]) {
+  ok(`'${type}' at 'identified' implies no stage move`, stageAfterAction("identified", type) === null)
+}
 
 console.log(`\n${pass}/${pass + fail} assertions passed`)
 if (fail > 0) process.exit(1)

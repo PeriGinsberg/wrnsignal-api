@@ -7,7 +7,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { computeNextDue } from "@/lib/network-tracker/reminder-engine"
-import { ACTION_TYPES, isPipelineAction } from "@/lib/network-tracker/action-semantics"
+import { ACTION_TYPES, isPipelineAction, stageAfterAction } from "@/lib/network-tracker/action-semantics"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -57,8 +57,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     // 3) reload actions, run the engine ONCE (the only place due dates are computed)
     // action_date is required: the engine scopes follow-up counting to the current cycle.
     const { data: acts } = await supabase.from("network_actions").select("type, action_date").eq("contact_id", contactId)
+    // The action may imply a stage move (first outreach from `identified`).
+    // Applied BEFORE the engine runs so it schedules from the stage the contact
+    // is moving TO — computing against `identified` would return no due date and
+    // leave a contact that was just messaged looking untouched.
+    const implied = stageAfterAction(c.stage, type)
+    const effectiveStage = implied ?? c.stage
     const due = computeNextDue({
-      stage: c.stage, createdAt: c.created_at, lastActionAt: actionDate,
+      stage: effectiveStage, createdAt: c.created_at, lastActionAt: actionDate,
       reminderOverride: c.reminder_override, dormantSince: c.dormant_since,
       pokeEnabled: false, actions: acts ?? [],
       cycleStartedAt: c.cycle_started_at,
@@ -71,7 +77,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       next_due_at: due.nextDueAt ? due.nextDueAt.toISOString() : null,
       next_due_reason: due.nextDueReason,
     }
-    if (due.stage) patch.stage = due.stage
+    if (implied) patch.stage = implied
+    if (due.stage) patch.stage = due.stage   // an engine flip still wins over the implied move
     if (due.dormantSince) patch.dormant_since = due.dormantSince.toISOString()
     if (due.clearOverride) patch.reminder_override = null   // the snooze has been served
 

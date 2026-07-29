@@ -1,21 +1,36 @@
 "use client"
 
 // Network Tracker — CONTACT RECORD.
-// Pipeline stepper + dated action log + notes + the reminder state (with a
-// visible "clear reminder" control, since an override left alone persists as
-// 'manual' indefinitely). All writes are owner-only and re-fetch the bundle;
-// no due-date math lives here. The coach comment thread is a deliberate,
-// unwired placeholder — the Coach Layer is a separate thread.
+//
+// Restructured per docs/network-tracker/network-tracker-ux-contact-record.md.
+// Nothing was removed: every capability the old ten-section stack had is still
+// reachable. What changed is order and prominence.
+//
+// The old screen put the thing the user came to do — send a message, record that
+// they reached out — at the BOTTOM, under four near-identical navy text areas.
+// Now the send box is the first thing under the header, accent-bordered, with
+// the only warm button on the page; the stage moves that need no message sit
+// under it in plain language; and everything else folds into drawers that say
+// what is inside them while shut.
+//
+// Colour carries meaning in three registers and nothing else:
+//   warm  = act here   (one element: "Copy and mark as sent")
+//   phase = status     (the header stage pill, from the shared 7-group palette)
+//   quiet = reference  (drawers, reminder line, secondary buttons)
 
 import { use as usePromise, useCallback, useEffect, useState } from "react"
 import { T, card, eyebrow, headline, input as inputStyle, select as selectStyle, selectOption, textarea as textareaStyle } from "../../../../../lib/dashboard-theme"
 import { authFetch } from "../../authFetch"
-import { PipelineStepper } from "./PipelineStepper"
+import { ActionBox } from "./ActionBox"
+import { QuickActions } from "./QuickActions"
+import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
-import { SendPanel } from "./SendPanel"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
-import { FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES } from "../../vocab"
+import {
+  FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES,
+  STAGE_LABELS, stagePillStyle,
+} from "../../vocab"
 
 type Contact = {
   id: string
@@ -69,9 +84,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
     }
   }, [contactId])
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  useEffect(() => { void load() }, [load])
 
   if (loading) return <main style={wrap}><p style={{ color: T.MUTED }}>Loading…</p></main>
   if (error || !contact)
@@ -85,109 +98,107 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
     )
 
   const company = contact.network_companies?.name
+  const notes = actions.filter((a) => a.type === "note")
+  const touches = actions.filter((a) => a.type !== "note")
+
+  // Drawer summaries. Each answers, while shut, the question that would
+  // otherwise cost a click: is there anything in here?
+  const detailBits = [
+    contact.relationship ? RELATIONSHIP_LABEL[contact.relationship] : null,
+    contact.priority ? `Priority ${contact.priority}` : null,
+    contact.segment || null,
+  ].filter(Boolean) as string[]
+  // Relationship gets its own summary line when unset, rather than being one
+  // absent item among three. It is not just another field: pickTemplate routes
+  // on it, so an unset relationship means the action box above has no suggestion
+  // to make — the summary has to say why.
+  const detailsSummary = !contact.relationship
+    ? "Relationship not set — it drives which template is suggested"
+    : detailBits.join(" · ")
 
   return (
     <main style={wrap}>
       <a href={backHref} style={backLink}>← Back</a>
 
-      {/* header */}
-      <div style={{ marginTop: 14 }}>
-        <div style={eyebrow}>CONTACT</div>
-        <h1 style={{ ...headline, marginTop: 6 }}>
-          {contact.first_name} {contact.last_name}
-        </h1>
-        <div style={{ color: T.MUTED, fontSize: 14, marginTop: 4 }}>
-          {[contact.title, company].filter(Boolean).join(" · ") || "No title or company"}
+      {/* ── 1. Header, compact ─────────────────────────────────── */}
+      <header style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <h1 style={{ ...headline, margin: 0 }}>{contact.first_name} {contact.last_name}</h1>
+          {/* Phase colour as STATUS. This one pill replaced the seven-segment
+              phase bar: same information, same shared palette, one element. */}
+          <span data-testid="stage-pill" style={{ ...stagePillStyle(contact.stage), fontSize: 11.5, fontWeight: 800, padding: "4px 11px", borderRadius: 999 }}>
+            {STAGE_LABELS[contact.stage] ?? contact.stage}
+          </span>
         </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
-          {contact.email && (
-            <a href={`mailto:${contact.email}`} style={metaLink}>{contact.email}</a>
-          )}
-          {contact.linkedin_url && (
-            <a href={contact.linkedin_url} target="_blank" rel="noreferrer" style={metaLink}>LinkedIn ↗</a>
-          )}
+        <div style={{ color: T.MUTED, fontSize: 13, marginTop: 5, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+          <span>{[contact.title, company].filter(Boolean).join(" · ") || "No title or company"}</span>
+          {contact.email && <a href={`mailto:${contact.email}`} style={metaLink}>{contact.email}</a>}
+          {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" rel="noreferrer" style={metaLink}>LinkedIn ↗</a>}
         </div>
-      </div>
+      </header>
 
-      {/* reminder state + clear control */}
-      <ReminderBanner contact={contact} onChanged={load} />
+      {/* ── 2. Your next move ──────────────────────────────────── */}
+      <ActionBox contact={contact as never} onLogged={load} />
 
-      {/* details — relationship / priority / segment (the v3 fields) */}
-      <Section title="Details">
-        <DetailsEditor contact={contact} onSaved={load} />
-      </Section>
+      {/* ── 3. Something happened (+ the full stage control) ───── */}
+      <QuickActions contact={contact} onChanged={load} />
 
-      {/* additional info — per-contact context (opening lines, why-this-person);
-          feeds Phase 8 templates as [ADDITIONAL_INFO]. Detail-page only. */}
-      <Section title="Additional info">
-        <TextFieldEditor
-          contactId={contact.id}
-          field="additional_info"
-          value={contact.additional_info}
-          placeholder="Context for this person — a hand-written opening line, why they're worth reaching, a shared connection…"
-          onSaved={load}
-        />
-      </Section>
+      {/* ── 4. Reminder, one line ──────────────────────────────── */}
+      <ReminderLine contact={contact} onChanged={load} />
 
-      {/* pipeline */}
-      <Section title="Pipeline">
-        <PipelineStepper contact={contact} onChanged={load} />
-      </Section>
-
-      {/* 8d — the payoff: the suggested message, ready to copy and log in one
-          action. Sits ABOVE the action log: composing is what the user came to
-          do; the log is the record of having done it. */}
-      <Section title="Message">
-        <SendPanel contact={contact as never} onLogged={load} />
-      </Section>
-
-      {/* action log */}
-      <Section title="Action log">
-        <ActionLog contactId={contact.id} actions={actions} onChanged={load} />
-      </Section>
-
-      {/* Pinned summary — durable facts about the person (how you met, what they
-          care about), NOT dated events. Kept as the network_contacts.notes
-          column; only the label changed. Sits above the running log. */}
-      <Section title="About this person">
-        <TextFieldEditor
-          contactId={contact.id}
-          field="notes"
-          value={contact.notes}
-          placeholder="Durable context — how you met, what they care about…"
-          onSaved={load}
-        />
-      </Section>
-
-      {/* Running notes log — type='note' rows from the same actions the log
-          above renders. One source, two views. */}
-      <Section title="Notes">
-        <NotesLog
-          contactId={contact.id}
-          notes={actions.filter((a) => a.type === "note")}
-          onSaved={load}
-        />
-      </Section>
-
-      {/* coach comments — placeholder surface, intentionally unwired (Coach Layer) */}
-      <Section title="Coach comments">
-        <div
-          style={{
-            padding: "16px",
-            borderRadius: 12,
-            border: `1px dashed ${T.BORDER_SOFT}`,
-            color: T.DIM,
-            fontSize: 13,
-          }}
+      {/* ── 5. Reference, folded away ──────────────────────────── */}
+      <div style={{ marginTop: 22 }}>
+        {/* Details opens for a contact with NO relationship set, because that
+            single field drives the whole template engine (pickTemplate routes on
+            it) — a new user should land on the setup step already open. Once it
+            is set, this is reference and shuts. */}
+        <Collapsible
+          title="Details" testId="details"
+          defaultOpen={!contact.relationship}
+          summary={detailsSummary}
         >
-          Coach comments arrive with the Coach Layer. Nothing to show yet.
-        </div>
-      </Section>
+          <DetailsEditor contact={contact} onSaved={load} />
+          <div style={{ marginTop: 18 }}>
+            <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 8 }}>Additional info</div>
+            <TextFieldEditor
+              contactId={contact.id} field="additional_info" value={contact.additional_info}
+              placeholder="Context for this person — a hand-written opening line, why they're worth reaching, a shared connection…"
+              onSaved={load}
+            />
+          </div>
+        </Collapsible>
 
-      {/* delete — hard delete; on success navigate back to Contacts with a confirmation */}
-      <Section title="Danger zone">
-        <DeleteContactControl contact={contact} />
-      </Section>
+        <Collapsible
+          title="History" testId="history"
+          defaultOpen={touches.length > 0}
+          summary={touches.length ? `${touches.length} touch${touches.length === 1 ? "" : "es"} logged` : "Nothing yet"}
+        >
+          <ActionLog contactId={contact.id} actions={actions} onChanged={load} />
+        </Collapsible>
+
+        <Collapsible
+          title="Notes" testId="notes"
+          defaultOpen={notes.length > 0}
+          summary={notes.length ? `${notes.length} note${notes.length === 1 ? "" : "s"}` : "Nothing yet"}
+        >
+          {/* "About this person" is durable context, not a dated event, so it is
+              pinned above the running log rather than being a fourth text area
+              somewhere else on the page. */}
+          <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 8 }}>About this person</div>
+          <TextFieldEditor
+            contactId={contact.id} field="notes" value={contact.notes}
+            placeholder="Durable context — how you met, what they care about…"
+            onSaved={load}
+          />
+          <div style={{ marginTop: 18 }}>
+            <NotesLog contactId={contact.id} notes={notes} onSaved={load} />
+          </div>
+        </Collapsible>
+
+        <Collapsible title="Danger zone" testId="danger" summary="Delete this contact">
+          <DeleteContactControl contact={contact} />
+        </Collapsible>
+      </div>
     </main>
   )
 }
@@ -282,7 +293,7 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.relationship}</span>
-          <select value={relationship} onChange={(e) => setRelationship(e.target.value)} style={{ ...selectStyle, width: 180, height: 40 }}>
+          <select value={relationship} onChange={(e) => setRelationship(e.target.value)} aria-label={FIELD_LABELS.relationship} style={{ ...selectStyle, width: 180, height: 40 }}>
             <option value="" style={selectOption}>—</option>
             {RELATIONSHIPS.map((r) => (
               <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABEL[r]}</option>
@@ -291,7 +302,7 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.priority}</span>
-          <select value={priority} onChange={(e) => setPriority(e.target.value)} style={{ ...selectStyle, width: 90, height: 40 }}>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label={FIELD_LABELS.priority} style={{ ...selectStyle, width: 90, height: 40 }}>
             <option value="" style={selectOption}>—</option>
             {PRIORITIES.map((p) => (
               <option key={p} value={p} style={selectOption}>{p}</option>
@@ -323,7 +334,9 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
   )
 }
 
-function ReminderBanner({ contact, onChanged }: { contact: Contact; onChanged: () => void }) {
+// The reminder state, condensed from a full banner to one quiet row. Same
+// control, same POSTs — it is reference, not the action, so it recedes.
+function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const snoozed = Boolean(contact.reminder_override)
@@ -353,66 +366,40 @@ function ReminderBanner({ contact, onChanged }: { contact: Contact; onChanged: (
   const clearReminder = () => setReminder({ reminder_override: null }, "Clear")
 
   return (
-    <div
-      style={{
-        marginTop: 18,
-        padding: "12px 16px",
-        borderRadius: 12,
-        background: snoozed ? T.WARNING_BG : T.GLASS,
-        border: `1px solid ${snoozed ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        flexWrap: "wrap",
-      }}
-    >
-      <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+    <div data-testid="reminder-line" style={{
+      marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+      fontSize: 12.5, color: T.MUTED,
+    }}>
+      <span style={{ flex: "1 1 auto", minWidth: 0 }}>
         {contact.next_due_at ? (
-          <span style={{ color: T.TEXT, fontSize: 13 }}>
-            Next: <strong>{REASON_LABELS[contact.next_due_reason ?? ""] ?? contact.next_due_reason ?? "—"}</strong>
-            {" · "}
-            <span style={{ color: T.MUTED }}>{fmt(contact.next_due_at)}</span>
-          </span>
-        ) : (
-          <span style={{ color: T.MUTED, fontSize: 13 }}>No reminder scheduled.</span>
-        )}
-        {snoozed && (
-          <span style={{ color: T.WRN_ORANGE, fontSize: 12, marginLeft: 8 }}>
-            (manual reminder — overrides the stage cadence)
-          </span>
-        )}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
-        <span style={{ color: T.MUTED, fontSize: 11, fontWeight: 700 }}>Snooze</span>
+          <>
+            Next: <strong style={{ color: T.TEXT, fontWeight: 700 }}>
+              {REASON_LABELS[contact.next_due_reason ?? ""] ?? contact.next_due_reason ?? "—"}
+            </strong>
+            {" · "}{fmt(contact.next_due_at)}
+            {snoozed && <span style={{ color: T.WRN_ORANGE, marginLeft: 8 }}>manual — overrides the stage cadence</span>}
+          </>
+        ) : "No reminder set."}
+      </span>
+      <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
+        <span style={{ color: T.DIM, fontSize: 11, fontWeight: 700 }}>Snooze</span>
         {[3, 7, 14].map((d) => (
-          <button
-            key={d}
-            onClick={() => snooze(d)}
-            disabled={busy}
-            title={`Snooze ${d} days`}
+          <button key={d} onClick={() => snooze(d)} disabled={busy} title={`Snooze ${d} days`}
             style={{
-              background: T.GLASS, color: T.TEXT, border: `1px solid ${T.BORDER}`,
-              borderRadius: 9, padding: "6px 10px", fontSize: 12, fontWeight: 800,
-              cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-            }}
-          >
+              background: "none", color: T.MUTED, border: `1px solid ${T.BORDER_SOFT}`,
+              borderRadius: 8, padding: "3px 8px", fontSize: 11.5, fontWeight: 800,
+              cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "inherit",
+            }}>
             {d}d
           </button>
         ))}
         {snoozed && (
-          <button
-            onClick={clearReminder}
-            disabled={busy}
-            style={{
-              background: "none", color: T.DIM, border: "none",
-              fontSize: 12, fontWeight: 700, cursor: busy ? "default" : "pointer",
-              textDecoration: "underline", marginLeft: 2,
-            }}
-          >
+          <button onClick={clearReminder} disabled={busy}
+            style={{ background: "none", color: T.DIM, border: "none", fontSize: 11.5, fontWeight: 700, cursor: busy ? "default" : "pointer", textDecoration: "underline" }}>
             {busy ? "…" : "Clear"}
           </button>
         )}
-      </div>
+      </span>
       {err && <div style={{ flexBasis: "100%", color: T.ERROR, fontSize: 12 }}>{err}</div>}
     </div>
   )
@@ -462,6 +449,7 @@ function TextFieldEditor({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder={placeholder}
+        aria-label={field === "notes" ? "About this person" : "Additional info"}
         rows={4}
         style={{ ...textareaStyle, minHeight: 96 }}
       />
@@ -490,15 +478,6 @@ function TextFieldEditor({
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={{ marginTop: 26 }}>
-      <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 12 }}>{title}</div>
-      {children}
-    </section>
-  )
-}
-
 const wrap: React.CSSProperties = { padding: "28px 24px", maxWidth: 820, margin: "0 auto" }
 const backLink: React.CSSProperties = { color: T.MUTED, fontSize: 12, fontWeight: 700, textDecoration: "none" }
-const metaLink: React.CSSProperties = { color: T.WRN_BLUE, fontSize: 13, textDecoration: "none" }
+const metaLink: React.CSSProperties = { color: T.WRN_BLUE, fontSize: 12.5, textDecoration: "none" }

@@ -32,3 +32,31 @@ const INERT_TYPES = new Set(["note"])
 export function isPipelineAction(type: string): boolean {
   return !INERT_TYPES.has(type)
 }
+
+/**
+ * The stage an action implies, or null to leave the stage alone.
+ *
+ * ONE case, and it is deliberate: logging the first outreach against a contact
+ * still sitting at `identified` moves them to `sequence_active`.
+ *
+ * The reminder engine will not do this. Its only stage write is the
+ * sequence_active -> dormant_no_answer flip; it reads the stage and never
+ * advances it. That left the contact record unable to record its own most
+ * common event — `identified` has no due reason (pokeEnabled is false), so the
+ * send box had no action to log, so the first message could not be sent from the
+ * screen built for sending without first moving the stage by hand.
+ *
+ * So this is the one place the record LEADS the engine instead of following it:
+ * "send the first outreach" is treated as the due action at `identified` even
+ * though nothing is scheduled. It is applied BEFORE computeNextDue runs, so the
+ * engine sees sequence_active and schedules touch 2 — running it against the old
+ * stage would schedule nothing and leave the contact idle again.
+ *
+ * Only from `identified`, and only for touch_1: every later stage has its own
+ * due reason and its own action, and re-entering a sequence is a decision the
+ * user makes explicitly.
+ */
+export function stageAfterAction(currentStage: string, type: string): string | null {
+  if (type === "touch_1" && currentStage === "identified") return "sequence_active"
+  return null
+}
