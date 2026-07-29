@@ -12,20 +12,16 @@
 // that actually costs effort.
 
 import { useCallback, useEffect, useState } from "react"
-import { T, card, input, textarea, btnPrimary, btnSecondary, fieldLabel } from "../../../../lib/dashboard-theme"
+import { T, card, fieldLabel } from "../../../../lib/dashboard-theme"
 import { authFetch } from "../authFetch"
+import { Field, type FieldDef } from "./Field"
+import { ProgressHeader } from "./ProgressHeader"
+import { groupProgress } from "./fieldState"
 
-type Field = {
-  key: string
-  label: string
-  placeholder: string
-  multiline?: boolean
-  /** Seeded fields say where the value came from, so a client knows why a box
-   *  is already full and feels free to change it. */
-  seededFrom?: string
-}
-
-const GROUPS: { title: string; blurb?: string; fields: Field[] }[] = [
+// Field shape and the 17 entries are UNCHANGED — the restructure is
+// presentation only. `seededFrom` still says where a value came from, so a
+// client knows why a box is already full and feels free to change it.
+const GROUPS: { title: string; blurb?: string; fields: FieldDef[] }[] = [
   {
     title: "About you",
     fields: [
@@ -192,28 +188,8 @@ export function ProfileForm() {
   return (
     <div>
       {meter && (
-        <div style={{ ...card, padding: "14px 16px", marginBottom: 16 }} data-testid="completeness">
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ color: T.TEXT, fontSize: 18, fontWeight: 900 }} data-testid="completeness-count">
-              {meter.filled} of {meter.total}
-            </span>
-            <span style={{ color: T.MUTED, fontSize: 12.5 }}>
-              {meter.filled === meter.total
-                ? "Complete — every template will have what it needs."
-                : "filled. Templates leave a blank wherever one of these is empty."}
-            </span>
-            <button onClick={() => void refreshFromProfile()} disabled={refreshing}
-              style={{ ...btnSecondary, marginLeft: "auto", padding: "7px 12px", fontSize: 12 }}>
-              {refreshing ? "Refreshing…" : "Refresh from profile"}
-            </button>
-          </div>
-          <div style={{ height: 6, borderRadius: 3, background: T.BORDER_SOFT, marginTop: 10, overflow: "hidden" }}>
-            <div style={{
-              width: `${Math.round((meter.filled / meter.total) * 100)}%`, height: "100%",
-              background: meter.filled === meter.total ? T.SUCCESS : T.WRN_BLUE,
-            }} />
-          </div>
-        </div>
+        <ProgressHeader meter={meter} profile={profile} refreshing={refreshing}
+          onRefresh={() => void refreshFromProfile()} />
       )}
 
       {banner && (
@@ -223,52 +199,37 @@ export function ProfileForm() {
       )}
       {error && <div style={{ color: T.ERROR, fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
-      {GROUPS.map((g) => (
-        <section key={g.title} style={{ ...card, padding: "16px 18px", marginBottom: 14 }}>
-          <h2 style={{ ...fieldLabel, textTransform: "uppercase", margin: "0 0 4px" }}>{g.title}</h2>
-          {g.blurb && <p style={{ color: T.MUTED, fontSize: 11.5, lineHeight: "17px", margin: "0 0 12px" }}>{g.blurb}</p>}
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
-            {g.fields.map((f) => {
-              const value = (profile?.[f.key] ?? "") as string
-              const pending = resumePending && RESUME_FIELDS.has(f.key)
-              return (
-                <label key={f.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={fieldLabel}>
-                    {f.label}
-                    {f.seededFrom && !value && <span style={{ color: T.DIM, fontWeight: 600 }}> · from {f.seededFrom}</span>}
-                  </span>
-                  {f.multiline ? (
-                    <textarea
-                      key={`${f.key}:${value}`}
-                      defaultValue={value}
-                      aria-label={f.label}
-                      placeholder={f.placeholder}
-                      rows={3}
-                      onBlur={(e) => void saveField(f.key, e.target.value)}
-                      style={{ ...textarea, fontSize: 13 }}
-                    />
-                  ) : (
-                    <input
-                      // Remount when the value changes so a phase-2 arrival is
-                      // actually shown — defaultValue alone would ignore it.
-                      key={`${f.key}:${value}`}
-                      defaultValue={value}
-                      aria-label={f.label}
-                      placeholder={pending ? "Reading your résumé…" : f.placeholder}
-                      // Disabled while pending: the field cannot be typed into,
-                      // so the late arrival has nothing of the user's to clobber.
-                      disabled={pending}
-                      onBlur={(e) => void saveField(f.key, e.target.value)}
-                      style={{ ...input, height: 38, fontSize: 13, opacity: pending ? 0.6 : 1 }}
-                    />
-                  )}
-                  {savingKey === f.key && <span style={{ color: T.DIM, fontSize: 10 }}>Saving…</span>}
-                </label>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+      {GROUPS.map((g) => {
+        const prog = groupProgress(g.fields.map((f) => f.key), profile)
+        const done = prog.filled === prog.total
+        return (
+          <section key={g.title} style={{ ...card, padding: "16px 18px", marginBottom: 14 }}
+            data-testid={`section-${g.title.toLowerCase().replace(/\s+/g, "-")}`}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "0 0 4px" }}>
+              <h2 style={{ ...fieldLabel, textTransform: "uppercase", margin: 0 }}>{g.title}</h2>
+              {/* Per-section counts so the user feels movement inside a section
+                  rather than only against the distant 17. */}
+              <span data-testid="section-count" style={{ color: done ? T.SUCCESS : T.DIM, fontSize: 11, fontWeight: 700 }}>
+                · {prog.filled} of {prog.total}
+              </span>
+            </div>
+            {g.blurb && <p style={{ color: T.MUTED, fontSize: 11.5, lineHeight: "17px", margin: "0 0 12px" }}>{g.blurb}</p>}
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+              {g.fields.map((f) => (
+                <Field
+                  key={f.key}
+                  def={f}
+                  value={(profile?.[f.key] ?? "") as string}
+                  pending={resumePending && RESUME_FIELDS.has(f.key)}
+                  saving={savingKey === f.key}
+                  featured={f.key === "elevator_pitch"}
+                  onSave={(k, v) => void saveField(k, v)}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      })}
     </div>
   )
 }

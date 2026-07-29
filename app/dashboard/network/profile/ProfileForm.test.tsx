@@ -27,6 +27,108 @@ beforeEach(() => {
   authFetchMock.mockImplementation(() => ok({ profile: seeded, completeness: { filled: 9, total: 17, missing: ["city"] } }))
 })
 
+describe("per-field state — the scan, not the read", () => {
+  // The point of the restructure: before this, a done field and an empty one
+  // looked identical, so finding what was left meant reading all 17.
+  it("a filled field shows the check, an empty required one shows the warning", async () => {
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("field-client_first")).toBeTruthy())
+
+    // client_first is seeded; city is deliberately never seeded (see 7a).
+    expect(screen.getByTestId("field-client_first").getAttribute("data-state")).toBe("filled")
+    expect(screen.getByTestId("check-client_first")).toBeTruthy()
+    expect(screen.queryByTestId("needed-client_first")).toBeNull()
+
+    expect(screen.getByTestId("field-city").getAttribute("data-state")).toBe("required-empty")
+    expect(screen.getByTestId("needed-city")).toBeTruthy()
+    expect(screen.queryByTestId("check-city")).toBeNull()
+  })
+
+  it("the four skippable fields say optional and never warn", async () => {
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("field-degree")).toBeTruthy())
+
+    for (const k of ["degree", "resume_link", "calendar_link"]) {
+      expect(screen.getByTestId(`field-${k}`).getAttribute("data-state")).toBe("optional-empty")
+      expect(screen.getByTestId(`optional-${k}`)).toBeTruthy()
+      expect(screen.queryByTestId(`needed-${k}`)).toBeNull()
+    }
+    // grad_year IS seeded in this fixture, so it must read filled rather than
+    // optional — the optional label is for empty ones only.
+    expect(screen.getByTestId("field-grad_year").getAttribute("data-state")).toBe("filled")
+  })
+
+  it("the elevator pitch is marked out from every other field", async () => {
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("field-elevator_pitch")).toBeTruthy())
+    expect(screen.getByTestId("pitch-badge")).toBeTruthy()
+    // Exactly one featured field — the emphasis is worthless if it spreads.
+    expect(screen.queryAllByTestId("pitch-badge")).toHaveLength(1)
+  })
+
+  it("state follows the value, so filling a field flips it on the next load", async () => {
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("field-city")).toBeTruthy())
+    expect(screen.getByTestId("field-city").getAttribute("data-state")).toBe("required-empty")
+
+    authFetchMock.mockImplementation(() =>
+      ok({ profile: { ...seeded, city: "Chicago" }, completeness: { filled: 10, total: 17, missing: [] } }))
+    fireEvent.blur(screen.getByLabelText("City"), { target: { value: "Chicago" } })
+
+    await waitFor(() => expect(screen.getByTestId("field-city").getAttribute("data-state")).toBe("filled"))
+    expect(screen.getByTestId("check-city")).toBeTruthy()
+  })
+})
+
+describe("the 'enough to start sending' threshold", () => {
+  it("says how many more, and which, while below it", async () => {
+    // The fixture has client_first, target_role and target_field but NO pitch.
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("send-not-ready")).toBeTruthy())
+
+    const line = screen.getByTestId("send-not-ready").textContent ?? ""
+    expect(line).toMatch(/1 more to start sending/)
+    expect(line).toMatch(/elevator pitch/)
+    expect(screen.queryByTestId("send-ready")).toBeNull()
+  })
+
+  it("crosses the threshold when the last must-have lands, well short of 17", async () => {
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("send-not-ready")).toBeTruthy())
+
+    authFetchMock.mockImplementation(() =>
+      ok({ profile: { ...seeded, elevator_pitch: "I'm a marketing analyst moving into…" },
+           completeness: { filled: 10, total: 17, missing: [] } }))
+    fireEvent.blur(screen.getByLabelText("Elevator pitch"), { target: { value: "I'm a marketing analyst moving into…" } })
+
+    await waitFor(() => expect(screen.getByTestId("send-ready")).toBeTruthy())
+    expect(screen.queryByTestId("send-not-ready")).toBeNull()
+    // Ready at 10 of 17 — the signal exists precisely so this is not all-or-nothing.
+    expect(screen.getByTestId("completeness-count").textContent).toBe("10 of 17")
+  })
+
+  it("an empty profile needs all four and says so", async () => {
+    authFetchMock.mockImplementation(() =>
+      ok({ profile: {}, completeness: { filled: 0, total: 17, missing: [] } }))
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("send-not-ready")).toBeTruthy())
+    expect(screen.getByTestId("send-not-ready").textContent).toMatch(/4 more to start sending/)
+  })
+})
+
+describe("section-level progress", () => {
+  it("each section carries its own count, so movement is visible inside it", async () => {
+    render(<ProfileForm />)
+    await waitFor(() => expect(screen.getByTestId("section-about-you")).toBeTruthy())
+
+    // About you: client_first, current_role_title, current_employer, school,
+    // grad_year filled; degree and city empty.
+    expect(screen.getByTestId("section-about-you").textContent).toMatch(/5 of 7/)
+    // Affinities are all empty in the fixture.
+    expect(screen.getByTestId("section-your-affinities").textContent).toMatch(/0 of 3/)
+  })
+})
+
 describe("completeness meter", () => {
   it("shows filled of total, so gaps are visible before templates hit them", async () => {
     render(<ProfileForm />)
