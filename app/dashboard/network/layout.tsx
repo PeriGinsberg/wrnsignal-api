@@ -19,6 +19,7 @@ const TABS = [
   { href: "/dashboard/network/contacts", label: VIEW_LABELS.contacts.tab, exact: false },
   { href: "/dashboard/network/companies", label: VIEW_LABELS.companies.tab, exact: false },
   { href: "/dashboard/network/profile", label: VIEW_LABELS.profile.tab, exact: false },
+  { href: "/dashboard/network/templates", label: VIEW_LABELS.templates.tab, exact: false },
 ]
 
 export default function NetworkLayout({ children }: { children: React.ReactNode }) {

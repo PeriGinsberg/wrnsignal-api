@@ -128,6 +128,7 @@ export const VIEW_LABELS = {
   contacts: { tab: "Contacts", heading: "Contacts" },
   companies: { tab: "Companies", heading: "Companies" },
   profile: { tab: "Profile", heading: "Your networking profile" },
+  templates: { tab: "Templates", heading: "Your message templates" },
 } as const
 
 export const STATUS_LABELS: Record<string, string> = {
