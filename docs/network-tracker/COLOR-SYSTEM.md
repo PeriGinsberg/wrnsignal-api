@@ -148,6 +148,134 @@ fill). Colouring auto items ice blue too would make the menu disagree with the m
 
 ---
 
+## 6. The light theme (PROPOSAL, not applied)
+
+Light cards on the navy page. Networking is the pilot; the token set below is written to
+be product-wide, not networking-only. **Nothing is applied yet.** No screen has changed.
+
+### 6.1 The problem this had to solve
+
+The dark palette separates several meanings by LIGHTNESS, not hue. On white every colour
+has to darken to clear 4.5:1, which compresses the whole set into one narrow luminance
+band and collapses exactly those pairs. Measured, on a first pass of naive darkening:
+
+| Pair | Hue gap | Luminance ratio | Verdict |
+|---|---|---|---|
+| in-progress blue vs sequence ice | 11 deg | 1.01 | collapsed |
+| attention warm vs done gold | 16 deg | 1.06 | collapsed |
+| replied green vs we-spoke mint | 21 deg | 1.09 | collapsed |
+
+On the dark theme ice blue beat `WRN_BLUE` by luminance `0.933` against `0.373`. Darkening
+both for white throws that separation away.
+
+**The fix is structural, not another hue hunt.** Every meaning gets TWO values on light:
+
+- **`ink`** - the dark value, for text, rails, borders and icons
+- **`fill`** - the pale tint, for pill and circle backgrounds, always with its own `ink` on top
+
+Pairs that collapsed as two inks no longer meet as two inks. A status pill is `ink` on
+`fill`; a group rail is a bar of `ink`. The §2 shape rule does the separating, and it does
+more work on light than it ever had to on dark.
+
+### 6.2 Surfaces
+
+| Role | Value | Note |
+|---|---|---|
+| Page | `#13294A` | unchanged, the existing `T.BG` navy |
+| Card surface | `#F7F9FC` | soft cool off-white; 13.79:1 against the page |
+| Raised / active card | `#FFFFFF` | brighter than the base surface, so raised reads as raised |
+| Input well | `#EDF1F7` | recessed a step below the card |
+| Border | `#D6DEE8` | hairline on light |
+| Border soft | `#E3E6EA` | for internal dividers |
+
+Pure white is the RAISED state, not the base. An off-white base means a raised card has
+somewhere brighter to go, and it takes the glare off a full page of cards.
+
+### 6.3 Text on light
+
+| Role | Value | Contrast on card |
+|---|---|---|
+| Primary | `#13294A` | 13.79 |
+| Secondary | `#3D5878` | 6.95 |
+| Muted | `#5E7A99` | 4.22, large text and labels only |
+| Dim | `#8AA0B8` | 2.55, decorative and placeholder only |
+
+Primary text is the page navy itself. The background of the app is the ink of the cards,
+which is what keeps the two themes feeling like one product.
+
+### 6.4 Every meaning, re-tuned for white
+
+Meaning is preserved; only the surface flipped. All eleven clear 4.5:1 both as ink on the
+card and as ink on their own fill.
+
+| Meaning | Ink | Fill | ink-on-fill | ink-on-card |
+|---|---|---|---|---|
+| Attention, act here, overdue | `#9A4708` | `#FDEBD3` | 5.49 | 6.07 |
+| Responded / alive | `#116C34` | `#DCF5E4` | 5.66 | 6.19 |
+| We actually spoke | `#046A5A` | `#CBEDE4` | 5.22 | 6.19 |
+| Achieved / done | `#7A5B10` | `#F6EAC2` | 5.24 | 5.98 |
+| In progress | `#185E8C` | `#DBEAF7` | 5.67 | 6.60 |
+| The sequence (group) | `#0B6076` | `#D2EFF7` | 5.91 | 6.75 |
+| LinkedIn (group) | `#BE185D` | `#FBDFEB` | 4.85 | 5.72 |
+| Long game | `#6D28D9` | `#E9E1FB` | 5.63 | 6.74 |
+| Dormant / resting | `#A34848` | `#F7E2E2` | 4.73 | 5.57 |
+| Error / destructive | `#B3261E` | `#FBE2E0` | 5.31 | 6.20 |
+| Not started | `#4E6B88` | `#E8EDF4` | 4.72 | 5.26 |
+
+The replies group keeps the replied green and the fill-at-send bracket keeps the attention
+warm, exactly as on dark. One meaning, one colour, both themes.
+
+### 6.5 The two tight pairs, and why they are safe
+
+`blue ink` vs `ice ink` is a luminance ratio of 1.02, and `warm ink` vs `gold ink` is 1.02.
+Both are fine because **neither pair ever meets as two inks**:
+
+- In-progress is a status, so it appears as ink on its fill inside a pill. The sequence is a
+  group, so it appears as a rail. Blue pill ink against ice rail fill measures **5.77**.
+- Attention is text, a border or an icon. Done is a status pill. Warm text against a gold
+  pill fill is the comparison a reader actually makes, never warm ink against gold ink.
+
+This is the §2 shape rule earning its keep. If a future screen puts two inks side by side
+it breaks, so that is the thing to check when applying, not the hex values.
+
+### 6.6 Gradient buttons
+
+`GRAD_PRIMARY` (`#FEB06A` to `#51ADE5`) was built for a dark surface and reads washed out on
+white. On light, the primary button becomes solid page navy `#13294A` with white text, which
+inverts cleanly against a light card and needs no gradient at all. The gradient stays the
+dark theme's.
+
+### 6.7 Token structure
+
+Written so this is not networking-only:
+
+```ts
+// lib/theme/surfaces.ts
+export type Meaning = { ink: string; fill: string }
+export type Surface = {
+  page: string; card: string; raised: string; well: string
+  border: string; borderSoft: string
+  text: { primary: string; secondary: string; muted: string; dim: string }
+  meaning: Record<MeaningKey, Meaning>
+}
+export const DARK: Surface = { ... }   // today's T, restated in this shape
+export const LIGHT: Surface = { ... }  // the table above
+```
+
+Components read `surface.meaning.attention.ink` rather than `T.WRN_ORANGE`, so a screen is
+themed by which `Surface` it is handed. `pillStyle()` becomes `pillStyle(surface, phase)`
+and returns `ink` on `fill`. Existing `T.*` stays exported and unchanged during the
+migration, so no screen breaks while they move across one at a time.
+
+### 6.8 What is NOT decided here
+
+- Whether the page background stays navy or also lightens.
+- The hover, selected and just-changed row overlays (`ROW_*`), which are white-alpha today
+  and need dark-alpha equivalents on light.
+- Whether the dark theme survives as a user choice or the light one replaces it.
+
+---
+
 ## Appendix: the original audit, and what it found
 
 The state before these rules, kept because it is the evidence for them.
