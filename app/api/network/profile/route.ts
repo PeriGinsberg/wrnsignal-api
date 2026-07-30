@@ -44,7 +44,7 @@ type ProfileRow = Record<string, string | string[] | null>
 
 const PROFILE_COLS =
   "id, client_profile_id, " + ALL_FIELDS.join(", ") +
-  ", touched_fields, seeded_at, resume_seed_attempted_at, created_at, updated_at"
+  ", touched_fields, help_dismissed, seeded_at, resume_seed_attempted_at, created_at, updated_at"
 
 const SOURCE_COLS =
   "id, name, university, target_roles, grad_date, timeline, coach_notes_strengths, profile_structured, resume_text"
@@ -239,6 +239,23 @@ export async function PATCH(req: NextRequest) {
         ok: true, profile: updated, refreshed: Object.keys(patch),
         completeness: completeness((updated ?? {}) as never),
       }, 200)
+    }
+
+    // ── dismiss a help callout ──
+    // Its own action rather than an ordinary field write: help_dismissed is UI
+    // state, and routing it through the ALL_FIELDS path would put it in the
+    // completeness meter and in touched_fields, so a profile that is genuinely
+    // finished would read as one field short forever.
+    if (body.action === "dismiss_help") {
+      const surface = String(body.surface || "").trim()
+      if (!surface) return withCorsJson(req, { ok: false, error: "surface required" }, 400)
+      const { data: cur } = await supabase
+        .from("network_client_profile").select("help_dismissed").eq("client_profile_id", target).maybeSingle()
+      const next = { ...((cur?.help_dismissed as Record<string, boolean>) ?? {}), [surface]: body.dismissed !== false }
+      const { data: updated } = await supabase
+        .from("network_client_profile").update({ help_dismissed: next })
+        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+      return withCorsJson(req, { ok: true, profile: updated, completeness: completeness((updated ?? {}) as never) }, 200)
     }
 
     // ── ordinary edit ──

@@ -30,15 +30,20 @@ vi.mock("../authFetch", () => ({
   getToken: async () => "t",
 }))
 
+// Complete enough to clear sendReadiness()'s four must-haves, so the default
+// fixture is a user who is READY and the profile-gap banner is absent unless a
+// test deliberately empties it.
 const PROFILE = {
   client_first: "Jordan",
   current_role_title: "Senior Marketing Analyst",
   current_employer: "Northbrook Consumer Group",
   target_role: "Marketing Analytics",
   target_field: "Marketing",
+  elevator_pitch: "I turn messy data into decisions people act on.",
   city: "Chicago",
   school: "University of Illinois",
   key_strength: "turning messy data into decisions",
+  help_dismissed: { templates: true },
 }
 
 // Server-side override store, so a save is observable by the next GET the way it
@@ -77,9 +82,15 @@ function api() {
         })),
       })
     }
-    return json({ ok: true, profile: PROFILE })
+    if (u === "/api/network/profile" && method === "PATCH") {
+      const sent = JSON.parse(init!.body!)
+      return json({ ok: true, profile: { ...PROFILE, help_dismissed: { templates: sent.dismissed !== false } } })
+    }
+    return json({ ok: true, profile: profileFixture })
   }
 }
+// Per-test override, so a test can hand back an empty or partial profile.
+let profileFixture: Record<string, unknown> = PROFILE
 const json = (v: unknown) => Promise.resolve({ ok: true, status: 200, json: async () => v } as unknown as Response)
 
 const bodyBox = () => screen.getByTestId("template-body") as HTMLTextAreaElement
@@ -89,6 +100,7 @@ afterEach(cleanup)
 beforeEach(() => {
   params = new URLSearchParams()
   overrides = {}
+  profileFixture = PROFILE
   replaceMock.mockClear()
   authFetchMock.mockReset()
   authFetchMock.mockImplementation(api())
@@ -368,6 +380,98 @@ describe("the dropped-variable warning", () => {
     expect(droppedVariables("C2", DEFAULTS_BY_ID.C2.body + " [CITY]")).toEqual([])
     expect(droppedVariables("C2", "no variables at all"))
       .toEqual(expect.arrayContaining(["NAME"]))
+  })
+})
+
+describe("the help layers", () => {
+  it("always shows the plain intro line", async () => {
+    await open()
+    expect(screen.getByText(/These are your outreach messages, ready to send/)).toBeTruthy()
+  })
+
+  it("warns when the profile is below the send-ready threshold, and links to it", async () => {
+    // Missing elevator_pitch alone drops it under — the threshold is imported
+    // from the profile screen, not restated here.
+    profileFixture = { ...PROFILE, elevator_pitch: "" }
+    await open()
+    const banner = screen.getByTestId("profile-gap-banner")
+    expect(banner.textContent).toMatch(/previews below will have gaps/)
+    expect(screen.getByTestId("profile-gap-link").getAttribute("href")).toBe("/dashboard/network/profile")
+  })
+
+  it("stays quiet once the profile clears the threshold", async () => {
+    await open()
+    expect(screen.queryByTestId("profile-gap-banner")).toBeNull()
+  })
+
+  it("never blocks the page — the templates render underneath the warning", async () => {
+    profileFixture = {}
+    await open()
+    expect(screen.getByTestId("profile-gap-banner")).toBeTruthy()
+    expect(screen.getByTestId("sequence")).toBeTruthy()
+    for (const id of sequenceIds("personal")) expect(screen.getByTestId(`card-${id}`)).toBeTruthy()
+  })
+
+  it("shows 'How this works' to someone who has not dismissed it", async () => {
+    profileFixture = { ...PROFILE, help_dismissed: {} }
+    await open()
+    const box = screen.getByTestId("how-this-works")
+    expect(box.textContent).toMatch(/Pick who you're messaging/)
+    expect(box.textContent).toMatch(/amber ones are\s+yours to write/)
+  })
+
+  it("dismisses, and persists the dismissal", async () => {
+    profileFixture = { ...PROFILE, help_dismissed: {} }
+    await open()
+    fireEvent.click(screen.getByTestId("how-this-works-dismiss"))
+
+    expect(screen.queryByTestId("how-this-works")).toBeNull()
+    await waitFor(() => {
+      const patch = authFetchMock.mock.calls.find(
+        (c) => String(c[0]) === "/api/network/profile" && c[1]?.method === "PATCH")
+      expect(patch).toBeTruthy()
+      const sent = JSON.parse(patch![1].body)
+      expect(sent).toMatchObject({ action: "dismiss_help", surface: "templates", dismissed: true })
+    })
+  })
+
+  it("stays dismissed on the next visit, but can be reopened", async () => {
+    await open()   // fixture has help_dismissed.templates = true
+    expect(screen.queryByTestId("how-this-works")).toBeNull()
+
+    fireEvent.click(screen.getByTestId("how-this-works-reopen"))
+    expect(screen.getByTestId("how-this-works")).toBeTruthy()
+  })
+
+  it("opens and closes the Insert field popover", async () => {
+    await open("C2")
+    const label = "About insert field"
+    expect(screen.queryByTestId(`help-panel-${label}`)).toBeNull()
+
+    fireEvent.click(screen.getByTestId(`help-${label}`))
+    expect(screen.getByTestId(`help-panel-${label}`).textContent).toMatch(/Calm ones fill themselves/)
+
+    fireEvent.click(screen.getByTestId(`help-${label}`))
+    expect(screen.queryByTestId(`help-panel-${label}`)).toBeNull()
+  })
+
+  it("opens the edit-area popover and closes it on Escape", async () => {
+    await open("C2")
+    const label = "About editing here"
+    fireEvent.click(screen.getByTestId(`help-${label}`))
+    expect(screen.getByTestId(`help-panel-${label}`).textContent)
+      .toMatch(/edit it on their contact page instead/)
+
+    fireEvent.keyDown(document, { key: "Escape" })
+    await waitFor(() => expect(screen.queryByTestId(`help-panel-${label}`)).toBeNull())
+  })
+
+  it("says none of it in jargon", async () => {
+    profileFixture = { ...PROFILE, help_dismissed: {}, elevator_pitch: "" }
+    const { container } = await open("C2")
+    fireEvent.click(screen.getByTestId("insert-field-button"))
+    fireEvent.click(screen.getByTestId("help-About insert field"))
+    expect(container.textContent ?? "").not.toMatch(/merge variable|template variable|\btoken\b|mail.?merge/i)
   })
 })
 

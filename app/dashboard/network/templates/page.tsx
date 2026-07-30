@@ -23,6 +23,8 @@ import {
   PLACEMENT_BY_ID, NAME_BY_ID, TOUCH_DAYS, REPLY_IDS, LINKEDIN_IDS, sequenceIds,
 } from "./templateNames"
 import { WhoPicker } from "./WhoPicker"
+import { HowThisWorks } from "./HowThisWorks"
+import { ProfileGapBanner } from "./ProfileGapBanner"
 import { TemplateCard } from "./TemplateCard"
 import { LibraryGroup, groupSection, railStyle } from "./LibraryGroup"
 import { ACCENTS } from "./accents"
@@ -39,6 +41,7 @@ export default function TemplatesPage() {
 function TemplatesEditor() {
   const [templates, setTemplates] = useState<MergedTemplate[]>([])
   const [profile, setProfile] = useState<Record<string, string | null> | null>(null)
+  const [helpDismissed, setHelpDismissed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,7 +64,10 @@ function TemplatesEditor() {
       ])
       const [tj, pj] = await Promise.all([tRes.json().catch(() => ({})), pRes.json().catch(() => ({}))])
       if (tj?.ok) setTemplates(tj.templates ?? [])
-      if (pj?.ok) setProfile(pj.profile ?? {})
+      if (pj?.ok) {
+        setProfile(pj.profile ?? {})
+        setHelpDismissed(Boolean((pj.profile?.help_dismissed as Record<string, boolean> | null)?.templates))
+      }
       if (!tj?.ok) setError(tj?.error || "Could not load templates.")
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e))
@@ -70,6 +76,19 @@ function TemplatesEditor() {
     }
   }, [])
   useEffect(() => { void load() }, [load])
+
+  // Optimistic: the callout closes on click and the write follows. A failed
+  // dismiss re-showing the help on the next load is a far smaller annoyance
+  // than a click that appears to do nothing.
+  const dismissHelp = useCallback(async () => {
+    setHelpDismissed(true)
+    try {
+      await authFetch("/api/network/profile", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dismiss_help", surface: "templates", dismissed: true }),
+      })
+    } catch { /* stays dismissed for this visit either way */ }
+  }, [])
 
   const byId = useMemo(
     () => Object.fromEntries(templates.map((t) => [t.template_id, t])) as Record<string, MergedTemplate>,
@@ -114,6 +133,14 @@ function TemplatesEditor() {
   return (
     <main style={main}>
       <h1 style={headline}>{VIEW_LABELS.templates.heading}</h1>
+      <p style={{ color: T.MUTED, fontSize: 13, lineHeight: "20px", margin: "7px 0 0", maxWidth: 640 }}>
+        These are your outreach messages, ready to send. The highlighted bits fill in
+        automatically from your profile and each contact — so every message is personal
+        without rewriting it.
+      </p>
+
+      <ProfileGapBanner profile={profile} />
+      <HowThisWorks dismissed={helpDismissed} onDismiss={() => void dismissHelp()} />
 
       <div style={{ ...fieldLabel, textTransform: "uppercase", marginTop: 16 }}>Who are you messaging?</div>
       <WhoPicker value={relationship} onChange={pickRelationship} />

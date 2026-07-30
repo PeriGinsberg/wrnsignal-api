@@ -20,6 +20,7 @@ import { renderTemplate, type MergedTemplate } from "../../../../lib/network-tra
 import { SAMPLE_CONTACT, droppedVariables } from "./groups"
 import { BracketText } from "./brackets"
 import { InsertFieldMenu } from "./InsertFieldMenu"
+import { HelpTip } from "./HelpTip"
 
 // Shared by the textarea and the highlight layer behind it. Any typography or
 // box value that differs between the two shows up as text drifting off its own
@@ -151,7 +152,13 @@ export function TemplateEditor({
         />
       </div>
 
-      <InsertFieldMenu onInsert={insert} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <InsertFieldMenu onInsert={insert} />
+        <HelpTip label="About insert field">
+          These drop a fill-in blank into your message. Calm ones fill themselves; amber ones
+          you write when you send.
+        </HelpTip>
+      </div>
 
       {dropped.length > 0 && (
         // Between editor and preview, where the eye already is. A warning, never
@@ -186,9 +193,15 @@ export function TemplateEditor({
 
       {/* The nuance that used to be a paragraph at the top of the screen, now
           where it is actually needed: at the moment of editing. */}
-      <p style={{ color: T.DIM, fontSize: 11.5, marginTop: 10, lineHeight: "17px" }}>
-        This changes every future message of this kind. To change one message for one person,
-        edit it in the Send panel on their record instead.
+      <p style={{
+        color: T.DIM, fontSize: 11.5, marginTop: 10, lineHeight: "17px",
+        display: "flex", alignItems: "center", gap: 7,
+      }}>
+        <span>This changes every future message of this kind.</span>
+        <HelpTip label="About editing here">
+          Editing here changes this message for <strong>every</strong> future contact. To change
+          one message for one person, edit it on their contact page instead.
+        </HelpTip>
       </p>
 
       {/* ── PREVIEW, now stacked below rather than a third column ── */}
