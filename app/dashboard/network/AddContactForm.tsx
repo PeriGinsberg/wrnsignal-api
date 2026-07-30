@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { T, input as inputStyle, select as selectStyle, selectOption } from "../../../lib/dashboard-theme"
 import { authFetch } from "./authFetch"
-import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABEL, STAGE_LABELS, FIELD_LABELS } from "./vocab"
+import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABELS, STAGE_LABELS, FIELD_LABELS } from "./vocab"
 
 // "Add a contact" — a small modal form. Company is OPTIONAL (leave it blank for a
 // standalone contact). The new contact starts at not_contacted with no due date;
@@ -112,7 +112,7 @@ export function AddContactForm({ onClose, onCreated }: { onClose: () => void; on
                 <select value={relationship} onChange={(e) => setRelationship(e.target.value)} style={{ ...selectStyle, height: 40 }}>
                   <option value="" style={selectOption}>—</option>
                   {RELATIONSHIPS.map((r) => (
-                    <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABEL[r]}</option>
+                    <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABELS[r]}</option>
                   ))}
                 </select>
               </label>

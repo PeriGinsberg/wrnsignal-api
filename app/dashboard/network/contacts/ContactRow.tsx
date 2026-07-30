@@ -10,7 +10,7 @@
 import { useState } from "react"
 import { T, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
 import { authFetch } from "../authFetch"
-import { STAGE_LABELS, REASON_LABELS, REASON_TO_ACTION, RELATIONSHIP_LABEL, stagePillStyle } from "../vocab"
+import { STAGE_LABELS, REASON_LABELS, REASON_TO_ACTION, RELATIONSHIP_LABELS, stagePillStyle } from "../vocab"
 
 export type Contact = {
   id: string
@@ -147,7 +147,7 @@ export function Row({
       </td>
       <td style={{ ...td, color: T.MUTED }}>{c.title ?? "—"}</td>
       {/* Relationship stays the full word — clarity over width. */}
-      <td style={td}>{c.relationship ? RELATIONSHIP_LABEL[c.relationship] : <span style={{ color: T.DIM }}>—</span>}</td>
+      <td style={td}>{c.relationship ? RELATIONSHIP_LABELS[c.relationship] : <span style={{ color: T.DIM }}>—</span>}</td>
       <td style={td}>{c.priority ?? <span style={{ color: T.DIM }}>—</span>}</td>
       <td style={td}>
         {/* Stage column doubles as the change-stage action (a spreadsheet cell). */}

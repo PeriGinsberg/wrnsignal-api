@@ -28,7 +28,7 @@ import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
 import {
-  FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES,
+  FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES,
   STAGE_LABELS, stagePillStyle,
 } from "../../vocab"
 
@@ -104,7 +104,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
   // Drawer summaries. Each answers, while shut, the question that would
   // otherwise cost a click: is there anything in here?
   const detailBits = [
-    contact.relationship ? RELATIONSHIP_LABEL[contact.relationship] : null,
+    contact.relationship ? RELATIONSHIP_LABELS[contact.relationship] : null,
     contact.priority ? `Priority ${contact.priority}` : null,
     contact.segment || null,
   ].filter(Boolean) as string[]
@@ -296,7 +296,7 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
           <select value={relationship} onChange={(e) => setRelationship(e.target.value)} aria-label={FIELD_LABELS.relationship} style={{ ...selectStyle, width: 180, height: 40 }}>
             <option value="" style={selectOption}>—</option>
             {RELATIONSHIPS.map((r) => (
-              <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABEL[r]}</option>
+              <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABELS[r]}</option>
             ))}
           </select>
         </label>

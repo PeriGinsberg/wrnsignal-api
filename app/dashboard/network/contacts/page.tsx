@@ -18,7 +18,7 @@ import { T, headline, select as selectStyle, selectOption } from "../../../../li
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
 import {
-  STAGE_LABELS, RELATIONSHIP_LABEL, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
+  STAGE_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
 } from "../vocab"
 import { Row, dueOf, type Contact } from "./ContactRow"
 import { matchesQuery } from "./search"
@@ -349,7 +349,7 @@ function ContactsSpreadsheetInner() {
         </Filter>
         <Filter value={fRelationship} onChange={setFRelationship} allLabel="All relationships">
           <option value={NO_RELATIONSHIP} style={selectOption}>No relationship set</option>
-          {RELATIONSHIPS.map((r) => <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABEL[r]}</option>)}
+          {RELATIONSHIPS.map((r) => <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABELS[r]}</option>)}
         </Filter>
         <Filter value={fSegment} onChange={setFSegment} allLabel="All segments">
           {segments.map((s) => <option key={s} value={s} style={selectOption}>{s}</option>)}

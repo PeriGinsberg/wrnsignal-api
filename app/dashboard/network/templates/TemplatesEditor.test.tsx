@@ -106,7 +106,9 @@ describe("the list", () => {
 
     // Grouping mirrors RELATIONSHIP_TO_FAMILY: 1 intro + 5 sequences of 3 + 5 S + 3 L.
     expect(TEMPLATE_GROUPS.map((g) => g.ids.length)).toEqual([1, 3, 3, 3, 3, 3, 5, 3])
-    for (const h of ["Personal", "Affinity", "Referred", "Cold", "Recruiter"]) {
+    // Headings come from RELATIONSHIP_LABELS; the A1/C2 template IDs beside them
+    // are IDs, not labels, and deliberately do not follow a rename.
+    for (const h of ["Personal", "Something in Common", "Referral", "Cold", "Recruiter"]) {
       expect(screen.getByText(h)).toBeTruthy()
     }
   })

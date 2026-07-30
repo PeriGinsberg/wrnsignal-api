@@ -14,7 +14,7 @@
 // contact now at `nurture` still counts as having replied. Deriving these from
 // the CURRENT stage instead would make the reply rate fall as things went well.
 
-import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS, RELATIONSHIP_LABEL } from "./vocab"
+import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS, RELATIONSHIP_LABELS } from "./vocab"
 import type { PhaseKey } from "../../../lib/dashboard-theme"
 import type { Contact } from "./contacts/ContactRow"
 
@@ -143,7 +143,7 @@ export function splitBy(contacts: Contact[], field: "relationship" | "segment"):
       const suppressed = r < MIN_SPLIT_N
       return {
         key,
-        label: field === "relationship" ? (RELATIONSHIP_LABEL[key] ?? key) : key,
+        label: field === "relationship" ? (RELATIONSHIP_LABELS[key] ?? key) : key,
         reached: r,
         replied: rep,
         rate: suppressed || r === 0 ? null : rep / r,

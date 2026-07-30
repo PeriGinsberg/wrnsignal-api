@@ -110,12 +110,12 @@ describe("the two behaviours that rode along with the dropdown", () => {
     expect(screen.queryByTestId("outcome-types")).toBeNull()
   })
 
-  it("suggests Referred after requesting an intro, and applies it on accept", async () => {
+  it("suggests Referral after requesting an intro, and applies it on accept", async () => {
     openPanel({ relationship: "cold" })
     fireEvent.change(screen.getByLabelText("Stage"), { target: { value: "intro_requested" } })
 
     await waitFor(() => expect(screen.getByText(/usually turns a contact into a/i)).toBeTruthy())
-    fireEvent.click(screen.getByRole("button", { name: /Set to Referred/i }))
+    fireEvent.click(screen.getByRole("button", { name: /Set to Referral/i }))
 
     await waitFor(() => expect(authFetchMock).toHaveBeenCalledTimes(2))
     const [url, init] = authFetchMock.mock.calls[1]
@@ -124,7 +124,7 @@ describe("the two behaviours that rode along with the dropdown", () => {
     expect(JSON.parse(init.body).relationship).toBe("referred")
   })
 
-  it("does not suggest Referred when the contact already is", async () => {
+  it("does not suggest Referral when the contact already is", async () => {
     openPanel({ relationship: "referred" })
     fireEvent.change(screen.getByLabelText("Stage"), { target: { value: "intro_requested" } })
     await waitFor(() => expect(authFetchMock).toHaveBeenCalledTimes(1))

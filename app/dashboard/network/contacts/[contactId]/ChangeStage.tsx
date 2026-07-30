@@ -15,12 +15,12 @@
 //
 // Two behaviours ride along with the dropdown and would have been lost with it:
 // the outcome-type sub-attribute, and the "requesting an intro usually means
-// Referred" suggestion.
+// Referral" suggestion.
 
 import { useState } from "react"
 import { T, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
 import { authFetch } from "../../authFetch"
-import { STAGE_LABELS, FIELD_LABELS, stagePillStyle } from "../../vocab"
+import { STAGE_LABELS, FIELD_LABELS, RELATIONSHIP_LABELS, stagePillStyle } from "../../vocab"
 
 const OUTCOME_TYPES = [
   { key: "referral", label: "Referral" },
@@ -151,14 +151,15 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
           display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
         }}>
           <span style={{ color: T.TEXT, fontSize: 12, flex: "1 1 220px" }}>
-            Requesting an intro usually turns a contact into a <strong>Referred</strong> one. Update the relationship?
+            Requesting an intro usually turns a contact into a{" "}
+            <strong>{RELATIONSHIP_LABELS.referred}</strong> one. Update the relationship?
           </span>
           <button onClick={applyReferred} disabled={busy === "suggest"}
             style={{
               background: T.GRAD_PRIMARY, color: "#04060F", fontWeight: 900, fontSize: 12,
               border: "none", borderRadius: 10, padding: "7px 13px", cursor: "pointer",
             }}>
-            {busy === "suggest" ? "Saving…" : "Set to Referred"}
+            {busy === "suggest" ? "Saving…" : `Set to ${RELATIONSHIP_LABELS.referred}`}
           </button>
           <button onClick={() => setSuggestReferred(false)} style={quiet}>Not now</button>
         </div>

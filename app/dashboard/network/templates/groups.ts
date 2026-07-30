@@ -4,7 +4,7 @@
 // A module rather than helpers inside page.tsx: page files should export only
 // route members, and these three all need to be reachable from tests.
 
-import { RELATIONSHIPS, RELATIONSHIP_LABEL, RELATIONSHIP_TO_FAMILY } from "../vocab"
+import { RELATIONSHIPS, RELATIONSHIP_LABELS, RELATIONSHIP_TO_FAMILY } from "../vocab"
 import { TEMPLATE_IDS, DEFAULTS_BY_ID, extractVariables, type RenderContact } from "../../../../lib/network-tracker/templates"
 
 export type TemplateGroup = { heading: string; hint?: string; ids: string[] }
@@ -15,7 +15,7 @@ export type TemplateGroup = { heading: string; hint?: string; ids: string[] }
 const SEQUENCE_GROUPS: TemplateGroup[] = RELATIONSHIPS.map((rel) => {
   const family = RELATIONSHIP_TO_FAMILY[rel]
   return {
-    heading: RELATIONSHIP_LABEL[rel],
+    heading: RELATIONSHIP_LABELS[rel],
     hint: "sequence",
     ids: TEMPLATE_IDS.filter((id) => id.startsWith(family) && /^[A-Z]\d$/.test(id)),
   }

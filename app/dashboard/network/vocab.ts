@@ -254,10 +254,22 @@ export const REASON_LABELS: Record<string, string> = {
   manual: "Your reminder",
 }
 
-export const RELATIONSHIP_LABEL: Record<string, string> = {
+// DISPLAY ONLY. The keys are the DB values in network_contacts.relationship and
+// are NOT changing — RELATIONSHIP_TO_FAMILY and pickTemplate key off those, so a
+// label edit here can never move a contact to a different template family.
+// Same arrangement as STAGE_LABELS: one constant, every surface reads it.
+//
+// KNOWN COLLISION: "Referral" is also an OUTCOME_TYPE label (ChangeStage.tsx),
+// where it means "this conversation produced a referral" — here it means "this
+// is how you know them". Both can appear in the same panel: the intro-request
+// suggestion reads "usually turns a contact into a Referral one" a few inches
+// from the outcome-type picker. Accepted for now because the relationship word
+// is the one users pick at add-contact time; if it bites, rename the OUTCOME
+// side ("Got a referral"), never the relationship key.
+export const RELATIONSHIP_LABELS: Record<string, string> = {
   personal: "Personal",
-  affinity: "Affinity",
-  referred: "Referred",
+  affinity: "Something in Common",
+  referred: "Referral",
   cold: "Cold",
   recruiter: "Recruiter",
 }
