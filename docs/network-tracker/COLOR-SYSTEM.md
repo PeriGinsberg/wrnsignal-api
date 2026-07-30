@@ -17,6 +17,9 @@ Audit taken 2026-07-30 at `2d1a3ef8`; rules locked and applied the same day.
 | **We actually spoke** | mint `#a7f3d0` | `PHASE.momentum.fg` |
 | **Achieved / outcome** | gold `#D4A444` | `T.GOLD` (= `PHASE.won.fg`) |
 | **In progress** | blue `#51ADE5` | `T.WRN_BLUE` (= `PHASE.active.fg`) |
+| **The sequence · your active outreach** *(group identity)* | ice blue `#DCFEFF` | `T.ICE_BLUE` |
+| **The replies** *(group identity)* | green `#4ade80` | `T.SUCCESS` |
+| **LinkedIn** *(group identity)* | pink `#EC4899` | `T.WRN_PINK` |
 | **Long game (nurture/ask)** | violet `#c4b5fd` | `PHASE.longgame.fg` |
 | **Dormant / resting** | salmon | `PHASE.resting.fg` |
 | **Not started** | white 62% | `PHASE.idle.fg` |
@@ -55,12 +58,17 @@ Green in a pill means the contact replied. Green on a rail means the Replies sec
 No reader confuses them, and no future screen has to invent a third convention. Any new
 use of colour must pick one of these two shapes, or state why it is neither.
 
-### Not every group needs a colour
-The **primary content of a screen takes no rail**. On Templates the sequence is the
-content and the two library groups are asides; colouring only the asides is what says so.
-Three coloured peers would have made them compete, and it would have spent warm — which
-inside those very cards has to mean "you write this" — on a section heading. A group with
-no colour keeps the same 14px inset via a transparent rail, so headings stay aligned.
+### A group colour must carry no other meaning
+The Templates sequence went warm → neutral → **ice blue**, and the path is the lesson.
+Warm was wrong because warm means "act here", and a sequence card was showing a warm rail,
+warm step circles *and* warm fill-at-send brackets — three warm things meaning three
+different amounts. Neutral fixed the collision but cost the sequence its identity and its
+filled step circles. Ice blue gives both back in a colour that means nothing else here.
+
+The rule that survives: **a group identity may only use a colour with no competing meaning
+on the function.** Warm, green, gold and red were all unavailable to the sequence for that
+reason. `railStyle()` still accepts `null` for an uncoloured group, and a `null` rail keeps
+the identical 14px inset via a transparent border so headings stay aligned either way.
 
 ---
 
@@ -99,7 +107,7 @@ the body cannot disagree about what a variable is.
 | Templates: Replies green, LinkedIn pink | ✅ done |
 | Templates: bracket two-colour | ✅ done |
 | Token hygiene (literals → tokens) | ✅ done |
-| Templates: sequence section → neutral | ✅ done |
+| Templates: sequence section → ice blue | ✅ done |
 | Contacts spreadsheet | ⏳ not yet applied |
 | Dashboard / funnel | ⏳ not yet applied (inherits the gold change) |
 | Profile | ⏳ not yet applied |
@@ -108,6 +116,12 @@ the body cannot disagree about what a variable is.
 
 ## 5. Known, accepted overlaps
 
+- **Ice blue and `WRN_BLUE` are both blue-family.** Checked rather than assumed:
+  ice is luminance `0.933`, `WRN_BLUE` `0.373` — a `2.32:1` ratio between them, and
+  `15.44:1` vs `6.64:1` against the card navy. Ice reads near-white with a cyan cast,
+  `WRN_BLUE` reads as a blue. Distinct at rail and step-circle size. Also `T.ICE_BLUE` is
+  the pale cyan JobFit already uses on its Internship pill — different function, same
+  accepted-overlap footing as `T.GOLD`.
 - **Blue means link, in-progress, and unsaved-edit.** Three meanings, but they never
   co-occur in a way that misleads: a link is underlined text, in-progress is a pill, an
   unsaved edit is a border. Left as-is deliberately. Revisit only if it bites.

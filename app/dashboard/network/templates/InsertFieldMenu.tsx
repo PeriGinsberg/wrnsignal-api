@@ -15,16 +15,24 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { T, card } from "../../../../lib/dashboard-theme"
 import { DEFAULTS_BY_ID, extractVariables, classifyVariable } from "../../../../lib/network-tracker/templates"
 
-// Friendlier names for the tokens that read as jargon. The INSERTED text is
-// always the real bracket — this is a label, never a rename. Tokens not listed
-// here show as themselves, which is right for [NAME], [FIRM] and [CITY].
+// Friendlier names for the auto-resolving tokens. The INSERTED text is always
+// the real bracket — this is a label, never a rename.
+//
+// Every profile and contact variable is listed, none left bare: three rows
+// showing a naked [TOKEN] beside rows with a name read as a rendering bug, not
+// as "these three needed no explanation".
 const FRIENDLY: Record<string, string> = {
+  // About you
   AFFINITY_1: "Something you share",
   CURRENT_ROLE: "Your current role",
   KEY_STRENGTH: "Your strength",
   CURRENT_EMPLOYER: "Your current employer",
   TARGET_FIELD: "Field you're moving into",
   TARGET_ROLE: "Role you're targeting",
+  CITY: "Your city",
+  // About them
+  NAME: "Their name",
+  FIRM: "Their company",
 }
 
 /** What the menu shows for a token. Exported for the test that pins the mapping. */

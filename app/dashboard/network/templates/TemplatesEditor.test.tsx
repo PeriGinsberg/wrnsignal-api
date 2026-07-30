@@ -458,8 +458,19 @@ describe("the Insert field menu", () => {
     expect(menuLabel("CURRENT_EMPLOYER")).toBe("Your current employer")
     expect(menuLabel("TARGET_FIELD")).toBe("Field you're moving into")
     expect(menuLabel("TARGET_ROLE")).toBe("Role you're targeting")
-    // Already clear, deliberately untouched.
-    for (const t of ["NAME", "FIRM", "CITY"]) expect(menuLabel(t)).toBe(`[${t}]`)
+    expect(menuLabel("NAME")).toBe("Their name")
+    expect(menuLabel("FIRM")).toBe("Their company")
+    expect(menuLabel("CITY")).toBe("Your city")
+
+    // No auto-resolving variable may be bare. A row showing a naked [TOKEN]
+    // beside rows with a name reads as a rendering bug, so every profile and
+    // contact variable the menu offers must have one.
+    const offered = new Set(Object.values(DEFAULTS_BY_ID).flatMap((d) =>
+      (d.body.match(/\[([^\]]+)\]/g) ?? []).map((m) => m.slice(1, -1))))
+    const bare = [...offered]
+      .filter((t) => classifyVariable(t) !== "fill")
+      .filter((t) => menuLabel(t) === `[${t}]`)
+    expect(bare).toEqual([])
 
     await open("C2")
     fireEvent.change(bodyBox(), { target: { value: "" } })

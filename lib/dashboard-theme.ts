@@ -17,6 +17,11 @@ export const T = {
   // SUCCESS below, so this is one system and the hex belongs here rather than
   // being retyped wherever a fourth accent is wanted.
   WRN_PINK: "#EC4899",
+  // Ice blue — the pale cyan the product already uses (the Internship pill on
+  // the JobFit main component). Near-white with a cyan cast, which is what
+  // keeps it clearly apart from WRN_BLUE below despite both being blue-family:
+  // luminance 0.933 against WRN_BLUE's 0.373, a 2.32:1 ratio between them.
+  ICE_BLUE: "#DCFEFF",
   // "Achieved", distinct from the action-warm above. Attention and done cannot
   // share a hex — see docs/network-tracker/COLOR-SYSTEM.md. This is the gold the
   // product already uses (JobFit's Review pill), reused rather than inventing a
@@ -51,6 +56,8 @@ export const T = {
   SUCCESS_BORDER: "rgba(74,222,128,0.35)",
   PINK_BORDER: "rgba(236,72,153,0.35)",
   PINK_BG: "rgba(236,72,153,0.10)",
+  ICE_BLUE_BORDER: "rgba(220,254,255,0.35)",
+  ICE_BLUE_BG: "rgba(220,254,255,0.10)",
   // Blue tints, previously written as literals at four strengths in ChangeStage.
   BLUE_BG: "rgba(81,173,229,0.10)",
   BLUE_BG_ON: "rgba(81,173,229,0.15)",
