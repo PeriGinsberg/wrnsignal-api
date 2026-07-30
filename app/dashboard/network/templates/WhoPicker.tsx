@@ -1,6 +1,6 @@
 "use client"
 
-// "Who are you messaging?" — the five relationships in plain language, which is
+// "Who are you messaging?": the five relationships in plain language, which is
 // how the screen replaces a 24-item codebook with one question.
 
 import { T } from "../../../../lib/dashboard-theme"

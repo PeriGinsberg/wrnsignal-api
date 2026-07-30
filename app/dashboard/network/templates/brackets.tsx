@@ -1,6 +1,6 @@
 "use client"
 
-// Two kinds of bracket, two colours — the same meaning→colour rule the rest of
+// Two kinds of bracket, two colours, following the same meaning→colour rule the rest of
 // the networking function uses, applied inside a message body.
 //
 //   [NAME], [CITY], [CURRENT_ROLE]  auto-resolving  → calm, "this fills itself in"
@@ -20,7 +20,7 @@ export type Segment = { text: string; kind: "plain" | "auto" | "fill" }
 export function splitBrackets(text: string): Segment[] {
   const out: Segment[] = []
   // The placeholder is what an auto-resolving bracket becomes in the preview
-  // when the profile has no value yet — still an "it fills itself in" slot, so
+  // when the profile has no value yet, and still an "it fills itself in" slot, so
   // it takes the same calm colour rather than reading as prose.
   const re = new RegExp(`(\\[[^\\]]+\\]|${UNRESOLVED_PLACEHOLDER})`, "g")
   let last = 0

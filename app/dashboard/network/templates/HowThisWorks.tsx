@@ -2,7 +2,7 @@
 
 // Layer 2 of the help: the callout a first-timer reads once and never sees
 // again. Shown until dismissed, then replaced by a quiet "How this works" link
-// so it can be reopened — dismissing help should never mean losing it.
+// so it can be reopened, because dismissing help should never mean losing it.
 //
 // The last line is the part text teaches better than colour can: calm fills
 // itself, amber is yours. It says out loud what the bracket colouring shows.
@@ -47,7 +47,7 @@ export function HowThisWorks({
         <ol style={{
           margin: 0, paddingLeft: 18, color: T.MUTED, fontSize: 12.5, lineHeight: "20px",
         }}>
-          <li>Pick who you&apos;re messaging — the buttons up top.</li>
+          <li>Pick who you&apos;re messaging, using the buttons up top.</li>
           <li>Your three messages for that kind of person appear, already written.</li>
           <li>Edit any of them to sound like you. Your version is saved and used from then on.</li>
         </ol>

@@ -1,4 +1,4 @@
-// Phase 8e, redesigned per UX-TEMPLATES.md — the saved counterpart to 8d's
+// Phase 8e, redesigned per UX-TEMPLATES.md: the saved counterpart to 8d's
 // scratchpad, navigated by who you are writing to.
 //
 // The four editor properties are unchanged and still required: an edit saves as
@@ -118,7 +118,7 @@ async function open(id?: string) {
 describe("no code reaches the screen", () => {
   // The headline of the redesign, asserted over the whole rendered output rather
   // than field by field, so a code leaking back in through any surface fails
-  // here — a card, a heading, a save notice, a badge.
+  // here: a card, a heading, a save notice, a badge.
   const CODE = /\b(IN|[PARCXSL][1-5])\b/
 
   it("renders no letter code, collapsed or expanded", async () => {
@@ -335,7 +335,7 @@ describe("the live preview", () => {
     expect(authFetchMock.mock.calls.some((c) => c[1]?.method === "PATCH")).toBe(false)
   })
 
-  it("catches the hardcoded name — the case this preview exists for", async () => {
+  it("catches the hardcoded name, the case this preview exists for", async () => {
     await open("C2")
     fireEvent.change(bodyBox(), { target: { value: "Hi Dana, one quick thing." } })
     // Every preview now says Dana no matter who it is addressed to.
@@ -364,7 +364,7 @@ describe("the dropped-variable warning", () => {
     const warn = screen.getByTestId("dropped-warning")
     expect(warn.textContent).toMatch(/\[NAME\]/)
 
-    // Warned, not blocked — dropping a variable can be exactly what someone means.
+    // Warned, not blocked, because dropping a variable can be exactly what someone means.
     expect((screen.getByRole("button", { name: /^Save$/ }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(screen.getByRole("button", { name: /^Save$/ }))
     await waitFor(() => expect(overrides.C2).toBe("Hi Dana, following up."))
@@ -376,7 +376,7 @@ describe("the dropped-variable warning", () => {
     expect(screen.queryByTestId("dropped-warning")).toBeNull()
   })
 
-  it("counts only what the DEFAULT had — adding variables is not a drop", async () => {
+  it("counts only what the DEFAULT had, so adding variables is not a drop", async () => {
     expect(droppedVariables("C2", DEFAULTS_BY_ID.C2.body + " [CITY]")).toEqual([])
     expect(droppedVariables("C2", "no variables at all"))
       .toEqual(expect.arrayContaining(["NAME"]))
@@ -390,7 +390,7 @@ describe("the help layers", () => {
   })
 
   it("warns when the profile is below the send-ready threshold, and links to it", async () => {
-    // Missing elevator_pitch alone drops it under — the threshold is imported
+    // Missing elevator_pitch alone drops it under. The threshold is imported
     // from the profile screen, not restated here.
     profileFixture = { ...PROFILE, elevator_pitch: "" }
     await open()
@@ -404,7 +404,7 @@ describe("the help layers", () => {
     expect(screen.queryByTestId("profile-gap-banner")).toBeNull()
   })
 
-  it("never blocks the page — the templates render underneath the warning", async () => {
+  it("never blocks the page: the templates render underneath the warning", async () => {
     profileFixture = {}
     await open()
     expect(screen.getByTestId("profile-gap-banner")).toBeTruthy()
@@ -489,7 +489,7 @@ describe("the two kinds of bracket", () => {
   })
 
   it("carries the split into the preview, where the auto ones are already gone", async () => {
-    await open("S1")     // "Scheduling a call" — [OPTION 1..3] are fill prompts
+    await open("S1")     // "Scheduling a call": [OPTION 1..3] are fill prompts
     const pv = screen.getByTestId("preview")
     expect(kinds(pv, "fill")).toEqual(expect.arrayContaining(["[OPTION 1]", "[OPTION 2]"]))
     // [NAME] resolved against the sample contact, so it is text now, not a bracket.
@@ -501,7 +501,7 @@ describe("the two kinds of bracket", () => {
     authFetchMock.mockImplementation((url: string, init?: { method?: string; body?: string }) =>
       String(url) === "/api/network/profile" ? json({ ok: true, profile: {} }) : api()(url, init))
     await open("C1")
-    // "_____" is a slot that fills ITSELF once the profile has a value — the
+    // "_____" is a slot that fills ITSELF once the profile has a value, so the
     // writer is not being asked to type into it, so it must not read as warm.
     expect(kinds(screen.getByTestId("preview"), "auto")).toContain("_____")
     expect(kinds(screen.getByTestId("preview"), "fill")).not.toContain("_____")
@@ -529,7 +529,7 @@ describe("the Insert field menu", () => {
     }
 
     // classifyVariable is the authority, so the grouping is asserted against IT
-    // rather than against a list restated here — the menu and the bracket
+    // rather than against a list restated here, so the menu and the bracket
     // colouring cannot drift apart without this failing.
     const kind = { profile: "profile", contact: "contact", fill: "fill" } as const
     for (const [key, group] of Object.entries(kind)) {

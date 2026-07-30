@@ -1,6 +1,6 @@
 "use client"
 
-// "Insert field ▾" — one dropdown in place of the twenty-odd chips that used to
+// "Insert field ▾": one dropdown in place of the twenty-odd chips that used to
 // sit under the editor as a wall.
 //
 // The grouping is NOT re-derived here. classifyVariable() is the same authority
@@ -8,15 +8,15 @@
 // sections and the two bracket colours cannot disagree about what a variable is.
 //
 // Custom popup rather than a native <select> with <optgroup>: the warm colour on
-// the "You fill this in" items is the point — the menu teaches the same lesson
-// the message body does — and per-<option> colour is not reliably honoured.
+// the "You fill this in" items is the point, since the menu teaches the same lesson
+// the message body does, and per-<option> colour is not reliably honoured.
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { T, card } from "../../../../lib/dashboard-theme"
 import { DEFAULTS_BY_ID, extractVariables, classifyVariable } from "../../../../lib/network-tracker/templates"
 
 // Friendlier names for the auto-resolving tokens. The INSERTED text is always
-// the real bracket — this is a label, never a rename.
+// the real bracket. This is a label, never a rename.
 //
 // Every profile and contact variable is listed, none left bare: three rows
 // showing a naked [TOKEN] beside rows with a name read as a rendering bug, not
@@ -42,7 +42,7 @@ export function menuLabel(token: string): string {
 
 // Two registers, not three: the split that matters is auto-fill vs you-fill,
 // and the headers say it before any item is read. "About you" and "About them"
-// share ice blue because they are the same KIND of thing — their own words keep
+// share ice blue because they are the same KIND of thing, and their own words keep
 // them apart, and giving them separate colours would imply a difference the
 // renderer does not make.
 const SECTIONS = [

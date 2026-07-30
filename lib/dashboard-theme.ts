@@ -12,18 +12,18 @@ export const T = {
   WRN_ORANGE: "#FEB06A",
   WRN_BLUE: "#51ADE5",
   WRN_TEAL: "#218C8C",
-  // SIGNAL's pink, the same value the marketing palette calls `pink` — that
+  // SIGNAL's pink, the same value the marketing palette calls `pink`. That
   // palette's orange/blue/green are byte-identical to WRN_ORANGE/WRN_BLUE/
   // SUCCESS below, so this is one system and the hex belongs here rather than
   // being retyped wherever a fourth accent is wanted.
   WRN_PINK: "#EC4899",
-  // Ice blue — the pale cyan the product already uses (the Internship pill on
+  // Ice blue: the pale cyan the product already uses (the Internship pill on
   // the JobFit main component). Near-white with a cyan cast, which is what
   // keeps it clearly apart from WRN_BLUE below despite both being blue-family:
   // luminance 0.933 against WRN_BLUE's 0.373, a 2.32:1 ratio between them.
   ICE_BLUE: "#DCFEFF",
   // "Achieved", distinct from the action-warm above. Attention and done cannot
-  // share a hex — see docs/network-tracker/COLOR-SYSTEM.md. This is the gold the
+  // share a hex. See docs/network-tracker/COLOR-SYSTEM.md. This is the gold the
   // product already uses (JobFit's Review pill), reused rather than inventing a
   // second one; the two never appear on the same screen.
   GOLD: "#D4A444",
@@ -49,7 +49,7 @@ export const T = {
   ORANGE_BORDER: "rgba(254,176,106,0.35)",
   ORANGE_BORDER_MED: "rgba(254,176,106,0.45)",
   ORANGE_BORDER_STRONG: "rgba(254,176,106,0.55)",
-  /** The faint halo under an attention surface — a glow, not an edge. */
+  /** The faint halo under an attention surface: a glow, not an edge. */
   ORANGE_GLOW: "rgba(254,176,106,0.05)",
   /** Lift for a popup floating over the page. Depth, not a palette colour. */
   SHADOW_POPUP: "0 12px 32px rgba(0,0,0,0.45)",
@@ -99,7 +99,7 @@ export const T = {
 // and not by two hexes happening to agree.
 //
 // The two greens are DELIBERATE and not a duplication: `alive` is "they
-// responded", `momentum` is "we actually spoke" — a two-step progression within
+// responded", `momentum` is "we actually spoke", a two-step progression within
 // the same good news, which is why they are adjacent in hue as well as in the
 // funnel. Collapsing them would lose the step that matters most to a user.
 export const PHASE = {
@@ -108,7 +108,7 @@ export const PHASE = {
   alive:    { fg: T.SUCCESS,                bg: "rgba(74,222,128,0.16)"  }, // replied
   momentum: { fg: "#a7f3d0",                bg: "rgba(16,185,129,0.34)"  }, // chat booked/done
   longgame: { fg: "#c4b5fd",                bg: "rgba(167,139,250,0.22)" }, // nurture / ask
-  won:      { fg: T.GOLD,                   bg: T.GOLD_BG               }, // outcome — ACHIEVED, not urgent
+  won:      { fg: T.GOLD,                   bg: T.GOLD_BG               }, // outcome: ACHIEVED, not urgent
   resting:  { fg: "rgba(255,150,150,0.78)", bg: "rgba(255,120,120,0.14)" }, // dormant
 } as const
 

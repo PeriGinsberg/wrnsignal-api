@@ -5,7 +5,7 @@
 //
 // The sequence cards and the library cards are the same component with an
 // optional step badge, because they differ only in whether a message has a
-// position in a three-touch sequence — not in what editing one does.
+// position in a three-touch sequence, not in what editing one does.
 
 import { T, card } from "../../../../lib/dashboard-theme"
 import { TemplateEditor } from "./TemplateEditor"
@@ -29,7 +29,7 @@ export function TemplateCard({
 }) {
   const edited = template?.source === "override"
   // The uncoloured group still needs a visible "edited" marker and a visible
-  // active edge — it falls back to plain white, which reads as clearly against
+  // active edge. It falls back to plain white, which reads as clearly against
   // the quiet grey "Default" as any accent does.
   const mark = accent.line ?? T.TEXT
   const activeEdge = accent.line ?? T.BORDER

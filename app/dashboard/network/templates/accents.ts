@@ -1,17 +1,17 @@
-// Colour identity per group — see docs/network-tracker/COLOR-SYSTEM.md §2. A
+// Colour identity per group. See docs/network-tracker/COLOR-SYSTEM.md §2. A
 // 3px left rail always means "what family is this", never "what state is this
 // contact in"; that shape rule is what lets green be both a Replies rail and a
 // "they replied" pill without either being misread.
 //
 // The SEQUENCE is ice blue: its own group identity, in a colour that carries no
-// other meaning on this function. It was warm for one commit, which was wrong —
+// other meaning on this function. It was warm for one commit, which was wrong:
 // warm means "act here", and a card was showing a warm rail, warm step circles
 // AND warm fill-at-send brackets, three warm things meaning three different
 // amounts. Neutral fixed that but cost the sequence its identity and the step
 // circles their fill; ice blue restores both without taking warm back.
 //
 // Ice is blue-family like WRN_BLUE (link / in-progress) but near-white against
-// its mid-blue — see the luminance note on the token. They do not collide.
+// its mid-blue. See the luminance note on the token. They do not collide.
 //
 // Every value is a theme token. A fourth group added here without a token would
 // be the moment a hardcoded hex creeps back in.

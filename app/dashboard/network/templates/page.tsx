@@ -1,16 +1,16 @@
 "use client"
 
-// Phase 8e, redesigned per UX-TEMPLATES.md — the "make it yours permanently"
+// Phase 8e, redesigned per UX-TEMPLATES.md: the "make it yours permanently"
 // surface, navigated by who you are writing to rather than by template code.
 //
 // The counterpart to 8d's scratchpad, and deliberately a DIFFERENT PLACE. The
 // Send panel edit is one message to one person and evaporates; this one rewrites
 // what every future message of that kind says. Same words on screen, opposite
-// blast radius — so they do not share a surface.
+// blast radius, so they do not share a surface.
 //
 // The 24-item rail of letter codes is gone. Pick a relationship in plain
 // language, see that relationship's three messages as cards, click one to edit
-// it in place. The codes remain the storage IDs and remain in ?id= — they are
+// it in place. The codes remain the storage IDs and remain in ?id=, and they are
 // simply never rendered, which templateNames.ts exists to guarantee.
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
@@ -47,7 +47,7 @@ function TemplatesEditor() {
 
   // The expanded template lives in the URL, so the Send panel's "Edit this
   // template" link can point straight at one and a half-written screen is
-  // shareable with a coach. It still carries the code — ?id=A2 — because that
+  // shareable with a coach. It still carries the code, ?id=A2, because that
   // is the storage ID; what changed is that it now RESOLVES to a relationship
   // and a card rather than to a row in a list.
   const sp = useSearchParams()
@@ -135,7 +135,7 @@ function TemplatesEditor() {
       <h1 style={headline}>{VIEW_LABELS.templates.heading}</h1>
       <p style={{ color: T.MUTED, fontSize: 13, lineHeight: "20px", margin: "7px 0 0", maxWidth: 640 }}>
         These are your outreach messages, ready to send. The highlighted bits fill in
-        automatically from your profile and each contact — so every message is personal
+        automatically from your profile and each contact, so every message is personal
         without rewriting it.
       </p>
 
@@ -147,7 +147,7 @@ function TemplatesEditor() {
 
       {error && <div style={{ color: T.ERROR, fontSize: 13, marginTop: 14 }} data-testid="load-error">{error}</div>}
 
-      {/* Ice-blue rail and header — the group-identity shape, in the colour that
+      {/* Ice-blue rail and header, the group-identity shape, in the colour that
           means "your active outreach". See COLOR-SYSTEM.md §2. */}
       <section
         style={{ ...groupSection, marginTop: 22, ...railStyle(ACCENTS.sequence.line) }}

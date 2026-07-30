@@ -1,4 +1,4 @@
-// Phase 8e — the sample contact the live preview renders against, and the
+// Phase 8e: the sample contact the live preview renders against, and the
 // dropped-variable check.
 //
 // A module rather than helpers inside page.tsx: page files should export only
@@ -15,7 +15,7 @@ import { DEFAULTS_BY_ID, extractVariables, type RenderContact } from "../../../.
  * The preview's stand-in contact. FIXED and synthetic on purpose: previewing
  * against a real contact would make the editor depend on having one, and
  * choosing which is a control nobody asked for. A realistic name and firm
- * matter — "[NAME]" rendering as "Contact" or "Test" reads as scaffolding and
+ * matter: "[NAME]" rendering as "Contact" or "Test" reads as scaffolding and
  * stops anyone believing the preview.
  */
 export const SAMPLE_CONTACT: RenderContact & { display: string } = {
@@ -29,8 +29,8 @@ export const SAMPLE_CONTACT: RenderContact & { display: string } = {
  * Variables the default had that this edit no longer contains.
  *
  * This is the "you hardcoded Hi Dana over Hi [NAME]" check. It WARNS, never
- * blocks: dropping a variable is a legitimate edit — someone who always writes
- * to the same firm may genuinely not want [FIRM] — and a client who cannot save
+ * blocks: dropping a variable is a legitimate edit (someone who always writes
+ * to the same firm may genuinely not want [FIRM]), and a client who cannot save
  * their own wording will simply stop using the editor. Naming what was dropped
  * is what makes it actionable rather than nagging.
  */

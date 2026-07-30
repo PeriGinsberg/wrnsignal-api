@@ -51,7 +51,7 @@ export function LibraryGroup({
 // unrailed one sit on the same vertical line rather than stepping in and out.
 export const groupSection: React.CSSProperties = { marginTop: 26, paddingLeft: 14 }
 
-/** A 3px left rail — the group-identity shape (COLOR-SYSTEM.md §2). A group with
+/** A 3px left rail, the group-identity shape (COLOR-SYSTEM.md §2). A group with
  *  no colour keeps the identical inset via a transparent rail, so the headings
  *  stay aligned down the page. */
 export function railStyle(line: string | null): React.CSSProperties {

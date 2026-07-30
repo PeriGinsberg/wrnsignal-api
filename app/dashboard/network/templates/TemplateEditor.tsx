@@ -84,7 +84,7 @@ export function TemplateEditor({
       setDraft(null)
       await onReload()
       // The route turns "saved the default back" into a revert; say which
-      // happened — without naming the template by its code.
+      // happened, without naming the template by its code.
       setNotice(j?.reverted ? "Back to the default." : "Saved.")
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e))
@@ -162,14 +162,14 @@ export function TemplateEditor({
 
       {dropped.length > 0 && (
         // Between editor and preview, where the eye already is. A warning, never
-        // a block — dropping a variable can be exactly what someone means, and
+        // a block, because dropping a variable can be exactly what someone means, and
         // refusing the save would just push them to stop editing.
         <div data-testid="dropped-warning" style={{
           background: T.WARNING_BG, border: `1px solid ${T.ORANGE_BORDER}`, borderRadius: 10,
           padding: "9px 12px", marginTop: 12, color: T.TEXT, fontSize: 12, lineHeight: "18px",
         }}>
           This drops {dropped.map((v) => `[${v}]`).join(", ")}, which the default filled in
-          automatically. Fine if you meant it — but check the preview for anything you have
+          automatically. Fine if you meant it, but check the preview for anything you have
           written in by hand.
         </div>
       )}

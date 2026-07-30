@@ -1,15 +1,15 @@
 // The one place a template ID becomes a word a person would say.
 //
 // The letter codes (IN, A2, S4, L1…) stay exactly what they are in storage, in
-// the routes, and in ?id= — they are just never rendered. Everything the
+// the routes, and in ?id=, and are just never rendered. Everything the
 // Templates screen puts on screen comes from here, which is what makes "no code
 // on screen" a property one test can assert instead of a rule to remember.
 //
 // Two invariants, both asserted in the test rather than at runtime, because the
-// failure they catch is a template that becomes invisible — not broken, which
+// failure they catch is a template that becomes invisible, not broken, which
 // someone would notice, but absent, which nobody does:
-//   unplacedIds()  — every template has somewhere on screen to live
-//   unnamedIds()   — every template has a name to live under
+//   unplacedIds():  every template has somewhere on screen to live
+//   unnamedIds():   every template has a name to live under
 
 import { RELATIONSHIPS, RELATIONSHIP_LABELS, RELATIONSHIP_TO_FAMILY } from "../vocab"
 import { TEMPLATE_IDS } from "../../../../lib/network-tracker/templates"
@@ -21,7 +21,7 @@ import { STAGE_INTERVALS } from "../../../../lib/network-tracker/reminder-engine
 export const TOUCH_NAMES = ["First outreach", "Follow-up", "Last follow-up"] as const
 
 // Days DERIVED from the reminder engine, not restated. The engine schedules
-// touch 2 at +7d from the first and touch 3 at +5d from THAT — so the cumulative
+// touch 2 at +7d from the first and touch 3 at +5d from THAT, so the cumulative
 // day a card shows can never drift from the day the reminder actually fires.
 export const TOUCH_DAYS: readonly number[] = [
   0,
@@ -63,7 +63,7 @@ export const PLACEMENT_BY_ID: Record<string, Placement> = {
 
 // The reply and LinkedIn names. The defaults carry a `label` already, but they
 // are terse and inconsistent ("The ask", "Nurture · every 4-8 weeks") because
-// they were written as internal shorthand — these are what a person reads.
+// they were written as internal shorthand. These are what a person reads.
 //
 // L1/L2 pull their relationship word from RELATIONSHIP_LABELS so they track the
 // who-picker: rename "Something in Common" once and the LinkedIn card follows,
