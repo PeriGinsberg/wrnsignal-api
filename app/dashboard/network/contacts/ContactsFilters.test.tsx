@@ -1,5 +1,5 @@
 // Deep-link integration test: landing on Contacts with a filter in the URL must
-// actually filter, and must keep working when only the QUERY STRING changes —
+// actually filter, and must keep working when only the QUERY STRING changes,
 // which is what a client navigation from the dashboard does.
 //
 // This is the gap the funnel-href test left. That one proved the link points at
@@ -53,10 +53,7 @@ const ROSTER = [
       last_action_at: new Date(Date.now() - 20 * 86400000).toISOString() }),
 ]
 
-// Cards across both worlds, not table rows: a filter governs the whole page, so
-// the assertion has to see the hero and the grid together.
-const names = () =>
-  Array.from(document.querySelectorAll('[data-testid^="card-"]')).map((r) => r.textContent ?? "")
+const names = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "")
 const shows = (n: string) => names().some((t) => t.includes(n))
 
 afterEach(cleanup)
@@ -71,7 +68,7 @@ beforeEach(() => {
 async function renderWith(qs: string) {
   params = new URLSearchParams(qs)
   const utils = render(<ContactsPage />)
-  await waitFor(() => expect(names().length).toBeGreaterThan(0))
+  await waitFor(() => expect(screen.queryAllByRole("row").length).toBeGreaterThan(1))
   return utils
 }
 
@@ -98,7 +95,7 @@ describe("deep-link filters apply on arrival", () => {
     expect(shows("Ida")).toBe(false)
   })
 
-  it("the pre-existing params still work — ?stage= and ?segment=", async () => {
+  it("the pre-existing params still work: ?stage= and ?segment=", async () => {
     await renderWith("stage=replied")
     expect(shows("Rita")).toBe(true)
     expect(shows("Ida")).toBe(false)
@@ -122,7 +119,7 @@ describe("the dropdowns write to the URL", () => {
 })
 
 describe("filters react to the URL CHANGING, not just to mount", () => {
-  it("re-filters when only the query string changes — the client-navigation case", async () => {
+  it("re-filters when only the query string changes, the client-navigation case", async () => {
     // Arrive unfiltered, as if already sitting on Contacts.
     const { rerender } = await renderWith("")
     expect(shows("Ida")).toBe(true)

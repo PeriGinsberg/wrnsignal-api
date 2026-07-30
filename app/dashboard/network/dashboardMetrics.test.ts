@@ -4,7 +4,7 @@
 // gives you one arrangement of numbers, and never the awkward ones.
 
 import { funnel, conversion, splitBy, weeklyFirstTouches, needsAttention, isStalled, startOfWeek, pct, MIN_SPLIT_N } from "./dashboardMetrics"
-import type { Contact } from "./contacts/contactModel"
+import type { Contact } from "./contacts/ContactRow"
 
 let pass = 0, fail = 0
 function ok(label: string, cond: boolean) {

@@ -1,6 +1,6 @@
-// Search on the contacts spreadsheet. The three worked examples from the spec —
+// Search on the contacts spreadsheet. The three worked examples from the spec,
 // "schr" finds Schreyer, "wolf" finds everyone at Wolf Greenfield, "litig" finds
-// the litigation titles — plus the two properties that make it behave like the
+// the litigation titles, plus the two properties that make it behave like the
 // rest of the filter bar: it composes with them, and it lives in the URL.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
@@ -57,13 +57,9 @@ const ROSTER = [
       email: "ida@northpoint.io", network_companies: { name: "Northpoint" } }),
 ]
 
-// Two worlds of cards now, not a <table>. Querying the card testid counts BOTH
-// the hero and the grid, which is what "visible" has to mean for a search that
-// filters the whole page.
-const rowEls = () => Array.from(document.querySelectorAll('[data-testid^="card-"]'))
-const rows = () => rowEls().map((r) => r.textContent ?? "")
+const rows = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "")
 const shows = (n: string) => rows().some((t) => t.includes(n))
-const visible = () => rowEls().length
+const visible = () => (screen.queryAllByRole("row").length ? rows().length : 0)
 const box = () => screen.getByTestId("contacts-search") as HTMLInputElement
 
 afterEach(cleanup)
@@ -100,7 +96,7 @@ describe("typing filters the visible rows", () => {
     expect(visible()).toBe(1)
   })
 
-  it('"wolf" finds everyone at Wolf Greenfield — a company match, not a name match', async () => {
+  it('"wolf" finds everyone at Wolf Greenfield: a company match, not a name match', async () => {
     const { rerender } = await arrive()
     await type("wolf", rerender)
 
@@ -139,7 +135,7 @@ describe("typing filters the visible rows", () => {
   it("a term matching nothing empties the table without hiding the search box", async () => {
     const { rerender } = await arrive()
     await type("zzzz", rerender)
-    // The box must survive its own empty result, or there is no way to undo it —
+    // The box must survive its own empty result, or there is no way to undo it:
     // the same trap the filter bar's contacts.length guard avoids.
     expect(screen.getByTestId("contacts-search")).toBeTruthy()
     expect(screen.getByText(/No contacts match these filters/i)).toBeTruthy()
@@ -193,7 +189,7 @@ describe("the term round-trips through the URL", () => {
     expect(box().value).toBe("wolf")
   })
 
-  it("re-filters when only the query string changes — back/forward and shared links", async () => {
+  it("re-filters when only the query string changes: back/forward and shared links", async () => {
     const { rerender } = await arrive("q=wolf")
     expect(shows("Okafor")).toBe(false)
 

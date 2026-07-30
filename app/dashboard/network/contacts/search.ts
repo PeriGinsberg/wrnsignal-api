@@ -9,7 +9,7 @@
 // whose name, company and title all look nothing like the query — the match
 // would be invisible in the row you get back, which reads as a bug.
 
-import type { Contact } from "./contactModel"
+import type { Contact } from "./ContactRow"
 
 // One haystack per contact, fields joined with a space so a query can span two
 // of them ("jane schr" matches across first_name + last_name).
