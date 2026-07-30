@@ -7,10 +7,11 @@
 import { T, fieldLabel } from "../../../../lib/dashboard-theme"
 import { TemplateCard } from "./TemplateCard"
 import { NAME_BY_ID } from "./templateNames"
+import type { Accent } from "./accents"
 import type { MergedTemplate } from "../../../../lib/network-tracker/templates"
 
 export function LibraryGroup({
-  heading, hint, ids, byId, profile, expandedId, onToggle, onReload,
+  heading, hint, ids, byId, profile, expandedId, onToggle, onReload, accent,
 }: {
   heading: string
   hint?: string
@@ -20,10 +21,11 @@ export function LibraryGroup({
   expandedId: string | null
   onToggle: (id: string) => void
   onReload: () => Promise<void>
+  accent: Accent
 }) {
   return (
-    <section style={{ marginTop: 26 }} data-testid={`group-${heading}`}>
-      <div style={{ ...fieldLabel, textTransform: "uppercase" }}>{heading}</div>
+    <section style={{ ...groupSection, borderLeft: `3px solid ${accent.line}` }} data-testid={`group-${heading}`}>
+      <div style={{ ...fieldLabel, textTransform: "uppercase", color: accent.line }}>{heading}</div>
       {hint && <p style={{ color: T.DIM, fontSize: 12, margin: "4px 0 0" }}>{hint}</p>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
         {ids.map((id) => (
@@ -36,6 +38,7 @@ export function LibraryGroup({
             expanded={expandedId === id}
             onToggle={() => onToggle(id)}
             onReload={onReload}
+            accent={accent}
             compact
           />
         ))}
@@ -43,3 +46,7 @@ export function LibraryGroup({
     </section>
   )
 }
+
+// Shared by the sequence section in page.tsx, so the three rails sit on one
+// vertical line rather than each choosing its own inset.
+export const groupSection: React.CSSProperties = { marginTop: 26, paddingLeft: 14 }

@@ -23,7 +23,7 @@ export function WhoPicker({
             data-testid={`who-${rel}`}
             style={{
               background: on ? T.GRAD_PRIMARY : T.GLASS,
-              color: on ? "#04060F" : T.MUTED,
+              color: on ? T.INK_ON_ACCENT : T.MUTED,
               border: `1px solid ${on ? "transparent" : T.BORDER_SOFT}`,
               borderRadius: 999, padding: "8px 15px", cursor: "pointer",
               fontFamily: "inherit", fontSize: 12.5, fontWeight: on ? 900 : 700,

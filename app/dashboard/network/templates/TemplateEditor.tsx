@@ -122,7 +122,7 @@ export function TemplateEditor({
         // a block — dropping a variable can be exactly what someone means, and
         // refusing the save would just push them to stop editing.
         <div data-testid="dropped-warning" style={{
-          background: T.WARNING_BG, border: "1px solid rgba(254,176,106,0.35)", borderRadius: 10,
+          background: T.WARNING_BG, border: `1px solid ${T.ORANGE_BORDER}`, borderRadius: 10,
           padding: "9px 12px", marginTop: 12, color: T.TEXT, fontSize: 12, lineHeight: "18px",
         }}>
           This drops {dropped.map((v) => `[${v}]`).join(", ")}, which the default filled in

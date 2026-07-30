@@ -24,7 +24,8 @@ import {
 } from "./templateNames"
 import { WhoPicker } from "./WhoPicker"
 import { TemplateCard } from "./TemplateCard"
-import { LibraryGroup } from "./LibraryGroup"
+import { LibraryGroup, groupSection } from "./LibraryGroup"
+import { ACCENTS } from "./accents"
 
 export default function TemplatesPage() {
   // useSearchParams() needs a Suspense boundary, same as Contacts.
@@ -119,8 +120,11 @@ function TemplatesEditor() {
 
       {error && <div style={{ color: T.ERROR, fontSize: 13, marginTop: 14 }} data-testid="load-error">{error}</div>}
 
-      <section style={{ marginTop: 22 }} data-testid="sequence">
-        <div style={{ ...fieldLabel, textTransform: "uppercase" }}>
+      <section
+        style={{ ...groupSection, marginTop: 22, borderLeft: `3px solid ${ACCENTS.sequence.line}` }}
+        data-testid="sequence"
+      >
+        <div style={{ ...fieldLabel, textTransform: "uppercase", color: ACCENTS.sequence.line }}>
           {RELATIONSHIP_LABELS[relationship]} · the sequence
         </div>
         <p style={{ color: T.MUTED, fontSize: 12.5, margin: "5px 0 0", maxWidth: 620 }}>
@@ -139,6 +143,7 @@ function TemplatesEditor() {
               expanded={expandedId === id}
               onToggle={() => toggle(id)}
               onReload={load}
+              accent={ACCENTS.sequence}
             />
           ))}
         </div>
@@ -153,6 +158,7 @@ function TemplatesEditor() {
         expandedId={expandedId}
         onToggle={toggle}
         onReload={load}
+        accent={ACCENTS.reply}
       />
 
       <LibraryGroup
@@ -163,6 +169,7 @@ function TemplatesEditor() {
         expandedId={expandedId}
         onToggle={toggle}
         onReload={load}
+        accent={ACCENTS.linkedin}
       />
     </main>
   )

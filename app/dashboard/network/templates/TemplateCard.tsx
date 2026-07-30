@@ -9,10 +9,11 @@
 
 import { T, card } from "../../../../lib/dashboard-theme"
 import { TemplateEditor } from "./TemplateEditor"
+import type { Accent } from "./accents"
 import type { MergedTemplate } from "../../../../lib/network-tracker/templates"
 
 export function TemplateCard({
-  id, name, step, day, template, profile, expanded, onToggle, onReload, compact,
+  id, name, step, day, template, profile, expanded, onToggle, onReload, accent, compact,
 }: {
   id: string
   name: string
@@ -23,6 +24,7 @@ export function TemplateCard({
   expanded: boolean
   onToggle: () => void
   onReload: () => Promise<void>
+  accent: Accent
   compact?: boolean
 }) {
   const edited = template?.source === "override"
@@ -33,7 +35,11 @@ export function TemplateCard({
       style={{
         ...card,
         padding: expanded ? "14px 16px 16px" : "12px 14px",
-        border: `1px solid ${expanded ? T.WRN_ORANGE : T.BORDER_SOFT}`,
+        // Three states, loudest first: the card being edited takes the full
+        // accent edge, one you have customised takes the tinted one, everything
+        // else stays quiet. A customised template used to be indistinguishable
+        // in the stack, which made the one status that matters invisible.
+        border: `1px solid ${expanded ? accent.line : edited ? accent.border : T.BORDER_SOFT}`,
         flex: compact && !expanded ? "1 1 210px" : "1 1 100%",
         minWidth: compact && !expanded ? 200 : undefined,
       }}
@@ -53,23 +59,36 @@ export function TemplateCard({
           <span aria-hidden style={{
             flex: "0 0 auto", width: 22, height: 22, borderRadius: 999,
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            background: expanded ? T.WRN_ORANGE : T.GLASS,
-            color: expanded ? "#04060F" : T.MUTED,
-            border: `1px solid ${expanded ? "transparent" : T.BORDER_SOFT}`,
+            background: accent.line, color: T.INK_ON_ACCENT,
             fontSize: 11, fontWeight: 900,
           }}>{step}</span>
         )}
-        <span style={{ color: T.TEXT, fontSize: 13, fontWeight: 800 }}>{name}</span>
+        <span style={{ color: accent.onCard ?? T.TEXT, fontSize: 13, fontWeight: 800 }}>{name}</span>
         {day !== undefined && (
           <span style={{ color: T.DIM, fontSize: 11.5 }}>day {day}</span>
         )}
         <span style={{ flex: 1 }} />
-        <span data-testid={`marker-${id}`} style={{
-          fontSize: 10.5, fontWeight: 900, letterSpacing: 0.3, textTransform: "uppercase",
-          color: edited ? T.WRN_ORANGE : T.DIM,
-        }}>
-          {edited ? "Edited by you" : "Default"}
-        </span>
+        {edited ? (
+          <span data-testid={`marker-${id}`} style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            background: accent.bg, border: `1px solid ${accent.border}`, borderRadius: 999,
+            padding: "3px 9px 3px 7px", color: accent.line,
+            fontSize: 10.5, fontWeight: 900, letterSpacing: 0.3, textTransform: "uppercase",
+          }}>
+            {/* A drawn dot, not a "•" character, so the marker's text stays
+                exactly the two words a reader (and the test) expects. */}
+            <span aria-hidden style={{
+              width: 6, height: 6, borderRadius: 999, background: accent.line, flex: "0 0 auto",
+            }} />
+            Edited by you
+          </span>
+        ) : (
+          <span data-testid={`marker-${id}`} style={{
+            color: T.DIM, fontSize: 10.5, fontWeight: 900, letterSpacing: 0.3, textTransform: "uppercase",
+          }}>
+            Default
+          </span>
+        )}
       </button>
 
       {!expanded && (

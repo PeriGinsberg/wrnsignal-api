@@ -12,11 +12,29 @@ export const T = {
   WRN_ORANGE: "#FEB06A",
   WRN_BLUE: "#51ADE5",
   WRN_TEAL: "#218C8C",
+  // SIGNAL's pink, the same value the marketing palette calls `pink` — that
+  // palette's orange/blue/green are byte-identical to WRN_ORANGE/WRN_BLUE/
+  // SUCCESS below, so this is one system and the hex belongs here rather than
+  // being retyped wherever a fourth accent is wanted.
+  WRN_PINK: "#EC4899",
   ERROR: "rgba(255,120,120,0.95)",
   SUCCESS: "#4ade80",
   SUCCESS_BG: "rgba(74,222,128,0.10)",
   WARNING_BG: "rgba(254,176,106,0.08)",
   ERROR_BG: "rgba(255,120,120,0.08)",
+
+  // Near-black ink for text sitting ON a bright accent fill, where TEXT (a
+  // white at 92%) would vanish. The value was already the de-facto convention
+  // in btnPrimary and ~30 call sites; naming it is what stops the next one
+  // being typed from memory.
+  INK_ON_ACCENT: "#04060F",
+
+  // Accent borders at a common strength, so a tinted edge reads the same
+  // weight whichever accent it is drawn in.
+  ORANGE_BORDER: "rgba(254,176,106,0.35)",
+  SUCCESS_BORDER: "rgba(74,222,128,0.35)",
+  PINK_BORDER: "rgba(236,72,153,0.35)",
+  PINK_BG: "rgba(236,72,153,0.10)",
 
   NAV_ACTIVE_BG: "rgba(254,176,106,0.08)",
   NAV_ACTIVE_BORDER: "rgba(254,176,106,0.35)",
