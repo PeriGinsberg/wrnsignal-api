@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { T, PHASE, card, fieldLabel } from "../../../lib/dashboard-theme"
 import { authFetch } from "./authFetch"
-import type { Contact } from "./contacts/ContactRow"
+import type { Contact } from "./contacts/contactModel"
 import {
   funnel, conversion, splitBy, weeklyFirstTouches, needsAttention, pct,
   MIN_SPLIT_N, BENCHMARK_MIN_REACHED, STALLED_DAYS, WEEKLY_TARGET_MIN, WEEKLY_TARGET_MAX,

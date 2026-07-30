@@ -53,9 +53,10 @@ const ROSTER = [
       last_action_at: new Date(Date.now() - 20 * 86400000).toISOString() }),
 ]
 
-// Row-objects, not table rows: the spreadsheet moved to the light theme.
+// Cards across both worlds, not table rows: a filter governs the whole page, so
+// the assertion has to see the hero and the grid together.
 const names = () =>
-  Array.from(document.querySelectorAll('[data-testid^="row-"]')).map((r) => r.textContent ?? "")
+  Array.from(document.querySelectorAll('[data-testid^="card-"]')).map((r) => r.textContent ?? "")
 const shows = (n: string) => names().some((t) => t.includes(n))
 
 afterEach(cleanup)

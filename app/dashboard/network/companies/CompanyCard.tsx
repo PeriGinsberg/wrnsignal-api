@@ -14,7 +14,7 @@ import { useState } from "react"
 import { T, select as selectStyle, selectOption, input, fieldLabel, fieldWrap } from "../../../../lib/dashboard-theme"
 import { authFetch } from "../authFetch"
 import { STAGE_LABELS, TIER_LABELS, TIER_GROUP_LABELS, UNSORTED_TIER, STATUS_LABELS, FIELD_LABELS, statusLabel, stagePillStyle } from "../vocab"
-import type { Contact } from "../contacts/ContactRow"
+import type { Contact } from "../contacts/contactModel"
 
 export type Company = {
   id: string

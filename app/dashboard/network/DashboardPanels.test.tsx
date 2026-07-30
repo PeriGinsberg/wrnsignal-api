@@ -8,7 +8,7 @@
 import { describe, it, expect, afterEach } from "vitest"
 import { render, screen, cleanup } from "@testing-library/react"
 import { DashboardPanels } from "./DashboardPanels"
-import type { Contact } from "./contacts/ContactRow"
+import type { Contact } from "./contacts/contactModel"
 
 let seq = 0
 function c(over: Partial<Contact> = {}): Contact {

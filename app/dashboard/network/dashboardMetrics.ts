@@ -16,7 +16,7 @@
 
 import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS, RELATIONSHIP_LABELS } from "./vocab"
 import type { PhaseKey } from "../../../lib/dashboard-theme"
-import type { Contact } from "./contacts/ContactRow"
+import type { Contact } from "./contacts/contactModel"
 
 // A split with fewer than this many reached is noise. Show the count and say so
 // rather than printing a rate over four contacts that will swing 25% on the next

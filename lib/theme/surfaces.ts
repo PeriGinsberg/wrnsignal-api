@@ -48,6 +48,12 @@ export type Surface = {
   inkOnAccent: string
   /** The primary button: solid, no gradient on light. */
   primaryButton: { background: string; color: string }
+  gradient: {
+    /** The TODAY panel: deep navy with a warm glow off the top right. */
+    hero: string
+    /** The act-now button on a hero card. */
+    warmAction: string
+  }
 }
 
 export const LIGHT: Surface = {
@@ -86,6 +92,12 @@ export const LIGHT: Surface = {
   },
   inkOnAccent: "#FFFFFF",
   primaryButton: { background: "#13294A", color: "#FFFFFF" },
+  gradient: {
+    hero:
+      "radial-gradient(70% 90% at 88% 6%, rgba(254,176,106,0.16), transparent 62%), " +
+      "radial-gradient(120% 140% at 12% 0%, #1B3A63 0%, #13294A 55%, #0E1F38 100%)",
+    warmAction: "linear-gradient(135deg, #B45309, #9A4708)",
+  },
 }
 
 // Kept whole, not deleted. The light theme is the pilot, not a replacement, and
@@ -125,6 +137,12 @@ export const DARK: Surface = {
   },
   inkOnAccent: "#04060F",
   primaryButton: { background: "linear-gradient(90deg, #FEB06A, #51ADE5)", color: "#04060F" },
+  gradient: {
+    hero:
+      "radial-gradient(70% 90% at 88% 6%, rgba(254,176,106,0.10), transparent 62%), " +
+      "radial-gradient(120% 140% at 12% 0%, #16294a 0%, #0F1F38 60%, #0B182B 100%)",
+    warmAction: "linear-gradient(90deg, #FEB06A, #51ADE5)",
+  },
 }
 
 /** The pipeline's phase groups, in Surface terms. One mapping, both themes. */
@@ -159,4 +177,21 @@ export function rowBackground(
   const under = o.zebra ? `linear-gradient(${s.row.stripe}, ${s.row.stripe}), ${base}` : base
   const overlay = o.flash ? s.row.flash : o.hover ? s.row.hover : o.checked ? s.row.selected : null
   return overlay ? `linear-gradient(${overlay}, ${overlay}), ${under}` : under
+}
+
+/**
+ * A phase-coloured initial tile. The sheen is a translucent white overlay rather
+ * than a second hex per meaning, so any meaning can be tiled without adding
+ * eleven more tokens to keep in sync.
+ */
+export function tile(s: Surface, key: MeaningKey): React.CSSProperties {
+  return {
+    background: `linear-gradient(135deg, rgba(255,255,255,0.24), rgba(255,255,255,0)), ${s.meaning[key].ink}`,
+    color: s.name === "light" ? "#FFFFFF" : s.inkOnAccent,
+  }
+}
+
+/** The flat, deliberately colourless tile for a contact nobody has worked yet. */
+export function tileIdle(s: Surface): React.CSSProperties {
+  return { background: s.meaning.idle.fill, color: s.meaning.idle.ink }
 }

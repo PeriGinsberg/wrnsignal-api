@@ -57,9 +57,10 @@ const ROSTER = [
       email: "ida@northpoint.io", network_companies: { name: "Northpoint" } }),
 ]
 
-// The spreadsheet is a list of row-objects now, not a <table>, so rows are
-// found by their testid rather than by the table row role.
-const rowEls = () => Array.from(document.querySelectorAll('[data-testid^="row-"]'))
+// Two worlds of cards now, not a <table>. Querying the card testid counts BOTH
+// the hero and the grid, which is what "visible" has to mean for a search that
+// filters the whole page.
+const rowEls = () => Array.from(document.querySelectorAll('[data-testid^="card-"]'))
 const rows = () => rowEls().map((r) => r.textContent ?? "")
 const shows = (n: string) => rows().some((t) => t.includes(n))
 const visible = () => rowEls().length

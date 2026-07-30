@@ -20,7 +20,10 @@ import { AddContactForm } from "../AddContactForm"
 import {
   STAGE_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
 } from "../vocab"
-import { Row, dueOf, needsMe, type Contact } from "./ContactRow"
+import { dueOf, needsMe, heroSort, HERO_CAP, type Contact } from "./contactModel"
+import { TodayHero } from "./TodayHero"
+import { ContactGrid } from "./ContactGrid"
+import { SelectionBar } from "./SelectionBar"
 import { LIGHT as S } from "../../../../lib/theme/surfaces"
 import { matchesQuery } from "./search"
 import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS } from "../vocab"
@@ -51,6 +54,10 @@ function ContactsSpreadsheetInner() {
   const [error, setError] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  // Select MODE rather than a checkbox parked on every card: always-visible
+  // checkboxes are the spreadsheet clutter this rebuild exists to remove. The
+  // capability is unchanged, it is just asked for.
+  const [selectMode, setSelectMode] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
@@ -132,6 +139,17 @@ function ContactsSpreadsheetInner() {
   // being dropped.
   const [orderIds, setOrderIds] = useState<string[] | null>(null)
 
+  // THE FROZEN PARTITION, the same invariant one level up. Which world a contact
+  // is in is snapshotted on load and held for the session: log the due touch on
+  // a hero card and it STAYS in the hero, marked done, rather than teleporting
+  // into the grid the moment its next_due_at changes. Re-derives on an explicit
+  // Re-sort or a reload, never live.
+  //
+  // The urgency ranking is frozen WITH it. If the hero re-ranked live, the cap
+  // would itself start moving cards around mid-work, which is the exact failure
+  // the frozen order exists to prevent.
+  const [heroIds, setHeroIds] = useState<string[] | null>(null)
+
   const load = useCallback(async (opts?: { resort?: boolean }) => {
     setError(null)
     try {
@@ -141,6 +159,9 @@ function ContactsSpreadsheetInner() {
       const rows: Contact[] = j.contacts ?? []
       setContacts(rows)
       setOrderIds((prev) => (prev === null || opts?.resort ? rows.map((c) => c.id) : prev))
+      setHeroIds((prev) => (prev === null || opts?.resort
+        ? heroSort(rows.filter((c) => needsMe(dueOf(c.next_due_at)))).map((c) => c.id)
+        : prev))
     } catch (e: any) {
       setError(e?.message || String(e))
       setContacts([])
@@ -149,6 +170,17 @@ function ContactsSpreadsheetInner() {
     }
   }, [])
   useEffect(() => { void load() }, [load])
+
+  // Escape leaves select mode, the same way it closes every other transient
+  // mode on this function.
+  useEffect(() => {
+    if (!selectMode) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setSelectMode(false); setSelected(new Set()) }
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [selectMode])
 
   // Brief highlight on the row just acted on. With the position frozen the row
   // no longer moves, so it needs its own confirmation that the write landed —
@@ -194,6 +226,9 @@ function ContactsSpreadsheetInner() {
       if (fCompany && fCompany !== STANDALONE && c.company_id !== fCompany) return false
       if (fStatus) {
         const kind = dueOf(c.next_due_at).kind
+        // `due` is the combined value the hero overflow chip uses. The four
+        // original values are untouched.
+        if (fStatus === "due" && kind !== "overdue" && kind !== "due_today") return false
         if (fStatus === "overdue" && kind !== "overdue") return false
         if (fStatus === "due_today" && kind !== "due_today") return false
         if (fStatus === "not_started" && c.stage !== "identified") return false
@@ -224,9 +259,22 @@ function ContactsSpreadsheetInner() {
     return contacts.some((c, i) => rank.get(c.id) !== i)
   }, [contacts, orderIds])
 
-  // The organising question, answered once for the header. Visual only: the
-  // frozen order is deliberate and nothing re-sorts.
-  const needCount = ordered.filter((c) => needsMe(dueOf(c.next_due_at))).length
+  // THE TWO WORLDS. Both are drawn from `filtered`, so every filter and the
+  // search compose with the split rather than fighting it.
+  const { heroShown, heroOverflow, gridContacts } = useMemo(() => {
+    const rank = new Map((heroIds ?? []).map((id, i) => [id, i]))
+    const inHero = filtered.filter((c) => rank.has(c.id))
+      .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)
+    const shown = inHero.slice(0, HERO_CAP)
+    const shownIds = new Set(shown.map((c) => c.id))
+    // Overflow deliberately falls into the grid rather than growing the hero,
+    // which is what the "+ N more due" chip goes to.
+    return {
+      heroShown: shown,
+      heroOverflow: inHero.length - shown.length,
+      gridContacts: ordered.filter((c) => !shownIds.has(c.id)),
+    }
+  }, [filtered, ordered, heroIds])
 
   const anyFilter = fQuery || fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus
   function clearFilters() {
@@ -393,43 +441,54 @@ function ContactsSpreadsheetInner() {
       )}
 
       {filtered.length > 0 && (
-        <div role="list" aria-label="Contacts" style={{
-          marginTop: 16, borderRadius: 14, overflow: "hidden",
-          background: S.card, border: `1px solid ${S.border}`,
-        }}>
-          {/* A hybrid, not a table: the header keeps the spreadsheet's
-              select-all and says how many rows want attention, and the rows
-              below are designed objects rather than cells. Column headings are
-              gone because a row-object labels itself. */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-            background: S.well, borderBottom: `1px solid ${S.border}`,
-          }}>
-            <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible}
-              aria-label="Select all" style={{ cursor: "pointer" }} />
-            <span style={{ color: S.text.secondary, fontSize: 11.5, fontWeight: 800 }}>
-              {needCount > 0
-                ? `${needCount} need${needCount === 1 ? "s" : ""} you today`
-                : "Nothing due today"}
-            </span>
-            <span style={{ flex: 1 }} />
-            <span style={{ color: S.text.muted, fontSize: 11.5 }}>
-              {ordered.length} contact{ordered.length === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          {ordered.map((c, i) => (
-            <Row
-              key={c.id}
-              contact={c}
-              onChanged={() => handleActed(c.id)}
-              checked={selected.has(c.id)}
-              onToggle={() => toggleOne(c.id)}
-              flash={flashId === c.id}
-              zebra={i % 2 === 1}
+        <>
+          {selectMode && (
+            <SelectionBar
+              count={effectiveSelected.length}
+              allSelected={allVisibleSelected}
+              onSelectAll={toggleAllVisible}
+              onClear={() => setSelected(new Set())}
+              onDelete={() => setConfirmDelete(true)}
             />
-          ))}
-        </div>
+          )}
+
+          <TodayHero
+            shown={heroShown}
+            overflow={heroOverflow}
+            onChanged={handleActed}
+            selectMode={selectMode}
+            selectedIds={selected}
+            onToggle={toggleOne}
+            flashId={flashId}
+            onSeeOverflow={() => {
+              setFStatus("due")
+              document.getElementById("everyone")?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }}
+          />
+
+          <ContactGrid
+            contacts={gridContacts}
+            total={contacts.length}
+            onChanged={handleActed}
+            selectMode={selectMode}
+            onToggleSelectMode={() => {
+              setSelectMode((m) => {
+                if (m) setSelected(new Set())   // leaving the mode drops the selection
+                return !m
+              })
+            }}
+            selectedIds={selected}
+            onToggle={toggleOne}
+            flashId={flashId}
+            emptyNote={
+              heroShown.length > 0
+                ? "Everyone who needs you is in TODAY, above."
+                : anyFilter
+                  ? "No contacts match these filters."
+                  : "No contacts yet. Add your first one."
+            }
+          />
+        </>
       )}
     </main>
   )
