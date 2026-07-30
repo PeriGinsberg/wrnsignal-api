@@ -42,6 +42,23 @@ export const dynamic = "force-dynamic"
 
 type ProfileRow = Record<string, string | string[] | null>
 
+/**
+ * Supabase returns `{ data, error }`. Destructuring only `data` turns a FAILED
+ * query into an empty result, which is how a missing column became a blank
+ * profile page rather than an error: the select errored, `row` came back null,
+ * the route read that as "no row yet", re-seeded, failed the same way, and
+ * answered `profile: null`. Nothing in the logs, nothing on screen.
+ *
+ * Every query whose result the response depends on goes through here, so the
+ * next missing column is a 500 with a column name in it instead of a screen
+ * that quietly says you have no data.
+ */
+function must<T>(res: { data: T; error: { message: string } | null }, what: string): T {
+  if (res.error) throw new Error(`${what}: ${res.error.message}`)
+  return res.data
+}
+
+
 const PROFILE_COLS =
   "id, client_profile_id, " + ALL_FIELDS.join(", ") +
   ", touched_fields, help_dismissed, seeded_at, resume_seed_attempted_at, created_at, updated_at"
@@ -62,8 +79,8 @@ async function loadSources(
   clientProfileId: string,
   opts: { withResume: boolean },
 ): Promise<SeedSources & { hasResume: boolean }> {
-  const { data: cp } = await supabase
-    .from("client_profiles").select(SOURCE_COLS).eq("id", clientProfileId).maybeSingle()
+  const cp = must(await supabase
+    .from("client_profiles").select(SOURCE_COLS).eq("id", clientProfileId).maybeSingle(), "read client_profiles")
 
   const structured = (cp?.profile_structured ?? null) as { targetFamilies?: unknown } | null
   const structuredFamilies = Array.isArray(structured?.targetFamilies)
@@ -106,8 +123,8 @@ async function loadSources(
 
 /** Cheap existence check — avoids pulling resume_text just to ask "is there one". */
 async function hasResumeText(supabase: ReturnType<typeof getSupabaseAdmin>, clientProfileId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from("client_profiles").select("resume_text").eq("id", clientProfileId).maybeSingle()
+  const data = must(await supabase
+    .from("client_profiles").select("resume_text").eq("id", clientProfileId).maybeSingle(), "check resume_text")
   return Boolean((data?.resume_text ?? "").trim())
 }
 
@@ -120,22 +137,23 @@ export async function GET(req: NextRequest) {
     const acc = await assertBoardAccess(supabase, profileId, target, "view")
     if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
 
-    let { data: row } = await supabase
-      .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", target).maybeSingle<ProfileRow>()
+    let row = must(await supabase
+      .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", target).maybeSingle<ProfileRow>(),
+      "read networking profile")
 
     // First open: materialise + seed. ON CONFLICT DO NOTHING makes this safe
     // against a second tab racing it.
     if (!row) {
       const seed = computeSeed(await loadSources(supabase, target, { withResume: false }))
-      await supabase
+      must(await supabase
         .from("network_client_profile")
         .upsert(
           { client_profile_id: target, ...seed, seeded_at: new Date().toISOString(), touched_fields: [] },
           { onConflict: "client_profile_id", ignoreDuplicates: true },
-        )
-      const reread = await supabase
-        .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", target).maybeSingle<ProfileRow>()
-      row = reread.data
+        ), "seed networking profile")
+      row = must(await supabase
+        .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", target).maybeSingle<ProfileRow>(),
+        "re-read networking profile after seed")
     }
 
     // AUTO-FILL. The source data fills in over time and usually after the first
@@ -150,10 +168,10 @@ export async function GET(req: NextRequest) {
         (row.touched_fields as string[]) ?? [],
       )
       if (Object.keys(fill).length) {
-        const { data: refilled } = await supabase
+        const refilled = must(await supabase
           .from("network_client_profile")
           .update({ ...fill, seeded_at: new Date().toISOString() })
-          .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+          .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "auto-fill networking profile")
         if (refilled) row = refilled
         autoFilled = Object.keys(fill)
       }
@@ -199,8 +217,9 @@ export async function PATCH(req: NextRequest) {
     const acc = await assertBoardAccess(supabase, profileId, target, "full")
     if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
 
-    const { data: existing } = await supabase
-      .from("network_client_profile").select("id, touched_fields").eq("client_profile_id", target).maybeSingle()
+    const existing = must(await supabase
+      .from("network_client_profile").select("id, touched_fields").eq("client_profile_id", target).maybeSingle(),
+      "read networking profile for edit")
     if (!existing) return withCorsJson(req, { ok: false, error: "Profile not initialised — open it first." }, 404)
 
     // ── phase 2 of the seed: the two résumé-derived fields ──
@@ -217,24 +236,24 @@ export async function PATCH(req: NextRequest) {
       // must not re-run on every subsequent open.
       const stamp = { resume_seed_attempted_at: new Date().toISOString() }
       if (Object.keys(patch).length === 0) {
-        const { data: unchanged } = await supabase
+        const unchanged = must(await supabase
           .from("network_client_profile").update(stamp)
-          .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+          .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "stamp resume seed attempt")
         return withCorsJson(req, { ok: true, profile: unchanged, completeness: completeness((unchanged ?? {}) as never) }, 200)
       }
-      const { data: updated } = await supabase
+      const updated = must(await supabase
         .from("network_client_profile").update({ ...patch, ...stamp })
-        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "apply resume seed")
       return withCorsJson(req, { ok: true, profile: updated, completeness: completeness((updated ?? {}) as never) }, 200)
     }
 
     // ── refresh from profile: re-seed ONLY untouched fields ──
     if (body.action === "refresh") {
       const patch = computeRefresh(await loadSources(supabase, target, { withResume: true }), existing.touched_fields ?? [])
-      const { data: updated } = await supabase
+      const updated = must(await supabase
         .from("network_client_profile")
         .update({ ...patch, seeded_at: new Date().toISOString() })
-        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "refresh networking profile")
       return withCorsJson(req, {
         ok: true, profile: updated, refreshed: Object.keys(patch),
         completeness: completeness((updated ?? {}) as never),
@@ -249,12 +268,13 @@ export async function PATCH(req: NextRequest) {
     if (body.action === "dismiss_help") {
       const surface = String(body.surface || "").trim()
       if (!surface) return withCorsJson(req, { ok: false, error: "surface required" }, 400)
-      const { data: cur } = await supabase
-        .from("network_client_profile").select("help_dismissed").eq("client_profile_id", target).maybeSingle()
+      const cur = must(await supabase
+        .from("network_client_profile").select("help_dismissed").eq("client_profile_id", target).maybeSingle(),
+        "read help dismissals")
       const next = { ...((cur?.help_dismissed as Record<string, boolean>) ?? {}), [surface]: body.dismissed !== false }
-      const { data: updated } = await supabase
+      const updated = must(await supabase
         .from("network_client_profile").update({ help_dismissed: next })
-        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "record help dismissal")
       return withCorsJson(req, { ok: true, profile: updated, completeness: completeness((updated ?? {}) as never) }, 200)
     }
 
