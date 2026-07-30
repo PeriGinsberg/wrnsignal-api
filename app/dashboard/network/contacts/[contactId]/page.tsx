@@ -27,6 +27,7 @@ import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
+import { ContactTile } from "../../ContactTile"
 import {
   FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES,
   STAGE_LABELS, stagePillStyle,
@@ -122,7 +123,9 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
 
       {/* ── 1. Header, compact ─────────────────────────────────── */}
       <header style={{ marginTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {/* Same tile, same colour rule as everywhere else a person appears. */}
+          <ContactTile contact={contact} size={46} />
           <h1 style={{ ...headline, margin: 0 }}>{contact.first_name} {contact.last_name}</h1>
           {/* Phase colour as STATUS. This one pill replaced the seven-segment
               phase bar: same information, same shared palette, one element. */}
