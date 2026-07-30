@@ -40,10 +40,15 @@ export function menuLabel(token: string): string {
   return FRIENDLY[token] ?? `[${token}]`
 }
 
+// Two registers, not three: the split that matters is auto-fill vs you-fill,
+// and the headers say it before any item is read. "About you" and "About them"
+// share ice blue because they are the same KIND of thing — their own words keep
+// them apart, and giving them separate colours would imply a difference the
+// renderer does not make.
 const SECTIONS = [
-  { key: "profile" as const, heading: "About you" },
-  { key: "contact" as const, heading: "About them" },
-  { key: "fill" as const, heading: "You fill this in" },
+  { key: "profile" as const, heading: "About you", tone: T.ICE_BLUE },
+  { key: "contact" as const, heading: "About them", tone: T.ICE_BLUE },
+  { key: "fill" as const, heading: "You fill this in", tone: T.WRN_ORANGE },
 ]
 
 export function InsertFieldMenu({ onInsert }: { onInsert: (token: string) => void }) {
@@ -103,10 +108,10 @@ export function InsertFieldMenu({ onInsert }: { onInsert: (token: string) => voi
             boxShadow: T.SHADOW_POPUP,
           }}
         >
-          {SECTIONS.map(({ key, heading }) => (
+          {SECTIONS.map(({ key, heading, tone }) => (
             <div key={key} data-testid={`menu-group-${key}`}>
-              <div style={{
-                color: T.DIM, fontSize: 10, fontWeight: 900, letterSpacing: 0.6,
+              <div data-testid={`menu-heading-${key}`} style={{
+                color: tone, fontSize: 10, fontWeight: 900, letterSpacing: 0.6,
                 textTransform: "uppercase", padding: "8px 12px 4px",
               }}>
                 {heading}

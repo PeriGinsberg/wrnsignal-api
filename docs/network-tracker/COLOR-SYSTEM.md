@@ -95,6 +95,19 @@ renders warm, "About you" and "About them" calm — so the menu teaches the spli
 just listing it. Its grouping comes from `classifyVariable()` too, which is why the menu and
 the body cannot disagree about what a variable is.
 
+**Its group headers follow the same auto/manual split, one register up:**
+
+| Header | Colour | Because |
+|---|---|---|
+| About you · About them | ice blue `T.ICE_BLUE` | auto-fill — the "fills itself" colour |
+| You fill this in | amber `T.WRN_ORANGE` | your job to write |
+
+Two colours for three headers is deliberate: the distinction that matters is auto vs manual,
+and the two auto sections stay apart on their own words. Note the header and its items sit in
+different registers on purpose — a header states what the *group* is (ice blue = fills itself),
+while items keep the colour their bracket takes in the body (calm `T.MUTED` for auto, warm for
+fill). Colouring auto items ice blue too would make the menu disagree with the message body.
+
 ---
 
 ## 4. Applied where
