@@ -46,6 +46,8 @@ export const T = {
   ORANGE_BORDER_STRONG: "rgba(254,176,106,0.55)",
   /** The faint halo under an attention surface — a glow, not an edge. */
   ORANGE_GLOW: "rgba(254,176,106,0.05)",
+  /** Lift for a popup floating over the page. Depth, not a palette colour. */
+  SHADOW_POPUP: "0 12px 32px rgba(0,0,0,0.45)",
   SUCCESS_BORDER: "rgba(74,222,128,0.35)",
   PINK_BORDER: "rgba(236,72,153,0.35)",
   PINK_BG: "rgba(236,72,153,0.10)",

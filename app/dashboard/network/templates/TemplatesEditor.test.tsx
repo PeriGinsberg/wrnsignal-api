@@ -13,7 +13,8 @@ import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/re
 import TemplatesPage from "./page"
 import { SAMPLE_CONTACT, droppedVariables } from "./groups"
 import { NAME_BY_ID, unplacedIds, unnamedIds, REPLY_IDS, LINKEDIN_IDS, sequenceIds } from "./templateNames"
-import { DEFAULTS_BY_ID, TEMPLATE_IDS } from "../../../../lib/network-tracker/templates"
+import { menuLabel } from "./InsertFieldMenu"
+import { DEFAULTS_BY_ID, TEMPLATE_IDS, classifyVariable } from "../../../../lib/network-tracker/templates"
 
 let params = new URLSearchParams()
 const replaceMock = vi.fn((url: string) => { params = new URLSearchParams(String(url).split("?")[1] ?? "") })
@@ -411,25 +412,69 @@ describe("the two kinds of bracket", () => {
   })
 })
 
-describe("the palette", () => {
-  it("groups by where the value comes from and inserts at the caret", async () => {
+describe("the Insert field menu", () => {
+  const openMenu = () => fireEvent.click(screen.getByTestId("insert-field-button"))
+
+  it("groups by where the value comes from, under plain-English headers", async () => {
     await open("C2")
-    for (const label of ["From your profile", "From the contact", "Fill in when you send"]) {
-      expect(screen.getByText(label)).toBeTruthy()
+    expect(screen.queryByTestId("insert-field-menu")).toBeNull()   // shut until asked
+    openMenu()
+
+    for (const heading of ["About you", "About them", "You fill this in"]) {
+      expect(screen.getByText(heading)).toBeTruthy()
     }
 
+    // classifyVariable is the authority, so the grouping is asserted against IT
+    // rather than against a list restated here — the menu and the bracket
+    // colouring cannot drift apart without this failing.
+    const kind = { profile: "profile", contact: "contact", fill: "fill" } as const
+    for (const [key, group] of Object.entries(kind)) {
+      const host = screen.getByTestId(`menu-group-${group}`)
+      const tokens = Array.from(host.querySelectorAll("[data-testid^='insert-']"))
+        .map((n) => n.getAttribute("data-testid")!.replace("insert-", ""))
+      expect(tokens.length).toBeGreaterThan(0)
+      for (const t of tokens) expect(classifyVariable(t)).toBe(key)
+    }
+  })
+
+  it("inserts the real bracket at the caret", async () => {
+    await open("C2")
     fireEvent.change(bodyBox(), { target: { value: "Hi , welcome." } })
     const ta = bodyBox()
     ta.setSelectionRange(3, 3)          // caret between "Hi " and ","
-    fireEvent.click(screen.getByTestId("chip-NAME"))
+
+    openMenu()
+    fireEvent.mouseDown(screen.getByTestId("insert-NAME"))   // must not steal focus
+    fireEvent.click(screen.getByTestId("insert-NAME"))
 
     expect(bodyBox().value).toBe("Hi [NAME], welcome.")
+    expect(screen.queryByTestId("insert-field-menu")).toBeNull()  // closes after
+  })
+
+  it("shows friendly labels but inserts the jargon token", async () => {
+    expect(menuLabel("AFFINITY_1")).toBe("Something you share")
+    expect(menuLabel("CURRENT_ROLE")).toBe("Your current role")
+    expect(menuLabel("KEY_STRENGTH")).toBe("Your strength")
+    expect(menuLabel("CURRENT_EMPLOYER")).toBe("Your current employer")
+    expect(menuLabel("TARGET_FIELD")).toBe("Field you're moving into")
+    expect(menuLabel("TARGET_ROLE")).toBe("Role you're targeting")
+    // Already clear, deliberately untouched.
+    for (const t of ["NAME", "FIRM", "CITY"]) expect(menuLabel(t)).toBe(`[${t}]`)
+
+    await open("C2")
+    fireEvent.change(bodyBox(), { target: { value: "" } })
+    openMenu()
+    expect(screen.getByText("Something you share")).toBeTruthy()
+    fireEvent.click(screen.getByTestId("insert-AFFINITY_1"))
+    // The friendly name is a label; what lands in the body is the real token.
+    expect(bodyBox().value).toBe("[AFFINITY_1]")
   })
 
   it("offers every variable the 24 defaults actually use", async () => {
     await open("C2")
+    openMenu()
     const used = new Set(Object.values(DEFAULTS_BY_ID).flatMap((d) =>
       (d.body.match(/\[([^\]]+)\]/g) ?? []).map((m) => m.slice(1, -1))))
-    for (const v of used) expect(screen.queryByTestId(`chip-${v}`)).toBeTruthy()
+    for (const v of used) expect(screen.queryByTestId(`insert-${v}`)).toBeTruthy()
   })
 })

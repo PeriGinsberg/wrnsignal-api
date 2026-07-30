@@ -82,6 +82,11 @@ Implementation note: colouring inside an editable body needs a highlight layer b
 transparent textarea. Both read one shared `BODY_BOX` style object; if they ever drift,
 text slides off its own highlight.
 
+**The "Insert field ▾" menu carries the same two colours** — its "You fill this in" section
+renders warm, "About you" and "About them" calm — so the menu teaches the split rather than
+just listing it. Its grouping comes from `classifyVariable()` too, which is why the menu and
+the body cannot disagree about what a variable is.
+
 ---
 
 ## 4. Applied where

@@ -16,12 +16,10 @@
 import { useCallback, useMemo, useRef, useState } from "react"
 import { T, card, fieldLabel, btnPrimary } from "../../../../lib/dashboard-theme"
 import { authFetch } from "../authFetch"
-import {
-  renderTemplate, extractVariables, classifyVariable, DEFAULTS_BY_ID,
-  type MergedTemplate,
-} from "../../../../lib/network-tracker/templates"
+import { renderTemplate, type MergedTemplate } from "../../../../lib/network-tracker/templates"
 import { SAMPLE_CONTACT, droppedVariables } from "./groups"
 import { BracketText } from "./brackets"
+import { InsertFieldMenu } from "./InsertFieldMenu"
 
 // Shared by the textarea and the highlight layer behind it. Any typography or
 // box value that differs between the two shows up as text drifting off its own
@@ -153,7 +151,7 @@ export function TemplateEditor({
         />
       </div>
 
-      <Palette onInsert={insert} />
+      <InsertFieldMenu onInsert={insert} />
 
       {dropped.length > 0 && (
         // Between editor and preview, where the eye already is. A warning, never
@@ -217,49 +215,6 @@ export function TemplateEditor({
           </p>
         )}
       </div>
-    </div>
-  )
-}
-
-// Grouped by where the value comes from, because that is the distinction that
-// matters when writing: two of these fill themselves in and one never will.
-function Palette({ onInsert }: { onInsert: (token: string) => void }) {
-  const groups = useMemo(() => {
-    // Derived from the DEFAULTS, so a variable used by a template can never be
-    // missing from the palette that is supposed to offer it.
-    const all = new Set<string>()
-    for (const d of Object.values(DEFAULTS_BY_ID)) extractVariables(d.body).forEach((v) => all.add(v))
-    const out: Record<"profile" | "contact" | "fill", string[]> = { profile: [], contact: [], fill: [] }
-    for (const v of all) out[classifyVariable(v)].push(v)
-    for (const k of Object.keys(out) as (keyof typeof out)[]) out[k].sort()
-    return out
-  }, [])
-
-  const SECTIONS = [
-    { key: "profile" as const, label: "From your profile" },
-    { key: "contact" as const, label: "From the contact" },
-    { key: "fill" as const, label: "Fill in when you send" },
-  ]
-
-  return (
-    <div style={{ marginTop: 12 }} data-testid="palette">
-      {SECTIONS.map(({ key, label }) => (
-        <div key={key} style={{ marginBottom: 8 }}>
-          <div style={{ ...fieldLabel, textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {groups[key].map((v) => (
-              <button key={v} onClick={() => onInsert(v)} data-testid={`chip-${v}`} title={`Insert [${v}]`}
-                style={{
-                  background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 7,
-                  padding: "4px 8px", fontSize: 11, fontWeight: 700, color: T.MUTED, cursor: "pointer",
-                  fontFamily: "inherit",
-                }}>
-                [{v}]
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
     </div>
   )
 }
