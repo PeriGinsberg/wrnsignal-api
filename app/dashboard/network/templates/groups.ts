@@ -14,15 +14,25 @@ import { DEFAULTS_BY_ID, extractVariables, type RenderContact } from "../../../.
 /**
  * The preview's stand-in contact. FIXED and synthetic on purpose: previewing
  * against a real contact would make the editor depend on having one, and
- * choosing which is a control nobody asked for. A realistic name and firm
- * matter: "[NAME]" rendering as "Contact" or "Test" reads as scaffolding and
- * stops anyone believing the preview.
+ * choosing which is a control nobody asked for.
+ *
+ * THE NAME IS A DELIBERATE COMPROMISE, and it replaces an earlier one. This
+ * used to be "Priya Nandal at Nodal Exchange", chosen because a realistic name
+ * keeps the preview believable where "[NAME]" rendering as "Contact" or "Test"
+ * reads as scaffolding. It was too believable: people read the preview and
+ * hunted for a contact they did not recognise.
+ *
+ * So the name still has to READ naturally inside a sentence, because "Hi
+ * Contact," proves nothing about how a real message looks, but it must be
+ * unmistakable as a placeholder at a glance. "Sam Sample at Example Co" does
+ * both: "Hi Sam," scans like a real greeting, and nobody has ever met Sam
+ * Sample. The framing around the preview does the rest.
  */
 export const SAMPLE_CONTACT: RenderContact & { display: string } = {
-  first_name: "Priya",
-  company_name: "Nodal Exchange",
-  additional_info: "we both spoke at the Chicago derivatives panel",
-  display: "Priya Nandal · Nodal Exchange",
+  first_name: "Sam",
+  company_name: "Example Co",
+  additional_info: "we met at an alumni event last spring",
+  display: "Sam Sample at Example Co",
 }
 
 /**

@@ -206,9 +206,15 @@ export function TemplateEditor({
 
       {/* ── PREVIEW, now stacked below rather than a third column ── */}
       <div style={{ ...card, padding: "14px 16px", marginTop: 14 }}>
-        <div style={{ ...fieldLabel, textTransform: "uppercase", marginBottom: 4 }}>Preview</div>
-        <div style={{ color: T.DIM, fontSize: 11.5, marginBottom: 10 }}>
-          Your profile, sample contact: {SAMPLE_CONTACT.display}
+        <div style={{ ...fieldLabel, textTransform: "uppercase", marginBottom: 4 }}>
+          Example preview
+        </div>
+        {/* Said plainly, because the old wording let people read the preview as
+            a contact of theirs they could not place. */}
+        <div data-testid="preview-caption" style={{ color: T.DIM, fontSize: 11.5, marginBottom: 10, lineHeight: "17px" }}>
+          This is an example, not one of your contacts. It shows how the message
+          reads for a made-up person, <strong>{SAMPLE_CONTACT.display}</strong>,
+          filled in with your real profile.
         </div>
         <pre data-testid="preview" style={{
           whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 13, lineHeight: "20px",

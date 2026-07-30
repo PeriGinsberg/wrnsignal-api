@@ -331,7 +331,7 @@ describe("the live preview", () => {
     fireEvent.change(bodyBox(), { target: { value: "Hi [NAME], one quick thing." } })
 
     // The substitution happens live, which is what makes the preview worth watching.
-    expect(preview()).toBe("Hi Priya, one quick thing.")
+    expect(preview()).toBe(`Hi ${SAMPLE_CONTACT.first_name}, one quick thing.`)
     expect(authFetchMock.mock.calls.some((c) => c[1]?.method === "PATCH")).toBe(false)
   })
 
@@ -340,7 +340,7 @@ describe("the live preview", () => {
     fireEvent.change(bodyBox(), { target: { value: "Hi Dana, one quick thing." } })
     // Every preview now says Dana no matter who it is addressed to.
     expect(preview()).toContain("Dana")
-    expect(preview()).not.toContain("Priya")
+    expect(preview()).not.toContain(SAMPLE_CONTACT.first_name)
   })
 
   it("shows a blank, never a raw bracket, for a profile field with no value", async () => {
