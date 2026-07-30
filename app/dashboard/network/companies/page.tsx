@@ -106,7 +106,7 @@ export default function CompaniesBoardPage() {
       </div>
 
       {banner && (
-        <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 10, background: T.SUCCESS_BG, color: T.TEXT, fontSize: 12 }}>
+        <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, color: T.TEXT, fontSize: 12 }}>
           {banner}
           <button onClick={() => setBanner(null)} style={{ background: "none", border: "none", color: T.DIM, cursor: "pointer", float: "right" }}>×</button>
         </div>

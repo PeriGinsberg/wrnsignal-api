@@ -24,8 +24,8 @@ export function LibraryGroup({
   accent: Accent
 }) {
   return (
-    <section style={{ ...groupSection, borderLeft: `3px solid ${accent.line}` }} data-testid={`group-${heading}`}>
-      <div style={{ ...fieldLabel, textTransform: "uppercase", color: accent.line }}>{heading}</div>
+    <section style={{ ...groupSection, ...railStyle(accent.line) }} data-testid={`group-${heading}`}>
+      <div style={{ ...fieldLabel, textTransform: "uppercase", color: accent.line ?? undefined }}>{heading}</div>
       {hint && <p style={{ color: T.DIM, fontSize: 12, margin: "4px 0 0" }}>{hint}</p>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
         {ids.map((id) => (
@@ -47,6 +47,13 @@ export function LibraryGroup({
   )
 }
 
-// Shared by the sequence section in page.tsx, so the three rails sit on one
-// vertical line rather than each choosing its own inset.
+// Shared by the sequence section in page.tsx, so a railed group and the
+// unrailed one sit on the same vertical line rather than stepping in and out.
 export const groupSection: React.CSSProperties = { marginTop: 26, paddingLeft: 14 }
+
+/** A 3px left rail — the group-identity shape (COLOR-SYSTEM.md §2). A group with
+ *  no colour keeps the identical inset via a transparent rail, so the headings
+ *  stay aligned down the page. */
+export function railStyle(line: string | null): React.CSSProperties {
+  return { borderLeft: `3px solid ${line ?? "transparent"}` }
+}

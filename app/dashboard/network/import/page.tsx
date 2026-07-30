@@ -123,7 +123,7 @@ export default function ImportPage() {
       {/* result summary */}
       {result && (
         <div style={{ ...card, marginTop: 18, padding: 20 }}>
-          <div style={{ color: T.SUCCESS, fontSize: 16, fontWeight: 900 }}>
+          <div style={{ color: T.TEXT, fontSize: 16, fontWeight: 900 }}>
             Imported {result.imported} contact{result.imported === 1 ? "" : "s"} across {result.companies} compan{result.companies === 1 ? "y" : "ies"}
             {result.newCompanies > 0 ? ` (${result.newCompanies} new)` : ""}.
           </div>
@@ -237,7 +237,7 @@ export default function ImportPage() {
 }
 
 const primaryBtn: React.CSSProperties = {
-  background: T.GRAD_PRIMARY, color: "#04060F", fontWeight: 900, fontSize: 13,
+  background: T.GRAD_PRIMARY, color: T.INK_ON_ACCENT, fontWeight: 900, fontSize: 13,
   border: "none", borderRadius: 12, padding: "11px 18px", cursor: "pointer",
 }
 const th: React.CSSProperties = {

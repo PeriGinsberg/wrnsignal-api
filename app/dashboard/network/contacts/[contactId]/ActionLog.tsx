@@ -111,7 +111,7 @@ export function ActionLog({
           disabled={busy}
           style={{
             background: T.GRAD_PRIMARY,
-            color: "#04060F",
+            color: T.INK_ON_ACCENT,
             fontWeight: 900,
             fontSize: 12,
             border: "none",

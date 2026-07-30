@@ -78,7 +78,7 @@ export function DeleteCompanyConfirm({
             disabled={!canDelete}
             style={{
               background: canDelete ? T.ERROR : "rgba(255,120,120,0.25)",
-              color: canDelete ? "#04060F" : T.DIM,
+              color: canDelete ? T.INK_ON_ACCENT : T.DIM,
               fontWeight: 900, borderRadius: 13, padding: "13px 18px", fontSize: 13,
               border: "none", cursor: canDelete ? "pointer" : "not-allowed",
             }}

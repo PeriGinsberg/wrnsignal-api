@@ -1,111 +1,139 @@
-# Networking colour inventory
+# Networking colour system
 
-An audit of every colour in use across the networking screens, taken 2026-07-30 at
-commit `2d1a3ef8`. **Nothing was changed.** This is the inventory we agreed to take
-before defining one meaning→colour rule set for the whole function.
+The meaning→colour map for the networking function. **These rules are definitive.**
+A colour is chosen by looking up the meaning here, never by picking something that
+looks right — that is how the collisions in the appendix happened.
 
-Sources: `lib/dashboard-theme.ts` (tokens + `PHASE`), `app/dashboard/network/vocab.ts`
-(stage→phase map), and every `T.*` / literal colour under `app/dashboard/network/`.
-
----
-
-## 1. The phase palette — 7 colours
-
-Defined in `dashboard-theme.ts:69-77`, applied only through `pillStyle()` →
-`stagePillStyle()` (`vocab.ts:52`). The stage→phase mapping is `STAGE_PHASE`
-(`vocab.ts:36`). Appears on: stage pills in the contacts spreadsheet, the contact
-record's phase bar, `ChangeStage`, and the dashboard funnel.
-
-| Phase | fg | Meaning | Stages |
-|---|---|---|---|
-| `idle` | `rgba(255,255,255,0.62)` | not started | identified |
-| `active` | `#51ADE5` | in progress | intro_requested, sequence_active |
-| `alive` | `#4ade80` | **replied** | replied |
-| `momentum` | `#a7f3d0` | chat booked/done | chat_scheduled, chat_done |
-| `longgame` | `#c4b5fd` | nurture / ask | nurture, ask_made |
-| `won` | `#FEB06A` | outcome | outcome |
-| `resting` | `rgba(255,150,150,0.78)` | dormant | dormant_no_answer, dormant_declined |
-
-## 2. Everything outside the phase palette
-
-| Colour | Token | Value | Meaning(s) as used | Where |
-|---|---|---|---|---|
-| Warm | `T.WRN_ORANGE` | `#FEB06A` | attention needed; the outreach sequence | nav active tab, "Due today", ActionBox, snooze override, worklist late count, profile required-empty dot + MOST USEFUL badge, import "not a person?", Templates sequence rail + step circles |
-| Green | `T.SUCCESS` | `#4ade80` | saved OK; the replies group | save ticks (contact record ×2, SendPanel, Templates), banners (contacts, companies, profile), filled-field ✓, target met, import success, Templates Replies rail + labels |
-| Blue | `T.WRN_BLUE` | `#51ADE5` | link; unsaved edit; progress bar | all links, SendPanel + TemplateEditor dirty border, dashboard bars, ChangeStage selected outcome |
-| Pink | `T.WRN_PINK` | `#EC4899` | LinkedIn | Templates LinkedIn rail + labels **(only site)** |
-| Red | `T.ERROR` | `rgba(255,120,120,0.95)` | error; overdue; destructive | ~28 sites; `ContactRow:55` overdue; delete buttons |
-| Amber tint | `T.WARNING_BG` | `rgba(254,176,106,0.08)` | edited; late | SendPanel scratchpad, WorklistRow late row, dropped-variable warning, Templates edited pill |
+Audit taken 2026-07-30 at `2d1a3ef8`; rules locked and applied the same day.
 
 ---
 
-## Collisions and inconsistencies
+## 1. Meaning → colour
 
-### A. The Replies green and the "replied" green are the same shade but not the same token
-**Direct answer to the question asked.** `T.SUCCESS` is `#4ade80`; `PHASE.alive.fg` is
-`#4ade80`. Byte-identical, declared independently ~55 lines apart. They agree today by
-coincidence, not by construction — change one and the other silently diverges. This is
-the single highest-value fix in the audit, because the meaning genuinely *is* shared
-("they responded") and the coupling should be real.
+| Meaning | Colour | Token |
+|---|---|---|
+| **Attention · act here · overdue** | warm orange `#FEB06A` | `T.WRN_ORANGE` |
+| **Responded / alive** | green `#4ade80` | `T.SUCCESS` (= `PHASE.alive.fg`) |
+| **We actually spoke** | mint `#a7f3d0` | `PHASE.momentum.fg` |
+| **Achieved / outcome** | gold `#D4A444` | `T.GOLD` (= `PHASE.won.fg`) |
+| **In progress** | blue `#51ADE5` | `T.WRN_BLUE` (= `PHASE.active.fg`) |
+| **Long game (nurture/ask)** | violet `#c4b5fd` | `PHASE.longgame.fg` |
+| **Dormant / resting** | salmon | `PHASE.resting.fg` |
+| **Not started** | white 62% | `PHASE.idle.fg` |
+| **Error · destructive** | red | `T.ERROR` |
+| **Neutral confirmation** | muted white | `T.MUTED` |
 
-### B. Green carries three unrelated meanings
-1. "replied" (phase), 2. "saved successfully" (13 sites), 3. "the replies group"
-(Templates). 1 and 3 are the same idea. **2 is not** — an operation succeeding has
-nothing to do with a contact responding, and it is the most frequent use of the colour
-on the whole function.
+### Warm owns attention, and only attention
+Warm is the send button, overdue dates, required-empty fields, the late-worklist row,
+the fill-at-send bracket. It is **not** "done". `PHASE.won` moved off `#FEB06A` to
+`T.GOLD` — a deeper gold that reads accomplished rather than urgent — because attention
+and done are close to opposites and cannot share a hex.
 
-### C. There are two greens, adjacent in both hue and meaning
-`PHASE.alive #4ade80` (replied) and `PHASE.momentum #a7f3d0` (chat booked/done) sit next
-to each other in the funnel and are both green. Whatever rule we write has to say why
-"they replied" and "we spoke" are different colours, or merge them.
+### Green means "they responded", not "it worked"
+`T.SUCCESS` and `PHASE.alive.fg` are now **one token**, not two hexes that happened to
+agree. Save-confirmations moved OFF green to `T.MUTED`: a save succeeding is not news
+about a contact. The Templates "Replies" group keeps green — those genuinely are the
+reply messages.
 
-### D. Warm means three things, one of which is an end state
-`T.WRN_ORANGE` = `PHASE.won.fg` exactly. So warm is simultaneously **"needs your
-attention"** (due today, required-empty, late), **"outcome reached / done"** (phase pill),
-and now **"the outreach sequence"** (Templates). Attention and done are close to
-opposites. This is the worst collision in the set.
-
-### E. The amber tint means both "edited" and "late"
-`T.WARNING_BG` backs the SendPanel's edited scratchpad, the worklist's late row, and the
-Templates edited pill. Edited is neutral; late is a problem.
-
-### F. Blue means link, in-progress, and unsaved
-`#51ADE5` is `PHASE.active.fg` *and* every hyperlink *and* the dirty-textarea border.
-
-### G. Pink is the only colour with exactly one meaning and no collision
-No pink anywhere in `PHASE`. Nearest neighbour is `resting rgba(255,150,150,0.78)`
-(dormant) — a desaturated salmon. Distinguishable, but they can co-occur on a contact
-row, so worth a deliberate check rather than an assumption.
-
-### H. Three different strengths of the same warm border
-`T.ORANGE_BORDER` `0.35` (token) · `Field.tsx:28` `0.45` (required-empty) ·
-`Field.tsx:44` `0.55` (featured). The latter two are literals.
-
-### I. Literals that duplicate or near-miss a token
-- `contacts/page.tsx:294` — `rgba(74,222,128,0.3)` vs `T.SUCCESS_BORDER` `0.35`. Near-miss.
-- `SendPanel.tsx:264` — `rgba(254,176,106,0.35)` is exactly `T.ORANGE_BORDER`, written raw.
-- `ChangeStage.tsx:134,136,150` — blues at `0.10/0.15/0.35/0.4`; no blue tint tokens exist.
-- `ActionBox.tsx:35,36` — warm at `0.38` and `0.05`.
-- `#1a0505` (`contacts/page.tsx:461`, `[contactId]/page.tsx:245`) — a second ink colour for
-  text on red, with no token. `#04060F` now has one (`T.INK_ON_ACCENT`) but ~10 networking
-  sites still write it literally.
+### The two greens are deliberate
+`alive #4ade80` ("they responded") and `momentum #a7f3d0` ("we actually spoke") are a
+**two-step progression inside the same good news**, which is why they are adjacent in hue
+as well as in the funnel. This is a designed step, not a duplication. Do not collapse them.
 
 ---
 
-## What this implies for the rule set
+## 2. The shape rule — what prevents the next overload
 
-Three questions to settle before any colour moves:
+**Status = filled pill. Group identity = 3px left rail.**
 
-1. **Does "replied" own green outright?** If yes, save-confirmations need a different
-   signal (blue, or no colour at all), and `T.SUCCESS` and `PHASE.alive` become one token.
-2. **What does warm mean — attention, or done?** It cannot keep meaning both. If warm is
-   attention, `PHASE.won` needs a new colour; if warm is done, every due/late/required
-   affordance needs one.
-3. **Is a group identity the same kind of thing as a status?** Templates uses colour for
-   *which family a template belongs to*; the pipeline uses it for *what state a contact is
-   in*. If both stay, they need visually separate roles (e.g. status = filled pill, group
-   = 3px rail) so one is never read as the other.
+A colour may carry both a status and a group meaning **because the shape disambiguates**:
 
-Not addressed here: the coach surfaces (`app/dashboard/coach/**`) carry their own avatar
-palette including a soft pink `#F4ADC9`. Out of scope for the networking function, but it
-is a fourth pink in the product.
+- A **filled pill** always answers *what state is this contact in?* (`pillStyle()`)
+- A **3px left rail + coloured section header** always answers *what family is this?*
+
+Green in a pill means the contact replied. Green on a rail means the Replies section.
+No reader confuses them, and no future screen has to invent a third convention. Any new
+use of colour must pick one of these two shapes, or state why it is neither.
+
+### Not every group needs a colour
+The **primary content of a screen takes no rail**. On Templates the sequence is the
+content and the two library groups are asides; colouring only the asides is what says so.
+Three coloured peers would have made them compete, and it would have spent warm — which
+inside those very cards has to mean "you write this" — on a section heading. A group with
+no colour keeps the same 14px inset via a transparent rail, so headings stay aligned.
+
+---
+
+## 3. Brackets — the rule inside a message body
+
+Applied in the Templates editor and its live preview (`brackets.tsx`).
+
+| Bracket | Meaning | Colour |
+|---|---|---|
+| `[NAME]`, `[FIRM]`, `[CITY]`, `[CURRENT_ROLE]` … | fills itself in | calm `T.MUTED` |
+| `_____` (profile blank, not yet filled) | fills itself in, once you complete your profile | calm `T.MUTED` |
+| `[MUTUAL]`, `[OPTION 1]`, `[ONE SPECIFIC QUESTION]` … | **you write this** | warm `T.WRN_ORANGE`, bold |
+
+This is the same warm = *your action* rule as overdue and required-empty: a blank you have
+to fill is the part of the message that needs you. The split is not re-derived —
+`classifyVariable()` in the 8b renderer stays the only authority on which bracket is which.
+
+Implementation note: colouring inside an editable body needs a highlight layer behind a
+transparent textarea. Both read one shared `BODY_BOX` style object; if they ever drift,
+text slides off its own highlight.
+
+---
+
+## 4. Applied where
+
+| Surface | State |
+|---|---|
+| Theme tokens | ✅ done |
+| Phase palette (`alive` merged, `won` → gold) | ✅ done |
+| Save-confirmations → neutral | ✅ done (7 sites) |
+| Templates: Replies green, LinkedIn pink | ✅ done |
+| Templates: bracket two-colour | ✅ done |
+| Token hygiene (literals → tokens) | ✅ done |
+| Templates: sequence section → neutral | ✅ done |
+| Contacts spreadsheet | ⏳ not yet applied |
+| Dashboard / funnel | ⏳ not yet applied (inherits the gold change) |
+| Profile | ⏳ not yet applied |
+
+---
+
+## 5. Known, accepted overlaps
+
+- **Blue means link, in-progress, and unsaved-edit.** Three meanings, but they never
+  co-occur in a way that misleads: a link is underlined text, in-progress is a pill, an
+  unsaved edit is a border. Left as-is deliberately. Revisit only if it bites.
+- **`T.GOLD` is also JobFit's "Review" decision colour** (`app/dashboard/page.tsx:114`).
+  Different function, never on the same screen as a networking phase pill. Accepted; flagged
+  for the eventual product-wide pass.
+- **Profile completion still uses green** (filled-field ✓, progress bar, section counts).
+  By §1 that is arguably "it worked", not "they responded". Deliberately left for the
+  profile screen's own pass rather than changed in passing.
+- **The coach surfaces carry a fourth pink** (`#F4ADC9`, avatar palette). Out of scope.
+
+---
+
+## Appendix — the original audit, and what it found
+
+The state before these rules, kept because it is the evidence for them.
+
+**Fixed by this pass:**
+- `T.SUCCESS` and `PHASE.alive.fg` were the same hex declared twice, ~55 lines apart —
+  agreeing by coincidence. Now one token.
+- `T.WRN_ORANGE` was exactly `PHASE.won.fg`, so warm meant attention *and* done.
+- Green carried three meanings; the most frequent (save confirmation) was unrelated to the
+  other two.
+- Three warm border strengths (`0.35` token, `0.45`/`0.55` literals in `Field.tsx`), plus
+  strays at `0.38` and `0.30` — now `ORANGE_BORDER` / `_MED` / `_STRONG`, with the two
+  strays snapped to the nearest step (a ≤0.05 alpha change, invisible).
+- `rgba(74,222,128,0.3)` near-missing `SUCCESS_BORDER` `0.35`.
+- Untokenised blues at `0.10/0.12/0.15/0.35/0.40` in `ChangeStage` and `WorklistRow` —
+  now `BLUE_BG` / `BLUE_BG_ON` / `BLUE_BORDER` / `BLUE_BORDER_ON`.
+- `#04060F` written literally at ~10 networking sites → `T.INK_ON_ACCENT`.
+- `#1a0505` (ink on red) had no token → `T.INK_ON_ERROR`.
+- `rgba(254,176,106,0.05)` glow → `T.ORANGE_GLOW`.
+
+**Raised and deliberately not "fixed":** the two greens (§1), blue's three meanings (§5).

@@ -25,7 +25,7 @@ const BORDER: Record<FieldState, string> = {
   filled: T.BORDER_SOFT,
   // Amber only on the border, never a fill: seventeen tinted boxes on a fresh
   // profile would read as seventeen errors rather than seventeen invitations.
-  "required-empty": "rgba(254,176,106,0.45)",
+  "required-empty": T.ORANGE_BORDER_MED,
   "optional-empty": T.BORDER_SOFT,
 }
 
@@ -41,7 +41,7 @@ export function Field({
   onSave: (key: string, value: string) => void
 }) {
   const state = fieldState(def.key, value)
-  const border = featured ? "rgba(254,176,106,0.55)" : BORDER[state]
+  const border = featured ? T.ORANGE_BORDER_STRONG : BORDER[state]
 
   return (
     <label style={{
@@ -64,7 +64,7 @@ export function Field({
         {featured && (
           <span data-testid="pitch-badge" style={{
             color: T.WRN_ORANGE, fontWeight: 900, fontSize: 9, letterSpacing: 0.6,
-            border: `1px solid rgba(254,176,106,0.4)`, borderRadius: 999, padding: "1px 7px",
+            border: `1px solid ${T.ORANGE_BORDER_MED}`, borderRadius: 999, padding: "1px 7px",
           }}>
             MOST USEFUL
           </span>

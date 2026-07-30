@@ -88,7 +88,7 @@ export function WorklistRow({
         padding: "14px 16px",
         borderRadius: 14,
         background: late > 0 ? T.WARNING_BG : T.GLASS,
-        border: `1px solid ${late > 0 ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
+        border: `1px solid ${late > 0 ? T.ORANGE_BORDER : T.BORDER_SOFT}`,
         flexWrap: "wrap",
       }}
     >
@@ -107,7 +107,7 @@ export function WorklistRow({
       <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 8 }}>
         <span
           style={{
-            background: "rgba(81,173,229,0.12)",
+            background: T.BLUE_BG_ON,
             color: T.WRN_BLUE,
             fontSize: 10,
             fontWeight: 900,
@@ -129,7 +129,7 @@ export function WorklistRow({
           disabled={busy !== null}
           style={{
             background: T.GRAD_PRIMARY,
-            color: "#04060F",
+            color: T.INK_ON_ACCENT,
             fontWeight: 900,
             fontSize: 12,
             border: "none",

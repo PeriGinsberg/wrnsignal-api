@@ -291,8 +291,8 @@ function ContactsSpreadsheetInner() {
 
       {/* post-delete / bulk-delete confirmation banner */}
       {banner && (
-        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: T.SUCCESS_BG, border: `1px solid rgba(74,222,128,0.3)`, display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ color: T.SUCCESS, fontSize: 13, fontWeight: 700, flex: 1 }}>{banner}</span>
+        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: T.TEXT, fontSize: 13, fontWeight: 700, flex: 1 }}>{banner}</span>
           <button onClick={() => setBanner(null)} style={{ background: "none", border: "none", color: T.DIM, fontSize: 16, cursor: "pointer" }}>×</button>
         </div>
       )}
@@ -458,7 +458,7 @@ function BulkDeleteConfirm({
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           <button onClick={onConfirm} disabled={busy}
-            style={{ background: T.ERROR, color: "#1a0505", border: "none", borderRadius: 11, padding: "10px 18px", fontSize: 13, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
+            style={{ background: T.ERROR, color: T.INK_ON_ERROR, border: "none", borderRadius: 11, padding: "10px 18px", fontSize: 13, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
             {busy ? "Deleting…" : `Delete ${n}`}
           </button>
           <button onClick={onCancel} disabled={busy}

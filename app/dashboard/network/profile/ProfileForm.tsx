@@ -193,7 +193,7 @@ export function ProfileForm() {
       )}
 
       {banner && (
-        <div style={{ padding: "9px 12px", borderRadius: 10, background: T.SUCCESS_BG, color: T.TEXT, fontSize: 12, marginBottom: 14 }}>
+        <div style={{ padding: "9px 12px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, color: T.TEXT, fontSize: 12, marginBottom: 14 }}>
           {banner}
         </div>
       )}

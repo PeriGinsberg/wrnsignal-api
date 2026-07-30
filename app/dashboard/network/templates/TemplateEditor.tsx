@@ -21,6 +21,18 @@ import {
   type MergedTemplate,
 } from "../../../../lib/network-tracker/templates"
 import { SAMPLE_CONTACT, droppedVariables } from "./groups"
+import { BracketText } from "./brackets"
+
+// Shared by the textarea and the highlight layer behind it. Any typography or
+// box value that differs between the two shows up as text drifting off its own
+// highlight, so they read from one object rather than two matching literals.
+const BODY_BOX: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box",
+  fontFamily: "inherit", fontSize: 13, lineHeight: "20px",
+  borderRadius: 12, padding: "12px 14px",
+  whiteSpace: "pre-wrap", wordBreak: "break-word",
+  margin: 0,
+}
 
 export function TemplateEditor({
   id, template, profile, onReload,
@@ -35,6 +47,7 @@ export function TemplateEditor({
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const taRef = useRef<HTMLTextAreaElement | null>(null)
+  const mirrorRef = useRef<HTMLDivElement | null>(null)
 
   const body = draft ?? template?.body ?? ""
   const dirty = draft !== null && template != null && draft !== template.body
@@ -100,20 +113,45 @@ export function TemplateEditor({
 
   return (
     <div data-testid="template-editor" style={{ marginTop: 12 }}>
-      <textarea
-        ref={taRef}
-        data-testid="template-body"
-        aria-label="Template body"
-        value={body}
-        onChange={(e) => setDraft(e.target.value)}
-        rows={Math.min(20, Math.max(7, body.split("\n").length + 2))}
-        style={{
-          display: "block", width: "100%", boxSizing: "border-box", resize: "vertical",
-          fontFamily: "inherit", fontSize: 13, lineHeight: "20px", color: T.TEXT,
-          background: T.GLASS, border: `1px solid ${dirty ? T.WRN_BLUE : T.BORDER_SOFT}`,
-          borderRadius: 12, padding: "12px 14px",
-        }}
-      />
+      {/* The textarea sits transparent over a highlight layer drawing the same
+          text, which is the only way to colour part of an editable body. Both
+          share BODY_BOX so the two never drift out of alignment; the caret and
+          selection stay the real control's. */}
+      <div style={{ position: "relative" }}>
+        <div
+          ref={mirrorRef}
+          aria-hidden
+          data-testid="body-highlight"
+          style={{
+            ...BODY_BOX,
+            position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none",
+            color: T.TEXT, background: T.GLASS,
+            border: `1px solid ${dirty ? T.WRN_BLUE : T.BORDER_SOFT}`,
+          }}
+        >
+          <BracketText text={body} />
+          {/* A trailing newline has no line box of its own; this gives it one so
+              the highlight does not fall short of the caret on the last line. */}
+          {"​"}
+        </div>
+        <textarea
+          ref={taRef}
+          data-testid="template-body"
+          aria-label="Template body"
+          value={body}
+          onChange={(e) => setDraft(e.target.value)}
+          onScroll={(e) => {
+            if (mirrorRef.current) mirrorRef.current.scrollTop = e.currentTarget.scrollTop
+          }}
+          rows={Math.min(20, Math.max(7, body.split("\n").length + 2))}
+          style={{
+            ...BODY_BOX,
+            display: "block", position: "relative", resize: "vertical",
+            color: "transparent", caretColor: T.TEXT, background: "transparent",
+            border: "1px solid transparent",
+          }}
+        />
+      </div>
 
       <Palette onInsert={insert} />
 
@@ -142,7 +180,9 @@ export function TemplateEditor({
             {busy === "revert" ? "Reverting…" : "Revert to default"}
           </button>
         )}
-        {notice && <span data-testid="editor-notice" style={{ color: T.SUCCESS, fontSize: 12, fontWeight: 700 }}>{notice}</span>}
+        {/* Neutral, not green: green means "they responded" on this function, and
+            a save succeeding is not news about a contact. */}
+        {notice && <span data-testid="editor-notice" style={{ color: T.MUTED, fontSize: 12, fontWeight: 700 }}>{notice}</span>}
         {error && <span data-testid="editor-error" style={{ color: T.ERROR, fontSize: 12 }}>{error}</span>}
       </div>
 
@@ -163,7 +203,7 @@ export function TemplateEditor({
           whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 13, lineHeight: "20px",
           color: T.TEXT, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`,
           borderRadius: 12, padding: "12px 14px", margin: 0,
-        }}>{preview.text}</pre>
+        }}><BracketText text={preview.text} /></pre>
 
         {preview.unresolved.length > 0 && (
           <p data-testid="preview-unresolved" style={{ color: T.MUTED, fontSize: 11.5, marginTop: 10, lineHeight: "17px" }}>

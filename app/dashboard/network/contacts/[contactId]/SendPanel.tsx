@@ -261,7 +261,7 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
             <div
               data-testid="gap-warning"
               style={{
-                background: T.WARNING_BG, border: `1px solid rgba(254,176,106,0.35)`,
+                background: T.WARNING_BG, border: `1px solid ${T.ORANGE_BORDER}`,
                 borderRadius: 10, padding: "9px 12px", marginBottom: 12,
                 color: T.TEXT, fontSize: 12, lineHeight: "18px",
               }}
@@ -301,7 +301,7 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
       )}
 
       {confirmation && (
-        <div data-testid="confirmation" style={{ marginTop: 10, color: T.SUCCESS, fontSize: 12, fontWeight: 700 }}>
+        <div data-testid="confirmation" style={{ marginTop: 10, color: T.MUTED, fontSize: 12, fontWeight: 700 }}>
           {confirmation}
         </div>
       )}

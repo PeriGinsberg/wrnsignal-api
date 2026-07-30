@@ -192,7 +192,7 @@ const panel: React.CSSProperties = {
 }
 const primaryBtn: React.CSSProperties = {
   background: T.GRAD_PRIMARY,
-  color: "#04060F",
+  color: T.INK_ON_ACCENT,
   fontWeight: 900,
   fontSize: 13,
   border: "none",

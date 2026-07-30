@@ -32,8 +32,8 @@ export function ActionBox({ contact, onLogged }: { contact: Contact; onLogged: (
         background: T.CARD,
         // The accent border is the whole signal: one surface on the page reads
         // as "act here", and it is this one.
-        border: `1px solid rgba(254,176,106,0.38)`,
-        boxShadow: "0 0 0 3px rgba(254,176,106,0.05)",
+        border: `1px solid ${T.ORANGE_BORDER}`,
+        boxShadow: `0 0 0 3px ${T.ORANGE_GLOW}`,
       }}
     >
       <div style={{

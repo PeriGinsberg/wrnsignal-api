@@ -242,7 +242,7 @@ function DeleteContactControl({ contact }: { contact: Contact }) {
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
         <button onClick={del} disabled={busy}
-          style={{ background: T.ERROR, color: "#1a0505", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 12, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
+          style={{ background: T.ERROR, color: T.INK_ON_ERROR, border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 12, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
           {busy ? "Deleting…" : "Delete"}
         </button>
         <button onClick={() => setConfirming(false)} disabled={busy}
@@ -320,14 +320,14 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
           disabled={busy || !dirty}
           style={{
             background: dirty ? T.GRAD_PRIMARY : T.GLASS,
-            color: dirty ? "#04060F" : T.DIM,
+            color: dirty ? T.INK_ON_ACCENT : T.DIM,
             fontWeight: 900, fontSize: 12, border: dirty ? "none" : `1px solid ${T.BORDER_SOFT}`,
             borderRadius: 11, padding: "9px 16px", cursor: busy || !dirty ? "default" : "pointer", opacity: busy ? 0.6 : 1,
           }}
         >
           {busy ? "Saving…" : "Save details"}
         </button>
-        {savedTick && <span style={{ color: T.SUCCESS, fontSize: 12 }}>Saved</span>}
+        {savedTick && <span style={{ color: T.MUTED, fontSize: 12 }}>Saved</span>}
         {err && <span style={{ color: T.ERROR, fontSize: 12 }}>{err}</span>}
       </div>
     </div>
@@ -459,7 +459,7 @@ function TextFieldEditor({
           disabled={busy || !dirty}
           style={{
             background: dirty ? T.GRAD_PRIMARY : T.GLASS,
-            color: dirty ? "#04060F" : T.DIM,
+            color: dirty ? T.INK_ON_ACCENT : T.DIM,
             fontWeight: 900,
             fontSize: 12,
             border: dirty ? "none" : `1px solid ${T.BORDER_SOFT}`,
@@ -471,7 +471,7 @@ function TextFieldEditor({
         >
           {busy ? "Saving…" : "Save"}
         </button>
-        {savedTick && <span style={{ color: T.SUCCESS, fontSize: 12 }}>Saved</span>}
+        {savedTick && <span style={{ color: T.MUTED, fontSize: 12 }}>Saved</span>}
         {err && <span style={{ color: T.ERROR, fontSize: 12 }}>{err}</span>}
       </div>
     </div>

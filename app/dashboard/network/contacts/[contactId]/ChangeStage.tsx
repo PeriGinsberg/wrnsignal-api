@@ -131,9 +131,9 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
                 <button key={o.key} onClick={() => setStage({ outcome_type: o.key }, `outcome:${o.key}`)}
                   disabled={busy !== null}
                   style={{
-                    background: on ? "rgba(81,173,229,0.15)" : T.NAV_DEFAULT_BG,
+                    background: on ? T.BLUE_BG_ON : T.NAV_DEFAULT_BG,
                     color: on ? T.WRN_BLUE : T.TEXT,
-                    border: `1px solid ${on ? "rgba(81,173,229,0.4)" : T.BORDER_SOFT}`,
+                    border: `1px solid ${on ? T.BLUE_BORDER_ON : T.BORDER_SOFT}`,
                     borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer",
                   }}>
                   {o.label}
@@ -147,7 +147,7 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
       {suggestReferred && (
         <div style={{
           marginTop: 12, padding: "11px 13px", borderRadius: 11,
-          background: "rgba(81,173,229,0.10)", border: `1px solid rgba(81,173,229,0.35)`,
+          background: T.BLUE_BG, border: `1px solid ${T.BLUE_BORDER}`,
           display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
         }}>
           <span style={{ color: T.TEXT, fontSize: 12, flex: "1 1 220px" }}>
@@ -156,7 +156,7 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
           </span>
           <button onClick={applyReferred} disabled={busy === "suggest"}
             style={{
-              background: T.GRAD_PRIMARY, color: "#04060F", fontWeight: 900, fontSize: 12,
+              background: T.GRAD_PRIMARY, color: T.INK_ON_ACCENT, fontWeight: 900, fontSize: 12,
               border: "none", borderRadius: 10, padding: "7px 13px", cursor: "pointer",
             }}>
             {busy === "suggest" ? "Saving…" : `Set to ${RELATIONSHIP_LABELS.referred}`}

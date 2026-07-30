@@ -59,7 +59,7 @@ export function dueOf(nextDueAt: string | null): Due {
 
 const td: React.CSSProperties = { padding: "8px 12px", color: T.TEXT, verticalAlign: "middle" }
 const logBtn: React.CSSProperties = {
-  background: T.GRAD_PRIMARY, color: "#04060F", fontWeight: 900, fontSize: 11,
+  background: T.GRAD_PRIMARY, color: T.INK_ON_ACCENT, fontWeight: 900, fontSize: 11,
   border: "none", borderRadius: 8, padding: "5px 9px", cursor: "pointer", whiteSpace: "nowrap",
 }
 

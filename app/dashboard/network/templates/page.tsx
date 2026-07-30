@@ -24,7 +24,7 @@ import {
 } from "./templateNames"
 import { WhoPicker } from "./WhoPicker"
 import { TemplateCard } from "./TemplateCard"
-import { LibraryGroup, groupSection } from "./LibraryGroup"
+import { LibraryGroup, groupSection, railStyle } from "./LibraryGroup"
 import { ACCENTS } from "./accents"
 
 export default function TemplatesPage() {
@@ -120,11 +120,14 @@ function TemplatesEditor() {
 
       {error && <div style={{ color: T.ERROR, fontSize: 13, marginTop: 14 }} data-testid="load-error">{error}</div>}
 
+      {/* No rail and no colour: the sequence is the primary content, and
+          colouring only the two secondary groups makes them read as asides
+          rather than three peers competing. See COLOR-SYSTEM.md §2. */}
       <section
-        style={{ ...groupSection, marginTop: 22, borderLeft: `3px solid ${ACCENTS.sequence.line}` }}
+        style={{ ...groupSection, marginTop: 22, ...railStyle(ACCENTS.sequence.line) }}
         data-testid="sequence"
       >
-        <div style={{ ...fieldLabel, textTransform: "uppercase", color: ACCENTS.sequence.line }}>
+        <div style={{ ...fieldLabel, textTransform: "uppercase", color: T.TEXT }}>
           {RELATIONSHIP_LABELS[relationship]} · the sequence
         </div>
         <p style={{ color: T.MUTED, fontSize: 12.5, margin: "5px 0 0", maxWidth: 620 }}>

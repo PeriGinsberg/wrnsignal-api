@@ -370,6 +370,47 @@ describe("the dropped-variable warning", () => {
   })
 })
 
+describe("the two kinds of bracket", () => {
+  const kinds = (host: HTMLElement, kind: "auto" | "fill") =>
+    Array.from(host.querySelectorAll(`[data-bracket="${kind}"]`)).map((n) => n.textContent)
+
+  it("colours fill-at-send prompts apart from the ones that fill themselves", async () => {
+    // IN carries both: [MUTUAL] and [TARGET_FIELD] are a fill prompt and a
+    // profile variable sitting in one body.
+    await open("IN")
+    const editor = screen.getByTestId("body-highlight")
+    expect(kinds(editor, "fill")).toContain("[MUTUAL]")
+    expect(kinds(editor, "auto")).toContain("[TARGET_FIELD]")
+  })
+
+  it("carries the split into the preview, where the auto ones are already gone", async () => {
+    await open("S1")     // "Scheduling a call" — [OPTION 1..3] are fill prompts
+    const pv = screen.getByTestId("preview")
+    expect(kinds(pv, "fill")).toEqual(expect.arrayContaining(["[OPTION 1]", "[OPTION 2]"]))
+    // [NAME] resolved against the sample contact, so it is text now, not a bracket.
+    expect(kinds(pv, "fill")).not.toContain("[NAME]")
+    expect(preview()).toContain(SAMPLE_CONTACT.first_name)
+  })
+
+  it("treats an unfilled profile blank as calm, not as your action", async () => {
+    authFetchMock.mockImplementation((url: string, init?: { method?: string; body?: string }) =>
+      String(url) === "/api/network/profile" ? json({ ok: true, profile: {} }) : api()(url, init))
+    await open("C1")
+    // "_____" is a slot that fills ITSELF once the profile has a value — the
+    // writer is not being asked to type into it, so it must not read as warm.
+    expect(kinds(screen.getByTestId("preview"), "auto")).toContain("_____")
+    expect(kinds(screen.getByTestId("preview"), "fill")).not.toContain("_____")
+  })
+
+  it("colours without altering a single character of the body", async () => {
+    await open("IN")
+    // The highlight layer must render the body EXACTLY, or the text drifts off
+    // the textarea it sits behind.
+    expect(screen.getByTestId("body-highlight").textContent?.replace(/​/g, ""))
+      .toBe(DEFAULTS_BY_ID.IN.body)
+  })
+})
+
 describe("the palette", () => {
   it("groups by where the value comes from and inserts at the caret", async () => {
     await open("C2")

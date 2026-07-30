@@ -28,6 +28,11 @@ export function TemplateCard({
   compact?: boolean
 }) {
   const edited = template?.source === "override"
+  // The uncoloured group still needs a visible "edited" marker and a visible
+  // active edge — it falls back to plain white, which reads as clearly against
+  // the quiet grey "Default" as any accent does.
+  const mark = accent.line ?? T.TEXT
+  const activeEdge = accent.line ?? T.BORDER
 
   return (
     <div
@@ -39,7 +44,7 @@ export function TemplateCard({
         // accent edge, one you have customised takes the tinted one, everything
         // else stays quiet. A customised template used to be indistinguishable
         // in the stack, which made the one status that matters invisible.
-        border: `1px solid ${expanded ? accent.line : edited ? accent.border : T.BORDER_SOFT}`,
+        border: `1px solid ${expanded ? activeEdge : edited ? accent.border : T.BORDER_SOFT}`,
         flex: compact && !expanded ? "1 1 210px" : "1 1 100%",
         minWidth: compact && !expanded ? 200 : undefined,
       }}
@@ -59,7 +64,8 @@ export function TemplateCard({
           <span aria-hidden style={{
             flex: "0 0 auto", width: 22, height: 22, borderRadius: 999,
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            background: accent.line, color: T.INK_ON_ACCENT,
+            background: accent.step, color: accent.stepInk,
+            border: accent.line ? "none" : `1px solid ${T.BORDER}`,
             fontSize: 11, fontWeight: 900,
           }}>{step}</span>
         )}
@@ -72,13 +78,13 @@ export function TemplateCard({
           <span data-testid={`marker-${id}`} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             background: accent.bg, border: `1px solid ${accent.border}`, borderRadius: 999,
-            padding: "3px 9px 3px 7px", color: accent.line,
+            padding: "3px 9px 3px 7px", color: mark,
             fontSize: 10.5, fontWeight: 900, letterSpacing: 0.3, textTransform: "uppercase",
           }}>
             {/* A drawn dot, not a "•" character, so the marker's text stays
                 exactly the two words a reader (and the test) expects. */}
             <span aria-hidden style={{
-              width: 6, height: 6, borderRadius: 999, background: accent.line, flex: "0 0 auto",
+              width: 6, height: 6, borderRadius: 999, background: mark, flex: "0 0 auto",
             }} />
             Edited by you
           </span>

@@ -17,6 +17,12 @@ export const T = {
   // SUCCESS below, so this is one system and the hex belongs here rather than
   // being retyped wherever a fourth accent is wanted.
   WRN_PINK: "#EC4899",
+  // "Achieved", distinct from the action-warm above. Attention and done cannot
+  // share a hex — see docs/network-tracker/COLOR-SYSTEM.md. This is the gold the
+  // product already uses (JobFit's Review pill), reused rather than inventing a
+  // second one; the two never appear on the same screen.
+  GOLD: "#D4A444",
+  GOLD_BG: "rgba(212,164,68,0.22)",
   ERROR: "rgba(255,120,120,0.95)",
   SUCCESS: "#4ade80",
   SUCCESS_BG: "rgba(74,222,128,0.10)",
@@ -28,13 +34,26 @@ export const T = {
   // in btnPrimary and ~30 call sites; naming it is what stops the next one
   // being typed from memory.
   INK_ON_ACCENT: "#04060F",
+  /** Ink for text on a filled ERROR surface, where INK_ON_ACCENT reads too blue. */
+  INK_ON_ERROR: "#1a0505",
 
   // Accent borders at a common strength, so a tinted edge reads the same
-  // weight whichever accent it is drawn in.
+  // weight whichever accent it is drawn in. The two stronger warm steps exist
+  // because the profile deliberately escalates: a soft edge invites, a stronger
+  // one on the featured field says "this is the one that matters".
   ORANGE_BORDER: "rgba(254,176,106,0.35)",
+  ORANGE_BORDER_MED: "rgba(254,176,106,0.45)",
+  ORANGE_BORDER_STRONG: "rgba(254,176,106,0.55)",
+  /** The faint halo under an attention surface — a glow, not an edge. */
+  ORANGE_GLOW: "rgba(254,176,106,0.05)",
   SUCCESS_BORDER: "rgba(74,222,128,0.35)",
   PINK_BORDER: "rgba(236,72,153,0.35)",
   PINK_BG: "rgba(236,72,153,0.10)",
+  // Blue tints, previously written as literals at four strengths in ChangeStage.
+  BLUE_BG: "rgba(81,173,229,0.10)",
+  BLUE_BG_ON: "rgba(81,173,229,0.15)",
+  BLUE_BORDER: "rgba(81,173,229,0.35)",
+  BLUE_BORDER_ON: "rgba(81,173,229,0.40)",
 
   NAV_ACTIVE_BG: "rgba(254,176,106,0.08)",
   NAV_ACTIVE_BORDER: "rgba(254,176,106,0.35)",
@@ -66,13 +85,21 @@ export const T = {
 // painted straight onto the row. That holds text contrast identical on a
 // striped row, an unstriped row, a hovered row and a just-flashed row —
 // otherwise the 0.28 ROW_FLASH overlay bleeds through and the label washes out.
+// `alive` and `won` read their fg from T rather than restating a hex, so a
+// meaning that is shared with the rest of the product is shared by construction
+// and not by two hexes happening to agree.
+//
+// The two greens are DELIBERATE and not a duplication: `alive` is "they
+// responded", `momentum` is "we actually spoke" — a two-step progression within
+// the same good news, which is why they are adjacent in hue as well as in the
+// funnel. Collapsing them would lose the step that matters most to a user.
 export const PHASE = {
   idle:     { fg: "rgba(255,255,255,0.62)", bg: "rgba(255,255,255,0.10)" }, // not started
-  active:   { fg: "#51ADE5",                bg: "rgba(81,173,229,0.20)"  }, // in progress
-  alive:    { fg: "#4ade80",                bg: "rgba(74,222,128,0.16)"  }, // replied
+  active:   { fg: T.WRN_BLUE,               bg: "rgba(81,173,229,0.20)"  }, // in progress
+  alive:    { fg: T.SUCCESS,                bg: "rgba(74,222,128,0.16)"  }, // replied
   momentum: { fg: "#a7f3d0",                bg: "rgba(16,185,129,0.34)"  }, // chat booked/done
   longgame: { fg: "#c4b5fd",                bg: "rgba(167,139,250,0.22)" }, // nurture / ask
-  won:      { fg: "#FEB06A",                bg: "rgba(254,176,106,0.22)" }, // outcome
+  won:      { fg: T.GOLD,                   bg: T.GOLD_BG               }, // outcome — ACHIEVED, not urgent
   resting:  { fg: "rgba(255,150,150,0.78)", bg: "rgba(255,120,120,0.14)" }, // dormant
 } as const
 
