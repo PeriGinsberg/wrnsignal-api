@@ -57,9 +57,12 @@ const ROSTER = [
       email: "ida@northpoint.io", network_companies: { name: "Northpoint" } }),
 ]
 
-const rows = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "")
+// The spreadsheet is a list of row-objects now, not a <table>, so rows are
+// found by their testid rather than by the table row role.
+const rowEls = () => Array.from(document.querySelectorAll('[data-testid^="row-"]'))
+const rows = () => rowEls().map((r) => r.textContent ?? "")
 const shows = (n: string) => rows().some((t) => t.includes(n))
-const visible = () => (screen.queryAllByRole("row").length ? rows().length : 0)
+const visible = () => rowEls().length
 const box = () => screen.getByTestId("contacts-search") as HTMLInputElement
 
 afterEach(cleanup)

@@ -20,7 +20,8 @@ import { AddContactForm } from "../AddContactForm"
 import {
   STAGE_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
 } from "../vocab"
-import { Row, dueOf, type Contact } from "./ContactRow"
+import { Row, dueOf, needsMe, type Contact } from "./ContactRow"
+import { LIGHT as S } from "../../../../lib/theme/surfaces"
 import { matchesQuery } from "./search"
 import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS } from "../vocab"
 import { isStalled, STALLED_DAYS } from "../dashboardMetrics"
@@ -223,6 +224,10 @@ function ContactsSpreadsheetInner() {
     return contacts.some((c, i) => rank.get(c.id) !== i)
   }, [contacts, orderIds])
 
+  // The organising question, answered once for the header. Visual only: the
+  // frozen order is deliberate and nothing re-sorts.
+  const needCount = ordered.filter((c) => needsMe(dueOf(c.next_due_at))).length
+
   const anyFilter = fQuery || fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus
   function clearFilters() {
     // One replace, not seven — seven sequential calls would each read a stale
@@ -388,32 +393,42 @@ function ContactsSpreadsheetInner() {
       )}
 
       {filtered.length > 0 && (
-        <div style={{ overflowX: "auto", marginTop: 16, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12 }}>
-          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100, fontSize: 12.5 }}>
-            <thead>
-              <tr>
-                <th style={{ ...th, width: 34, textAlign: "center" }}>
-                  <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Select all" style={{ cursor: "pointer" }} />
-                </th>
-                {["Company", "Name", "Title", FIELD_LABELS.relationship, FIELD_LABELS.priority, FIELD_LABELS.stage, "Last touch", "Due", ""].map((h, i) => (
-                  <th key={i} style={th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ordered.map((c, i) => (
-                <Row
-                  key={c.id}
-                  contact={c}
-                  onChanged={() => handleActed(c.id)}
-                  checked={selected.has(c.id)}
-                  onToggle={() => toggleOne(c.id)}
-                  flash={flashId === c.id}
-                  zebra={i % 2 === 1}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div role="list" aria-label="Contacts" style={{
+          marginTop: 16, borderRadius: 14, overflow: "hidden",
+          background: S.card, border: `1px solid ${S.border}`,
+        }}>
+          {/* A hybrid, not a table: the header keeps the spreadsheet's
+              select-all and says how many rows want attention, and the rows
+              below are designed objects rather than cells. Column headings are
+              gone because a row-object labels itself. */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+            background: S.well, borderBottom: `1px solid ${S.border}`,
+          }}>
+            <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible}
+              aria-label="Select all" style={{ cursor: "pointer" }} />
+            <span style={{ color: S.text.secondary, fontSize: 11.5, fontWeight: 800 }}>
+              {needCount > 0
+                ? `${needCount} need${needCount === 1 ? "s" : ""} you today`
+                : "Nothing due today"}
+            </span>
+            <span style={{ flex: 1 }} />
+            <span style={{ color: S.text.muted, fontSize: 11.5 }}>
+              {ordered.length} contact{ordered.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          {ordered.map((c, i) => (
+            <Row
+              key={c.id}
+              contact={c}
+              onChanged={() => handleActed(c.id)}
+              checked={selected.has(c.id)}
+              onToggle={() => toggleOne(c.id)}
+              flash={flashId === c.id}
+              zebra={i % 2 === 1}
+            />
+          ))}
         </div>
       )}
     </main>
@@ -483,8 +498,3 @@ const addBtn: React.CSSProperties = {
   padding: "9px 14px", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", flex: "0 0 auto",
 }
 const ghostBtn: React.CSSProperties = { background: "none", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700, cursor: "pointer" }
-const th: React.CSSProperties = {
-  textAlign: "left", padding: "9px 12px", fontSize: 10, fontWeight: 900, letterSpacing: 0.4,
-  textTransform: "uppercase", color: T.DIM, background: T.NAV_DEFAULT_BG, whiteSpace: "nowrap",
-  position: "sticky", top: 0,
-}

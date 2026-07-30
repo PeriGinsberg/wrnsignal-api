@@ -53,7 +53,9 @@ const ROSTER = [
       last_action_at: new Date(Date.now() - 20 * 86400000).toISOString() }),
 ]
 
-const names = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "")
+// Row-objects, not table rows: the spreadsheet moved to the light theme.
+const names = () =>
+  Array.from(document.querySelectorAll('[data-testid^="row-"]')).map((r) => r.textContent ?? "")
 const shows = (n: string) => names().some((t) => t.includes(n))
 
 afterEach(cleanup)
@@ -68,7 +70,7 @@ beforeEach(() => {
 async function renderWith(qs: string) {
   params = new URLSearchParams(qs)
   const utils = render(<ContactsPage />)
-  await waitFor(() => expect(screen.queryAllByRole("row").length).toBeGreaterThan(1))
+  await waitFor(() => expect(names().length).toBeGreaterThan(0))
   return utils
 }
 
