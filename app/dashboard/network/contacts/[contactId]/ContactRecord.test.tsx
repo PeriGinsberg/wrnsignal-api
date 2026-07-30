@@ -11,6 +11,7 @@
 import { Suspense } from "react"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, cleanup, within } from "@testing-library/react"
+import { displayName } from "../../templates/templateNames"
 import ContactRecordPage from "./page"
 import { DEFAULTS_BY_ID } from "../../../../../lib/network-tracker/templates"
 
@@ -141,7 +142,7 @@ describe("the first send — a contact nobody has contacted yet", () => {
     await open()
 
     // pickTemplate falls to touch 1 for the relationship — C1 for a cold contact.
-    expect(screen.getByTestId("active-template").textContent).toMatch(/^C1 ·/)
+    expect(screen.getByTestId("active-template").textContent).toBe(displayName("C1"))
     expect((screen.getByTestId("rendered-message") as HTMLTextAreaElement).value).toContain("Priya")
 
     // The button exists and is not the "nothing due" fallback.

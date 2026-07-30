@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react"
 import { SendPanel } from "./SendPanel"
-import { DEFAULTS_BY_ID } from "../../../../../lib/network-tracker/templates"
+import { DEFAULTS_BY_ID, TEMPLATE_IDS } from "../../../../../lib/network-tracker/templates"
+import { displayName } from "../../templates/templateNames"
 
 const authFetchMock = vi.fn()
 vi.mock("../../authFetch", () => ({
@@ -73,7 +74,7 @@ describe("the full loop", () => {
     await waitFor(() => expect(screen.getByTestId("active-template")).toBeTruthy())
 
     // 8c chose it…
-    expect(screen.getByTestId("active-template").textContent).toMatch(/^C2 ·/)
+    expect(screen.getByTestId("active-template").textContent).toBe(displayName("C2"))
 
     // …8b filled it in. A contact variable resolved, and no bracket survived.
     const msg = box().value
@@ -197,12 +198,12 @@ describe("the per-contact scratchpad", () => {
 
   it("switching templates DISCARDS the edit — an edit written for C2 must never ride along to C3", async () => {
     render(<SendPanel contact={COLD_DUE_T2} />)
-    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toMatch(/^C2 ·/))
+    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toBe(displayName("C2")))
     fireEvent.change(box(), { target: { value: "written against C2" } })
     expect(box().value).toBe("written against C2")
 
     fireEvent.change(screen.getByLabelText("Template"), { target: { value: "C3" } })
-    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toMatch(/^C3 ·/))
+    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toBe(displayName("C3")))
 
     // Back to a clean render of the NEW template.
     expect(box().value).not.toBe("written against C2")
@@ -272,6 +273,52 @@ describe("no suggestion", () => {
 
     // Picking one renders it.
     fireEvent.change(select, { target: { value: "S1" } })
-    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toMatch(/^S1 ·/))
+    await waitFor(() => expect(screen.getByTestId("active-template").textContent).toBe(displayName("S1")))
+  })
+})
+
+describe("the template picker speaks English", () => {
+  // The same rule the Templates page holds itself to, enforced on the surface a
+  // client actually sends from. A code here is the one that would be seen most.
+  const CODE = /(IN|[PARCXSL][1-5])/
+
+  it("shows no raw template code in any option, or on the active label", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} onLogged={() => {}} />)
+    await waitFor(() => expect(screen.getByLabelText("Template")).toBeTruthy())
+
+    const options = Array.from(
+      (screen.getByLabelText("Template") as HTMLSelectElement).options,
+    ).map((o) => o.textContent ?? "")
+
+    expect(options.length).toBeGreaterThan(1)
+    for (const text of options) expect(text).not.toMatch(CODE)
+
+    // The header beside "Edit this template" is the other place the id leaked.
+    expect(screen.getByTestId("active-template").textContent ?? "").not.toMatch(CODE)
+  })
+
+  it("names every option through the SAME function the Templates page uses", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} onLogged={() => {}} />)
+    await waitFor(() => expect(screen.getByLabelText("Template")).toBeTruthy())
+
+    const options = Array.from(
+      (screen.getByLabelText("Template") as HTMLSelectElement).options,
+    ).slice(1)   // drop the "Choose a template…" placeholder
+
+    // Not a restated list: each option must equal displayName() of its own
+    // value, so the picker cannot drift from the library.
+    for (const o of options) {
+      expect(o.textContent).toBe(displayName(o.value))
+    }
+    expect(options.length).toBe(TEMPLATE_IDS.length)
+  })
+
+  it("keeps the real code in the deep link, which is storage, not display", async () => {
+    render(<SendPanel contact={COLD_DUE_T2} onLogged={() => {}} />)
+    await waitFor(() => expect(screen.getByTestId("edit-template-link")).toBeTruthy())
+    // ?id= still carries the storage id. Codes in a URL are fine; codes on
+    // screen are not.
+    expect(screen.getByTestId("edit-template-link").getAttribute("href"))
+      .toMatch(/\/dashboard\/network\/templates\?id=[A-Z]+\d?/)
   })
 })

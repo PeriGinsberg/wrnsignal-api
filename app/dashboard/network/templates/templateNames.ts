@@ -90,6 +90,19 @@ export const NAME_BY_ID: Record<string, string> = {
   ...LIBRARY_NAMES,
 }
 
+/**
+ * The name to SHOW for a template. Every surface that puts a template in front
+ * of a person goes through here, so "no code on screen" holds off the Templates
+ * page as well as on it.
+ *
+ * The fallback is deliberately not the id. Returning "S4" for an unknown
+ * template would quietly reintroduce the exact thing this module exists to
+ * prevent, and unnamedIds() already guarantees every real template has a name.
+ */
+export function displayName(id: string): string {
+  return NAME_BY_ID[id] ?? "Untitled message"
+}
+
 /** Templates with nowhere on screen to live. Must be empty. */
 export function unplacedIds(): string[] {
   return TEMPLATE_IDS.filter((id) => !PLACEMENT_BY_ID[id])

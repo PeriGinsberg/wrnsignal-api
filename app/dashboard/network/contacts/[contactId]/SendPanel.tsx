@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { T, btnPrimary, btnSecondary, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
 import { authFetch } from "../../authFetch"
+import { displayName } from "../../templates/templateNames"
 import { pickTemplate, REASON_TO_ACTION, ACTION_TYPE_LABEL } from "../../vocab"
 import { renderTemplate, extractVariables, classifyVariable, UNRESOLVED_PLACEHOLDER, type MergedTemplate } from "../../../../../lib/network-tracker/templates"
 
@@ -177,7 +178,7 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
     <div data-testid="send-panel">
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
         {active && <span style={{ color: T.MUTED, fontSize: 12 }} data-testid="active-template">
-          {active.template_id} · {active.label}
+          {displayName(active.template_id)}
         </span>}
         {active && (
           // The bridge to the permanent editor. Deliberately a LINK away rather
@@ -213,7 +214,7 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
           <option value="" style={selectOption}>Choose a template…</option>
           {templates.map((t) => (
             <option key={t.template_id} value={t.template_id} style={selectOption}>
-              {t.template_id} · {t.label}{t.source === "override" ? " (edited)" : ""}
+              {displayName(t.template_id)}{t.source === "override" ? " (edited)" : ""}
             </option>
           ))}
         </select>
