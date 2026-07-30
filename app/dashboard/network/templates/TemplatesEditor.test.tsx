@@ -1,13 +1,18 @@
-// Phase 8e — the template editor. The saved counterpart to 8d's scratchpad.
+// Phase 8e, redesigned per UX-TEMPLATES.md — the saved counterpart to 8d's
+// scratchpad, navigated by who you are writing to.
 //
-// The four required properties: an edit saves as an override, revert deletes it,
-// the preview tracks the edit live, and dropping a variable the default had
-// warns without blocking.
+// The four editor properties are unchanged and still required: an edit saves as
+// an override, revert deletes it, the preview tracks the edit live, and dropping
+// a variable the default had warns without blocking.
+//
+// What the redesign adds: no letter code reaches the screen, every surfaced
+// template has a plain name, and ?id= resolves to a relationship AND a card.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react"
 import TemplatesPage from "./page"
-import { TEMPLATE_GROUPS, SAMPLE_CONTACT, droppedVariables, ungroupedIds } from "./groups"
+import { SAMPLE_CONTACT, droppedVariables } from "./groups"
+import { NAME_BY_ID, unplacedIds, unnamedIds, REPLY_IDS, LINKEDIN_IDS, sequenceIds } from "./templateNames"
 import { DEFAULTS_BY_ID, TEMPLATE_IDS } from "../../../../lib/network-tracker/templates"
 
 let params = new URLSearchParams()
@@ -88,59 +93,155 @@ beforeEach(() => {
   authFetchMock.mockImplementation(api())
 })
 
+/** Render the screen. With an id, that card arrives expanded (the deep link). */
 async function open(id?: string) {
   if (id) params = new URLSearchParams(`id=${id}`)
   const utils = render(<TemplatesPage />)
-  await waitFor(() => expect(screen.queryByTestId("template-body")).toBeTruthy())
+  if (id) await waitFor(() => expect(screen.queryByTestId("template-body")).toBeTruthy())
+  else await waitFor(() => expect(screen.queryByTestId("who-picker")).toBeTruthy())
   return utils
 }
 
-describe("the list", () => {
-  it("shows all 24 templates, each exactly once, under family headings", async () => {
-    await open()
-    const placed = TEMPLATE_GROUPS.flatMap((g) => g.ids)
-    expect(placed.length).toBe(24)
-    expect(new Set(placed).size).toBe(24)
-    expect(ungroupedIds()).toEqual([])       // nothing silently uneditable
-    expect(TEMPLATE_IDS.every((id) => screen.queryByTestId(`pick-${id}`))).toBe(true)
+describe("no code reaches the screen", () => {
+  // The headline of the redesign, asserted over the whole rendered output rather
+  // than field by field, so a code leaking back in through any surface fails
+  // here — a card, a heading, a save notice, a badge.
+  const CODE = /\b(IN|[PARCXSL][1-5])\b/
 
-    // Grouping mirrors RELATIONSHIP_TO_FAMILY: 1 intro + 5 sequences of 3 + 5 S + 3 L.
-    expect(TEMPLATE_GROUPS.map((g) => g.ids.length)).toEqual([1, 3, 3, 3, 3, 3, 5, 3])
-    // Headings come from RELATIONSHIP_LABELS; the A1/C2 template IDs beside them
-    // are IDs, not labels, and deliberately do not follow a rename.
-    for (const h of ["Personal", "Something in Common", "Referral", "Cold", "Recruiter"]) {
-      expect(screen.getByText(h)).toBeTruthy()
+  it("renders no letter code, collapsed or expanded", async () => {
+    const { container } = await open()
+    expect(container.textContent ?? "").not.toMatch(CODE)
+
+    cleanup()
+    const deep = await open("A2")
+    expect(deep.container.textContent ?? "").not.toMatch(CODE)
+  })
+
+  it("says nothing in code after a save either", async () => {
+    await open("C2")
+    fireEvent.change(bodyBox(), { target: { value: bodyBox().value + " One more line." } })
+    fireEvent.click(screen.getByRole("button", { name: /^Save$/ }))
+    await waitFor(() => expect(screen.getByTestId("editor-notice")).toBeTruthy())
+    expect(screen.getByTestId("editor-notice").textContent ?? "").not.toMatch(CODE)
+  })
+})
+
+describe("placement and naming invariants", () => {
+  it("gives all 24 templates somewhere to live and a plain name to live under", () => {
+    expect(TEMPLATE_IDS.length).toBe(24)
+    expect(unplacedIds()).toEqual([])   // nothing silently unreachable
+    expect(unnamedIds()).toEqual([])    // nothing rendering as a bare code
+
+    // The three groups account for every template: 5 sequences of 3, 6 replies,
+    // 3 LinkedIn. Stated as a total rather than a shape so adding a sixth
+    // relationship does not need this line edited.
+    const surfaced = [
+      ...["personal", "affinity", "referred", "cold", "recruiter"].flatMap(sequenceIds),
+      ...REPLY_IDS, ...LINKEDIN_IDS,
+    ]
+    expect(new Set(surfaced).size).toBe(24)
+  })
+
+  it("names every surfaced template in words, never a code", () => {
+    for (const id of TEMPLATE_IDS) {
+      expect(NAME_BY_ID[id]).toBeTruthy()
+      expect(NAME_BY_ID[id]).not.toMatch(/\b(IN|[PARCXSL][1-5])\b/)
     }
   })
 
-  it("deep-links: ?id=C2 opens C2, and picking one writes the URL", async () => {
-    const { rerender } = await open("C2")
-    expect(screen.getByTestId("editing-id").textContent).toBe("C2")
+  it("tracks RELATIONSHIP_LABELS for the LinkedIn connect notes", () => {
+    // L1/L2 disambiguate by relationship, so they must follow a picker rename
+    // rather than saying "affinity" while the picker says something else.
+    expect(NAME_BY_ID.L1).toBe("Connect note · Something in Common")
+    expect(NAME_BY_ID.L2).toBe("Connect note · Cold")
+  })
+})
 
-    fireEvent.click(screen.getByTestId("pick-R1"))
-    expect(String(replaceMock.mock.calls.at(-1)![0])).toContain("id=R1")
+describe("picking who you are messaging", () => {
+  it("shows that relationship's three messages, named and dated", async () => {
+    await open()
+    // Personal is the landing relationship.
+    for (const id of sequenceIds("personal")) expect(screen.getByTestId(`card-${id}`)).toBeTruthy()
+    for (const name of ["First outreach", "Follow-up", "Last follow-up"]) {
+      expect(screen.getByText(name)).toBeTruthy()
+    }
+    expect(screen.getByText("day 0")).toBeTruthy()
+    expect(screen.getByText("day 7")).toBeTruthy()
+    expect(screen.getByText("day 12")).toBeTruthy()
+
+    // Switching swaps the sequence, without a second dropdown.
+    fireEvent.click(screen.getByTestId("who-cold"))
+    for (const id of sequenceIds("cold")) expect(screen.getByTestId(`card-${id}`)).toBeTruthy()
+    expect(screen.queryByTestId("card-P1")).toBeNull()
+  })
+
+  it("surfaces the replies and the LinkedIn notes whatever is selected", async () => {
+    await open()
+    for (const id of [...REPLY_IDS, ...LINKEDIN_IDS]) {
+      expect(screen.getByTestId(`card-${id}`)).toBeTruthy()
+    }
+  })
+
+  it("marks which are yours and which are still the default", async () => {
+    overrides.P2 = "my own wording"
+    await open()
+    expect(screen.getByTestId("marker-P2").textContent).toMatch(/Edited by you/)
+    expect(screen.getByTestId("marker-P1").textContent).toMatch(/Default/)
+  })
+})
+
+describe("deep links resolve to a relationship and a card", () => {
+  it("?id=C2 lands on Cold with the second card open", async () => {
+    await open("C2")
+    // The relationship followed the link...
+    expect(screen.getByTestId("who-cold").getAttribute("aria-selected")).toBe("true")
+    // ...and only that card is expanded.
+    expect(screen.getByTestId("open-C2").getAttribute("aria-expanded")).toBe("true")
+    expect(screen.getByTestId("open-C1").getAttribute("aria-expanded")).toBe("false")
+    expect(bodyBox().value).toBe(DEFAULTS_BY_ID.C2.body)
+  })
+
+  it("a reply deep-links too, without disturbing the sequence shown", async () => {
+    await open("S4")
+    expect(screen.getByTestId("open-S4").getAttribute("aria-expanded")).toBe("true")
+    expect(screen.getByTestId("who-personal").getAttribute("aria-selected")).toBe("true")
+  })
+
+  it("clicking a card writes the URL, and clicking it again collapses", async () => {
+    const { rerender } = await open()
+    fireEvent.click(screen.getByTestId("open-P3"))
+    expect(String(replaceMock.mock.calls.at(-1)![0])).toContain("id=P3")
+
     rerender(<TemplatesPage />)
-    await waitFor(() => expect(screen.getByTestId("editing-id").textContent).toBe("R1"))
+    await waitFor(() => expect(screen.getByTestId("open-P3").getAttribute("aria-expanded")).toBe("true"))
+
+    fireEvent.click(screen.getByTestId("open-P3"))
+    expect(String(replaceMock.mock.calls.at(-1)![0])).not.toContain("id=")
+  })
+
+  it("switching relationship closes whatever was open", async () => {
+    await open("C2")
+    fireEvent.click(screen.getByTestId("who-recruiter"))
+    expect(String(replaceMock.mock.calls.at(-1)![0])).not.toContain("id=")
   })
 })
 
 describe("editing and saving writes an override", () => {
   it("PATCHes the edited body and the template comes back marked as yours", async () => {
     await open("C2")
-    expect(screen.getByTestId("source-badge").textContent).toMatch(/Default/)
+    expect(screen.getByTestId("marker-C2").textContent).toMatch(/Default/)
 
     const edited = bodyBox().value + " One more line."
     fireEvent.change(bodyBox(), { target: { value: edited } })
     fireEvent.click(screen.getByRole("button", { name: /^Save$/ }))
 
-    await waitFor(() => expect(screen.getByTestId("editor-notice").textContent).toMatch(/C2 saved/))
+    await waitFor(() => expect(screen.getByTestId("editor-notice").textContent).toMatch(/Saved/))
     const patch = authFetchMock.mock.calls.find((c) => c[1]?.method === "PATCH")
     expect(String(patch![0])).toBe("/api/network/templates/C2")
     expect(JSON.parse(patch![1].body).body).toBe(edited)
 
-    // Reloaded from the server, not assumed: the badge and the list dot both flip.
-    await waitFor(() => expect(screen.getByTestId("source-badge").textContent).toMatch(/Your version/))
-    expect(screen.getByTestId("edited-dot-C2")).toBeTruthy()
+    // Reloaded from the server, not assumed: the card's marker flips.
+    await waitFor(() => expect(screen.getByTestId("marker-C2").textContent).toMatch(/Edited by you/))
     expect(overrides.C2).toBe(edited)
   })
 
@@ -153,13 +254,13 @@ describe("editing and saving writes an override", () => {
     expect((screen.getByRole("button", { name: /^Save$/ }) as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it("switching templates abandons an unsaved edit rather than carrying it over", async () => {
+  it("collapsing a card abandons an unsaved edit rather than carrying it over", async () => {
     const { rerender } = await open("C2")
     fireEvent.change(bodyBox(), { target: { value: "half-written" } })
 
-    fireEvent.click(screen.getByTestId("pick-C3"))
+    fireEvent.click(screen.getByTestId("open-C3"))
     rerender(<TemplatesPage />)
-    await waitFor(() => expect(screen.getByTestId("editing-id").textContent).toBe("C3"))
+    await waitFor(() => expect(screen.getByTestId("open-C3").getAttribute("aria-expanded")).toBe("true"))
 
     expect(bodyBox().value).toBe(DEFAULTS_BY_ID.C3.body)
     expect(authFetchMock.mock.calls.some((c) => c[1]?.method === "PATCH")).toBe(false)
@@ -171,16 +272,16 @@ describe("revert deletes the override", () => {
     overrides.C2 = "my own wording"
     await open("C2")
     expect(bodyBox().value).toBe("my own wording")
-    expect(screen.getByTestId("source-badge").textContent).toMatch(/Your version/)
+    expect(screen.getByTestId("marker-C2").textContent).toMatch(/Edited by you/)
 
     fireEvent.click(screen.getByTestId("revert"))
-    await waitFor(() => expect(screen.getByTestId("editor-notice").textContent).toMatch(/back to the default/))
+    await waitFor(() => expect(screen.getByTestId("editor-notice").textContent).toMatch(/Back to the default/))
 
     const del = authFetchMock.mock.calls.find((c) => c[1]?.method === "DELETE")
     expect(String(del![0])).toBe("/api/network/templates/C2")
     expect(overrides.C2).toBeUndefined()
     await waitFor(() => expect(bodyBox().value).toBe(DEFAULTS_BY_ID.C2.body))
-    expect(screen.getByTestId("source-badge").textContent).toMatch(/Default/)
+    expect(screen.getByTestId("marker-C2").textContent).toMatch(/Default/)
   })
 
   it("offers revert only for a template that HAS an override", async () => {
@@ -199,7 +300,7 @@ describe("revert deletes the override", () => {
     fireEvent.change(bodyBox(), { target: { value: DEFAULTS_BY_ID.C2.body } })
     fireEvent.click(screen.getByRole("button", { name: /^Save$/ }))
 
-    await waitFor(() => expect(screen.getByTestId("editor-notice").textContent).toMatch(/back to the default/))
+    await waitFor(() => expect(screen.getByTestId("editor-notice").textContent).toMatch(/Back to the default/))
     expect(overrides.C2).toBeUndefined()   // no row left behind
   })
 })
