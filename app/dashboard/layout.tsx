@@ -64,6 +64,12 @@ const D2C_NAV: NavGroup[] = [
         children: [
           { href: "/dashboard/network/companies", label: "Companies", matchPrefix: true },
           { href: "/dashboard/network/contacts", label: "Contacts", matchPrefix: true },
+          // TEMPORARY (redesign step 3). The networking area's own tab strip was
+          // removed, and the outreach identity (pitch, affinities, merge
+          // variables) has no other way in until My Profile absorbs it. Without
+          // this the send-time draft loses the fields it fills from.
+          // REMOVE when the My Profile Networking section lands.
+          { href: "/dashboard/network/profile", label: "Networking profile", matchPrefix: true },
         ],
       },
       { href: "/dashboard/profile", label: "My Profile", matchPrefix: true },
@@ -134,7 +140,9 @@ const COACH_NAV: NavGroup[] = [
  * in. Matching is exact-or-descendant, so "/dashboard/network" also covers
  * "/dashboard/network/contacts".
  */
-const LIGHT_ROUTES: string[] = []
+const LIGHT_ROUTES: string[] = [
+  "/dashboard/network/contacts",   // step 3
+]
 
 /**
  * The WORK ON A JOB zone, as one entry rather than three.

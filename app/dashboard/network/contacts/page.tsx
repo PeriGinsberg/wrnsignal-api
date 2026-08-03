@@ -1,34 +1,41 @@
 "use client"
 
-// Network Tracker: CONTACTS as a spreadsheet view (DASHBOARD.md Part 2).
-// Replaces the old roster outright: one dense table, scannable columns, not cards.
-// Columns: Company · Name · Title · Relationship · Priority · Stage ·
-//          Last touch · Due (+ inline actions)
-// Exactly TWO inline actions per row: log the due touch, and change stage (the
-// Stage column dropdown). Snooze is a deliberate decision: it lives on the
-// contact record, not fired off mid-scan. Everything else (notes, backdating,
-// field edits) is also on the record. Full list fetched once (default sort:
-// no-activity first, then most-recent); filtering + the computed Due are
-// client-side. Filter state can arrive via URL query params so the (future)
-// dashboard can deep-link here pre-filtered.
+// Network Tracker: CONTACTS, the full roster.
+//
+// Redesign step 3 (2026-08-03). Was a dense spreadsheet; it is now a list of
+// designed cards in the light theme. The information architecture is unchanged
+// (same data, same URL-as-filter-state model, same search); what changed is that
+// a contact is presented as an object with one obvious action rather than as a
+// row of nine columns.
+//
+// FILTERS. The visible set is deliberately two, search plus stage plus company,
+// because a student with no coach should meet an invitation and not machinery.
+// The other five (phase, relationship, segment, priority, status) are STILL
+// LIVE as URL params, because the dashboard deep-links into them and those links
+// must keep working. When one is active it announces itself as a chip with a way
+// to clear it, so a filtered view can never look like an empty roster. Capability
+// preserved, quiet.
+//
+// SELECTION. Bulk delete is real capability and is not dropped, but checkboxes on
+// every card would make a calm list look like a spreadsheet again. It lives
+// behind a quiet "Select" toggle.
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { T, headline, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
+import { LIGHT as S, action as actionStyle } from "../../../../lib/theme/surfaces"
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
-import {
-  STAGE_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, FIELD_LABELS, VIEW_LABELS,
-} from "../vocab"
-import { Row, dueOf, type Contact } from "./ContactRow"
+import { STAGE_LABELS, VIEW_LABELS } from "../vocab"
+import { dueOf, type Contact } from "./ContactRow"
+import { ContactCard } from "./ContactCard"
 import { matchesQuery } from "./search"
-import { STAGE_PHASE, PHASE_ORDER, PHASE_LABELS } from "../vocab"
+import { STAGE_PHASE, PHASE_LABELS, RELATIONSHIP_LABELS } from "../vocab"
 import { isStalled, STALLED_DAYS } from "../dashboardMetrics"
+import type { PhaseKey } from "../../../../lib/dashboard-theme"
 
 const STANDALONE = "__standalone__"
 const NO_RELATIONSHIP = "__none__"
 
-// Read initial filter state from the URL (deep-link support). Client-only.
 function urlParam(name: string): string {
   if (typeof window === "undefined") return ""
   return new URLSearchParams(window.location.search).get(name) ?? ""
@@ -36,19 +43,20 @@ function urlParam(name: string): string {
 
 // useSearchParams() requires a Suspense boundary. Without one Next fails the
 // build for any statically-prerendered route that reads it.
-export default function ContactsSpreadsheetPage() {
+export default function ContactsPage() {
   return (
     <Suspense fallback={null}>
-      <ContactsSpreadsheetInner />
+      <ContactsInner />
     </Suspense>
   )
 }
 
-function ContactsSpreadsheetInner() {
+function ContactsInner() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -66,16 +74,9 @@ function ContactsSpreadsheetInner() {
     }
   }, [])
 
-  // THE URL IS THE FILTER STATE. Previously these were seven useState values
-  // seeded from window.location.search at mount and never re-read, so a filter
-  // only ever applied on a full page load. Arriving from the dashboard is a
-  // CLIENT navigation: the query string changes without the component being
-  // remounted, so the deep-links pointed at the right URL and then did nothing.
-  // Refreshing "fixed" it because a refresh is a mount.
-  //
-  // Deriving from useSearchParams() makes them reactive by construction: there
-  // is no second copy that can go stale. It also fixes browser back/forward for
-  // free, and makes a filtered view a shareable link.
+  // THE URL IS THE FILTER STATE. Deriving from useSearchParams() makes these
+  // reactive by construction: there is no second copy that can go stale. It also
+  // fixes browser back/forward for free, and makes a filtered view shareable.
   const sp = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -86,15 +87,12 @@ function ContactsSpreadsheetInner() {
   const fSegment = sp.get("segment") ?? ""
   const fPriority = sp.get("priority") ?? ""
   const fStatus = sp.get("status") ?? ""   // overdue | due_today | not_started | stalled
-  // Free text, same URL-as-source-of-truth model as the dropdowns: a searched
-  // view is shareable, survives back/forward, and needs no second copy of state.
   const fQuery = sp.get("q") ?? ""
   // Company is two params behind one control: an explicit id, or the standalone flag.
   const fCompany = sp.get("standalone") ? STANDALONE : (sp.get("company_id") ?? "")
 
-  // Writing back to the URL is what keeps the dropdowns working now that they no
-  // longer own the state. `replace`, not `push`, so tweaking a filter does not
-  // stack history entries the back button has to chew through.
+  // `replace`, not `push`, so tweaking a filter does not stack history entries
+  // the back button has to chew through.
   const setParam = useCallback((key: string, value: string) => {
     const next = new URLSearchParams(sp.toString())
     if (value) next.set(key, value)
@@ -104,11 +102,6 @@ function ContactsSpreadsheetInner() {
   }, [sp, router, pathname])
 
   const setFStage = useCallback((v: string) => setParam("stage", v), [setParam])
-  const setFPhase = useCallback((v: string) => setParam("phase", v), [setParam])
-  const setFRelationship = useCallback((v: string) => setParam("relationship", v), [setParam])
-  const setFSegment = useCallback((v: string) => setParam("segment", v), [setParam])
-  const setFPriority = useCallback((v: string) => setParam("priority", v), [setParam])
-  const setFStatus = useCallback((v: string) => setParam("status", v), [setParam])
   const setFQuery = useCallback((v: string) => setParam("q", v), [setParam])
   const setFCompany = useCallback((v: string) => {
     const next = new URLSearchParams(sp.toString())
@@ -119,16 +112,18 @@ function ContactsSpreadsheetInner() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [sp, router, pathname])
 
-  // Frozen render order. The server sorts (no-activity first, then most-recent:
-  // route.ts `.order("last_action_at"…)`), and a stage change or logged touch
-  // rewrites last_action_at, so a naive refetch makes the edited row jump to a
-  // new position mid-interaction, sometimes off-screen. We snapshot the id
-  // order on first load and keep rendering in it, so the row you just edited
-  // stays under your cursor. The ranking is a triage heuristic, not a live
-  // invariant; it re-applies on an explicit Re-sort or a page reload.
-  //
-  // Rows the snapshot has never seen (newly added) sort to the end rather than
-  // being dropped.
+  const clearParams = useCallback((keys: string[]) => {
+    const next = new URLSearchParams(sp.toString())
+    for (const k of keys) next.delete(k)
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [sp, router, pathname])
+
+  // Frozen render order. The server sorts (no-activity first, then most-recent),
+  // and a stage change or logged touch rewrites last_action_at, so a naive
+  // refetch makes the edited card jump position mid-interaction. We snapshot the
+  // id order on first load and keep rendering in it. Cards the snapshot has never
+  // seen (newly added) sort to the end rather than being dropped.
   const [orderIds, setOrderIds] = useState<string[] | null>(null)
 
   const load = useCallback(async (opts?: { resort?: boolean }) => {
@@ -149,9 +144,6 @@ function ContactsSpreadsheetInner() {
   }, [])
   useEffect(() => { void load() }, [load])
 
-  // Brief highlight on the row just acted on. With the position frozen the row
-  // no longer moves, so it needs its own confirmation that the write landed:
-  // previously the jump WAS the (bad) feedback.
   const [flashId, setFlashId] = useState<string | null>(null)
   useEffect(() => {
     if (!flashId) return
@@ -159,16 +151,6 @@ function ContactsSpreadsheetInner() {
     return () => clearTimeout(t)
   }, [flashId])
 
-  const handleActed = useCallback((id: string) => {
-    setFlashId(id)
-    void load()
-  }, [load])
-
-  // Filter dropdown options derived from the data (segments + companies present).
-  const segments = useMemo(
-    () => Array.from(new Set(contacts.map((c) => c.segment).filter(Boolean) as string[])).sort(),
-    [contacts],
-  )
   const companies = useMemo(() => {
     const m = new Map<string, string>()
     for (const c of contacts) if (c.company_id && c.network_companies?.name) m.set(c.company_id, c.network_companies.name)
@@ -178,8 +160,8 @@ function ContactsSpreadsheetInner() {
   const filtered = useMemo(() => {
     return contacts.filter((c) => {
       // Search composes with the dropdowns rather than overriding them: it is
-      // one more predicate in the same chain, so "litig" inside an active
-      // stage filter narrows that stage, it does not search past it.
+      // one more predicate in the same chain, so "litig" inside an active stage
+      // filter narrows that stage, it does not search past it.
       if (!matchesQuery(c, fQuery)) return false
       if (fStage && c.stage !== fStage) return false
       if (fPhase && (STAGE_PHASE[c.stage] ?? "idle") !== fPhase) return false
@@ -204,8 +186,6 @@ function ContactsSpreadsheetInner() {
     })
   }, [contacts, fQuery, fStage, fPhase, fRelationship, fSegment, fPriority, fCompany, fStatus])
 
-  // Apply the frozen order to whatever survived filtering. Selection logic below
-  // deliberately keeps using `filtered`, which is set-based and order-independent.
   const ordered = useMemo(() => {
     if (!orderIds) return filtered
     const rank = new Map(orderIds.map((id, i) => [id, i]))
@@ -214,28 +194,46 @@ function ContactsSpreadsheetInner() {
     )
   }, [filtered, orderIds])
 
-  // True once the live server ranking would differ from what's on screen, i.e.
-  // some row has been acted on since the snapshot. Drives the Re-sort button so
-  // it only appears when it would actually do something.
-  const orderStale = useMemo(() => {
-    if (!orderIds) return false
-    const rank = new Map(orderIds.map((id, i) => [id, i]))
-    return contacts.some((c, i) => rank.get(c.id) !== i)
-  }, [contacts, orderIds])
+  // The five filters that have no control on this screen. Each is still live via
+  // the URL, so a dashboard deep-link works; each announces itself here so a
+  // narrowed list never reads as an empty roster.
+  const hiddenFilters = useMemo(() => {
+    const out: { key: string; label: string; params: string[] }[] = []
+    if (fPhase) out.push({ key: "phase", label: `Group: ${PHASE_LABELS[fPhase as PhaseKey] ?? fPhase}`, params: ["phase"] })
+    if (fRelationship) {
+      out.push({
+        key: "relationship",
+        label: fRelationship === NO_RELATIONSHIP
+          ? "No relationship set"
+          : `Relationship: ${RELATIONSHIP_LABELS[fRelationship] ?? fRelationship}`,
+        params: ["relationship"],
+      })
+    }
+    if (fSegment) out.push({ key: "segment", label: `Segment: ${fSegment}`, params: ["segment"] })
+    if (fPriority) out.push({ key: "priority", label: `Priority ${fPriority}`, params: ["priority"] })
+    if (fStatus) {
+      const words: Record<string, string> = {
+        overdue: "Overdue",
+        due_today: "Due today",
+        not_started: "Not started",
+        stalled: `Quiet for ${STALLED_DAYS}+ days`,
+      }
+      out.push({ key: "status", label: words[fStatus] ?? fStatus, params: ["status"] })
+    }
+    return out
+  }, [fPhase, fRelationship, fSegment, fPriority, fStatus])
 
-  const anyFilter = fQuery || fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus
+  const anyFilter = Boolean(
+    fQuery || fStage || fPhase || fRelationship || fSegment || fPriority || fCompany || fStatus,
+  )
   function clearFilters() {
-    // One replace, not seven: seven sequential calls would each read a stale
-    // `sp` and the last would win, clearing only one filter.
-    const next = new URLSearchParams(sp.toString())
-    for (const k of ["q", "stage", "phase", "relationship", "segment", "priority", "status", "company_id", "standalone"]) next.delete(k)
-    const qs = next.toString()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    // One replace, not eight: sequential calls would each read a stale `sp` and
+    // the last would win, clearing only one filter.
+    clearParams(["q", "stage", "phase", "relationship", "segment", "priority", "status", "company_id", "standalone"])
   }
 
-  // Selection is scoped to the VISIBLE (filtered) rows, so "select all" means the
-  // current filtered set, and you can only ever delete what you can see. Rows
-  // that leave the filter drop out of the effective selection automatically.
+  // Selection is scoped to the VISIBLE rows, so you can only ever delete what
+  // you can see. Cards that leave the filter drop out of the selection.
   const effectiveSelected = useMemo(() => filtered.filter((c) => selected.has(c.id)), [filtered, selected])
   const allVisibleSelected = filtered.length > 0 && effectiveSelected.length === filtered.length
 
@@ -250,6 +248,10 @@ function ContactsSpreadsheetInner() {
       return n
     })
   }
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelected(new Set())
+  }
 
   async function runBulkDelete() {
     const ids = effectiveSelected.map((c) => c.id)
@@ -262,7 +264,7 @@ function ContactsSpreadsheetInner() {
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Delete failed (${res.status})`)
       setBanner(`Deleted ${j.deleted} contact${j.deleted === 1 ? "" : "s"}.`)
-      setSelected(new Set())
+      exitSelectMode()
       setConfirmDelete(false)
       await load()
     } catch (e: any) {
@@ -272,40 +274,123 @@ function ContactsSpreadsheetInner() {
     }
   }
 
+  const companyCount = companies.length
+  const countLine = loading
+    ? "Loading…"
+    : filtered.length !== contacts.length
+      ? `${filtered.length} of ${contacts.length} people.`
+      : `${contacts.length} ${contacts.length === 1 ? "person" : "people"}${companyCount ? ` across ${companyCount} ${companyCount === 1 ? "company" : "companies"}` : ""}.`
+
   return (
-    <main style={{ padding: "24px", margin: "0 auto", maxWidth: 1280 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+    <main style={{ maxWidth: 1080 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
         <div>
-          <h1 style={headline}>{VIEW_LABELS.contacts.heading}</h1>
-          <p style={{ color: T.MUTED, fontSize: 13, marginTop: 6 }}>
-            {loading ? "Loading…" : `${filtered.length}${filtered.length !== contacts.length ? ` of ${contacts.length}` : ""} contact${contacts.length === 1 ? "" : "s"}`}
-          </p>
+          <div style={eyebrowStyle}>Networking</div>
+          <h1 style={h1Style}>{VIEW_LABELS.contacts.heading}</h1>
+          <p style={{ color: S.text.muted, fontSize: 14.5, marginTop: 6 }}>{countLine}</p>
         </div>
-        <div style={{ display: "flex", gap: 8, flex: "0 0 auto" }}>
-          <a href="/dashboard/network/import" style={{ ...addBtn, textDecoration: "none", display: "inline-block" }}>Import</a>
-          <button onClick={() => setAddOpen(true)} style={addBtn}>+ Add a contact</button>
+        <div style={{ display: "flex", gap: 10, flex: "0 0 auto", alignItems: "center" }}>
+          <a href="/dashboard/network/import" style={{ ...secondaryBtn, textDecoration: "none" }}>Import</a>
+          <button onClick={() => setAddOpen(true)} style={{ ...actionStyle(S, "primary"), ...primarySize }}>
+            + Add contact
+          </button>
         </div>
       </div>
 
       {addOpen && <AddContactForm onClose={() => setAddOpen(false)} onCreated={load} />}
 
-      {/* post-delete / bulk-delete confirmation banner */}
       {banner && (
-        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ color: T.TEXT, fontSize: 13, fontWeight: 700, flex: 1 }}>{banner}</span>
-          <button onClick={() => setBanner(null)} style={{ background: "none", border: "none", color: T.DIM, fontSize: 16, cursor: "pointer" }}>×</button>
+        <div style={noticeStyle}>
+          <span style={{ color: S.text.primary, fontSize: 14, fontWeight: 700, flex: 1 }}>{banner}</span>
+          <button onClick={() => setBanner(null)} aria-label="Dismiss" style={dismissStyle}>×</button>
         </div>
       )}
 
-      {/* bulk-delete action bar, shown when any visible rows are selected */}
-      {effectiveSelected.length > 0 && (
-        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER}`, display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ color: T.TEXT, fontSize: 13, fontWeight: 700, flex: 1 }}>{effectiveSelected.length} selected</span>
-          <button onClick={() => setSelected(new Set())} style={ghostBtn}>Clear selection</button>
-          <button onClick={() => setConfirmDelete(true)}
-            style={{ background: "none", border: `1px solid rgba(255,120,120,0.4)`, color: T.ERROR, borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>
-            Delete {effectiveSelected.length}
+      {contacts.length > 0 && (
+        <div style={{ display: "flex", gap: 12, marginTop: 22, flexWrap: "wrap", alignItems: "center" }}>
+          <input
+            type="search"
+            value={fQuery}
+            onChange={(e) => setFQuery(e.target.value)}
+            placeholder="Search by name, company, title"
+            aria-label="Search contacts"
+            data-testid="contacts-search"
+            style={searchStyle}
+          />
+          <select
+            value={fStage}
+            onChange={(e) => setFStage(e.target.value)}
+            aria-label="Filter by stage"
+            style={selectStyle}
+          >
+            <option value="">All stages</option>
+            {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <select
+            value={fCompany}
+            onChange={(e) => setFCompany(e.target.value)}
+            aria-label="Filter by company"
+            style={selectStyle}
+          >
+            <option value="">All companies</option>
+            <option value={STANDALONE}>No company</option>
+            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <button
+            type="button"
+            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            style={quietBtn}
+          >
+            {selectMode ? "Done selecting" : "Select"}
           </button>
+          {anyFilter && (
+            <button type="button" onClick={clearFilters} style={quietBtn}>Clear filters</button>
+          )}
+        </div>
+      )}
+
+      {/* Filters with no control on this screen still apply, and say so. */}
+      {hiddenFilters.length > 0 && (
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+          {hiddenFilters.map((f) => (
+            <span key={f.key} style={chipStyle}>
+              {f.label}
+              <button
+                type="button"
+                onClick={() => clearParams(f.params)}
+                aria-label={`Clear ${f.label}`}
+                style={chipClearStyle}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {selectMode && (
+        <div style={selectBarStyle}>
+          <button type="button" onClick={toggleAllVisible} style={quietBtn}>
+            {allVisibleSelected ? "Clear all" : `Select all ${filtered.length}`}
+          </button>
+          <span style={{ flex: 1, color: S.text.muted, fontSize: 13.5 }}>
+            {effectiveSelected.length} selected
+          </span>
+          {effectiveSelected.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              style={{
+                background: S.card,
+                border: `1px solid ${S.meaning.error.accent}`,
+                color: S.meaning.error.ink,
+                borderRadius: 10, padding: "8px 16px",
+                fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              Delete {effectiveSelected.length}
+            </button>
+          )}
         </div>
       )}
 
@@ -318,120 +403,37 @@ function ContactsSpreadsheetInner() {
         />
       )}
 
-      {/* Filter bar, hidden until there is something to filter. On a brand-new
-          account six dropdowns and ~40 options sat above the words "No contacts
-          yet", so the first thing a new user met was machinery rather than the
-          invitation.
-
-          Guarded on contacts.length, NOT filtered.length: keying it on the
-          filtered set would make the bar vanish the moment a filter matched
-          nothing, taking the controls needed to clear that filter with it. */}
-      {contacts.length > 0 && (
-      <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <input
-          type="search"
-          value={fQuery}
-          onChange={(e) => setFQuery(e.target.value)}
-          placeholder="Search name, company, title, email"
-          aria-label="Search contacts"
-          data-testid="contacts-search"
-          style={{
-            ...selectStyle, width: 260, height: 34, fontSize: 12,
-            // selectStyle carries a dropdown arrow background; a text input must not.
-            background: T.GLASS, backgroundImage: "none", appearance: "none",
-          }}
-        />
-        <Filter value={fStage} onChange={setFStage} allLabel="All stages">
-          {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k} style={selectOption}>{v}</option>)}
-        </Filter>
-        <Filter value={fPhase} onChange={setFPhase} allLabel="All phases">
-          {PHASE_ORDER.map((p) => <option key={p} value={p} style={selectOption}>{PHASE_LABELS[p]}</option>)}
-        </Filter>
-        <Filter value={fRelationship} onChange={setFRelationship} allLabel="All relationships">
-          <option value={NO_RELATIONSHIP} style={selectOption}>No relationship set</option>
-          {RELATIONSHIPS.map((r) => <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABELS[r]}</option>)}
-        </Filter>
-        <Filter value={fSegment} onChange={setFSegment} allLabel="All segments">
-          {segments.map((s) => <option key={s} value={s} style={selectOption}>{s}</option>)}
-        </Filter>
-        <Filter value={fPriority} onChange={setFPriority} allLabel="All priorities">
-          {PRIORITIES.map((p) => <option key={p} value={p} style={selectOption}>Priority {p}</option>)}
-        </Filter>
-        <Filter value={fCompany} onChange={setFCompany} allLabel="All companies">
-          <option value={STANDALONE} style={selectOption}>Standalone only</option>
-          {companies.map((c) => <option key={c.id} value={c.id} style={selectOption}>{c.name}</option>)}
-        </Filter>
-        <Filter value={fStatus} onChange={setFStatus} allLabel="Any status">
-          <option value="overdue" style={selectOption}>Overdue</option>
-          <option value="due_today" style={selectOption}>Due today</option>
-          <option value="not_started" style={selectOption}>Not started</option>
-          <option value="stalled" style={selectOption}>Stalled {STALLED_DAYS}+ days</option>
-        </Filter>
-        {anyFilter && <button onClick={clearFilters} style={ghostBtn}>Clear</button>}
-        {/* Re-sort gives the ranking back on demand. Only shown once the frozen
-            order actually differs from the server's, so it never sits there as
-            dead chrome. */}
-        {orderStale && (
-          <button onClick={() => void load({ resort: true })} style={ghostBtn} title="Re-rank by most recent activity">
-            Re-sort
-          </button>
-        )}
-      </div>
+      {error && (
+        <div style={{ color: S.meaning.error.ink, fontSize: 14, marginTop: 18 }}>{error}</div>
       )}
 
-      {error && <div style={{ color: T.ERROR, fontSize: 13, marginTop: 16 }}>{error}</div>}
-
       {!loading && !error && filtered.length === 0 && (
-        <div style={{ marginTop: 18, padding: "32px 24px", textAlign: "center", border: `1px dashed ${T.BORDER_SOFT}`, borderRadius: 14, color: T.MUTED, fontSize: 13 }}>
-          {anyFilter ? "No contacts match these filters." : "No contacts yet. Add your first one."}
+        <div style={emptyStyle}>
+          {anyFilter
+            ? "No contacts match these filters."
+            : "No contacts yet. Add your first one and start building your network."}
         </div>
       )}
 
       {filtered.length > 0 && (
-        <div style={{ overflowX: "auto", marginTop: 16, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12 }}>
-          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100, fontSize: 12.5 }}>
-            <thead>
-              <tr>
-                <th style={{ ...th, width: 34, textAlign: "center" }}>
-                  <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Select all" style={{ cursor: "pointer" }} />
-                </th>
-                {["Company", "Name", "Title", FIELD_LABELS.relationship, FIELD_LABELS.priority, FIELD_LABELS.stage, "Last touch", "Due", ""].map((h, i) => (
-                  <th key={i} style={th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ordered.map((c, i) => (
-                <Row
-                  key={c.id}
-                  contact={c}
-                  onChanged={() => handleActed(c.id)}
-                  checked={selected.has(c.id)}
-                  onToggle={() => toggleOne(c.id)}
-                  flash={flashId === c.id}
-                  zebra={i % 2 === 1}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 18 }}>
+          {ordered.map((c) => (
+            <ContactCard
+              key={c.id}
+              contact={c}
+              selectMode={selectMode}
+              checked={selected.has(c.id)}
+              onToggle={() => toggleOne(c.id)}
+              flash={flashId === c.id}
+            />
+          ))}
         </div>
       )}
     </main>
   )
 }
 
-function Filter({ value, onChange, allLabel, children }: {
-  value: string; onChange: (v: string) => void; allLabel: string; children: React.ReactNode
-}) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...selectStyle, width: "auto", height: 34, fontSize: 12 }}>
-      <option value="" style={selectOption}>{allLabel}</option>
-      {children}
-    </select>
-  )
-}
-
-// Confirm modal that names WHO is being deleted, not just the count.
+// Names WHO is being deleted, not just the count.
 function BulkDeleteConfirm({
   contacts, busy, onCancel, onConfirm,
 }: {
@@ -442,7 +444,6 @@ function BulkDeleteConfirm({
 }) {
   const names = contacts.map((c) => `${c.first_name} ${c.last_name}`.trim())
   const n = names.length
-  // Small selection: name them all. Large: name the first few + "and N others".
   const shown = names.slice(0, 3)
   const body =
     n <= 4
@@ -450,41 +451,93 @@ function BulkDeleteConfirm({
       : `Delete ${n} contacts? Including ${shown.join(", ")} and ${n - shown.length} others.`
 
   return (
-    <div style={overlay} onClick={busy ? undefined : onCancel}>
-      <div style={panel} onClick={(e) => e.stopPropagation()}>
-        <div style={{ color: T.TEXT, fontSize: 15, fontWeight: 800, lineHeight: "22px" }}>{body}</div>
-        <div style={{ color: T.MUTED, fontSize: 13, marginTop: 8, lineHeight: "20px" }}>
+    <div style={overlayStyle} onClick={busy ? undefined : onCancel}>
+      <div style={panelStyle} onClick={(e) => e.stopPropagation()}>
+        <div style={{ color: S.text.primary, fontSize: 16, fontWeight: 800, lineHeight: "23px" }}>{body}</div>
+        <div style={{ color: S.text.muted, fontSize: 14, marginTop: 10, lineHeight: "21px" }}>
           This removes their action logs and notes. This can&apos;t be undone.
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <button onClick={onConfirm} disabled={busy}
-            style={{ background: T.ERROR, color: T.INK_ON_ERROR, border: "none", borderRadius: 11, padding: "10px 18px", fontSize: 13, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            style={{
+              background: S.meaning.error.accent, color: "#FFFFFF", border: "none", borderRadius: 10,
+              padding: "11px 20px", fontSize: 14, fontWeight: 800, fontFamily: "inherit",
+              cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+            }}
+          >
             {busy ? "Deleting…" : `Delete ${n}`}
           </button>
-          <button onClick={onCancel} disabled={busy}
-            style={{ background: T.GLASS, color: T.TEXT, border: `1px solid ${T.BORDER}`, borderRadius: 11, padding: "10px 18px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-            Cancel
-          </button>
+          <button onClick={onCancel} disabled={busy} style={secondaryBtn}>Cancel</button>
         </div>
       </div>
     </div>
   )
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed", inset: 0, background: "rgba(4,6,15,0.6)", display: "flex",
+const eyebrowStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase",
+  color: S.meaning.replied.ink, marginBottom: 6,
+}
+const h1Style: React.CSSProperties = {
+  fontSize: 34, fontWeight: 800, letterSpacing: -0.6, color: S.text.primary, margin: 0,
+}
+const primarySize: React.CSSProperties = {
+  borderRadius: 10, padding: "12px 20px", fontSize: 14.5, fontFamily: "inherit",
+}
+const secondaryBtn: React.CSSProperties = {
+  background: S.card, color: S.text.primary, border: `1px solid ${S.border}`,
+  borderRadius: 10, padding: "12px 20px", fontSize: 14.5, fontWeight: 800,
+  cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit", boxShadow: S.shadow.card,
+}
+const quietBtn: React.CSSProperties = {
+  background: "none", border: "none", color: S.action.quietInk,
+  fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "6px 4px",
+}
+const searchStyle: React.CSSProperties = {
+  flex: "1 1 320px", minWidth: 220, background: S.card, border: `1px solid ${S.border}`,
+  borderRadius: 10, padding: "12px 16px", fontSize: 14.5, color: S.text.primary,
+  fontFamily: "inherit", outline: "none", boxShadow: S.shadow.card,
+}
+const selectStyle: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.border}`, borderRadius: 10,
+  padding: "12px 14px", fontSize: 14, fontWeight: 700, color: S.text.primary,
+  fontFamily: "inherit", cursor: "pointer", boxShadow: S.shadow.card,
+}
+const chipStyle: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 6,
+  background: S.meaning.progress.fill, color: S.meaning.progress.ink,
+  borderRadius: 999, padding: "6px 8px 6px 14px", fontSize: 13, fontWeight: 700,
+}
+const chipClearStyle: React.CSSProperties = {
+  background: "none", border: "none", color: "inherit", cursor: "pointer",
+  fontSize: 16, lineHeight: 1, padding: "0 4px", fontFamily: "inherit",
+}
+const selectBarStyle: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 14, marginTop: 14,
+  padding: "10px 16px", borderRadius: 12,
+  background: S.card, border: `1px solid ${S.borderSoft}`, boxShadow: S.shadow.card,
+}
+const noticeStyle: React.CSSProperties = {
+  marginTop: 16, padding: "12px 16px", borderRadius: 12, display: "flex",
+  alignItems: "center", gap: 10,
+  background: S.card, border: `1px solid ${S.borderSoft}`, boxShadow: S.shadow.card,
+}
+const dismissStyle: React.CSSProperties = {
+  background: "none", border: "none", color: S.text.dim, fontSize: 18,
+  cursor: "pointer", fontFamily: "inherit", lineHeight: 1,
+}
+const emptyStyle: React.CSSProperties = {
+  marginTop: 20, padding: "36px 28px", textAlign: "center",
+  border: `1px dashed ${S.border}`, borderRadius: 14,
+  color: S.text.muted, fontSize: 14.5, background: "rgba(255,255,255,0.5)",
+}
+const overlayStyle: React.CSSProperties = {
+  position: "fixed", inset: 0, background: "rgba(19,41,74,0.45)", display: "flex",
   alignItems: "flex-start", justifyContent: "center", padding: "16vh 16px", zIndex: 50,
 }
-const panel: React.CSSProperties = {
-  background: T.CARD, border: `1px solid ${T.BORDER}`, borderRadius: 18, padding: 24, width: "100%", maxWidth: 460,
-}
-const addBtn: React.CSSProperties = {
-  background: T.GLASS, color: T.TEXT, border: `1px solid ${T.BORDER}`, borderRadius: 11,
-  padding: "9px 14px", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", flex: "0 0 auto",
-}
-const ghostBtn: React.CSSProperties = { background: "none", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700, cursor: "pointer" }
-const th: React.CSSProperties = {
-  textAlign: "left", padding: "9px 12px", fontSize: 10, fontWeight: 900, letterSpacing: 0.4,
-  textTransform: "uppercase", color: T.DIM, background: T.NAV_DEFAULT_BG, whiteSpace: "nowrap",
-  position: "sticky", top: 0,
+const panelStyle: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.borderSoft}`, borderRadius: 18,
+  padding: 26, width: "100%", maxWidth: 470, boxShadow: S.shadow.raised,
 }

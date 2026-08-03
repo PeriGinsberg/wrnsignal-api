@@ -53,7 +53,9 @@ const ROSTER = [
       last_action_at: new Date(Date.now() - 20 * 86400000).toISOString() }),
 ]
 
-const names = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "")
+// Cards, not a table, since the step-3 redesign. Selector changed, assertions
+// below are untouched: what they protect is that a deep-linked filter applies.
+const names = () => screen.queryAllByTestId("contact-card").map((r) => r.textContent ?? "")
 const shows = (n: string) => names().some((t) => t.includes(n))
 
 afterEach(cleanup)
@@ -68,7 +70,11 @@ beforeEach(() => {
 async function renderWith(qs: string) {
   params = new URLSearchParams(qs)
   const utils = render(<ContactsPage />)
-  await waitFor(() => expect(screen.queryAllByRole("row").length).toBeGreaterThan(1))
+  // Wait for the LOAD to finish, not for a card count. A deep-linked filter can
+  // legitimately match a single contact, or none, so counting cards here would
+  // hang exactly on the cases these tests exist to cover. The filter bar renders
+  // as soon as contacts arrive, whatever the filter then matches.
+  await waitFor(() => expect(screen.queryAllByTestId("contacts-search").length).toBe(1))
   return utils
 }
 

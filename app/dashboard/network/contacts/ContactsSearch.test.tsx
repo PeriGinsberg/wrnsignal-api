@@ -57,9 +57,12 @@ const ROSTER = [
       email: "ida@northpoint.io", network_companies: { name: "Northpoint" } }),
 ]
 
-const rows = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "")
+// The list is cards, not a table, since the step-3 redesign. These helpers moved
+// off getAllByRole("row") onto the card testid; every assertion below is
+// unchanged, because what they protect is the FILTERING, not the markup.
+const rows = () => screen.queryAllByTestId("contact-card").map((r) => r.textContent ?? "")
 const shows = (n: string) => rows().some((t) => t.includes(n))
-const visible = () => (screen.queryAllByRole("row").length ? rows().length : 0)
+const visible = () => rows().length
 const box = () => screen.getByTestId("contacts-search") as HTMLInputElement
 
 afterEach(cleanup)
@@ -167,7 +170,7 @@ describe("search composes with the existing filters", () => {
 
   it("Clear wipes the search term along with the dropdowns", async () => {
     const { rerender } = await arrive("stage=replied&q=litig")
-    fireEvent.click(screen.getByRole("button", { name: /^Clear$/ }))
+    fireEvent.click(screen.getByRole("button", { name: /^Clear filters$/ }))
     rerender(<ContactsPage />)
     await waitFor(() => expect(visible()).toBe(5))
     expect(box().value).toBe("")
