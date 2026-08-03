@@ -47,11 +47,20 @@ as well as in the funnel. This is a designed step, not a duplication. Do not col
 
 ## 2. The shape rule: what prevents the next overload
 
-**Status = filled pill. Group identity = 3px left rail.**
+**Status = dot + text. Group identity = 3px left rail.**
+
+> **Amended 2026-08-03.** Status was "a filled pill" from the original audit until the light
+> theme landed. It is now a coloured dot plus plain coloured text (`status()` in
+> `lib/theme/surfaces.ts`). The reason is the action rule in §6.9: a filled pill looks
+> tappable, and on light the only tappable-looking thing is allowed to be a peach action
+> button. The dark theme still renders status as pills, and `pill()` is retained for that
+> plus chips and counts. The original wording is kept below because the rail half of the
+> rule is unchanged and the pill half is still live on dark.
 
 A colour may carry both a status and a group meaning **because the shape disambiguates**:
 
-- A **filled pill** always answers *what state is this contact in?* (`pillStyle()`)
+- A **status mark** always answers *what state is this contact in?* (`status()` on light,
+  `pillStyle()` on dark)
 - A **3px left rail + coloured section header** always answers *what family is this?*
 
 Green in a pill means the contact replied. Green on a rail means the Replies section.
@@ -114,6 +123,7 @@ fill). Colouring auto items ice blue too would make the menu disagree with the m
 
 | Surface | State |
 |---|---|
+| Light theme tokens (`lib/theme/surfaces.ts`) | ✅ done 2026-08-03, see §6. No screen consumes them yet |
 | Theme tokens | ✅ done |
 | Phase palette (`alive` merged, `won` → gold) | ✅ done |
 | Save-confirmations → neutral | ✅ done (7 sites) |
@@ -148,10 +158,12 @@ fill). Colouring auto items ice blue too would make the menu disagree with the m
 
 ---
 
-## 6. The light theme (PROPOSAL, not applied)
+## 6. The light theme (APPLIED to tokens 2026-08-03)
 
-Light cards on the navy page. Networking is the pilot; the token set below is written to
-be product-wide, not networking-only. **Nothing is applied yet.** No screen has changed.
+The ground lightens and navy becomes structure. The token set below is product-wide, not
+networking-only, and is **live in `lib/theme/surfaces.ts`**. No screen consumes it yet:
+the redesign applies it screen by screen, starting with the nav shell. The dark tokens are
+unchanged and dormant, so light is a token flip rather than a deletion.
 
 ### 6.1 The problem this had to solve
 
@@ -168,62 +180,127 @@ band and collapses exactly those pairs. Measured, on a first pass of naive darke
 On the dark theme ice blue beat `WRN_BLUE` by luminance `0.933` against `0.373`. Darkening
 both for white throws that separation away.
 
-**The fix is structural, not another hue hunt.** Every meaning gets TWO values on light:
+**The fix is structural, not another hue hunt.** Every meaning gets THREE values on light.
+The measurement that forces it: **no brand hue clears 4.5:1 as text on white.**
 
-- **`ink`** - the dark value, for text, rails, borders and icons
-- **`fill`** - the pale tint, for pill and circle backgrounds, always with its own `ink` on top
+| Hue | As text on white |
+|---|---|
+| Peach `#FEB06A` | 1.81 |
+| Blue `#51ADE5` | 2.48 |
+| Gold `#D4A444` | 2.28 |
+| Pink `#FF8FB0` | 2.14 |
+| Purple `#B679E0` | 3.09 |
+| Red `#E5484D` | 3.91 |
+| Teal `#218C8C` | 4.04 |
 
-Pairs that collapsed as two inks no longer meet as two inks. A status pill is `ink` on
-`fill`; a group rail is a bar of `ink`. The §2 shape rule does the separating, and it does
-more work on light than it ever had to on dark.
+So a meaning cannot be one hex on light. It is three, each with one job:
+
+- **`ink`** the darkened value, for status TEXT and the status DOT, both the same value so a
+  mark and its label match. Also icons.
+- **`accent`** the brand hue at full chroma, for initial tiles, 3px group rails, progress
+  fills and orb gradients. Structural colour, never text.
+- **`fill`** the pale tint, for chips and soft backgrounds, always with its own `ink` on top.
+
+Pairs that collapsed as two inks no longer meet as two inks. A status is a dot plus text; a
+group rail is a bar of `accent`. The §2 shape rule does the separating, and it does more work
+on light than it ever had to on dark.
 
 ### 6.2 Surfaces
 
 | Role | Value | Note |
 |---|---|---|
-| Page | `#13294A` | unchanged, the existing `T.BG` navy |
-| Card surface | `#F7F9FC` | soft cool off-white; 13.79:1 against the page |
-| Raised / active card | `#FFFFFF` | brighter than the base surface, so raised reads as raised |
-| Input well | `#EDF1F7` | recessed a step below the card |
-| Border | `#D6DEE8` | hairline on light |
-| Border soft | `#E3E6EA` | for internal dividers |
+| Page | `radial-gradient(120% 120% at 50% 0%, #f0f9fc 0%, #e6f4f9 100%)` | the cool ground, gently glowing, not flat |
+| Page flat | `#EAF5FA` | solid fallback where a gradient cannot go |
+| Card | `#FFFFFF` | white, lifted by shadow |
+| Raised / active card | `#FFFFFF` | same colour, more elevation |
+| Input well | `#F4F8FB` | recessed a step below the card |
+| Border | `#DCE6EF` | hairline on light |
+| Border soft | `#E8EFF5` | for internal dividers |
+| Shadow, card | `0 1px 2px rgba(19,41,74,0.04), 0 4px 12px rgba(19,41,74,0.06)` | navy tinted, never black |
+| Shadow, raised | `0 2px 4px rgba(19,41,74,0.05), 0 10px 28px rgba(19,41,74,0.10)` | the lift for an active card |
 
-Pure white is the RAISED state, not the base. An off-white base means a raised card has
-somewhere brighter to go, and it takes the glare off a full page of cards.
+**Cards separate by shadow, not by tint.** White against the ground is a 1.13:1 luminance
+step, which is deliberate: elevation carries the separation and the ground stays calm. This
+reverses the earlier proposal, where the base card was off-white so a raised card had
+somewhere brighter to go. `raised` and `card` are now the same white, and a component asks
+for `surfaceCard(s, lifted)` to get the right shadow. If a future component genuinely needs a
+surface brighter than white, add a token then rather than reserving one now.
+
+A black shadow on a blue ground reads as dirt, which is why every shadow is navy tinted.
 
 ### 6.3 Text on light
 
-| Role | Value | Contrast on card |
-|---|---|---|
-| Primary | `#13294A` | 13.79 |
-| Secondary | `#3D5878` | 6.95 |
-| Muted | `#5E7A99` | 4.22, large text and labels only |
-| Dim | `#8AA0B8` | 2.55, decorative and placeholder only |
+| Role | Value | On card | On ground | On well |
+|---|---|---|---|---|
+| Primary | `#13294A` | 14.55 | 12.93 | 13.62 |
+| Secondary | `#3D5878` | 7.33 | 6.52 | 6.86 |
+| Muted | `#526C87` | 5.45 | 4.85 | 5.15 |
+| Dim | `#8299B3` | 2.93 | 2.61 | 2.75, decorative and placeholder only |
 
-Primary text is the page navy itself. The background of the app is the ink of the cards,
-which is what keeps the two themes feeling like one product.
+Primary text is the structural navy itself, which is what keeps the two themes feeling like
+one product. `muted` moved from `#5E7A99`, which measured 3.96 on the ground and would have
+failed on every page. All values are now measured against three surfaces, not one, because
+the ground is a surface text actually sits on.
 
 ### 6.4 Every meaning, re-tuned for white
 
-Meaning is preserved; only the surface flipped. All eleven clear 4.5:1 both as ink on the
-card and as ink on their own fill.
+Meaning is preserved; only the surface flipped. Every `ink` clears 4.5:1 on all three light
+surfaces (card, ground, well) and on its own `fill`. The `ink worst` column is the lowest of
+the three, so it is the number that actually has to hold.
 
-| Meaning | Ink | Fill | ink-on-fill | ink-on-card |
-|---|---|---|---|---|
-| Attention, act here, overdue | `#9A4708` | `#FDEBD3` | 5.49 | 6.07 |
-| Responded / alive | `#116C34` | `#DCF5E4` | 5.66 | 6.19 |
-| We actually spoke | `#046A5A` | `#CBEDE4` | 5.22 | 6.19 |
-| Achieved / done | `#7A5B10` | `#F6EAC2` | 5.24 | 5.98 |
-| In progress | `#185E8C` | `#DBEAF7` | 5.67 | 6.60 |
-| The sequence (group) | `#0B6076` | `#D2EFF7` | 5.91 | 6.75 |
-| LinkedIn (group) | `#BE185D` | `#FBDFEB` | 4.85 | 5.72 |
-| Long game | `#6D28D9` | `#E9E1FB` | 5.63 | 6.74 |
-| Dormant / resting | `#A34848` | `#F7E2E2` | 4.73 | 5.57 |
-| Error / destructive | `#B3261E` | `#FBE2E0` | 5.31 | 6.20 |
-| Not started | `#4E6B88` | `#E8EDF4` | 4.72 | 5.26 |
+| Meaning | Ink | Accent | Fill | ink worst | ink on fill |
+|---|---|---|---|---|---|
+| Attention, act here, overdue | `#95500E` | `#FEB06A` | `#FDECD9` | 5.44 | 5.30 |
+| Responded / alive | `#17706F` | `#218C8C` | `#D6EFEC` | 5.21 | 4.86 |
+| We actually spoke | `#0F5C55` | `#1B7A72` | `#CDEAE4` | 6.96 | 6.15 |
+| Achieved / done | `#8A6410` | `#D4A444` | `#F7EBCC` | 4.77 | 4.53 |
+| In progress | `#1F6FA8` | `#51ADE5` | `#DCEDF9` | 4.79 | 4.50 |
+| The sequence (group) | `#0F6478` | `#DCFEFF` | `#DCFEFF` | 6.00 | 6.31 |
+| LinkedIn (group) | `#C2185B` | `#FF8FB0` | `#FDE3EC` | 5.22 | 4.86 |
+| Long game | `#7B3FB5` | `#B679E0` | `#EDE4F9` | 5.80 | 5.30 |
+| Dormant / resting | `#6E5C79` | `#A98FB8` | `#EFEAF3` | 5.38 | 5.11 |
+| Error / destructive | `#C0322F` | `#E5484D` | `#FBE4E3` | 4.99 | 4.63 |
+| Not started | `#4E6B88` | `#D3DCE6` | `#E9EEF4` | 4.94 | 4.76 |
 
-The replies group keeps the replied green and the fill-at-send bracket keeps the attention
-warm, exactly as on dark. One meaning, one colour, both themes.
+Two notes on the accent column. The two icon-family accents, pink `#FF8FB0` and purple
+`#B679E0`, land as the accents for LinkedIn and long game, so the icon set and the meaning
+set share one vocabulary instead of drifting apart. And the green that carried "responded" on
+dark becomes teal on light: `#218C8C` is the brand's own colour and the light palette has no
+separate green, so the two-step progression in §1 is now teal into deeper teal rather than
+green into mint.
+
+The fill-at-send bracket keeps the attention warm, exactly as on dark. One meaning, one
+place in the table, both themes.
+
+### 6.4a Orbs
+
+Primary actions and navigation choices render as glowing gradient orb-buttons. Text sits
+across the whole sweep, so the ink has to clear 4.5:1 at **every stop**, not on average.
+
+| Orb | Gradient | Ink | Worst stop |
+|---|---|---|---|
+| Peach, network and act | `#FEB06A` to `#F0913F` | navy `#13294A` | 6.11 |
+| Blue, track and info | `#7FC8EF` to `#4FA3D8` | navy `#13294A` | 5.24 |
+| Teal, score and JobFit | `#1B7A72` to `#16605C` | white `#FFFFFF` | 5.16 |
+
+Light-tinted orbs take navy ink; the one saturated orb takes white. White on the mockup's
+lighter blue measured 2.48 and was rejected. Keeping blue light and flipping its ink to navy
+preserves the intended look and matches what peach already does.
+
+### 6.4b The navy hero
+
+Navy is structure on light: the nav, hero panels and initial tiles.
+
+| Role | Value | On navy |
+|---|---|---|
+| Background | `radial-gradient(70% 90% at 88% 6%, rgba(254,176,106,0.16), transparent 62%), radial-gradient(120% 140% at 12% 0%, #1B3A63 0%, #13294A 55%, #0E1F38 100%)` | 11.46 for white |
+| Ink | `#FFFFFF` | 14.55 |
+| Muted | `#9DB6D0` | 6.95 |
+| Link | `#7FC4EC` | 7.63 |
+| Accent, progress fills | `#FEB06A` | 8.06 |
+
+Carried over from the dark theme's hero, which is why the navy panels already look like
+SIGNAL rather than like a new app.
 
 ### 6.5 The two tight pairs, and why they are safe
 
@@ -241,9 +318,14 @@ it breaks, so that is the thing to check when applying, not the hex values.
 ### 6.6 Gradient buttons
 
 `GRAD_PRIMARY` (`#FEB06A` to `#51ADE5`) was built for a dark surface and reads washed out on
-white. On light, the primary button becomes solid page navy `#13294A` with white text, which
-inverts cleanly against a light card and needs no gradient at all. The gradient stays the
-dark theme's.
+white. It stays the dark theme's.
+
+An earlier draft of this section made the light primary button solid navy with white text,
+on the grounds that peach read washed out. **That is superseded.** The judgement was made
+while peach also had to serve as the attention meaning, which forced it to be legible as
+text and therefore darkened past the point where it looked like the brand. Now that peach is
+action only (§6.9) it can stay at full chroma and take navy ink at 6.11:1. The light primary
+is the peach gradient `#FEB06A` to `#F0913F` with navy `#13294A` ink.
 
 ### 6.7 Token structure
 
@@ -251,28 +333,85 @@ Written so this is not networking-only:
 
 ```ts
 // lib/theme/surfaces.ts
-export type Meaning = { ink: string; fill: string }
+export type Meaning = { ink: string; accent: string; fill: string }
 export type Surface = {
-  page: string; card: string; raised: string; well: string
-  border: string; borderSoft: string
+  name: "dark" | "light"
+  page: string; pageFlat: string; card: string; raised: string; well: string
+  border: string; borderSoft: string; shadow: { card: string; raised: string }
   text: { primary: string; secondary: string; muted: string; dim: string }
   meaning: Record<MeaningKey, Meaning>
+  row: RowOverlays
+  action: Action; hero: Hero; orb: Record<"peach" | "blue" | "teal", OrbStyle>
 }
-export const DARK: Surface = { ... }   // today's T, restated in this shape
-export const LIGHT: Surface = { ... }  // the table above
+export const DARK: Surface = { ... }   // unchanged, dormant
+export const LIGHT: Surface = { ... }  // the tables above
 ```
 
-Components read `surface.meaning.attention.ink` rather than `T.WRN_ORANGE`, so a screen is
-themed by which `Surface` it is handed. `pillStyle()` becomes `pillStyle(surface, phase)`
-and returns `ink` on `fill`. Existing `T.*` stays exported and unchanged during the
+Components read `surface.meaning.replied.ink` rather than `T.SUCCESS`, so a screen is themed
+by which `Surface` it is handed. Existing `T.*` stays exported and unchanged during the
 migration, so no screen breaks while they move across one at a time.
 
-### 6.8 What is NOT decided here
+Helpers, all taking a `Surface` first:
 
-- Whether the page background stays navy or also lightens.
-- The hover, selected and just-changed row overlays (`ROW_*`), which are white-alpha today
-  and need dark-alpha equivalents on light.
-- Whether the dark theme survives as a user choice or the light one replaces it.
+| Helper | Returns |
+|---|---|
+| `status(s, key)` | `{ dot, text }`, both the meaning's ink. The status shape. |
+| `rail(s, key \| null)` | 3px left border of the meaning's accent. Null keeps the inset. |
+| `action(s, tier)` | The one action shape. `primary` filled peach, `optional` outline. |
+| `orb(s, key)` | Gradient fill, colour glow, the ink that survives every stop. |
+| `surfaceCard(s, lifted)` | Card background, border and the right elevation shadow. |
+| `tile(s, key)` | Phase-coloured initial tile, built on `accent`. |
+| `tileStructural(s)` | The navy initial tile for an active card. |
+| `tileIdle(s)` | The flat colourless tile for something nobody has worked yet. |
+| `pill(s, key)` | Retained for chips, counts and dark-theme status. Not the light status shape. |
+
+### 6.8 Resolved, and what is still open
+
+Resolved since the proposal:
+
+- **The page lightens.** It is the cool light-blue radial ground, not navy. Navy becomes
+  structure only: nav, heroes, initial tiles.
+- **The row overlays** are dark-alpha on light: stripe `rgba(19,41,74,0.030)`, hover
+  `rgba(19,41,74,0.055)`, selected `rgba(31,111,168,0.10)`, flash `rgba(31,111,168,0.20)`.
+- **Light ships, dark stays dormant.** Not deleted, so a toggle remains possible.
+
+Still open:
+
+- Whether dark is ever offered as a user choice, or stays an internal fallback.
+- Whether the coach surfaces adopt the light theme in stage 2 or keep their own treatment.
+
+### 6.9 Peach is action, and only action
+
+The rule that the whole light theme hangs on: **an action is always a filled peach button,
+and peach appears nowhere else.** This makes "what do I click" unmistakable on a page with no
+other tappable-looking colour.
+
+It is enforced structurally, not by convention. On light, peach is **not reachable through
+`meaning`**. It lives in `action` and `orb.peach`, so a status lookup cannot return it:
+
+| Role | Token | Value |
+|---|---|---|
+| Action fill | `action.fill` | `linear-gradient(135deg, #FEB06A, #F0913F)` |
+| Action ink | `action.ink` | `#13294A`, 6.11 at the darkest stop |
+| Action glow | `action.glow` | `0 2px 6px rgba(240,145,63,0.28), 0 8px 20px rgba(240,145,63,0.18)` |
+| Optional tier border | `action.outlineBorder` | `#F0913F` |
+| Optional tier ink | `action.outlineInk` | `#95500E`, 6.12 on white |
+| Quiet inline link | `action.quietInk` | `#1F6FA8` |
+| Attention as TEXT | `meaning.attention.ink` | `#95500E`, for "none yet" and overdue |
+| Attention as structure | `meaning.attention.accent` | `#FEB06A`, for rails and tiles only |
+
+**Attention and action have split on light and stay one colour on dark.** §1's "warm owns
+attention, and only attention" is still true of the dark theme. On light the sentence
+becomes two: peach owns *action* as a fill, and darkened peach owns *attention* as text. They
+never collide because they never appear in the same shape. This is the same reasoning that
+moved `PHASE.won` off `#FEB06A` to gold in §1, applied one level up.
+
+The action tiers, from the build plan:
+
+1. **Filled peach** means do this now.
+2. **Outline** means optional, for example "Apply" on a job that is only saved.
+3. **Nothing** means no action. The absence of a button, never a disabled one, because a
+   greyed button still reads as a thing you failed to earn.
 
 ---
 
