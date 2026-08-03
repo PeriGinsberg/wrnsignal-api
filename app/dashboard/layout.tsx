@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
-import { T, input, btnPrimary, card, eyebrow } from "../../lib/dashboard-theme"
+import { T, eyebrow } from "../../lib/dashboard-theme"
+import { LIGHT } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
 import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
 
@@ -12,6 +13,16 @@ import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
 //   • Coach: Coaches Center group (Dashboard / Required Actions / My
 //     Clients), then My Account, then Back to SIGNAL. Job Tracker +
 //     ResumeRx hidden from coach nav.
+//
+// Redesign step 2 (2026-08-03): the D2C shell moves to the light theme. The
+// nav stays NAVY because navy is structure in the new language; what changes
+// is the ground the pages sit on and the nav's own active treatment. Peach is
+// gone from the nav entirely: it is the action colour and a nav item is a
+// place, not an action. See COLOR-SYSTEM.md section 6.9.
+//
+// Coach routes are deliberately NOT converted. They keep the dark shell until
+// the Coaches Center pass in stage 2, so this change cannot break a surface it
+// was not designed for. `isD2C` and `useLight` below are the only switches.
 
 type NavItem = {
   // Optional: action items (e.g. Feedback) render as a <button> with no href.
@@ -27,18 +38,40 @@ type NavItem = {
   /** Opens in a new browser tab via a plain anchor (target="_blank").
    *  For static/external resources like the Coaches Guide PDF. */
   newTab?: boolean
+  /**
+   * Sub-nav, revealed only while the parent is the active section. Networking
+   * is the one section whose views are real routes, so it is the one that
+   * nests. Job Tracker's Applications / Interviews / History are an in-page
+   * tab strip, per the mockups, so it stays a single entry.
+   */
+  children?: NavItem[]
 }
 type NavGroup = { header: string; items: NavItem[] }
 
 const D2C_NAV: NavGroup[] = [
   {
-    header: "DASHBOARD",
+    header: "MY ACCOUNT",
     items: [
-      { href: "/dashboard", label: "My Account" },
-      { href: "/dashboard/tracker", label: "Job Tracker" },
-      // matchPrefix so the whole tracker keeps the nav highlighted — its own tab
-      // strip owns Today / Contacts / Companies underneath this one entry.
-      { href: "/dashboard/network", label: "Networking", matchPrefix: true },
+      { href: "/dashboard", label: "Dashboard" },
+      // matchPrefix so a future application detail page keeps the section lit.
+      { href: "/dashboard/tracker", label: "Job Tracker", matchPrefix: true },
+      {
+        href: "/dashboard/network",
+        label: "Networking",
+        matchPrefix: true,
+        // Templates is gone for phase one, and Summary is dropped in favour of
+        // the Dashboard being the single "what needs you" surface.
+        children: [
+          { href: "/dashboard/network/companies", label: "Companies", matchPrefix: true },
+          { href: "/dashboard/network/contacts", label: "Contacts", matchPrefix: true },
+        ],
+      },
+      { href: "/dashboard/profile", label: "My Profile", matchPrefix: true },
+      // TEMPORARY (redesign step 2). Students have never had a sign-out; the
+      // designed home for it is My Profile > Account, which is several screens
+      // away. This entry closes the functional gap in the meantime.
+      // REMOVE when the My Profile Account section lands.
+      { label: "Log out", action: "logout" },
     ],
   },
 ]
@@ -91,9 +124,30 @@ const COACH_NAV: NavGroup[] = [
   },
 ]
 
+/**
+ * Routes whose screens have been redesigned into the light theme. Only these
+ * get the light ground; everything else keeps the dark shell so an unconverted
+ * page never renders dark cards on a pale background.
+ *
+ * Grows one entry per screen as the redesign lands. Empty means the ground is
+ * off everywhere and only the nav has changed, which is the state step 2 ships
+ * in. Matching is exact-or-descendant, so "/dashboard/network" also covers
+ * "/dashboard/network/contacts".
+ */
+const LIGHT_ROUTES: string[] = []
+
+/**
+ * The WORK ON A JOB zone, as one entry rather than three.
+ *
+ * The design calls for JobFit, Positioning and Cover Letter as separate nav
+ * items, but Framer serves all three as tabs inside a single /signal/jobfit
+ * page. Three items pointing at one URL would promise three places and deliver
+ * one. So this is the hub, named for what it is. It splits into three when the
+ * Phase C Framer reskin gives those tabs real routes.
+ */
 const EXTERNAL_NAV_ITEM: NavItem = {
   href: `${FRAMER_URL}/signal/jobfit`,
-  label: "Back to SIGNAL →",
+  label: "Work on a job →",
   external: true,
 }
 
@@ -369,65 +423,146 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // navigation (window.location) — not router.push — guarantees the layout
   // re-initializes from scratch in the unauthenticated state.
   async function handleLogout() {
+    const supabase = getSupabaseBrowser()
+
+    // A plain signOut() is a GLOBAL sign-out, which needs a round trip to the
+    // auth server to revoke the refresh token. When that call fails, and it does
+    // (an already-expired token answers 403, and the Framer handoff path stores
+    // an access token that was never a valid refresh token), supabase-js throws
+    // BEFORE clearing local storage. The old empty catch swallowed that and
+    // redirected anyway, so the session survived the redirect and the user
+    // landed straight back in a signed-in dashboard. Sign-out looked like it did
+    // nothing. Found 2026-08-03 while wiring the student Log out entry; the
+    // coach nav has been carrying the same bug.
+    //
+    // So: attempt the global revoke, then ALWAYS follow with a local sign-out,
+    // which is pure local teardown and cannot fail on the network.
     try {
-      await getSupabaseBrowser().auth.signOut()
+      await supabase.auth.signOut()
     } catch {
-      // ignore — we redirect regardless; the storage clears below still run
+      // Server-side revoke failed. The local teardown below is what actually
+      // signs this browser out, so carry on.
     }
+    try {
+      await supabase.auth.signOut({ scope: "local" })
+    } catch {
+      // Belt and braces below covers even this.
+    }
+
     if (typeof window !== "undefined") {
+      // The session lives in two places (no @supabase/ssr):
+      //   1. Supabase's own key in localStorage, sb-<ref>-auth-token.
+      //   2. signal_handoff_token in sessionStorage, the Framer-handoff bearer
+      //      that getToken() falls back to across pages.
+      // Both must go or the next load restores the session. Sweeping the sb-
+      // prefix by hand is the guarantee that no storage survives a failed
+      // signOut, whatever the cause.
+      try {
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("sb-")) localStorage.removeItem(key)
+        }
+      } catch {
+        // Storage unavailable, e.g. blocked cookies. Nothing else to do.
+      }
       sessionStorage.removeItem("signal_handoff_token")
       sessionStorage.removeItem("signal_from_framer")
+      // A full navigation, not router.push, so the layout re-initialises from
+      // scratch in the unauthenticated state.
       window.location.href = "/dashboard"
     }
   }
 
+  // The entry screens are light. They are the first thing a student sees, and a
+  // dark sign-in leading into a light app undercuts the whole first impression.
+  // Deliberately a SMALL pass: the ground, the card, the input well and the one
+  // peach action. Not the full treatment, which arrives with the real screens.
+  // A coach signing in sees this too, then lands on the dark coach shell. That
+  // is a brief mismatch for one person and is accepted rather than designed for.
+  const authInput: React.CSSProperties = {
+    width: "100%",
+    background: LIGHT.well,
+    border: `1px solid ${LIGHT.border}`,
+    borderRadius: 10,
+    padding: "12px 14px",
+    fontSize: 14,
+    color: LIGHT.text.primary,
+    fontFamily: "inherit",
+    outline: "none",
+    boxSizing: "border-box",
+  }
+  const authLabel: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: LIGHT.text.muted,
+  }
+  const authCard: React.CSSProperties = {
+    background: LIGHT.card,
+    border: `1px solid ${LIGHT.borderSoft}`,
+    borderRadius: 16,
+    boxShadow: LIGHT.shadow.raised,
+    padding: 28,
+    marginTop: 24,
+  }
+  const authWordmark = (
+    <div style={{ textAlign: "center", marginBottom: 8 }}>
+      <span style={{ fontSize: 26, fontWeight: 950, fontStyle: "italic", letterSpacing: -0.5, color: LIGHT.text.primary }}>
+        SIGNAL
+      </span>
+      <div style={{ width: 16, height: 4, background: T.WRN_ORANGE, borderRadius: 1, margin: "6px auto 0" }} />
+    </div>
+  )
+
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: T.BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: T.MUTED, fontSize: 13 }}>Loading...</span>
+      <div style={{ minHeight: "100vh", background: LIGHT.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ color: LIGHT.text.muted, fontSize: 13 }}>Loading...</span>
       </div>
     )
   }
 
   if (status === "unauthed") {
     return (
-      <div style={{ minHeight: "100vh", background: T.BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: "100vh", background: LIGHT.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: 360 }}>
-          <div style={{ textAlign: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: 26, fontWeight: 950, fontStyle: "italic", letterSpacing: -0.5, color: "#ffffff" }}>SIGNAL</span>
-            <div style={{ width: 16, height: 4, background: T.WRN_ORANGE, borderRadius: 1, margin: "6px auto 0" }} />
-          </div>
+          {authWordmark}
 
           {linkSent ? (
-            <div style={{ ...card, padding: 28, textAlign: "center", marginTop: 24 }}>
-              <div style={{ ...eyebrow, color: T.SUCCESS }}>LINK SENT</div>
-              <p style={{ fontSize: 14, color: T.TEXT, marginTop: 12, fontWeight: 950, letterSpacing: -0.3 }}>Check your email</p>
-              <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, lineHeight: "20px" }}>
-                We sent a sign-in link to <span style={{ color: T.WRN_BLUE }}>{email}</span>
+            <div style={{ ...authCard, textAlign: "center" }}>
+              <div style={{ ...authLabel, color: LIGHT.meaning.replied.ink }}>LINK SENT</div>
+              <p style={{ fontSize: 15, color: LIGHT.text.primary, marginTop: 12, fontWeight: 800, letterSpacing: -0.2 }}>
+                Check your email
+              </p>
+              <p style={{ fontSize: 13, color: LIGHT.text.muted, marginTop: 8, lineHeight: "20px" }}>
+                We sent a sign-in link to{" "}
+                <span style={{ color: LIGHT.meaning.progress.ink, fontWeight: 700 }}>{email}</span>
               </p>
               <button
                 onClick={() => { setLinkSent(false); setEmail("") }}
-                style={{ background: "none", border: "none", color: T.DIM, fontSize: 12, cursor: "pointer", marginTop: 16 }}
+                style={{ background: "none", border: "none", color: LIGHT.action.quietInk, fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 16, fontFamily: "inherit" }}
               >
                 Use a different email
               </button>
             </div>
           ) : (
-            <form onSubmit={sendMagicLink} style={{ ...card, padding: 28, marginTop: 24 }}>
-              <div style={{ height: 3, background: T.GRAD_PRIMARY, borderRadius: "18px 18px 0 0", margin: "-28px -28px 24px" }} />
-              <label style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.5, color: T.WRN_BLUE }}>EMAIL ADDRESS</label>
+            <form onSubmit={sendMagicLink} style={authCard}>
+              <label style={authLabel}>Email address</label>
               <input
                 type="email"
                 required
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ ...input, marginTop: 8 }}
+                style={{ ...authInput, marginTop: 8 }}
               />
               {showDevAuth && (
                 <>
-                  <label style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.5, color: T.WRN_BLUE, marginTop: 16, display: "block" }}>
-                    PASSWORD <span style={{ color: T.DIM, fontWeight: 400 }}>(dev only — leave blank for magic link)</span>
+                  <label style={{ ...authLabel, marginTop: 16, display: "block" }}>
+                    Password{" "}
+                    <span style={{ color: LIGHT.text.dim, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                      (dev only, leave blank for a magic link)
+                    </span>
                   </label>
                   <input
                     type="password"
@@ -440,12 +575,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         signInWithPassword()
                       }
                     }}
-                    style={{ ...input, marginTop: 8 }}
+                    style={{ ...authInput, marginTop: 8 }}
                   />
                 </>
               )}
-              {error && <p style={{ fontSize: 12, color: T.ERROR, marginTop: 8 }}>{error}</p>}
-              <button type="submit" disabled={sending || passwordSubmitting} style={{ ...btnPrimary, width: "100%", marginTop: 16, opacity: sending || passwordSubmitting ? 0.5 : 1 }}>
+              {error && (
+                <p style={{ fontSize: 13, color: LIGHT.meaning.error.ink, marginTop: 10 }}>{error}</p>
+              )}
+              {/* The one action on the screen, so it is the one peach thing. */}
+              <button
+                type="submit"
+                disabled={sending || passwordSubmitting}
+                style={{
+                  width: "100%",
+                  marginTop: 18,
+                  padding: "13px 20px",
+                  borderRadius: 10,
+                  border: "none",
+                  fontFamily: "inherit",
+                  fontSize: 15,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  background: LIGHT.action.fill,
+                  color: LIGHT.action.ink,
+                  boxShadow: LIGHT.action.glow,
+                  opacity: sending || passwordSubmitting ? 0.55 : 1,
+                }}
+              >
                 {sending ? "Sending..." : "Send magic link"}
               </button>
               {showDevAuth && (
@@ -454,12 +610,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onClick={signInWithPassword}
                   disabled={sending || passwordSubmitting || !email.trim() || !password}
                   style={{
-                    ...btnPrimary,
                     width: "100%",
                     marginTop: 10,
-                    background: "rgba(255,255,255,0.06)",
-                    border: `1px solid ${T.BORDER_SOFT}`,
-                    color: T.TEXT,
+                    padding: "12px 20px",
+                    borderRadius: 10,
+                    fontFamily: "inherit",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    background: LIGHT.card,
+                    border: `1px solid ${LIGHT.border}`,
+                    color: LIGHT.text.secondary,
                     opacity: (sending || passwordSubmitting || !email.trim() || !password) ? 0.5 : 1,
                   }}
                 >
@@ -473,23 +634,64 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  // D2C nav, with the coached-only "Coaching Hub" item injected into the
-  // DASHBOARD group when this account has an active coach. Non-coached D2C users
-  // never see it. (is_coach users render COACH_NAV, so the item is D2C-only.)
+  // D2C nav, with the coached-only "Coaches Hub" item injected into the
+  // MY ACCOUNT group when this account has an active coach. Non-coached D2C
+  // users never see it, which is the case for both usability-test students.
+  // (is_coach users render COACH_NAV, so the item is D2C-only.) It sits above
+  // My Profile so the settings entry stays last in the list.
   const d2cNav: NavGroup[] = coached
-    ? D2C_NAV.map((g) =>
-        g.header === "DASHBOARD"
-          ? { ...g, items: [...g.items, { href: "/dashboard/coaching-hub", label: "Coaching Hub", matchPrefix: true }] }
-          : g,
-      )
+    ? D2C_NAV.map((g) => {
+        if (g.header !== "MY ACCOUNT") return g
+        const items = [...g.items]
+        const profileAt = items.findIndex((i) => i.href === "/dashboard/profile")
+        const hub: NavItem = {
+          href: "/dashboard/coaching-hub",
+          label: "Coaches Hub",
+          matchPrefix: true,
+        }
+        items.splice(profileAt === -1 ? items.length : profileAt, 0, hub)
+        return { ...g, items }
+      })
     : D2C_NAV
   const navGroups = isCoach ? COACH_NAV : d2cNav
 
+  // The one theme switch, in two parts.
+  //
+  // 1. `isD2C` picks the NAV treatment. Coach accounts and every coach route
+  //    keep the dark nav; the pathname check means a coach page is never
+  //    briefly light while /api/profile is still resolving.
+  // 2. `useLight` picks the GROUND, and is additionally gated on the route
+  //    having been redesigned. A converted nav over an unconverted page puts
+  //    dark-theme cards and white text on a pale ground, which is unreadable.
+  //    So the ground turns on route by route, as each screen lands, and dev
+  //    stays runnable instead of half-flipped for days.
+  //
+  // ADD A ROUTE HERE IN THE SAME COMMIT THAT REDESIGNS IT. Nothing else needs
+  // to change: the page starts sitting on the light ground the moment its
+  // prefix appears in this list.
+  const isD2C = !isCoach && !pathname.startsWith("/dashboard/coach")
+  const useLight = isD2C && LIGHT_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
+  const S = LIGHT
+
+  // Nav chrome. Navy in both themes because navy is structure; only the active
+  // treatment differs. No peach anywhere: a nav item is a place, not an action.
+  // Keyed on isD2C, not useLight: the nav is redesigned for every student route
+  // straight away. It reads correctly against both a light ground and a dark
+  // one, because navy sits happily next to either.
+  const navBg = isD2C ? "linear-gradient(180deg, #13294A 0%, #0E1F38 100%)" : T.NAV_BG
+  const navBorder = isD2C ? "rgba(255,255,255,0.10)" : T.BORDER_SOFT
+  const navHeaderInk = isD2C ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.42)"
+  const navHeaderHotInk = isD2C ? "#FFFFFF" : T.WRN_ORANGE
+  const navIdleInk = isD2C ? S.hero.muted : T.TEXT
+  const navActiveInk = isD2C ? "#FFFFFF" : T.WRN_ORANGE
+  const navActiveBg = isD2C ? "rgba(255,255,255,0.12)" : T.NAV_ACTIVE_BG
+  const navActiveBorder = isD2C ? "rgba(255,255,255,0.16)" : T.NAV_ACTIVE_BORDER
+
   return (
-    <div style={{ minHeight: "100vh", background: T.BG, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: useLight ? S.page : T.BG, display: "flex", flexDirection: "column" }}>
       {fromFramer && <FramerBanner />}
       <div style={{ display: "flex", flex: 1 }}>
-        <nav style={{ width: 220, background: T.NAV_BG, borderRight: `1px solid ${T.BORDER_SOFT}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
+        <nav style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
           <Logo />
           <div style={{ padding: "0 12px" }}>
             {navGroups.map((group, gi) => {
@@ -498,13 +700,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div key={group.header} style={{ marginBottom: gi === navGroups.length - 1 ? 12 : 16 }}>
                   <div style={{
                     ...eyebrow, fontSize: 11, letterSpacing: 1.2,
-                    color: groupHot ? T.WRN_ORANGE : "rgba(255,255,255,0.42)",
+                    color: groupHot ? navHeaderHotInk : navHeaderInk,
                     padding: "0 8px", marginBottom: 8,
                   }}>
                     {group.header}
                   </div>
                   {group.items.map((item) => {
                     const active = isItemActive(item, pathname)
+                    // A parent stays lit for its whole section, so Networking
+                    // reads as current while you are on Contacts.
+                    const sectionOpen =
+                      active ||
+                      (item.children ?? []).some((c) => isItemActive(c, pathname))
                     const itemStyle: React.CSSProperties = {
                       display: "block",
                       padding: "10px 12px",
@@ -513,10 +720,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       fontSize: 13,
                       fontWeight: 900,
                       textDecoration: "none",
-                      border: active ? `1px solid ${T.NAV_ACTIVE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
-                      background: active ? T.NAV_ACTIVE_BG : T.NAV_DEFAULT_BG,
-                      color: active ? T.WRN_ORANGE : T.TEXT,
+                      border: sectionOpen
+                        ? `1px solid ${navActiveBorder}`
+                        : `1px solid ${isD2C ? "transparent" : T.BORDER_SOFT}`,
+                      background: sectionOpen ? navActiveBg : (isD2C ? "transparent" : T.NAV_DEFAULT_BG),
+                      color: sectionOpen ? navActiveInk : navIdleInk,
                     }
+                    // Sub-nav, rendered only while its section is open. Indented
+                    // and one weight quieter so the parent still reads as the
+                    // place and these read as views inside it.
+                    const subNav =
+                      item.children && sectionOpen ? (
+                        <div style={{ margin: "0 0 8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+                          {item.children.map((child) => {
+                            const childActive = isItemActive(child, pathname)
+                            return (
+                              <a
+                                key={child.href}
+                                href={child.href}
+                                style={{
+                                  display: "block",
+                                  padding: "7px 12px",
+                                  borderRadius: 8,
+                                  fontSize: 12.5,
+                                  fontWeight: childActive ? 800 : 600,
+                                  textDecoration: "none",
+                                  color: childActive ? "#FFFFFF" : navIdleInk,
+                                  background: childActive
+                                    ? (isD2C ? "rgba(255,255,255,0.09)" : T.NAV_ACTIVE_BG)
+                                    : "transparent",
+                                }}
+                              >
+                                {child.label}
+                              </a>
+                            )
+                          })}
+                        </div>
+                      ) : null
+
                     // Disabled "Soon" domain — greyed, non-clickable, no nav.
                     // Mirrors the disabled-item treatment formerly in the
                     // settings sub-nav.
@@ -567,14 +808,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       )
                     }
                     return (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        style={itemStyle}
-                        {...(item.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      >
-                        {item.label}
-                      </a>
+                      <div key={item.href}>
+                        <a
+                          href={item.href}
+                          style={itemStyle}
+                          {...(item.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                        >
+                          {item.label}
+                        </a>
+                        {subNav}
+                      </div>
                     )
                   })}
                 </div>
@@ -602,15 +845,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               }}
               style={{
                 display: "block",
+                marginTop: 8,
                 padding: "10px 12px",
                 marginBottom: 4,
                 borderRadius: 10,
                 fontSize: 13,
                 fontWeight: 900,
                 textDecoration: "none",
-                border: "1px solid rgba(74,222,128,0.3)",
-                background: "rgba(74,222,128,0.06)",
-                color: "#4ade80",
+                border: isD2C
+                  ? "1px solid rgba(255,255,255,0.16)"
+                  : "1px solid rgba(74,222,128,0.3)",
+                background: isD2C ? "transparent" : "rgba(74,222,128,0.06)",
+                // Not green, not peach. On light this is a context switch out to
+                // the Framer tools, so it takes the hero link blue.
+                color: isD2C ? S.hero.link : "#4ade80",
               }}
             >
               {EXTERNAL_NAV_ITEM.label}
@@ -618,7 +866,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
         </nav>
-        <main style={{ flex: 1, padding: "32px 40px 60px 36px", overflowY: "auto" }}>
+        <main
+          style={{
+            flex: 1,
+            padding: isD2C ? "36px 44px 72px 40px" : "32px 40px 60px 36px",
+            overflowY: "auto",
+            color: useLight ? S.text.primary : undefined,
+          }}
+        >
           {children}
         </main>
       </div>
