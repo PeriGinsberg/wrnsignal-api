@@ -284,8 +284,48 @@ export async function PUT(req: NextRequest) {
     if (lookupErr) throw new Error(`Profile lookup failed: ${lookupErr.message}`)
     if (!existing) return withCorsJson(req, { error: "Profile not found" }, 404)
 
-    // Strip fields that must not be changed via this route
-    const { email, id, user_id, seat_id, profile_version, ...allowed } = body
+    // WRITABLE COLUMNS, as an ALLOWLIST. This was a denylist —
+    // `const { email, id, user_id, seat_id, profile_version, ...allowed } = body`
+    // — which forwarded every other key straight into the UPDATE, so anything
+    // the client echoed back had to be a real column or Postgres rejected the
+    // whole write.
+    //
+    // That is exactly what broke. The GET returns `{ ...profile, coached }`,
+    // where `coached` is COMPUTED by isCoached() over the coach-relationship
+    // table and is not a column on client_profiles. Every profile form loads
+    // that payload into state and PUTs it back, so every save shipped a
+    // `coached` key and every save failed with:
+    //     Could not find the 'coached' column of 'client_profiles'
+    // Live since 692ad135 (2026-06-07), on prod as well as dev, on both the
+    // old /dashboard/profile form and the old /dashboard My Account panel.
+    //
+    // A denylist cannot survive the GET growing a computed field, and the GET
+    // is the natural place for computed fields to grow. An allowlist inverts
+    // that: a new derived value on the read side can never break the write.
+    //
+    // Unknown keys are IGNORED rather than 400'd, deliberately. Clients already
+    // in the wild send `coached` today; rejecting the request would keep them
+    // broken, while dropping the key lets an unchanged client start working the
+    // moment this deploys.
+    // A SECOND, WORSE THING THE DENYLIST ALLOWED. It stripped five keys, so
+    // `is_coach`, `coach_org`, `active`, `purchase_date` and `refunded_at` were
+    // all writable by any authenticated user on their own row. The coach gate
+    // is purely `client_profiles.is_coach`, so `PUT /api/profile {"is_coach":
+    // true}` was a self-service promotion to coach — and `active` /
+    // `purchase_date` are the access and billing flags. None of those belong to
+    // the client, and none of them are in this list.
+    //
+    // `profile_complete` is not here either: the route recomputes it below from
+    // the five required fields on every save, precisely so it cannot depend on
+    // what the client happened to send.
+    const WRITABLE = new Set([
+      "name", "job_type", "target_roles", "target_locations", "preferred_locations",
+      "timeline", "resume_text", "profile_text", "profile_structured",
+    ])
+    const allowed: Record<string, any> = {}
+    for (const [k, v] of Object.entries(body)) {
+      if (WRITABLE.has(k)) allowed[k] = v
+    }
 
     // Canonical job_type: coerce legacy/dirty spellings (this is a full-form
     // resave, so an untouched legacy value is resubmitted as-is) BEFORE strict

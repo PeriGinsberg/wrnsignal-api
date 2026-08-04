@@ -86,11 +86,15 @@ function MyProfile() {
   const save = useCallback(async (patch: Partial<Profile>): Promise<boolean> => {
     if (!profile) return false
     setErr(null)
-    const { id, profile_version, email, purchase_date, refunded_at, active, ...rest } = { ...profile, ...patch }
+    // Send ONLY what this section edits, not the whole loaded profile echoed
+    // back. The old forms resubmitted everything they had received, which is
+    // how a computed field from the GET (`coached`) ended up in a write and
+    // broke every save. The server now allowlists too, so this is the second
+    // of two locks rather than the only one.
     const res = await authFetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(rest),
+      body: JSON.stringify(patch),
     })
     if (!res.ok) {
       const j = await res.json().catch(() => ({}))
