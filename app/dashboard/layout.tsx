@@ -135,14 +135,27 @@ const COACH_NAV: NavGroup[] = [
  * get the light ground; everything else keeps the dark shell so an unconverted
  * page never renders dark cards on a pale background.
  *
- * Grows one entry per screen as the redesign lands. Empty means the ground is
- * off everywhere and only the nav has changed, which is the state step 2 ships
- * in. Matching is exact-or-descendant, so "/dashboard/network" also covers
- * "/dashboard/network/contacts".
+ * Grows one entry per screen as the redesign lands.
+ *
+ * Matching is EXACT by default. A trailing "/*" opts a route into covering its
+ * descendants. This started as exact-or-descendant and that was wrong: adding
+ * the contacts LIST silently lit up the contact RECORD underneath it, which is
+ * a different screen with its own components, so an unconverted page went onto
+ * the light ground exactly as this list exists to prevent. A screen now has to
+ * ask for its children.
  */
 const LIGHT_ROUTES: string[] = [
-  "/dashboard/network/contacts",   // step 3
+  "/dashboard/network/contacts",   // step 3, the list only. The record at
+                                   // /contacts/<id> is NOT converted yet.
 ]
+
+function isLightRoute(pathname: string): boolean {
+  return LIGHT_ROUTES.some((r) =>
+    r.endsWith("/*")
+      ? pathname === r.slice(0, -2) || pathname.startsWith(r.slice(0, -1))
+      : pathname === r,
+  )
+}
 
 /**
  * The WORK ON A JOB zone, as one entry rather than three.
@@ -678,7 +691,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // to change: the page starts sitting on the light ground the moment its
   // prefix appears in this list.
   const isD2C = !isCoach && !pathname.startsWith("/dashboard/coach")
-  const useLight = isD2C && LIGHT_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
+  const useLight = isD2C && isLightRoute(pathname)
   const S = LIGHT
 
   // Nav chrome. Navy in both themes because navy is structure; only the active
