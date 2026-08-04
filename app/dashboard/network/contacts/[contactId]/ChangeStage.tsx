@@ -12,8 +12,15 @@
 // Referral" suggestion.
 //
 // Redesign step 4: light theme, and it opens inside the "Where things stand"
-// card rather than floating under the quick moves. The trigger reads "Change"
-// because it sits next to a sentence describing the current state.
+// card. The trigger reads "OTHER MOVES", not "Change", because that is what it
+// holds once the stepper circles took over forward progress. Everything the
+// circles cannot reach is in here and nowhere else:
+//   - the two off-path stages, "No answer" and "Declined"
+//   - "Outcome", which is on the path but deliberately never one tap
+//   - every BACKWARD move, since a circle behind you is disabled. This is the
+//     only undo on the screen, which "Change" did not advertise.
+//   - the outcome-type sub-attribute, whose only writer is this component
+//   - the "an intro request usually means Referral" relationship prompt
 
 import { useState } from "react"
 import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
@@ -81,7 +88,7 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} data-testid="change-stage-open" style={quiet}>
-        Change ▾
+        Other moves ▾
       </button>
     )
   }
