@@ -2,16 +2,23 @@
 
 // Network Tracker — CONTACT RECORD.
 //
-// The screen's job is one question: what do I do with this person, and let me do
-// it. So the message you are about to send is the first thing under the header,
-// where things stand is the second, and everything else folds into drawers that
+// The screen answers two questions in order: where does this stand, and what do
+// I do about it. So the reading order is identity, then position, then the
+// message you are about to send, then everything else folded into drawers that
 // say what is inside them while shut.
 //
-// Redesign step 4 (2026-08-04): light theme, to the locked language. The
-// structure was already action-first, so this is a restyle plus two moves:
-//   - the stage pill became a status dot plus text, per the shape rule
-//   - "Something happened?" became "Where things stand", which answers before it
-//     offers to change (see WhereThingsStand.tsx)
+// Redesign step 4 (2026-08-04): light theme, to the locked language, and a
+// rework of the top half to remove three statements of one fact. Before this,
+// the stage was said as a pill, again as a sentence under the name, and a third
+// time as "Next: Send a reply" in the reminder row. Now:
+//   - status is ONE treatment: the labelled stepper in "Where things stand".
+//     Each circle names its stage and the current one is marked, so the position
+//     IS the label. The header no longer repeats it in words.
+//   - identity (role, employer, relationship, email, LinkedIn) is one run beside
+//     the name, not a row of cards competing with the message
+//   - the reminder row keeps only WHEN. The reason named what the status and the
+//     hero button already say; the date and the overdue count are what nothing
+//     else carries.
 //
 // Colour carries meaning in three registers and nothing else:
 //   peach = act here   (one element: "Copy and mark as sent", inside the hero)
@@ -19,7 +26,7 @@
 //   quiet = reference  (drawers, reminder line, secondary buttons)
 
 import { use as usePromise, useCallback, useEffect, useState } from "react"
-import { LIGHT as S, PHASE_MEANING, status as statusStyle, action as actionStyle, tile, tileIdle } from "../../../../../lib/theme/surfaces"
+import { LIGHT as S, PHASE_MEANING, action as actionStyle, tile, tileIdle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { ActionBox } from "./ActionBox"
 import { WhereThingsStand } from "./WhereThingsStand"
@@ -28,8 +35,7 @@ import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
 import {
-  FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES,
-  STAGE_LABELS, STAGE_PHASE,
+  FIELD_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, STAGE_PHASE,
 } from "../../vocab"
 
 type Contact = {
@@ -102,7 +108,6 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
   const touches = actions.filter((a) => a.type !== "note")
 
   const phaseKey = PHASE_MEANING[STAGE_PHASE[contact.stage] ?? "idle"]
-  const st = statusStyle(S, phaseKey)
   const idle = phaseKey === "idle"
   const initials = `${(contact.first_name || "").charAt(0)}${(contact.last_name || "").charAt(0)}`.toUpperCase() || "?"
 
@@ -125,8 +130,12 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
     <main style={wrap}>
       <a href={backHref} style={backLink}>← Back to contacts</a>
 
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      {/* ── Header ─────────────────────────────────────────────────
+          Context BEFORE action. You should know who this is and where it
+          stands before your eye reaches the message you are about to send,
+          so the header carries three lines in decreasing permanence:
+          who they are, where this stands, and how you know them. */}
+      <header style={{ marginTop: 16, display: "flex", alignItems: "flex-start", gap: 16 }}>
         <span
           aria-hidden="true"
           style={{
@@ -137,60 +146,52 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         >
           {initials}
         </span>
-        <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: S.text.primary, margin: 0 }}>
             {contact.first_name} {contact.last_name}
           </h1>
-          <div style={{ color: S.text.muted, fontSize: 15, marginTop: 4 }}>
-            {[contact.title, company].filter(Boolean).join(" · ") || "No title or company"}
+          {/* Identity, one run. Role, employer, how you know them and how to
+              reach them are all properties of the PERSON, so they read as one
+              line rather than as a row of cards competing with the message. */}
+          <div
+            style={{
+              display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap",
+              marginTop: 4, fontSize: 14.5, color: S.text.muted,
+            }}
+          >
+            <span>{[contact.title, company].filter(Boolean).join(" · ") || "No title or company"}</span>
+            <span style={{ color: S.text.dim }}>·</span>
+            <span>
+              {contact.relationship
+                ? RELATIONSHIP_LABELS[contact.relationship]
+                : <span style={{ color: S.meaning.attention.ink, fontWeight: 700 }}>Relationship not set</span>}
+            </span>
+            {contact.email && (
+              <>
+                <span style={{ color: S.text.dim }}>·</span>
+                <a href={`mailto:${contact.email}`} style={identityLink}>{contact.email}</a>
+              </>
+            )}
+            {contact.linkedin_url && (
+              <>
+                <span style={{ color: S.text.dim }}>·</span>
+                <a href={contact.linkedin_url} target="_blank" rel="noreferrer" style={identityLink}>
+                  LinkedIn ↗
+                </a>
+              </>
+            )}
           </div>
         </div>
-        {/* Status is a dot plus text, never a pill: a pill looks tappable and the
-            only tappable-looking thing on this page is the peach action below. */}
-        <span
-          data-testid="stage-pill"
-          style={{ display: "inline-flex", alignItems: "center", gap: 9, flexShrink: 0 }}
-        >
-          <span style={st.dot} />
-          <span style={{ ...st.text, fontSize: 15.5, whiteSpace: "nowrap" }}>
-            {STAGE_LABELS[contact.stage] ?? contact.stage}
-          </span>
-        </span>
       </header>
+
+      {/* ── Where things stand ─────────────────────────────────
+          Context BEFORE action: position and the moves sit directly under the
+          identity, so you know where this is before your eye reaches the
+          message you are about to send. */}
+      <WhereThingsStand contact={contact} onChanged={load} />
 
       {/* ── The thing you came here to do ──────────────────────── */}
       <ActionBox contact={contact as never} onLogged={load} />
-
-      {/* ── Where things stand (+ the full stage control) ───────── */}
-      <WhereThingsStand contact={contact} onChanged={load} />
-
-      {/* ── Quick facts ────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-        <div style={{ ...cardBase, flex: "1 1 240px", padding: "16px 20px" }}>
-          <div style={factLabel}>{FIELD_LABELS.relationship}</div>
-          <div style={{ color: contact.relationship ? S.text.primary : S.text.dim, fontSize: 15.5, fontWeight: 700, marginTop: 4 }}>
-            {contact.relationship ? RELATIONSHIP_LABELS[contact.relationship] : "Not set"}
-          </div>
-        </div>
-        <div style={{ ...cardBase, flex: "1 1 240px", padding: "16px 20px" }}>
-          <div style={factLabel}>Email</div>
-          <div style={{ fontSize: 15.5, fontWeight: 700, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis" }}>
-            {contact.email
-              ? <a href={`mailto:${contact.email}`} style={{ color: S.action.quietInk, textDecoration: "none" }}>{contact.email}</a>
-              : <span style={{ color: S.text.dim }}>Not set</span>}
-          </div>
-        </div>
-        {contact.linkedin_url && (
-          <div style={{ ...cardBase, flex: "1 1 240px", padding: "16px 20px" }}>
-            <div style={factLabel}>LinkedIn</div>
-            <div style={{ fontSize: 15.5, fontWeight: 700, marginTop: 4 }}>
-              <a href={contact.linkedin_url} target="_blank" rel="noreferrer" style={{ color: S.action.quietInk, textDecoration: "none" }}>
-                Open profile ↗
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* ── Reminder, one line ─────────────────────────────────── */}
       <ReminderLine contact={contact} onChanged={load} />
@@ -244,7 +245,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
           </div>
         </Collapsible>
 
-        <Collapsible title="Danger zone" testId="danger" summary="Delete this contact">
+        <Collapsible title="Close out this contact" testId="danger" summary="Remove them and their history">
           <DeleteContactControl contact={contact} />
         </Collapsible>
       </div>
@@ -403,6 +404,13 @@ function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () 
   const [err, setErr] = useState<string | null>(null)
   const snoozed = Boolean(contact.reminder_override)
 
+  // Whole days late, measured from the start of each day so a reminder set this
+  // morning is not "overdue" by lunchtime.
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const overdueDays = contact.next_due_at
+    ? Math.max(0, Math.round((startOfDay(new Date()) - startOfDay(new Date(contact.next_due_at))) / 86400000))
+    : 0
+
   async function setReminder(body: unknown, label: string) {
     setBusy(true)
     setErr(null)
@@ -436,16 +444,23 @@ function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () 
         ...cardBase,
       }}
     >
+      {/* WHEN, not what. The reason ("Send a reply") named the same thing the
+          status above and the hero's button already say, so it was the third
+          statement of one fact. The date is the part nothing else carries, and
+          overdue is the part that changes behaviour, so those are what is left. */}
       <span style={{ flex: "1 1 auto", minWidth: 0 }}>
         {contact.next_due_at ? (
           <>
-            Next: <strong style={{ color: S.text.primary, fontWeight: 700 }}>
-              {REASON_LABELS[contact.next_due_reason ?? ""] ?? contact.next_due_reason ?? "—"}
-            </strong>
-            {" · "}{fmt(contact.next_due_at)}
+            {overdueDays > 0 ? (
+              <strong style={{ color: S.meaning.attention.ink, fontWeight: 700 }}>
+                Overdue by {overdueDays} day{overdueDays === 1 ? "" : "s"}
+              </strong>
+            ) : (
+              <>Due <strong style={{ color: S.text.primary, fontWeight: 700 }}>{fmt(contact.next_due_at)}</strong></>
+            )}
             {snoozed && (
-              <span style={{ color: S.meaning.attention.ink, marginLeft: 8 }}>
-                manual, overrides the stage cadence
+              <span style={{ color: S.text.dim, marginLeft: 8 }}>
+                snoozed, overrides the stage cadence
               </span>
             )}
           </>
@@ -561,6 +576,9 @@ const backLink: React.CSSProperties = {
 }
 const cardBase: React.CSSProperties = {
   background: S.card, border: `1px solid ${S.borderSoft}`, borderRadius: 14, boxShadow: S.shadow.card,
+}
+const identityLink: React.CSSProperties = {
+  color: S.action.quietInk, textDecoration: "none", fontWeight: 600,
 }
 const factLabel: React.CSSProperties = {
   color: S.text.muted, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase",

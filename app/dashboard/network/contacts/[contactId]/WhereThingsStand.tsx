@@ -3,27 +3,46 @@
 // "Where things stand" — the state of this relationship, in one card.
 //
 // Replaces QuickActions, which was a row of stage buttons under the heading
-// "Something happened?". Same capability, better question: the card now ANSWERS
-// where you are before it offers to change it, which is what the mockup shows
-// and what a student with no coach actually needs. A progress bar for position,
-// a plain sentence for meaning, and the moves underneath.
+// "Something happened?". Same capability, better question: the card ANSWERS
+// where you are before it offers to change it.
 //
-// The two frequent forward moves stay prominent and the terminal ones stay
-// behind Change, unchanged: on a screen built for someone with no coach, a rare
-// irreversible-feeling move should not be one accidental tap away from the
-// common one.
+// The position is a LABELLED STEP-CIRCLE STEPPER, the same pattern as the
+// Coaches Center prospects pipeline: completed steps filled and ticked, the
+// current step marked, every circle labelled with its stage. A plain progress
+// bar showed how far along you were but never said what any segment MEANT, so
+// the position was only legible next to a separate status label. With the
+// stepper the position is self-evident, which is why the header no longer
+// repeats the stage in words.
 //
-// The moves are NOT peach. Peach is the action colour and it belongs to the one
-// thing you came here to do, which is send the message in the hero above.
-// Recording that something happened is bookkeeping, so it takes the quiet
-// secondary treatment.
+// COLOUR, mapped into light and kept inside the exclusivity rule:
+//   done     teal, our positive colour (light has no green)
+//   current  attention AMBER, the darkened ink, never the peach accent
+//   ahead    muted, a hairline circle
+// Peach stays action-only. The current step is attention ink on its pale fill,
+// which is the documented status pairing, so no saturated peach appears outside
+// a button. See COLOR-SYSTEM.md section 6.9.
+//
+// THE CIRCLES ARE THE CONTROL, same as the prospects pipeline. The pair of
+// "They replied" / "We talked" buttons underneath said the same thing the
+// circles already said, so the circles absorbed them: clicking a step ahead of
+// you advances to it. Everything those buttons could do still can be done.
+//   forward   click the circle. "They replied" and "Chat happened" are the same
+//             two moves those buttons made, by the same words.
+//   backward  Change, which offers all eleven stages in any direction. The
+//             buttons could go backward too, so this is where that went.
+//   terminal  Change. `outcome` sits on the path so you can SEE it coming, but
+//             it is not clickable: a rare irreversible-feeling move should not
+//             be one accidental tap away on a screen built for someone with no
+//             coach to undo it for them. The dormant stages are off the path
+//             entirely and were never one tap.
+// No circle is peach. Advancing a stage is bookkeeping; peach belongs to the
+// message.
 
-import { useState } from "react"
-import { LIGHT as S, PHASE_MEANING } from "../../../../../lib/theme/surfaces"
-import type { PhaseKey } from "../../../../../lib/dashboard-theme"
+import { Fragment, useState } from "react"
+import { LIGHT as S } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { ChangeStage } from "./ChangeStage"
-import { STAGE_PHASE, FUNNEL_PHASES } from "../../vocab"
+import { STAGE_LABELS } from "../../vocab"
 
 type Contact = {
   id: string
@@ -32,47 +51,38 @@ type Contact = {
   relationship: string | null
 }
 
-const FREQUENT = [
-  { stage: "replied", label: "They replied" },
-  { stage: "chat_done", label: "We talked" },
+/**
+ * The linear path, in order. The two dormant stages are deliberately absent:
+ * "No answer" and "Declined" are not steps forward, they are where a thread
+ * stops, so putting them on the path would imply progress toward them. A
+ * contact sitting in one is handled below the stepper instead.
+ */
+const PATH = [
+  "identified",
+  "intro_requested",
+  "sequence_active",
+  "replied",
+  "chat_scheduled",
+  "chat_done",
+  "nurture",
+  "ask_made",
+  "outcome",
 ] as const
 
-/**
- * The state of play, in the student's words.
- *
- * DELIBERATELY NOT a stage label. `vocab.ts` owns the noun for a stage ("Message
- * sent"); this owns the sentence about it ("You sent a message. Waiting to hear
- * back."). Two registers, two jobs, so neither has to compromise: a label has to
- * fit in a pill on a list row, a sentence has room to say what it means.
- */
-const STANDING: Record<string, string> = {
-  identified: "You have not reached out yet. The first message is ready above.",
-  intro_requested: "You asked someone for an introduction. Waiting on them.",
-  sequence_active: "You sent a message. Waiting to hear back.",
-  replied: "They replied. Your move.",
-  chat_scheduled: "You have a conversation booked.",
-  chat_done: "You talked. Worth a thank-you while it is fresh.",
-  nurture: "Keeping this one warm. No rush.",
-  ask_made: "You asked for a referral. Waiting to hear back.",
-  outcome: "This one paid off.",
-  dormant_no_answer: "No answer so far. It will resurface when it is worth another try.",
-  dormant_declined: "They passed. Resting, not closed.",
-}
+const RESTING = new Set(["dormant_no_answer", "dormant_declined"])
+
+/** On the path so you can see it coming, but never one tap. Set it from Change. */
+const NOT_ONE_TAP = new Set(["outcome"])
 
 export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onChanged: () => void }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
-  const phase: PhaseKey = STAGE_PHASE[contact.stage] ?? "idle"
-  const resting = phase === "resting"
-  // `idle` is excluded from the bar. It is the ZERO state, not a step: a contact
-  // nobody has written to has made no progress, and rendering it as a reached
-  // segment was indistinguishable from an unreached one anyway, because idle's
-  // accent is the same grey the empty segments use.
-  const STEPS = FUNNEL_PHASES.filter((p) => p !== "idle")
-  // How far along this contact is. Resting is not a step of progress, so it
-  // fills nothing and says so in words instead.
-  const reached = resting ? -1 : STEPS.indexOf(phase)
+  const resting = RESTING.has(contact.stage)
+  // -1 when resting or unrecognised: nothing on the path is current, so nothing
+  // is filled, and the caption below carries the state instead.
+  const currentIndex = resting ? -1 : PATH.indexOf(contact.stage as (typeof PATH)[number])
+  const nextStage = currentIndex >= 0 ? PATH[currentIndex + 1] ?? null : null
 
   async function move(stage: string) {
     setBusy(stage); setErr(null)
@@ -110,53 +120,105 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
         <ChangeStage contact={contact} onChanged={onChanged} />
       </div>
 
-      {/* Position as a filled run of segments. Each reached phase takes its own
-          meaning colour, so the bar and the status dot on the list agree. */}
-      <div
-        style={{ display: "flex", gap: 5, margin: "14px 0 12px" }}
-        role="img"
-        aria-label={resting ? "Resting" : `Step ${reached + 1} of ${STEPS.length}`}
-      >
-        {STEPS.map((p, i) => (
-          <span
-            key={p}
-            style={{
-              flex: 1, height: 6, borderRadius: 999,
-              background: i <= reached ? S.meaning[PHASE_MEANING[p]].accent : S.meaning.idle.accent,
-            }}
-          />
-        ))}
+      {/* Horizontal band. Overflow-x keeps the connectors continuous and the
+          labels readable rather than wrapping nine columns into a grid. */}
+      <div style={{ overflowX: "auto", padding: "16px 0 4px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", minWidth: "min-content" }}>
+          {PATH.map((stageKey, i) => {
+            const done = currentIndex >= 0 && i < currentIndex
+            const isCurrent = i === currentIndex
+            const circleInk = isCurrent ? S.meaning.attention.ink : done ? S.meaning.replied.ink : S.text.dim
+            const circleBg = isCurrent ? S.meaning.attention.fill : done ? S.meaning.replied.fill : "transparent"
+            const circleBorder = isCurrent ? S.meaning.attention.ink : done ? S.meaning.replied.accent : S.border
+            // Only steps AHEAD of you advance. Behind is history and is changed
+            // through Change; the terminal step is never one tap.
+            const advanceable =
+              currentIndex >= 0 && i > currentIndex && !NOT_ONE_TAP.has(stageKey) && busy === null
+
+            return (
+              <Fragment key={stageKey}>
+                {/* Connector to the previous step, filled once this step is
+                    reached, so the completed path reads as one run. */}
+                {i > 0 && (
+                  <div
+                    aria-hidden
+                    style={{
+                      flex: "0 0 22px", height: 2, marginTop: 13,
+                      background: done || isCurrent ? S.meaning.replied.accent : S.borderSoft,
+                    }}
+                  />
+                )}
+                <button
+                  type="button"
+                  data-testid={`step-${stageKey}`}
+                  onClick={() => { if (advanceable) void move(stageKey) }}
+                  disabled={!advanceable}
+                  title={
+                    advanceable ? `Advance to ${STAGE_LABELS[stageKey]}`
+                      : NOT_ONE_TAP.has(stageKey) ? "Set this from Change"
+                      : isCurrent ? "Where this stands now"
+                      : done ? "Already past this"
+                      : undefined
+                  }
+                  style={{
+                    flex: "0 0 auto", width: 86,
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+                    padding: "0 3px", background: "none", border: "none", fontFamily: "inherit",
+                    cursor: advanceable ? "pointer" : "default",
+                    opacity: busy === stageKey ? 0.55 : 1,
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, fontWeight: 900,
+                      border: `1.5px solid ${circleBorder}`,
+                      background: circleBg,
+                      color: circleInk,
+                    }}
+                  >
+                    {done ? "✓" : i + 1}
+                  </span>
+                  {/* The CURRENT step's label is the screen's statement of the
+                      stage, which is why it carries the stage-pill hook: the
+                      header used to say it in words and no longer needs to. */}
+                  <span
+                    {...(isCurrent ? { "data-testid": "stage-pill" } : {})}
+                    style={{
+                      fontSize: 11.5, lineHeight: "15px", textAlign: "center",
+                      color: isCurrent ? S.meaning.attention.ink : done ? S.text.secondary : S.text.dim,
+                      fontWeight: isCurrent ? 800 : done ? 700 : 500,
+                    }}
+                  >
+                    {STAGE_LABELS[stageKey]}
+                  </span>
+                </button>
+              </Fragment>
+            )
+          })}
+        </div>
       </div>
 
-      <p style={{ margin: 0, color: S.text.secondary, fontSize: 15, lineHeight: "23px" }}>
-        {STANDING[contact.stage] ?? "Where this stands is not clear yet."}
-      </p>
+      {/* Off the path. A resting contact has no position to mark, so it is
+          stated rather than drawn, and it carries the stage hook in that case. */}
+      {resting && (
+        <div
+          data-testid="stage-pill"
+          style={{ marginTop: 6, color: S.meaning.dormant.ink, fontSize: 14, fontWeight: 700 }}
+        >
+          {STAGE_LABELS[contact.stage] ?? contact.stage}
+        </div>
+      )}
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 16 }}>
-        {FREQUENT.map((a) => {
-          const on = contact.stage === a.stage
-          return (
-            <button
-              key={a.stage}
-              onClick={() => void move(a.stage)}
-              disabled={busy !== null || on}
-              data-testid={`quick-${a.stage}`}
-              title={on ? "Already at this stage" : undefined}
-              style={{
-                background: S.card,
-                color: on ? S.text.dim : S.text.secondary,
-                border: `1px solid ${S.border}`,
-                borderRadius: 999,
-                padding: "9px 17px", fontSize: 13.5, fontWeight: 700, fontFamily: "inherit",
-                cursor: busy !== null || on ? "default" : "pointer",
-                opacity: busy === a.stage ? 0.6 : 1,
-              }}
-            >
-              {busy === a.stage ? "Saving…" : a.label}
-            </button>
-          )
-        })}
-      </div>
+      {/* Plain text, not a button. The advance lives on the circle above; saying
+          it twice is what we just removed. This only names what comes next. */}
+      {nextStage && (
+        <p style={{ margin: "14px 0 0", color: S.text.muted, fontSize: 14 }}>
+          Next step: <strong style={{ color: S.text.secondary, fontWeight: 700 }}>{STAGE_LABELS[nextStage]}</strong>
+        </p>
+      )}
 
       {err && (
         <div style={{ color: S.meaning.error.ink, fontSize: 13, marginTop: 10 }} data-testid="quick-error">

@@ -208,7 +208,12 @@ describe("quick actions — split by likelihood", () => {
     const call = authFetchMock.mock.calls.findIndex((c) => String(c[0]).includes("/stage"))
     expect(bodyOf(call).stage).toBe("replied")
 
-    fireEvent.click(screen.getByRole("button", { name: "We talked" }))
+    // LABEL CHANGED 2026-08-04, not the behaviour. The pair of quick buttons
+    // became the stepper circles, so this move is now named by its stage label:
+    // "We talked" was the button's wording for the chat_done stage, whose label
+    // is "Chat happened". Still by label, not testid, so the words still have to
+    // be wired to the right move.
+    fireEvent.click(screen.getByRole("button", { name: "Chat happened" }))
     await waitFor(() => {
       const stageCalls = authFetchMock.mock.calls.filter((c) => String(c[0]).includes("/stage"))
       expect(stageCalls).toHaveLength(2)
@@ -235,8 +240,11 @@ describe("quick actions — split by likelihood", () => {
   it("does not offer a move to the stage the contact is already at", async () => {
     contact = { ...BASE, stage: "replied" }
     await open()
-    expect((screen.getByTestId("quick-replied") as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByTestId("quick-chat_done") as HTMLButtonElement).disabled).toBe(false)
+    // The circles replaced the quick buttons, so the handle moved from
+    // quick-<stage> to step-<stage>. Same assertion: you cannot advance to
+    // where you already are, and you can advance to what is ahead.
+    expect((screen.getByTestId("step-replied") as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByTestId("step-chat_done") as HTMLButtonElement).disabled).toBe(false)
   })
 })
 
@@ -293,7 +301,7 @@ describe("the drawers", () => {
     expect(screen.getByTestId("drawer-body-notes")).toBeTruthy()
 
     // Any save on the page refetches the contact. The drawer must survive it.
-    fireEvent.click(screen.getByTestId("quick-replied"))
+    fireEvent.click(screen.getByTestId("step-replied"))
     await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(true))
     expect(screen.getByTestId("drawer-body-notes")).toBeTruthy()
   })
@@ -319,7 +327,13 @@ describe("nothing was removed", () => {
   it("the reminder controls survive as one line", async () => {
     await open()
     const line = screen.getByTestId("reminder-line")
-    expect(line.textContent).toMatch(/Next:/)
+    // ASSERTION CHANGED 2026-08-04, not just a selector. This used to pin the
+    // literal "Next:", which prefixed the due REASON ("Next: Send a reply").
+    // That reason was removed in the top-half rework because the status above
+    // and the hero's own button already said it, three statements of one fact.
+    // What the line must still do is say WHEN, which is the part nothing else
+    // on the screen carries, so that is what is asserted now.
+    expect(line.textContent).toMatch(/Overdue by|Due |No reminder set/)
     fireEvent.click(within(line).getByTitle("Snooze 7 days"))
     await waitFor(() => {
       const call = authFetchMock.mock.calls.find((c) => String(c[0]).includes("/reminder"))
