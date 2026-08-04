@@ -31,9 +31,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LIGHT as S } from "../../../lib/theme/surfaces"
-import { getSupabaseBrowser } from "../../../lib/supabase-browser"
-import { FRAMER_URL } from "../../../lib/urls"
 import { authFetch } from "../network/authFetch"
+import { openInSignal, JOBFIT_URL } from "./openInSignal"
 import { daysUntil, parseLocalDate } from "../../../lib/localDate"
 import { ApplicationsView } from "./ApplicationsView"
 import { InterviewsView, type Interview } from "./InterviewsView"
@@ -47,8 +46,6 @@ const TABS = [
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
-
-const JOBFIT_URL = `${FRAMER_URL}/signal/jobfit`
 
 export default function TrackerPage() {
   return (
@@ -115,18 +112,6 @@ function Tracker() {
 
   function setTab(next: TabKey) {
     router.replace(next === "applications" ? "/dashboard/tracker" : `/dashboard/tracker?view=${next}`)
-  }
-
-  /**
-   * Reopening a scored job means leaving for Framer, so the session has to
-   * travel with it. Same handoff the old tracker used for "View in SIGNAL".
-   */
-  async function openInSignal(runId: string) {
-    const { data } = await getSupabaseBrowser().auth.getSession()
-    const p = new URLSearchParams()
-    if (data.session?.access_token) p.set("access_token", data.session.access_token)
-    if (data.session?.refresh_token) p.set("refresh_token", data.session.refresh_token)
-    window.location.replace(`${JOBFIT_URL}?run=${runId}#${p.toString()}`)
   }
 
   /** The soonest interview still ahead for a job. Drives Prep and the ordering. */

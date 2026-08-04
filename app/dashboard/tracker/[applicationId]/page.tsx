@@ -38,6 +38,7 @@ import { authFetch } from "../../network/authFetch"
 import { daysUntil, formatLong, formatShort, parseLocalDate } from "../../../../lib/localDate"
 import { Collapsible } from "../../network/contacts/[contactId]/Collapsible"
 import { ClientJobNotes } from "../ClientJobNotes"
+import { openInSignal } from "../openInSignal"
 import { JobHistory } from "../JobHistory"
 import { Field, Select, control, areaControl, formGrid } from "../controls"
 import {
@@ -293,15 +294,42 @@ export default function ApplicationDetailPage({
             onChange={(v) => patch({ application_status: v })}
           />
         </div>
+        {/* The score, and the way back to the reasoning behind it.
+            A number with no route to its explanation is the least useful thing
+            on this page: "71, Review" tells a student nothing they can act on,
+            while the analysis behind it is the WHY and RISK bullets they are
+            supposed to write their application from. */}
         <div style={{ ...surfaceCard(S), borderRadius: 14, padding: "16px 20px", flex: "1 1 260px" }}>
           <div style={factLabel}>How you scored</div>
           {app.signal_score != null ? (
-            <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-              <span style={{ fontSize: 30, fontWeight: 800, color: S.text.primary, fontVariantNumeric: "tabular-nums" }}>
-                {app.signal_score}
-              </span>
-              <span style={{ fontSize: 14.5, color: S.text.muted }}>{app.signal_decision}</span>
-            </div>
+            <>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                <span style={{ fontSize: 30, fontWeight: 800, color: S.text.primary, fontVariantNumeric: "tabular-nums" }}>
+                  {app.signal_score}
+                </span>
+                <span style={{ fontSize: 14.5, color: S.text.muted }}>{app.signal_decision}</span>
+              </div>
+              {app.jobfit_run_id ? (
+                <button
+                  onClick={() => void openInSignal(app.jobfit_run_id!)}
+                  style={{
+                    background: "none", border: "none", padding: "10px 0 0",
+                    color: S.action.quietInk, fontSize: 14, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  See the full analysis →
+                </button>
+              ) : (
+                // Roughly a third of scored applications carry a score with no
+                // run behind it: a coach-sourced job copies the number across,
+                // and rows that predate the FK never had one. Saying so beats a
+                // dead link or a silently missing control.
+                <p style={{ fontSize: 13.5, color: S.text.dim, margin: "10px 0 0", lineHeight: "19px" }}>
+                  The full analysis isn&apos;t saved for this one.
+                </p>
+              )}
+            </>
           ) : (
             <div style={{ fontSize: 14.5, color: S.text.muted, paddingTop: 6 }}>
               This one hasn&apos;t been scored.
