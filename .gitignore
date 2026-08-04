@@ -41,6 +41,12 @@ Thumbs.db
 Apple/
 **/AuthKey_*.p8
 *.pem
+# Design reference only, never commit and never deploy. Build plan, merge spec
+# and the screen mockups for the light-theme redesign. Local-only by intent:
+# Vercel builds from this repo, and these are ~5 MB of PNGs plus specs that are
+# not code. Was ignored via an uncommitted .gitignore edit, which went away.
+Redesign0826/
+
 # Real client resumes — used as local test fixtures, never commit
 Resumes/
 # Real client contact lists — local import test fixtures, never commit
