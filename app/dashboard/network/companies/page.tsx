@@ -1,6 +1,12 @@
 "use client"
 
-// Network Tracker — COMPANIES as a board (Phase 5b), grouped by tier.
+// Network Tracker — COMPANIES as a board, grouped by tier.
+//
+// Redesign step 5 (2026-08-04): light theme. Structure unchanged; the company
+// hub page from the mockups is deliberately NOT built here, because the two
+// things that make it its own page (the linked application and the JobFit
+// guidance with its LinkedIn searches) both come from the merge and land in
+// Phase B. Building a thin hub now would mean gutting it then.
 // Zero-contact wishlist firms are first-class here: a dream employer you have no
 // way into yet is precisely what this view exists to surface, and it appears
 // nowhere else in the tracker.
@@ -13,7 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { T, headline, btnPrimary, input, select as selectStyle, selectOption, fieldLabel, fieldWrap } from "../../../../lib/dashboard-theme"
+import { LIGHT as S, action as actionStyle } from "../../../../lib/theme/surfaces"
 import { authFetch } from "../authFetch"
 import { TIER_ORDER, TIER_GROUP_LABELS, TIER_LABELS, UNSORTED_TIER, FIELD_LABELS, VIEW_LABELS } from "../vocab"
 import { CompanyCard, type Company } from "./CompanyCard"
@@ -92,13 +98,14 @@ export default function CompaniesBoardPage() {
   }
 
   return (
-    <main style={{ padding: "22px 26px 60px" }}>
+    <main style={{ maxWidth: 1080 }}>
+      <div style={eyebrowStyle}>Networking</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <h1 style={headline}>{VIEW_LABELS.companies.heading}</h1>
+        <h1 style={h1Style}>{VIEW_LABELS.companies.heading}</h1>
         {standaloneCount !== null && standaloneCount > 0 && (
           <Link
             href="/dashboard/network/contacts?standalone=1"
-            style={{ color: T.WRN_BLUE, fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+            style={{ color: S.action.quietInk, fontSize: 14, fontWeight: 700, textDecoration: "none" }}
           >
             {standaloneCount} standalone contact{standaloneCount === 1 ? "" : "s"} →
           </Link>
@@ -106,19 +113,19 @@ export default function CompaniesBoardPage() {
       </div>
 
       {banner && (
-        <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, color: T.TEXT, fontSize: 12 }}>
+        <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: S.card, border: `1px solid ${S.borderSoft}`, boxShadow: S.shadow.card, color: S.text.primary, fontSize: 14 }}>
           {banner}
-          <button onClick={() => setBanner(null)} style={{ background: "none", border: "none", color: T.DIM, cursor: "pointer", float: "right" }}>×</button>
+          <button onClick={() => setBanner(null)} aria-label="Dismiss" style={{ background: "none", border: "none", color: S.text.dim, fontSize: 18, cursor: "pointer", float: "right", fontFamily: "inherit" }}>×</button>
         </div>
       )}
 
       <AddCompanyForm onAdded={(c) => setCompanies((prev) => [...prev, c])} />
 
-      {error && <div style={{ color: T.ERROR, fontSize: 13, marginTop: 16 }}>{error}</div>}
-      {loading && <div style={{ color: T.DIM, fontSize: 13, marginTop: 16 }}>Loading…</div>}
+      {error && <div style={{ color: S.meaning.error.ink, fontSize: 14, marginTop: 18 }}>{error}</div>}
+      {loading && <div style={{ color: S.text.muted, fontSize: 14, marginTop: 18 }}>Loading…</div>}
 
       {!loading && companies.length === 0 && !error && (
-        <div style={{ marginTop: 18, padding: "32px 24px", textAlign: "center", border: `1px dashed ${T.BORDER_SOFT}`, borderRadius: 14, color: T.MUTED, fontSize: 13 }}>
+        <div style={{ marginTop: 20, padding: "36px 28px", textAlign: "center", border: `1px dashed ${S.border}`, borderRadius: 14, background: "rgba(255,255,255,0.5)", color: S.text.muted, fontSize: 14.5 }}>
           No companies yet. Add a target firm — you don&apos;t need a contact there first.
         </div>
       )}
@@ -128,7 +135,7 @@ export default function CompaniesBoardPage() {
         if (rows.length === 0) return null
         return (
           <section key={tier} style={{ marginTop: 22 }}>
-            <h2 style={{ color: T.DIM, fontSize: 10, fontWeight: 900, letterSpacing: 0.5, textTransform: "uppercase", margin: "0 0 8px" }}>
+            <h2 style={{ color: S.text.muted, fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 10px" }}>
               {TIER_GROUP_LABELS[tier]} · {rows.length}
             </h2>
             {rows.map((c) => (
@@ -187,8 +194,8 @@ function AddCompanyForm({ onAdded }: { onAdded: (c: Company) => void }) {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ ...btnPrimary, marginTop: 14, padding: "9px 14px", fontSize: 12 }}>
-        Add a company
+      <button onClick={() => setOpen(true)} style={{ ...actionStyle(S, "primary"), ...btnSize, marginTop: 18 }}>
+        + Add a company
       </button>
     )
   }
@@ -202,22 +209,42 @@ function AddCompanyForm({ onAdded }: { onAdded: (c: Company) => void }) {
         placeholder="Company name"
         aria-label="Company name"
         autoFocus
-        style={{ ...input, height: 36, fontSize: 12, width: 240 }}
+        style={{ ...control, width: 260 }}
       />
       <label style={fieldWrap}>
         <span style={fieldLabel}>{FIELD_LABELS.tier}</span>
-      <select value={tier} onChange={(e) => setTier(e.target.value)} aria-label={FIELD_LABELS.tier} style={{ ...selectStyle, width: "auto", height: 36, fontSize: 12 }}>
-        <option value="" style={selectOption}>{TIER_GROUP_LABELS[UNSORTED_TIER]}</option>
-        {Object.entries(TIER_LABELS).map(([k, v]) => <option key={k} value={k} style={selectOption}>{v}</option>)}
+      <select value={tier} onChange={(e) => setTier(e.target.value)} aria-label={FIELD_LABELS.tier} style={{ ...control, width: "auto" }}>
+        <option value="">{TIER_GROUP_LABELS[UNSORTED_TIER]}</option>
+        {Object.entries(TIER_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
       </select>
       </label>
-      <button onClick={() => void submit()} disabled={busy || !name.trim()} style={{ ...btnPrimary, padding: "9px 14px", fontSize: 12 }}>
+      <button onClick={() => void submit()} disabled={busy || !name.trim()} style={{ ...actionStyle(S, "primary"), ...btnSize, opacity: busy || !name.trim() ? 0.5 : 1 }}>
         {busy ? "Adding…" : "Add"}
       </button>
-      <button onClick={() => { setOpen(false); setErr(null) }} style={{ background: "none", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+      <button onClick={() => { setOpen(false); setErr(null) }} style={{ background: "none", border: "none", color: S.action.quietInk, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
         Cancel
       </button>
-      {err && <div style={{ color: T.ERROR, fontSize: 11, width: "100%" }}>{err}</div>}
+      {err && <div style={{ color: S.meaning.error.ink, fontSize: 13, width: "100%" }}>{err}</div>}
     </div>
   )
+}
+
+const eyebrowStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase",
+  color: S.meaning.replied.ink, marginBottom: 6,
+}
+const h1Style: React.CSSProperties = {
+  fontSize: 34, fontWeight: 800, letterSpacing: -0.6, color: S.text.primary, margin: 0,
+}
+const btnSize: React.CSSProperties = {
+  borderRadius: 10, padding: "12px 20px", fontSize: 14.5, fontFamily: "inherit",
+}
+const control: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.border}`, borderRadius: 10,
+  height: 42, padding: "0 12px", fontSize: 14, color: S.text.primary,
+  fontFamily: "inherit", boxSizing: "border-box",
+}
+const fieldWrap: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 6 }
+const fieldLabel: React.CSSProperties = {
+  color: S.text.muted, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase",
 }

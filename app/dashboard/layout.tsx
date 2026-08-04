@@ -148,6 +148,8 @@ const LIGHT_ROUTES: string[] = [
   // Step 3 the list, step 4 the record. The "/*" covers both: the only
   // descendant of this route is the contact record itself.
   "/dashboard/network/contacts/*",
+  "/dashboard/network/companies",   // step 5, the board. The per-company hub
+                                    // page arrives with the Phase B merge.
 ]
 
 function isLightRoute(pathname: string): boolean {

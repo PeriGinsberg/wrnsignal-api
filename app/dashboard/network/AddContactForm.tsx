@@ -11,11 +11,19 @@ import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABELS, STAGE_LABELS, FIELD_LAB
 // On success it shows a link to the new record, because a not_contacted contact
 // has no due date and so will NOT appear on the worklist.
 
-export function AddContactForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+export function AddContactForm({
+  onClose, onCreated, initialCompany = "",
+}: {
+  onClose: () => void
+  onCreated: () => void
+  /** Prefills the company field. Set when the form is opened FROM a company, so
+   *  "add your first contact here" does not ask which company "here" is. */
+  initialCompany?: string
+}) {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [title, setTitle] = useState("")
-  const [company, setCompany] = useState("")
+  const [company, setCompany] = useState(initialCompany)
   const [email, setEmail] = useState("")
   const [linkedin, setLinkedin] = useState("")
   const [relationship, setRelationship] = useState("")
