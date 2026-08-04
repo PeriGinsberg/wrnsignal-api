@@ -570,7 +570,12 @@ function TextFieldEditor({
   )
 }
 
-const wrap: React.CSSProperties = { maxWidth: 820 }
+// Matches the contacts list. Was 820, a reading measure for the draft, but the
+// stepper needs 950px to show all nine stages (9 x 86px columns + 8 x 22px
+// connectors) and was clipping from about step seven. Seeing the whole path at
+// once is worth more than the narrower column: the stepper is the thing that
+// makes position self-evident, and a path you have to scroll to read is not.
+const wrap: React.CSSProperties = { maxWidth: 1080 }
 const backLink: React.CSSProperties = {
   color: S.action.quietInk, fontSize: 14, fontWeight: 700, textDecoration: "none",
 }
