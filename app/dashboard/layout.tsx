@@ -145,8 +145,9 @@ const COACH_NAV: NavGroup[] = [
  * ask for its children.
  */
 const LIGHT_ROUTES: string[] = [
-  "/dashboard/network/contacts",   // step 3, the list only. The record at
-                                   // /contacts/<id> is NOT converted yet.
+  // Step 3 the list, step 4 the record. The "/*" covers both: the only
+  // descendant of this route is the contact record itself.
+  "/dashboard/network/contacts/*",
 ]
 
 function isLightRoute(pathname: string): boolean {

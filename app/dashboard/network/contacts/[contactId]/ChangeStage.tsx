@@ -2,25 +2,23 @@
 
 // The full stage control, folded behind a toggle.
 //
-// Replaces PipelineStepper on this screen. The phase bar is gone — its job was
-// "where is this person", which the header pill now does in one element instead
-// of seven segments — and the dropdown moved behind "Change stage" because on a
-// screen built for a user with no coach, the loud controls should be the frequent
-// forward moves, not the terminal ones.
-//
-// It still offers ALL ELEVEN stages, not just the rare ones the quick actions
-// leave out. Someone occasionally needs "Keeping in touch", or to undo a
-// mistaken tap, and the alternative would be sending them to the spreadsheet to
-// fix a record they are already looking at.
+// It offers ALL ELEVEN stages, not just the ones the quick moves cover. Someone
+// occasionally needs "Keeping in touch", or to undo a mistaken tap, and the
+// alternative would be sending them to the list to fix a record they are already
+// looking at.
 //
 // Two behaviours ride along with the dropdown and would have been lost with it:
 // the outcome-type sub-attribute, and the "requesting an intro usually means
 // Referral" suggestion.
+//
+// Redesign step 4: light theme, and it opens inside the "Where things stand"
+// card rather than floating under the quick moves. The trigger reads "Change"
+// because it sits next to a sentence describing the current state.
 
 import { useState } from "react"
-import { T, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
+import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
-import { STAGE_LABELS, FIELD_LABELS, RELATIONSHIP_LABELS, stagePillStyle } from "../../vocab"
+import { STAGE_LABELS, FIELD_LABELS, RELATIONSHIP_LABELS } from "../../vocab"
 
 const OUTCOME_TYPES = [
   { key: "referral", label: "Referral" },
@@ -83,59 +81,67 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} data-testid="change-stage-open" style={quiet}>
-        Change stage →
+        Change ▾
       </button>
     )
   }
 
   return (
-    <div data-testid="change-stage-panel" style={{
-      marginTop: 4, padding: "12px 14px", borderRadius: 12,
-      background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`,
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={fieldLabel}>{FIELD_LABELS.stage}</span>
+    <div
+      data-testid="change-stage-panel"
+      style={{
+        marginTop: 14, padding: "16px 18px", borderRadius: 12,
+        background: S.well, border: `1px solid ${S.border}`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={fieldLabelStyle}>{FIELD_LABELS.stage}</span>
           <select
             value={contact.stage}
             onChange={(e) => setStage({ stage: e.target.value }, e.target.value)}
             disabled={busy !== null}
             aria-label={FIELD_LABELS.stage}
             style={{
-              ...selectStyle, ...stagePillStyle(contact.stage),
-              height: 34, padding: "0 12px", fontSize: 12.5, width: 200,
-              fontWeight: 700, borderRadius: 999, opacity: busy !== null ? 0.55 : 1,
+              background: S.card, color: S.text.primary, border: `1px solid ${S.border}`,
+              height: 40, padding: "0 12px", fontSize: 14, width: 210,
+              fontWeight: 700, borderRadius: 10, fontFamily: "inherit", cursor: "pointer",
+              opacity: busy !== null ? 0.55 : 1,
             }}
           >
             {Object.entries(STAGE_LABELS).map(([k, v]) => (
-              <option key={k} value={k} style={selectOption}>{v}</option>
+              <option key={k} value={k}>{v}</option>
             ))}
           </select>
         </label>
-        <span style={{ color: T.DIM, fontSize: 11, paddingBottom: 9, flex: 1 }}>
+        <span style={{ color: S.text.muted, fontSize: 13, paddingBottom: 11, flex: 1 }}>
           {busy !== null ? "Saving…" : isDormant ? "Will resurface automatically." : "Any stage, any direction."}
         </span>
-        <button onClick={() => setOpen(false)} style={{ ...quiet, paddingBottom: 9 }}>Done</button>
+        <button onClick={() => setOpen(false)} style={{ ...quiet, paddingBottom: 11 }}>Done</button>
       </div>
 
       {contact.stage === "outcome" && (
         // The sub-attribute of the outcome stage. It lives with the control that
-        // can reach that stage — orphaning it would make "Got the outcome"
-        // set a state whose defining detail could never be filled in.
-        <div style={{ marginTop: 12 }}>
-          <div style={{ ...fieldLabel, marginBottom: 7 }}>Outcome type</div>
+        // can reach that stage: orphaning it would make "Got the outcome" set a
+        // state whose defining detail could never be filled in.
+        <div style={{ marginTop: 16 }}>
+          <div style={{ ...fieldLabelStyle, marginBottom: 8 }}>Outcome type</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} data-testid="outcome-types">
             {OUTCOME_TYPES.map((o) => {
               const on = contact.outcome_type === o.key
               return (
-                <button key={o.key} onClick={() => setStage({ outcome_type: o.key }, `outcome:${o.key}`)}
+                <button
+                  key={o.key}
+                  onClick={() => setStage({ outcome_type: o.key }, `outcome:${o.key}`)}
                   disabled={busy !== null}
                   style={{
-                    background: on ? T.BLUE_BG_ON : T.NAV_DEFAULT_BG,
-                    color: on ? T.WRN_BLUE : T.TEXT,
-                    border: `1px solid ${on ? T.BLUE_BORDER_ON : T.BORDER_SOFT}`,
-                    borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                  }}>
+                    background: on ? S.meaning.progress.fill : S.card,
+                    color: on ? S.meaning.progress.ink : S.text.secondary,
+                    border: `1px solid ${on ? S.meaning.progress.accent : S.border}`,
+                    borderRadius: 999, padding: "8px 15px", fontSize: 13.5, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
                   {o.label}
                 </button>
               )
@@ -145,32 +151,40 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
       )}
 
       {suggestReferred && (
-        <div style={{
-          marginTop: 12, padding: "11px 13px", borderRadius: 11,
-          background: T.BLUE_BG, border: `1px solid ${T.BLUE_BORDER}`,
-          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-        }}>
-          <span style={{ color: T.TEXT, fontSize: 12, flex: "1 1 220px" }}>
+        <div
+          style={{
+            marginTop: 16, padding: "14px 16px", borderRadius: 11,
+            background: S.meaning.progress.fill, border: `1px solid ${S.meaning.progress.accent}`,
+            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: S.meaning.progress.ink, fontSize: 13.5, flex: "1 1 220px", lineHeight: "20px" }}>
             Requesting an intro usually turns a contact into a{" "}
             <strong>{RELATIONSHIP_LABELS.referred}</strong> one. Update the relationship?
           </span>
-          <button onClick={applyReferred} disabled={busy === "suggest"}
+          <button
+            onClick={applyReferred}
+            disabled={busy === "suggest"}
             style={{
-              background: T.GRAD_PRIMARY, color: T.INK_ON_ACCENT, fontWeight: 900, fontSize: 12,
-              border: "none", borderRadius: 10, padding: "7px 13px", cursor: "pointer",
-            }}>
+              ...actionStyle(S, "primary"),
+              borderRadius: 10, padding: "9px 15px", fontSize: 13.5, fontFamily: "inherit",
+            }}
+          >
             {busy === "suggest" ? "Saving…" : `Set to ${RELATIONSHIP_LABELS.referred}`}
           </button>
           <button onClick={() => setSuggestReferred(false)} style={quiet}>Not now</button>
         </div>
       )}
 
-      {err && <div style={{ color: T.ERROR, fontSize: 12, marginTop: 8 }}>{err}</div>}
+      {err && <div style={{ color: S.meaning.error.ink, fontSize: 13, marginTop: 10 }}>{err}</div>}
     </div>
   )
 }
 
 const quiet: React.CSSProperties = {
-  background: "none", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700,
+  background: "none", border: "none", color: S.action.quietInk, fontSize: 13.5, fontWeight: 700,
   cursor: "pointer", padding: 0, fontFamily: "inherit",
+}
+const fieldLabelStyle: React.CSSProperties = {
+  color: S.text.muted, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase",
 }

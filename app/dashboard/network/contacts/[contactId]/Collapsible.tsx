@@ -11,9 +11,13 @@
 // contact has loaded, so the auto-expand decision is made against real data; and
 // because it is initial state rather than a controlled prop, a later refetch
 // cannot slam a drawer shut while someone is reading it.
+//
+// Redesign step 4: each drawer is its own white card rather than a row divided
+// by a hairline, which is what the mockup shows and what stops a stack of
+// reference sections reading as one undifferentiated block.
 
 import { useState } from "react"
-import { T } from "../../../../../lib/dashboard-theme"
+import { LIGHT as S } from "../../../../../lib/theme/surfaces"
 
 export function Collapsible({
   title, summary, testId, defaultOpen = false, children,
@@ -27,26 +31,54 @@ export function Collapsible({
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <section style={{ borderTop: `1px solid ${T.BORDER_SOFT}` }} data-testid={`drawer-${testId}`}>
+    <section
+      data-testid={`drawer-${testId}`}
+      style={{
+        background: S.card,
+        border: `1px solid ${S.borderSoft}`,
+        borderRadius: 14,
+        boxShadow: S.shadow.card,
+        marginBottom: 10,
+        overflow: "hidden",
+      }}
+    >
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         data-testid={`drawer-toggle-${testId}`}
         style={{
-          display: "flex", alignItems: "baseline", gap: 10, width: "100%", textAlign: "left",
-          background: "none", border: "none", padding: "14px 2px", cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "baseline", gap: 12, width: "100%", textAlign: "left",
+          background: "none", border: "none", padding: "16px 20px", cursor: "pointer", fontFamily: "inherit",
         }}
       >
-        <span style={{ color: T.TEXT, fontSize: 12.5, fontWeight: 800, flex: "0 0 auto" }}>{title}</span>
-        <span style={{ color: T.DIM, fontSize: 12, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-          data-testid={`drawer-summary-${testId}`}>
+        <span style={{ color: S.text.primary, fontSize: 15, fontWeight: 800, flex: "0 0 auto" }}>{title}</span>
+        <span
+          style={{
+            color: S.text.muted, fontSize: 13.5, flex: 1, minWidth: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right",
+          }}
+          data-testid={`drawer-summary-${testId}`}
+        >
           {summary}
         </span>
-        <span aria-hidden style={{ color: T.DIM, fontSize: 11, flex: "0 0 auto", transform: open ? "rotate(90deg)" : "none", transition: "transform 140ms ease" }}>
+        <span
+          aria-hidden
+          style={{
+            color: S.text.dim, fontSize: 11, flex: "0 0 auto",
+            transform: open ? "rotate(90deg)" : "none", transition: "transform 140ms ease",
+          }}
+        >
           ▶
         </span>
       </button>
-      {open && <div style={{ padding: "2px 2px 20px" }} data-testid={`drawer-body-${testId}`}>{children}</div>}
+      {open && (
+        <div
+          style={{ padding: "4px 20px 20px", borderTop: `1px solid ${S.borderSoft}` }}
+          data-testid={`drawer-body-${testId}`}
+        >
+          <div style={{ paddingTop: 16 }}>{children}</div>
+        </div>
+      )}
     </section>
   )
 }

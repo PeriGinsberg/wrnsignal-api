@@ -2,35 +2,34 @@
 
 // Network Tracker — CONTACT RECORD.
 //
-// Restructured per docs/network-tracker/network-tracker-ux-contact-record.md.
-// Nothing was removed: every capability the old ten-section stack had is still
-// reachable. What changed is order and prominence.
+// The screen's job is one question: what do I do with this person, and let me do
+// it. So the message you are about to send is the first thing under the header,
+// where things stand is the second, and everything else folds into drawers that
+// say what is inside them while shut.
 //
-// The old screen put the thing the user came to do — send a message, record that
-// they reached out — at the BOTTOM, under four near-identical navy text areas.
-// Now the send box is the first thing under the header, accent-bordered, with
-// the only warm button on the page; the stage moves that need no message sit
-// under it in plain language; and everything else folds into drawers that say
-// what is inside them while shut.
+// Redesign step 4 (2026-08-04): light theme, to the locked language. The
+// structure was already action-first, so this is a restyle plus two moves:
+//   - the stage pill became a status dot plus text, per the shape rule
+//   - "Something happened?" became "Where things stand", which answers before it
+//     offers to change (see WhereThingsStand.tsx)
 //
 // Colour carries meaning in three registers and nothing else:
-//   warm  = act here   (one element: "Copy and mark as sent")
-//   phase = status     (the header stage pill, from the shared 7-group palette)
+//   peach = act here   (one element: "Copy and mark as sent", inside the hero)
+//   phase = status     (the header dot + text, and the progress bar)
 //   quiet = reference  (drawers, reminder line, secondary buttons)
 
 import { use as usePromise, useCallback, useEffect, useState } from "react"
-import { T, card, eyebrow, headline, input as inputStyle, select as selectStyle, selectOption, textarea as textareaStyle } from "../../../../../lib/dashboard-theme"
+import { LIGHT as S, PHASE_MEANING, status as statusStyle, action as actionStyle, tile, tileIdle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { ActionBox } from "./ActionBox"
-import { QuickActions } from "./QuickActions"
+import { WhereThingsStand } from "./WhereThingsStand"
 import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
-import { ContactTile } from "../../ContactTile"
 import {
   FIELD_LABELS, REASON_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES,
-  STAGE_LABELS, stagePillStyle,
+  STAGE_LABELS, STAGE_PHASE,
 } from "../../vocab"
 
 type Contact = {
@@ -87,13 +86,13 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
 
   useEffect(() => { void load() }, [load])
 
-  if (loading) return <main style={wrap}><p style={{ color: T.MUTED }}>Loading…</p></main>
+  if (loading) return <main style={wrap}><p style={{ color: S.text.muted }}>Loading…</p></main>
   if (error || !contact)
     return (
       <main style={wrap}>
-        <a href={backHref} style={backLink}>← Back</a>
-        <div style={{ ...card, marginTop: 16, padding: 20, background: T.ERROR_BG, borderColor: "rgba(255,120,120,0.35)" }}>
-          <div style={{ color: T.ERROR, fontSize: 13 }}>{error || "Contact not found."}</div>
+        <a href={backHref} style={backLink}>← Back to contacts</a>
+        <div style={{ ...cardBase, marginTop: 18, padding: 22, borderColor: S.meaning.error.accent }}>
+          <div style={{ color: S.meaning.error.ink, fontSize: 14.5 }}>{error || "Contact not found."}</div>
         </div>
       </main>
     )
@@ -101,6 +100,11 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
   const company = contact.network_companies?.name
   const notes = actions.filter((a) => a.type === "note")
   const touches = actions.filter((a) => a.type !== "note")
+
+  const phaseKey = PHASE_MEANING[STAGE_PHASE[contact.stage] ?? "idle"]
+  const st = statusStyle(S, phaseKey)
+  const idle = phaseKey === "idle"
+  const initials = `${(contact.first_name || "").charAt(0)}${(contact.last_name || "").charAt(0)}`.toUpperCase() || "?"
 
   // Drawer summaries. Each answers, while shut, the question that would
   // otherwise cost a click: is there anything in here?
@@ -111,61 +115,103 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
   ].filter(Boolean) as string[]
   // Relationship gets its own summary line when unset, rather than being one
   // absent item among three. It is not just another field: pickTemplate routes
-  // on it, so an unset relationship means the action box above has no suggestion
-  // to make — the summary has to say why.
+  // on it, so an unset relationship means the hero above has no suggestion to
+  // make, and the summary has to say why.
   const detailsSummary = !contact.relationship
-    ? "Relationship not set — it drives which template is suggested"
+    ? "Relationship not set, it drives which template is suggested"
     : detailBits.join(" · ")
 
   return (
     <main style={wrap}>
-      <a href={backHref} style={backLink}>← Back</a>
+      <a href={backHref} style={backLink}>← Back to contacts</a>
 
-      {/* ── 1. Header, compact ─────────────────────────────────── */}
-      <header style={{ marginTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          {/* Same tile, same colour rule as everywhere else a person appears. */}
-          <ContactTile contact={contact} size={46} />
-          <h1 style={{ ...headline, margin: 0 }}>{contact.first_name} {contact.last_name}</h1>
-          {/* Phase colour as STATUS. This one pill replaced the seven-segment
-              phase bar: same information, same shared palette, one element. */}
-          <span data-testid="stage-pill" style={{ ...stagePillStyle(contact.stage), fontSize: 11.5, fontWeight: 800, padding: "4px 11px", borderRadius: 999 }}>
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <header style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <span
+          aria-hidden="true"
+          style={{
+            ...(idle ? tileIdle(S) : tile(S, phaseKey)),
+            width: 56, height: 56, borderRadius: 14, flexShrink: 0,
+            display: "grid", placeItems: "center", fontSize: 17, fontWeight: 800, letterSpacing: 0.5,
+          }}
+        >
+          {initials}
+        </span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: S.text.primary, margin: 0 }}>
+            {contact.first_name} {contact.last_name}
+          </h1>
+          <div style={{ color: S.text.muted, fontSize: 15, marginTop: 4 }}>
+            {[contact.title, company].filter(Boolean).join(" · ") || "No title or company"}
+          </div>
+        </div>
+        {/* Status is a dot plus text, never a pill: a pill looks tappable and the
+            only tappable-looking thing on this page is the peach action below. */}
+        <span
+          data-testid="stage-pill"
+          style={{ display: "inline-flex", alignItems: "center", gap: 9, flexShrink: 0 }}
+        >
+          <span style={st.dot} />
+          <span style={{ ...st.text, fontSize: 15.5, whiteSpace: "nowrap" }}>
             {STAGE_LABELS[contact.stage] ?? contact.stage}
           </span>
-        </div>
-        <div style={{ color: T.MUTED, fontSize: 13, marginTop: 5, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
-          <span>{[contact.title, company].filter(Boolean).join(" · ") || "No title or company"}</span>
-          {contact.email && <a href={`mailto:${contact.email}`} style={metaLink}>{contact.email}</a>}
-          {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" rel="noreferrer" style={metaLink}>LinkedIn ↗</a>}
-        </div>
+        </span>
       </header>
 
-      {/* ── 2. Your next move ──────────────────────────────────── */}
+      {/* ── The thing you came here to do ──────────────────────── */}
       <ActionBox contact={contact as never} onLogged={load} />
 
-      {/* ── 3. Something happened (+ the full stage control) ───── */}
-      <QuickActions contact={contact} onChanged={load} />
+      {/* ── Where things stand (+ the full stage control) ───────── */}
+      <WhereThingsStand contact={contact} onChanged={load} />
 
-      {/* ── 4. Reminder, one line ──────────────────────────────── */}
+      {/* ── Quick facts ────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+        <div style={{ ...cardBase, flex: "1 1 240px", padding: "16px 20px" }}>
+          <div style={factLabel}>{FIELD_LABELS.relationship}</div>
+          <div style={{ color: contact.relationship ? S.text.primary : S.text.dim, fontSize: 15.5, fontWeight: 700, marginTop: 4 }}>
+            {contact.relationship ? RELATIONSHIP_LABELS[contact.relationship] : "Not set"}
+          </div>
+        </div>
+        <div style={{ ...cardBase, flex: "1 1 240px", padding: "16px 20px" }}>
+          <div style={factLabel}>Email</div>
+          <div style={{ fontSize: 15.5, fontWeight: 700, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {contact.email
+              ? <a href={`mailto:${contact.email}`} style={{ color: S.action.quietInk, textDecoration: "none" }}>{contact.email}</a>
+              : <span style={{ color: S.text.dim }}>Not set</span>}
+          </div>
+        </div>
+        {contact.linkedin_url && (
+          <div style={{ ...cardBase, flex: "1 1 240px", padding: "16px 20px" }}>
+            <div style={factLabel}>LinkedIn</div>
+            <div style={{ fontSize: 15.5, fontWeight: 700, marginTop: 4 }}>
+              <a href={contact.linkedin_url} target="_blank" rel="noreferrer" style={{ color: S.action.quietInk, textDecoration: "none" }}>
+                Open profile ↗
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Reminder, one line ─────────────────────────────────── */}
       <ReminderLine contact={contact} onChanged={load} />
 
-      {/* ── 5. Reference, folded away ──────────────────────────── */}
+      {/* ── Reference, folded away ─────────────────────────────── */}
       <div style={{ marginTop: 22 }}>
         {/* Details opens for a contact with NO relationship set, because that
             single field drives the whole template engine (pickTemplate routes on
-            it) — a new user should land on the setup step already open. Once it
-            is set, this is reference and shuts. */}
+            it), so a new user lands on the setup step already open. Once it is
+            set, this is reference and shuts. */}
         <Collapsible
           title="Details" testId="details"
           defaultOpen={!contact.relationship}
           summary={detailsSummary}
         >
           <DetailsEditor contact={contact} onSaved={load} />
-          <div style={{ marginTop: 18 }}>
-            <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 8 }}>Additional info</div>
+          <div style={{ marginTop: 22 }}>
+            <div style={{ ...factLabel, marginBottom: 8 }}>Additional info</div>
             <TextFieldEditor
               contactId={contact.id} field="additional_info" value={contact.additional_info}
-              placeholder="Context for this person — a hand-written opening line, why they're worth reaching, a shared connection…"
+              placeholder="Context for this person: a hand-written opening line, why they're worth reaching, a shared connection…"
               onSaved={load}
             />
           </div>
@@ -187,13 +233,13 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
           {/* "About this person" is durable context, not a dated event, so it is
               pinned above the running log rather than being a fourth text area
               somewhere else on the page. */}
-          <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 8 }}>About this person</div>
+          <div style={{ ...factLabel, marginBottom: 8 }}>About this person</div>
           <TextFieldEditor
             contactId={contact.id} field="notes" value={contact.notes}
-            placeholder="Durable context — how you met, what they care about…"
+            placeholder="Durable context: how you met, what they care about…"
             onSaved={load}
           />
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 22 }}>
             <NotesLog contactId={contact.id} notes={notes} onSaved={load} />
           </div>
         </Collapsible>
@@ -232,28 +278,42 @@ function DeleteContactControl({ contact }: { contact: Contact }) {
     return (
       <button
         onClick={() => setConfirming(true)}
-        style={{ background: "none", border: `1px solid rgba(255,120,120,0.35)`, color: T.ERROR, borderRadius: 11, padding: "9px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}
+        style={{
+          background: S.card, border: `1px solid ${S.meaning.error.accent}`, color: S.meaning.error.ink,
+          borderRadius: 10, padding: "10px 18px", fontSize: 13.5, fontWeight: 800,
+          cursor: "pointer", fontFamily: "inherit",
+        }}
       >
         Delete contact
       </button>
     )
   }
   return (
-    <div style={{ padding: "14px 16px", borderRadius: 12, background: T.ERROR_BG, border: `1px solid rgba(255,120,120,0.35)` }}>
-      <div style={{ color: T.TEXT, fontSize: 13, lineHeight: "20px" }}>
+    <div style={{ padding: "16px 18px", borderRadius: 12, background: S.meaning.error.fill, border: `1px solid ${S.meaning.error.accent}` }}>
+      <div style={{ color: S.text.primary, fontSize: 14.5, lineHeight: "22px" }}>
         Delete <strong>{name}</strong>? This removes {her} action log and notes. This can&apos;t be undone.
       </div>
-      <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-        <button onClick={del} disabled={busy}
-          style={{ background: T.ERROR, color: T.INK_ON_ERROR, border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 12, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
+      <div style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "center" }}>
+        <button
+          onClick={del}
+          disabled={busy}
+          style={{
+            background: S.meaning.error.accent, color: "#FFFFFF", border: "none", borderRadius: 10,
+            padding: "10px 18px", fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
+            cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+          }}
+        >
           {busy ? "Deleting…" : "Delete"}
         </button>
-        <button onClick={() => setConfirming(false)} disabled={busy}
-          style={{ background: "none", border: "none", color: T.MUTED, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+        <button
+          onClick={() => setConfirming(false)}
+          disabled={busy}
+          style={{ background: "none", border: "none", color: S.text.muted, fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+        >
           Cancel
         </button>
       </div>
-      {err && <div style={{ color: T.ERROR, fontSize: 12, marginTop: 8 }}>{err}</div>}
+      {err && <div style={{ color: S.meaning.error.ink, fontSize: 13, marginTop: 10 }}>{err}</div>}
     </div>
   )
 }
@@ -294,51 +354,50 @@ function DetailsEditor({ contact, onSaved }: { contact: Contact; onSaved: () => 
   return (
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.relationship}</span>
-          <select value={relationship} onChange={(e) => setRelationship(e.target.value)} aria-label={FIELD_LABELS.relationship} style={{ ...selectStyle, width: 180, height: 40 }}>
-            <option value="" style={selectOption}>—</option>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={factLabel}>{FIELD_LABELS.relationship}</span>
+          <select value={relationship} onChange={(e) => setRelationship(e.target.value)} aria-label={FIELD_LABELS.relationship} style={{ ...control, width: 190 }}>
+            <option value="">—</option>
             {RELATIONSHIPS.map((r) => (
-              <option key={r} value={r} style={selectOption}>{RELATIONSHIP_LABELS[r]}</option>
+              <option key={r} value={r}>{RELATIONSHIP_LABELS[r]}</option>
             ))}
           </select>
         </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>{FIELD_LABELS.priority}</span>
-          <select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label={FIELD_LABELS.priority} style={{ ...selectStyle, width: 90, height: 40 }}>
-            <option value="" style={selectOption}>—</option>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={factLabel}>{FIELD_LABELS.priority}</span>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label={FIELD_LABELS.priority} style={{ ...control, width: 100 }}>
+            <option value="">—</option>
             {PRIORITIES.map((p) => (
-              <option key={p} value={p} style={selectOption}>{p}</option>
+              <option key={p} value={p}>{p}</option>
             ))}
           </select>
         </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 160px" }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>SEGMENT (target list)</span>
-          <input value={segment} onChange={(e) => setSegment(e.target.value)} placeholder="e.g. Spring PM alumni" style={{ ...inputStyle, height: 40 }} />
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 180px" }}>
+          <span style={factLabel}>Segment (target list)</span>
+          <input value={segment} onChange={(e) => setSegment(e.target.value)} placeholder="e.g. Spring PM alumni" style={control} />
         </label>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
         <button
           onClick={save}
           disabled={busy || !dirty}
-          style={{
-            background: dirty ? T.GRAD_PRIMARY : T.GLASS,
-            color: dirty ? T.INK_ON_ACCENT : T.DIM,
-            fontWeight: 900, fontSize: 12, border: dirty ? "none" : `1px solid ${T.BORDER_SOFT}`,
-            borderRadius: 11, padding: "9px 16px", cursor: busy || !dirty ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-          }}
+          style={
+            dirty
+              ? { ...actionStyle(S, "primary"), ...saveSize, opacity: busy ? 0.6 : 1 }
+              : { ...saveSize, background: S.card, color: S.text.dim, border: `1px solid ${S.border}`, cursor: "default" }
+          }
         >
           {busy ? "Saving…" : "Save details"}
         </button>
-        {savedTick && <span style={{ color: T.MUTED, fontSize: 12 }}>Saved</span>}
-        {err && <span style={{ color: T.ERROR, fontSize: 12 }}>{err}</span>}
+        {savedTick && <span style={{ color: S.text.muted, fontSize: 13.5 }}>Saved</span>}
+        {err && <span style={{ color: S.meaning.error.ink, fontSize: 13.5 }}>{err}</span>}
       </div>
     </div>
   )
 }
 
-// The reminder state, condensed from a full banner to one quiet row. Same
-// control, same POSTs — it is reference, not the action, so it recedes.
+// The reminder state, one quiet row. Same control, same POSTs: it is reference,
+// not the action, so it recedes.
 function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -369,46 +428,62 @@ function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () 
   const clearReminder = () => setReminder({ reminder_override: null }, "Clear")
 
   return (
-    <div data-testid="reminder-line" style={{
-      marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
-      fontSize: 12.5, color: T.MUTED,
-    }}>
+    <div
+      data-testid="reminder-line"
+      style={{
+        marginTop: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+        fontSize: 14, color: S.text.muted, padding: "14px 20px",
+        ...cardBase,
+      }}
+    >
       <span style={{ flex: "1 1 auto", minWidth: 0 }}>
         {contact.next_due_at ? (
           <>
-            Next: <strong style={{ color: T.TEXT, fontWeight: 700 }}>
+            Next: <strong style={{ color: S.text.primary, fontWeight: 700 }}>
               {REASON_LABELS[contact.next_due_reason ?? ""] ?? contact.next_due_reason ?? "—"}
             </strong>
             {" · "}{fmt(contact.next_due_at)}
-            {snoozed && <span style={{ color: T.WRN_ORANGE, marginLeft: 8 }}>manual — overrides the stage cadence</span>}
+            {snoozed && (
+              <span style={{ color: S.meaning.attention.ink, marginLeft: 8 }}>
+                manual, overrides the stage cadence
+              </span>
+            )}
           </>
         ) : "No reminder set."}
       </span>
-      <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
-        <span style={{ color: T.DIM, fontSize: 11, fontWeight: 700 }}>Snooze</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 7, flex: "0 0 auto" }}>
+        <span style={{ color: S.text.dim, fontSize: 12.5, fontWeight: 700 }}>Snooze</span>
         {[3, 7, 14].map((d) => (
-          <button key={d} onClick={() => snooze(d)} disabled={busy} title={`Snooze ${d} days`}
+          <button
+            key={d}
+            onClick={() => snooze(d)}
+            disabled={busy}
+            title={`Snooze ${d} days`}
             style={{
-              background: "none", color: T.MUTED, border: `1px solid ${T.BORDER_SOFT}`,
-              borderRadius: 8, padding: "3px 8px", fontSize: 11.5, fontWeight: 800,
+              background: S.card, color: S.text.secondary, border: `1px solid ${S.border}`,
+              borderRadius: 8, padding: "5px 11px", fontSize: 12.5, fontWeight: 800,
               cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "inherit",
-            }}>
+            }}
+          >
             {d}d
           </button>
         ))}
         {snoozed && (
-          <button onClick={clearReminder} disabled={busy}
-            style={{ background: "none", color: T.DIM, border: "none", fontSize: 11.5, fontWeight: 700, cursor: busy ? "default" : "pointer", textDecoration: "underline" }}>
+          <button
+            onClick={clearReminder}
+            disabled={busy}
+            style={{ background: "none", color: S.action.quietInk, border: "none", fontSize: 13, fontWeight: 700, cursor: busy ? "default" : "pointer", textDecoration: "underline", fontFamily: "inherit" }}
+          >
             {busy ? "…" : "Clear"}
           </button>
         )}
       </span>
-      {err && <div style={{ flexBasis: "100%", color: T.ERROR, fontSize: 12 }}>{err}</div>}
+      {err && <div style={{ flexBasis: "100%", color: S.meaning.error.ink, fontSize: 13 }}>{err}</div>}
     </div>
   )
 }
 
-// Generic single-textarea PATCH editor — used for both notes and additional_info.
+// Generic single-textarea PATCH editor, used for both notes and additional_info.
 // The field name is the PATCH key (only present keys are touched by the route).
 function TextFieldEditor({
   contactId, field, value, placeholder, onSaved,
@@ -454,33 +529,47 @@ function TextFieldEditor({
         placeholder={placeholder}
         aria-label={field === "notes" ? "About this person" : "Additional info"}
         rows={4}
-        style={{ ...textareaStyle, minHeight: 96 }}
+        style={{
+          display: "block", width: "100%", boxSizing: "border-box", resize: "vertical",
+          background: S.well, border: `1px solid ${S.border}`, borderRadius: 10,
+          padding: "12px 14px", fontSize: 14.5, lineHeight: "22px", minHeight: 96,
+          color: S.text.primary, fontFamily: "inherit", outline: "none",
+        }}
       />
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
         <button
           onClick={save}
           disabled={busy || !dirty}
-          style={{
-            background: dirty ? T.GRAD_PRIMARY : T.GLASS,
-            color: dirty ? T.INK_ON_ACCENT : T.DIM,
-            fontWeight: 900,
-            fontSize: 12,
-            border: dirty ? "none" : `1px solid ${T.BORDER_SOFT}`,
-            borderRadius: 11,
-            padding: "9px 16px",
-            cursor: busy || !dirty ? "default" : "pointer",
-            opacity: busy ? 0.6 : 1,
-          }}
+          style={
+            dirty
+              ? { ...actionStyle(S, "primary"), ...saveSize, opacity: busy ? 0.6 : 1 }
+              : { ...saveSize, background: S.card, color: S.text.dim, border: `1px solid ${S.border}`, cursor: "default" }
+          }
         >
           {busy ? "Saving…" : "Save"}
         </button>
-        {savedTick && <span style={{ color: T.MUTED, fontSize: 12 }}>Saved</span>}
-        {err && <span style={{ color: T.ERROR, fontSize: 12 }}>{err}</span>}
+        {savedTick && <span style={{ color: S.text.muted, fontSize: 13.5 }}>Saved</span>}
+        {err && <span style={{ color: S.meaning.error.ink, fontSize: 13.5 }}>{err}</span>}
       </div>
     </div>
   )
 }
 
-const wrap: React.CSSProperties = { padding: "28px 24px", maxWidth: 820, margin: "0 auto" }
-const backLink: React.CSSProperties = { color: T.MUTED, fontSize: 12, fontWeight: 700, textDecoration: "none" }
-const metaLink: React.CSSProperties = { color: T.WRN_BLUE, fontSize: 12.5, textDecoration: "none" }
+const wrap: React.CSSProperties = { maxWidth: 820 }
+const backLink: React.CSSProperties = {
+  color: S.action.quietInk, fontSize: 14, fontWeight: 700, textDecoration: "none",
+}
+const cardBase: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.borderSoft}`, borderRadius: 14, boxShadow: S.shadow.card,
+}
+const factLabel: React.CSSProperties = {
+  color: S.text.muted, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase",
+}
+const control: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.border}`, borderRadius: 10,
+  height: 42, padding: "0 12px", fontSize: 14, color: S.text.primary,
+  fontFamily: "inherit", boxSizing: "border-box",
+}
+const saveSize: React.CSSProperties = {
+  borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 800, fontFamily: "inherit",
+}

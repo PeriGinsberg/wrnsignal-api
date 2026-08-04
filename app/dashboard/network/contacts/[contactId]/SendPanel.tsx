@@ -11,8 +11,14 @@
 // for this contact's current state, the stored body (override or default)
 // supplies the wording, and renderTemplate fills it in.
 
+// Redesign step 4: this panel now sits inside a NAVY hero, so its own text reads
+// on hero ink rather than on a card. The message box is the one white surface
+// inside it, which is what makes the draft look like a thing you pick up and
+// paste. Logic is untouched: same pickTemplate, same copy-first-then-log
+// ordering, same ephemeral draft.
+
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { T, btnPrimary, btnSecondary, fieldLabel, select as selectStyle, selectOption } from "../../../../../lib/dashboard-theme"
+import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { displayName } from "../../templates/templateNames"
 import { pickTemplate, REASON_TO_ACTION, ACTION_TYPE_LABEL } from "../../vocab"
@@ -170,143 +176,194 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
     }
   }, [rendered, messageText, actionType, contact.id, onLogged])
 
-  if (loading) return <div style={{ color: T.DIM, fontSize: 12 }}>Loading templates…</div>
+  if (loading) return <div style={{ color: S.hero.muted, fontSize: 13 }}>Loading templates…</div>
 
   const gaps = rendered ? [...gapsNow.unresolved, ...gapsNow.toFill] : []
 
   return (
     <div data-testid="send-panel">
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-        {active && <span style={{ color: T.MUTED, fontSize: 12 }} data-testid="active-template">
-          {displayName(active.template_id)}
-        </span>}
-        {active && (
-          // The bridge to the permanent editor. Deliberately a LINK away rather
-          // than an editor here: wanting to change this wording everywhere is a
-          // different intent from tweaking this one message, and 8d's whole
-          // point is that those two do not share a surface.
-          <a href={`/dashboard/network/templates?id=${active.template_id}`}
-            data-testid="edit-template-link"
-            style={{ color: T.WRN_BLUE, fontSize: 11.5, fontWeight: 700, textDecoration: "underline" }}>
-            Edit this template
-          </a>
-        )}
-      </div>
-
       {!suggestedId && !chosenId && (
         // Not an error state. S1/S5 have no due reason that implies them, and a
         // first message needs a relationship to choose a family.
-        <p style={{ color: T.MUTED, fontSize: 12, margin: "0 0 10px" }}>
+        <p style={{ color: S.hero.muted, fontSize: 13.5, margin: "0 0 12px", lineHeight: "20px" }}>
           {contact.relationship
             ? "No suggested template for this moment — pick one below."
             : "Set a relationship to get a suggested template, or pick one below."}
         </p>
       )}
 
-      <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
-        <span style={fieldLabel}>Template</span>
-        <select
-          value={activeId ?? ""}
-          onChange={(e) => setChosenId(e.target.value || null)}
-          aria-label="Template"
-          style={{ ...selectStyle, height: 34, fontSize: 12, width: "100%", maxWidth: 420 }}
-        >
-          <option value="" style={selectOption}>Choose a template…</option>
-          {templates.map((t) => (
-            <option key={t.template_id} value={t.template_id} style={selectOption}>
-              {displayName(t.template_id)}{t.source === "override" ? " (edited)" : ""}
-            </option>
-          ))}
-        </select>
-      </label>
+      {rendered && (
+        <textarea
+          data-testid="rendered-message"
+          aria-label="Message"
+          value={messageText}
+          onChange={(e) => setDraft(e.target.value)}
+          spellCheck
+          rows={Math.min(24, Math.max(4, messageText.split("\n").length + 1))}
+          style={{
+            display: "block", width: "100%", boxSizing: "border-box", resize: "vertical",
+            whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 15.5, lineHeight: "25px",
+            color: S.text.primary, background: S.card,
+            border: `2px solid ${isEdited ? S.meaning.progress.accent : "transparent"}`,
+            borderRadius: 12, padding: "16px 18px", margin: "0 0 10px",
+            outline: "none",
+          }}
+        />
+      )}
+
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 14, minHeight: 20 }}>
+        <span style={{ color: S.hero.muted, fontSize: 13 }}>
+          {isEdited ? (
+            <span data-testid="edited-note">
+              Edited for {contact.first_name}, this copy only, not saved to the template.
+            </span>
+          ) : (
+            "Tap the message to edit before you send."
+          )}
+        </span>
+        {isEdited && (
+          <button
+            onClick={() => setDraft(null)}
+            style={{
+              background: "none", border: "none", padding: 0, cursor: "pointer",
+              color: S.hero.link, fontSize: 13, fontWeight: 700, textDecoration: "underline",
+              fontFamily: "inherit",
+            }}
+          >
+            Revert to suggestion
+          </button>
+        )}
+      </div>
 
       {rendered && (
         <>
-          <textarea
-            data-testid="rendered-message"
-            aria-label="Message"
-            value={messageText}
-            onChange={(e) => setDraft(e.target.value)}
-            spellCheck
-            rows={Math.min(24, Math.max(6, messageText.split("\n").length + 1))}
-            style={{
-              display: "block", width: "100%", boxSizing: "border-box", resize: "vertical",
-              whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 13, lineHeight: "20px",
-              color: T.TEXT, background: T.GLASS, border: `1px solid ${isEdited ? T.WRN_BLUE : T.BORDER_SOFT}`,
-              borderRadius: 12, padding: "12px 14px", margin: "0 0 6px",
-            }}
-          />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 20, marginBottom: 10 }}>
-            {isEdited && (
-              <>
-                <span style={{ color: T.MUTED, fontSize: 11.5 }} data-testid="edited-note">
-                  Edited for {contact.first_name} — this copy only, not saved to the template.
-                </span>
-                <button
-                  onClick={() => setDraft(null)}
-                  style={{
-                    background: "none", border: "none", padding: 0, cursor: "pointer",
-                    color: T.WRN_BLUE, fontSize: 11.5, fontWeight: 700, textDecoration: "underline",
-                  }}
-                >
-                  Revert to suggestion
-                </button>
-              </>
-            )}
-          </div>
-
           {gaps.length > 0 && (
             // Warn, never block. Someone may well finish the sentence in Gmail,
             // and refusing to copy would just push them to retype it by hand.
             <div
               data-testid="gap-warning"
               style={{
-                background: T.WARNING_BG, border: `1px solid ${T.ORANGE_BORDER}`,
-                borderRadius: 10, padding: "9px 12px", marginBottom: 12,
-                color: T.TEXT, fontSize: 12, lineHeight: "18px",
+                // Attention as TEXT, not as a fill. The peach fill is reserved
+                // for the button below, so the warning takes the peach accent as
+                // ink on a left rail and reads as a caution rather than as a
+                // second thing to click. At 12% alpha this was a plain dark box
+                // and lost the signal entirely.
+                background: "rgba(254,176,106,0.10)",
+                borderLeft: `3px solid ${S.meaning.attention.accent}`,
+                borderRadius: "0 10px 10px 0", padding: "12px 16px", marginBottom: 14,
+                color: S.meaning.attention.accent, fontSize: 13.5, lineHeight: "20px",
+                fontWeight: 600,
               }}
             >
               {gapsNow.unresolved.length > 0 && (
                 <div>
-                  Still unfilled: {gapsNow.unresolved.map((v) => `[${v}]`).join(", ")} — fill your
+                  Still unfilled: {gapsNow.unresolved.map((v) => `[${v}]`).join(", ")}. Fill your
                   networking profile, or edit before sending.
                 </div>
               )}
               {gapsNow.toFill.length > 0 && (
-                <div style={{ marginTop: gapsNow.unresolved.length ? 4 : 0 }}>
-                  Fill in {gapsNow.toFill.map((v) => `[${v}]`).join(", ")} before sending — these
+                <div style={{ marginTop: gapsNow.unresolved.length ? 5 : 0 }}>
+                  Fill in {gapsNow.toFill.map((v) => `[${v}]`).join(", ")} before sending. These
                   are yours to write.
                 </div>
               )}
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             {actionType ? (
-              <button onClick={() => void copyAndSend()} disabled={busy !== null}
-                style={{ ...btnPrimary, padding: "10px 16px", fontSize: 12.5 }}>
+              <button
+                onClick={() => void copyAndSend()}
+                disabled={busy !== null}
+                style={{ ...actionStyle(S, "primary"), ...btnSize, opacity: busy !== null ? 0.6 : 1 }}
+              >
                 {busy === "send" ? "Copying…" : "Copy and mark as sent"}
               </button>
             ) : (
               // Nothing is due, so there is no action to log. Inventing one would
               // put a touch on the record that the engine never asked for.
-              <span style={{ color: T.DIM, fontSize: 11.5 }}>Nothing due — copy without logging.</span>
+              <span style={{ color: S.hero.muted, fontSize: 13 }}>Nothing due — copy without logging.</span>
             )}
-            <button onClick={() => void copyOnly()} disabled={busy !== null}
-              style={{ ...btnSecondary, padding: "10px 16px", fontSize: 12.5 }}>
+            <button
+              onClick={() => void copyOnly()}
+              disabled={busy !== null}
+              style={{
+                ...btnSize,
+                background: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.16)",
+                color: S.hero.ink,
+                cursor: "pointer",
+                opacity: busy !== null ? 0.6 : 1,
+              }}
+            >
               {busy === "copy" ? "Copying…" : "Copy only"}
             </button>
           </div>
         </>
       )}
 
+      {/* Template chrome sits BELOW the action, deliberately. Which template is
+          in the box is reference; sending the message is the job. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: S.hero.muted, fontSize: 12.5, fontWeight: 700 }}>Template</span>
+          <select
+            value={activeId ?? ""}
+            onChange={(e) => setChosenId(e.target.value || null)}
+            aria-label="Template"
+            style={{
+              background: "rgba(255,255,255,0.10)", color: S.hero.ink,
+              border: "1px solid rgba(255,255,255,0.16)", borderRadius: 9,
+              height: 34, fontSize: 13, padding: "0 10px", maxWidth: 300,
+              fontFamily: "inherit", cursor: "pointer",
+            }}
+          >
+            <option value="" style={darkOption}>Choose a template…</option>
+            {templates.map((t) => (
+              <option key={t.template_id} value={t.template_id} style={darkOption}>
+                {displayName(t.template_id)}{t.source === "override" ? " (edited)" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        {active && (
+          <span style={{ color: S.hero.muted, fontSize: 12.5 }} data-testid="active-template">
+            {displayName(active.template_id)}
+          </span>
+        )}
+        {active && (
+          // The bridge to the permanent editor. Deliberately a LINK away rather
+          // than an editor here: wanting to change this wording everywhere is a
+          // different intent from tweaking this one message, and those two must
+          // not share a surface.
+          <a
+            href={`/dashboard/network/templates?id=${active.template_id}`}
+            data-testid="edit-template-link"
+            style={{ color: S.hero.link, fontSize: 12.5, fontWeight: 700, textDecoration: "underline" }}
+          >
+            Edit this template
+          </a>
+        )}
+      </div>
+
       {confirmation && (
-        <div data-testid="confirmation" style={{ marginTop: 10, color: T.MUTED, fontSize: 12, fontWeight: 700 }}>
+        <div
+          data-testid="confirmation"
+          style={{ marginTop: 12, color: S.hero.ink, fontSize: 13.5, fontWeight: 700 }}
+        >
           {confirmation}
         </div>
       )}
-      {error && <div style={{ marginTop: 10, color: T.ERROR, fontSize: 12 }}>{error}</div>}
+      {error && (
+        <div style={{ marginTop: 12, color: "#FFB4B0", fontSize: 13.5, lineHeight: "20px" }}>{error}</div>
+      )}
     </div>
   )
 }
+
+const btnSize: React.CSSProperties = {
+  padding: "12px 20px", fontSize: 14.5, borderRadius: 10, fontFamily: "inherit", fontWeight: 800,
+}
+// A native option list cannot be reliably tinted, so keep it explicitly dark to
+// match the hero it drops out of rather than flashing white.
+const darkOption: React.CSSProperties = { background: "#13294A", color: "#FFFFFF" }

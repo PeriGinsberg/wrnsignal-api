@@ -16,7 +16,7 @@
 // log shows everything in order; this shows only what you wrote about them.
 
 import { useEffect, useState } from "react"
-import { T, input, btnPrimary } from "../../../../../lib/dashboard-theme"
+import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 
 export type NoteEntry = {
@@ -89,29 +89,36 @@ export function NotesLog({
         placeholder="Add a note…"
         aria-label="Add a note"
         rows={3}
-        style={{ ...input, height: "auto", padding: "10px 14px", lineHeight: "20px", resize: "vertical" }}
+        style={noteBox}
       />
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-        <button onClick={() => void save()} disabled={busy || !text.trim()} style={{ ...btnPrimary, padding: "9px 16px", fontSize: 12 }}>
+        <button onClick={() => void save()} disabled={busy || !text.trim()} style={{ ...actionStyle(S, "primary"), borderRadius: 10, padding: "10px 18px", fontSize: 14, fontFamily: "inherit", opacity: busy || !text.trim() ? 0.5 : 1 }}>
           {busy ? "Saving…" : "Save note"}
         </button>
-        {err && <span style={{ color: T.ERROR, fontSize: 12 }}>{err}</span>}
+        {err && <span style={{ color: S.meaning.error.ink, fontSize: 13 }}>{err}</span>}
       </div>
 
       {items.length === 0 ? (
-        <div style={{ color: T.DIM, fontSize: 12, marginTop: 14 }}>No notes yet.</div>
+        <div style={{ color: S.text.muted, fontSize: 14, marginTop: 16 }}>No notes yet.</div>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0" }}>
           {items.map((n) => (
-            <li key={n.id} style={{ padding: "10px 0", borderTop: `1px solid ${T.BORDER_SOFT}` }}>
-              <div style={{ color: T.DIM, fontSize: 10, fontWeight: 800, letterSpacing: 0.3, marginBottom: 3 }}>
+            <li key={n.id} style={{ padding: "12px 0", borderTop: `1px solid ${S.borderSoft}` }}>
+              <div style={{ color: S.text.muted, fontSize: 11.5, fontWeight: 800, letterSpacing: 0.4, marginBottom: 4 }}>
                 {fmtWhen(n.action_date)}
               </div>
-              <div style={{ color: T.TEXT, fontSize: 13, lineHeight: "19px", whiteSpace: "pre-wrap" }}>{n.note}</div>
+              <div style={{ color: S.text.primary, fontSize: 14.5, lineHeight: "22px", whiteSpace: "pre-wrap" }}>{n.note}</div>
             </li>
           ))}
         </ul>
       )}
     </div>
   )
+}
+
+const noteBox: React.CSSProperties = {
+  display: "block", width: "100%", boxSizing: "border-box", resize: "vertical",
+  background: S.well, border: `1px solid ${S.border}`, borderRadius: 10,
+  padding: "12px 14px", fontSize: 14.5, lineHeight: "22px",
+  color: S.text.primary, fontFamily: "inherit", outline: "none",
 }

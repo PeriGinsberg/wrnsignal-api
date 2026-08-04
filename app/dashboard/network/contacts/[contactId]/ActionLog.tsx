@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { T, input as inputStyle, select as selectStyle, selectOption, fieldLabel } from "../../../../../lib/dashboard-theme"
+import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { ACTION_TYPE_OPTIONS, ACTION_TYPE_LABEL } from "../../vocab"
 
@@ -9,6 +9,11 @@ import { ACTION_TYPE_OPTIONS, ACTION_TYPE_LABEL } from "../../vocab"
 // route accepts action_date and the engine measures intervals from it), so the
 // date input defaults to today but is freely editable to the past. Logging runs
 // the engine in the route — this component never computes a due date.
+//
+// Redesign step 4: light theme. "Log it" keeps the peach action treatment
+// because inside this drawer it IS the action; the peach-is-one-thing rule is
+// about a screen at rest, and a drawer the user has deliberately opened to log
+// something is its own context.
 
 type Action = {
   id: string
@@ -72,65 +77,52 @@ export function ActionLog({
   return (
     <div>
       {/* add form */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>ACTION</span>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            style={{ ...selectStyle, width: 190, height: 40 }}
-          >
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={label}>Action</span>
+          <select value={type} onChange={(e) => setType(e.target.value)} style={{ ...control, width: 200 }}>
             {ACTION_TYPES.map((t) => (
-              <option key={t.key} value={t.key} style={selectOption}>
-                {t.label}
-              </option>
+              <option key={t.key} value={t.key}>{t.label}</option>
             ))}
           </select>
         </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: T.MUTED, fontSize: 10, fontWeight: 800 }}>DATE (backdatable)</span>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={label}>Date (backdatable)</span>
           <input
             type="date"
             value={date}
             max={toDateInput(new Date())}
             onChange={(e) => setDate(e.target.value)}
-            style={{ ...inputStyle, width: 160, height: 40 }}
+            style={{ ...control, width: 170 }}
           />
         </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 180px" }}>
-          <span style={fieldLabel}>Details (optional)</span>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 200px" }}>
+          <span style={label}>Details (optional)</span>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Context for this touch"
-            style={{ ...inputStyle, height: 40 }}
+            style={control}
           />
         </label>
         <button
           onClick={add}
           disabled={busy}
           style={{
-            background: T.GRAD_PRIMARY,
-            color: T.INK_ON_ACCENT,
-            fontWeight: 900,
-            fontSize: 12,
-            border: "none",
-            borderRadius: 11,
-            padding: "0 16px",
-            height: 40,
-            cursor: busy ? "default" : "pointer",
-            opacity: busy ? 0.6 : 1,
+            ...actionStyle(S, "primary"),
+            borderRadius: 10, padding: "0 20px", height: 42, fontSize: 14,
+            fontFamily: "inherit", opacity: busy ? 0.6 : 1,
           }}
         >
           {busy ? "Logging…" : "Log it"}
         </button>
       </div>
-      {err && <div style={{ color: T.ERROR, fontSize: 12, marginTop: 8 }}>{err}</div>}
+      {err && <div style={{ color: S.meaning.error.ink, fontSize: 13, marginTop: 10 }}>{err}</div>}
 
       {/* the log */}
-      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 8 }}>
         {actions.length === 0 ? (
-          <div style={{ color: T.DIM, fontSize: 13 }}>No actions logged yet.</div>
+          <div style={{ color: S.text.muted, fontSize: 14 }}>No actions logged yet.</div>
         ) : (
           actions.map((a) => (
             <div
@@ -138,20 +130,29 @@ export function ActionLog({
               style={{
                 display: "flex",
                 alignItems: "baseline",
-                gap: 12,
-                padding: "10px 12px",
-                background: T.GLASS,
+                gap: 14,
+                padding: "12px 14px",
+                background: S.well,
                 borderRadius: 10,
-                border: `1px solid ${T.BORDER_SOFT}`,
+                border: `1px solid ${S.borderSoft}`,
               }}
             >
-              <span style={{ color: T.DIM, fontSize: 11, fontWeight: 700, flex: "0 0 96px" }}>{fmt(a.action_date)}</span>
-              <span style={{ color: T.TEXT, fontSize: 13, fontWeight: 700, flex: "0 0 auto" }}>
+              <span style={{ color: S.text.muted, fontSize: 12.5, fontWeight: 700, flex: "0 0 104px" }}>
+                {fmt(a.action_date)}
+              </span>
+              <span style={{ color: S.text.primary, fontSize: 14, fontWeight: 700, flex: "0 0 auto" }}>
                 {TYPE_LABEL[a.type] ?? a.type}
               </span>
-              {a.note && <span style={{ color: T.MUTED, fontSize: 13 }}>{a.note}</span>}
+              {a.note && <span style={{ color: S.text.secondary, fontSize: 14 }}>{a.note}</span>}
               {a.author_role === "coach" && (
-                <span style={{ marginLeft: "auto", color: T.WRN_TEAL, fontSize: 10, fontWeight: 800 }}>COACH</span>
+                <span
+                  style={{
+                    marginLeft: "auto", color: S.meaning.replied.ink,
+                    fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
+                  }}
+                >
+                  COACH
+                </span>
               )}
             </div>
           ))
@@ -159,4 +160,13 @@ export function ActionLog({
       </div>
     </div>
   )
+}
+
+const label: React.CSSProperties = {
+  color: S.text.muted, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase",
+}
+const control: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.border}`, borderRadius: 10,
+  height: 42, padding: "0 12px", fontSize: 14, color: S.text.primary,
+  fontFamily: "inherit", boxSizing: "border-box",
 }
