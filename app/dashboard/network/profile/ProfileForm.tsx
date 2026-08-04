@@ -6,13 +6,17 @@
 // Extracted from page.tsx so it can be rendered in isolation by a test (a Next
 // page may only export route members).
 //
+// Redesign step 8 (2026-08-04): light theme, and this form is now a SECTION of
+// My Profile rather than its own route. Structure, testids, field defs and copy
+// are all unchanged; only the palette moved.
+//
 // Grouped rather than presented as a flat wall of 17 inputs, because the groups
 // are the argument for filling them in: "About you" and "Your target" are facts,
 // "Your affinities" is the bit only the client knows, and the pitch is the one
 // that actually costs effort.
 
 import { useCallback, useEffect, useState } from "react"
-import { T, card, fieldLabel } from "../../../../lib/dashboard-theme"
+import { LIGHT as S, surfaceCard } from "../../../../lib/theme/surfaces"
 import { authFetch } from "../authFetch"
 import { Field, type FieldDef } from "./Field"
 import { ProgressHeader } from "./ProgressHeader"
@@ -183,7 +187,7 @@ export function ProfileForm() {
     }
   }
 
-  if (loading) return <div style={{ color: T.DIM, fontSize: 13 }}>Loading…</div>
+  if (loading) return <div style={{ color: S.text.muted, fontSize: 14.5 }}>Loading…</div>
 
   return (
     <div>
@@ -193,28 +197,28 @@ export function ProfileForm() {
       )}
 
       {banner && (
-        <div style={{ padding: "9px 12px", borderRadius: 10, background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, color: T.TEXT, fontSize: 12, marginBottom: 14 }}>
+        <div style={{ padding: "11px 16px", borderRadius: 10, background: S.meaning.sequence.fill, color: S.meaning.sequence.ink, fontSize: 14, lineHeight: "20px", marginBottom: 16 }}>
           {banner}
         </div>
       )}
-      {error && <div style={{ color: T.ERROR, fontSize: 13, marginBottom: 12 }}>{error}</div>}
+      {error && <div style={{ color: S.meaning.error.ink, fontSize: 14, marginBottom: 14 }}>{error}</div>}
 
       {GROUPS.map((g) => {
         const prog = groupProgress(g.fields.map((f) => f.key), profile)
         const done = prog.filled === prog.total
         return (
-          <section key={g.title} style={{ ...card, padding: "16px 18px", marginBottom: 14 }}
+          <section key={g.title} style={{ ...surfaceCard(S), borderRadius: 14, padding: "18px 22px", marginBottom: 12 }}
             data-testid={`section-${g.title.toLowerCase().replace(/\s+/g, "-")}`}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "0 0 4px" }}>
-              <h2 style={{ ...fieldLabel, textTransform: "uppercase", margin: 0 }}>{g.title}</h2>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "0 0 6px" }}>
+              <h2 style={{ color: S.text.primary, fontSize: 15.5, fontWeight: 800, margin: 0 }}>{g.title}</h2>
               {/* Per-section counts so the user feels movement inside a section
                   rather than only against the distant 17. */}
-              <span data-testid="section-count" style={{ color: done ? T.SUCCESS : T.DIM, fontSize: 11, fontWeight: 700 }}>
+              <span data-testid="section-count" style={{ color: done ? S.meaning.replied.ink : S.text.dim, fontSize: 13, fontWeight: 700 }}>
                 · {prog.filled} of {prog.total}
               </span>
             </div>
-            {g.blurb && <p style={{ color: T.MUTED, fontSize: 11.5, lineHeight: "17px", margin: "0 0 12px" }}>{g.blurb}</p>}
-            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+            {g.blurb && <p style={{ color: S.text.muted, fontSize: 14, lineHeight: "21px", margin: "0 0 16px" }}>{g.blurb}</p>}
+            <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
               {g.fields.map((f) => (
                 <Field
                   key={f.key}

@@ -1,181 +1,222 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { getSupabaseBrowser } from "../../../lib/supabase-browser"
-import { T, input, textarea, btnPrimary, card, eyebrow, headline, label } from "../../../lib/dashboard-theme"
-import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../lib/jobType"
-import { LegacyAccountPanel } from "./LegacyAccountPanel"
+// My Profile — one home for everything about the student.
+//
+// This is the last Phase A screen, and it exists mostly to retire things. Three
+// temporary entries added while the redesign was in flight all land here:
+//
+//   the LEGACY ACCOUNT PANEL, the whole old /dashboard page (personas, coach
+//   recommendations, refund), parked at the bottom of this route and still
+//   dark. Personas became Resume > Resume versions, the refund became Account.
+//
+//   the NETWORKING PROFILE nav entry, a sub-item under Networking pointing at
+//   /dashboard/network/profile. It is now the Networking section here, and that
+//   route redirects.
+//
+//   LOG OUT, a nav item with no designed home. It is now Account > Sign out.
+//
+// SECTIONS LIVE IN THE URL (?section=resume) so a section is linkable, survives
+// a refresh, and Back steps between them. Same decision as the tracker's tabs.
+//
+// NOT BUILT: the Notifications section from the mockup. There is no
+// notification-settings data anywhere in the schema — no table, no columns, no
+// endpoint — so it would be a menu item leading to an empty page. Flagged
+// rather than stubbed.
 
-type Profile = {
-  id: string
-  name: string | null
-  job_type: string | null
-  target_roles: string | null
-  target_locations: string | null
-  preferred_locations: string | null
-  timeline: string | null
-  resume_text: string | null
-  profile_version: number
+import { Suspense, useCallback, useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { LIGHT as S } from "../../../lib/theme/surfaces"
+import { AccountIcon, ResumeIcon, NetworkIcon, ProfileIcon } from "../../../components/icons"
+import { authFetch } from "../network/authFetch"
+import { profileCompletion } from "../dashboardState"
+import { BasicsSection, type Profile } from "./BasicsSection"
+import { ResumeSection } from "./ResumeSection"
+import { AccountSection } from "./AccountSection"
+import { ProfileForm } from "../network/profile/ProfileForm"
+import { SectionHead } from "./BasicsSection"
+
+const SECTIONS = [
+  { key: "basics", label: "Basics", icon: <ProfileIcon size={19} /> },
+  { key: "resume", label: "Resume", icon: <ResumeIcon size={19} /> },
+  { key: "networking", label: "Networking", icon: <NetworkIcon size={19} /> },
+  { key: "account", label: "Account", icon: <AccountIcon size={19} /> },
+] as const
+
+type SectionKey = (typeof SECTIONS)[number]["key"]
+
+export default function MyProfilePage() {
+  return (
+    <Suspense fallback={<p style={{ color: S.text.muted, fontSize: 14.5 }}>Loading…</p>}>
+      <MyProfile />
+    </Suspense>
+  )
 }
 
-const FIELDS: { key: keyof Profile; label: string; multi: boolean; required: boolean }[] = [
-  { key: "name", label: "NAME", multi: false, required: true },
-  { key: "job_type", label: "JOB TYPE", multi: false, required: true },
-  { key: "target_roles", label: "TARGET ROLES", multi: false, required: true },
-  { key: "target_locations", label: "TARGET LOCATIONS", multi: false, required: false },
-  { key: "timeline", label: "TIMELINE", multi: false, required: false },
-  { key: "resume_text", label: "RESUME TEXT", multi: true, required: true },
-]
+function MyProfile() {
+  const router = useRouter()
+  const params = useSearchParams()
+  const raw = params.get("section")
+  const section: SectionKey = SECTIONS.some((s) => s.key === raw) ? (raw as SectionKey) : "basics"
 
-export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState("")
-  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
-  async function getToken() {
-    const { data: { session } } = await getSupabaseBrowser().auth.getSession()
-    if (session?.access_token) return session.access_token
-    return sessionStorage.getItem("signal_handoff_token")
-  }
-
-  useEffect(() => {
-    async function load() {
-      const token = await getToken()
-      if (!token) return
-      const res = await fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } })
-      if (res.ok) {
-        const j = await res.json()
-        setProfile(j.profile)
-      } else {
-        setError("Failed to load profile")
-      }
-    }
-    load()
-  }, [])
-
-  function toggleJobType(opt: string) {
-    if (!profile) return
-    const cur = new Set((profile.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
-    let next: string[]
-    if (opt === "Any") next = cur.has("Any") ? [] : ["Any"]
-    else if (cur.has(opt)) { cur.delete(opt); next = Array.from(cur) }
-    else { cur.delete("Any"); cur.add(opt); next = Array.from(cur) }
-    setProfile({ ...profile, job_type: normalizeJobType(next).value ?? "" })
-  }
-
-  async function save() {
-    if (!profile) return
-    setSaving(true)
-    setToast("")
-    setError("")
-    const token = await getToken()
-    if (!token) { setError("Session expired"); setSaving(false); return }
-    // preferred_locations destructured out so this form no longer writes it
-    // (field removed); the column stays as inert dead storage.
-    const { id, profile_version, preferred_locations, ...fields } = profile
-    const res = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(fields),
-    })
-    if (res.ok) {
-      const j = await res.json()
+  const load = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/profile")
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.profile) throw new Error("We couldn't load your profile. Refresh to try again.")
       setProfile(j.profile)
-      setToast("Profile saved")
-      setTimeout(() => setToast(""), 3000)
-    } else {
-      const j = await res.json().catch(() => null)
-      setError(j?.error || "Save failed")
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
     }
-    setSaving(false)
+  }, [])
+  useEffect(() => { void load() }, [load])
+
+  /**
+   * One writer for the whole page. Returns success so a section can show its
+   * own Saved state without each one re-implementing the fetch and the error.
+   * `preferred_locations` is destructured out: the field was removed from the
+   * UI and the column stays as inert dead storage, so writing it back would
+   * resurrect a value nobody can see or edit.
+   */
+  const save = useCallback(async (patch: Partial<Profile>): Promise<boolean> => {
+    if (!profile) return false
+    setErr(null)
+    const { id, profile_version, email, purchase_date, refunded_at, active, ...rest } = { ...profile, ...patch }
+    const res = await authFetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(rest),
+    })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setErr(j?.error || "That didn't save. Try again.")
+      return false
+    }
+    const j = await res.json()
+    setProfile(j.profile)
+    return true
+  }, [profile])
+
+  function go(next: SectionKey) {
+    router.replace(next === "basics" ? "/dashboard/profile" : `/dashboard/profile?section=${next}`)
   }
 
-  if (error && !profile) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
-  if (!profile) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
+  if (loading) return <p style={{ color: S.text.muted, fontSize: 14.5 }}>Loading…</p>
+
+  if (!profile) {
+    return (
+      <main style={{ maxWidth: 1080 }}>
+        <p style={{ color: S.meaning.error.ink, fontSize: 15 }}>{err ?? "We couldn't load your profile."}</p>
+      </main>
+    )
+  }
+
+  const { percent, missing } = profileCompletion(profile)
 
   return (
-    <div>
-      <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 }}>SETTINGS</div>
-      <h1 style={{ ...headline, fontSize: 28, letterSpacing: -0.8 }}>Edit Profile</h1>
-      <p style={{ fontSize: 12, color: T.DIM, marginTop: 4 }}>Version {profile.profile_version}</p>
+    <main style={{ maxWidth: 1080 }}>
+      <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: S.text.primary, margin: 0 }}>
+        My Profile
+      </h1>
+      <p style={{ color: S.text.muted, fontSize: 15, margin: "6px 0 0" }}>
+        Everything SIGNAL uses to personalise your search. Fill it once, tweak whenever.
+      </p>
 
-      <div style={{ ...card, marginTop: 24 }}>
-        <div style={{ height: 3, background: "linear-gradient(90deg, #51ADE5, #218C8C, #FEB06A)" }} />
-        <div style={{ padding: 28, display: "flex", flexDirection: "column", gap: 20 }}>
-          {FIELDS.map(({ key, label: lbl, multi, required: req }) => (
-            <div key={key}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                <span style={{ ...label, color: req ? T.WRN_BLUE : T.DIM }}>{lbl}</span>
-                {!req && <span style={{ fontSize: 10, color: T.DIM }}>optional</span>}
-              </div>
-              {key === "job_type" ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {JOB_TYPE_OPTIONS.map((opt) => {
-                    const active = (profile.job_type || "").split(",").map((s) => s.trim()).includes(opt)
-                    return (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => toggleJobType(opt)}
-                        style={{
-                          padding: "8px 14px",
-                          borderRadius: 999,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
-                          background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
-                          color: active ? T.WRN_BLUE : T.DIM,
-                        }}
-                      >
-                        {opt}
-                      </button>
-                    )
-                  })}
-                </div>
-              ) : multi ? (
-                <textarea
-                  style={{ ...textarea, minHeight: 180 }}
-                  value={(profile[key] as string) ?? ""}
-                  onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
-                />
-              ) : (
-                <input
-                  type="text"
-                  style={input}
-                  value={(profile[key] as string) ?? ""}
-                  onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
-                />
-              )}
+      {/* The completeness bar, only while there is something to finish. At 100%
+          it is a trophy nobody asked for, and the space is better spent on the
+          form. This is the same measure the Dashboard's new-student state uses,
+          so the two can never disagree. */}
+      {missing > 0 && (
+        <section
+          style={{
+            background: S.hero.background, borderRadius: 16,
+            padding: "20px 24px", marginTop: 22,
+            display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap",
+          }}
+        >
+          <div style={{ flex: "1 1 320px", minWidth: 240 }}>
+            <div style={{ color: S.hero.ink, fontSize: 17, fontWeight: 800 }}>
+              Your profile is {percent}% complete
             </div>
-          ))}
-        </div>
-      </div>
-
-      {error && (
-        <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 10, background: T.ERROR_BG, color: T.ERROR, fontSize: 12, fontWeight: 900 }}>
-          {error}
-        </div>
-      )}
-      {toast && (
-        <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 10, background: T.SUCCESS_BG, color: T.SUCCESS, fontSize: 12, fontWeight: 900 }}>
-          {toast}
-        </div>
+            <div style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.14)", marginTop: 12 }}>
+              <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: S.hero.accent }} />
+            </div>
+          </div>
+          <span style={{ color: S.hero.muted, fontSize: 14.5, whiteSpace: "nowrap" }}>
+            {missing} {missing === 1 ? "field" : "fields"} left
+          </span>
+        </section>
       )}
 
-      <button onClick={save} disabled={saving} style={{ ...btnPrimary, marginTop: 20, opacity: saving ? 0.5 : 1 }}>
-        {saving ? "Saving..." : "Save Profile"}
-      </button>
+      {err && (
+        <div
+          style={{
+            marginTop: 18, padding: "12px 16px", borderRadius: 12,
+            background: S.meaning.error.fill, color: S.meaning.error.ink, fontSize: 14, fontWeight: 700,
+          }}
+        >
+          {err}
+        </div>
+      )}
 
-      {/* TEMPORARY. Resume personas, coach recommendations and the refund panel
-          used to live on /dashboard, which is now the stateful home. They have
-          no designed home until My Profile grows its Resume and Account
-          sections, so they sit here, unchanged and still dark, rather than
-          being dropped. See LegacyAccountPanel.tsx. */}
-      <div style={{ marginTop: 44, paddingTop: 28, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
-        <LegacyAccountPanel />
+      <div style={{ display: "flex", gap: 20, marginTop: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+        {/* The section menu. A real list of buttons rather than a tab strip,
+            because five settings sections read as a table of contents and a
+            horizontal strip of five would wrap awkwardly at any narrow width. */}
+        <nav
+          aria-label="Profile sections"
+          style={{ flex: "0 0 232px", display: "flex", flexDirection: "column", gap: 4, minWidth: 200 }}
+        >
+          {SECTIONS.map((s) => {
+            const active = section === s.key
+            return (
+              <button
+                key={s.key}
+                onClick={() => go(s.key)}
+                aria-current={active ? "page" : undefined}
+                style={{
+                  display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+                  background: active ? S.card : "transparent",
+                  border: `1px solid ${active ? S.borderSoft : "transparent"}`,
+                  boxShadow: active ? S.shadow.card : "none",
+                  color: active ? S.text.primary : S.text.muted,
+                  borderRadius: 12, padding: "13px 16px", fontSize: 15,
+                  fontWeight: active ? 800 : 700, cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                {s.icon}
+                {s.label}
+              </button>
+            )
+          })}
+        </nav>
+
+        <section
+          style={{
+            flex: "1 1 460px", minWidth: 280,
+            background: S.card, border: `1px solid ${S.borderSoft}`,
+            borderRadius: 16, boxShadow: S.shadow.card, padding: "28px 32px",
+          }}
+        >
+          {section === "basics" && <BasicsSection profile={profile} onSave={save} />}
+          {section === "resume" && <ResumeSection profile={profile} onSave={save} />}
+          {section === "networking" && (
+            <>
+              <SectionHead
+                title="Networking"
+                blurb="What your outreach messages pull from. This is your voice, not your CV, so write it the way you'd say it."
+              />
+              <ProfileForm />
+            </>
+          )}
+          {section === "account" && <AccountSection profile={profile} />}
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

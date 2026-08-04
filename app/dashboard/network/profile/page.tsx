@@ -1,20 +1,20 @@
 "use client"
 
-// Phase 7b — /dashboard/network/profile. The 16 merge variables plus the
-// elevator pitch that Phase 8's templates interpolate. Seeded once from what
-// SIGNAL already stores, then owned by the client.
+// /dashboard/network/profile — kept as a REDIRECT, not deleted.
+//
+// The networking profile is now a section of My Profile (redesign step 8), so
+// this route has no screen of its own. It stays because the URL is reachable
+// from outside the nav: the send panel's "Fill your networking profile" prompt
+// links here, and so does anything a student or coach bookmarked while it was
+// a real page. Deleting it would 404 those.
 
-import { headline } from "../../../../lib/dashboard-theme"
-import { ProfileForm } from "./ProfileForm"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
-export default function NetworkProfilePage() {
-  return (
-    <main style={{ padding: "22px 26px 60px" }}>
-      <h1 style={headline}>Your networking profile</h1>
-      <p style={{ color: "rgba(255,255,255,0.60)", fontSize: 13, margin: "6px 0 18px", maxWidth: 620 }}>
-        This is what your messages pull from. Fill it in once, tweak whenever.
-      </p>
-      <ProfileForm />
-    </main>
-  )
+export default function NetworkProfileRedirect() {
+  const router = useRouter()
+  useEffect(() => {
+    router.replace("/dashboard/profile?section=networking")
+  }, [router])
+  return null
 }

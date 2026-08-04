@@ -257,8 +257,20 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
             >
               {gapsNow.unresolved.length > 0 && (
                 <div>
-                  Still unfilled: {gapsNow.unresolved.map((v) => `[${v}]`).join(", ")}. Fill your
-                  networking profile, or edit before sending.
+                  {/* A LINK now, not just an instruction. This warning has
+                      always told the student to go fill their networking
+                      profile; until step 8 the only route there was a nav entry
+                      that has now been retired into My Profile, so leaving this
+                      as plain text would have named a place with no way to get
+                      to it. */}
+                  Still unfilled: {gapsNow.unresolved.map((v) => `[${v}]`).join(", ")}.{" "}
+                  <a
+                    href="/dashboard/profile?section=networking"
+                    style={{ color: "inherit", fontWeight: 800 }}
+                  >
+                    Fill your networking profile
+                  </a>
+                  , or edit before sending.
                 </div>
               )}
               {gapsNow.toFill.length > 0 && (

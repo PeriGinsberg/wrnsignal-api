@@ -6,6 +6,7 @@ import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, eyebrow } from "../../lib/dashboard-theme"
 import { LIGHT } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
+import { signOutCompletely } from "../../lib/signOut"
 import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
 import {
   HomeIcon, TrackIcon, NetworkIcon, ProfileIcon, CoachesHubIcon,
@@ -72,20 +73,15 @@ const D2C_NAV: NavGroup[] = [
         children: [
           { href: "/dashboard/network/companies", label: "Companies", matchPrefix: true, icon: <CompaniesIcon size={17} /> },
           { href: "/dashboard/network/contacts", label: "Contacts", matchPrefix: true, icon: <ProfileIcon size={17} /> },
-          // TEMPORARY (redesign step 3). The networking area's own tab strip was
-          // removed, and the outreach identity (pitch, affinities, merge
-          // variables) has no other way in until My Profile absorbs it. Without
-          // this the send-time draft loses the fields it fills from.
-          // REMOVE when the My Profile Networking section lands.
-          { href: "/dashboard/network/profile", label: "Networking profile", matchPrefix: true },
+          // The temporary "Networking profile" entry is GONE (step 8). The
+          // outreach identity is now My Profile > Networking, and the old route
+          // redirects there for anything that still links to it.
         ],
       },
       { href: "/dashboard/profile", label: "My Profile", matchPrefix: true, icon: <ProfileIcon size={20} /> },
-      // TEMPORARY (redesign step 2). Students have never had a sign-out; the
-      // designed home for it is My Profile > Account, which is several screens
-      // away. This entry closes the functional gap in the meantime.
-      // REMOVE when the My Profile Account section lands.
-      { label: "Log out", action: "logout", icon: <SignOutIcon size={20} /> },
+      // The temporary "Log out" entry is GONE (step 8). Signing out is now
+      // My Profile > Account, which is where it was always designed to live.
+      // The coach nav keeps its own Log out: coaches have no My Profile.
     ],
   },
 ]
@@ -160,9 +156,11 @@ const LIGHT_ROUTES: string[] = [
                                     // page arrives with the Phase B merge.
   "/dashboard/tracker/*",           // step 7, all three views plus the
                                     // application detail page.
-  "/dashboard",                     // step 6, the stateful home. EXACT: My
-                                    // Profile is a descendant and is not
-                                    // converted yet.
+  "/dashboard/profile",             // step 8, the sectioned settings home.
+  "/dashboard/network/profile",     // redirects into the section above; light
+                                    // so the hop does not flash dark.
+  "/dashboard",                     // step 6, the stateful home. EXACT: every
+                                    // converted descendant is listed by name.
 ]
 
 function isLightRoute(pathname: string): boolean {
@@ -459,54 +457,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // drop the signal_from_framer UI flag so the login screen is clean. A full
   // navigation (window.location) — not router.push — guarantees the layout
   // re-initializes from scratch in the unauthenticated state.
+  // The coach nav's Log out. The student's lives on My Profile > Account, and
+  // both call the SAME teardown: lib/signOut.ts, which carries the fix for the
+  // global-signOut-throws-before-clearing-storage bug. Two copies of that would
+  // drift, and the redirect makes the failure look like success.
   async function handleLogout() {
-    const supabase = getSupabaseBrowser()
-
-    // A plain signOut() is a GLOBAL sign-out, which needs a round trip to the
-    // auth server to revoke the refresh token. When that call fails, and it does
-    // (an already-expired token answers 403, and the Framer handoff path stores
-    // an access token that was never a valid refresh token), supabase-js throws
-    // BEFORE clearing local storage. The old empty catch swallowed that and
-    // redirected anyway, so the session survived the redirect and the user
-    // landed straight back in a signed-in dashboard. Sign-out looked like it did
-    // nothing. Found 2026-08-03 while wiring the student Log out entry; the
-    // coach nav has been carrying the same bug.
-    //
-    // So: attempt the global revoke, then ALWAYS follow with a local sign-out,
-    // which is pure local teardown and cannot fail on the network.
-    try {
-      await supabase.auth.signOut()
-    } catch {
-      // Server-side revoke failed. The local teardown below is what actually
-      // signs this browser out, so carry on.
-    }
-    try {
-      await supabase.auth.signOut({ scope: "local" })
-    } catch {
-      // Belt and braces below covers even this.
-    }
-
-    if (typeof window !== "undefined") {
-      // The session lives in two places (no @supabase/ssr):
-      //   1. Supabase's own key in localStorage, sb-<ref>-auth-token.
-      //   2. signal_handoff_token in sessionStorage, the Framer-handoff bearer
-      //      that getToken() falls back to across pages.
-      // Both must go or the next load restores the session. Sweeping the sb-
-      // prefix by hand is the guarantee that no storage survives a failed
-      // signOut, whatever the cause.
-      try {
-        for (const key of Object.keys(localStorage)) {
-          if (key.startsWith("sb-")) localStorage.removeItem(key)
-        }
-      } catch {
-        // Storage unavailable, e.g. blocked cookies. Nothing else to do.
-      }
-      sessionStorage.removeItem("signal_handoff_token")
-      sessionStorage.removeItem("signal_from_framer")
-      // A full navigation, not router.push, so the layout re-initialises from
-      // scratch in the unauthenticated state.
-      window.location.href = "/dashboard"
-    }
+    await signOutCompletely()
   }
 
   // The entry screens are light. They are the first thing a student sees, and a

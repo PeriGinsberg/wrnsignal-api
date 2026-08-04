@@ -16,8 +16,9 @@
 //                                 surface. Still routable, not yet redesigned.
 //   /dashboard/network/contacts   in the left nav
 //   /dashboard/network/companies  in the left nav
-//   /dashboard/network/profile    TEMPORARY entry in the left nav, until My
-//                                 Profile absorbs the networking fields
+//   /dashboard/network/profile    now My Profile > Networking. The route is
+//                                 kept as a redirect, because the templates
+//                                 gap banner still links to it
 //   /dashboard/network/templates  cut for phase one, route still reachable by
 //                                 URL so nothing is destroyed
 
