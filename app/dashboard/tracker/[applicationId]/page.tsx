@@ -32,12 +32,13 @@ import {
   surfaceCard, tileStructural,
 } from "../../../../lib/theme/surfaces"
 import {
-  InterviewIcon, JobDescriptionIcon, NotesIcon, AccountIcon, SignOutIcon,
+  InterviewIcon, JobDescriptionIcon, NotesIcon, AccountIcon, SignOutIcon, HistoryIcon,
 } from "../../../../components/icons"
 import { authFetch } from "../../network/authFetch"
 import { daysUntil, formatLong, formatShort, parseLocalDate } from "../../../../lib/localDate"
 import { Collapsible } from "../../network/contacts/[contactId]/Collapsible"
 import { ClientJobNotes } from "../ClientJobNotes"
+import { JobHistory } from "../JobHistory"
 import { Field, Select, control, areaControl, formGrid } from "../controls"
 import {
   APP_LOCATIONS, STATUS_LABELS, statusLabel, statusMeaning,
@@ -355,6 +356,18 @@ export default function ApplicationDetailPage({
             .filter(Boolean).join(" · ") || "Nothing filled in yet"}
         >
           <DetailsEditor app={app} onSave={patch} />
+        </Collapsible>
+
+        {/* Directly under Details, and above the reference material, because
+            "what has happened here" is closer to context than to reference.
+            Same position it holds on the contact record. */}
+        <Collapsible
+          title="History"
+          testId="job-history"
+          icon={<HistoryIcon size={20} />}
+          summary="Everything that's happened on this job"
+        >
+          <JobHistory applicationId={app.id} />
         </Collapsible>
 
         <Collapsible
