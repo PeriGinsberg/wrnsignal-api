@@ -28,6 +28,7 @@ import { AddContactForm } from "../AddContactForm"
 import { STAGE_LABELS, VIEW_LABELS } from "../vocab"
 import { dueOf, type Contact } from "./ContactRow"
 import { ContactCard } from "./ContactCard"
+import { sortForAttention } from "./contactOrder"
 import { matchesQuery } from "./search"
 import { STAGE_PHASE, PHASE_LABELS, RELATIONSHIP_LABELS } from "../vocab"
 import { isStalled, STALLED_DAYS } from "../dashboardMetrics"
@@ -119,11 +120,14 @@ function ContactsInner() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [sp, router, pathname])
 
-  // Frozen render order. The server sorts (no-activity first, then most-recent),
-  // and a stage change or logged touch rewrites last_action_at, so a naive
-  // refetch makes the edited card jump position mid-interaction. We snapshot the
-  // id order on first load and keep rendering in it. Cards the snapshot has never
-  // seen (newly added) sort to the end rather than being dropped.
+  // Frozen render order, now ranked by ATTENTION rather than by the server's
+  // no-activity-first ordering. See contactOrder.ts for why: the server order
+  // stacks every receded card above every live one, which is the opposite of
+  // what the card language is for.
+  //
+  // Still frozen at load so a refetch cannot reshuffle the list under a pointer.
+  // Cards the snapshot has never seen (newly added) sort to the end rather than
+  // being dropped.
   const [orderIds, setOrderIds] = useState<string[] | null>(null)
 
   const load = useCallback(async (opts?: { resort?: boolean }) => {
@@ -134,7 +138,9 @@ function ContactsInner() {
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not load contacts (${res.status})`)
       const rows: Contact[] = j.contacts ?? []
       setContacts(rows)
-      setOrderIds((prev) => (prev === null || opts?.resort ? rows.map((c) => c.id) : prev))
+      setOrderIds((prev) =>
+        prev === null || opts?.resort ? sortForAttention(rows).map((c) => c.id) : prev,
+      )
     } catch (e: any) {
       setError(e?.message || String(e))
       setContacts([])
