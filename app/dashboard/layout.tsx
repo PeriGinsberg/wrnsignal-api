@@ -150,6 +150,9 @@ const LIGHT_ROUTES: string[] = [
   "/dashboard/network/contacts/*",
   "/dashboard/network/companies",   // step 5, the board. The per-company hub
                                     // page arrives with the Phase B merge.
+  "/dashboard",                     // step 6, the stateful home. EXACT: the
+                                    // tracker and My Profile are descendants
+                                    // and are not converted.
 ]
 
 function isLightRoute(pathname: string): boolean {

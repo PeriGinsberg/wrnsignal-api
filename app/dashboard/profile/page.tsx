@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, input, textarea, btnPrimary, card, eyebrow, headline, label } from "../../../lib/dashboard-theme"
 import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../lib/jobType"
+import { LegacyAccountPanel } from "./LegacyAccountPanel"
 
 type Profile = {
   id: string
@@ -166,6 +167,15 @@ export default function ProfilePage() {
       <button onClick={save} disabled={saving} style={{ ...btnPrimary, marginTop: 20, opacity: saving ? 0.5 : 1 }}>
         {saving ? "Saving..." : "Save Profile"}
       </button>
+
+      {/* TEMPORARY. Resume personas, coach recommendations and the refund panel
+          used to live on /dashboard, which is now the stateful home. They have
+          no designed home until My Profile grows its Resume and Account
+          sections, so they sit here, unchanged and still dark, rather than
+          being dropped. See LegacyAccountPanel.tsx. */}
+      <div style={{ marginTop: 44, paddingTop: 28, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
+        <LegacyAccountPanel />
+      </div>
     </div>
   )
 }

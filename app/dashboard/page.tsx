@@ -1,897 +1,461 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+// The Dashboard: HOME, and the single "what needs you" surface for the whole
+// app. It ADAPTS to where the student is rather than showing everything at
+// once, because a wall of panels is the thing a student with no coach cannot
+// parse. One or two things, never a wall.
+//
+// The five states and their priority live in dashboardState.ts as a pure
+// function, so which screen you get is testable without a browser. This file is
+// the rendering of that decision and nothing else.
+//
+// Redesign step 6 (2026-08-04). This route used to be "My Account": profile
+// summary, resume personas, coach recommendations and a refund panel on one
+// page. None of that belongs on a what-needs-you home, and it was moved WHOLE
+// to /dashboard/profile rather than dropped, because personas and the refund
+// window have no other home until My Profile grows its Resume and Account
+// sections. See profile/LegacyAccountPanel.tsx.
+
+import { useCallback, useEffect, useState } from "react"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
-import {
-  T,
-  input,
-  textarea,
-  btnPrimary,
-  btnSecondary,
-  card,
-  eyebrow,
-  headline,
-  label,
-} from "../../lib/dashboard-theme"
-import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../lib/jobType"
+import { LIGHT as S, action as actionStyle, orb } from "../../lib/theme/surfaces"
+import { FRAMER_URL } from "../../lib/urls"
+import { timeAgo } from "../../lib/relativeTime"
+import { buildDashboard, type DashboardModel, type DashboardState } from "./dashboardState"
 
-type CoachRecommendation = {
-  id: string
-  company: string
-  title: string
-  priority: "urgent" | "high" | "normal" | null
-  coaching_note: string | null
-  verdict: string | null
-  apply_by: string | null
-  seen: boolean
-  responded: string | null
+// DEV-ONLY state preview. A five-state screen cannot be reviewed by anyone,
+// including its author, when an account only ever occupies one state at a time,
+// and the alternative is editing real profile rows to move between them. So
+// ?preview=<state> renders that state against a small fixture.
+//
+// Gated on NEXT_PUBLIC_DEV_AUTH, the same flag as the dev password sign-in, so
+// it is absent from the production bundle's behaviour entirely. Without the
+// flag the parameter is ignored and the real model always wins.
+const PREVIEW_ENABLED = process.env.NEXT_PUBLIC_DEV_AUTH === "true"
+
+function previewModel(state: DashboardState, real: DashboardModel): DashboardModel {
+  const day = 86400000
+  const iso = (d: number) => new Date(Date.now() - d * day).toISOString()
+  const fixture: Partial<DashboardModel> = {
+    state,
+    completion: state === "new" ? { percent: 40, missing: 3 } : { percent: 100, missing: 0 },
+    due: state === "active" || state === "interview"
+      ? [{ id: "p1" }, { id: "p2" }, { id: "p3" }] as DashboardModel["due"]
+      : [],
+    awaiting: state === "active" || state === "quiet"
+      ? [{ id: "p4", first_name: "Grace", last_name: "Lin", stage: "replied", last_action_at: iso(2) }] as DashboardModel["awaiting"]
+      : [],
+    stale: state === "active" || state === "quiet"
+      ? [{ id: "p5", company_name: "Globex", application_status: "applied", applied_date: iso(20) }] as DashboardModel["stale"]
+      : [],
+    saved: [],
+    interview: state === "interview"
+      ? { id: "p6", interview_date: new Date(Date.now() + 3 * day).toISOString(), status: "scheduled", company_name: "Globex", job_title: "Senior PM", interview_stage: "final_round" }
+      : null,
+    daysToInterview: state === "interview" ? 3 : 0,
+    appliedThisWeek: state === "active" ? 4 : 0,
+    reachedThisWeek: state === "active" ? 6 : 0,
+    quietDays: state === "quiet" ? 9 : 0,
+  }
+  return { ...real, ...fixture } as DashboardModel
 }
 
-type Profile = {
-  id: string
-  name: string | null
-  email: string | null
-  job_type: string | null
-  target_roles: string | null
-  target_locations: string | null
-  preferred_locations: string | null
-  timeline: string | null
-  resume_text: string | null
-  profile_version: number
-  profile_structured: Record<string, any> | null
-  profile_complete: boolean
-  active: boolean | null
-  purchase_date: string | null
-  refunded_at: string | null
-  is_coach: boolean | null
+const JOBFIT_URL = `${FRAMER_URL}/signal/jobfit`
+
+async function getToken(): Promise<string | null> {
+  const { data: { session } } = await getSupabaseBrowser().auth.getSession()
+  if (session?.access_token) return session.access_token
+  return sessionStorage.getItem("signal_handoff_token")
 }
-
-const REFUND_WINDOW_DAYS = 7
-const REFUND_WINDOW_MS = REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000
-
-type Persona = {
-  id: string
-  name: string
-  resume_text: string
-  is_default: boolean
-  display_order: number
-  persona_version: number
-}
-
-const PROFILE_FIELDS: { key: keyof Profile; label: string; multi: boolean; required: boolean }[] = [
-  { key: "name", label: "NAME", multi: false, required: true },
-  { key: "job_type", label: "JOB TYPE", multi: false, required: true },
-  { key: "target_roles", label: "TARGET ROLES", multi: false, required: true },
-  { key: "target_locations", label: "TARGET LOCATIONS", multi: false, required: false },
-  { key: "timeline", label: "TIMELINE", multi: false, required: false },
-]
-
-function Toast({ message, onDone }: { message: string; onDone: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 3000)
-    return () => clearTimeout(t)
-  }, [onDone])
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 24,
-        right: 24,
-        padding: "12px 20px",
-        borderRadius: 12,
-        background: T.SUCCESS_BG,
-        border: "1px solid rgba(74,222,128,0.25)",
-        color: T.SUCCESS,
-        fontSize: 13,
-        fontWeight: 900,
-        zIndex: 100,
-      }}
-    >
-      {message}
-    </div>
-  )
-}
-
-function SummaryRow({ label: lbl, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>{lbl}</span>
-      <p style={{ fontSize: 13, color: T.TEXT, marginTop: 2, lineHeight: "18px" }}>{value}</p>
-    </div>
-  )
-}
-
-const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
-  urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  high: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  normal: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
-}
-
-const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
-  "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
-  Apply: { bg: "rgba(74,222,128,0.12)", color: "#4ade80" },
-  Review: { bg: "rgba(212,164,68,0.15)", color: "#D4A444" },
-  Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
-}
-
-const RESPOND_OPTIONS = [
-  { value: "interested", label: "Interested" },
-  { value: "applying", label: "Applying" },
-  { value: "applied", label: "Applied" },
-  { value: "not_for_me", label: "Not for me" },
-]
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [personas, setPersonas] = useState<Persona[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const [model, setModel] = useState<DashboardModel | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Coach state
-  const [coachNotifUnseen, setCoachNotifUnseen] = useState(0)
-  const [coachRecs, setCoachRecs] = useState<CoachRecommendation[]>([])
-  const [respondingId, setRespondingId] = useState<string | null>(null)
-
-  // UI state
-  const [profileEditOpen, setProfileEditOpen] = useState(false)
-  const [editProfile, setEditProfile] = useState<Profile | null>(null)
-  // Sprint 3 correction (2026-05-08): persona self-service is open to
-  // any authenticated user editing their OWN personas. /api/personas/*
-  // gates by profile_id ownership, not role.
-  const [personaEditId, setPersonaEditId] = useState<string | null>(null)
-  const [editPersona, setEditPersona] = useState<Persona | null>(null)
-  const [addPersonaOpen, setAddPersonaOpen] = useState(false)
-  const [newPersonaName, setNewPersonaName] = useState("")
-  const [newPersonaResume, setNewPersonaResume] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState<string | null>(null)
-  const [resumeUploading, setResumeUploading] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(false)
-  const [refunding, setRefunding] = useState(false)
-
-  async function getToken() {
-    const { data: { session } } = await getSupabaseBrowser().auth.getSession()
-    if (session?.access_token) return session.access_token
-    // Fallback: handoff token stored directly from Framer redirect
-    return sessionStorage.getItem("signal_handoff_token")
-  }
-
-  async function handleResumeUpload(onText: (text: string) => void) {
-    const fileInput = document.createElement("input")
-    fileInput.type = "file"
-    fileInput.accept = ".pdf,.docx,.doc,.txt"
-    fileInput.onchange = async () => {
-      const file = fileInput.files?.[0]
-      if (!file) return
-      const token = await getToken()
-      if (!token) return
-      setResumeUploading(true)
-      try {
-        const formData = new FormData()
-        formData.append("file", file)
-        const res = await fetch("/api/resume-upload", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data?.error || "Upload failed")
-        onText(data.text)
-        setToast("Resume uploaded successfully")
-      } catch (err: any) {
-        setToast(err?.message || "Upload failed. Try pasting instead.")
-      } finally {
-        setResumeUploading(false)
-      }
-    }
-    fileInput.click()
-  }
-
-  const loadAll = useCallback(async () => {
-    const token = await getToken()
-    if (!token) return
-    const headers = { Authorization: `Bearer ${token}` }
-    const [pRes, personasRes, notifRes] = await Promise.all([
-      fetch("/api/profile", { headers }),
-      fetch("/api/personas", { headers }),
-      fetch("/api/coach/notifications", { headers }),
-    ])
-    if (pRes.ok) {
-      const j = await pRes.json()
-      setProfile(j.profile)
-    } else {
-      setError("Failed to load profile")
-    }
-    if (personasRes.ok) {
-      const j = await personasRes.json()
-      setPersonas(j.personas || [])
-    }
-    if (notifRes.ok) {
-      const j = await notifRes.json()
-      setCoachNotifUnseen(j.total_unseen || 0)
-      setCoachRecs(j.recommendations || [])
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { loadAll() }, [loadAll])
-
-  // Show welcome modal only when profile_complete is explicitly false.
-  // profile_complete is the sole gate — no localStorage dependency.
-  useEffect(() => {
-    if (!profile) return
-    if (profile.profile_complete !== false) return
-    setShowWelcome(true)
-  }, [profile])
-
-  // --- Profile actions ---
-  function openProfileEdit() {
-    setEditProfile(profile ? { ...profile } : null)
-    setProfileEditOpen(true)
-  }
-
-  function toggleJobType(opt: string) {
-    if (!editProfile) return
-    const cur = new Set((editProfile.job_type || "").split(",").map((s) => s.trim()).filter(Boolean))
-    let next: string[]
-    if (opt === "Any") next = cur.has("Any") ? [] : ["Any"]
-    else if (cur.has(opt)) { cur.delete(opt); next = Array.from(cur) }
-    else { cur.delete("Any"); cur.add(opt); next = Array.from(cur) }
-    setEditProfile({ ...editProfile, job_type: normalizeJobType(next).value ?? "" })
-  }
-
-  async function saveProfile() {
-    if (!editProfile) return
-    setSaving(true)
-    const token = await getToken()
-    if (!token) { setSaving(false); return }
-    // preferred_locations is destructured out so this form no longer writes it
-    // (field removed); the column/readers stay as inert dead storage.
-    const { id, email, profile_version, profile_structured, preferred_locations, ...fields } = editProfile
-    const res = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(fields),
-    })
-    if (res.ok) {
-      const j = await res.json()
-      setProfile(j.profile)
-      setProfileEditOpen(false)
-      setToast("Profile updated")
-    }
-    setSaving(false)
-  }
-
-  // Sprint 3 (2026-05-08): persona mutation handlers — calls
-  // /api/personas/* which is open for self-edit by any authenticated
-  // user on their own data.
-  function openPersonaEdit(p: Persona) {
-    setEditPersona({ ...p })
-    setPersonaEditId(p.id)
-    setAddPersonaOpen(false)
-  }
-
-  async function savePersona() {
-    if (!editPersona) return
-    setSaving(true)
-    const token = await getToken()
-    if (!token) { setSaving(false); return }
-    const res = await fetch(`/api/personas/${editPersona.id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editPersona.name, resume_text: editPersona.resume_text }),
-    })
-    if (res.ok) {
-      await loadAll()
-      setPersonaEditId(null)
-      setEditPersona(null)
-      setToast("Persona updated")
-    }
-    setSaving(false)
-  }
-
-  async function setDefaultPersona(id: string) {
-    const token = await getToken()
-    if (!token) return
-    await fetch(`/api/personas/${id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ is_default: true }),
-    })
-    await loadAll()
-  }
-
-  async function deletePersona(id: string) {
-    const token = await getToken()
-    if (!token) return
-    await fetch(`/api/personas/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    setPersonaEditId(null)
-    setEditPersona(null)
-    await loadAll()
-    setToast("Persona deleted")
-  }
-
-  async function createPersona() {
-    if (!newPersonaName.trim()) return
-    setSaving(true)
-    const token = await getToken()
-    if (!token) { setSaving(false); return }
-    const res = await fetch("/api/personas", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newPersonaName.trim(), resume_text: newPersonaResume }),
-    })
-    if (res.ok) {
-      await loadAll()
-      setAddPersonaOpen(false)
-      setNewPersonaName("")
-      setNewPersonaResume("")
-      setToast("Persona created")
-    } else {
-      const j = await res.json().catch(() => null)
-      setError(j?.error || "Create failed")
-    }
-    setSaving(false)
-  }
-
-  async function requestRefund() {
-    if (refunding) return
-    const ok = window.confirm(
-      "Are you sure? You will lose access immediately."
-    )
-    if (!ok) return
-
-    setRefunding(true)
+  const load = useCallback(async () => {
     try {
       const token = await getToken()
-      if (!token) {
-        setError("You must be signed in to request a refund.")
-        return
-      }
-      const res = await fetch("/api/stripe/refund", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+      if (!token) { setError("Please sign in again."); return }
+      const headers = { Authorization: `Bearer ${token}` }
+      // Four independent reads. Any one failing degrades that section rather
+      // than the page: a student whose networking call times out should still
+      // see their applications, not an error screen.
+      const [p, a, c, i] = await Promise.all([
+        fetch("/api/profile", { headers }).then((r) => r.json()).catch(() => ({})),
+        fetch("/api/applications", { headers }).then((r) => r.json()).catch(() => ({})),
+        fetch("/api/network/contacts", { headers }).then((r) => r.json()).catch(() => ({})),
+        fetch("/api/interviews", { headers }).then((r) => r.json()).catch(() => ({})),
+      ])
+      setModel(buildDashboard({
+        profile: p?.profile ?? null,
+        applications: a?.applications ?? [],
+        contacts: c?.contacts ?? [],
+        interviews: i?.interviews ?? [],
+      }))
+    } catch (e: any) {
+      setError(e?.message || String(e))
+    }
+  }, [])
+
+  useEffect(() => { void load() }, [load])
+
+  if (error) return <main style={wrap}><p style={{ color: S.meaning.error.ink }}>{error}</p></main>
+  if (!model) return <main style={wrap}><p style={{ color: S.text.muted }}>Loading…</p></main>
+
+  const requested = PREVIEW_ENABLED && typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("preview")
+    : null
+  const previewing = requested && ["new", "ready", "active", "interview", "quiet"].includes(requested)
+  const shown = previewing ? previewModel(requested as DashboardState, model) : model
+
+  const model2 = shown
+  const sub: Record<string, string> = {
+    new: "Let's get you set up. Here's your first step.",
+    ready: "You're all set up. Time to make your first move.",
+    active: "Here's what needs you today.",
+    interview: "You have an interview coming up. Let's get you ready.",
+    quiet: "Welcome back. Let's pick up where you left off.",
+  }
+
+  return (
+    <main style={wrap}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
+        <div>
+          <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: -0.6, color: S.text.primary, margin: 0 }}>
+            Hello{model2.firstName ? `, ${model2.firstName}` : ""} 👋
+          </h1>
+          <p style={{ color: S.text.muted, fontSize: 15.5, margin: "6px 0 0" }}>{sub[model2.state]}</p>
+        </div>
+        {/* Quiet, on every state. The profile is always reachable without the
+            screen having to nag about it. */}
+        <a href="/dashboard/profile" style={editProfile}>Edit profile</a>
+      </div>
+
+      {previewing && (
+        <div style={{ marginTop: 16, padding: "10px 16px", borderRadius: 10, background: S.meaning.attention.fill, color: S.meaning.attention.ink, fontSize: 13.5, fontWeight: 700 }}>
+          Previewing the “{requested}” state with fixture data. Dev only.
+        </div>
+      )}
+      {model2.state === "new" && <NewStudent model={model2} />}
+      {model2.state === "ready" && <Ready />}
+      {model2.state === "interview" && <Interview model={model2} />}
+      {model2.state === "quiet" && <Quiet model={model2} />}
+      {model2.state === "active" && <Active model={model2} />}
+    </main>
+  )
+}
+
+// ── New student: one thing, and nothing competing with it ───────────────────
+function NewStudent({ model }: { model: DashboardModel }) {
+  const { percent, missing } = model.completion
+  return (
+    <>
+      <section style={{ ...hero, marginTop: 22 }}>
+        <div style={{ ...heroEyebrow, color: S.hero.accent }}>✦ Start here</div>
+        <h2 style={heroTitle}>Finish your profile</h2>
+        <p style={heroBody}>
+          Everything SIGNAL does, scoring jobs and writing your outreach, starts with knowing who you
+          are and what you're after. About 3 minutes.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "22px 0 20px" }}>
+          <div style={{ flex: 1, height: 10, borderRadius: 999, background: "rgba(255,255,255,0.14)" }}>
+            <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: S.hero.accent }} />
+          </div>
+          <span style={{ color: S.hero.ink, fontSize: 15, fontWeight: 800 }}>{percent}%</span>
+        </div>
+        <a href="/dashboard/profile" style={{ ...actionStyle(S, "primary"), ...bigBtn, textDecoration: "none" }}>
+          Finish my profile →
+        </a>
+        {missing > 0 && (
+          <span style={{ color: S.hero.muted, fontSize: 13.5, marginLeft: 14 }}>
+            {missing} {missing === 1 ? "field" : "fields"} left
+          </span>
+        )}
+      </section>
+
+      <div style={{ ...sectionLabel, marginTop: 28 }}>Then you'll be ready to</div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <OrbCard tone="teal" href={JOBFIT_URL} title="Score a job" sub="See if it's a fit" external />
+        <OrbCard tone="blue" href="/dashboard/tracker" title="Track applications" sub="Jobs you're serious about" />
+        <OrbCard tone="peach" href="/dashboard/network/contacts" title="Network your way in" sub="Reach real people" />
+      </div>
+      <p style={{ textAlign: "center", color: S.text.muted, fontSize: 14, marginTop: 22 }}>
+        One step at a time. We'll guide you the whole way. 🌱
+      </p>
+    </>
+  )
+}
+
+// ── Ready: set up, nothing tracked. Two ways in, no third option ────────────
+function Ready() {
+  return (
+    <>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 24 }}>
+        <OrbCard
+          tone="teal" href={JOBFIT_URL} external
+          title="Score your first job" sub="See how strong a match you are, and how to stand out"
+        />
+        <OrbCard
+          tone="peach" href="/dashboard/network/contacts"
+          title="Start networking" sub="Reach the people who can get you in"
+        />
+      </div>
+      <p style={{ textAlign: "center", color: S.text.muted, fontSize: 14, marginTop: 22 }}>
+        Your profile's done, so everything's ready to personalise for you. 🌱
+      </p>
+    </>
+  )
+}
+
+// ── Interview: time-bound, so it takes the whole top ────────────────────────
+function Interview({ model }: { model: DashboardModel }) {
+  const iv = model.interview!
+  const days = model.daysToInterview
+  const when = days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`
+  const where = [iv.job_title, iv.company_name].filter(Boolean).join(" at ") || "your interview"
+
+  return (
+    <>
+      {/* Peach FRAME, navy fill. The frame is the only place peach appears
+          outside a button, and it is a border rather than a surface, so it
+          still reads as emphasis rather than as something to press. */}
+      <section style={{ ...hero, marginTop: 22, border: `2px solid ${S.meaning.attention.accent}` }}>
+        <div style={{ ...heroEyebrow, color: S.hero.accent }}>🎤 Interview {when}</div>
+        <h2 style={heroTitle}>{where}</h2>
+        <p style={heroBody}>
+          {iv.interview_date && new Date(iv.interview_date).toLocaleDateString(undefined, {
+            weekday: "long", month: "long", day: "numeric",
+          })}
+          {iv.interview_stage ? ` · ${iv.interview_stage.replace(/_/g, " ")}` : ""}
+        </p>
+        <div style={{ ...sectionLabel, color: S.hero.muted, marginTop: 22 }}>Now is the time to prep</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a href="/dashboard/tracker" style={{ ...actionStyle(S, "primary"), ...bigBtn, textDecoration: "none" }}>
+            Prep now →
+          </a>
+          <a href="/dashboard/network/contacts" style={{ ...heroSecondary, textDecoration: "none" }}>
+            Reach your contacts there
+          </a>
+        </div>
+        {/* Soft promotion: contextual, below the free value, teaches rather
+            than sells. The template for all future soft promotion. */}
+        <p style={{ color: S.hero.muted, fontSize: 13.5, margin: "20px 0 0", lineHeight: "20px" }}>
+          Want to walk in more prepared? The Ultimate Interview Playbook takes you through all of
+          this, step by step.
+        </p>
+      </section>
+
+      <div style={{ ...sectionLabel, marginTop: 28 }}>Also today</div>
+      <CountRow model={model} />
+    </>
+  )
+}
+
+// ── Quiet: warm, no guilt, and a concrete reason to come back ───────────────
+function Quiet({ model }: { model: DashboardModel }) {
+  return (
+    <>
+      <section style={{ ...hero, marginTop: 22 }}>
+        <div style={{ ...heroEyebrow, color: S.hero.accent }}>✦ Still in your corner</div>
+        <h2 style={heroTitle}>It's been {model.quietDays} days. No worries, let's get moving again.</h2>
+        <p style={heroBody}>
+          Job searches never run steady. The trick is small, steady steps. Pick one thing below and
+          you're back in it.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <a href={JOBFIT_URL} style={{ ...actionStyle(S, "primary"), ...bigBtn, textDecoration: "none" }}>
+            Score a new job
+          </a>
+          <a href="/dashboard/network/contacts" style={{ ...heroSecondary, textDecoration: "none" }}>
+            Reach out to someone
+          </a>
+        </div>
+      </section>
+
+      {(model.awaiting.length > 0 || model.stale.length > 0) && (
+        <>
+          <div style={{ ...sectionLabel, marginTop: 28 }}>While you were away</div>
+          <Nudges model={model} />
+        </>
+      )}
+    </>
+  )
+}
+
+// ── Active: the normal working state ────────────────────────────────────────
+function Active({ model }: { model: DashboardModel }) {
+  const momentum = model.appliedThisWeek > 0 || model.reachedThisWeek > 0
+  return (
+    <>
+      <div style={{ marginTop: 24 }}><CountRow model={model} /></div>
+
+      {momentum && (
+        <div style={momentumBar}>
+          🌱&nbsp;&nbsp;This week:{" "}
+          <strong style={{ fontWeight: 800 }}>{model.appliedThisWeek} jobs applied</strong>,{" "}
+          <strong style={{ fontWeight: 800 }}>{model.reachedThisWeek} people reached</strong>. Keep going.
+        </div>
+      )}
+
+      {(model.awaiting.length > 0 || model.stale.length > 0 || model.saved.length > 0) && (
+        <>
+          <div style={{ ...sectionLabel, marginTop: 26 }}>A couple things to keep moving</div>
+          <Nudges model={model} />
+        </>
+      )}
+    </>
+  )
+}
+
+// The two cross-app counts. Peach is people (the thing students avoid), blue is
+// applications. Both are orbs because both are a way IN to a section.
+function CountRow({ model }: { model: DashboardModel }) {
+  const people = model.due.length
+  const jobs = model.stale.length + model.saved.length
+  if (people === 0 && jobs === 0) {
+    return (
+      <div style={{ ...card, padding: "22px 24px", color: S.text.muted, fontSize: 15 }}>
+        Nothing needs you right now. Good place to be.
+      </div>
+    )
+  }
+  return (
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+      {people > 0 && (
+        <CountOrb
+          tone="peach" href="/dashboard/network/contacts" n={people}
+          title={`${people === 1 ? "person" : "people"} to reach out to`} sub="Networking →"
+        />
+      )}
+      {jobs > 0 && (
+        <CountOrb
+          tone="blue" href="/dashboard/tracker" n={jobs}
+          title={`${jobs === 1 ? "job" : "jobs"} to follow up on`} sub="Job Tracker →"
+        />
+      )}
+    </div>
+  )
+}
+
+// Specific, never vague. Each nudge names the person or the company.
+function Nudges({ model }: { model: DashboardModel }) {
+  const items: { key: string; icon: string; body: React.ReactNode; href: string; cta: string; tone: "attention" | "replied" }[] = []
+
+  for (const c of model.awaiting.slice(0, 2)) {
+    items.push({
+      key: `r-${c.id}`, icon: "💬", tone: "replied",
+      body: <><strong>{c.first_name} {c.last_name}</strong> replied {timeAgo(c.last_action_at) ?? "recently"}. Don't leave them hanging.</>,
+      href: `/dashboard/network/contacts/${c.id}`, cta: "Reply →",
+    })
+  }
+  for (const a of model.stale.slice(0, 2)) {
+    items.push({
+      key: `s-${a.id}`, icon: "📍", tone: "attention",
+      body: <>You applied to <strong>{a.company_name || "a company"}</strong> over two weeks ago with no word back. Worth a follow-up.</>,
+      href: "/dashboard/tracker", cta: "Show me →",
+    })
+  }
+  if (items.length === 0) {
+    for (const a of model.saved.slice(0, 2)) {
+      items.push({
+        key: `v-${a.id}`, icon: "📍", tone: "attention",
+        body: <>You saved <strong>{a.job_title || "a job"}</strong>{a.company_name ? ` at ${a.company_name}` : ""} but haven't applied yet.</>,
+        href: "/dashboard/tracker", cta: "Show me →",
       })
-      const data = await res.json().catch(() => null)
-      if (!res.ok) {
-        setError(data?.error || "Refund request failed.")
-        return
-      }
-      // Sign the user out and return them to the unauthenticated state.
-      try {
-        await getSupabaseBrowser().auth.signOut()
-      } catch {
-        // ignore — we're redirecting regardless
-      }
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem("signal_handoff_token")
-        window.location.href = "/dashboard"
-      }
-    } finally {
-      setRefunding(false)
     }
   }
 
-  async function respondToRec(recId: string, response: string) {
-    setRespondingId(recId)
-    const token = await getToken()
-    if (!token) { setRespondingId(null); return }
-    await fetch(`/api/coach/recommendations/${recId}/respond`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ response }),
-    })
-    setCoachRecs((prev) => prev.map((r) => r.id === recId ? { ...r, responded: response } : r))
-    if (coachNotifUnseen > 0) setCoachNotifUnseen((n) => n - 1)
-    setRespondingId(null)
-  }
-
-  if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading...</p>
-  if (error && !profile) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
-
-  // atLimit removed — pilot disables client-side persona create.
-
   return (
-    <div>
-      {/* Welcome modal for first-time users */}
-      {showWelcome && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(0,0,0,0.75)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{
-            background: "#0D1F35",
-            border: "0.5px solid #1E3A5F",
-            borderRadius: 16,
-            padding: 40,
-            maxWidth: 480,
-            width: "90%",
-          }}>
-            <h2 style={{
-              color: "#ffffff", fontSize: 24, fontWeight: 900,
-              fontStyle: "italic", margin: 0,
-            }}>
-              Welcome to SIGNAL.
-            </h2>
-            <p style={{
-              color: "#7A99BA", fontSize: 14, lineHeight: "1.75",
-              marginTop: 16, marginBottom: 0,
-            }}>
-              Before we can score any job for you, we need to know you. It takes about 3 minutes
-              — upload your resume, tell us your targets, and set your constraints. Everything
-              SIGNAL does from here runs on this profile.
-            </p>
-            <button
-              onClick={() => setShowWelcome(false)}
-              style={{
-                width: "100%", marginTop: 28, padding: 16,
-                background: "linear-gradient(90deg, #FF6B00, #FF9A3C)",
-                color: "#ffffff", fontWeight: 900, fontStyle: "italic",
-                fontSize: 16, borderRadius: 12, border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Build my profile
-            </button>
-          </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {items.slice(0, 3).map((it) => (
+        <div key={it.key} style={{ ...card, ...nudgeCard, borderLeft: `3px solid ${S.meaning[it.tone].accent}` }}>
+          <span aria-hidden style={{ fontSize: 18, flexShrink: 0 }}>{it.icon}</span>
+          <span style={{ flex: 1, color: S.text.secondary, fontSize: 15, lineHeight: "22px" }}>{it.body}</span>
+          <a href={it.href} style={{ color: S.action.quietInk, fontSize: 14.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+            {it.cta}
+          </a>
         </div>
-      )}
-
-      {/* Coach notification banner */}
-      {coachNotifUnseen > 0 && (
-        <div style={{
-          background: "rgba(254,176,106,0.09)",
-          border: "1px solid rgba(254,176,106,0.25)",
-          borderRadius: 14,
-          padding: "14px 20px",
-          marginBottom: 24,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{
-              background: T.WRN_ORANGE, color: "#04060F", fontWeight: 900,
-              fontSize: 11, padding: "2px 8px", borderRadius: 999,
-            }}>
-              {coachNotifUnseen}
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 900, color: T.TEXT }}>
-              New recommendation{coachNotifUnseen !== 1 ? "s" : ""} from your coach
-            </span>
-          </div>
-          <span style={{ fontSize: 12, color: T.WRN_ORANGE, fontWeight: 700 }}>↓ See below</span>
-        </div>
-      )}
-
-      <div style={{ ...eyebrow, color: T.DIM, marginBottom: 8 }}>CONTROL CENTER</div>
-      <h1 style={{ ...headline, fontSize: 32, letterSpacing: -1 }}>
-        Welcome{profile?.name ? `, ${profile.name}` : ""}
-      </h1>
-      <p style={{ fontSize: 13, color: T.MUTED, marginTop: 4 }}>{profile?.email}</p>
-
-      {/* From Your Coach section */}
-      {coachRecs.length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 14 }}>FROM YOUR COACH</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {coachRecs.map((rec) => (
-              <div key={rec.id} style={{
-                ...card,
-                border: rec.responded ? `1px solid ${T.BORDER_SOFT}` : "1px solid rgba(254,176,106,0.22)",
-                opacity: rec.responded ? 0.8 : 1,
-              }}>
-                <div style={{ height: 3, background: rec.responded ? "rgba(255,255,255,0.06)" : "linear-gradient(90deg,#FEB06A,#f97316)" }} />
-                <div style={{ padding: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-                    <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
-                    <span style={{ fontSize: 13, color: T.MUTED }}>— {rec.title}</span>
-                    {rec.priority && (
-                      <span style={{
-                        ...(PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal),
-                        fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase" as const,
-                        padding: "3px 10px", borderRadius: 999,
-                        background: (PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal).bg,
-                        color: (PRIORITY_STYLE[rec.priority] || PRIORITY_STYLE.normal).color,
-                      }}>
-                        {rec.priority}
-                      </span>
-                    )}
-                    {rec.verdict && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase" as const,
-                        padding: "3px 10px", borderRadius: 999,
-                        background: (DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }).bg,
-                        color: (DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }).color,
-                      }}>
-                        {rec.verdict}
-                      </span>
-                    )}
-                    {rec.apply_by && (
-                      <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
-                        Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {rec.coaching_note && (
-                    <p style={{ fontSize: 13, color: T.MUTED, lineHeight: "19px", marginBottom: 14 }}>
-                      <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Coach: </span>
-                      {rec.coaching_note}
-                    </p>
-                  )}
-
-                  {/* Response pills */}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
-                    {rec.responded ? (
-                      <span style={{ fontSize: 11, color: T.DIM }}>
-                        You responded: <span style={{ color: T.SUCCESS, fontWeight: 900 }}>
-                          {RESPOND_OPTIONS.find((o) => o.value === rec.responded)?.label || rec.responded}
-                        </span>
-                      </span>
-                    ) : (
-                      <>
-                        <span style={{ fontSize: 11, color: T.DIM, marginRight: 4 }}>Your status:</span>
-                        {RESPOND_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => respondToRec(rec.id, opt.value)}
-                            disabled={respondingId === rec.id}
-                            style={{
-                              fontSize: 11, fontWeight: 900, padding: "5px 14px", borderRadius: 999, cursor: "pointer",
-                              border: `1px solid ${T.BORDER_SOFT}`,
-                              background: "rgba(255,255,255,0.04)",
-                              color: T.MUTED,
-                              opacity: respondingId === rec.id ? 0.5 : 1,
-                              transition: "all 0.15s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "rgba(254,176,106,0.1)"
-                              e.currentTarget.style.color = T.WRN_ORANGE
-                              e.currentTarget.style.borderColor = "rgba(254,176,106,0.3)"
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "rgba(255,255,255,0.04)"
-                              e.currentTarget.style.color = T.MUTED
-                              e.currentTarget.style.borderColor = T.BORDER_SOFT
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 24, marginTop: 28, alignItems: "flex-start" }}>
-        {/* LEFT COLUMN — Profile */}
-        <div style={{ width: "40%", flexShrink: 0 }}>
-          <div style={{ ...eyebrow, color: T.WRN_BLUE, marginBottom: 10 }}>PROFILE</div>
-          <div style={card}>
-            <div style={{ height: 3, background: T.GRAD_PROFILE }} />
-            <div style={{ padding: 24 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 950, letterSpacing: -0.3, color: T.TEXT }}>
-                  {profile?.name || "Unnamed"}
-                </span>
-                <span style={{ fontSize: 11, color: T.DIM }}>Version {profile?.profile_version}</span>
-              </div>
-
-              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                {profile?.target_roles && <SummaryRow label="Target Roles" value={profile.target_roles} />}
-                {profile?.target_locations && <SummaryRow label="Locations" value={profile.target_locations} />}
-                {profile?.preferred_locations && <SummaryRow label="Preferred Locations" value={profile.preferred_locations} />}
-                {profile?.job_type && <SummaryRow label="Job Type" value={profile.job_type} />}
-                {profile?.timeline && <SummaryRow label="Timeline" value={profile.timeline} />}
-                {profile?.resume_text && <SummaryRow label="Resume" value={profile.resume_text.length > 200 ? profile.resume_text.slice(0, 200) + "..." : profile.resume_text} />}
-              </div>
-
-              {!profileEditOpen && (
-                <button onClick={openProfileEdit} style={{ ...btnSecondary, marginTop: 20, fontSize: 12, padding: "9px 16px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                  Edit Profile
-                </button>
-              )}
-            </div>
-
-            {/* Profile edit form */}
-            {profileEditOpen && editProfile && (
-              <div style={{ borderTop: `1px solid ${T.BORDER_SOFT}`, padding: 24 }}>
-                <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>EDIT PROFILE</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {PROFILE_FIELDS.map(({ key, label: lbl, multi, required: req }) => (
-                    <div key={key}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-                        <span style={{ ...label, color: req ? T.WRN_BLUE : T.DIM }}>{lbl}</span>
-                        {!req && <span style={{ fontSize: 9, color: T.DIM }}>optional</span>}
-                      </div>
-                      {key === "job_type" ? (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                          {JOB_TYPE_OPTIONS.map((opt) => {
-                            const active = (editProfile.job_type || "").split(",").map((s) => s.trim()).includes(opt)
-                            return (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => toggleJobType(opt)}
-                                style={{
-                                  padding: "8px 14px",
-                                  borderRadius: 999,
-                                  fontSize: 13,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                  border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
-                                  background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
-                                  color: active ? T.WRN_BLUE : T.DIM,
-                                }}
-                              >
-                                {opt}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      ) : multi ? (
-                        <textarea
-                          style={{ ...textarea, minHeight: 100 }}
-                          value={(editProfile[key] as string) ?? ""}
-                          onChange={(e) => setEditProfile({ ...editProfile, [key]: e.target.value })}
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          style={input}
-                          value={(editProfile[key] as string) ?? ""}
-                          onChange={(e) => setEditProfile({ ...editProfile, [key]: e.target.value })}
-                        />
-                      )}
-                      {key === "timeline" && (
-                        <span style={{ display: "block", marginTop: 4, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                          e.g. Immediate, Summer 2026, Fall 2026, Spring 2027, Summer 2027
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                  <button onClick={saveProfile} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.5 : 1 }}>
-                    {saving ? "Saving..." : "Save Changes"}
-                  </button>
-                  <button onClick={() => setProfileEditOpen(false)} style={{ ...btnSecondary, fontSize: 13 }}>Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN — Personas (self-edit, any user on own data) */}
-        <div style={{ flex: 1 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 10 }}>PERSONAS</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {personas.map((p) => {
-              const isEditing = personaEditId === p.id
-              return (
-                <div key={p.id} style={card}>
-                  <div style={{ height: 3, background: T.GRAD_PERSONA }} />
-                  <div style={{ padding: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 18, fontWeight: 950, letterSpacing: -0.3, color: T.TEXT }}>{p.name}</span>
-                      {p.is_default && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
-                          color: T.WRN_ORANGE, background: T.WARNING_BG, padding: "3px 8px", borderRadius: 6,
-                        }}>
-                          Default
-                        </span>
-                      )}
-                      <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>Version {p.persona_version}</span>
-                    </div>
-
-                    {!isEditing && (
-                      <>
-                        <p style={{ fontSize: 13, color: T.MUTED, marginTop: 10, lineHeight: "20px" }}>
-                          {p.resume_text
-                            ? p.resume_text.slice(0, 200) + (p.resume_text.length > 200 ? "..." : "")
-                            : "No resume text yet"}
-                        </p>
-                        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                          <button onClick={() => openPersonaEdit(p)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}>
-                            Edit
-                          </button>
-                          {!p.is_default && (
-                            <button onClick={() => setDefaultPersona(p.id)} style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10 }}>
-                              Set as Default
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-
-                    {isEditing && editPersona && (
-                      <div style={{ borderTop: `1px solid ${T.BORDER_SOFT}`, marginTop: 14, paddingTop: 18 }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                          <div>
-                            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONA NAME</span>
-                            <input
-                              type="text"
-                              style={input}
-                              value={editPersona.name}
-                              onChange={(e) => setEditPersona({ ...editPersona, name: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
-                            <button
-                              type="button"
-                              onClick={() => handleResumeUpload((text) => setEditPersona({ ...editPersona!, resume_text: text }))}
-                              disabled={resumeUploading}
-                              style={{
-                                ...btnSecondary, width: "100%", marginBottom: 8,
-                                fontSize: 12, padding: "10px 14px", borderRadius: 10,
-                                color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)",
-                                opacity: resumeUploading ? 0.5 : 1,
-                              }}
-                            >
-                              {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
-                            </button>
-                            <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
-                            <textarea
-                              style={{ ...textarea, minHeight: 220 }}
-                              value={editPersona.resume_text}
-                              onChange={(e) => setEditPersona({ ...editPersona, resume_text: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-                          <button onClick={savePersona} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.5 : 1 }}>
-                            {saving ? "Saving..." : "Save Changes"}
-                          </button>
-                          <button onClick={() => { setPersonaEditId(null); setEditPersona(null) }} style={{ ...btnSecondary, fontSize: 13 }}>Cancel</button>
-                        </div>
-                        {/* Delete — hide when this is the only persona to avoid leaving the user with none */}
-                        {personas.length > 1 && (
-                          <button
-                            onClick={() => deletePersona(p.id)}
-                            style={{ background: "none", border: "none", color: T.ERROR, fontSize: 12, cursor: "pointer", marginTop: 14, padding: 0, opacity: 0.7 }}
-                          >
-                            Delete this persona
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-
-            {personas.length === 0 && !addPersonaOpen && (
-              <p style={{ color: T.MUTED, fontSize: 13 }}>
-                No personas yet. Click Add Persona to create one.
-              </p>
-            )}
-
-            {/* Add persona form */}
-            {addPersonaOpen && (
-              <div style={card}>
-                <div style={{ height: 3, background: T.GRAD_PERSONA }} />
-                <div style={{ padding: 24 }}>
-                  <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>NEW PERSONA</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div>
-                      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONA NAME</span>
-                      <input
-                        type="text"
-                        style={input}
-                        placeholder="e.g. Coaching Resume"
-                        value={newPersonaName}
-                        onChange={(e) => setNewPersonaName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>RESUME</span>
-                      <button
-                        type="button"
-                        onClick={() => handleResumeUpload((text) => setNewPersonaResume(text))}
-                        disabled={resumeUploading}
-                        style={{
-                          ...btnSecondary, width: "100%", marginBottom: 8,
-                          fontSize: 12, padding: "10px 14px", borderRadius: 10,
-                          color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)",
-                          opacity: resumeUploading ? 0.5 : 1,
-                        }}
-                      >
-                        {resumeUploading ? "Uploading..." : "Upload Resume (PDF, DOCX, TXT)"}
-                      </button>
-                      <div style={{ fontSize: 11, color: T.DIM, textAlign: "center", marginBottom: 8 }}>or paste manually</div>
-                      <textarea
-                        style={{ ...textarea, minHeight: 180 }}
-                        placeholder="Paste your resume text here..."
-                        value={newPersonaResume}
-                        onChange={(e) => setNewPersonaResume(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                    <button onClick={createPersona} disabled={saving || !newPersonaName.trim()} style={{ ...btnPrimary, opacity: saving || !newPersonaName.trim() ? 0.5 : 1 }}>
-                      {saving ? "Creating..." : "Create Persona"}
-                    </button>
-                    <button onClick={() => { setAddPersonaOpen(false); setNewPersonaName(""); setNewPersonaResume("") }} style={{ ...btnSecondary, fontSize: 13 }}>
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!addPersonaOpen && (
-              <button
-                onClick={() => { setAddPersonaOpen(true); setPersonaEditId(null) }}
-                style={{ ...btnPrimary, alignSelf: "flex-start" }}
-              >
-                Add Persona
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {(() => {
-        if (!profile?.purchase_date) return null
-        if (profile.refunded_at) return null
-        if (profile.active === false) return null
-        const purchasedAt = new Date(profile.purchase_date).getTime()
-        if (!Number.isFinite(purchasedAt)) return null
-        const ageMs = Date.now() - purchasedAt
-        if (ageMs > REFUND_WINDOW_MS) return null
-        const daysLeft = Math.max(
-          0,
-          Math.ceil((REFUND_WINDOW_MS - ageMs) / (24 * 60 * 60 * 1000))
-        )
-        return (
-          <div style={{ marginTop: 40 }}>
-            <div style={{ ...eyebrow, color: T.DIM, marginBottom: 10 }}>ACCOUNT</div>
-            <div style={{ ...card }}>
-              <div style={{ padding: 20, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 240 }}>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: T.TEXT, marginBottom: 4 }}>
-                    7-day money-back guarantee
-                  </div>
-                  <div style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px" }}>
-                    You have {daysLeft} day{daysLeft === 1 ? "" : "s"} left to request a
-                    full refund. Refunding will revoke your SIGNAL access immediately.
-                  </div>
-                </div>
-                <button
-                  onClick={requestRefund}
-                  disabled={refunding}
-                  style={{
-                    ...btnSecondary,
-                    fontSize: 12,
-                    padding: "10px 16px",
-                    borderRadius: 10,
-                    color: "#f87171",
-                    borderColor: "rgba(248,113,113,0.3)",
-                    opacity: refunding ? 0.5 : 1,
-                  }}
-                >
-                  {refunding ? "Processing..." : "Request Refund"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
-
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      ))}
     </div>
   )
+}
+
+function OrbCard({
+  tone, href, title, sub, external = false,
+}: {
+  tone: "teal" | "blue" | "peach"; href: string; title: string; sub: string; external?: boolean
+}) {
+  const o = orb(S, tone)
+  return (
+    <a
+      href={href}
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      style={{ ...o, ...orbCard, textDecoration: "none" }}
+    >
+      <span style={{ display: "block", fontSize: 19, fontWeight: 800 }}>{title}</span>
+      <span style={{ display: "block", fontSize: 14, marginTop: 4, opacity: 0.85 }}>{sub}</span>
+    </a>
+  )
+}
+
+function CountOrb({
+  tone, href, n, title, sub,
+}: {
+  tone: "teal" | "blue" | "peach"; href: string; n: number; title: string; sub: string
+}) {
+  const o = orb(S, tone)
+  return (
+    <a href={href} style={{ ...o, ...orbCard, textDecoration: "none", display: "flex", alignItems: "center", gap: 18 }}>
+      <span style={{ fontSize: 46, fontWeight: 900, lineHeight: 1 }}>{n}</span>
+      <span>
+        <span style={{ display: "block", fontSize: 19, fontWeight: 800 }}>{title}</span>
+        <span style={{ display: "block", fontSize: 14, marginTop: 3, opacity: 0.85, fontWeight: 700 }}>{sub}</span>
+      </span>
+    </a>
+  )
+}
+
+const wrap: React.CSSProperties = { maxWidth: 1080 }
+const card: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.borderSoft}`, borderRadius: 14, boxShadow: S.shadow.card,
+}
+const hero: React.CSSProperties = {
+  background: S.hero.background, borderRadius: 18, padding: "26px 28px", boxShadow: S.shadow.raised,
+}
+const heroEyebrow: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 10,
+}
+const heroTitle: React.CSSProperties = {
+  color: "#FFFFFF", fontSize: 27, fontWeight: 800, letterSpacing: -0.4, margin: 0, textWrap: "balance",
+}
+const heroBody: React.CSSProperties = {
+  color: S.hero.muted, fontSize: 15.5, lineHeight: "24px", margin: "10px 0 0", maxWidth: "68ch",
+}
+const heroSecondary: React.CSSProperties = {
+  background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.16)",
+  color: S.hero.ink, borderRadius: 10, padding: "13px 22px", fontSize: 15, fontWeight: 800,
+  fontFamily: "inherit", cursor: "pointer",
+}
+const bigBtn: React.CSSProperties = {
+  borderRadius: 10, padding: "13px 22px", fontSize: 15, fontFamily: "inherit", display: "inline-block",
+}
+const sectionLabel: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase",
+  color: S.text.muted, marginBottom: 12,
+}
+const orbCard: React.CSSProperties = {
+  flex: "1 1 260px", borderRadius: 16, padding: "22px 24px", minWidth: 240,
+}
+const momentumBar: React.CSSProperties = {
+  marginTop: 14, padding: "16px 22px", borderRadius: 14,
+  background: `linear-gradient(135deg, ${S.meaning.spoke.accent}, ${S.meaning.replied.accent})`,
+  color: "#FFFFFF", fontSize: 15.5,
+}
+const nudgeCard: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 14, padding: "16px 20px",
+}
+const editProfile: React.CSSProperties = {
+  background: S.card, border: `1px solid ${S.border}`, color: S.text.primary,
+  borderRadius: 999, padding: "9px 18px", fontSize: 14, fontWeight: 700,
+  textDecoration: "none", whiteSpace: "nowrap", boxShadow: S.shadow.card, flexShrink: 0,
 }
