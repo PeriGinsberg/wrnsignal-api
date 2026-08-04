@@ -9,7 +9,12 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, waitFor, cleanup } from "@testing-library/react"
-import WorklistPage from "./page"
+// The worklist is no longer routed: /dashboard/network redirects to Contacts
+// (2026-08-04), and ./page is now that redirect. The COMPONENT is retained
+// deliberately — it is the only reader of GET /api/network/worklist — so this
+// keeps testing it at its new address rather than dropping the case. If the
+// worklist is ever re-routed, its empty state is still guarded.
+import { LegacyWorklist as WorklistPage } from "./LegacyWorklist"
 import ContactsPage from "./contacts/page"
 import CompaniesPage from "./companies/page"
 
@@ -58,7 +63,7 @@ async function textOf(ui: React.ReactElement): Promise<string> {
 }
 
 describe("first-run empty states", () => {
-  it("worklist: invites rather than alarms", async () => {
+  it("worklist (unrouted, retained): invites rather than alarms", async () => {
     const text = await textOf(<WorklistPage />)
     console.log("\n── TODAY (worklist) ──\n" + text.trim() + "\n")
     expect(text).not.toMatch(ALARM)
