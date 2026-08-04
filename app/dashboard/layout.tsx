@@ -7,6 +7,10 @@ import { T, eyebrow } from "../../lib/dashboard-theme"
 import { LIGHT } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
 import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
+import {
+  HomeIcon, TrackIcon, NetworkIcon, ProfileIcon, CoachesHubIcon,
+  SignOutIcon, ScoreAJobIcon, CompaniesIcon,
+} from "../../components/icons"
 
 // Sprint 3 (2026-05-08): conditional nav rendering by is_coach.
 //   • D2C: My Account (renamed from Overview), Job Tracker, ResumeRx
@@ -45,6 +49,9 @@ type NavItem = {
    * tab strip, per the mockups, so it stays a single entry.
    */
   children?: NavItem[]
+  /** The family mark for this destination. Top-level D2C items only: the coach
+   *  nav is unconverted, and sub-nav items sit indented under a marked parent. */
+  icon?: React.ReactNode
 }
 type NavGroup = { header: string; items: NavItem[] }
 
@@ -52,18 +59,19 @@ const D2C_NAV: NavGroup[] = [
   {
     header: "MY ACCOUNT",
     items: [
-      { href: "/dashboard", label: "Dashboard" },
+      { href: "/dashboard", label: "Dashboard", icon: <HomeIcon size={20} /> },
       // matchPrefix so a future application detail page keeps the section lit.
-      { href: "/dashboard/tracker", label: "Job Tracker", matchPrefix: true },
+      { href: "/dashboard/tracker", label: "Job Tracker", matchPrefix: true, icon: <TrackIcon size={20} /> },
       {
         href: "/dashboard/network",
         label: "Networking",
         matchPrefix: true,
+        icon: <NetworkIcon size={20} />,
         // Templates is gone for phase one, and Summary is dropped in favour of
         // the Dashboard being the single "what needs you" surface.
         children: [
-          { href: "/dashboard/network/companies", label: "Companies", matchPrefix: true },
-          { href: "/dashboard/network/contacts", label: "Contacts", matchPrefix: true },
+          { href: "/dashboard/network/companies", label: "Companies", matchPrefix: true, icon: <CompaniesIcon size={17} /> },
+          { href: "/dashboard/network/contacts", label: "Contacts", matchPrefix: true, icon: <ProfileIcon size={17} /> },
           // TEMPORARY (redesign step 3). The networking area's own tab strip was
           // removed, and the outreach identity (pitch, affinities, merge
           // variables) has no other way in until My Profile absorbs it. Without
@@ -72,12 +80,12 @@ const D2C_NAV: NavGroup[] = [
           { href: "/dashboard/network/profile", label: "Networking profile", matchPrefix: true },
         ],
       },
-      { href: "/dashboard/profile", label: "My Profile", matchPrefix: true },
+      { href: "/dashboard/profile", label: "My Profile", matchPrefix: true, icon: <ProfileIcon size={20} /> },
       // TEMPORARY (redesign step 2). Students have never had a sign-out; the
       // designed home for it is My Profile > Account, which is several screens
       // away. This entry closes the functional gap in the meantime.
       // REMOVE when the My Profile Account section lands.
-      { label: "Log out", action: "logout" },
+      { label: "Log out", action: "logout", icon: <SignOutIcon size={20} /> },
     ],
   },
 ]
@@ -675,6 +683,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           href: "/dashboard/coaching-hub",
           label: "Coaches Hub",
           matchPrefix: true,
+          icon: <CoachesHubIcon size={20} />,
         }
         items.splice(profileAt === -1 ? items.length : profileAt, 0, hub)
         return { ...g, items }
@@ -752,6 +761,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         : `1px solid ${isD2C ? "transparent" : T.BORDER_SOFT}`,
                       background: sectionOpen ? navActiveBg : (isD2C ? "transparent" : T.NAV_DEFAULT_BG),
                       color: sectionOpen ? navActiveInk : navIdleInk,
+                      ...(item.icon ? { display: "flex", alignItems: "center", gap: 11 } : null),
                     }
                     // Sub-nav, rendered only while its section is open. Indented
                     // and one weight quieter so the parent still reads as the
@@ -776,9 +786,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                   background: childActive
                                     ? (isD2C ? "rgba(255,255,255,0.09)" : T.NAV_ACTIVE_BG)
                                     : "transparent",
+                                  ...(child.icon ? { display: "flex", alignItems: "center", gap: 9 } : null),
                                 }}
                               >
-                                {child.label}
+                                {child.icon}
+                                <span>{child.label}</span>
                               </a>
                             )
                           })}
@@ -830,7 +842,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             boxSizing: "border-box",
                           }}
                         >
-                          {item.label}
+                          {item.icon}
+                          <span>{item.label}</span>
                         </button>
                       )
                     }
@@ -841,7 +854,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           style={itemStyle}
                           {...(item.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                         >
-                          {item.label}
+                          {item.icon}
+                          <span>{item.label}</span>
                         </a>
                         {subNav}
                       </div>
@@ -888,7 +902,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 color: isD2C ? S.hero.link : "#4ade80",
               }}
             >
-              {EXTERNAL_NAV_ITEM.label}
+              <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                {isD2C && <ScoreAJobIcon size={20} />}
+                <span>{EXTERNAL_NAV_ITEM.label}</span>
+              </span>
             </a>
             )}
           </div>

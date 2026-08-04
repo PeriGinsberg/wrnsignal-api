@@ -21,6 +21,10 @@ import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { LIGHT as S, action as actionStyle, orb } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
 import { timeAgo } from "../../lib/relativeTime"
+import {
+  ScoreAJobIcon, TrackIcon, NetworkIcon, InterviewIcon, MomentumIcon,
+  PinIcon, RepliedIcon, QuietIcon,
+} from "../../components/icons"
 import { buildDashboard, type DashboardModel, type DashboardState } from "./dashboardState"
 
 // DEV-ONLY state preview. A five-state screen cannot be reviewed by anyone,
@@ -175,12 +179,12 @@ function NewStudent({ model }: { model: DashboardModel }) {
 
       <div style={{ ...sectionLabel, marginTop: 28 }}>Then you'll be ready to</div>
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-        <OrbCard tone="teal" href={JOBFIT_URL} title="Score a job" sub="See if it's a fit" external />
-        <OrbCard tone="blue" href="/dashboard/tracker" title="Track applications" sub="Jobs you're serious about" />
-        <OrbCard tone="peach" href="/dashboard/network/contacts" title="Network your way in" sub="Reach real people" />
+        <OrbCard tone="teal" href={JOBFIT_URL} title="Score a job" sub="See if it's a fit" icon={<ScoreAJobIcon size={28} />} external />
+        <OrbCard tone="blue" href="/dashboard/tracker" title="Track applications" sub="Jobs you're serious about" icon={<TrackIcon size={28} />} />
+        <OrbCard tone="peach" href="/dashboard/network/contacts" title="Network your way in" sub="Reach real people" icon={<NetworkIcon size={28} />} />
       </div>
       <p style={{ textAlign: "center", color: S.text.muted, fontSize: 14, marginTop: 22 }}>
-        One step at a time. We'll guide you the whole way. 🌱
+        One step at a time. We'll guide you the whole way.
       </p>
     </>
   )
@@ -193,15 +197,15 @@ function Ready() {
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 24 }}>
         <OrbCard
           tone="teal" href={JOBFIT_URL} external
-          title="Score your first job" sub="See how strong a match you are, and how to stand out"
+          title="Score your first job" sub="See how strong a match you are, and how to stand out" icon={<ScoreAJobIcon size={28} />}
         />
         <OrbCard
           tone="peach" href="/dashboard/network/contacts"
-          title="Start networking" sub="Reach the people who can get you in"
+          title="Start networking" sub="Reach the people who can get you in" icon={<NetworkIcon size={28} />}
         />
       </div>
       <p style={{ textAlign: "center", color: S.text.muted, fontSize: 14, marginTop: 22 }}>
-        Your profile's done, so everything's ready to personalise for you. 🌱
+        Your profile's done, so everything's ready to personalise for you.
       </p>
     </>
   )
@@ -220,7 +224,9 @@ function Interview({ model }: { model: DashboardModel }) {
           outside a button, and it is a border rather than a surface, so it
           still reads as emphasis rather than as something to press. */}
       <section style={{ ...hero, marginTop: 22, border: `2px solid ${S.meaning.attention.accent}` }}>
-        <div style={{ ...heroEyebrow, color: S.hero.accent }}>🎤 Interview {when}</div>
+        <div style={{ ...heroEyebrow, color: S.hero.accent, display: "flex", alignItems: "center", gap: 9 }}>
+          <InterviewIcon size={22} /> Interview {when}
+        </div>
         <h2 style={heroTitle}>{where}</h2>
         <p style={heroBody}>
           {iv.interview_date && new Date(iv.interview_date).toLocaleDateString(undefined, {
@@ -256,7 +262,9 @@ function Quiet({ model }: { model: DashboardModel }) {
   return (
     <>
       <section style={{ ...hero, marginTop: 22 }}>
-        <div style={{ ...heroEyebrow, color: S.hero.accent }}>✦ Still in your corner</div>
+        <div style={{ ...heroEyebrow, color: S.hero.accent, display: "flex", alignItems: "center", gap: 9 }}>
+          <QuietIcon size={20} /> Still in your corner
+        </div>
         <h2 style={heroTitle}>It's been {model.quietDays} days. No worries, let's get moving again.</h2>
         <p style={heroBody}>
           Job searches never run steady. The trick is small, steady steps. Pick one thing below and
@@ -291,7 +299,15 @@ function Active({ model }: { model: DashboardModel }) {
 
       {momentum && (
         <div style={momentumBar}>
-          🌱&nbsp;&nbsp;This week:{" "}
+          <span
+            style={{
+              display: "inline-flex", padding: 6, borderRadius: 9, marginRight: 12,
+              background: "rgba(255,255,255,0.22)", verticalAlign: "-9px",
+            }}
+          >
+            <MomentumIcon size={20} />
+          </span>
+          This week:{" "}
           <strong style={{ fontWeight: 800 }}>{model.appliedThisWeek} jobs applied</strong>,{" "}
           <strong style={{ fontWeight: 800 }}>{model.reachedThisWeek} people reached</strong>. Keep going.
         </div>
@@ -339,18 +355,18 @@ function CountRow({ model }: { model: DashboardModel }) {
 
 // Specific, never vague. Each nudge names the person or the company.
 function Nudges({ model }: { model: DashboardModel }) {
-  const items: { key: string; icon: string; body: React.ReactNode; href: string; cta: string; tone: "attention" | "replied" }[] = []
+  const items: { key: string; icon: React.ReactNode; body: React.ReactNode; href: string; cta: string; tone: "attention" | "replied" }[] = []
 
   for (const c of model.awaiting.slice(0, 2)) {
     items.push({
-      key: `r-${c.id}`, icon: "💬", tone: "replied",
+      key: `r-${c.id}`, icon: <RepliedIcon size={26} />, tone: "replied",
       body: <><strong>{c.first_name} {c.last_name}</strong> replied {timeAgo(c.last_action_at) ?? "recently"}. Don't leave them hanging.</>,
       href: `/dashboard/network/contacts/${c.id}`, cta: "Reply →",
     })
   }
   for (const a of model.stale.slice(0, 2)) {
     items.push({
-      key: `s-${a.id}`, icon: "📍", tone: "attention",
+      key: `s-${a.id}`, icon: <PinIcon size={26} />, tone: "attention",
       body: <>You applied to <strong>{a.company_name || "a company"}</strong> over two weeks ago with no word back. Worth a follow-up.</>,
       href: "/dashboard/tracker", cta: "Show me →",
     })
@@ -358,7 +374,7 @@ function Nudges({ model }: { model: DashboardModel }) {
   if (items.length === 0) {
     for (const a of model.saved.slice(0, 2)) {
       items.push({
-        key: `v-${a.id}`, icon: "📍", tone: "attention",
+        key: `v-${a.id}`, icon: <PinIcon size={26} />, tone: "attention",
         body: <>You saved <strong>{a.job_title || "a job"}</strong>{a.company_name ? ` at ${a.company_name}` : ""} but haven't applied yet.</>,
         href: "/dashboard/tracker", cta: "Show me →",
       })
@@ -369,7 +385,7 @@ function Nudges({ model }: { model: DashboardModel }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {items.slice(0, 3).map((it) => (
         <div key={it.key} style={{ ...card, ...nudgeCard, borderLeft: `3px solid ${S.meaning[it.tone].accent}` }}>
-          <span aria-hidden style={{ fontSize: 18, flexShrink: 0 }}>{it.icon}</span>
+          <span style={{ flexShrink: 0, display: "flex" }}>{it.icon}</span>
           <span style={{ flex: 1, color: S.text.secondary, fontSize: 15, lineHeight: "22px" }}>{it.body}</span>
           <a href={it.href} style={{ color: S.action.quietInk, fontSize: 14.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
             {it.cta}
@@ -381,9 +397,10 @@ function Nudges({ model }: { model: DashboardModel }) {
 }
 
 function OrbCard({
-  tone, href, title, sub, external = false,
+  tone, href, title, sub, icon, external = false,
 }: {
-  tone: "teal" | "blue" | "peach"; href: string; title: string; sub: string; external?: boolean
+  tone: "teal" | "blue" | "peach"; href: string; title: string; sub: string
+  icon?: React.ReactNode; external?: boolean
 }) {
   const o = orb(S, tone)
   return (
@@ -392,6 +409,18 @@ function OrbCard({
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       style={{ ...o, ...orbCard, textDecoration: "none" }}
     >
+      {icon && (
+        // Frosted tile behind the mark, per the orb spec. Keeps a two-tone icon
+        // legible on a saturated gradient without recolouring the artwork.
+        <span
+          style={{
+            display: "inline-flex", padding: 9, borderRadius: 12, marginBottom: 14,
+            background: "rgba(255,255,255,0.22)",
+          }}
+        >
+          {icon}
+        </span>
+      )}
       <span style={{ display: "block", fontSize: 19, fontWeight: 800 }}>{title}</span>
       <span style={{ display: "block", fontSize: 14, marginTop: 4, opacity: 0.85 }}>{sub}</span>
     </a>

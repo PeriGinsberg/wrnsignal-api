@@ -20,11 +20,13 @@ import { useState } from "react"
 import { LIGHT as S } from "../../../../../lib/theme/surfaces"
 
 export function Collapsible({
-  title, summary, testId, defaultOpen = false, children,
+  title, summary, testId, icon, defaultOpen = false, children,
 }: {
   title: string
   summary: string
   testId: string
+  /** The family mark for what is inside. Optional: a drawer reads fine without. */
+  icon?: React.ReactNode
   defaultOpen?: boolean
   children: React.ReactNode
 }) {
@@ -47,10 +49,11 @@ export function Collapsible({
         aria-expanded={open}
         data-testid={`drawer-toggle-${testId}`}
         style={{
-          display: "flex", alignItems: "baseline", gap: 12, width: "100%", textAlign: "left",
+          display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left",
           background: "none", border: "none", padding: "16px 20px", cursor: "pointer", fontFamily: "inherit",
         }}
       >
+        {icon}
         <span style={{ color: S.text.primary, fontSize: 15, fontWeight: 800, flex: "0 0 auto" }}>{title}</span>
         <span
           style={{

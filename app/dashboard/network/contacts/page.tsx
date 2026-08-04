@@ -30,6 +30,7 @@ import { dueOf, type Contact } from "./ContactRow"
 import { ContactCard } from "./ContactCard"
 import { sortForAttention } from "./contactOrder"
 import { matchesQuery } from "./search"
+import { SearchIcon, ImportIcon } from "../../../../components/icons"
 import { STAGE_PHASE, PHASE_LABELS, RELATIONSHIP_LABELS } from "../vocab"
 import { isStalled, STALLED_DAYS } from "../dashboardMetrics"
 import type { PhaseKey } from "../../../../lib/dashboard-theme"
@@ -296,7 +297,7 @@ function ContactsInner() {
           <p style={{ color: S.text.muted, fontSize: 14.5, marginTop: 6 }}>{countLine}</p>
         </div>
         <div style={{ display: "flex", gap: 10, flex: "0 0 auto", alignItems: "center" }}>
-          <a href="/dashboard/network/import" style={{ ...secondaryBtn, textDecoration: "none" }}>Import</a>
+          <a href="/dashboard/network/import" style={{ ...secondaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}><ImportIcon size={19} />Import</a>
           <button onClick={() => setAddOpen(true)} style={{ ...actionStyle(S, "primary"), ...primarySize }}>
             + Add contact
           </button>
@@ -314,6 +315,10 @@ function ContactsInner() {
 
       {contacts.length > 0 && (
         <div style={{ display: "flex", gap: 12, marginTop: 22, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ position: "relative", flex: "1 1 320px", minWidth: 220, display: "flex", alignItems: "center" }}>
+          <span style={{ position: "absolute", left: 14, display: "flex", pointerEvents: "none" }}>
+            <SearchIcon size={19} />
+          </span>
           <input
             type="search"
             value={fQuery}
@@ -323,6 +328,7 @@ function ContactsInner() {
             data-testid="contacts-search"
             style={searchStyle}
           />
+          </span>
           <select
             value={fStage}
             onChange={(e) => setFStage(e.target.value)}
@@ -502,8 +508,8 @@ const quietBtn: React.CSSProperties = {
   fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "6px 4px",
 }
 const searchStyle: React.CSSProperties = {
-  flex: "1 1 320px", minWidth: 220, background: S.card, border: `1px solid ${S.border}`,
-  borderRadius: 10, padding: "12px 16px", fontSize: 14.5, color: S.text.primary,
+  width: "100%", background: S.card, border: `1px solid ${S.border}`,
+  borderRadius: 10, padding: "12px 16px 12px 42px", fontSize: 14.5, color: S.text.primary,
   fontFamily: "inherit", outline: "none", boxShadow: S.shadow.card,
 }
 const selectStyle: React.CSSProperties = {

@@ -29,6 +29,7 @@ import { LIGHT as S, action as actionStyle, tileStructural, tileIdle } from "../
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
 import { ContactCard } from "../contacts/ContactCard"
+import { CompaniesIcon } from "../../../../components/icons"
 import { TIER_LABELS, TIER_GROUP_LABELS, UNSORTED_TIER, STATUS_LABELS, FIELD_LABELS, statusLabel } from "../vocab"
 import type { Contact } from "../contacts/ContactRow"
 
@@ -255,6 +256,7 @@ export function CompanyCard({
                 border: `1px dashed ${S.border}`, background: "rgba(255,255,255,0.5)",
               }}
             >
+              <CompaniesIcon size={34} style={{ margin: "0 auto 12px" }} />
               <div style={{ color: S.text.muted, fontSize: 14.5 }}>
                 No contacts here yet, a wishlist firm. Found someone? Add them and start your outreach.
               </div>

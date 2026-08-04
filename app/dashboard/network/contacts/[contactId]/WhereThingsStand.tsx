@@ -43,6 +43,7 @@ import { LIGHT as S } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { ChangeStage } from "./ChangeStage"
 import { STAGE_LABELS } from "../../vocab"
+import { StepCompleteIcon, StepRestingIcon } from "../../../../../components/icons"
 
 type Contact = {
   id: string
@@ -168,19 +169,24 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
                     opacity: busy === stageKey ? 0.55 : 1,
                   }}
                 >
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 28, height: 28, borderRadius: 999, flexShrink: 0,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 12, fontWeight: 900,
-                      border: `1.5px solid ${circleBorder}`,
-                      background: circleBg,
-                      color: circleInk,
-                    }}
-                  >
-                    {done ? "✓" : i + 1}
-                  </span>
+                  {done ? (
+                    // The drawn tick, teal, matching the stepper's done state.
+                    <StepCompleteIcon size={28} />
+                  ) : (
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 12, fontWeight: 900,
+                        border: `1.5px solid ${circleBorder}`,
+                        background: circleBg,
+                        color: circleInk,
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                  )}
                   {/* The CURRENT step's label is the screen's statement of the
                       stage, which is why it carries the stage-pill hook: the
                       header used to say it in words and no longer needs to. */}
@@ -206,8 +212,9 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
       {resting && (
         <div
           data-testid="stage-pill"
-          style={{ marginTop: 6, color: S.meaning.dormant.ink, fontSize: 14, fontWeight: 700 }}
+          style={{ marginTop: 6, color: S.meaning.dormant.ink, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}
         >
+          <StepRestingIcon size={26} />
           {STAGE_LABELS[contact.stage] ?? contact.stage}
         </div>
       )}

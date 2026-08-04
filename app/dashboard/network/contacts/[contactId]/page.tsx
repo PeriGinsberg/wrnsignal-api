@@ -37,6 +37,7 @@ import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
 import {
   FIELD_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, STAGE_PHASE,
 } from "../../vocab"
+import { NotesIcon, HistoryIcon, ProfileIcon, SignOutIcon } from "../../../../../components/icons"
 
 type Contact = {
   id: string
@@ -203,6 +204,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
             it), so a new user lands on the setup step already open. Once it is
             set, this is reference and shuts. */}
         <Collapsible
+          icon={<ProfileIcon size={20} />}
           title="Details" testId="details"
           defaultOpen={!contact.relationship}
           summary={detailsSummary}
@@ -219,6 +221,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         </Collapsible>
 
         <Collapsible
+          icon={<HistoryIcon size={20} />}
           title="History" testId="history"
           defaultOpen={touches.length > 0}
           summary={touches.length ? `${touches.length} touch${touches.length === 1 ? "" : "es"} logged` : "Nothing yet"}
@@ -227,6 +230,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         </Collapsible>
 
         <Collapsible
+          icon={<NotesIcon size={20} />}
           title="Notes" testId="notes"
           defaultOpen={notes.length > 0}
           summary={notes.length ? `${notes.length} note${notes.length === 1 ? "" : "s"}` : "Nothing yet"}
@@ -245,7 +249,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
           </div>
         </Collapsible>
 
-        <Collapsible title="Close out this contact" testId="danger" summary="Remove them and their history">
+        <Collapsible icon={<SignOutIcon size={20} />} title="Close out this contact" testId="danger" summary="Remove them and their history">
           <DeleteContactControl contact={contact} />
         </Collapsible>
       </div>
