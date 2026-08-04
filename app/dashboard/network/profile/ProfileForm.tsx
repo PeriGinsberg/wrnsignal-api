@@ -12,7 +12,7 @@
 //
 // Grouped rather than presented as a flat wall of 17 inputs, because the groups
 // are the argument for filling them in: "About you" and "Your target" are facts,
-// "Your affinities" is the bit only the client knows, and the pitch is the one
+// "Things in Common" is the bit only the client knows, and the pitch is the one
 // that actually costs effort.
 
 import { useCallback, useEffect, useState } from "react"
@@ -51,12 +51,17 @@ const GROUPS: { title: string; blurb?: string; fields: FieldDef[] }[] = [
     ],
   },
   {
-    title: "Your affinities",
+    // LABEL ONLY (2026-08-04). "Affinity" is our word; the contact record has
+    // said "Something in Common" for the same idea since the vocab pass, and
+    // two screens naming one concept differently is how a vocabulary drifts.
+    // The keys stay affinity_1..3 and the merge tokens stay [AFFINITY_1..3];
+    // nothing about the data or the templates moves.
+    title: "Things in Common",
     blurb: "Shared ground that opens a door — alumni network, a past employer, a community, anything you have in common with someone you're reaching out to. Only you know these.",
     fields: [
-      { key: "affinity_1", label: "Affinity 1", placeholder: "e.g. Illinois alumni" },
-      { key: "affinity_2", label: "Affinity 2", placeholder: "e.g. ex-Deloitte" },
-      { key: "affinity_3", label: "Affinity 3", placeholder: "e.g. Chicago Women in Analytics" },
+      { key: "affinity_1", label: "Thing in common 1", placeholder: "e.g. Illinois alumni" },
+      { key: "affinity_2", label: "Thing in common 2", placeholder: "e.g. ex-Deloitte" },
+      { key: "affinity_3", label: "Thing in common 3", placeholder: "e.g. Chicago Women in Analytics" },
     ],
   },
   {

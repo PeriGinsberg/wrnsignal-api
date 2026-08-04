@@ -124,8 +124,9 @@ describe("section-level progress", () => {
     // About you: client_first, current_role_title, current_employer, school,
     // grad_year filled; degree and city empty.
     expect(screen.getByTestId("section-about-you").textContent).toMatch(/5 of 7/)
-    // Affinities are all empty in the fixture.
-    expect(screen.getByTestId("section-your-affinities").textContent).toMatch(/0 of 3/)
+    // The three things-in-common fields are all empty in the fixture. The
+    // testid is derived from the section title, so it moved with the label.
+    expect(screen.getByTestId("section-things-in-common").textContent).toMatch(/0 of 3/)
   })
 })
 
@@ -237,7 +238,7 @@ describe("first open is not blocked on the résumé extraction", () => {
     expect(container.textContent).not.toMatch(/error|failed|could not|unauthorized|undefined|NaN|\[object/i)
     // Every group heading is present, so the page explains itself. getAllByText
     // because "Elevator pitch" is both a group heading and a field label.
-    for (const g of ["About you", "Your target", "Your affinities", "Links", "Elevator pitch"]) {
+    for (const g of ["About you", "Your target", "Things in Common", "Links", "Elevator pitch"]) {
       expect(screen.getAllByText(g).length).toBeGreaterThan(0)
     }
     expect(screen.getAllByRole("textbox").length).toBe(17)
