@@ -11,18 +11,43 @@ import { isKnownTemplateId } from "../../../lib/network-tracker/templates"
 // Display labels only — the KEYS are the DB/engine stage values (unchanged); the
 // VALUES are plain-English UI copy. Every surface (stepper, roster, worklist,
 // filters, dropdowns, prose) reads from here — never hardcode a stage's wording.
+// Warm-wording pass, 2026-08-04. Judged as a SET rather than one label at a
+// time, because the record's stepper now renders all nine on-path labels in one
+// row and they have to read as a sequence a student would say out loud.
+//
+// The register is plain and active: what YOU did, or what THEY did. The subject
+// changes across the set ("Message sent", "They replied", "You talked") because
+// the actor changes, which is accuracy rather than inconsistency.
+//
+// What changed and why:
+//   Not contacted     -> Not started        "contacted" is a CRM word
+//   Intro requested   -> Asked for an intro passive to active; you did it
+//   Chat scheduled    -> Chat booked        shorter, and people book chats
+//   Chat happened     -> You talked         "happened" describes a log entry
+//   Asked for referral-> Asked for a referral  the missing article read as a
+//                                           system label rather than a sentence
+//   Outcome           -> Got a result       "Outcome" is a database column.
+//                                           NEUTRAL on purpose: the stage covers
+//                                           referral, intro and lead, so a label
+//                                           like "It paid off" would claim a win
+//                                           the data does not always support.
+//   No answer         -> No answer yet      "yet" keeps it open, not a verdict
+//   Declined          -> Not interested     "declined" is formal and final
+//
+// Kept: "Message sent", "They replied", "Keeping in touch" were already in the
+// right register, and changing words that are already right is churn.
 export const STAGE_LABELS: Record<string, string> = {
-  identified: "Not contacted",
-  intro_requested: "Intro requested",
+  identified: "Not started",
+  intro_requested: "Asked for an intro",
   sequence_active: "Message sent",
   replied: "They replied",
-  chat_scheduled: "Chat scheduled",
-  chat_done: "Chat happened",
+  chat_scheduled: "Chat booked",
+  chat_done: "You talked",
   nurture: "Keeping in touch",
-  ask_made: "Asked for referral",
-  outcome: "Outcome",
-  dormant_no_answer: "No answer",
-  dormant_declined: "Declined",
+  ask_made: "Asked for a referral",
+  outcome: "Got a result",
+  dormant_no_answer: "No answer yet",
+  dormant_declined: "Not interested",
 }
 
 // Stage → PHASE GROUP. The single source of truth for how a stage is coloured
@@ -61,7 +86,7 @@ export const PHASE_LABELS: Record<PhaseKey, string> = {
   alive: "Replied",
   momentum: "Talking",
   longgame: "Nurture & ask",
-  won: "Outcome",
+  won: "Result",
   resting: "Resting",
 }
 

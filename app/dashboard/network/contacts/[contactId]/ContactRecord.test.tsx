@@ -167,7 +167,7 @@ describe("the first send — a contact nobody has contacted yet", () => {
     })
 
     await open()
-    expect(screen.getByTestId("stage-pill").textContent).toBe("Not contacted")
+    expect(screen.getByTestId("stage-pill").textContent).toBe("Not started")
 
     fireEvent.click(screen.getByRole("button", { name: /Copy and mark as sent/i }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
@@ -208,12 +208,12 @@ describe("quick actions — split by likelihood", () => {
     const call = authFetchMock.mock.calls.findIndex((c) => String(c[0]).includes("/stage"))
     expect(bodyOf(call).stage).toBe("replied")
 
-    // LABEL CHANGED 2026-08-04, not the behaviour. The pair of quick buttons
-    // became the stepper circles, so this move is now named by its stage label:
-    // "We talked" was the button's wording for the chat_done stage, whose label
-    // is "Chat happened". Still by label, not testid, so the words still have to
-    // be wired to the right move.
-    fireEvent.click(screen.getByRole("button", { name: "Chat happened" }))
+    // LABEL FOLLOWS THE WORDS ON SCREEN. This move was a button reading "We
+    // talked", then the chat_done circle reading "Chat happened", and after the
+    // warm-wording pass it reads "You talked". The stage key never moved. Still
+    // looked up by label, not testid, so the wording still has to be wired to
+    // the right move.
+    fireEvent.click(screen.getByRole("button", { name: "You talked" }))
     await waitFor(() => {
       const stageCalls = authFetchMock.mock.calls.filter((c) => String(c[0]).includes("/stage"))
       expect(stageCalls).toHaveLength(2)
