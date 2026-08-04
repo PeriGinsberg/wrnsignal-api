@@ -197,8 +197,28 @@ export const LIGHT: Surface = {
     fill: "linear-gradient(135deg, #FEB06A, #F0913F)",
     ink: "#13294A",
     glow: "0 2px 6px rgba(240,145,63,0.28), 0 8px 20px rgba(240,145,63,0.18)",
-    outlineBorder: "#F0913F",
-    outlineInk: "#95500E",
+    // THE OPTIONAL TIER IS PEACH TOO, and it took a structural fix to get
+    // there rather than a new hex.
+    //
+    // `outlineInk` was #95500E, a darkened peach, and it read as amber — which
+    // was the whole problem: every other action on a screen was peach, and the
+    // one outline button was brown. But the ink cannot simply be "more peach".
+    // Peach measures 1.81 as text on white, so an outline label has to be
+    // darkened to clear 4.5:1, and #95500E was ALREADY peach's own hue (29°) at
+    // 83% saturation. Every candidate at that hue with usable contrast comes
+    // out brown; that is what darkening an orange does. Measured across a
+    // 500-candidate sweep, no exception.
+    //
+    // So the peach moves to where peach can actually live at full chroma — the
+    // BORDER — and the label takes the same navy the FILLED tier already uses.
+    // Both tiers now share one ink and one colour identity, and the tiers
+    // differ by fill versus border, which is what a tier should mean.
+    //
+    // The border deepens one stop past the gradient's dark end because #F0913F
+    // measures 2.38 on white, under the 3.0 a non-text boundary needs. #DE7620
+    // is the same hue family at 3.13.
+    outlineBorder: "#DE7620",
+    outlineInk: "#13294A",
     quietInk: "#1F6FA8",
   },
   hero: {
@@ -387,7 +407,10 @@ export function action(s: Surface, tier: "primary" | "optional" = "primary"): Re
   if (tier === "optional") {
     return {
       background: s.card,
-      border: `1px solid ${s.action.outlineBorder}`,
+      // 1.5px, not 1px. The border is the only thing carrying the action
+      // colour in this tier, so it has to be seen; at 1px a 3.13 boundary is
+      // technically compliant and practically a hairline.
+      border: `1.5px solid ${s.action.outlineBorder}`,
       color: s.action.outlineInk,
       fontWeight: 800,
       cursor: "pointer",
