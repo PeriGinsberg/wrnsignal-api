@@ -251,6 +251,7 @@ the three, so it is the number that actually has to hold.
 | Meaning | Ink | Accent | Fill | ink worst | ink on fill |
 |---|---|---|---|---|---|
 | Attention, act here, overdue | `#95500E` | `#FEB06A` | `#FDECD9` | 5.44 | 5.30 |
+| Current position on a path | `#93245F` | `#E5397E` | `#FBDCEB` | 7.02 | 6.22 |
 | Responded / alive | `#17706F` | `#218C8C` | `#D6EFEC` | 5.21 | 4.86 |
 | We actually spoke | `#0F5C55` | `#1B7A72` | `#CDEAE4` | 6.96 | 6.15 |
 | Achieved / done | `#8A6410` | `#D4A444` | `#F7EBCC` | 4.77 | 4.53 |
@@ -412,6 +413,42 @@ The action tiers, from the build plan:
 2. **Outline** means optional, for example "Apply" on a job that is only saved.
 3. **Nothing** means no action. The absence of a button, never a disabled one, because a
    greyed button still reads as a thing you failed to earn.
+
+---
+
+### 6.10 Rose owns "where you are" (2026-08-04)
+
+Amber was marking the current step on the contact record's stepper, borrowed from
+`meaning.attention`. That was the wrong word for it. **Attention means something needs you.
+The current step means this is where you stand**, which is often true with nothing owing at
+all: a contact you messaged yesterday is at "Message sent" and needs nothing today. Two
+different questions were sharing one colour, and a screen can legitimately ask both at once.
+
+Rose is now its own meaning, `meaning.current`:
+
+| Role | Token | Value | Measured |
+|---|---|---|---|
+| The ring on the current step | `meaning.current.accent` | `#E5397E` | 4.02 on white, non-text, needs 3.0 |
+| The numeral and the label | `meaning.current.ink` | `#93245F` | 7.02 on the worst light ground |
+| The circle's fill | `meaning.current.fill` | `#FBDCEB` | carries the ink at 6.22 |
+
+**Why the ink is not simply the accent darkened.** Rose `#E5397E` and the LinkedIn pink
+`#FF8FB0` sit on the *same hue*, 336. The accents are far enough apart to name, 17.5 dE2000,
+so the pair the brief asked about is safe. But their inks are not: the LinkedIn ink `#C2185B`
+**is** a darkened rose, and every straight darkening of `#E5397E` that clears 4.5:1 lands
+within about 4 dE of it, which is "the same colour, slightly off" rather than a difference
+anyone would name. Hue cannot separate two hues that are equal, so lightness does the work.
+`#93245F` sits 10.7 dE from the LinkedIn ink, stays rose at hue 328, and clears every ground
+with room. Distances to everything else it could be confused with: error ink 22.9, long-game
+ink 19.5, attention ink 36.8.
+
+The two fills, `#FBDCEB` and LinkedIn's `#FDE3EC`, remain close at 3.0 dE. Accepted, on the
+same terms as §5: they are pale backgrounds that never carry meaning alone, each always has
+its own ink on top, and they have no screen in common. Recorded so it is a decision rather
+than an oversight.
+
+Peach is untouched by this. The ring is rose, and §6.9 still holds: the only peach on the
+contact record is the send button.
 
 ---
 

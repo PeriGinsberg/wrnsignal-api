@@ -6,8 +6,8 @@
 //
 // WHY EVERY MEANING HAS THREE VALUES. No brand hue clears 4.5:1 as text on
 // white. Measured: peach 1.81, blue 2.48, gold 2.28, pink 2.14, purple 3.09,
-// red 3.91, teal 4.04. So a meaning cannot be one hex on light. It is three,
-// each with one job:
+// red 3.91, teal 4.04, rose 4.02. So a meaning cannot be one hex on light. It
+// is three, each with one job:
 //
 //   ink     the darkened value: status TEXT and the status DOT, both the same
 //           value so a dot and its label match. Also rails-as-text, icons.
@@ -26,11 +26,17 @@
 // rule is structural rather than a convention someone has to remember. The
 // attention MEANING keeps a darkened peach ink for text such as "none yet" and
 // overdue dates. See COLOR-SYSTEM.md section 6.9.
+//
+// `current` IS NOT A STATUS. It is the one meaning that marks a position rather
+// than a state: where you are on a path, on a stepper. It is separate from
+// `attention` (which was doing this job in rose's place) because "where you
+// stand" and "something needs you" are different questions, and a screen can
+// legitimately ask both at once.
 
 import type { PhaseKey } from "../dashboard-theme"
 
 export type MeaningKey =
-  | "attention" | "replied" | "spoke" | "done" | "progress"
+  | "attention" | "current" | "replied" | "spoke" | "done" | "progress"
   | "sequence" | "linkedin" | "longgame" | "dormant" | "error" | "idle"
 
 export type Meaning = {
@@ -139,6 +145,18 @@ export const LIGHT: Surface = {
   text: { primary: "#13294A", secondary: "#3D5878", muted: "#526C87", dim: "#8299B3" },
   meaning: {
     attention: { ink: "#95500E", accent: "#FEB06A", fill: "#FDECD9" },
+    // Rose. The ring on a stepper's current step, and the label under it.
+    //
+    // The ink is NOT a plain darkening of the accent, and the reason is worth
+    // keeping: rose and the linkedin pink sit on the SAME hue, 336. Darkening
+    // #E5397E far enough to clear 4.5:1 lands it on top of the linkedin ink
+    // #C2185B, which is itself a darkened rose. Measured, a straight darken
+    // came out 3.6 dE2000 from it, which is "same colour, slightly off" and
+    // not a difference anyone would name. Since hue cannot separate two hues
+    // that are equal, lightness does: #93245F is 10.7 dE from the linkedin
+    // ink, still reads as rose (hue 328), and measures 7.02 on the worst
+    // ground. The accents were never the problem, 17.5 dE apart.
+    current: { ink: "#93245F", accent: "#E5397E", fill: "#FBDCEB" },
     replied: { ink: "#17706F", accent: "#218C8C", fill: "#D6EFEC" },
     spoke: { ink: "#0F5C55", accent: "#1B7A72", fill: "#CDEAE4" },
     done: { ink: "#8A6410", accent: "#D4A444", fill: "#F7EBCC" },
@@ -234,6 +252,10 @@ export const DARK: Surface = {
   },
   meaning: {
     attention: { ink: "#FEB06A", accent: "#FEB06A", fill: "rgba(254,176,106,0.08)" },
+    // The one meaning dark did not already have. The accent is the same rose;
+    // the ink is lifted to #FF6BA3 because #E5397E measures 3.60 on the navy
+    // card, under the bar. 5.44 at the worst dark ground.
+    current: { ink: "#FF6BA3", accent: "#E5397E", fill: "rgba(229,57,126,0.14)" },
     replied: { ink: "#4ade80", accent: "#4ade80", fill: "rgba(74,222,128,0.16)" },
     spoke: { ink: "#a7f3d0", accent: "#a7f3d0", fill: "rgba(16,185,129,0.34)" },
     done: { ink: "#D4A444", accent: "#D4A444", fill: "rgba(212,164,68,0.22)" },

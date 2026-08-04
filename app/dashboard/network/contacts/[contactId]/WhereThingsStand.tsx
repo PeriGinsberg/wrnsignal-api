@@ -16,11 +16,15 @@
 //
 // COLOUR, mapped into light and kept inside the exclusivity rule:
 //   done     teal, our positive colour (light has no green)
-//   current  attention AMBER, the darkened ink, never the peach accent
+//   current  ROSE: the accent as the ring, the darkened ink as the numeral and
+//            the label, on the pale rose fill
 //   ahead    muted, a hairline circle
-// Peach stays action-only. The current step is attention ink on its pale fill,
-// which is the documented status pairing, so no saturated peach appears outside
-// a button. See COLOR-SYSTEM.md section 6.9.
+// Rose replaced amber here (2026-08-04). Amber was borrowed from `attention`,
+// and it was saying the wrong thing: attention means something needs you, while
+// the current step means this is where you stand, which can be true with
+// nothing owing. Rose is its own meaning now, `meaning.current`, so the two can
+// appear on one screen without arguing. Peach stays action-only either way; the
+// ring is rose, not peach. See COLOR-SYSTEM.md section 6.10.
 //
 // THE CIRCLES ARE THE CONTROL, same as the prospects pipeline. The pair of
 // "They replied" / "We talked" buttons underneath said the same thing the
@@ -128,9 +132,12 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
           {PATH.map((stageKey, i) => {
             const done = currentIndex >= 0 && i < currentIndex
             const isCurrent = i === currentIndex
-            const circleInk = isCurrent ? S.meaning.attention.ink : done ? S.meaning.replied.ink : S.text.dim
-            const circleBg = isCurrent ? S.meaning.attention.fill : done ? S.meaning.replied.fill : "transparent"
-            const circleBorder = isCurrent ? S.meaning.attention.ink : done ? S.meaning.replied.accent : S.border
+            // The current ring is the rose ACCENT at full chroma, not its ink:
+            // a ring is structure, so it takes the vivid value, and the numeral
+            // inside it takes the ink that has to be read.
+            const circleInk = isCurrent ? S.meaning.current.ink : done ? S.meaning.replied.ink : S.text.dim
+            const circleBg = isCurrent ? S.meaning.current.fill : done ? S.meaning.replied.fill : "transparent"
+            const circleBorder = isCurrent ? S.meaning.current.accent : done ? S.meaning.replied.accent : S.border
             // Only steps AHEAD of you advance. Behind is history and is changed
             // through Change; the terminal step is never one tap.
             const advanceable =
@@ -179,7 +186,9 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
                         width: 28, height: 28, borderRadius: 999, flexShrink: 0,
                         display: "inline-flex", alignItems: "center", justifyContent: "center",
                         fontSize: 12, fontWeight: 900,
-                        border: `1.5px solid ${circleBorder}`,
+                        // The current step gets the heavier ring. It is the one
+                        // circle that has to be found without reading.
+                        border: `${isCurrent ? 2 : 1.5}px solid ${circleBorder}`,
                         background: circleBg,
                         color: circleInk,
                       }}
@@ -194,7 +203,7 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
                     {...(isCurrent ? { "data-testid": "stage-pill" } : {})}
                     style={{
                       fontSize: 11.5, lineHeight: "15px", textAlign: "center",
-                      color: isCurrent ? S.meaning.attention.ink : done ? S.text.secondary : S.text.dim,
+                      color: isCurrent ? S.meaning.current.ink : done ? S.text.secondary : S.text.dim,
                       fontWeight: isCurrent ? 800 : done ? 700 : 500,
                     }}
                   >
