@@ -18,7 +18,7 @@
 // ordering, same ephemeral draft.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
+import { LIGHT as S, DARK, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { displayName } from "../../templates/templateNames"
 import { pickTemplate, REASON_TO_ACTION, ACTION_TYPE_LABEL } from "../../vocab"
@@ -243,15 +243,23 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
             <div
               data-testid="gap-warning"
               style={{
-                // Attention as TEXT, not as a fill. The peach fill is reserved
-                // for the button below, so the warning takes the peach accent as
-                // ink on a left rail and reads as a caution rather than as a
-                // second thing to click. At 12% alpha this was a plain dark box
-                // and lost the signal entirely.
-                background: "rgba(254,176,106,0.10)",
+                // Attention as TEXT, not as a fill. The action fill is reserved
+                // for the button below, so the warning takes a coral left rail
+                // and reads as a caution rather than as a second thing to
+                // click. At 12% alpha this was a plain dark box and lost the
+                // signal entirely.
+                //
+                // THE TEXT USES THE DARK THEME'S attention ink, not the light
+                // one, and this panel is the reason that value exists. This
+                // card is navy: the light accent #F26B52 measures 3.82 against
+                // the gradient's lightest stop, under the bar for text, while
+                // the dark ink #FF9B80 measures 5.60 at the same stop. Reading
+                // a light-theme token on a dark surface is the mistake; the
+                // rail can take the accent because a 3px border only needs 3.0.
+                background: "rgba(242,107,82,0.12)",
                 borderLeft: `3px solid ${S.meaning.attention.accent}`,
                 borderRadius: "0 10px 10px 0", padding: "12px 16px", marginBottom: 14,
-                color: S.meaning.attention.accent, fontSize: 13.5, lineHeight: "20px",
+                color: DARK.meaning.attention.ink, fontSize: 13.5, lineHeight: "20px",
                 fontWeight: 600,
               }}
             >

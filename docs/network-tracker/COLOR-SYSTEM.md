@@ -250,7 +250,7 @@ the three, so it is the number that actually has to hold.
 
 | Meaning | Ink | Accent | Fill | ink worst | ink on fill |
 |---|---|---|---|---|---|
-| Attention, act here, overdue | `#95500E` | `#FEB06A` | `#FDECD9` | 5.44 | 5.30 |
+| Attention, act here, overdue | `#884133` | `#F26B52` | `#FBE3D6` | 6.55 | 5.98 |
 | Current position on a path | `#93245F` | `#E5397E` | `#FBDCEB` | 7.02 | 6.22 |
 | Responded / alive | `#17706F` | `#218C8C` | `#D6EFEC` | 5.21 | 4.86 |
 | We actually spoke | `#0F5C55` | `#1B7A72` | `#CDEAE4` | 6.96 | 6.15 |
@@ -398,8 +398,8 @@ It is enforced structurally, not by convention. On light, peach is **not reachab
 | Optional tier border | `action.outlineBorder` | `#F0913F` |
 | Optional tier ink | `action.outlineInk` | `#95500E`, 6.12 on white |
 | Quiet inline link | `action.quietInk` | `#1F6FA8` |
-| Attention as TEXT | `meaning.attention.ink` | `#95500E`, for "none yet" and overdue |
-| Attention as structure | `meaning.attention.accent` | `#FEB06A`, for rails and tiles only |
+| Attention as TEXT | `meaning.attention.ink` | `#884133`, for "none yet" and overdue |
+| Attention as structure | `meaning.attention.accent` | `#F26B52`, for rails and frames only |
 
 **Attention and action have split on light and stay one colour on dark.** §1's "warm owns
 attention, and only attention" is still true of the dark theme. On light the sentence
@@ -449,6 +449,61 @@ than an oversight.
 
 Peach is untouched by this. The ring is rose, and §6.9 still holds: the only peach on the
 contact record is the send button.
+
+---
+
+### 6.11 Attention is coral, and how it stays clear of error red (2026-08-04)
+
+Attention was amber, `#FEB06A`, which is **the same hex as the action colour**. §6.9 held that
+apart by shape alone: peach as a fill means press me, darkened peach as text means attend to me.
+That worked, but it asked the reader to decode a shape before they could decode a meaning, and
+it left the product with one warm colour doing two jobs.
+
+Attention is now **coral**, and the two are separated by hue as well as shape: 21.8 dE2000 from
+peach. One consequence worth noting: `action.outlineInk` is still `#95500E`, a darkened peach,
+so the optional-tier button and attention text are now 14.7 dE apart where they used to be the
+same value.
+
+| Role | Token | Value | Measured |
+|---|---|---|---|
+| Attention as text | `meaning.attention.ink` | `#884133` | 6.55 on the worst light ground, 5.98 on its own fill |
+| Attention as structure | `meaning.attention.accent` | `#F26B52` | 3.00 on white and 3.82 on the lightest navy stop; both are borders, which need 3.0 |
+| Attention as a soft ground | `meaning.attention.fill` | `#FBE3D6` | carries the ink at 5.98 |
+
+**The error-red question, answered honestly.** "Needs you" and "destructive" must not look the
+same, and coral sits between orange and red, which is where error red lives. Measured:
+
+| Pair | dE2000 |
+|---|---|
+| coral accent vs error accent `#E5484D` | **9.7** |
+| coral **ink** vs error ink `#C0322F` | 11.3 |
+| coral fill vs error fill `#FBE4E3` | 5.6 |
+| coral accent vs peach action `#FEB06A` | 21.8 |
+| coral accent vs rose current `#E5397E` | 22.7 |
+
+9.7 on the accents is the closest pair in the system. It is recorded rather than smoothed over,
+and the reason it was not "fixed" is that fixing it is meaningless: the nearest hex that crosses
+10 is `#F26F54`, which is **0.9 dE** from the specified coral — below the threshold at which a
+human can see a difference at all. A number that flips on an invisible change is not a guardrail.
+
+What actually keeps them apart is that **they never appear in the same shape**, and this is now a
+rule rather than an accident:
+
+- `attention.accent` appears ONLY as a 3px left rail, a 2px frame on a navy hero, an input
+  border, and a progress fill. **Never as a filled surface, never as a button.**
+- `error.accent` appears ONLY as a filled destructive button and as the border of a confirmation
+  card. It is always attached to an irreversible action.
+
+So the two are never the same object, and the text that carries each meaning is 11.3 apart. If a
+future screen needs both as filled surfaces at once, this section is the thing to revisit, and
+the fix at that point is to deepen error red rather than to lighten coral — danger should be
+heavier than attention, not merely a different hue from it.
+
+**One regression this change surfaced.** The send panel's gap warning drew its TEXT in
+`attention.accent` on a navy card. Amber cleared comfortably there; coral measures 3.82 against
+the gradient's lightest stop, under the bar. The fix is to read the DARK theme's attention ink
+`#FF9B80` (5.60 at the same stop) for text on a dark surface, which is what the dark theme is
+for. The rail keeps the light accent, because a 3px border only needs 3.0.
 
 ---
 

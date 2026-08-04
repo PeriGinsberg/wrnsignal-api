@@ -18,7 +18,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
-import { LIGHT as S, action as actionStyle, orb } from "../../lib/theme/surfaces"
+import { LIGHT as S, DARK, action as actionStyle, orb } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
 import { timeAgo } from "../../lib/relativeTime"
 import {
@@ -220,11 +220,17 @@ function Interview({ model }: { model: DashboardModel }) {
 
   return (
     <>
-      {/* Peach FRAME, navy fill. The frame is the only place peach appears
-          outside a button, and it is a border rather than a surface, so it
-          still reads as emphasis rather than as something to press. */}
+      {/* CORAL frame, navy fill, peach button inside it. This card is the
+          clearest argument for moving attention off amber: the frame and the
+          button used to be the same hue, so "this is urgent" and "press this"
+          were one colour doing two jobs. Now the frame says urgent and the
+          button says press, and they no longer have to be told apart by shape.
+          The frame is a border rather than a surface, so it still reads as
+          emphasis rather than as something to press.
+          The eyebrow takes the DARK attention ink, not the light accent: this
+          is a navy card, and #F26B52 measures 3.82 against its lightest stop. */}
       <section style={{ ...hero, marginTop: 22, border: `2px solid ${S.meaning.attention.accent}` }}>
-        <div style={{ ...heroEyebrow, color: S.hero.accent, display: "flex", alignItems: "center", gap: 9 }}>
+        <div style={{ ...heroEyebrow, color: DARK.meaning.attention.ink, display: "flex", alignItems: "center", gap: 9 }}>
           <InterviewIcon size={22} /> Interview {when}
         </div>
         <h2 style={heroTitle}>{where}</h2>

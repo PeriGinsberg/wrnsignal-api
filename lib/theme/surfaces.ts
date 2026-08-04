@@ -144,7 +144,19 @@ export const LIGHT: Surface = {
   // rather than the earlier #5E7A99, which measured 3.96 on the ground.
   text: { primary: "#13294A", secondary: "#3D5878", muted: "#526C87", dim: "#8299B3" },
   meaning: {
-    attention: { ink: "#95500E", accent: "#FEB06A", fill: "#FDECD9" },
+    // Coral. "Something needs you": overdue, unfilled, not set, act here.
+    //
+    // Amber held this role until 2026-08-04 and had one structural problem:
+    // it was the SAME HUE as the action colour, so "act on this" and "press
+    // this" were the same warmth, separated only by shape. Coral separates
+    // them by hue as well, 21.8 dE from peach.
+    //
+    // WHERE IT SITS NEXT TO ERROR RED, the one pairing that matters, because
+    // "needs you" and "destructive" must never read alike: the ACCENTS measure
+    // 9.7 dE apart, which is distinguishable side by side but is the closest
+    // pair in the system. The INKS, which is what carries text, are 11.3 apart,
+    // and the two never appear in the same shape (see COLOR-SYSTEM 6.11).
+    attention: { ink: "#884133", accent: "#F26B52", fill: "#FBE3D6" },
     // Rose. The ring on a stepper's current step, and the label under it.
     //
     // The ink is NOT a plain darkening of the accent, and the reason is worth
@@ -251,7 +263,9 @@ export const DARK: Surface = {
     dim: "rgba(255,255,255,0.35)",
   },
   meaning: {
-    attention: { ink: "#FEB06A", accent: "#FEB06A", fill: "rgba(254,176,106,0.08)" },
+    // Coral here too. The ink is lifted to #FF9B80 because #F26B52 measures
+    // 3.82 against the lightest navy stop, under the bar for text.
+    attention: { ink: "#FF9B80", accent: "#F26B52", fill: "rgba(242,107,82,0.10)" },
     // The one meaning dark did not already have. The accent is the same rose;
     // the ink is lifted to #FF6BA3 because #E5397E measures 3.60 on the navy
     // card, under the bar. 5.44 at the worst dark ground.
