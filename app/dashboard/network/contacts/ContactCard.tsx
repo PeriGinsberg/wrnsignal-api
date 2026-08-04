@@ -30,6 +30,7 @@ import {
   type MeaningKey,
 } from "../../../../lib/theme/surfaces"
 import { STAGE_LABELS, STAGE_PHASE, REASON_LABELS } from "../vocab"
+import { timeAgo } from "../../../../lib/relativeTime"
 import type { Contact } from "./ContactRow"
 
 function initials(c: Contact): string {
@@ -72,6 +73,10 @@ export function ContactCard({
   // engine saying "this one is on you now", so it earns the filled action. A
   // never-contacted contact earns the outline: worth doing, not overdue. Anything
   // else is waiting on them, and gets no button.
+  // Null for a contact nobody has worked, which is what keeps the untouched
+  // rows quiet on every axis at once.
+  const lastActivity = timeAgo(c.last_action_at)
+
   const reason = c.next_due_reason
   const dueLabel = reason ? REASON_LABELS[reason] ?? "Reach out" : null
   const tier: "primary" | "optional" | null = dueLabel ? "primary" : idle ? "optional" : null
@@ -167,11 +172,30 @@ export function ContactCard({
         </span>
       </a>
 
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
-        <span style={st.dot} />
-        <span style={{ ...st.text, fontSize: 14.5, whiteSpace: "nowrap" }}>
-          {STAGE_LABELS[c.stage] ?? c.stage}
+      {/* Status, and when it last moved. Recency sits with STATE rather than in
+          the identity line, because "replied, three weeks ago" is one thought:
+          the state means something different depending on how stale it is.
+
+          Only rows with activity get the line. A contact nobody has written to
+          has no "last" anything, and printing "never" on every untouched row
+          would be noise on exactly the rows that are already quiet. */}
+      <span
+        style={{
+          display: "flex", flexDirection: "column", alignItems: "flex-end",
+          gap: 3, flexShrink: 0,
+        }}
+      >
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+          <span style={st.dot} />
+          <span style={{ ...st.text, fontSize: 14.5, whiteSpace: "nowrap" }}>
+            {STAGE_LABELS[c.stage] ?? c.stage}
+          </span>
         </span>
+        {lastActivity && (
+          <span style={{ fontSize: 12.5, color: S.text.dim, whiteSpace: "nowrap" }}>
+            {lastActivity}
+          </span>
+        )}
       </span>
 
       {/* minWidth, not width. A fixed slot is narrower than the longest label
