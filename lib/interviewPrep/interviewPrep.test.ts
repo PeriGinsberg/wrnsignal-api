@@ -132,6 +132,42 @@ console.log("\nbuildPrepSource")
 
 // THE CASE THIS MODULE EXISTS FOR.
 ok("a SEEDED stub run yields null, not a thin source", buildPrepSource(STUB_RUN) === null)
+
+// THE SECOND ONE, found by pressing the button on dev and watching nothing
+// happen. A force_pass gate is a COMPLETE run — 26 keys, 6 risks, 3 requirement
+// units — but enforceClientFacingRules zeroes why_codes on it, so there is no
+// evidence to ground an answer in. It must still return null, and the caller
+// must be able to tell this apart from a stub, because "rescore it" is true
+// advice for one and false for the other.
+{
+  const GATED_PASS_RUN = {
+    job_description: "U.S. Bank is hiring. ".repeat(30),
+    result_json: {
+      decision: "Pass",
+      score: 25,
+      gate_triggered: {
+        type: "force_pass",
+        gateCode: "GATE_EXPERIENCE_GAP",
+        detail: "This role requires 5+ years of experience.",
+      },
+      why_codes: [],
+      risk_codes: [
+        { code: "RISK_EXPERIENCE", risk: "Too junior for the title.", job_fact: "5+ years", severity: "high" },
+      ],
+      job_signals: {
+        jobTitle: "Risk Manager",
+        companyName: "U.S. Bank",
+        requirement_units: [
+          { id: "u1", label: "risk management", snippet: "5+ years in risk.", strength: 9, requiredness: "core" },
+        ],
+      },
+    },
+  }
+  ok("a force_pass run yields null even though it has risks and requirements",
+    buildPrepSource(GATED_PASS_RUN) === null)
+  ok("...and the gate is still readable by the caller, so it can say WHY",
+    (GATED_PASS_RUN.result_json as any).gate_triggered.type === "force_pass")
+}
 ok("null run is null", buildPrepSource(null) === null)
 ok("a run with no result_json is null", buildPrepSource({ result_json: null }) === null)
 ok("a run with why_codes but no profile_fact is null — nothing to ground on",

@@ -97,6 +97,8 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
   const [generated, setGenerated] = useState<Prep | null>(null)
   const [generating, setGenerating] = useState(false)
   const [genErr, setGenErr] = useState<string | null>(null)
+  /** Why there was nothing to build from. Set only when the server says so. */
+  const [noMaterial, setNoMaterial] = useState<"gated_pass" | "thin_run" | "no_run" | null>(null)
 
   /** Always the newest checklist — see toggle() for why state alone is not enough. */
   const stateRef = useRef<Record<string, boolean>>({})
@@ -151,17 +153,31 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
     if (generating) return
     setGenerating(true)
     setGenErr(null)
-    const res = await authFetch(`/api/interviews/${interviewId}/prep/generate`, { method: "POST" })
-    const j = await res.json().catch(() => null)
-    setGenerating(false)
-    if (!res.ok || !j?.ok) {
+    setNoMaterial(null)
+    try {
+      const res = await authFetch(`/api/interviews/${interviewId}/prep/generate`, { method: "POST" })
+      const j = await res.json().catch(() => null)
+      if (!res.ok || !j?.ok) {
+        setGenErr("We couldn't build this one. Try again.")
+        return
+      }
+      if (j.generated) {
+        setGenerated(j.generated as Prep)
+        return
+      }
+      // ok:true with generated:null means there was nothing to work from.
+      //
+      // THIS BRANCH USED TO DO NOTHING, and the button looked broken. The
+      // client cannot tell the difference itself: `hasRun` only knows an id
+      // exists, and both a seeded stub and a gate-Passed run carry one. Only
+      // the server can tell, so it says which, and this says so out loud.
+      setNoMaterial(j.reason === "gated_pass" || j.reason === "no_run" ? j.reason : "thin_run")
+    } catch {
+      // A thrown fetch must not strand the button on "Building…" forever.
       setGenErr("We couldn't build this one. Try again.")
-      return
+    } finally {
+      setGenerating(false)
     }
-    // ok:true with generated:null means there was nothing to work from — a
-    // missing run, or a run with no analysis behind it. The gate below already
-    // says what to do about that, so this quietly stays as it was.
-    if (j.generated) setGenerated(j.generated as Prep)
   }
 
   useEffect(() => { void load() }, [load])
@@ -666,19 +682,51 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
             </p>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 18, flexWrap: "wrap" }}>
-            <button
-              onClick={() => void generate()}
-              disabled={generating}
-              data-testid="prep-generate"
-              style={{
-                ...actionStyle(S, "primary"), borderRadius: 11, padding: "11px 20px",
-                fontSize: 14.5, fontFamily: "inherit", opacity: generating ? 0.6 : 1,
-                cursor: generating ? "default" : "pointer",
-              }}
+          {/* WHY NOTHING CAME BACK, in the reader's terms. Two different causes
+              that both leave no material, and they need different advice:
+              telling someone with a gate-Passed run to rescore would be false,
+              and telling someone with an empty saved analysis that they were
+              Passed would be equally false. */}
+          {noMaterial && (
+            <p
+              data-testid={`prep-no-material-${noMaterial}`}
+              style={{ fontSize: 14.5, color: S.text.secondary, lineHeight: "22px", margin: "12px 0 0", maxWidth: 620 }}
             >
-              {generating ? "Building…" : "Build my prep for this interview →"}
-            </button>
+              {noMaterial === "gated_pass"
+                ? "SIGNAL scored this one a Pass, so it saved no match evidence, and answers built on nothing would be worse than none. The checklist above still applies, and so does the playbook."
+                : "The analysis saved for this job doesn't have the detail we build from. Score it again with the full posting and we'll have the material."}
+            </p>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 18, flexWrap: "wrap" }}>
+            {/* Once we know there is nothing to build from, the build button
+                goes. Leaving it would invite a second press with a known
+                outcome, which is how a button teaches someone it is broken. */}
+            {!noMaterial && (
+              <button
+                onClick={() => void generate()}
+                disabled={generating}
+                data-testid="prep-generate"
+                style={{
+                  ...actionStyle(S, "primary"), borderRadius: 11, padding: "11px 20px",
+                  fontSize: 14.5, fontFamily: "inherit", opacity: generating ? 0.6 : 1,
+                  cursor: generating ? "default" : "pointer",
+                }}
+              >
+                {generating ? "Building…" : "Build my prep for this interview →"}
+              </button>
+            )}
+            {noMaterial === "thin_run" && (
+              <a
+                href={JOBFIT_URL}
+                style={{
+                  ...actionStyle(S, "primary"), textDecoration: "none", display: "inline-block",
+                  borderRadius: 11, padding: "11px 20px", fontSize: 14.5,
+                }}
+              >
+                Score this job →
+              </a>
+            )}
             <button
               onClick={() => void openInSignal(app!.jobfit_run_id!)}
               style={{

@@ -131,9 +131,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const source = buildPrepSource(run)
     if (!source) {
-      // A run with no usable analysis behind it. Reported as its own reason so
-      // the UI can say something true rather than showing an empty zone.
-      return withCorsJson(req, { ok: true, generated: null, reason: "thin_run" })
+      // TWO DIFFERENT REASONS, and they need different words in front of a
+      // user. Measured on dev, both occur:
+      //
+      //   gated_pass  a real, complete run that hit a force_pass gate.
+      //               enforceClientFacingRules zeroes why_codes on those, so
+      //               there is no match evidence to draft an answer from. The
+      //               analysis is fine; the verdict was "don't apply".
+      //   thin_run    a seeded or partial row with no analysis in it at all.
+      //
+      // Telling someone with a gated Pass to "rescore" would be false advice,
+      // which is why this is not one message.
+      const gate = (run?.result_json as any)?.gate_triggered
+      const reason = gate?.type === "force_pass" ? "gated_pass" : "thin_run"
+      return withCorsJson(req, { ok: true, generated: null, reason })
     }
 
     const contentHash = computeContentHash({
