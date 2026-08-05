@@ -99,6 +99,20 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
   const [genErr, setGenErr] = useState<string | null>(null)
   /** Why there was nothing to build from. Set only when the server says so. */
   const [noMaterial, setNoMaterial] = useState<"gated_pass" | "thin_run" | "no_run" | null>(null)
+  /**
+   * Seconds the current build has been running. REAL elapsed time, not a fake
+   * progress bar: there is one request in flight and no way to know how far
+   * through it is, so a bar creeping to 90% would be inventing a number. A
+   * counter that is simply true still proves the page is alive.
+   */
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    if (!generating) { setElapsed(0); return }
+    const started = Date.now()
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000)
+    return () => clearInterval(t)
+  }, [generating])
 
   /** Always the newest checklist — see toggle() for why state alone is not enough. */
   const stateRef = useRef<Record<string, boolean>>({})
@@ -665,16 +679,52 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
         <section
           style={{
             ...surfaceCard(S), borderRadius: 16, padding: "22px 26px", marginTop: 14,
-            borderLeft: `3px solid ${S.meaning.sequence.accent}`,
+            borderLeft: `3px solid ${generating ? S.meaning.attention.accent : S.meaning.sequence.accent}`,
           }}
         >
           <div style={{ fontSize: 17, fontWeight: 800, color: S.text.primary }}>
-            Your read on this role
+            {generating ? "Building your prep" : "Your read on this role"}
           </div>
-          <p style={{ fontSize: 14.5, color: S.text.muted, lineHeight: "22px", margin: "8px 0 0", maxWidth: 620 }}>
-            We&apos;ll turn what SIGNAL already knows about this job into the questions you&apos;re most
-            likely to get, and what to say about them, drawn from your own experience.
-          </p>
+
+          {/* THE WAITING STATE. One request, several seconds, and nothing to
+              look at was the complaint. The three lines below are the real
+              steps in order and they are not timed to fake progress: they are
+              a description of the work, shown all at once, so nothing on
+              screen can claim to be further along than it is. The counter is
+              the only moving part and it is simply true. */}
+          {generating ? (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+                <span
+                  data-testid="prep-elapsed"
+                  style={{
+                    fontSize: 15, fontWeight: 800, color: S.meaning.attention.ink,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {elapsed}s
+                </span>
+                <span style={{ fontSize: 14.5, color: S.text.muted }}>
+                  This takes a few seconds. Leaving the page will lose it.
+                </span>
+              </div>
+              <ul
+                style={{
+                  margin: "14px 0 0", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6,
+                  fontSize: 14.5, color: S.text.secondary, lineHeight: "21px",
+                }}
+              >
+                <li>Reading the posting and what SIGNAL found</li>
+                <li>Working out what they&apos;ll push on</li>
+                <li>Drafting answers from your own experience, and nothing else</li>
+              </ul>
+            </div>
+          ) : (
+            <p style={{ fontSize: 14.5, color: S.text.muted, lineHeight: "22px", margin: "8px 0 0", maxWidth: 620 }}>
+              We&apos;ll turn what SIGNAL already knows about this job into the questions you&apos;re most
+              likely to get, and what to say about them, drawn from your own experience.
+            </p>
+          )}
 
           {genErr && (
             <p style={{ fontSize: 14, fontWeight: 700, color: S.meaning.error.ink, margin: "12px 0 0" }}>
@@ -698,6 +748,10 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
             </p>
           )}
 
+          {/* Every control goes while the build runs. A greyed-out button
+              beside a live counter is two things saying the same thing, and the
+              one action left is to wait. */}
+          {!generating && (
           <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 18, flexWrap: "wrap" }}>
             {/* Once we know there is nothing to build from, the build button
                 goes. Leaving it would invite a second press with a known
@@ -705,15 +759,13 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
             {!noMaterial && (
               <button
                 onClick={() => void generate()}
-                disabled={generating}
                 data-testid="prep-generate"
                 style={{
                   ...actionStyle(S, "primary"), borderRadius: 11, padding: "11px 20px",
-                  fontSize: 14.5, fontFamily: "inherit", opacity: generating ? 0.6 : 1,
-                  cursor: generating ? "default" : "pointer",
+                  fontSize: 14.5, fontFamily: "inherit", cursor: "pointer",
                 }}
               >
-                {generating ? "Building…" : "Build my prep for this interview →"}
+                Build my prep for this interview →
               </button>
             )}
             {noMaterial === "thin_run" && (
@@ -738,6 +790,7 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
               See your full analysis →
             </button>
           </div>
+          )}
         </section>
       ) : (
         <section

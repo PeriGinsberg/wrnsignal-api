@@ -11,7 +11,7 @@
 import { buildPrepSource, jdIsThin, THIN_JD_CHARS } from "./source"
 import { computeContentHash, PROMPT_VERSION } from "./contentHash"
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt"
-import { parseResponse, validateGenerated } from "./validate"
+import { parseResponse, prose, validateGenerated } from "./validate"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -261,6 +261,43 @@ console.log("\nbuildUserPrompt")
 }
 
 // ── validate ────────────────────────────────────────────────────────────────
+
+console.log("\nprose — no em dashes")
+ok("a spaced em dash becomes a comma",
+  prose("You did the work — say so.") === "You did the work, say so.")
+ok("an en dash is treated the same",
+  prose("Two years – nearly three – in reporting.") === "Two years, nearly three, in reporting.")
+// A dash with no spaces is joining words, not separating clauses.
+ok("a joining dash becomes a plain hyphen", prose("a well—timed answer") === "a well-timed answer")
+ok("an existing hyphen is untouched", prose("a well-timed answer") === "a well-timed answer")
+ok("several dashes in one string all go", !prose("a — b — c — d").includes("—"))
+ok("no doubled comma is left behind", !prose("first, — second").includes(",,"))
+ok("no space before a comma is left behind", !/\s,/.test(prose("first , — second")))
+ok("a dash before a full stop does not strand a comma",
+  prose("that is the point —.") === "that is the point.")
+ok("ordinary text is unchanged", prose("Plain, ordinary text.") === "Plain, ordinary text.")
+ok("empty in, empty out", prose(null) === "" && prose("") === "")
+ok("the max length still applies", prose("x".repeat(50), 10).length === 10)
+{
+  // THE ONE PLACE IT MUST NOT REACH. Evidence is the candidate's own resume
+  // line, not the model's writing, so it goes through untouched.
+  const src = buildPrepSource({
+    result_json: {
+      why_codes: [{ job_fact: "asks", profile_fact: "Built models — fast — under deadline" }],
+      job_signals: {},
+    },
+  })!
+  const v = validateGenerated({
+    jd_depth: "adequate",
+    exposure: { prove: [], probe: [] },
+    questions: { certain: [], probes: [], always: [{ kind: "why_you", question: "Why — you?" }] },
+    answers: [{ question_ref: "always:why_you", answer: "Because — I did.", evidence_ids: ["e1"] }],
+  }, src)!
+  ok("the model's question is cleaned", v.questions.always[0].question === "Why, you?")
+  ok("the model's answer is cleaned", v.answers[0].answer === "Because, I did.")
+  ok("the candidate's own resume line keeps its dashes",
+    v.answers[0].evidence[0].text === "Built models — fast — under deadline")
+}
 
 console.log("\nparseResponse")
 ok("plain JSON parses", parseResponse('{"a":1}')?.a === 1)

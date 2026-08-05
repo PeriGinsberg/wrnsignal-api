@@ -21,8 +21,12 @@ import { createHash } from "node:crypto"
 /**
  * Bump on ANY change to the prompt, the schema, or what gets put in front of
  * the model. Every existing prep then regenerates on next view.
+ *
+ *   2  RULE 5, no em dashes. Preps generated before this carry them, and the
+ *      version bump is what makes those regenerate rather than sit in the
+ *      cache looking current while breaking the house style.
  */
-export const PROMPT_VERSION = 1
+export const PROMPT_VERSION = 2
 
 export type ContentHashInputs = {
   model: string

@@ -43,6 +43,39 @@ const text = (v: unknown, max = 1200): string =>
   typeof v === "string" ? v.trim().slice(0, max) : ""
 
 /**
+ * Model-authored prose, with em and en dashes removed.
+ *
+ * ASKED FOR IN THE PROMPT AND ENFORCED HERE, because punctuation is the least
+ * reliable instruction you can give a model: it complies for a few sentences
+ * and then reaches for the dash again mid-paragraph. A rule that holds 90% of
+ * the time reads as a bug the other 10%.
+ *
+ * A dash between spaces becomes a comma, which is what it was standing in for.
+ * A dash with no spaces is joining two words, so it becomes a plain hyphen and
+ * "well-timed" survives. Doubled-up punctuation from either substitution is
+ * then collapsed.
+ *
+ * DELIBERATELY NOT APPLIED TO EVIDENCE. Those strings are the candidate's own
+ * resume lines, not the model's writing, and rewriting someone's resume to fit
+ * our house style would be editing the source to match the copy of it.
+ */
+export function prose(v: unknown, max = 1200): string {
+  const t = text(v, max)
+  if (!t) return ""
+  return t
+    // Order matters. A dash running into terminal punctuation is standing in
+    // for nothing, so it is deleted rather than turned into a stray comma or,
+    // worse, falling through to the word-joining branch and leaving "point -."
+    .replace(/\s*[—–]+\s*([.,!?;:])/g, "$1")
+    .replace(/\s+[—–]+\s+/g, ", ")
+    .replace(/[—–]+/g, "-")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+,/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+}
+
+/**
  * Pull the JSON object out of a response. invokeClaude already strips markdown
  * fences; this handles the rest — a stray sentence before the brace, which is
  * the one thing a temperature-0 model still does occasionally.
@@ -77,7 +110,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const questions = (parsed.questions ?? {}) as any
 
   const prove = (Array.isArray(exposure.prove) ? exposure.prove : [])
-    .map((p: any) => ({ why_id: text(p?.why_id, 20), claim: text(p?.claim), how: text(p?.how) }))
+    .map((p: any) => ({ why_id: text(p?.why_id, 20), claim: prose(p?.claim), how: prose(p?.how) }))
     .filter((p: any) => whyIds.has(p.why_id) && p.claim)
     .slice(0, MAX_PROVE)
 
@@ -87,8 +120,8 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const probe = (Array.isArray(exposure.probe) ? exposure.probe : [])
     .map((p: any) => ({
       risk_id: text(p?.risk_id, 20),
-      they_will_ask: text(p?.they_will_ask),
-      how: text(p?.how),
+      they_will_ask: prose(p?.they_will_ask),
+      how: prose(p?.how),
     }))
     .filter((p: any) => riskIds.has(p.risk_id) && p.they_will_ask)
     .slice(0, MAX_PROBE)
@@ -96,7 +129,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const certain = (Array.isArray(questions.certain) ? questions.certain : [])
     .map((q: any) => {
       const req_id = text(q?.req_id, 64)
-      return { ref: `req:${req_id}`, req_id, question: text(q?.question, 400) }
+      return { ref: `req:${req_id}`, req_id, question: prose(q?.question, 400) }
     })
     .filter((q: any) => reqIds.has(q.req_id) && q.question)
     .slice(0, MAX_CERTAIN)
@@ -104,7 +137,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const probes = (Array.isArray(questions.probes) ? questions.probes : [])
     .map((q: any) => {
       const risk_id = text(q?.risk_id, 20)
-      return { ref: `risk:${risk_id}`, risk_id, question: text(q?.question, 400) }
+      return { ref: `risk:${risk_id}`, risk_id, question: prose(q?.question, 400) }
     })
     .filter((q: any) => riskIds.has(q.risk_id) && q.question)
 
@@ -112,7 +145,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const always = (Array.isArray(questions.always) ? questions.always : [])
     .map((q: any) => {
       const kind = text(q?.kind, 20)
-      return { ref: `always:${kind}`, kind, question: text(q?.question, 400) }
+      return { ref: `always:${kind}`, kind, question: prose(q?.question, 400) }
     })
     .filter((q: any) => {
       if (q.kind !== "why_this_job" && q.kind !== "why_you") return false
@@ -146,7 +179,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
         seenIds.add(id)
         evidence.push({ id, text: t })
       }
-      return { question_ref: text(a?.question_ref, 80), answer: text(a?.answer, 2000), evidence }
+      return { question_ref: text(a?.question_ref, 80), answer: prose(a?.answer, 2000), evidence }
     })
     .filter((a: any) => {
       if (!liveRefs.has(a.question_ref)) return false

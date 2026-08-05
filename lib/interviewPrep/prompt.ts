@@ -40,6 +40,8 @@ export const SYSTEM_PROMPT = [
   "RULE 3 — RISKS. Only produce exposures and probe questions from the RISKS block. If RISKS is empty, return empty arrays for exposure.probe and questions.probes. Never invent a risk.",
   "",
   "RULE 4 — OUTPUT. Return only valid JSON matching the requested shape. No markdown, no fences, no commentary before or after.",
+  "",
+  "RULE 5 — PUNCTUATION. Never use em dashes or en dashes. Use a comma, a full stop, or a new sentence. This is a house style rule and it applies to every string you write.",
 ].join("\n")
 
 function block(title: string, body: string): string {
