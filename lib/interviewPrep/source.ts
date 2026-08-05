@@ -118,13 +118,38 @@ export function buildPrepSource(run: {
     })
   }
 
-  // Core requirements only, strongest first, capped. `requiredness` and
-  // `strength` are the engine's own ranking; re-deriving importance here would
-  // be a second opinion nobody asked for.
+  // CORE FIRST, THEN SUPPORTING. `requiredness` and `strength` are the engine's
+  // own ranking, and this orders by them rather than re-deriving importance,
+  // which would be a second opinion nobody asked for.
+  //
+  // This used to keep ONLY core, and that was miscalibrated against the actual
+  // distribution. Measured across 144 usable dev runs: 308 core units and 439
+  // supporting, but only 103 runs carry any core at all. The other 41 have
+  // supporting units exclusively, so a core-only filter threw away the entire
+  // requirements block for 28% of runs and the prep lost its most concrete
+  // questions.
+  //
+  // Supporting is a TIER, not a downgrade to guesswork. All 439 carry both a
+  // label and a verbatim snippet from the posting, the same extraction as core:
+  //
+  //   analysis, reporting, and measurement work
+  //     <- "- 0-2 years of experience in FP&A, accounting, or financial analysis"
+  //
+  // With both tiers and this cap, every usable run yields at least one
+  // requirement and 118 of 144 yield three or more. Runs that already had core
+  // still lead with core, so nothing regresses.
+  //
+  // A CLOSED SET, not "anything with a requiredness". The engine's type is
+  // `requiredness: "core" | "supporting"` (signals.ts) and nothing else is
+  // reachable, so an unrecognised tier means the shape changed and it should be
+  // dropped rather than silently ranked last and shown to a user.
+  const RANK: Record<string, number> = { core: 0, supporting: 1 }
   const units = Array.isArray(signals.requirement_units) ? signals.requirement_units : []
   const requirements = units
-    .filter((u: any) => str(u?.requiredness) === "core" && (str(u?.label) || str(u?.snippet)))
-    .sort((a: any, b: any) => (Number(b?.strength) || 0) - (Number(a?.strength) || 0))
+    .filter((u: any) => RANK[str(u?.requiredness)] !== undefined && (str(u?.label) || str(u?.snippet)))
+    .sort((a: any, b: any) =>
+      RANK[str(a?.requiredness)] - RANK[str(b?.requiredness)]
+      || (Number(b?.strength) || 0) - (Number(a?.strength) || 0))
     .slice(0, 5)
     .map((u: any) => ({
       id: str(u?.id) || str(u?.key),

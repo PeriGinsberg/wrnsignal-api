@@ -77,7 +77,10 @@ export function buildUserPrompt(src: PrepSource): string {
 
   parts.push(
     block(
-      "REQUIREMENTS (the core things this posting asks for)",
+      // Was "the core things this posting asks for", which stopped being true
+      // when the supporting tier was let in. Most important first is what the
+      // ordering now actually promises.
+      "REQUIREMENTS (what this posting asks for, most important first)",
       src.requirements.length
         ? src.requirements
             .map((r) => `[${r.id}] ${r.label}${r.snippet ? ` — from the posting: "${r.snippet}"` : ""}`)

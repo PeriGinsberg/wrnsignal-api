@@ -25,8 +25,11 @@ import { createHash } from "node:crypto"
  *   2  RULE 5, no em dashes. Preps generated before this carry them, and the
  *      version bump is what makes those regenerate rather than sit in the
  *      cache looking current while breaking the house style.
+ *   3  Supporting requirement_units admitted alongside core, and the
+ *      REQUIREMENTS header reworded to match. Different material in front of
+ *      the model means a different answer is owed.
  */
-export const PROMPT_VERSION = 2
+export const PROMPT_VERSION = 3
 
 export type ContentHashInputs = {
   model: string

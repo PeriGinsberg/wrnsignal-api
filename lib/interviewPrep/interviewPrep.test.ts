@@ -76,12 +76,15 @@ const REAL_RUN = {
           requiredness: "core",
         },
         {
+          // SUPPORTING, and scored HIGHER than one of the core units on
+          // purpose: the tier has to beat strength, or a strong supporting
+          // requirement would outrank a weak core one.
           id: "aaaa1111",
           key: "communication",
           label: "written communication",
           snippet: "You will prepare quarterly materials.",
-          strength: 4,
-          requiredness: "nice_to_have",
+          strength: 8,
+          requiredness: "supporting",
         },
         {
           id: "bbbb2222",
@@ -122,12 +125,76 @@ console.log("\nbuildPrepSource")
   ok("evidence is the union of the profile facts", src.evidence.length === 3)
   ok("each strength points at its evidence",
     src.strengths.every((s) => src.evidence.some((e) => e.id === s.evidence_id)))
-  // requirement_units is the engine's own ranking; only core, strongest first.
-  ok("only core requirements are offered", src.requirements.length === 2)
-  ok("core requirements are strongest first",
-    src.requirements[0].id === "8d2fbd65931ce46a" && src.requirements[1].id === "bbbb2222")
-  ok("the nice-to-have unit is excluded",
-    !src.requirements.some((r) => r.id === "aaaa1111"))
+  // requirement_units is the engine's own ranking: core tier first, then
+  // supporting, and strongest first inside each tier.
+  ok("both core and supporting requirements are offered", src.requirements.length === 3)
+  // The fixture's supporting unit scores 8, above the core unit at 7. Tier has
+  // to win, or a strong supporting requirement outranks a weak core one.
+  ok("core comes before supporting even when supporting scores higher",
+    src.requirements[0].id === "8d2fbd65931ce46a"
+    && src.requirements[1].id === "bbbb2222"
+    && src.requirements[2].id === "aaaa1111")
+  ok("strength orders within a tier", src.requirements[0].id === "8d2fbd65931ce46a")
+}
+
+// THE 28% CASE. 41 of 144 usable dev runs carry supporting units and no core
+// at all. A core-only filter returned nothing for every one of them, which
+// removed the requirements block and left the prep with two generic questions.
+{
+  const src = buildPrepSource({
+    job_description: "x".repeat(2000),
+    result_json: {
+      why_codes: [{ job_fact: "asks for modelling", profile_fact: "built models" }],
+      job_signals: {
+        jobTitle: "Financial Analyst, FP&A",
+        requirement_units: [
+          { id: "s1", label: "analysis, reporting, and measurement work", snippet: "- 0-2 years of experience in FP&A", strength: 6, requiredness: "supporting" },
+          { id: "s2", label: "excel tool usage", snippet: "- Strong financial modeling and Excel skills", strength: 9, requiredness: "supporting" },
+          { id: "s3", label: "accounting and financial operations work", snippet: "- Bachelor's degree in Finance", strength: 3, requiredness: "supporting" },
+        ],
+      },
+    },
+  })!
+  ok("a run with ONLY supporting units still yields requirements", src.requirements.length === 3)
+  ok("...ordered by strength within the tier",
+    src.requirements[0].id === "s2" && src.requirements[1].id === "s1" && src.requirements[2].id === "s3")
+  ok("...and they carry the posting's own words", src.requirements[0].snippet.includes("Excel skills"))
+}
+
+// The cap is on the combined list, not per tier.
+{
+  const many = Array.from({ length: 9 }, (_, i) => ({
+    id: `u${i}`, label: `thing ${i}`, snippet: "s", strength: 9 - i,
+    requiredness: i < 2 ? "core" : "supporting",
+  }))
+  const src = buildPrepSource({
+    result_json: {
+      why_codes: [{ job_fact: "asks", profile_fact: "did" }],
+      job_signals: { requirement_units: many },
+    },
+  })!
+  ok("no more than 5 requirements are ever offered", src.requirements.length === 5)
+  ok("the two core ones are both kept", src.requirements[0].id === "u0" && src.requirements[1].id === "u1")
+}
+
+// An unrecognised tier means the engine's shape changed. Dropped, not ranked
+// last and shown: requiredness is typed "core" | "supporting" and nothing else
+// is reachable today.
+{
+  const src = buildPrepSource({
+    result_json: {
+      why_codes: [{ job_fact: "asks", profile_fact: "did" }],
+      job_signals: {
+        requirement_units: [
+          { id: "ok1", label: "real", snippet: "s", strength: 5, requiredness: "core" },
+          { id: "weird", label: "unknown tier", snippet: "s", strength: 9, requiredness: "nice_to_have" },
+          { id: "none", label: "no tier", snippet: "s", strength: 9 },
+        ],
+      },
+    },
+  })!
+  ok("an unrecognised requiredness is dropped, not ranked last",
+    src.requirements.length === 1 && src.requirements[0].id === "ok1")
 }
 
 // THE CASE THIS MODULE EXISTS FOR.
