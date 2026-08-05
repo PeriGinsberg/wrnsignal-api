@@ -20,10 +20,13 @@
 //   6  drawers: the details editor, the job description, notes, close out
 //
 // CUT: interest stars (the build plan cuts them), and the "date posted" field.
-// NOT BUILT: the networking section from the mockup ("your network at Globex").
-// It needs an application-to-company link the schema does not have; that is the
-// Phase B merge, and guessing at it by matching company names would be inventing
-// the thing the merge is supposed to define.
+//
+// The networking section ("your network at Globex") is BUILT, as of the
+// company link in 20260805_application_company_link.sql. It sat unbuilt because
+// the schema had no application-to-company edge, and the note here said that
+// guessing at it by matching company names would be inventing the thing the
+// merge was supposed to define. That still holds and shaped the result: a name
+// match only ever SUGGESTS, and the user confirms every link.
 
 import { use, useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -42,6 +45,7 @@ import { Collapsible } from "../../network/contacts/[contactId]/Collapsible"
 import { ClientJobNotes } from "../ClientJobNotes"
 import { openInSignal } from "../openInSignal"
 import { JobHistory } from "../JobHistory"
+import { NetworkAtCompany } from "./NetworkAtCompany"
 import { Field, Select, control, areaControl, formGrid } from "../controls"
 import {
   APP_LOCATIONS, STATUS_LABELS, statusLabel, statusMeaning,
@@ -71,6 +75,8 @@ type App = {
   job_description: string | null
   persona_id: string | null
   persona_name: string | null
+  /** The networking board link. Null until the user confirms one. */
+  company_id: string | null
   coach_annotations?: Annotation[]
 }
 
@@ -380,6 +386,19 @@ export default function ApplicationDetailPage({
       <InterviewsSection
         applicationId={app.id}
         interviews={interviews}
+        onChanged={load}
+      />
+
+      {/* 4b — the networking board link.
+          The section this file's header comment said was "NOT BUILT" because
+          it "needs an application-to-company link the schema does not have".
+          20260805_application_company_link.sql added it, so this is that
+          section, and it is the surface that creates the link the contact
+          record reads. */}
+      <NetworkAtCompany
+        applicationId={app.id}
+        companyName={app.company_name}
+        companyId={app.company_id ?? null}
         onChanged={load}
       />
 
