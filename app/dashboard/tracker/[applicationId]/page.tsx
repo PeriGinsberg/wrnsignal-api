@@ -262,6 +262,18 @@ export default function ApplicationDetailPage({
             Reread the job description below, and look at what SIGNAL said made you a match. Those
             are the things worth being able to say out loud.
           </p>
+          {/* This hero showed an interview with no way into preparing for it —
+              the only place in the tracker that named a round and then offered
+              nothing to do about it. */}
+          <a
+            href={`/dashboard/tracker/interviews/${nextInterview.id}`}
+            style={{
+              ...actionStyle(S, "primary"), textDecoration: "none", display: "inline-block",
+              marginTop: 18, borderRadius: 11, padding: "11px 20px", fontSize: 14.5,
+            }}
+          >
+            Prep now →
+          </a>
         </section>
       )}
 

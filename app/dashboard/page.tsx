@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { LIGHT as S, DARK, action as actionStyle, orb } from "../../lib/theme/surfaces"
+import { formatLong } from "../../lib/localDate"
 import { FRAMER_URL } from "../../lib/urls"
 import { timeAgo } from "../../lib/relativeTime"
 import {
@@ -234,15 +235,20 @@ function Interview({ model }: { model: DashboardModel }) {
           <InterviewIcon size={22} /> Interview {when}
         </div>
         <h2 style={heroTitle}>{where}</h2>
+        {/* formatLong, not `new Date(...).toLocaleDateString()`. interview_date
+            is a `date` column, so it arrives as a bare "2026-08-07"; the spec
+            parses that as UTC midnight, which renders a day early for every
+            user west of UTC. This hero was missed when the rest of the tracker
+            moved to lib/localDate, so it has been showing the wrong day. */}
         <p style={heroBody}>
-          {iv.interview_date && new Date(iv.interview_date).toLocaleDateString(undefined, {
-            weekday: "long", month: "long", day: "numeric",
-          })}
+          {formatLong(iv.interview_date)}
           {iv.interview_stage ? ` · ${iv.interview_stage.replace(/_/g, " ")}` : ""}
         </p>
         <div style={{ ...sectionLabel, color: S.hero.muted, marginTop: 22 }}>Now is the time to prep</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <a href="/dashboard/tracker" style={{ ...actionStyle(S, "primary"), ...bigBtn, textDecoration: "none" }}>
+          {/* Straight to Prep Now for THIS interview. It used to land on the
+              tracker index, which did not even name the job. */}
+          <a href={`/dashboard/tracker/interviews/${iv.id}`} style={{ ...actionStyle(S, "primary"), ...bigBtn, textDecoration: "none" }}>
             Prep now →
           </a>
           <a href="/dashboard/network/contacts" style={{ ...heroSecondary, textDecoration: "none" }}>

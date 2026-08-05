@@ -54,6 +54,8 @@ export type ContactLike = {
   network_companies?: { name: string } | null
 }
 
+import { parseLocalDate } from "../../lib/localDate"
+
 export type InterviewLike = {
   id: string
   interview_date?: string | null
@@ -127,16 +129,24 @@ export function awaitingReply(contacts: ContactLike[]): ContactLike[] {
  * would be a countdown to nothing.
  */
 export function nextInterview(interviews: InterviewLike[], now: Date): InterviewLike | null {
+  const at = (i: InterviewLike) => parseLocalDate(i.interview_date)?.getTime() ?? 0
   const upcoming = interviews
     .filter((i) => i.status !== "not_scheduled" && i.status !== "rejected" && i.interview_date)
-    .filter((i) => new Date(i.interview_date as string).getTime() >= startOfDay(now))
-    .sort((a, b) => new Date(a.interview_date as string).getTime() - new Date(b.interview_date as string).getTime())
+    // localDate, not `new Date(...)`. interview_date is a `date` column, so it
+    // arrives as a bare "2026-08-07" and the spec parses that as UTC midnight —
+    // a day early for every user west of UTC. This comparison decides whether
+    // the Dashboard takes over for an interview at all, so the drift showed up
+    // as the hero appearing and disappearing a day out of step.
+    .filter((i) => (parseLocalDate(i.interview_date)?.getTime() ?? -1) >= startOfDay(now))
+    .sort((a, b) => at(a) - at(b))
   return upcoming[0] ?? null
 }
 
 /** Whole days until an interview, floored at 0 so "today" never reads negative. */
 export function daysUntil(iso: string, now: Date): number {
-  return Math.max(0, Math.round((startOfDay(new Date(iso)) - startOfDay(now)) / DAY))
+  const at = parseLocalDate(iso)
+  if (!at) return 0
+  return Math.max(0, Math.round((startOfDay(at) - startOfDay(now)) / DAY))
 }
 
 /** The most recent thing that happened anywhere, or null on a cold account. */

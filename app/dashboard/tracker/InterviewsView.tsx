@@ -167,8 +167,12 @@ function UpcomingCard({ interview: iv }: { interview: Interview }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 20, flexWrap: "wrap" }}>
+        {/* Prep now goes to the INTERVIEW, not the application. The two answer
+            different questions: the application page is about the job, Prep Now
+            is about the conversation. "See the job" below still goes to the
+            application, which is where it belongs. */}
         <a
-          href={`/dashboard/tracker/${iv.application_id}`}
+          href={`/dashboard/tracker/interviews/${iv.id}`}
           style={{
             ...actionStyle(S, "primary"), textDecoration: "none",
             borderRadius: 11, padding: "11px 20px", fontSize: 14.5,
