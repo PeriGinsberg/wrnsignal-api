@@ -64,8 +64,20 @@ type App = {
   signal_decision: string | null
 }
 
-/** What the generator stores, plus the frozen thin-JD verdict. */
-type Prep = PrepGenerated & { jd_thin?: boolean }
+/**
+ * What the generator stores, plus the frozen posting verdict.
+ *
+ * `jd_thin` is the SUPERSEDED boolean. Preps written before the three-state
+ * signal still carry it, and they are not regenerated for a display-only
+ * change — that would charge the user for new words to say the same thing. So
+ * both shapes are read, and the old one maps onto the new.
+ */
+type Prep = PrepGenerated & { jd_state?: "absent" | "thin" | "ok"; jd_thin?: boolean }
+
+function postingState(p: Prep): "absent" | "thin" | "ok" {
+  if (p.jd_state) return p.jd_state
+  return p.jd_thin ? "thin" : "ok"
+}
 
 /**
  * The four countdown states, all off the existing daysUntil — no new parsing.
@@ -86,6 +98,8 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
 
   const [interview, setInterview] = useState<Interview | null>(null)
   const [app, setApp] = useState<App | null>(null)
+  /** The job failed to load. Distinct from the job having no analysis. */
+  const [appFailed, setAppFailed] = useState(false)
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -142,6 +156,14 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
     if (found && aRes.status === "fulfilled" && aRes.value.ok) {
       const j = await aRes.value.json().catch(() => null)
       setApp((j?.applications || []).find((x: App) => x.id === found!.application_id) ?? null)
+      setAppFailed(false)
+    } else if (found) {
+      // A FAILED LOAD IS NOT AN ABSENT RUN, and the two used to look identical
+      // here: both left `app` null, `hasRun` false, and the page telling
+      // someone to go and score a job they may well have scored already. The
+      // three reads are independent so the rest of the page still works; this
+      // just stops one of them lying on the other's behalf.
+      setAppFailed(true)
     }
 
     if (pRes.status === "fulfilled" && pRes.value.ok) {
@@ -474,10 +496,33 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
           </h2>
 
           {/* Said once, plainly. The posting is what everything here was built
-              from, so a short one is a fact the reader needs, not an apology. */}
-          {generated.jd_thin && (
+              from, so its absence or thinness is a fact the reader needs, not
+              an apology.
+              ABSENT AND THIN ARE DIFFERENT SENTENCES. Calling a posting that
+              was never saved "short" is a false statement about someone's own
+              data. Runs from before 2026-04-10 never stored the description,
+              and those questions came from the engine's extracted requirements
+              instead, which is worth saying rather than glossing. */}
+          {postingState(generated) === "absent" && (
+            <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "8px 0 0" }}>
+              The posting itself wasn&apos;t saved with this scan, so these come from what SIGNAL
+              extracted at the time. Scoring it again keeps the full description with it.
+            </p>
+          )}
+          {postingState(generated) === "thin" && (
             <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "8px 0 0" }}>
               This posting is short, so these lean general. Rescoring with the full description sharpens them.
+            </p>
+          )}
+
+          {/* The certain group comes entirely from the engine's extracted core
+              requirements, and 28% of usable runs on dev have none. Its silent
+              absence would read as us having nothing to say about the job, when
+              the truth is narrower and worth stating. */}
+          {generated.questions.certain.length === 0 && (
+            <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "8px 0 0" }}>
+              No specific requirements came out of this posting, so what follows is about you and
+              the gaps rather than the job&apos;s own checklist.
             </p>
           )}
 
@@ -675,7 +720,28 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
           (nothing here, the blocks are above), buildable, or nothing to build
           from — and that last one is a real conversion surface rather than an
           apology for missing data. */}
-      {generated ? null : hasRun ? (
+      {generated ? null : appFailed ? (
+        /* Neither the build card nor the score gate. We do not know which is
+           right, and guessing wrong sends someone to rescan a job that is
+           already scored. */
+        <section style={{ ...surfaceCard(S), borderRadius: 16, padding: "22px 26px", marginTop: 14 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: S.text.primary }}>
+            We couldn&apos;t load this job
+          </div>
+          <p style={{ fontSize: 14.5, color: S.text.muted, lineHeight: "22px", margin: "8px 0 0", maxWidth: 620 }}>
+            Your checklist above is fine. Refresh to try the rest again.
+          </p>
+          <button
+            onClick={() => void load()}
+            style={{
+              ...actionStyle(S, "primary"), borderRadius: 11, padding: "11px 20px",
+              fontSize: 14.5, fontFamily: "inherit", cursor: "pointer", marginTop: 18,
+            }}
+          >
+            Try again
+          </button>
+        </section>
+      ) : hasRun ? (
         <section
           style={{
             ...surfaceCard(S), borderRadius: 16, padding: "22px 26px", marginTop: 14,

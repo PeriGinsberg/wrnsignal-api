@@ -8,7 +8,7 @@
 // analysis exists, and the stub fixture is the case that would otherwise reach
 // the model with a job title and nothing else.
 
-import { buildPrepSource, jdIsThin, THIN_JD_CHARS } from "./source"
+import { buildPrepSource, jdState, THIN_JD_CHARS } from "./source"
 import { computeContentHash, PROMPT_VERSION } from "./contentHash"
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt"
 import { parseResponse, prose, validateGenerated } from "./validate"
@@ -200,10 +200,35 @@ ok("a run with why_codes but no profile_fact is null — nothing to ground on",
     src.risks.length === 1 && src.risks[0].evidence_id === "")
 }
 
-console.log("\njdIsThin")
-ok("a short posting is thin", jdIsThin("x".repeat(645)))
-ok("a full posting is not", !jdIsThin("x".repeat(THIN_JD_CHARS + 1)))
-ok("a missing posting is thin by definition", jdIsThin(null))
+console.log("\njdState")
+ok("a short posting is thin", jdState("x".repeat(645)) === "thin")
+ok("a full posting is ok", jdState("x".repeat(THIN_JD_CHARS + 1)) === "ok")
+ok("exactly at the threshold is ok", jdState("x".repeat(THIN_JD_CHARS)) === "ok")
+// ABSENT IS NOT THIN. Runs before 2026-04-10 never stored the posting, so
+// calling it "short" would be a false statement about the user's own data.
+ok("a missing posting is ABSENT, not thin", jdState(null) === "absent")
+ok("an empty posting is absent too", jdState("") === "absent")
+
+// A run with no stored posting is still worth generating from: the engine
+// extracted its requirements, strengths and risks at scan time.
+{
+  const src = buildPrepSource({
+    result_json: {
+      why_codes: [{ job_fact: "asks for reporting", profile_fact: "did reporting" }],
+      risk_codes: [{ risk: "thin on scale", job_fact: "large team" }],
+      job_signals: {
+        jobTitle: "Analyst",
+        requirement_units: [{ id: "u1", label: "reporting", snippet: "", strength: 8, requiredness: "core" }],
+      },
+    },
+    job_description: null,
+  })!
+  ok("a run with NO posting still yields a source", src !== null)
+  ok("...with its jobDescription null rather than an empty string", src.jobDescription === null)
+  ok("...and the engine's extracted requirements survive", src.requirements.length === 1)
+  ok("...and the prompt tells the model it has no company knowledge",
+    buildUserPrompt(src).includes("not available"))
+}
 
 // ── contentHash ─────────────────────────────────────────────────────────────
 

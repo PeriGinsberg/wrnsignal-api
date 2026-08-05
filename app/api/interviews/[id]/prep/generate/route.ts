@@ -27,7 +27,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { invokeClaude, InvokeClaudeError, MODEL } from "../../../../../../lib/ai/anthropicClient"
 import { centsForUsage } from "../../../../../../lib/ai/costPolicy"
-import { buildPrepSource, jdIsThin } from "../../../../../../lib/interviewPrep/source"
+import { buildPrepSource, jdState } from "../../../../../../lib/interviewPrep/source"
 import { computeContentHash } from "../../../../../../lib/interviewPrep/contentHash"
 import { buildUserPrompt, MAX_TOKENS, SYSTEM_PROMPT, TEMPERATURE } from "../../../../../../lib/interviewPrep/prompt"
 import { parseResponse, validateGenerated } from "../../../../../../lib/interviewPrep/validate"
@@ -201,14 +201,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     // ── Persist ──────────────────────────────────────────────────────────────
 
-    // The thin-JD verdict is STORED, not recomputed at render. It is the OR of
-    // two independent signals — a mechanical char count on the posting and the
-    // model's own read — and only one of them survives a page reload, because
-    // GET does not load the run. Freezing it here keeps the notice truthful on
-    // the second visit.
+    // The posting verdict is STORED, not recomputed at render, because GET
+    // does not load the run and half the inputs would be gone by then.
+    //
+    // THREE STATES. "absent" comes only from the mechanical check: whether a
+    // posting was saved is a fact about our database, and the model is in no
+    // position to have an opinion on it. "thin" is the OR of the char count and
+    // the model's own read, either of which is enough. Anything else is ok.
+    const state = jdState(source.jobDescription)
     const stored = {
       ...generated,
-      jd_thin: jdIsThin(source.jobDescription) || generated.jd_depth === "thin",
+      jd_state: state === "absent" ? "absent" : state === "thin" || generated.jd_depth === "thin" ? "thin" : "ok",
     }
 
     const row = { generated: stored, content_hash: contentHash, jobfit_run_id: jobfitRunId }

@@ -153,7 +153,24 @@ export function buildPrepSource(run: {
   }
 }
 
-/** The mechanical half of the thin-JD signal. A missing JD is thin by definition. */
-export function jdIsThin(jobDescription: string | null): boolean {
-  return (jobDescription?.length ?? 0) < THIN_JD_CHARS
+/**
+ * How much posting there was to work from. THREE states, not a boolean.
+ *
+ *   absent  no posting saved at all. jobfit_runs.job_description was added on
+ *           2026-04-10, so every run before that date has none. Measured: 0 on
+ *           dev, but a real and permanent slice of production.
+ *   thin    a posting too short to carry real requirements.
+ *   ok      enough to build from.
+ *
+ * absent and thin were one flag and that was wrong: calling a posting that was
+ * never saved "short" is a false statement about the user's own data, and it
+ * points them at the wrong fix. The engine still extracted requirement_units,
+ * strengths and risks at scan time, so a run with no stored posting is still
+ * worth generating from. It just cannot be described as short.
+ */
+export type JdState = "absent" | "thin" | "ok"
+
+export function jdState(jobDescription: string | null): JdState {
+  if (!jobDescription) return "absent"
+  return jobDescription.length < THIN_JD_CHARS ? "thin" : "ok"
 }
