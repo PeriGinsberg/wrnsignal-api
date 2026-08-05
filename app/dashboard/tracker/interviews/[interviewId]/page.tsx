@@ -29,11 +29,12 @@ import {
 } from "../../../../../lib/theme/surfaces"
 import { InterviewIcon, ScoreAJobIcon, StepCompleteIcon } from "../../../../../components/icons"
 import { authFetch } from "../../../network/authFetch"
-import { daysUntil, formatLong, formatShort } from "../../../../../lib/localDate"
+import { daysUntil, formatLong } from "../../../../../lib/localDate"
 import { openInSignal, JOBFIT_URL } from "../../openInSignal"
 import {
   groupedItems, PREP_GROUP_LABELS, isImminent, scheduledAt,
   isChecked, progressFor, safeState,
+  groupState, orderedGroups, type PrepGroup,
 } from "../../prepChecklist"
 import { interviewStageLabel, interviewStatusLabel, interviewStatusMeaning } from "../../vocab"
 
@@ -62,9 +63,15 @@ type App = {
   signal_decision: string | null
 }
 
-function countdown(when: string): string {
-  const days = daysUntil(when) ?? 0
-  if (days < 0) return "Already happened"
+/**
+ * The four countdown states, all off the existing daysUntil — no new parsing.
+ * A past interview says so plainly rather than showing a negative number.
+ */
+function countdown(when: string | null): string {
+  if (!when) return "No date set"
+  const days = daysUntil(when)
+  if (days === null) return "No date set"
+  if (days < 0) return "This has passed"
   if (days === 0) return "Today"
   if (days === 1) return "Tomorrow"
   return `In ${days} days`
@@ -124,7 +131,6 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
 
   const when = useMemo(() => (interview ? scheduledAt(interview) : null), [interview])
   const imminent = useMemo(() => isImminent(when), [when])
-  const groups = useMemo(() => groupedItems(interview?.interview_format), [interview])
   const progress = useMemo(() => progressFor(checklist, interview?.interview_format), [checklist, interview])
 
   /**
@@ -183,44 +189,83 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
 
   const st = statusStyle(S, interviewStatusMeaning(interview.status))
   const hasRun = Boolean(app?.jobfit_run_id)
+  const past = (daysUntil(when) ?? 0) < 0
 
-  const checklistBlock = (
-    <section style={{ ...surfaceCard(S), borderRadius: 16, padding: "24px 26px", marginTop: 14 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, color: S.text.primary, margin: 0 }}>
-          Before your interview
-        </h2>
-        <span style={{ fontSize: 14, color: S.text.muted, fontVariantNumeric: "tabular-nums" }}>
-          {progress.done} of {progress.total} done
-        </span>
-      </div>
+  const formatKnown = interview.interview_format === "in_person" || interview.interview_format === "virtual"
 
-      {/* One line, stated once, and NOT an instruction. The format column
-          exists but nothing writes it yet, so this is every interview today.
-          Telling someone to go and set a field they cannot set would be worse
-          than showing them both branches. */}
-      {interview.interview_format !== "in_person" && interview.interview_format !== "virtual" && (
-        <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "10px 0 0" }}>
-          Some of this depends on whether you&apos;re going in person or joining a call. Both are here.
-        </p>
-      )}
+  /**
+   * One time-group, as its own card.
+   *
+   * The three states are the whole point of the pass: at any moment ONE group
+   * is the one to act on, and the page should say which without the reader
+   * working it out from the date. Colour carries it, using the rail shape that
+   * COLOR-SYSTEM section 2 already reserves for group identity — no new shape.
+   *
+   *   live      coral rail + coral heading. "This is the one, now."
+   *   complete  teal rail + teal heading. Positive, and it OUTRANKS live:
+   *             a finished list does not need you, so a coral rail on it would
+   *             be saying something false.
+   *   receded   transparent rail, muted heading, flat card. De-emphasis, never
+   *             disablement — still readable, still tickable.
+   */
+  function GroupCard({ group }: { group: PrepGroup }) {
+    const items = groupedItems(interview!.interview_format).find((g) => g.group === group)?.items ?? []
+    if (items.length === 0) return null
+    const state = groupState(group, checklist, interview!.interview_format, when)
+    const live = state === "live"
+    const complete = state === "complete"
 
-      {groups.map((g) => (
-        <div key={g.group} style={{ marginTop: 24 }}>
-          <div
+    const railColour = complete ? S.meaning.replied.accent : live ? S.meaning.attention.accent : "transparent"
+    const headingColour = complete ? S.meaning.replied.ink : live ? S.meaning.attention.ink : S.text.muted
+
+    return (
+      <section
+        data-testid={`prep-group-${group}`}
+        data-state={state}
+        style={{
+          background: live || complete ? S.card : "#FBFDFE",
+          border: `1px solid ${S.borderSoft}`,
+          // Transparent rather than absent, so every heading stays on the same
+          // vertical line whatever state its card is in.
+          borderLeft: `3px solid ${railColour}`,
+          borderRadius: 14,
+          boxShadow: live || complete ? S.shadow.card : "none",
+          padding: "18px 22px",
+          marginTop: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <span
             style={{
               fontSize: 12, fontWeight: 800, letterSpacing: 1.4,
-              textTransform: "uppercase", color: S.text.muted, marginBottom: 12,
+              textTransform: "uppercase", color: headingColour,
             }}
           >
-            {PREP_GROUP_LABELS[g.group]}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {g.items.map((item) => {
-              const done = isChecked(checklist, item.id)
-              return (
+            {PREP_GROUP_LABELS[group]}
+          </span>
+          {complete && <StepCompleteIcon size={16} />}
+          {live && !complete && (
+            <span style={{ fontSize: 13, fontWeight: 700, color: S.meaning.attention.ink }}>
+              · do this now
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {items.map((item, i) => {
+            const done = isChecked(checklist, item.id)
+            // With an unknown format the two branch items are one either-or
+            // slot, so the second one is prefixed with "or". Without this the
+            // count reads "0 of 8" against nine visible boxes and looks wrong.
+            const showOr = !formatKnown && Boolean(item.onlyFor) && Boolean(items[i - 1]?.onlyFor)
+            return (
+              <div key={item.id}>
+                {showOr && (
+                  <div style={{ fontSize: 13, color: S.text.dim, padding: "2px 0 2px 45px", fontStyle: "italic" }}>
+                    or
+                  </div>
+                )}
                 <button
-                  key={item.id}
                   onClick={() => void toggle(item.id)}
                   aria-pressed={done}
                   data-testid={`prep-item-${item.id}`}
@@ -230,25 +275,25 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
                     padding: "10px 8px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
                   }}
                 >
-                  {/* The tick is the drawn teal mark, the same one the contact
-                      record's stepper uses for a completed step. An unticked box
-                      is a hairline circle, not an empty checkbox: it reads as
-                      "not yet" rather than as a form field. */}
+                  {/* The empty circle is a CONTROL, so it has to clear 3:1. It
+                      was S.border, which measures 1.26 on a white card and was
+                      effectively invisible; text.muted measures 5.45. Ticked is
+                      the drawn teal mark, same as the contact record's stepper. */}
                   <span aria-hidden style={{ flexShrink: 0, marginTop: 1, display: "inline-flex" }}>
                     {done ? (
-                      <StepCompleteIcon size={22} />
+                      <StepCompleteIcon size={24} />
                     ) : (
                       <span
                         style={{
-                          width: 22, height: 22, borderRadius: 999,
-                          border: `1.5px solid ${S.border}`, display: "inline-block",
+                          width: 24, height: 24, borderRadius: 999,
+                          border: `2px solid ${S.text.muted}`, display: "inline-block",
                         }}
                       />
                     )}
                   </span>
                   <span
                     style={{
-                      fontSize: 15, lineHeight: "22px",
+                      fontSize: 15, lineHeight: "24px",
                       color: done ? S.text.dim : S.text.secondary,
                       textDecoration: done ? "line-through" : "none",
                     }}
@@ -256,11 +301,33 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
                     {item.label}
                   </span>
                 </button>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })}
         </div>
-      ))}
+      </section>
+    )
+  }
+
+  const checklistBlock = (
+    <section style={{ marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, color: S.text.primary, margin: 0 }}>
+          Before your interview
+        </h2>
+      </div>
+
+      {/* One line, stated once, and NOT an instruction. The format column
+          exists but nothing writes it yet, so this is every interview today.
+          Telling someone to go and set a field they cannot set would be worse
+          than showing them both branches. */}
+      {!formatKnown && (
+        <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "8px 0 0" }}>
+          Some of this depends on whether you&apos;re going in person or joining a call. Both are here.
+        </p>
+      )}
+
+      {orderedGroups(when).map((g) => <GroupCard key={g} group={g} />)}
     </section>
   )
 
@@ -279,71 +346,89 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
         </div>
       )}
 
-      <header style={{ display: "flex", alignItems: "center", gap: 18, margin: "18px 0 4px", flexWrap: "wrap" }}>
-        <span
-          aria-hidden
-          style={{
-            ...tileStructural(S), width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-            display: "grid", placeItems: "center",
-          }}
-        >
-          <InterviewIcon size={28} />
-        </span>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: S.text.primary, margin: 0 }}>
-            {interview.job_title || "Your interview"}
-          </h1>
-          <p style={{ color: S.text.muted, fontSize: 15, margin: "4px 0 0" }}>
-            {[
-              interview.company_name,
-              interviewStageLabel(interview.interview_stage),
-              when ? formatLong(when) : "No date set",
-            ].filter(Boolean).join(" · ")}
-          </p>
+      {/* COUNTDOWN HERO. Navy is structure, so the one time-critical fact on
+          the page gets the structural surface. The countdown itself goes coral
+          only inside 24 hours — coral means "needs you", and "in 12 days" does
+          not. It reads the DARK attention ink because the light coral #F26B52
+          measures 3.82 against this gradient's lightest stop, under the bar for
+          text; #FF9B80 measures 5.60. Same fix as the send panel. */}
+      <section
+        style={{
+          background: S.hero.background, borderRadius: 16,
+          padding: "26px 28px", marginTop: 18,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 38, fontWeight: 800, letterSpacing: -1, lineHeight: 1.05,
+                color: past ? S.hero.muted : imminent ? DARK.meaning.attention.ink : S.hero.ink,
+              }}
+            >
+              {countdown(when)}
+            </div>
+            <div style={{ color: S.hero.ink, fontSize: 18, fontWeight: 700, marginTop: 12 }}>
+              {interview.job_title || "Your interview"}
+              {interview.company_name ? ` · ${interview.company_name}` : ""}
+            </div>
+            <div style={{ color: S.hero.muted, fontSize: 14.5, marginTop: 4 }}>
+              {[when ? formatLong(when) : null, interviewStageLabel(interview.interview_stage)]
+                .filter(Boolean).join(" · ")}
+            </div>
+          </div>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <span style={{ ...st.dot, background: S.hero.muted }} />
+            <span style={{ color: S.hero.muted, fontSize: 14.5, fontWeight: 700 }}>
+              {interviewStatusLabel(interview.status)}
+            </span>
+          </span>
         </div>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <span style={st.dot} />
-          <span style={{ ...st.text, fontSize: 16 }}>{interviewStatusLabel(interview.status)}</span>
-        </span>
-      </header>
+
+        {/* PROGRESS. Peach fill on a navy hero is the pattern the Dashboard's
+            new-student bar and My Profile's completeness bar already use, so
+            this is the third instance rather than an exception to the
+            action rule: a meter, inside navy, never a button. */}
+        <div style={{ marginTop: 22 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ flex: 1, height: 10, borderRadius: 999, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${progress.total ? Math.round((progress.done / progress.total) * 100) : 0}%`,
+                  height: "100%", borderRadius: 999, background: S.hero.accent,
+                  transition: "width 220ms ease",
+                }}
+              />
+            </div>
+            <span
+              style={{ color: S.hero.muted, fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
+              data-testid="prep-progress"
+            >
+              {progress.done} of {progress.total} done
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* Inside 24 hours the checklist comes first. */}
       {imminent && checklistBlock}
 
-      {/* The two facts. Countdown carries the urgency; coral only when it is
-          genuinely close, since coral means "this needs you". */}
-      <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
-        <div style={{ ...surfaceCard(S), borderRadius: 14, padding: "16px 20px", flex: "1 1 260px" }}>
-          <div style={factLabel}>When</div>
-          {when ? (
-            <>
-              <div
-                style={{
-                  fontSize: 22, fontWeight: 800,
-                  color: imminent ? S.meaning.attention.ink : S.text.primary,
-                }}
-              >
-                {countdown(when)}
-              </div>
-              <div style={{ fontSize: 14, color: S.text.muted, marginTop: 3 }}>{formatShort(when)}</div>
-            </>
-          ) : (
-            <div style={{ fontSize: 14.5, color: S.text.muted, paddingTop: 6 }}>No date set yet.</div>
-          )}
+      {/* One fact card, not two. The countdown hero above now states the
+          when — date, stage and how long — so a "When" card here would be the
+          same sentence twice, which is the redundancy the contact record was
+          reworked to remove. Only who-you-are-meeting is left, and it is the
+          one thing the hero does not carry. */}
+      <div style={{ ...surfaceCard(S), borderRadius: 14, padding: "16px 20px", marginTop: 12 }}>
+        <div style={factLabel}>Who you&apos;re meeting</div>
+        <div style={{ fontSize: 15.5, color: interview.interviewer_names ? S.text.primary : S.text.muted, paddingTop: 4 }}>
+          {interview.interviewer_names || "Not recorded"}
         </div>
-
-        <div style={{ ...surfaceCard(S), borderRadius: 14, padding: "16px 20px", flex: "1 1 260px" }}>
-          <div style={factLabel}>Who you&apos;re meeting</div>
-          <div style={{ fontSize: 15.5, color: interview.interviewer_names ? S.text.primary : S.text.muted, paddingTop: 4 }}>
-            {interview.interviewer_names || "Not recorded"}
-          </div>
-          <a
-            href={`/dashboard/tracker/${interview.application_id}`}
-            style={{ display: "inline-block", marginTop: 10, color: S.action.quietInk, fontSize: 14, fontWeight: 700, textDecoration: "none" }}
-          >
-            See the job →
-          </a>
-        </div>
+        <a
+          href={`/dashboard/tracker/${interview.application_id}`}
+          style={{ display: "inline-block", marginTop: 10, color: S.action.quietInk, fontSize: 14, fontWeight: 700, textDecoration: "none" }}
+        >
+          See the job →
+        </a>
       </div>
 
       {!imminent && checklistBlock}

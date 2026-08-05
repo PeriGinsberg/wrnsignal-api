@@ -100,13 +100,122 @@ export function isChecked(state: Record<string, unknown> | null | undefined, id:
   return Boolean(state && state[id])
 }
 
-/** How many of the applicable items are done — for the "3 of 9" summary. */
+/**
+ * A COMPLETION SLOT: one thing that has to be done, which may be satisfiable by
+ * more than one item.
+ *
+ * This exists to fix a checklist nobody could finish. With an unknown format
+ * both the in-person and the virtual item are shown, but they are mutually
+ * exclusive in reality — you cannot both check your route and test your camera
+ * for the same interview. Counting them as two separate obligations made "Day
+ * before" impossible to complete, so the group could never reach its done
+ * state and the overall count could never reach its total.
+ *
+ * Folding them into ONE either-or slot makes ticking either enough. Both stay
+ * visible and both stay tickable; only the arithmetic changes. When the format
+ * IS known, one branch is filtered out entirely and every slot is a single
+ * item, so this collapses to the obvious behaviour.
+ */
+export type PrepSlot = { id: string; group: PrepGroup; itemIds: string[] }
+
+export function slotsFor(format: string | null | undefined): PrepSlot[] {
+  const items = itemsFor(format)
+  const known = format === "in_person" || format === "virtual"
+  if (known) return items.map((i) => ({ id: i.id, group: i.group, itemIds: [i.id] }))
+
+  const out: PrepSlot[] = []
+  const emitted = new Set<PrepGroup>()
+  for (const i of items) {
+    if (!i.onlyFor) {
+      out.push({ id: i.id, group: i.group, itemIds: [i.id] })
+      continue
+    }
+    // The first branch item in a group emits the combined slot, IN PLACE, so
+    // the slot keeps its position in the sequence. Later branch items in the
+    // same group fold into it rather than emitting their own.
+    if (emitted.has(i.group)) continue
+    emitted.add(i.group)
+    out.push({
+      id: `${i.group}__either`,
+      group: i.group,
+      itemIds: items.filter((x) => x.group === i.group && x.onlyFor).map((x) => x.id),
+    })
+  }
+  return out
+}
+
+/** A slot is done when ANY of its items is ticked. */
+export function isSlotDone(state: Record<string, unknown> | null | undefined, slot: PrepSlot): boolean {
+  return slot.itemIds.some((id) => isChecked(state, id))
+}
+
+/**
+ * Progress, counted in SLOTS rather than items — so an unknown format reads
+ * "0 of 8" against nine visible boxes, because one of those nine pairs is an
+ * either-or. The page marks the pair with an "or" so the arithmetic is visible
+ * rather than mysterious.
+ */
 export function progressFor(
   state: Record<string, unknown> | null | undefined,
   format: string | null | undefined,
 ): { done: number; total: number } {
-  const items = itemsFor(format)
-  return { done: items.filter((i) => isChecked(state, i.id)).length, total: items.length }
+  const slots = slotsFor(format)
+  return { done: slots.filter((s) => isSlotDone(state, s)).length, total: slots.length }
+}
+
+/**
+ * Which group is the one to act on now.
+ *
+ *   more than 7 days out   this_week
+ *   2 to 7 days            day_before
+ *   today or tomorrow      day_of
+ *   already happened       null — nothing "needs you" any more
+ *   no date at all         this_week — you can always start researching
+ */
+export function liveGroup(when: string | null | undefined, now: Date = new Date()): PrepGroup | null {
+  const days = daysUntil(when, now)
+  if (days === null) return "this_week"
+  if (days < 0) return null
+  if (days <= 1) return "day_of"
+  if (days <= 7) return "day_before"
+  return "this_week"
+}
+
+export type GroupState = "complete" | "live" | "receded"
+
+/**
+ * How a group card presents itself.
+ *
+ * COMPLETE OUTRANKS LIVE, deliberately. Coral means "something needs you"; once
+ * every slot in a group is done that is no longer true, and a coral rail on a
+ * finished list would be saying something false. Teal wins.
+ *
+ * `receded` is de-emphasis, never disablement — the card stays readable and
+ * every item stays tickable. Same distinction the action rule makes elsewhere:
+ * the absence of emphasis, not a greyed-out control.
+ */
+export function groupState(
+  group: PrepGroup,
+  state: Record<string, unknown> | null | undefined,
+  format: string | null | undefined,
+  when: string | null | undefined,
+  now: Date = new Date(),
+): GroupState {
+  const slots = slotsFor(format).filter((s) => s.group === group)
+  if (slots.length > 0 && slots.every((s) => isSlotDone(state, s))) return "complete"
+  return liveGroup(when, now) === group ? "live" : "receded"
+}
+
+/**
+ * The order the group cards render in.
+ *
+ * Natural sequence, EXCEPT inside 24 hours when `day_of` jumps to the front.
+ * The sequence carries meaning, so it only breaks when the urgency demands it.
+ */
+export function orderedGroups(when: string | null | undefined, now: Date = new Date()): PrepGroup[] {
+  const natural: PrepGroup[] = ["this_week", "day_before", "day_of"]
+  if (!isImminent(when, now)) return natural
+  return ["day_of", ...natural.filter((g) => g !== "day_of")]
 }
 
 /** Guard so a malformed stored blob cannot crash the page. */

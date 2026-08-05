@@ -6,6 +6,7 @@
 import {
   PREP_ITEMS, itemsFor, groupedItems, isImminent, scheduledAt,
   isChecked, progressFor, safeState,
+  slotsFor, isSlotDone, liveGroup, groupState, orderedGroups,
 } from "./prepChecklist"
 
 let failures = 0
@@ -87,6 +88,85 @@ ok("drops non-true values", JSON.stringify(safeState({ a: true, b: false, c: "ye
 ok("an array is not a state", JSON.stringify(safeState([1, 2])) === "{}")
 ok("null is an empty state", JSON.stringify(safeState(null)) === "{}")
 ok("a string is an empty state", JSON.stringify(safeState("nope")) === "{}")
+
+console.log("\nslotsFor — the either-or fix")
+{
+  const unknown = slotsFor(null)
+  const known = slotsFor("virtual")
+  ok("unknown format folds the two branch items into ONE slot",
+    unknown.length === PREP_ITEMS.length - 1)
+  ok("a known format gives one slot per item", known.length === itemsFor("virtual").length)
+  const pair = unknown.find((s) => s.itemIds.length > 1)!
+  ok("the folded slot holds exactly the two branch items",
+    pair && pair.itemIds.slice().sort().join(",") === "before_route,before_tech")
+  ok("the folded slot belongs to day_before", pair.group === "day_before")
+  ok("the folded slot keeps its position in the sequence",
+    unknown.findIndex((s) => s.id === pair.id) === unknown.findIndex((s) => s.id === "before_outfit") + 1)
+  ok("no item is lost — every non-branch item still has its own slot",
+    PREP_ITEMS.filter((i) => !i.onlyFor).every((i) => unknown.some((s) => s.id === i.id)))
+}
+
+console.log("\nthe day_before completion trap")
+{
+  // The bug: four visible items, two mutually exclusive, so the group could
+  // never be completed and the total could never be reached.
+  const tickAll: Record<string, boolean> = {}
+  for (const i of itemsFor(null)) tickAll[i.id] = true
+  ok("ticking every visible item completes the group",
+    groupState("day_before", tickAll, null, day(3)) === "complete")
+
+  const routeOnly = { before_connect: true, before_outfit: true, before_route: true }
+  ok("ticking the IN-PERSON branch alone completes day_before",
+    groupState("day_before", routeOnly, null, day(3)) === "complete")
+  const techOnly = { before_connect: true, before_outfit: true, before_tech: true }
+  ok("ticking the VIRTUAL branch alone completes day_before",
+    groupState("day_before", techOnly, null, day(3)) === "complete")
+  ok("neither branch ticked leaves it incomplete",
+    groupState("day_before", { before_connect: true, before_outfit: true }, null, day(3)) !== "complete")
+
+  ok("the total counts 8 slots, not 9 items", progressFor({}, null).total === PREP_ITEMS.length - 1)
+  ok("one branch ticked advances the count by exactly one",
+    progressFor({ before_route: true }, null).done === 1)
+  ok("ticking BOTH branches still counts as one",
+    progressFor({ before_route: true, before_tech: true }, null).done === 1)
+  ok("a full tick-through reaches the total",
+    progressFor(tickAll, null).done === progressFor(tickAll, null).total)
+}
+
+console.log("\nliveGroup")
+ok("8 days out -> this_week", liveGroup(day(8), NOW) === "this_week")
+ok("7 days out -> day_before (boundary is inclusive)", liveGroup(day(7), NOW) === "day_before")
+ok("2 days out -> day_before", liveGroup(day(2), NOW) === "day_before")
+ok("tomorrow -> day_of", liveGroup(day(1), NOW) === "day_of")
+ok("today -> day_of", liveGroup(day(0), NOW) === "day_of")
+ok("yesterday -> null, nothing needs you any more", liveGroup(day(-1), NOW) === null)
+ok("no date -> this_week", liveGroup(null, NOW) === "this_week")
+
+console.log("\ngroupState precedence")
+{
+  const weekDone = { week_research: true, week_find_interviewers: true, week_follow: true }
+  ok("complete OUTRANKS live", groupState("this_week", weekDone, null, day(30), NOW) === "complete")
+  ok("live when it is the live group and unfinished",
+    groupState("this_week", {}, null, day(30), NOW) === "live")
+  ok("receded when it is neither",
+    groupState("day_of", {}, null, day(30), NOW) === "receded")
+  ok("a past interview leaves an unfinished group receded, not live",
+    groupState("day_of", {}, null, day(-2), NOW) === "receded")
+  ok("a past interview still shows a finished group as complete",
+    groupState("this_week", weekDone, null, day(-2), NOW) === "complete")
+}
+
+console.log("\norderedGroups")
+ok("natural order when the interview is far off",
+  JSON.stringify(orderedGroups(day(30), NOW)) === JSON.stringify(["this_week", "day_before", "day_of"]))
+ok("day_of jumps to the front inside 24 hours",
+  JSON.stringify(orderedGroups(day(1), NOW)) === JSON.stringify(["day_of", "this_week", "day_before"]))
+ok("today reorders too",
+  JSON.stringify(orderedGroups(day(0), NOW)) === JSON.stringify(["day_of", "this_week", "day_before"]))
+ok("two days out does NOT reorder",
+  JSON.stringify(orderedGroups(day(2), NOW)) === JSON.stringify(["this_week", "day_before", "day_of"]))
+ok("reordering never drops or duplicates a group",
+  new Set(orderedGroups(day(0), NOW)).size === 3 && new Set(orderedGroups(day(30), NOW)).size === 3)
 
 console.log(failures === 0 ? "\nall prepChecklist assertions passed\n" : `\n${failures} FAILED\n`)
 process.exit(failures === 0 ? 0 : 1)
