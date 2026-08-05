@@ -24,7 +24,24 @@ export type PrepGenerated = {
   jd_depth: "thin" | "adequate"
   exposure: {
     prove: Array<{ why_id: string; claim: string; how: string }>
-    probe: Array<{ risk_id: string; they_will_ask: string; how: string }>
+    /**
+     * `challenge` is DECLARATIVE: the gap stated as a fact about where the
+     * candidate stands, never phrased as a question. The question form lives
+     * in questions.probes and nowhere else.
+     *
+     * It was called `they_will_ask` and it produced the same sentence twice,
+     * back to back, on the same page. Measured on a live run, all three probes
+     * duplicated:
+     *
+     *   block 1  "...You have about 1 year. Why should we consider you for an
+     *             analyst-level role?"
+     *   block 2  "You have about a year of experience... Why do you think
+     *             you're ready for an analyst-level position?"
+     *
+     * The field name was the cause. Asking for what "they will ask" gets a
+     * question, and the questions block then asks for it again.
+     */
+    probe: Array<{ risk_id: string; challenge: string; how: string }>
   }
   questions: {
     certain: Array<{ ref: string; req_id: string; question: string }>
@@ -149,10 +166,20 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const probe = (Array.isArray(exposure.probe) ? exposure.probe : [])
     .map((p: any) => ({
       risk_id: text(p?.risk_id, 20),
-      they_will_ask: prose(p?.they_will_ask),
+      challenge: prose(p?.challenge),
       how: prose(p?.how),
     }))
-    .filter((p: any) => riskIds.has(p.risk_id) && p.they_will_ask)
+    .filter((p: any) => {
+      if (!riskIds.has(p.risk_id) || !p.challenge) return false
+      // DECLARATIVE OR NOT AT ALL. A challenge phrased as a question is the
+      // duplication this field was renamed to stop, so it rides the same
+      // drop-not-fail path as an invented id: the item goes, the rest stays,
+      // and the question is still available in questions.probes where it
+      // belongs. Prompt rules alone would hold most of the time, and most of
+      // the time is what made this a bug rather than a blemish.
+      if (p.challenge.endsWith("?")) return false
+      return true
+    })
     .slice(0, MAX_PROBE)
 
   const certain = (Array.isArray(questions.certain) ? questions.certain : [])

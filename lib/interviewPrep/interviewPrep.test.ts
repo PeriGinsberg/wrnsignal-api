@@ -343,6 +343,14 @@ console.log("\nbuildUserPrompt")
   // looking to build a career". Neither is grounded in anything.
   ok("the enthusiasm rule names the failure and gives a test",
     SYSTEM_PROMPT.includes("passionate") && SYSTEM_PROMPT.includes("different candidate's prep"))
+  // Three ways, because one was not enough: the field name, the instruction,
+  // and a worked example of right and wrong.
+  ok("the prompt asks for a declarative challenge and shows both forms",
+    p.includes("must never end with a question mark")
+    && p.includes("One year of experience against a role that usually asks for two to three")
+    && p.includes("a statement, not a question"))
+  ok("the superseded field name is gone from the prompt entirely",
+    !p.includes("they_will_ask"))
   ok("the system prompt forbids company knowledge beyond the JD",
     SYSTEM_PROMPT.includes("You do not know this company"))
 }
@@ -438,7 +446,7 @@ console.log("\nvalidateGenerated")
     jd_depth: "adequate",
     exposure: {
       prove: [{ why_id: "w1", claim: "You have done the reporting", how: "Lead with it" }],
-      probe: [{ risk_id: "r1", they_will_ask: "Are you senior enough", how: "Name the scope you held" }],
+      probe: [{ risk_id: "r1", challenge: "One year against a role that asks for three", how: "Name the scope you held" }],
     },
     questions: {
       certain: [{ req_id: "8d2fbd65931ce46a", question: "Walk me through a model you built." }],
@@ -466,6 +474,49 @@ console.log("\nvalidateGenerated")
   ok("jd_depth passes through", v.jd_depth === "adequate")
 
   // ── the drop rules, one at a time ────────────────────────────────────────
+
+  // BLOCK 1 IS DECLARATIVE. A challenge phrased as a question is the exact
+  // duplication the rename exists to stop, so it is dropped rather than shown
+  // beside the identical block 2 question. Both strings below are verbatim from
+  // the live Goldman Sachs run that surfaced this.
+  {
+    const asQuestion = validateGenerated({
+      ...good,
+      exposure: {
+        prove: good.exposure.prove,
+        probe: [{
+          risk_id: "r1",
+          challenge: "This role is typically filled by candidates with 2-3 years of finance or investment experience. You have about 1 year. Why should we consider you for an analyst-level role?",
+          how: "Acknowledge the gap, then show the depth of that year.",
+        }],
+      },
+    }, src)!
+    ok("a challenge ending in a question mark is dropped", asQuestion.exposure.probe.length === 0)
+    ok("...and the rest of the response is untouched", asQuestion.answers.length === 4)
+    ok("...and the QUESTION form still survives in block 2, where it belongs",
+      asQuestion.questions.probes.length === 1)
+  }
+  {
+    const declarative = validateGenerated({
+      ...good,
+      exposure: {
+        prove: [],
+        probe: [{
+          risk_id: "r1",
+          challenge: "One year of experience against a role that usually asks for two to three.",
+          how: "Acknowledge the gap, then show the depth of that year.",
+        }],
+      },
+    }, src)!
+    ok("a declarative challenge survives", declarative.exposure.probe.length === 1)
+    ok("...and carries its handling line, which appears nowhere else",
+      declarative.exposure.probe[0].how.startsWith("Acknowledge"))
+  }
+  ok("a question mark mid-sentence is not caught by the trailing check, by design",
+    validateGenerated({
+      ...good,
+      exposure: { prove: [], probe: [{ risk_id: "r1", challenge: "Why so junior? They will ask.", how: "x" }] },
+    }, src)!.exposure.probe.length === 1)
 
   const invented = validateGenerated({
     ...good,
@@ -549,7 +600,7 @@ console.log("\nvalidateGenerated")
   })!
   const v = validateGenerated({
     jd_depth: "adequate",
-    exposure: { prove: [], probe: [{ risk_id: "r1", they_will_ask: "invented risk", how: "x" }] },
+    exposure: { prove: [], probe: [{ risk_id: "r1", challenge: "invented risk", how: "x" }] },
     questions: {
       certain: [], probes: [{ risk_id: "r1", question: "invented probe" }],
       always: [{ kind: "why_you", question: "Why you?" }],

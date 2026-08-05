@@ -473,7 +473,11 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
                 {generated.exposure.probe.map((p) => (
                   <div key={p.risk_id} style={{ borderLeft: `3px solid ${S.meaning.attention.accent}`, paddingLeft: 14 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: S.text.primary, lineHeight: "22px" }}>
-                      {p.they_will_ask}
+                      {/* `they_will_ask` is the superseded key. Preps stored
+                          before the rename still carry it, and falling back
+                          costs one line and avoids a blank exposure row on
+                          anything not yet regenerated. */}
+                      {p.challenge ?? (p as { they_will_ask?: string }).they_will_ask}
                     </div>
                     {p.how && (
                       <div style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", marginTop: 3 }}>{p.how}</div>

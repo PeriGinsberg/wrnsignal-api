@@ -30,8 +30,10 @@ import { createHash } from "node:crypto"
  *      the model means a different answer is owed.
  *   4  RULE 5 widened to ban markdown, and RULE 6 added against ungrounded
  *      enthusiasm claims. Both were observed in live output.
+ *   5  exposure.probe.they_will_ask became a declarative `challenge`. The old
+ *      name produced the block 2 question verbatim, twice on one page.
  */
-export const PROMPT_VERSION = 4
+export const PROMPT_VERSION = 5
 
 export type ContentHashInputs = {
   model: string

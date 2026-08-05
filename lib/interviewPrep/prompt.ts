@@ -132,7 +132,10 @@ export function buildUserPrompt(src: PrepSource): string {
       "",
       "1. EXPOSURE. What they will want proved, and what they will push on.",
       `   exposure.prove: up to 3 entries, one per STRENGTH id. "claim" is what the candidate should be able to demonstrate; "how" is one line on how to bring it up.`,
-      `   exposure.probe: one entry per RISK id, up to 3. "they_will_ask" is how that risk shows up as an interviewer's doubt; "how" is one line on handling it honestly.`,
+      // "they_will_ask" produced the block 2 question verbatim, twice on one
+      // page. The field is declarative now and says so three ways: the name,
+      // the instruction, and the worked example.
+      `   exposure.probe: one entry per RISK id, up to 3. "challenge" states the gap as a FACT about where the candidate stands, in ONE sentence. It is NOT a question and must never end with a question mark. Write "One year of experience against a role that usually asks for two to three", not "Why should we consider you with only one year?". The question form belongs in questions.probes and must not appear here. "how" is one line on handling it honestly.`,
       "",
       "2. QUESTIONS. What they will actually ask.",
       "   questions.certain: exactly one question per REQUIREMENT id, up to 3, drawn from what the posting asks for.",
@@ -151,7 +154,7 @@ export function buildUserPrompt(src: PrepSource): string {
       '  "jd_depth": "thin" | "adequate",',
       '  "exposure": {',
       '    "prove": [{"why_id": "w1", "claim": "...", "how": "..."}],',
-      '    "probe": [{"risk_id": "r1", "they_will_ask": "...", "how": "..."}]',
+      '    "probe": [{"risk_id": "r1", "challenge": "a statement, not a question", "how": "..."}]',
       "  },",
       '  "questions": {',
       '    "certain": [{"req_id": "...", "question": "..."}],',
