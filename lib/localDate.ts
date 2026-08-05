@@ -56,6 +56,64 @@ export function daysUntil(value: string | null | undefined, now: Date = new Date
   return days === null ? null : -days
 }
 
+/**
+ * Build a real instant from a date field and a time field, both as the browser
+ * gave them: "2026-08-07" and "14:00".
+ *
+ * THE WHOLE POINT IS THE CONSTRUCTOR. `new Date(y, m, d, h, min)` takes LOCAL
+ * calendar components and produces the instant they name in the viewer's zone.
+ * Neither string form is safe here:
+ *
+ *   new Date("2026-08-07")        UTC midnight — the off-by-one bug
+ *   new Date("2026-08-07T14:00")  implementation-dependent
+ *
+ * Building from numbers cannot hit either, and it is the only composer in the
+ * codebase, so there is still exactly one module that touches dates.
+ *
+ * RETURNS NULL UNLESS BOTH ARE PRESENT. A date with no time must NOT become
+ * midnight: that is a guessed instant asserting a precision nobody supplied,
+ * and it is how "9am Friday" turns into "Thursday evening" for a reader in a
+ * different zone. Absent is honest; midnight is a lie.
+ */
+export function composeLocalInstant(
+  dateStr: string | null | undefined,
+  timeStr: string | null | undefined,
+): string | null {
+  if (!dateStr || !timeStr) return null
+  const d = DATE_ONLY.exec(dateStr)
+  // <input type="time"> gives "HH:MM", or "HH:MM:SS" in some browsers.
+  const t = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(timeStr)
+  if (!d || !t) return null
+
+  const [year, month, day] = [Number(d[1]), Number(d[2]), Number(d[3])]
+  const [hh, mm] = [Number(t[1]), Number(t[2])]
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null
+  if (hh > 23 || mm > 59) return null
+
+  const at = new Date(year, month - 1, day, hh, mm, 0, 0)
+  if (Number.isNaN(at.getTime())) return null
+  // Reject values the Date constructor silently rolled over, e.g. Feb 31.
+  if (at.getFullYear() !== year || at.getMonth() !== month - 1 || at.getDate() !== day) return null
+  return at.toISOString()
+}
+
+/**
+ * The inverse, for populating an edit form: an instant back into the local
+ * date and time fields that produced it. Round-trips with composeLocalInstant.
+ */
+export function splitLocalInstant(
+  value: string | null | undefined,
+): { date: string; time: string } | null {
+  if (!value) return null
+  const d = parseLocalDate(value)
+  if (!d) return null
+  const p = (n: number) => String(n).padStart(2, "0")
+  return {
+    date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+    time: `${p(d.getHours())}:${p(d.getMinutes())}`,
+  }
+}
+
 export function formatShort(value: string | null | undefined): string {
   const d = parseLocalDate(value)
   return d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""

@@ -35,7 +35,9 @@ import {
   InterviewIcon, JobDescriptionIcon, NotesIcon, AccountIcon, SignOutIcon, HistoryIcon,
 } from "../../../../components/icons"
 import { authFetch } from "../../network/authFetch"
-import { daysUntil, formatLong, formatShort, parseLocalDate } from "../../../../lib/localDate"
+import {
+  composeLocalInstant, daysUntil, formatLong, formatShort, parseLocalDate, splitLocalInstant,
+} from "../../../../lib/localDate"
 import { Collapsible } from "../../network/contacts/[contactId]/Collapsible"
 import { ClientJobNotes } from "../ClientJobNotes"
 import { openInSignal } from "../openInSignal"
@@ -43,8 +45,8 @@ import { JobHistory } from "../JobHistory"
 import { Field, Select, control, areaControl, formGrid } from "../controls"
 import {
   APP_LOCATIONS, STATUS_LABELS, statusLabel, statusMeaning,
-  interviewStageLabel, interviewStatusLabel, interviewStatusMeaning,
-  INTERVIEW_STAGES, INTERVIEW_STATUSES,
+  interviewStageLabel, interviewStatusLabel, interviewStatusMeaning, interviewFormatLabel,
+  INTERVIEW_STAGES, INTERVIEW_STATUSES, INTERVIEW_FORMATS,
 } from "../vocab"
 import { needOf, daysSinceApplied, FOLLOW_UP_AFTER_DAYS } from "../applicationOrder"
 import { APP_STATUSES } from "../../../_lib/applicationStatuses"
@@ -79,10 +81,14 @@ type Interview = {
   application_id: string
   interview_stage: string
   interview_date: string | null
+  /** The instant, when a time was actually given. Null is the normal case. */
+  interview_at: string | null
+  interview_format: string | null
   status: string
   interviewer_names: string | null
   notes: string | null
   thank_you_sent: boolean | null
+  confidence_level: number | null
 }
 
 // All three go through localDate, which parses a bare "2026-08-07" as LOCAL
@@ -100,6 +106,23 @@ function countdown(d: string): string {
 const STATUS_OPTIONS = APP_STATUSES.map((v) => ({ value: v, label: STATUS_LABELS[v] ?? v }))
 const STAGE_OPTIONS = INTERVIEW_STAGES.map((v) => ({ value: v, label: interviewStageLabel(v) }))
 const IV_STATUS_OPTIONS = INTERVIEW_STATUSES.map((v) => ({ value: v, label: interviewStatusLabel(v) }))
+
+/**
+ * "" is a real option and it means UNSET, not a default. Prep Now branches on
+ * format and shows both the in-person and the video items when it is null, so
+ * an empty format costs a little duplication and a guessed one sends someone
+ * to the wrong place.
+ */
+const FORMAT_OPTIONS = [
+  { value: "", label: "Not sure yet" },
+  ...INTERVIEW_FORMATS.map((v) => ({ value: v, label: interviewFormatLabel(v) })),
+]
+
+/** The clock time, but only when one was actually recorded. */
+function timeLabel(iv: { interview_at: string | null }): string | null {
+  const d = parseLocalDate(iv.interview_at)
+  return d ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : null
+}
 
 export default function ApplicationDetailPage({
   params,
@@ -249,8 +272,11 @@ export default function ApplicationDetailPage({
                   {interviewStageLabel(nextInterview.interview_stage)}
                 </div>
                 <div style={{ color: S.hero.muted, fontSize: 14, marginTop: 3 }}>
-                  {longDate(nextInterview.interview_date)}
-                  {nextInterview.interviewer_names ? ` · with ${nextInterview.interviewer_names}` : ""}
+                  {[
+                    longDate(nextInterview.interview_date),
+                    timeLabel(nextInterview),
+                    nextInterview.interviewer_names ? `with ${nextInterview.interviewer_names}` : null,
+                  ].filter(Boolean).join(" · ")}
                 </div>
               </div>
             </div>
@@ -517,6 +543,67 @@ function ActionStrip({
   )
 }
 
+/**
+ * Confidence, 1 to 5, matching the column's CHECK. Dots rather than stars: a
+ * star reads as a rating of the interview, and this is how the round FELT,
+ * which is a note to yourself.
+ */
+function ConfidenceDots({ level, onPick }: { level: number; onPick: (n: number) => void }) {
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 8, height: 40 }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onPick(n)}
+          aria-label={`${n} out of 5`}
+          aria-pressed={n <= level}
+          style={{
+            width: 20, height: 20, borderRadius: "50%", padding: 0, cursor: "pointer",
+            background: n <= level ? S.meaning.replied.accent : "transparent",
+            border: `1.5px solid ${n <= level ? S.meaning.replied.accent : S.text.muted}`,
+          }}
+        />
+      ))}
+    </span>
+  )
+}
+
+/**
+ * The draft an open interview is edited through. Date and time are kept SPLIT
+ * because that is how the two inputs work; they are composed into an instant
+ * only at save. Every field is a non-null string or number so the controls are
+ * never switching between controlled and uncontrolled.
+ */
+type Draft = {
+  interview_stage: string
+  /** "" means unset, and stays unset. */
+  interview_format: string
+  date: string
+  time: string
+  interviewer_names: string
+  status: string
+  thank_you_sent: boolean
+  confidence_level: number
+  notes: string
+}
+
+function draftFrom(iv: Interview): Draft {
+  return {
+    interview_stage: iv.interview_stage,
+    interview_format: iv.interview_format ?? "",
+    // Through splitLocalInstant rather than the raw column, so a `date` value
+    // and a timestamp both normalise to the "YYYY-MM-DD" the input needs.
+    date: splitLocalInstant(iv.interview_date)?.date ?? "",
+    time: splitLocalInstant(iv.interview_at)?.time ?? "",
+    interviewer_names: iv.interviewer_names ?? "",
+    status: iv.status,
+    thank_you_sent: !!iv.thank_you_sent,
+    confidence_level: iv.confidence_level ?? 3,
+    notes: iv.notes ?? "",
+  }
+}
+
 function InterviewsSection({
   applicationId, interviews, onChanged,
 }: {
@@ -526,9 +613,27 @@ function InterviewsSection({
 }) {
   const [adding, setAdding] = useState(false)
   const [stage, setStage] = useState<string>("phone")
+  const [format, setFormat] = useState("")
   const [date, setDate] = useState("")
+  const [time, setTime] = useState("")
   const [who, setWho] = useState("")
   const [saving, setSaving] = useState(false)
+
+  // The edit path. One row open at a time: two open editors on the same list
+  // means two drafts of the same shape on screen with nothing distinguishing
+  // which Save belongs to which.
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [rowErr, setRowErr] = useState<string | null>(null)
+
+  function toggle(iv: Interview) {
+    setRowErr(null)
+    if (openId === iv.id) { setOpenId(null); setDraft(null); return }
+    setOpenId(iv.id)
+    setDraft(draftFrom(iv))
+  }
+
+  const set = (patch: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...patch } : d))
 
   async function create() {
     if (saving) return
@@ -539,13 +644,49 @@ function InterviewsSection({
       body: JSON.stringify({
         application_id: applicationId,
         interview_stage: stage,
+        interview_format: format || null,
         interview_date: date || null,
+        // NULL unless BOTH were given. A date on its own must not become
+        // midnight: that asserts a precision nobody supplied. See
+        // composeLocalInstant in lib/localDate.ts.
+        interview_at: composeLocalInstant(date, time),
         interviewer_names: who.trim() || null,
         status: date ? "scheduled" : "not_scheduled",
       }),
     })
     setSaving(false)
-    setAdding(false); setDate(""); setWho(""); setStage("phone")
+    setAdding(false)
+    setDate(""); setTime(""); setWho(""); setStage("phone"); setFormat("")
+    onChanged()
+  }
+
+  async function save(id: string) {
+    if (!draft || saving) return
+    setSaving(true)
+    setRowErr(null)
+    const res = await authFetch(`/api/interviews/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        interview_stage: draft.interview_stage,
+        interview_format: draft.interview_format || null,
+        interview_date: draft.date || null,
+        interview_at: composeLocalInstant(draft.date, draft.time),
+        interviewer_names: draft.interviewer_names.trim() || null,
+        status: draft.status,
+        thank_you_sent: draft.thank_you_sent,
+        confidence_level: draft.confidence_level,
+        notes: draft.notes.trim() || null,
+      }),
+    })
+    setSaving(false)
+    if (!res.ok) {
+      // Said out loud rather than swallowed. A silently failed edit here reads
+      // as a saved one, and the next screen would show the old value.
+      setRowErr("That didn't save. Try again.")
+      return
+    }
+    setOpenId(null); setDraft(null)
     onChanged()
   }
 
@@ -582,29 +723,153 @@ function InterviewsSection({
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
           {interviews.map((iv) => {
             const ivst = statusStyle(S, interviewStatusMeaning(iv.status))
+            const open = openId === iv.id
             return (
-              <div
-                key={iv.id}
-                style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "12px 14px", borderRadius: 12, background: S.well,
-                }}
-              >
-                <InterviewIcon size={22} />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: S.text.primary }}>
-                    {interviewStageLabel(iv.interview_stage)}
+              <div key={iv.id} style={{ borderRadius: 12, background: S.well, overflow: "hidden" }}>
+                {/* THE WHOLE ROW is the expand control, same as CompanyCard: a
+                    real <button> so it is reachable by keyboard, and everything
+                    inside it is phrasing content, because a div inside a button
+                    is invalid HTML. */}
+                <button
+                  type="button"
+                  onClick={() => toggle(iv)}
+                  aria-expanded={open}
+                  aria-label={`${open ? "Collapse" : "Edit"} ${interviewStageLabel(iv.interview_stage)}`}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 14,
+                    padding: "12px 14px", background: "none", border: "none",
+                    cursor: "pointer", textAlign: "left", font: "inherit",
+                  }}
+                >
+                  <span aria-hidden="true" style={{ color: S.text.dim, fontSize: 12, width: 12, flexShrink: 0 }}>
+                    {open ? "▾" : "▸"}
                   </span>
-                  <span style={{ display: "block", fontSize: 13, color: S.text.muted, marginTop: 2 }}>
-                    {[longDate(iv.interview_date) || "No date yet", iv.interviewer_names].filter(Boolean).join(" · ")}
+                  <InterviewIcon size={22} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: S.text.primary }}>
+                      {interviewStageLabel(iv.interview_stage)}
+                    </span>
+                    <span style={{ display: "block", fontSize: 13, color: S.text.muted, marginTop: 2 }}>
+                      {[
+                        longDate(iv.interview_date) || "No date yet",
+                        timeLabel(iv),
+                        iv.interview_format ? interviewFormatLabel(iv.interview_format) : null,
+                        iv.interviewer_names,
+                      ].filter(Boolean).join(" · ")}
+                    </span>
                   </span>
-                </span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <span style={ivst.dot} />
-                  <span style={{ ...ivst.text, fontSize: 13.5, whiteSpace: "nowrap" }}>
-                    {interviewStatusLabel(iv.status)}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <span style={ivst.dot} />
+                    <span style={{ ...ivst.text, fontSize: 13.5, whiteSpace: "nowrap" }}>
+                      {interviewStatusLabel(iv.status)}
+                    </span>
                   </span>
-                </span>
+                </button>
+
+                {open && draft && (
+                  <div style={{ padding: "4px 14px 16px", borderTop: `1px solid ${S.borderSoft}` }}>
+                    <div style={{ ...formGrid, marginTop: 14 }}>
+                      <Field label="What kind">
+                        <Select
+                          value={draft.interview_stage} options={STAGE_OPTIONS} ariaLabel="What kind"
+                          onChange={(v) => set({ interview_stage: v })}
+                        />
+                      </Field>
+                      <Field label="How you're meeting">
+                        <Select
+                          value={draft.interview_format} options={FORMAT_OPTIONS} ariaLabel="How you're meeting"
+                          onChange={(v) => set({ interview_format: v })}
+                        />
+                      </Field>
+                      <Field label="Date">
+                        <input
+                          type="date" value={draft.date} style={control} aria-label="Date"
+                          onChange={(e) => set({ date: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Time">
+                        <input
+                          type="time" value={draft.time} style={control} aria-label="Time"
+                          onChange={(e) => set({ time: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Who you're meeting">
+                        <input
+                          value={draft.interviewer_names} style={control} placeholder="Optional"
+                          aria-label="Who you're meeting"
+                          onChange={(e) => set({ interviewer_names: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Where it stands">
+                        <Select
+                          value={draft.status} options={IV_STATUS_OPTIONS} ariaLabel="Where it stands"
+                          onChange={(v) => set({ status: v })}
+                        />
+                      </Field>
+                      <Field label="How it felt">
+                        <ConfidenceDots
+                          level={draft.confidence_level}
+                          onPick={(n) => set({ confidence_level: n })}
+                        />
+                      </Field>
+                      <Field label="Thank-you note">
+                        <label
+                          style={{
+                            display: "flex", alignItems: "center", gap: 10, height: 40,
+                            fontSize: 14, color: S.text.secondary, cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox" checked={draft.thank_you_sent}
+                            onChange={(e) => set({ thank_you_sent: e.target.checked })}
+                            style={{ width: 18, height: 18, accentColor: S.meaning.done.accent, cursor: "pointer" }}
+                          />
+                          Sent
+                        </label>
+                      </Field>
+                      <Field label="Notes" span={2}>
+                        <textarea
+                          value={draft.notes} style={areaControl} aria-label="Notes"
+                          placeholder="What they asked, who you met, anything to remember"
+                          onChange={(e) => set({ notes: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+
+                    {draft.time && !draft.date && (
+                      <p style={{ fontSize: 13, color: S.meaning.attention.ink, margin: "12px 0 0" }}>
+                        A time needs a date to go with it. Add the day and the time will save too.
+                      </p>
+                    )}
+                    {rowErr && (
+                      <p style={{ fontSize: 13.5, color: S.meaning.error.ink, fontWeight: 700, margin: "12px 0 0" }}>
+                        {rowErr}
+                      </p>
+                    )}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 16, flexWrap: "wrap" }}>
+                      <button
+                        onClick={() => void save(iv.id)}
+                        disabled={saving}
+                        style={{
+                          ...actionStyle(S, "primary"), borderRadius: 10, padding: "10px 18px",
+                          fontSize: 14, fontFamily: "inherit", opacity: saving ? 0.6 : 1,
+                        }}
+                      >
+                        {saving ? "Saving…" : "Save changes"}
+                      </button>
+                      <button
+                        onClick={() => { setOpenId(null); setDraft(null); setRowErr(null) }}
+                        style={{
+                          background: "none", border: "none", color: S.action.quietInk,
+                          fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -617,13 +882,27 @@ function InterviewsSection({
             <Field label="What kind">
               <Select value={stage} options={STAGE_OPTIONS} onChange={setStage} ariaLabel="What kind" />
             </Field>
-            <Field label="When">
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={control} aria-label="When" />
+            {/* Two separate questions. What ROUND it is drives nothing; how
+                you ATTEND is what Prep Now branches on, and it is the one an
+                invite always tells you. */}
+            <Field label="How you're meeting">
+              <Select value={format} options={FORMAT_OPTIONS} onChange={setFormat} ariaLabel="How you're meeting" />
+            </Field>
+            <Field label="Date">
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={control} aria-label="Date" />
+            </Field>
+            <Field label="Time">
+              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={control} aria-label="Time" />
             </Field>
             <Field label="Who you're meeting">
               <input value={who} onChange={(e) => setWho(e.target.value)} style={control} placeholder="Optional" aria-label="Who you're meeting" />
             </Field>
           </div>
+          {time && !date && (
+            <p style={{ fontSize: 13, color: S.meaning.attention.ink, margin: "12px 0 0" }}>
+              A time needs a date to go with it. Add the day and the time will save too.
+            </p>
+          )}
           <button
             onClick={create}
             disabled={saving}

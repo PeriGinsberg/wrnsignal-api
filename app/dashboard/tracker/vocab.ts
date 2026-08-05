@@ -123,6 +123,32 @@ export const INTERVIEW_STATUSES = [
   "not_scheduled", "scheduled", "awaiting_feedback", "offer_extended", "rejected", "ghosted",
 ] as const
 
+/**
+ * HOW you attend, which is a different question from what round it is. The
+ * stage list already carries `in_person` and `take_home` and the overlap is
+ * real but not redundant: a final round can be in person or on video, and the
+ * prep is different either way. Format is what Prep Now branches on.
+ *
+ * NULL is a legitimate value and stays one. Every interview created before
+ * this column existed has no format, and Prep Now shows both the in-person and
+ * the video items rather than guessing — an unset format is honest, a guessed
+ * one sends someone to the wrong building.
+ */
+export const INTERVIEW_FORMAT_LABELS: Record<string, string> = {
+  in_person: "In person",
+  virtual: "Video call",
+  phone: "Phone",
+  take_home: "Take-home",
+}
+
+export function interviewFormatLabel(f: string | null | undefined): string {
+  if (!f) return "Not set"
+  return INTERVIEW_FORMAT_LABELS[f] ?? f.replace(/_/g, " ")
+}
+
+/** Matches the CHECK constraint on signal_interviews.interview_format. */
+export const INTERVIEW_FORMATS = ["in_person", "virtual", "phone", "take_home"] as const
+
 // ── JobFit decision bands, for History ──────────────────────────────────────
 
 /**

@@ -6,7 +6,7 @@
 // CALENDAR FIELDS of the parsed value rather than on a formatted string, which
 // makes them true in every zone.
 
-import { parseLocalDate, daysSince, daysUntil, formatShort, startOfDay } from "./localDate"
+import { parseLocalDate, daysSince, daysUntil, formatShort, startOfDay, composeLocalInstant, splitLocalInstant } from "./localDate"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -54,6 +54,57 @@ ok("an empty value formats to an empty string", formatShort(null) === "")
 console.log("\nstartOfDay")
 ok("collapses a time to local midnight",
   startOfDay(new Date(2026, 7, 4, 23, 59)) === new Date(2026, 7, 4).getTime())
+
+console.log("\ncomposeLocalInstant")
+{
+  // Asserted against the LOCAL constructor rather than a hardcoded UTC string,
+  // so these hold in every timezone rather than only in mine.
+  const iso = composeLocalInstant("2026-08-07", "14:00")!
+  ok("an afternoon time becomes the instant it names locally",
+    iso === new Date(2026, 7, 7, 14, 0, 0, 0).toISOString())
+  ok("it round-trips back through splitLocalInstant",
+    JSON.stringify(splitLocalInstant(iso)) === JSON.stringify({ date: "2026-08-07", time: "14:00" }))
+  ok("midnight is representable when explicitly given",
+    composeLocalInstant("2026-08-07", "00:00") === new Date(2026, 7, 7, 0, 0, 0, 0).toISOString())
+  ok("seconds in the time field are accepted",
+    composeLocalInstant("2026-08-07", "14:00:00") === new Date(2026, 7, 7, 14, 0, 0, 0).toISOString())
+
+  // THE RULE: never guess an instant from a date alone.
+  ok("date with no time is null, NOT midnight", composeLocalInstant("2026-08-07", "") === null)
+  ok("date with null time is null", composeLocalInstant("2026-08-07", null) === null)
+  ok("time with no date is null", composeLocalInstant("", "14:00") === null)
+  ok("both absent is null", composeLocalInstant(null, null) === null)
+
+  ok("garbage date is null", composeLocalInstant("not-a-date", "14:00") === null)
+  ok("garbage time is null", composeLocalInstant("2026-08-07", "half two") === null)
+  ok("a 25th hour is rejected", composeLocalInstant("2026-08-07", "25:00") === null)
+  ok("a 60th minute is rejected", composeLocalInstant("2026-08-07", "12:60") === null)
+  ok("month 13 is rejected", composeLocalInstant("2026-13-01", "12:00") === null)
+  // The Date constructor silently rolls Feb 31 into March. Caught, not stored.
+  ok("Feb 31 is rejected rather than rolled into March",
+    composeLocalInstant("2026-02-31", "12:00") === null)
+
+  // DST. In US zones the spring-forward gap is 02:00–03:00 on the second
+  // Sunday in March; the autumn fallback repeats 01:00–02:00 in November.
+  // Neither may produce a NaN or a wrong calendar day.
+  const springGap = composeLocalInstant("2026-03-08", "02:30")
+  ok("a spring-forward gap time still yields a valid instant", springGap !== null && !Number.isNaN(Date.parse(springGap)))
+  const fallBack = composeLocalInstant("2026-11-01", "01:30")
+  ok("an autumn fallback repeated hour still yields a valid instant", fallBack !== null && !Number.isNaN(Date.parse(fallBack)))
+  ok("a DST-boundary instant keeps its calendar day when split back",
+    splitLocalInstant(fallBack)!.date === "2026-11-01")
+  ok("the day AFTER a spring-forward is unaffected",
+    splitLocalInstant(composeLocalInstant("2026-03-09", "09:00")!)!.date === "2026-03-09")
+}
+
+console.log("\nsplitLocalInstant")
+ok("null in, null out", splitLocalInstant(null) === null)
+ok("garbage in, null out", splitLocalInstant("not-a-date") === null)
+ok("a date-only value splits at local midnight",
+  JSON.stringify(splitLocalInstant("2026-08-07")) === JSON.stringify({ date: "2026-08-07", time: "00:00" }))
+ok("single-digit hours and months are zero-padded",
+  JSON.stringify(splitLocalInstant(new Date(2026, 0, 5, 9, 5).toISOString()))
+    === JSON.stringify({ date: "2026-01-05", time: "09:05" }))
 
 console.log(failures === 0 ? "\nall localDate assertions passed\n" : `\n${failures} FAILED\n`)
 process.exit(failures === 0 ? 0 : 1)

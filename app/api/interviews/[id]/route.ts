@@ -103,8 +103,8 @@ export async function PUT(
     // must not be writable back to this table — those columns don't
     // exist on signal_interviews and would crash the update.
     const ALLOWED_UPDATE_FIELDS = [
-      "interview_stage", "interviewer_names", "interview_date",
-      "thank_you_sent", "status", "confidence_level", "notes",
+      "interview_stage", "interviewer_names", "interview_date", "interview_at",
+      "interview_format", "thank_you_sent", "status", "confidence_level", "notes",
     ] as const
 
     const updates: Record<string, any> = {}

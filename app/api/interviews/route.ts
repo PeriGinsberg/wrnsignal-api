@@ -140,8 +140,8 @@ export async function POST(req: NextRequest) {
     }
 
     const optional = [
-      "interviewer_names", "interview_date", "thank_you_sent",
-      "status", "confidence_level", "notes",
+      "interviewer_names", "interview_date", "interview_at", "interview_format",
+      "thank_you_sent", "status", "confidence_level", "notes",
     ]
     for (const key of optional) {
       if (body[key] !== undefined) row[key] = body[key]
