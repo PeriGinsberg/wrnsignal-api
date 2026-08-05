@@ -382,7 +382,20 @@ export async function POST(req: NextRequest) {
         }).select("id").single()
 
         if (runInsertErr) {
-          console.warn("[jobfit/route] jobfit_runs insert failed:", runInsertErr.message)
+          // ARTIFACT_WRITE_FAILED is a greppable marker, and console.ERROR not warn.
+          // Warn is filtered out of most log views by default, which is half of why
+          // positioning_runs stopped persisting on prod for two weeks with zero signal.
+          //
+          // Response behaviour is deliberately UNCHANGED — still 200 with the content.
+          // A reader with an unsaved result is better off than one with an error. This
+          // is about signal, not behaviour.
+          //
+          // jobfit_runs is the ANCHOR the other three artifacts link to by
+          // jobfit_run_id, so a failure here silently orphans everything downstream
+          // for that job, not just this row.
+          console.error(
+            `ARTIFACT_WRITE_FAILED table=jobfit_runs profileId=${profileId} reason=${runInsertErr.message}`,
+          )
         }
 
         // Auto-create or update signal_applications

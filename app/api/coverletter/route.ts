@@ -727,7 +727,18 @@ Return JSON only. No markdown. No commentary.
         { onConflict: "client_profile_id,fingerprint_hash" }
       )
 
-    if (upsertErr) console.warn("coverletter_runs upsert failed:", upsertErr.message)
+    if (upsertErr) {
+      // ARTIFACT_WRITE_FAILED is a greppable marker, and console.ERROR not warn.
+      // Warn is filtered out of most log views by default, which is half of why
+      // positioning_runs stopped persisting on prod for two weeks with zero signal.
+      //
+      // Response behaviour is deliberately UNCHANGED — still 200 with the content.
+      // A reader with an unsaved result is better off than one with an error. This
+      // is about signal, not behaviour.
+      console.error(
+        `ARTIFACT_WRITE_FAILED table=coverletter_runs profileId=${profileId} reason=${upsertErr.message}`,
+      )
+    }
 
     // Track successful run
     // TODO(analytics-phase-2): replace with analytics_events insert per docs/signal-analytics-spec.md
