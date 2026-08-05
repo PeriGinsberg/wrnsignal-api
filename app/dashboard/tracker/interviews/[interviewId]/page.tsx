@@ -38,8 +38,8 @@ import {
 } from "../../prepChecklist"
 import { interviewStageLabel, interviewStatusLabel, interviewStatusMeaning } from "../../vocab"
 
-/** TODO(playbook-url): swap for the real Ultimate Interview Playbook link. */
-const PLAYBOOK_URL = "#"
+/** Offsite, so it opens in a new tab rather than losing someone's prep page. */
+const PLAYBOOK_URL = "https://www.youwerenevertold.com/interview-playbook"
 
 type Interview = {
   id: string
@@ -503,7 +503,12 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
           peach button; a second peach thing here would compete with it. */}
       <p style={{ fontSize: 14.5, color: S.text.muted, margin: "22px 0 0", lineHeight: "22px" }}>
         Want the full method?{" "}
-        <a href={PLAYBOOK_URL} style={{ color: S.action.quietInk, fontWeight: 700, textDecoration: "none" }}>
+        <a
+          href={PLAYBOOK_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: S.action.quietInk, fontWeight: 700, textDecoration: "none" }}
+        >
           The Ultimate Interview Playbook
         </a>
         .

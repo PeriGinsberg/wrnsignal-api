@@ -159,11 +159,83 @@ Listed so the inventory stays credible and nobody "fixes" these.
 
 ---
 
+## The monitor (Commit B)
+
+`GET /api/internal/monitor/artifact-writes`, daily at 13:00 UTC via Vercel Cron.
+
+**Watched tables** are one declared constant, `WATCHED_TABLES`, so adding one
+later is a one-line change rather than a hunt through a query:
+`jobfit_runs`, `positioning_runs`, `coverletter_runs`, `networking_runs`,
+`interview_prep_runs`.
+
+**The signal is zero-in-24h and nothing else.** Unambiguous, and it catches the
+failure that actually happened — it would have fired on 2026-07-24, one day
+after the last positioning write. Week-over-week drop detection was considered
+and deferred: it is where false positives begin, and a monitor that cries wolf
+gets muted, which is the same failure mode as no monitor, arrived at slowly.
+
+A table with **no rows in the whole 7-day window** is treated as NEW, not
+silent. `interview_prep_runs` is exactly that today. Only a table with history
+behind it can go quiet.
+
+A table that cannot be **read** is reported separately from one that is quiet.
+Reporting an unreadable table as "0 rows" would be the monitor inventing a
+clean answer out of a broken one.
+
+**Liveness has three layers**, because a monitor you cannot distinguish from a
+dead one gives false comfort:
+
+1. `monitor_runs` gets a row on EVERY run, healthy or not, written BEFORE the
+   email so a Postmark outage cannot make a run that happened look like one
+   that never did. `SELECT max(ran_at) FROM monitor_runs` — older than ~25h and
+   it is dead.
+2. An external dead-man's switch (Healthchecks.io) is pinged on success. It
+   alarms when the pings STOP, which is the only arrangement where the monitor
+   failing is itself alerted on, because the alarm lives outside the system it
+   watches.
+3. A thrown monitor logs `MONITOR_FAILED` and deliberately does NOT ping the
+   switch — letting the silence be noticed is the point.
+
+**The alert lands in email**, to `support@stopapplyingblind.com` via the
+existing Postmark sender path. It names the silent table in the subject and
+includes 7 days of counts for **every** watched table, so a cliff can be told
+from a slope at a glance. It sends only when something is wrong: a daily
+all-clear becomes noise inside a week, then gets filtered, and then it is a
+dead monitor nobody notices is dead.
+
+**Known gap, stated rather than implied away:** this does not catch per-user
+partial failure. One profile's writes failing while others succeed produces a
+lower count, not a zero. `ARTIFACT_WRITE_FAILED` in the logs is the only signal
+for that, and it is grep-on-demand, not push.
+
+**ALERTS ARE OPT-IN PER ENVIRONMENT and default to OFF.** Found by dry-running
+the count logic against dev before shipping: this signal is calibrated for
+PRODUCTION volume. Prod does ~40 `positioning_runs` a day, so zero is
+unambiguous. Dev does 2 `jobfit_runs` a *week*, so "0 in 24h" is a normal
+Tuesday. Vercel crons run on every project deploying this `vercel.json`, and
+the staging project deploys as "production" — so without the guard, staging
+would send daily false alarms, they would get filtered, and the real alert
+would be filtered with them. That is precisely the failure mode this commit
+exists to prevent.
+
+The monitor still runs and still writes its heartbeat in every environment,
+which is what makes it verifiable on dev. It only declines to email.
+
+**Required environment variables:**
+
+| Variable | Where | Effect |
+|---|---|---|
+| `CRON_SECRET` | every env running the cron | bearer token Vercel Cron sends; without it the route 401s (fail closed) |
+| `MONITOR_ALERTS_ENABLED` | **prod only**, set to `true` | enables the email. Absent or anything else = never emails |
+| `HEALTHCHECK_PING_URL` | prod | Healthchecks.io dead-man's switch. Ping skipped if unset |
+
+---
+
 ## Open work
 
 | | Status |
 |---|---|
 | Commit A — Tier 1 signal | done 2026-08-05 |
-| Commit B — reconciliation query | proposed, not built |
+| Commit B — reconciliation monitor | built 2026-08-05, dev only — NOT yet on prod |
 | Commit C — stripe refund alerting | proposed, not built |
 | Tiers 3, 4, 5 | no changes, by decision |
