@@ -104,9 +104,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Newest wins if more than one exists. Nothing creates duplicates today,
     // but reading defensively costs nothing and beats a 500 if that changes.
+    //
+    // `generated` is READ here but never written here — POST .../prep/generate
+    // owns it, and PATCH's allowlist still refuses it. Returning it means a
+    // cached prep renders on page load with no second round trip and no call.
     const { data, error } = await supabase
       .from("interview_prep_runs")
-      .select("id, interview_id, jobfit_run_id, checklist_state, created_at, updated_at")
+      .select("id, interview_id, jobfit_run_id, checklist_state, generated, created_at, updated_at")
       .eq("interview_id", id)
       .eq("profile_id", profileId)
       .order("created_at", { ascending: false })

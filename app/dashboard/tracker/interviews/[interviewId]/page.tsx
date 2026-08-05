@@ -37,6 +37,7 @@ import {
   groupState, orderedGroups, type PrepGroup,
 } from "../../prepChecklist"
 import { interviewStageLabel, interviewStatusLabel, interviewStatusMeaning } from "../../vocab"
+import type { PrepGenerated } from "../../../../../lib/interviewPrep/validate"
 
 /** Offsite, so it opens in a new tab rather than losing someone's prep page. */
 const PLAYBOOK_URL = "https://www.youwerenevertold.com/interview-playbook"
@@ -63,6 +64,9 @@ type App = {
   signal_decision: string | null
 }
 
+/** What the generator stores, plus the frozen thin-JD verdict. */
+type Prep = PrepGenerated & { jd_thin?: boolean }
+
 /**
  * The four countdown states, all off the existing daysUntil — no new parsing.
  * A past interview says so plainly rather than showing a negative number.
@@ -86,6 +90,13 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+
+  // The generated zone. `generating` drives the button; `genErr` is shown in
+  // place of the blocks, because a failed generation must never leave the page
+  // looking like it succeeded with nothing to say.
+  const [generated, setGenerated] = useState<Prep | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const [genErr, setGenErr] = useState<string | null>(null)
 
   /** Always the newest checklist — see toggle() for why state alone is not enough. */
   const stateRef = useRef<Record<string, boolean>>({})
@@ -122,10 +133,36 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
       const loaded = safeState(j?.prep?.checklist_state)
       stateRef.current = loaded
       setChecklist(loaded)
+      // A prep generated earlier renders straight away. GET never calls the
+      // model and never creates a row, so this costs nothing.
+      if (j?.prep?.generated) setGenerated(j.prep.generated as Prep)
     }
 
     setLoading(false)
   }, [interviewId])
+
+  /**
+   * A BUTTON, never automatic. Generation costs real money and the artifact is
+   * cached on the inputs, so the second press is free but the first must be
+   * asked for. Same rule as commit 2's "creation is an interaction, not a
+   * visit" — a glance at an interview should not bill a generation.
+   */
+  async function generate() {
+    if (generating) return
+    setGenerating(true)
+    setGenErr(null)
+    const res = await authFetch(`/api/interviews/${interviewId}/prep/generate`, { method: "POST" })
+    const j = await res.json().catch(() => null)
+    setGenerating(false)
+    if (!res.ok || !j?.ok) {
+      setGenErr("We couldn't build this one. Try again.")
+      return
+    }
+    // ok:true with generated:null means there was nothing to work from — a
+    // missing run, or a run with no analysis behind it. The gate below already
+    // says what to do about that, so this quietly stays as it was.
+    if (j.generated) setGenerated(j.generated as Prep)
+  }
 
   useEffect(() => { void load() }, [load])
 
@@ -331,6 +368,170 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
     </section>
   )
 
+  /**
+   * The three blocks, in the order the brief fixed: where you're exposed, what
+   * they'll ask, what you say. Everything rendered here came back through the
+   * validator, so every answer already carries the resume lines behind it.
+   */
+  const questionGroups: Array<{ key: string; label: string; items: Array<{ ref: string; question: string }> }> =
+    generated
+      ? [
+          { key: "certain", label: "They will ask about these", items: generated.questions.certain },
+          { key: "probes", label: "Where they'll push", items: generated.questions.probes },
+          { key: "always", label: "The two that always come", items: generated.questions.always },
+        ].filter((g) => g.items.length > 0)
+      : []
+
+  const orderedQuestions = questionGroups.flatMap((g) => g.items)
+  const answerFor = (ref: string) => generated?.answers.find((a) => a.question_ref === ref) ?? null
+
+  const generatedZone = generated ? (
+    <section data-testid="prep-generated" style={{ marginTop: 18 }}>
+      {/* 1 — WHERE YOU'RE EXPOSED. The same verdict SIGNAL already gave, wearing
+          an interview hat. Teal for what you prove, coral for what they push
+          on: the meanings the rest of the app already uses, not new ones. */}
+      {(generated.exposure.prove.length > 0 || generated.exposure.probe.length > 0) && (
+        <div style={{ ...surfaceCard(S), borderRadius: 16, padding: "20px 24px" }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, color: S.text.primary, margin: 0 }}>
+            Where you&apos;re exposed
+          </h2>
+
+          {generated.exposure.prove.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ ...zoneLabel, color: S.meaning.replied.ink }}>They&apos;ll want you to prove</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {generated.exposure.prove.map((p) => (
+                  <div key={p.why_id} style={{ borderLeft: `3px solid ${S.meaning.replied.accent}`, paddingLeft: 14 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: S.text.primary, lineHeight: "22px" }}>
+                      {p.claim}
+                    </div>
+                    {p.how && (
+                      <div style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", marginTop: 3 }}>{p.how}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {generated.exposure.probe.length > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <div style={{ ...zoneLabel, color: S.meaning.attention.ink }}>They&apos;ll probe</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {generated.exposure.probe.map((p) => (
+                  <div key={p.risk_id} style={{ borderLeft: `3px solid ${S.meaning.attention.accent}`, paddingLeft: 14 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: S.text.primary, lineHeight: "22px" }}>
+                      {p.they_will_ask}
+                    </div>
+                    {p.how && (
+                      <div style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", marginTop: 3 }}>{p.how}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 2 — WHAT THEY'LL ASK. Questions only. The answers are the next block,
+          because reading the question and reaching for your own answer first is
+          the point of practising. */}
+      {orderedQuestions.length > 0 && (
+        <div style={{ ...surfaceCard(S), borderRadius: 16, padding: "20px 24px", marginTop: 12 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, color: S.text.primary, margin: 0 }}>
+            What they&apos;ll ask
+          </h2>
+
+          {/* Said once, plainly. The posting is what everything here was built
+              from, so a short one is a fact the reader needs, not an apology. */}
+          {generated.jd_thin && (
+            <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "8px 0 0" }}>
+              This posting is short, so these lean general. Rescoring with the full description sharpens them.
+            </p>
+          )}
+
+          {questionGroups.map((g) => (
+            <div key={g.key} style={{ marginTop: 16 }}>
+              <div style={{ ...zoneLabel, color: S.text.muted }}>{g.label}</div>
+              <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                {g.items.map((q) => (
+                  <li key={q.ref} style={{ fontSize: 15.5, color: S.text.secondary, lineHeight: "23px" }}>
+                    {q.question}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 3 — WHAT YOU SAY. Every answer shows the resume line it rests on,
+          VISIBLY: not on hover, not behind a disclosure. Someone about to walk
+          into a room has to be able to see what their answer stands on, and a
+          claim whose source is one click away is a claim nobody checks. */}
+      {generated.answers.length > 0 && (
+        <div style={{ ...surfaceCard(S), borderRadius: 16, padding: "20px 24px", marginTop: 12 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, color: S.text.primary, margin: 0 }}>
+            What you say
+          </h2>
+          <p style={{ fontSize: 14, color: S.text.muted, lineHeight: "21px", margin: "8px 0 0" }}>
+            Drafted from your own experience, never beyond it. What each answer rests on is underneath it.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 18 }}>
+            {orderedQuestions.map((q) => {
+              const a = answerFor(q.ref)
+              if (!a) return null
+              return (
+                <div key={q.ref} data-testid={`prep-answer-${q.ref}`}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: S.text.primary, lineHeight: "22px" }}>
+                    {q.question}
+                  </div>
+                  <p style={{ fontSize: 15.5, color: S.text.secondary, lineHeight: "24px", margin: "8px 0 0" }}>
+                    {a.answer}
+                  </p>
+                  <div style={{ marginTop: 10, paddingLeft: 12, borderLeft: `2px solid ${S.borderSoft}` }}>
+                    <div
+                      style={{
+                        fontSize: 11, fontWeight: 800, letterSpacing: 0.8,
+                        textTransform: "uppercase", color: S.text.dim, marginBottom: 4,
+                      }}
+                    >
+                      From your resume
+                    </div>
+                    {a.evidence.map((e) => (
+                      <div key={e.id} style={{ fontSize: 13.5, color: S.text.muted, lineHeight: "20px" }}>
+                        {e.text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* The way back to the reasoning. It lived on the entry card, which this
+          zone replaces once a prep exists, so without this it would vanish at
+          exactly the moment someone starts wondering where any of this came
+          from. Quiet, because the reading is the point and this is the source. */}
+      {app?.jobfit_run_id && (
+        <button
+          onClick={() => void openInSignal(app.jobfit_run_id!)}
+          style={{
+            background: "none", border: "none", padding: "14px 0 0",
+            color: S.action.quietInk, fontSize: 14, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+          }}
+        >
+          See your full analysis →
+        </button>
+      )}
+    </section>
+  ) : null
+
   return (
     <main style={{ maxWidth: 1080 }}>
       <a href="/dashboard/tracker?view=interviews" style={backLink}>← Back to your interviews</a>
@@ -431,11 +632,20 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
         </a>
       </div>
 
+      {/* ORDER. The generated read sits ABOVE the checklist, because it is what
+          you think about before you start ticking. Inside 24 hours the existing
+          imminent rule already put the checklist first and this falls in behind
+          it: at that point there is nothing left to read and everything left
+          to do. */}
+      {generatedZone}
+
       {!imminent && checklistBlock}
 
-      {/* Where commit 3's generated read lands. Two states, and the second is a
-          real conversion surface rather than an apology for missing data. */}
-      {hasRun ? (
+      {/* The three states of the generated zone's entry point: already built
+          (nothing here, the blocks are above), buildable, or nothing to build
+          from — and that last one is a real conversion surface rather than an
+          apology for missing data. */}
+      {generated ? null : hasRun ? (
         <section
           style={{
             ...surfaceCard(S), borderRadius: 16, padding: "22px 26px", marginTop: 14,
@@ -443,22 +653,43 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
           }}
         >
           <div style={{ fontSize: 17, fontWeight: 800, color: S.text.primary }}>
-            Your read on this role is coming.
+            Your read on this role
           </div>
           <p style={{ fontSize: 14.5, color: S.text.muted, lineHeight: "22px", margin: "8px 0 0", maxWidth: 620 }}>
-            We&apos;ll pull what SIGNAL already knows about this job into the questions you&apos;re most
-            likely to get, and the answers worth having ready.
+            We&apos;ll turn what SIGNAL already knows about this job into the questions you&apos;re most
+            likely to get, and what to say about them, drawn from your own experience.
           </p>
-          <button
-            onClick={() => void openInSignal(app!.jobfit_run_id!)}
-            style={{
-              background: "none", border: "none", padding: "12px 0 0",
-              color: S.action.quietInk, fontSize: 14, fontWeight: 700,
-              cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            See your full analysis →
-          </button>
+
+          {genErr && (
+            <p style={{ fontSize: 14, fontWeight: 700, color: S.meaning.error.ink, margin: "12px 0 0" }}>
+              {genErr}
+            </p>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 18, flexWrap: "wrap" }}>
+            <button
+              onClick={() => void generate()}
+              disabled={generating}
+              data-testid="prep-generate"
+              style={{
+                ...actionStyle(S, "primary"), borderRadius: 11, padding: "11px 20px",
+                fontSize: 14.5, fontFamily: "inherit", opacity: generating ? 0.6 : 1,
+                cursor: generating ? "default" : "pointer",
+              }}
+            >
+              {generating ? "Building…" : "Build my prep for this interview →"}
+            </button>
+            <button
+              onClick={() => void openInSignal(app!.jobfit_run_id!)}
+              style={{
+                background: "none", border: "none", padding: 0,
+                color: S.action.quietInk, fontSize: 14, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              See your full analysis →
+            </button>
+          </div>
         </section>
       ) : (
         <section
@@ -523,4 +754,9 @@ const backLink: React.CSSProperties = {
 const factLabel: React.CSSProperties = {
   fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase",
   color: S.text.muted, marginBottom: 10,
+}
+/** The sub-heading inside a generated block. Colour is set per use. */
+const zoneLabel: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase",
+  marginBottom: 10,
 }
