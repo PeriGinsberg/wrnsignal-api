@@ -72,12 +72,42 @@ export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
+/**
+ * The columns the networking surfaces need, and nothing else.
+ *
+ * WHY A SEPARATE PROJECTION. The unfiltered read below is `select("*")` plus
+ * two embeds plus coach annotations plus jobfit_runs.job_description, which is
+ * the whole pasted posting. On production that is up to 993 rows carrying full
+ * job descriptions. The contact record wants to say "you have applied to 2 jobs
+ * here" and must not pull megabytes of job text across the wire to do it.
+ *
+ * So `?company_id=` is not just a filter, it is a different, narrow read.
+ */
+const COMPANY_SCOPED_COLUMNS =
+  "id, company_name, job_title, application_status, applied_date, signal_score, signal_decision, created_at"
+
 export async function GET(req: NextRequest) {
   try {
     const { userId, email } = await getAuthedUser(req)
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
     const boundaryAt = await getHistoryBoundary(supabase, profileId)
+
+    // Scoped read for the networking surfaces: the applications at one company.
+    // Still filtered by profile_id, so a company_id belonging to someone else
+    // returns an empty list rather than their applications.
+    const companyId = new URL(req.url).searchParams.get("company_id")
+    if (companyId) {
+      const scoped = supabase
+        .from("signal_applications")
+        .select(COMPANY_SCOPED_COLUMNS)
+        .eq("profile_id", profileId)
+        .eq("company_id", companyId)
+      const { data: rows, error: scopedErr } = await applyHistoryBoundary(scoped, boundaryAt)
+        .order("created_at", { ascending: false })
+      if (scopedErr) throw new Error(`Applications lookup failed: ${scopedErr.message}`)
+      return withCorsJson(req, { ok: true, applications: rows ?? [] })
+    }
 
     const q = supabase
       .from("signal_applications")
