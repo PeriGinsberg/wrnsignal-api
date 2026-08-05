@@ -189,7 +189,10 @@ dead one gives false comfort:
    email so a Postmark outage cannot make a run that happened look like one
    that never did. `SELECT max(ran_at) FROM monitor_runs` — older than ~25h and
    it is dead.
-2. An external dead-man's switch (Healthchecks.io) is pinged on success. It
+2. An external dead-man's switch (Healthchecks.io) is pinged on success, and
+   the result is reported in the response as `pinged: true | false |
+   "not_configured"` — the monitor STATES whether its own switch is armed
+   rather than leaving it to be inferred. It
    alarms when the pings STOP, which is the only arrangement where the monitor
    failing is itself alerted on, because the alarm lives outside the system it
    watches.
@@ -227,7 +230,20 @@ which is what makes it verifiable on dev. It only declines to email.
 |---|---|---|
 | `CRON_SECRET` | every env running the cron | bearer token Vercel Cron sends; without it the route 401s (fail closed) |
 | `MONITOR_ALERTS_ENABLED` | **prod only**, set to `true` | enables the email. Absent or anything else = never emails |
-| `HEALTHCHECK_PING_URL` | prod | Healthchecks.io dead-man's switch. Ping skipped if unset |
+| `HEALTHCHECKS_PING_URL` | **prod only** | Healthchecks.io dead-man's switch. Response reports `pinged`; `"not_configured"` when unset |
+
+**Do NOT set `HEALTHCHECKS_PING_URL` on staging.** Staging pinging the
+production check would keep it green while production was dead — an alarm that
+actively lies, which is worse than no alarm.
+
+**A bug worth remembering, because it happened inside the tool built to prevent
+it.** The first version read `HEALTHCHECK_PING_URL` while the variable was
+named `HEALTHCHECKS_PING_URL`. It returned early on every run and the
+swallowing catch logged nothing, so the monitor answered `ok: true` while its
+own liveness switch had never been armed. Caught during dev verification by
+checking the variable name against the code rather than trusting the 200. The
+fix was not only the rename: the ping result is now surfaced in the response,
+so this class of failure is visible rather than silent.
 
 ---
 
