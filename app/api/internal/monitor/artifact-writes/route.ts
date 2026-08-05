@@ -94,15 +94,45 @@ function alertsEnabled(): boolean {
   return process.env.MONITOR_ALERTS_ENABLED === "true"
 }
 
-/** Best-effort ping to the external dead-man's switch. Never blocks the run. */
-async function pingDeadMansSwitch(): Promise<void> {
-  const url = process.env.HEALTHCHECK_PING_URL
-  if (!url) return
+/**
+ * Whether the dead-man's switch was actually armed on this run.
+ *
+ *   true             pinged, and the ping was accepted
+ *   false            configured, but the ping did not land
+ *   "not_configured" no URL set for this environment
+ */
+type PingResult = true | false | "not_configured"
+
+/**
+ * Best-effort ping to the external dead-man's switch. Never blocks the run,
+ * but ALWAYS reports what happened.
+ *
+ * This function shipped broken once and is worth the comment. It read
+ * HEALTHCHECK_PING_URL while the variable was named HEALTHCHECKS_PING_URL, so
+ * it returned early on every run and the swallowing catch meant nothing was
+ * logged — the monitor answered `ok: true` while its own liveness switch was
+ * never armed. That is precisely the false comfort this whole workstream
+ * exists to remove, reproduced inside the tool built to prevent it.
+ *
+ * The fix is not just the name: the RESULT is now returned and surfaced in the
+ * response body, so "the switch is armed" is something the monitor states
+ * rather than something a reader infers from silence.
+ *
+ * PROD ONLY, deliberately. Do NOT set this on staging: staging pinging the
+ * production check would keep it green while production was dead, which is
+ * worse than having no check at all — the alarm would be actively lying.
+ */
+async function pingDeadMansSwitch(): Promise<PingResult> {
+  const url = process.env.HEALTHCHECKS_PING_URL
+  if (!url) return "not_configured"
   try {
-    await fetch(url, { method: "POST" })
+    const res = await fetch(url, { method: "POST" })
+    return res.ok
   } catch {
-    // The ping failing is not the monitor failing. Healthchecks.io will alarm
-    // on its own if the pings stop, which is precisely the point.
+    // A failed ping is not a failed monitor, so this stays swallowed and the
+    // run still succeeds. Healthchecks.io will alarm on its own if the pings
+    // stop, which is the point. But it is reported, not hidden.
+    return false
   }
 }
 
@@ -184,11 +214,15 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    await pingDeadMansSwitch()
+    // Deliberately AFTER the heartbeat, so a slow or failing third party can
+    // never stop the run being recorded. That ordering is also why `pinged` is
+    // not in the heartbeat row: it is not known yet when that row is written.
+    const pinged = await pingDeadMansSwitch()
 
-    // `alerted` is returned so a manual run says plainly whether an email went
-    // out, rather than leaving you to guess from an empty inbox.
-    return Response.json({ ok: true, status, alerted, silentTables, unreadable, counts })
+    // `alerted` and `pinged` are returned so a manual run STATES its own
+    // liveness instead of leaving it to be inferred from an empty inbox or a
+    // dashboard that never went green.
+    return Response.json({ ok: true, status, alerted, pinged, silentTables, unreadable, counts })
   } catch (err: any) {
     // A thrown monitor is a dead monitor. Say so loudly, and deliberately do
     // NOT ping the dead-man's switch — letting Healthchecks.io notice the
