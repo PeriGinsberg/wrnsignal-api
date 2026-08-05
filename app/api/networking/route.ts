@@ -928,7 +928,16 @@ Make the messages feel specifically grounded in this user and this role.
       })
 
     if (insertErr) {
-      console.warn("networking_runs insert failed:", insertErr.message)
+      // ARTIFACT_WRITE_FAILED is a greppable marker, and console.ERROR not warn.
+      // Warn is filtered out of most log views by default, which is half of why
+      // positioning_runs stopped persisting on prod for two weeks with zero signal.
+      //
+      // Response behaviour is deliberately UNCHANGED — still 200 with the content.
+      // A reader with an unsaved result is better off than one with an error. This
+      // is about signal, not behaviour.
+      console.error(
+        `ARTIFACT_WRITE_FAILED table=networking_runs profileId=${profileId} reason=${insertErr.message}`,
+      )
     }
 
     // Track successful run
