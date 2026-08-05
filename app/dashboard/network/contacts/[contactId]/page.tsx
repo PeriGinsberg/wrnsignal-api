@@ -33,6 +33,7 @@ import { WhereThingsStand } from "./WhereThingsStand"
 import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
 import { NotesLog } from "./NotesLog"
+import { AppliedHere } from "./AppliedHere"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
 import {
   FIELD_LABELS, RELATIONSHIP_LABELS, RELATIONSHIPS, PRIORITIES, STAGE_PHASE,
@@ -56,7 +57,9 @@ type Contact = {
   next_due_reason: string | null
   reminder_override: string | null
   notes: string | null
-  network_companies?: { name: string } | null
+  // `id` is what AppliedHere queries on. The endpoint already returns it
+  // (network_companies(id, name, tier, status)); only this type omitted it.
+  network_companies?: { id: string; name: string } | null
 }
 type Action = { id: string; type: string; action_date: string; note: string | null; author_role: string }
 
@@ -190,6 +193,17 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
           identity, so you know where this is before your eye reaches the
           message you are about to send. */}
       <WhereThingsStand contact={contact} onChanged={load} />
+
+      {/* ── What you've already applied to here ─────────────────
+          Directly above the send panel, because it changes the message. A
+          contact with no company, or a company with no linked applications,
+          renders nothing at all. */}
+      {contact.network_companies?.id && (
+        <AppliedHere
+          companyId={contact.network_companies.id}
+          companyName={contact.network_companies.name}
+        />
+      )}
 
       {/* ── The thing you came here to do ──────────────────────── */}
       <ActionBox contact={contact as never} onLogged={load} />
