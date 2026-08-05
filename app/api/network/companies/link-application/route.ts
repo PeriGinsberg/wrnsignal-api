@@ -19,12 +19,17 @@
 //                                     client_profile_id, so a cross-profile
 //                                     link is unrepresentable rather than
 //                                     rejected.
+//   { application_id, company_id: null }
+//                                     UNLINK. Same ownership gate.
 //
 // The name path is what the post-scan Framer prompt calls, so Framer holds no
 // logic that would have to be reimplemented on mobile later.
 //
-// NOT IN THIS ROUTE: unlinking. Nothing here can set company_id back to NULL.
-// See the note at the end of the commit message.
+// A LINK MUST BE CORRECTABLE. The suggestion is name-based and the user
+// confirms it, so some confirmations will be wrong, and without an unlink the
+// mistake is permanent: the migration's ON DELETE SET NULL only fires if the
+// company itself is deleted, which is a far bigger act than fixing a mislink.
+// Same class as the interview editor that went missing in the tracker rebuild.
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
@@ -97,9 +102,18 @@ export async function POST(req: NextRequest) {
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
+    // ABSENT AND EXPLICITLY NULL ARE DIFFERENT REQUESTS, and collapsing them
+    // with `?? null` would make every link-by-name request read as an unlink.
+    // `company_id: null` means unlink; no company_id at all means fall through
+    // to company_name.
+    const hasCompanyId = Object.prototype.hasOwnProperty.call(body, "company_id")
+    const companyId = hasCompanyId
+      ? body.company_id === null ? null : String(body.company_id)
+      : undefined
+
     const outcome = await linkApplicationToCompany(supabase, profileId, {
       applicationId: String(body.application_id ?? ""),
-      companyId: body.company_id == null ? null : String(body.company_id),
+      companyId,
       companyName: body.company_name == null ? null : String(body.company_name),
     })
 
@@ -109,11 +123,14 @@ export async function POST(req: NextRequest) {
 
     return withCorsJson(req, {
       ok: true,
-      company: { id: outcome.companyId, name: outcome.companyName },
+      // Null on an unlink, so the caller can render the empty state without
+      // inspecting a flag it might forget to read.
+      company: outcome.companyId ? { id: outcome.companyId, name: outcome.companyName } : null,
       // Lets the caller word it correctly: "Added to your board" versus
       // "Linked to Globex". The user pressed one button and deserves to know
       // which of the two happened.
       created: outcome.created,
+      unlinked: outcome.unlinked,
     })
   } catch (err: any) {
     const msg = err?.message || String(err)

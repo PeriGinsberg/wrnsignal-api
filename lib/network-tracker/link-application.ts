@@ -31,12 +31,22 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 export const UNIQUE_VIOLATION = "23505"
 
 export type LinkOutcome =
-  | { ok: true; companyId: string; companyName: string; created: boolean }
+  | { ok: true; companyId: string | null; companyName: string | null; created: boolean; unlinked: boolean }
   | { ok: false; status: 400 | 403 | 404 | 500; error: string }
 
 export type LinkInput = {
   applicationId: string
-  /** Link to a company the user picked. Ownership is CHECKED. */
+  /**
+   * THREE STATES, and the difference between two of them is the whole unlink
+   * feature:
+   *
+   *   a string    link to that company. Ownership is CHECKED.
+   *   null        UNLINK. Set company_id back to NULL.
+   *   undefined   not provided; fall through to companyName.
+   *
+   * `null` and `undefined` must not be collapsed. The caller distinguishes them
+   * by whether the key is present in the request body at all.
+   */
   companyId?: string | null
   /** Find-or-create by name. Ownership is STRUCTURAL, never checked. */
   companyName?: string | null
@@ -111,12 +121,14 @@ export async function linkApplicationToCompany(
   profileId: string,
   input: LinkInput,
 ): Promise<LinkOutcome> {
+  // Read BEFORE clean(), which cannot tell null from undefined.
+  const wantsUnlink = input.companyId === null
   const applicationId = clean(input.applicationId)
   const companyId = clean(input.companyId)
   const companyName = clean(input.companyName)
 
   if (!applicationId) return { ok: false, status: 400, error: "application_id is required" }
-  if (!companyId && !companyName) {
+  if (!wantsUnlink && !companyId && !companyName) {
     return { ok: false, status: 400, error: "company_id or company_name is required" }
   }
 
@@ -131,6 +143,26 @@ export async function linkApplicationToCompany(
   if (appErr) return { ok: false, status: 500, error: `Application lookup failed: ${appErr.message}` }
   if (!app) return { ok: false, status: 404, error: "Application not found" }
   if (app.profile_id !== profileId) return { ok: false, status: 403, error: "Not authorized" }
+
+  // 1b. UNLINK. Same ownership gate as linking, deliberately: correcting a
+  //     mistake is not a lesser operation than making one, and an unlink on
+  //     someone else's application is the same trespass as a link.
+  //
+  //     This clears the link ONLY. The network_companies row survives, because
+  //     the user said "this application is not for that company", not "delete
+  //     that company from my board". Deleting it would also take its contacts.
+  //
+  //     Idempotent: unlinking an already-unlinked application succeeds. The
+  //     user asked for it to be unlinked and it is.
+  if (wantsUnlink) {
+    const { error: clearErr } = await supabase
+      .from("signal_applications")
+      .update({ company_id: null, updated_at: new Date().toISOString() })
+      .eq("id", applicationId)
+      .eq("profile_id", profileId)
+    if (clearErr) return { ok: false, status: 500, error: `Unlink failed: ${clearErr.message}` }
+    return { ok: true, companyId: null, companyName: null, created: false, unlinked: true }
+  }
 
   // 2. Resolve the company.
   let resolved: { id: string; name: string; created: boolean }
@@ -168,5 +200,11 @@ export async function linkApplicationToCompany(
     .eq("profile_id", profileId)
   if (updErr) return { ok: false, status: 500, error: `Link failed: ${updErr.message}` }
 
-  return { ok: true, companyId: resolved.id, companyName: resolved.name, created: resolved.created }
+  return {
+    ok: true,
+    companyId: resolved.id,
+    companyName: resolved.name,
+    created: resolved.created,
+    unlinked: false,
+  }
 }

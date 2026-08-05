@@ -136,6 +136,78 @@ async function main() {
       fake.tables.network_companies.filter((c) => c.client_profile_id === THEIRS).length === 1)
   }
 
+  // ── UNLINK ──────────────────────────────────────────────────────────────────
+  // A mislink must be correctable. The suggestion is name-based and the user
+  // confirms it, so some confirmations will be wrong, and the migration's
+  // ON DELETE SET NULL only fires if the company itself is deleted.
+
+  console.log("\nunlinking")
+  {
+    const fake = makeFake({
+      signal_applications: [{ id: "app-1", profile_id: MINE, company_id: "co-1" }],
+      network_companies: [{ id: "co-1", name: "Globex", client_profile_id: MINE }],
+    })
+    const out = await linkApplicationToCompany(fake.client, MINE, {
+      applicationId: "app-1",
+      companyId: null,
+    })
+    ok("company_id: null clears the link", out.ok === true && out.unlinked === true)
+    ok("...and reports no company back", out.ok === true && out.companyId === null)
+    ok("...and the row is actually NULL", fake.tables.signal_applications[0].company_id === null)
+    // The user said "this application is not for that company", not "delete
+    // that company". Deleting it would take its contacts with it.
+    ok("...and the company row SURVIVES", fake.tables.network_companies.length === 1)
+    const upd = fake.calls.find((c) => c.op === "update")
+    ok("...and the UPDATE is scoped by profile_id as well as id",
+      upd?.filters.id === "app-1" && upd?.filters.profile_id === MINE)
+  }
+
+  {
+    // Correcting a mistake is not a lesser operation than making one.
+    const fake = makeFake({
+      signal_applications: [{ id: "app-theirs", profile_id: THEIRS, company_id: "co-theirs" }],
+      network_companies: [{ id: "co-theirs", name: "Globex", client_profile_id: THEIRS }],
+    })
+    const out = await linkApplicationToCompany(fake.client, MINE, {
+      applicationId: "app-theirs",
+      companyId: null,
+    })
+    ok("unlinking someone else's application is rejected", out.ok === false && out.status === 403)
+    ok("...with NO write attempted", !fake.calls.some((c) => c.op === "update"))
+    ok("...and their link intact", fake.tables.signal_applications[0].company_id === "co-theirs")
+  }
+
+  {
+    const fake = makeFake({
+      signal_applications: [{ id: "app-1", profile_id: MINE, company_id: null }],
+      network_companies: [],
+    })
+    const out = await linkApplicationToCompany(fake.client, MINE, { applicationId: "app-1", companyId: null })
+    ok("unlinking an already-unlinked application succeeds", out.ok === true && out.unlinked === true)
+  }
+
+  {
+    // THE REGRESSION THIS GUARDS. If the route collapsed absent into null with
+    // `?? null`, every link-by-name request would silently become an unlink.
+    const fake = makeFake({
+      signal_applications: [{ id: "app-1", profile_id: MINE, company_id: null }],
+      network_companies: [{ id: "co-1", name: "Globex", client_profile_id: MINE }],
+    })
+    const out = await linkApplicationToCompany(fake.client, MINE, {
+      applicationId: "app-1",
+      companyName: "Globex",
+      // companyId deliberately ABSENT, not null.
+    })
+    ok("an absent company_id is NOT an unlink", out.ok === true && out.unlinked === false)
+    ok("...it links by name as normal", out.ok === true && out.companyId === "co-1")
+  }
+
+  {
+    const fake = makeFake({ signal_applications: [], network_companies: [] })
+    const out = await linkApplicationToCompany(fake.client, MINE, { applicationId: "nope", companyId: null })
+    ok("unlinking a missing application is a 404", out.ok === false && out.status === 404)
+  }
+
   // ── ORDINARY PATHS ──────────────────────────────────────────────────────────
 
   console.log("\nlinking by id")
