@@ -335,9 +335,14 @@ console.log("\nbuildUserPrompt")
   ok("every requirement id is included", src.requirements.every((r) => p.includes(`[${r.id}]`)))
   ok("the ref format is spelled out for the model", p.includes("req:<id>") && p.includes("always:why_you"))
   // The resume itself is deliberately NOT sent — only the engine's chosen facts.
-  ok("the four grounding rules are in the system prompt",
-    SYSTEM_PROMPT.includes("RULE 1") && SYSTEM_PROMPT.includes("RULE 2")
-    && SYSTEM_PROMPT.includes("RULE 3") && SYSTEM_PROMPT.includes("RULE 4"))
+  ok("all six rules are in the system prompt",
+    ["RULE 1", "RULE 2", "RULE 3", "RULE 4", "RULE 5", "RULE 6"].every((r) => SYSTEM_PROMPT.includes(r)))
+  ok("the formatting rule bans markdown as well as dashes",
+    SYSTEM_PROMPT.includes("em dashes") && SYSTEM_PROMPT.includes("no asterisks"))
+  // Observed live: "a genuine passion for learning" and "not looking for a job,
+  // looking to build a career". Neither is grounded in anything.
+  ok("the enthusiasm rule names the failure and gives a test",
+    SYSTEM_PROMPT.includes("passionate") && SYSTEM_PROMPT.includes("different candidate's prep"))
   ok("the system prompt forbids company knowledge beyond the JD",
     SYSTEM_PROMPT.includes("You do not know this company"))
 }
@@ -354,19 +359,48 @@ console.log("\nbuildUserPrompt")
 
 // ── validate ────────────────────────────────────────────────────────────────
 
-console.log("\nprose — no em dashes")
-ok("a spaced em dash becomes a comma",
+console.log("\nprose — house style")
+// THE FOUR STRINGS BELOW ARE VERBATIM FROM A LIVE GOLDMAN SACHS GENERATION on
+// 2026-08-05. The first version of this function was written against invented
+// examples with spaces around the dashes, and every dash Haiku actually
+// produced was unspaced, so the rule was exactly backwards.
+ok("an UNSPACED em dash is a clause break, not a word join",
+  prose("Explain how you managed the $80,000+ budget—what systems you used.")
+    === "Explain how you managed the $80,000+ budget, what systems you used.")
+ok("a numeric range keeps a hyphen and does NOT become a comma",
+  prose("candidates with 2–3 years of finance experience")
+    === "candidates with 2-3 years of finance experience")
+ok("a pair of unspaced dashes around an aside both convert",
+  prose("strong technical skills—advanced Excel and modeling—with a track record")
+    === "strong technical skills, advanced Excel and modeling, with a track record")
+ok("markdown emphasis is stripped, not printed",
+  prose("the depth of what you *have* done in that year—especially the Excel modeling")
+    === "the depth of what you have done in that year, especially the Excel modeling")
+
+ok("a spaced em dash still becomes a comma",
   prose("You did the work — say so.") === "You did the work, say so.")
-ok("an en dash is treated the same",
+ok("an en dash between words is treated the same",
   prose("Two years – nearly three – in reporting.") === "Two years, nearly three, in reporting.")
-// A dash with no spaces is joining words, not separating clauses.
-ok("a joining dash becomes a plain hyphen", prose("a well—timed answer") === "a well-timed answer")
+// A REAL HYPHEN is a different character and is never touched. That is what
+// makes converting every dash safe: genuine word-joining does not use a dash.
 ok("an existing hyphen is untouched", prose("a well-timed answer") === "a well-timed answer")
+ok("a hyphenated compound survives", prose("state-of-the-art systems") === "state-of-the-art systems")
 ok("several dashes in one string all go", !prose("a — b — c — d").includes("—"))
 ok("no doubled comma is left behind", !prose("first, — second").includes(",,"))
 ok("no space before a comma is left behind", !/\s,/.test(prose("first , — second")))
 ok("a dash before a full stop does not strand a comma",
   prose("that is the point —.") === "that is the point.")
+
+console.log("\nprose — markdown")
+ok("bold is unwrapped", prose("what you **have** done") === "what you have done")
+ok("italic is unwrapped", prose("what you *have* done") === "what you have done")
+ok("an orphan asterisk is removed", prose("what you *have done") === "what you have done")
+ok("underscore emphasis is unwrapped", prose("what you _have_ done") === "what you have done")
+ok("backticks go", prose("use the `pivot` table") === "use the pivot table")
+// snake_case and mid-word underscores are not emphasis and must survive.
+ok("a snake_case token is not treated as emphasis",
+  prose("the job_signals field") === "the job_signals field")
+
 ok("ordinary text is unchanged", prose("Plain, ordinary text.") === "Plain, ordinary text.")
 ok("empty in, empty out", prose(null) === "" && prose("") === "")
 ok("the max length still applies", prose("x".repeat(50), 10).length === 10)

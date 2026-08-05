@@ -28,8 +28,10 @@ import { createHash } from "node:crypto"
  *   3  Supporting requirement_units admitted alongside core, and the
  *      REQUIREMENTS header reworded to match. Different material in front of
  *      the model means a different answer is owed.
+ *   4  RULE 5 widened to ban markdown, and RULE 6 added against ungrounded
+ *      enthusiasm claims. Both were observed in live output.
  */
-export const PROMPT_VERSION = 3
+export const PROMPT_VERSION = 4
 
 export type ContentHashInputs = {
   model: string

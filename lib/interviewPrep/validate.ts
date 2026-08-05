@@ -43,32 +43,61 @@ const text = (v: unknown, max = 1200): string =>
   typeof v === "string" ? v.trim().slice(0, max) : ""
 
 /**
- * Model-authored prose, with em and en dashes removed.
+ * Model-authored prose, normalised to the house style.
  *
- * ASKED FOR IN THE PROMPT AND ENFORCED HERE, because punctuation is the least
+ * ASKED FOR IN THE PROMPT AND ENFORCED HERE, because formatting is the least
  * reliable instruction you can give a model: it complies for a few sentences
- * and then reaches for the dash again mid-paragraph. A rule that holds 90% of
- * the time reads as a bug the other 10%.
+ * and then drifts. A rule that holds 90% of the time reads as a bug the other
+ * 10%.
  *
- * A dash between spaces becomes a comma, which is what it was standing in for.
- * A dash with no spaces is joining two words, so it becomes a plain hyphen and
- * "well-timed" survives. Doubled-up punctuation from either substitution is
- * then collapsed.
+ * THE DASH RULE WAS BACKWARDS IN THE FIRST VERSION, and the live output proved
+ * it. Every dash Haiku actually produced was UNSPACED:
+ *
+ *   "budget—what systems you used"
+ *   "skills—advanced Excel, financial modeling—with a track record"
+ *
+ * The old code only converted a spaced dash to a comma and treated an unspaced
+ * one as joining two words, which would have turned that into "budget-what".
+ * Backwards: an unspaced em dash is the ordinary American clause break, and
+ * genuine word-joining uses a hyphen, which is a different character and is
+ * left alone. So every em dash is a clause break now, whatever surrounds it.
+ *
+ * The one real exception is a NUMERIC RANGE, where an en dash means "to":
+ * "2–3 years" must become "2-3 years", not "2, 3 years".
+ *
+ * MARKDOWN is stripped rather than rendered. Haiku emphasises mid-sentence
+ * ("what you *have* done") and the page prints the asterisks literally. Strip
+ * is simpler than teaching the renderer inline markdown, and the emphasis was
+ * never asked for.
  *
  * DELIBERATELY NOT APPLIED TO EVIDENCE. Those strings are the candidate's own
  * resume lines, not the model's writing, and rewriting someone's resume to fit
- * our house style would be editing the source to match the copy of it.
+ * our house style would be editing the source to match the copy of it. The live
+ * scan confirms the boundary holds: 11 dashes in model output, zero in evidence.
  */
 export function prose(v: unknown, max = 1200): string {
-  const t = text(v, max)
+  let t = text(v, max)
   if (!t) return ""
+
+  // 1. Markdown emphasis. Paired first, then any orphan marker left behind.
+  t = t
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/\*/g, "")
+    .replace(/(^|[^A-Za-z0-9])__([^_]+)__(?![A-Za-z0-9])/g, "$1$2")
+    .replace(/(^|[^A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])/g, "$1$2")
+    .replace(/`/g, "")
+
+  // 2. A numeric range is the one place a dash means "to", not a clause break.
+  t = t.replace(/(\d)\s*[—–]+\s*(\d)/g, "$1-$2")
+
+  // 3. A dash running into punctuation is standing in for nothing.
+  t = t.replace(/\s*[—–]+\s*([.,!?;:])/g, "$1")
+
+  // 4. Everything else is a clause break, spaced or not.
+  t = t.replace(/\s*[—–]+\s*/g, ", ")
+
   return t
-    // Order matters. A dash running into terminal punctuation is standing in
-    // for nothing, so it is deleted rather than turned into a stray comma or,
-    // worse, falling through to the word-joining branch and leaving "point -."
-    .replace(/\s*[—–]+\s*([.,!?;:])/g, "$1")
-    .replace(/\s+[—–]+\s+/g, ", ")
-    .replace(/[—–]+/g, "-")
     .replace(/,\s*,/g, ",")
     .replace(/\s+,/g, ",")
     .replace(/\s{2,}/g, " ")

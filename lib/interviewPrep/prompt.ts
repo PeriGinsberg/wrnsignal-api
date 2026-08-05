@@ -41,7 +41,9 @@ export const SYSTEM_PROMPT = [
   "",
   "RULE 4 — OUTPUT. Return only valid JSON matching the requested shape. No markdown, no fences, no commentary before or after.",
   "",
-  "RULE 5 — PUNCTUATION. Never use em dashes or en dashes. Use a comma, a full stop, or a new sentence. This is a house style rule and it applies to every string you write.",
+  "RULE 5 — PUNCTUATION AND FORMATTING. Never use em dashes or en dashes. Use a comma, a full stop, or a new sentence. Never use markdown: no asterisks, no underscores, no backticks, no bold, no italics. Plain sentences only. This applies to every string you write.",
+  "",
+  "RULE 6 — NO ENTHUSIASM. Never claim the candidate is passionate, excited, eager, motivated, deeply interested, or genuinely interested in anything. Never write \"not looking for a job, looking for a career\" or any variation. You cannot know what someone feels, an interviewer discounts it on sight, and it takes the place of a fact that would have helped. Every sentence must carry something from the EVIDENCE block. The test: if a sentence would read exactly the same in a different candidate's prep, delete it.",
 ].join("\n")
 
 function block(title: string, body: string): string {
