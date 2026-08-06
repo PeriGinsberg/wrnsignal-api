@@ -1751,6 +1751,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         window.top!.location.replace(url)
     }
 
+    // Same mechanism as goToDashboard: this component runs inside a Framer
+    // iframe, so an <a href> would open the dashboard INSIDE the frame. The
+    // token rides along for the same reason it does there.
+    function goToNetworkCompanies() {
+        if (typeof window === "undefined") return
+        const url = accessToken
+            ? `${API_BASE}/dashboard/network/companies?token=${accessToken}`
+            : `${API_BASE}/dashboard/network/companies`
+        window.top!.location.replace(url)
+    }
+
     function runNewJob(isSilent = false) {
         if (!isSilent) clearErrorAndDebug()
         setJob("")
@@ -2652,6 +2663,215 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             goTo("positioning")
         }
 
+        // -- Networking prompt ------------------------------------
+        // ITS IMPORTANCE IS INVERSE TO THE VERDICT, and placement follows.
+        //
+        // On a PASS this is the best remaining action on the page: the role is
+        // gone, the company is not, and someone inside could get you the next
+        // one there. So on a Pass it moves INSIDE "Your move", becomes the
+        // filled action, and "Run New Job" demotes to text. Before this, the
+        // only offer on a rejection screen was a full-width button that threw
+        // the job away, with the alternative sitting under it at 7% opacity.
+        // A screen whose sole action is discard has nothing to offer, which is
+        // why the prompt got walked past.
+        //
+        // On every other verdict the user has a real next step (Positioning),
+        // so this stays a secondary strip.
+        //
+        // ctxCompany rather than a second read of job_signals: it already
+        // falls back through job context and the job text, so a cached result
+        // with a thin job_signals still names the company.
+        const netPromptVisible =
+            Boolean(jobfitApplicationId) && Boolean(ctxCompany)
+        // The Pass takeover needs a company to offer. Without one there is
+        // nothing to promote, so the screen keeps its original CTA rather than
+        // losing its only action.
+        const netPassTakeover =
+            netPromptVisible && isPass && netPromptState !== "dismissed"
+        // Suppression of the full-width Pass CTA applies only while the prompt
+        // is still ASKING. Once the company is added, "Run a new job" is gone
+        // from the block above (the confirmation replaced it), so the original
+        // button has to come back or the screen is a dead end with no way to
+        // start another scan.
+        const netPassAsking = netPassTakeover && netPromptState !== "added"
+
+        function renderNetPrompt(variant: "pass" | "strip") {
+            if (!netPromptVisible || netPromptState === "dismissed") return null
+            const inPass = variant === "pass"
+
+            if (netPromptState === "added") {
+                return (
+                    <div
+                        style={{
+                            marginTop: inPass ? 12 : 0,
+                            padding: inPass ? 0 : "14px 16px",
+                            borderRadius: inPass ? 0 : 12,
+                            background: inPass
+                                ? "transparent"
+                                : "rgba(81,173,229,0.14)",
+                            border: inPass
+                                ? "none"
+                                : "1px solid rgba(81,173,229,0.35)",
+                            fontSize: 13.5,
+                            color: "#CFE9FB",
+                            lineHeight: "20px",
+                        }}
+                    >
+                        {netPromptCompany ?? ctxCompany} is on your networking
+                        board.{" "}
+                        {/* On a Pass there is nothing else to do on this screen
+                            once this is done, so the confirmation carries the
+                            exit. Elsewhere Positioning is still the next step
+                            and this must not pull away from it. */}
+                        {inPass ? (
+                            <button
+                                type="button"
+                                onClick={goToNetworkCompanies}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    padding: 0,
+                                    color: "#FEB06A",
+                                    fontWeight: 800,
+                                    fontSize: 13.5,
+                                    fontFamily: "inherit",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Find someone there -&gt;
+                            </button>
+                        ) : (
+                            <span>
+                                Anyone you add there shows up on this job.
+                            </span>
+                        )}
+                    </div>
+                )
+            }
+
+            return (
+                <div
+                    style={{
+                        marginTop: inPass ? 12 : 0,
+                        padding: inPass ? 0 : "14px 16px",
+                        borderRadius: inPass ? 0 : 12,
+                        // Raised from 0.07/0.22. At 7% on this dark card the
+                        // strip was close to invisible, which is measurably
+                        // why it was missed.
+                        background: inPass
+                            ? "transparent"
+                            : "rgba(81,173,229,0.14)",
+                        border: inPass
+                            ? "none"
+                            : "1px solid rgba(81,173,229,0.35)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        flexWrap: "wrap" as const,
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: inPass ? 15 : 13.5,
+                            color: inPass
+                                ? "rgba(255,255,255,0.92)"
+                                : "#CFE9FB",
+                            lineHeight: inPass ? 1.5 : "20px",
+                            fontWeight: inPass ? 600 : 400,
+                            flex: 1,
+                            minWidth: 220,
+                        }}
+                    >
+                        {/* The Pass line ARGUES for the action rather than
+                            restating the offer, because the reader has just
+                            been told to walk away. */}
+                        {inPass
+                            ? "You will not get this role. Someone inside " +
+                              ctxCompany +
+                              " could get you the next one."
+                            : "Add " +
+                              ctxCompany +
+                              " to your networking tracker? One person inside beats ten applications."}
+                    </div>
+                    <button
+                        type="button"
+                        disabled={netPromptState === "busy"}
+                        onClick={() => addCompanyToNetworkBoard(ctxCompany)}
+                        style={{
+                            background: "#FEB06A",
+                            color: "#13294A",
+                            border: "none",
+                            borderRadius: 10,
+                            padding: inPass ? "12px 22px" : "9px 18px",
+                            fontSize: inPass ? 14.5 : 13.5,
+                            fontWeight: 800,
+                            fontFamily: "inherit",
+                            cursor:
+                                netPromptState === "busy"
+                                    ? "default"
+                                    : "pointer",
+                            opacity: netPromptState === "busy" ? 0.6 : 1,
+                        }}
+                    >
+                        {netPromptState === "busy"
+                            ? "Adding..."
+                            : inPass
+                              ? "Add " + ctxCompany + " to your networking board"
+                              : "Add"}
+                    </button>
+                    {/* On a Pass the discard action lives here as text: still
+                        reachable, no longer the headline. */}
+                    {inPass ? (
+                        <button
+                            type="button"
+                            onClick={() => runNewJob()}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                color: "#9FC4DC",
+                                fontSize: 13.5,
+                                fontWeight: 700,
+                                fontFamily: "inherit",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Run a new job
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setNetPromptState("dismissed")}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                color: "#9FC4DC",
+                                fontSize: 13,
+                                fontWeight: 700,
+                                fontFamily: "inherit",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Not now
+                        </button>
+                    )}
+                    {netPromptError ? (
+                        <div
+                            style={{
+                                fontSize: 12.5,
+                                color: "#FF9B80",
+                                fontWeight: 700,
+                                width: "100%",
+                            }}
+                        >
+                            {netPromptError}
+                        </div>
+                    ) : null}
+                </div>
+            )
+        }
+
         // ── Location label ───────────────────────────────────────
         const locLabel = locationCity
             ? locationCity
@@ -3258,11 +3478,28 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 >
                                     {nextStep}
                                 </div>
+
+                                {/* On a Pass the networking action IS the
+                                    move, so it lives inside this block rather
+                                    than as a footnote below the card. */}
+                                {netPassTakeover ? renderNetPrompt("pass") : null}
                             </div>
                         ) : null}
 
-                        {/* CTA */}
-                        {isPass ? (
+                        {/* CTA
+                            The Pass button is SUPPRESSED when the networking
+                            takeover is showing, because "Run a new job" has
+                            moved into the block above as text. Without the
+                            suppression the discard action would appear twice,
+                            once quietly and once as a full-width button, and
+                            the loud one would win.
+
+                            When there is no company to offer, netPassAsking
+                            is false and this renders exactly as it always did:
+                            a Pass with no alternative must not lose its only
+                            action. The same is true once the company has been
+                            ADDED, which is what stops that path dead-ending. */}
+                        {isPass && netPassAsking ? null : isPass ? (
                             <button
                                 style={jfCtaPass}
                                 onClick={onPrimaryClick}
@@ -3285,129 +3522,15 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     </div>
                 </div>
 
-                {/* ── NETWORKING PROMPT ──────────────────────────────────
-                    One line under the verdict. Renders ONLY when the scan
-                    produced an application to link and the user has not
-                    already answered, so it is never a permanent fixture.
+                {/* -- NETWORKING PROMPT (non-Pass) -------------------
+                    A secondary strip, because on these verdicts the user has
+                    a real next step and this must not compete with it. On a
+                    Pass it is not here at all: it has moved up into "Your
+                    move" as the primary action. See renderNetPrompt.
 
-                    Job tracking is untouched and still automatic: by the time
-                    this shows, the application row already exists. This asks
-                    one question, about the networking board.
-
-                    Dismissal is per scan, held in state rather than persisted.
-                    A new scan is a new question about a different company. */}
-                {jobfitApplicationId &&
-                    netPromptState !== "dismissed" &&
-                    (() => {
-                        const co = String(
-                            (jobFitResult as any)?.job_signals?.companyName ?? ""
-                        ).trim()
-                        if (!co) return null
-                        return (
-                            <div
-                                style={{
-                                    marginTop: 12,
-                                    padding: "14px 16px",
-                                    borderRadius: 12,
-                                    background: "rgba(81,173,229,0.07)",
-                                    border: "1px solid rgba(81,173,229,0.22)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 14,
-                                    flexWrap: "wrap" as const,
-                                }}
-                            >
-                                {netPromptState === "added" ? (
-                                    <div
-                                        style={{
-                                            fontSize: 13.5,
-                                            color: "#CFE9FB",
-                                            lineHeight: "20px",
-                                        }}
-                                    >
-                                        {netPromptCompany ?? co} is on your
-                                        networking board. Anyone you add there
-                                        shows up on this job.
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div
-                                            style={{
-                                                fontSize: 13.5,
-                                                color: "#CFE9FB",
-                                                lineHeight: "20px",
-                                                flex: 1,
-                                                minWidth: 220,
-                                            }}
-                                        >
-                                            Add {co} to your networking
-                                            tracker? One person inside beats
-                                            ten applications.
-                                        </div>
-                                        <button
-                                            type="button"
-                                            disabled={netPromptState === "busy"}
-                                            onClick={() =>
-                                                addCompanyToNetworkBoard(co)
-                                            }
-                                            style={{
-                                                background: "#FEB06A",
-                                                color: "#13294A",
-                                                border: "none",
-                                                borderRadius: 10,
-                                                padding: "9px 18px",
-                                                fontSize: 13.5,
-                                                fontWeight: 800,
-                                                fontFamily: "inherit",
-                                                cursor:
-                                                    netPromptState === "busy"
-                                                        ? "default"
-                                                        : "pointer",
-                                                opacity:
-                                                    netPromptState === "busy"
-                                                        ? 0.6
-                                                        : 1,
-                                            }}
-                                        >
-                                            {netPromptState === "busy"
-                                                ? "Adding…"
-                                                : "Add"}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setNetPromptState("dismissed")
-                                            }
-                                            style={{
-                                                background: "none",
-                                                border: "none",
-                                                padding: 0,
-                                                color: "#9FC4DC",
-                                                fontSize: 13,
-                                                fontWeight: 700,
-                                                fontFamily: "inherit",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            Not now
-                                        </button>
-                                    </>
-                                )}
-                                {netPromptError ? (
-                                    <div
-                                        style={{
-                                            fontSize: 12.5,
-                                            color: "#FF9B80",
-                                            fontWeight: 700,
-                                            width: "100%",
-                                        }}
-                                    >
-                                        {netPromptError}
-                                    </div>
-                                ) : null}
-                            </div>
-                        )
-                    })()}
+                    No marginTop: the gap made it read as a footnote floating
+                    under the card rather than part of it. */}
+                {!isPass ? renderNetPrompt("strip") : null}
 
                 {/* ── ACTION BANNER ── */}
                 {(whyCount > 0 || riskCount > 0) && (
