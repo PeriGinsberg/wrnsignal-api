@@ -255,6 +255,12 @@ export async function POST(req: NextRequest) {
             if (userCompanyName) (cleaned as any).job_signals.companyName = userCompanyName
           }
 
+          // Hoisted out of the try below so the RESPONSE can carry it. The
+          // route already auto-creates this row and then threw the id away;
+          // every caller that wanted to address the application had to go
+          // and find it again. See the fresh-scan branch for the full note.
+          let signalApplicationId: string | null = null
+
           // Ensure a signal_application exists even on cache hits
           try {
             let cachedCompany = String(cleaned?.job_signals?.companyName || "").trim()
@@ -302,6 +308,8 @@ export async function POST(req: NextRequest) {
               existingCachedApp = data
             }
 
+            if (existingCachedApp?.id) signalApplicationId = existingCachedApp.id
+
             if (!existingCachedApp?.id) {
               const { data: newCachedApp } = await supabase.from("signal_applications").insert({
                 profile_id: profileId,
@@ -317,6 +325,7 @@ export async function POST(req: NextRequest) {
                 interest_level: 1,
               }).select("id").single()
               if (newCachedApp?.id) {
+                signalApplicationId = newCachedApp.id
                 await logStatusChange(supabase, newCachedApp.id, null, "saved", profileId)
               }
               console.log("[jobfit/route] created application from cache hit:", cachedCompany || "(unknown)", cachedTitle || "(unknown)")
@@ -328,6 +337,7 @@ export async function POST(req: NextRequest) {
           return withCorsJson(req, {
             ...(cleaned as any),
             jobfit_run_id: (existingRun as any).id,  // FRD F1 — needed by /api/positioning/v2/start
+            signal_application_id: signalApplicationId,
             fingerprint_code,
             fingerprint_hash,
             jobfit_logic_version: JOBFIT_LOGIC_VERSION,
@@ -365,6 +375,18 @@ export async function POST(req: NextRequest) {
     // at the end of this function can reference it. Stays null if the
     // jobfit_runs insert fails (rare; v2/start surfaces as 400).
     let runId: string | null = null
+
+    // SAME REASON, and it should have been here from the start. This route
+    // auto-creates a signal_applications row on every authed scan, used the id
+    // to back-fill jobfit_runs.application_id, and then discarded it. So the
+    // caller was handed a run it could address and an application it could
+    // not, and anything wanting to act on the tracked job had to go looking
+    // for it by (company, title) and hope the match agreed with ours.
+    //
+    // Null is a real outcome, not a failure: the insert can fail, and the
+    // whole application block is wrapped in a catch that deliberately does not
+    // fail the scan. Callers must treat it as optional.
+    let signalApplicationId: string | null = null
 
     if (supabase && hasRealProfileId) {
       try {
@@ -491,6 +513,8 @@ export async function POST(req: NextRequest) {
 
             if (updateErr) console.warn("[jobfit/route] application update failed:", updateErr.message)
 
+            signalApplicationId = existingApp.id
+
             await supabase.from("jobfit_runs").update({
               application_id: existingApp.id,
             }).eq("id", runId)
@@ -519,6 +543,7 @@ export async function POST(req: NextRequest) {
             }
 
             if (newApp?.id) {
+              signalApplicationId = newApp.id
               await supabase.from("jobfit_runs").update({
                 application_id: newApp.id,
               }).eq("id", runId)
@@ -549,6 +574,7 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, {
       ...(result as any),
       jobfit_run_id: runId,  // FRD F1 — null if jobfit_runs insert failed (rare; v2/start surfaces as 400)
+      signal_application_id: signalApplicationId,
       fingerprint_code,
       fingerprint_hash,
       jobfit_logic_version: JOBFIT_LOGIC_VERSION,
