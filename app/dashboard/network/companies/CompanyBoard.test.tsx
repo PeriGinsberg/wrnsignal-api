@@ -89,19 +89,30 @@ describe("DeleteCompanyConfirm — guard rail scaled to what is lost", () => {
   })
 })
 
+/** Calls to one endpoint, so "fetched once" keeps meaning what it did. */
+const callsTo = (prefix: string) =>
+  authFetchMock.mock.calls.filter((c) => String(c[0]).startsWith(prefix)).length
+
 describe("CompanyCard — lazy load", () => {
   beforeEach(() => {
     authFetchMock.mockReset()
-    authFetchMock.mockImplementation(() =>
+    // Routed by URL: expanding now makes TWO independent reads, the roster and
+    // the applications at this company. Counting raw calls would say nothing
+    // about whether either one refetched, so the assertions below count each
+    // endpoint separately.
+    authFetchMock.mockImplementation((url: string) =>
       Promise.resolve({
         ok: true,
         status: 200,
-        json: async () => ({
-          ok: true,
-          contacts: [
-            { id: "p1", first_name: "Jordan", last_name: "Alvarez", title: "Analyst", stage: "replied" },
-          ],
-        }),
+        json: async () =>
+          String(url).startsWith("/api/applications")
+            ? { ok: true, applications: [] }
+            : {
+                ok: true,
+                contacts: [
+                  { id: "p1", first_name: "Jordan", last_name: "Alvarez", title: "Analyst", stage: "replied" },
+                ],
+              },
       } as unknown as Response),
     )
   })
@@ -115,8 +126,10 @@ describe("CompanyCard — lazy load", () => {
     fireEvent.click(screen.getByText("Nodal Exchange"))
 
     await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
-    expect(authFetchMock).toHaveBeenCalledTimes(1)
+    expect(callsTo("/api/network/contacts")).toBe(1)
     expect(authFetchMock.mock.calls[0][0]).toBe("/api/network/contacts?company_id=co1")
+    // The applications ride the SAME pass rather than fetching on mount.
+    expect(callsTo("/api/applications")).toBe(1)
   })
 
   it("fetches contacts on first expand only — collapse and re-expand do not refetch", async () => {
@@ -129,31 +142,110 @@ describe("CompanyCard — lazy load", () => {
     fireEvent.click(toggle)
 
     await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
-    expect(authFetchMock).toHaveBeenCalledTimes(1)
+    expect(callsTo("/api/network/contacts")).toBe(1)
     expect(authFetchMock.mock.calls[0][0]).toBe("/api/network/contacts?company_id=co1")
 
-    // Collapse, then re-expand: the row is still there and NO second request.
+    // Collapse, then re-expand: the row is still there and NO second request,
+    // for EITHER endpoint.
     fireEvent.click(screen.getByLabelText(/Collapse Nodal Exchange/))
     fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
     await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
-    expect(authFetchMock).toHaveBeenCalledTimes(1)
+    expect(callsTo("/api/network/contacts")).toBe(1)
+    expect(callsTo("/api/applications")).toBe(1)
   })
 
   it("does not refetch a genuinely empty company on re-expand", async () => {
     authFetchMock.mockImplementation(() =>
-      Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true, contacts: [] }) } as unknown as Response),
+      Promise.resolve({
+        ok: true, status: 200,
+        json: async () => ({ ok: true, contacts: [], applications: [] }),
+      } as unknown as Response),
     )
     render(<CompanyCard company={{ ...company, contact_count: 0 }} onChanged={() => {}} onRequestDelete={() => {}} />)
 
     fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
     await waitFor(() => expect(screen.getByText(/No contacts here yet/)).toBeTruthy())
-    expect(authFetchMock).toHaveBeenCalledTimes(1)
+    expect(callsTo("/api/network/contacts")).toBe(1)
 
     // `loaded` is tracked separately from contacts.length, so zero contacts must
     // not look like "never loaded" and trigger a refetch loop.
     fireEvent.click(screen.getByLabelText(/Collapse Nodal Exchange/))
     fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
     await waitFor(() => expect(screen.getByText(/No contacts here yet/)).toBeTruthy())
-    expect(authFetchMock).toHaveBeenCalledTimes(1)
+    expect(callsTo("/api/network/contacts")).toBe(1)
+  })
+})
+
+describe("CompanyCard — applications at this company", () => {
+  const withApps = (applications: unknown[], contactsOk = true) => (url: string) =>
+    Promise.resolve({
+      ok: contactsOk || String(url).startsWith("/api/applications"),
+      status: 200,
+      json: async () =>
+        String(url).startsWith("/api/applications")
+          ? { ok: true, applications }
+          : { ok: true, contacts: [{ id: "p1", first_name: "Jordan", last_name: "Alvarez", title: "Analyst", stage: "replied" }] },
+    } as unknown as Response)
+
+  const APP_ROWS = [
+    { id: "a1", company_name: "Nodal Exchange", job_title: "Operations Analyst", application_status: "applied", applied_date: "2026-08-12", signal_score: 71, signal_decision: "Review", created_at: "2026-08-10T00:00:00.000Z" },
+    { id: "a2", company_name: "Nodal Exchange", job_title: "Data Coordinator", application_status: "saved", applied_date: null, signal_score: null, signal_decision: null, created_at: "2026-08-09T00:00:00.000Z" },
+  ]
+
+  beforeEach(() => {
+    authFetchMock.mockReset()
+    authFetchMock.mockImplementation(withApps(APP_ROWS))
+  })
+
+  it("counts them, names the company, and links each role back to the tracker", async () => {
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    expect(await screen.findByText(/You've applied to 2 jobs at Nodal Exchange\./)).toBeTruthy()
+    expect(screen.getByRole("link", { name: "Operations Analyst" }).getAttribute("href"))
+      .toBe("/dashboard/tracker/a1")
+    // Same status words as the tracker itself, never a raw column value.
+    expect(screen.getByText("Applied")).toBeTruthy()
+    expect(screen.getByText("Saved")).toBeTruthy()
+  })
+
+  it("reads the scoped endpoint, not the full applications list", async () => {
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    await screen.findByText(/You've applied to 2 jobs/)
+    expect(authFetchMock.mock.calls.some((c) => c[0] === "/api/applications?company_id=co1")).toBe(true)
+  })
+
+  it("says nothing at all when no application is linked here", async () => {
+    authFetchMock.mockImplementation(withApps([]))
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
+    // Most companies on a board have no application against them. A line
+    // saying so on every card would be noise.
+    expect(screen.queryByTestId("company-applications")).toBeNull()
+    expect(screen.queryByText(/You've applied/)).toBeNull()
+  })
+
+  it("shows the roster even when the applications read fails", async () => {
+    authFetchMock.mockImplementation((url: string) =>
+      String(url).startsWith("/api/applications")
+        ? Promise.resolve({ ok: false, status: 500, json: async () => ({ ok: false }) } as unknown as Response)
+        : withApps([])(url))
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    // allSettled, not all: one read failing must not blank the other.
+    await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
+    // And it SAYS the check failed rather than reading as "nothing applied".
+    expect(await screen.findByText(/couldn't check your applications at Nodal Exchange/i)).toBeTruthy()
+  })
+
+  it("shows the applications even when the contacts read fails", async () => {
+    authFetchMock.mockImplementation((url: string) =>
+      String(url).startsWith("/api/network/contacts")
+        ? Promise.resolve({ ok: false, status: 500, json: async () => ({ ok: false }) } as unknown as Response)
+        : withApps(APP_ROWS)(url))
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    expect(await screen.findByText(/You've applied to 2 jobs at Nodal Exchange\./)).toBeTruthy()
   })
 })

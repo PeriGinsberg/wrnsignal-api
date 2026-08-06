@@ -29,6 +29,7 @@ import { LIGHT as S, action as actionStyle, tileStructural, tileIdle } from "../
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
 import { ContactCard } from "../contacts/ContactCard"
+import { AppliedList, appliedHeadline, type ScopedApp } from "../AppliedList"
 import { CompaniesIcon } from "../../../../components/icons"
 import { TIER_LABELS, TIER_GROUP_LABELS, UNSORTED_TIER, STATUS_LABELS, FIELD_LABELS, statusLabel } from "../vocab"
 import type { Contact } from "../contacts/ContactRow"
@@ -61,26 +62,66 @@ export function CompanyCard({
   const [loaded, setLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [apps, setApps] = useState<ScopedApp[]>([])
+  /**
+   * Separate from `err` AND from `loaded`: one read failing must not blank
+   * the other, and that means the applications cannot borrow the contacts'
+   * loaded flag. They did at first, so a failed roster read silently hid the
+   * applications as well, which is the exact coupling allSettled was chosen
+   * to avoid. Caught by the test that fails the contacts read.
+   */
+  const [appsLoaded, setAppsLoaded] = useState(false)
+  const [appsFailed, setAppsFailed] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
 
   const empty = co.contact_count === 0
 
+  /**
+   * Both halves of the expanded body, in ONE pass on first expand.
+   *
+   * The applications ride the existing lazy load rather than fetching on
+   * mount: a board can hold many companies and most are never opened, so a
+   * per-card read at mount would be a lot of work thrown away. Same reason the
+   * contacts were lazy in the first place.
+   *
+   * allSettled, not all: the two reads are INDEPENDENT and one failing must
+   * not blank the other. A networking board that cannot reach the tracker
+   * still shows its people.
+   */
   async function loadContacts() {
     setLoading(true)
     setErr(null)
+    setAppsFailed(false)
+    const [cRes, aRes] = await Promise.allSettled([
+      authFetch(`/api/network/contacts?company_id=${encodeURIComponent(co.id)}`),
+      authFetch(`/api/applications?company_id=${encodeURIComponent(co.id)}`),
+    ])
+
     try {
-      const res = await authFetch(`/api/network/contacts?company_id=${encodeURIComponent(co.id)}`)
-      const j = await res.json().catch(() => ({}))
-      if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not load contacts (${res.status})`)
+      if (cRes.status !== "fulfilled" || !cRes.value.ok) throw new Error("Could not load contacts")
+      const j = await cRes.value.json().catch(() => ({}))
+      if (!j?.ok) throw new Error(j?.error || "Could not load contacts")
       setContacts(j.contacts ?? [])
       setLoaded(true)
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e))
-    } finally {
-      setLoading(false)
     }
+
+    try {
+      if (aRes.status !== "fulfilled" || !aRes.value.ok) throw new Error("apps")
+      const j = await aRes.value.json().catch(() => ({}))
+      if (!j?.ok) throw new Error("apps")
+      setApps(j.applications ?? [])
+      setAppsLoaded(true)
+    } catch {
+      // Said out loud rather than rendering as "nothing applied here", which
+      // is a different fact and the one the reader would believe.
+      setAppsFailed(true)
+    }
+
+    setLoading(false)
   }
 
   async function toggle() {
@@ -248,6 +289,30 @@ export function CompanyCard({
 
           {loading && <div style={{ color: S.text.muted, fontSize: 14 }}>Loading contacts…</div>}
           {err && <div style={{ color: S.meaning.error.ink, fontSize: 13 }}>{err}</div>}
+
+          {/* WHAT YOU'VE APPLIED TO HERE. Context about the company, so it sits
+              above the people rather than below them: it changes how you read
+              the roster. Silent when there is nothing, because most companies
+              on a board have no application against them and a line saying so
+              on every card would be noise. */}
+          {appsFailed && (
+            <div style={{ color: S.text.muted, fontSize: 13.5 }}>
+              We couldn&apos;t check your applications at {co.name}.
+            </div>
+          )}
+          {appsLoaded && !appsFailed && apps.length > 0 && (
+            <div
+              data-testid="company-applications"
+              style={{ paddingLeft: 14, borderLeft: `3px solid ${S.meaning.replied.accent}` }}
+            >
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: S.text.primary, lineHeight: "21px" }}>
+                {appliedHeadline(apps.length, co.name)}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <AppliedList applications={apps} />
+              </div>
+            </div>
+          )}
 
           {loaded && contacts.length === 0 && !addOpen && (
             <div

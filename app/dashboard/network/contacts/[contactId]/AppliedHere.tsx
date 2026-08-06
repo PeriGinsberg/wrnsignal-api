@@ -23,21 +23,9 @@
 // fact this component exists to surface. So a failure says so in one line.
 
 import { useCallback, useEffect, useState } from "react"
-import { LIGHT as S, status as statusStyle } from "../../../../../lib/theme/surfaces"
+import { LIGHT as S } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
-import { statusLabel, statusMeaning } from "../../../tracker/vocab"
-import { formatShort } from "../../../../../lib/localDate"
-
-type ScopedApp = {
-  id: string
-  company_name: string
-  job_title: string
-  application_status: string
-  applied_date: string | null
-  signal_score: number | null
-  signal_decision: string | null
-  created_at: string
-}
+import { AppliedList, appliedHeadline, type ScopedApp } from "../../AppliedList"
 
 export function AppliedHere({
   companyId, companyName,
@@ -91,41 +79,11 @@ export function AppliedHere({
       }}
     >
       <div style={{ fontSize: 15, fontWeight: 800, color: S.text.primary, lineHeight: "22px" }}>
-        {apps.length === 1
-          ? `You've applied to a job at ${companyName}.`
-          : `You've applied to ${apps.length} jobs at ${companyName}.`}
+        {appliedHeadline(apps.length, companyName)}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 9 }}>
-        {apps.map((a) => {
-          const st = statusStyle(S, statusMeaning(a.application_status))
-          // applied_date is the honest date and is null until they actually
-          // applied; created_at is when the row appeared, which is a fact about
-          // us rather than about them.
-          const when = a.applied_date ? formatShort(a.applied_date) : null
-          return (
-            <div key={a.id} style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <a
-                href={`/dashboard/tracker/${a.id}`}
-                style={{
-                  fontSize: 14.5, fontWeight: 700, color: S.action.quietInk,
-                  textDecoration: "none", minWidth: 0,
-                }}
-              >
-                {a.job_title || "Untitled role"}
-              </a>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
-                <span style={st.dot} />
-                <span style={{ ...st.text, fontSize: 13.5, whiteSpace: "nowrap" }}>
-                  {statusLabel(a.application_status)}
-                </span>
-              </span>
-              {when && (
-                <span style={{ fontSize: 13, color: S.text.muted, whiteSpace: "nowrap" }}>{when}</span>
-              )}
-            </div>
-          )
-        })}
+      <div style={{ marginTop: 9 }}>
+        <AppliedList applications={apps} />
       </div>
     </section>
   )
