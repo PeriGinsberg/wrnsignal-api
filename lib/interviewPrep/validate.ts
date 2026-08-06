@@ -18,7 +18,12 @@
 
 import type { PrepSource } from "./source"
 
-export type PrepEvidence = { id: string; text: string }
+/**
+ * `source` decides the HEADING the page renders this under, so it has to
+ * survive into the stored artifact rather than being recomputed at render
+ * time from a run that may since have been rescored or deleted.
+ */
+export type PrepEvidence = { id: string; text: string; source: "resume" | "analysis" }
 
 export type PrepGenerated = {
   jd_depth: "thin" | "adequate"
@@ -161,7 +166,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
   const whyIds = new Set(src.strengths.map((s) => s.id))
   const riskIds = new Set(src.risks.map((r) => r.id))
   const reqIds = new Set(src.requirements.map((r) => r.id))
-  const evidenceById = new Map(src.evidence.map((e) => [e.id, e.text]))
+  const evidenceById = new Map(src.evidence.map((e) => [e.id, e]))
 
   const exposure = (parsed.exposure ?? {}) as any
   const questions = (parsed.questions ?? {}) as any
@@ -241,10 +246,10 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
       const evidence: PrepEvidence[] = []
       const seenIds = new Set<string>()
       for (const id of ids) {
-        const t = evidenceById.get(id)
-        if (!t || seenIds.has(id)) continue
+        const e = evidenceById.get(id)
+        if (!e || seenIds.has(id)) continue
         seenIds.add(id)
-        evidence.push({ id, text: t })
+        evidence.push({ id, text: e.text, source: e.source })
       }
       return { question_ref: text(a?.question_ref, 80), answer: prose(a?.answer, MAX_ANSWER_CHARS), evidence }
     })

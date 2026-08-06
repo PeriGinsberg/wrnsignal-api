@@ -252,6 +252,10 @@ ok("a run with why_codes but no profile_fact is null — nothing to ground on",
     },
   })!
   ok("a shared profile_fact is deduped to one evidence entry", src.evidence.length === 1)
+  // Strengths are built first, so a line on both sides keeps the stronger
+  // claim rather than being downgraded by the risk that reuses it.
+  ok("...and keeps the resume tag rather than being downgraded",
+    src.evidence[0].source === "resume")
   ok("the strength and the risk point at the same evidence id",
     src.strengths[0].evidence_id === src.risks[0].evidence_id)
 }
@@ -496,6 +500,17 @@ console.log("\nvalidateGenerated")
   const v = validateGenerated(good, src)!
   ok("a well-formed response survives whole", v !== null)
   ok("all four answers survive", v.answers.length === 4)
+  // THE LABEL WAS LYING. A why_code's profile_fact is a resume line; a
+  // risk_code's is the engine's own summary. Both rendered under "From your
+  // resume", so every pack claimed as a quotation something the candidate
+  // could not find in their own document.
+  ok("strength evidence is tagged as coming from the resume",
+    src.evidence.find((e) => e.id === "e1")?.source === "resume")
+  ok("risk evidence is tagged as coming from the ANALYSIS, not the resume",
+    src.evidence.find((e) => e.id === "e3")?.source === "analysis")
+  ok("the tag survives into the resolved answer evidence",
+    v.answers.find((a) => a.question_ref === "risk:r1")?.evidence[0].source === "analysis")
+
   ok("evidence is resolved to TEXT, not left as ids",
     v.answers[0].evidence[0].text === src.evidence[1].text)
   ok("refs are built server-side, not taken from the model",

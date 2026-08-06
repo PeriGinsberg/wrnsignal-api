@@ -570,21 +570,44 @@ export default function PrepNowPage({ params }: { params: Promise<{ interviewId:
                   <p style={{ fontSize: 15.5, color: S.text.secondary, lineHeight: "24px", margin: "8px 0 0" }}>
                     {a.answer}
                   </p>
-                  <div style={{ marginTop: 10, paddingLeft: 12, borderLeft: `2px solid ${S.borderSoft}` }}>
-                    <div
-                      style={{
-                        fontSize: 11, fontWeight: 800, letterSpacing: 0.8,
-                        textTransform: "uppercase", color: S.text.dim, marginBottom: 4,
-                      }}
-                    >
-                      From your resume
-                    </div>
-                    {a.evidence.map((e) => (
-                      <div key={e.id} style={{ fontSize: 13.5, color: S.text.muted, lineHeight: "20px" }}>
-                        {e.text}
+                  {/* TWO HEADINGS, because one of them was lying. A why_code's
+                      profile_fact is a line lifted from the resume. A
+                      risk_code's is the ENGINE'S summary, written by the
+                      scoring pipeline: "Profile shows approximately 1 year of
+                      experience." Both rendered under "From your resume", so
+                      every pack claimed as a quotation something the candidate
+                      could not find in their own document. On a page whose
+                      entire promise is that answers are traceable, that is the
+                      one label that must not overstate.
+
+                      Untagged evidence is treated as resume, which is what
+                      packs stored before the tag existed contain, and what they
+                      were already being shown as. */}
+                  {(["resume", "analysis"] as const).map((src) => {
+                    const lines = a.evidence.filter((e) =>
+                      src === "resume" ? (e.source ?? "resume") === "resume" : e.source === "analysis")
+                    if (lines.length === 0) return null
+                    return (
+                      <div
+                        key={src}
+                        style={{ marginTop: 10, paddingLeft: 12, borderLeft: `2px solid ${S.borderSoft}` }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 11, fontWeight: 800, letterSpacing: 0.8,
+                            textTransform: "uppercase", color: S.text.dim, marginBottom: 4,
+                          }}
+                        >
+                          {src === "resume" ? "From your resume" : "What SIGNAL found"}
+                        </div>
+                        {lines.map((e) => (
+                          <div key={e.id} style={{ fontSize: 13.5, color: S.text.muted, lineHeight: "20px" }}>
+                            {e.text}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )
+                  })}
                 </div>
               )
             })}

@@ -34,6 +34,8 @@ import { createHash } from "node:crypto"
  *      name produced the block 2 question verbatim, twice on one page.
  *   6  The "2 to 4 sentences" target removed, RULE 1a added. The target fought
  *      RULE 1 and won, and the model padded with invented detail to reach it.
+ *      Evidence also gained a `source` tag in the same version, so packs stored
+ *      before this have no tag and the page falls back for them.
  */
 export const PROMPT_VERSION = 6
 

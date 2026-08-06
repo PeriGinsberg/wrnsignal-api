@@ -33,8 +33,24 @@ export type PrepSource = {
   requirements: Array<{ id: string; label: string; snippet: string; requiredness: string }>
   strengths: Array<{ id: string; job_fact: string; profile_fact: string; match_strength: string; evidence_id: string }>
   risks: Array<{ id: string; job_fact: string; profile_fact: string; risk: string; severity: string; evidence_id: string }>
-  /** The ONLY claims about the candidate the model may make. */
-  evidence: Array<{ id: string; text: string }>
+  /**
+   * The ONLY claims about the candidate the model may make.
+   *
+   * TAGGED BY ORIGIN, because the page renders these under a heading and the
+   * heading was lying. A why_code's profile_fact is a line lifted from the
+   * resume. A risk_code's profile_fact is the ENGINE'S OWN SUMMARY, written by
+   * the scoring pipeline: "Profile shows approximately 1 year of experience."
+   * Both were rendered under "From your resume", so every pack claimed as a
+   * quotation something the candidate could not find in their own document.
+   *
+   * Tagged by where the string CAME FROM, not by testing whether it appears in
+   * the resume text. That test is more literally true and fails in practice:
+   * resume lines wrap, so the extracted fact is the collapsed version and a
+   * substring check misses, and the engine extracts from the selected PERSONA's
+   * resume rather than the profile's, so it would false-negative for anyone
+   * using one. Origin is a fact about provenance and cannot be wrong.
+   */
+  evidence: Array<{ id: string; text: string; source: "resume" | "analysis" }>
 }
 
 /** Longer than any real posting we have seen; a guard against a pathological row. */
@@ -72,14 +88,17 @@ export function buildPrepSource(run: {
   // Evidence is deduped across strengths and risks, because the same resume
   // line legitimately appears on both sides — it is the proof of one thing and
   // the thin spot in another.
-  const evidence: Array<{ id: string; text: string }> = []
+  const evidence: Array<{ id: string; text: string; source: "resume" | "analysis" }> = []
   const evidenceIdByText = new Map<string, string>()
-  const evidenceIdFor = (text: string): string => {
+  const evidenceIdFor = (text: string, source: "resume" | "analysis"): string => {
     const existing = evidenceIdByText.get(text)
+    // First writer wins on a shared string. In practice the strengths are built
+    // first, so a line appearing on both sides keeps the stronger claim
+    // ("resume") rather than being downgraded by the risk that reuses it.
     if (existing) return existing
     const id = `e${evidence.length + 1}`
     evidenceIdByText.set(text, id)
-    evidence.push({ id, text })
+    evidence.push({ id, text, source })
     return id
   }
 
@@ -95,7 +114,7 @@ export function buildPrepSource(run: {
       job_fact,
       profile_fact,
       match_strength: str(w?.match_strength) || "direct",
-      evidence_id: evidenceIdFor(profile_fact),
+      evidence_id: evidenceIdFor(profile_fact, "resume"),
     })
   }
 
@@ -114,7 +133,7 @@ export function buildPrepSource(run: {
       severity: str(r?.severity) || "medium",
       // A risk may have no profile_fact (a JD-side gate with nothing on the
       // candidate side). It still gets an evidence id only when it has text.
-      evidence_id: profile_fact ? evidenceIdFor(profile_fact) : "",
+      evidence_id: profile_fact ? evidenceIdFor(profile_fact, "analysis") : "",
     })
   }
 
