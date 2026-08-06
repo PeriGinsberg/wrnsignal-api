@@ -25,6 +25,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { LIGHT as S, action as actionStyle } from "../../../../lib/theme/surfaces"
 import { authFetch } from "../authFetch"
 import { AddContactForm } from "../AddContactForm"
+import { safeReturn, safeReturnLabel } from "../../../../lib/network-tracker/safeReturn"
 import { STAGE_LABELS, VIEW_LABELS } from "../vocab"
 import { dueOf, type Contact } from "./ContactRow"
 import { ContactCard } from "./ContactCard"
@@ -82,6 +83,24 @@ function ContactsInner() {
   const sp = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+
+  // ARRIVING FROM OUTSIDE NETWORKING, with the company already known.
+  // `?add=1&company=Globex&return=…&label=…` opens the form prefilled, so the
+  // application detail does not know a company and then forget it one screen
+  // later. Query params rather than sessionStorage because this page already
+  // treats the URL as its state (see the comment above), and because the
+  // intent here is explicit rather than a remembered origin, which is what
+  // backTarget is for.
+  const addParam = sp.get("add")
+  const prefillCompany = sp.get("company") ?? ""
+  // Both validated: `return` is an open-redirect surface and `label` is
+  // attacker-supplied text rendered as a control. See lib/network-tracker/safeReturn.ts.
+  const returnTo = safeReturn(sp.get("return"))
+  const returnLabel = safeReturnLabel(sp.get("label"))
+
+  useEffect(() => {
+    if (addParam) setAddOpen(true)
+  }, [addParam])
 
   const fStage = sp.get("stage") ?? ""
   const fPhase = sp.get("phase") ?? ""
@@ -304,7 +323,15 @@ function ContactsInner() {
         </div>
       </div>
 
-      {addOpen && <AddContactForm onClose={() => setAddOpen(false)} onCreated={load} />}
+      {addOpen && (
+        <AddContactForm
+          initialCompany={prefillCompany}
+          returnTo={returnTo}
+          returnLabel={returnLabel}
+          onClose={() => setAddOpen(false)}
+          onCreated={load}
+        />
+      )}
 
       {banner && (
         <div style={noticeStyle}>

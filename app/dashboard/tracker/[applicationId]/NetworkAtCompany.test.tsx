@@ -48,12 +48,12 @@ beforeEach(() => {
 
 describe("NetworkAtCompany, unlinked with no name match", () => {
   it("offers to add the company, named", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Umbrella Health" companyId={null} onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Umbrella Health" jobTitle="Operations Analyst" companyId={null} onChanged={() => {}} />)
     expect(await screen.findByRole("button", { name: /Add Umbrella Health to your board/ })).toBeTruthy()
   })
 
   it("posts company_name, and does NOT send a company_id key at all", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Umbrella Health" companyId={null} onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Umbrella Health" jobTitle="Operations Analyst" companyId={null} onChanged={() => {}} />)
     fireEvent.click(await screen.findByRole("button", { name: /Add Umbrella Health/ }))
     await waitFor(() => expect(authFetchMock.mock.calls.length).toBeGreaterThan(1))
     const body = bodyOf(authFetchMock.mock.calls[1])
@@ -64,7 +64,7 @@ describe("NetworkAtCompany, unlinked with no name match", () => {
   })
 
   it("offers the picker as an escape hatch when the names do not match", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex Corp" companyId={null} onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex Corp" jobTitle="Operations Analyst" companyId={null} onChanged={() => {}} />)
     const picker = await screen.findByLabelText("Link to a company already on your board")
     fireEvent.change(picker, { target: { value: "co-1" } })
     await waitFor(() => expect(authFetchMock.mock.calls.length).toBeGreaterThan(1))
@@ -74,13 +74,13 @@ describe("NetworkAtCompany, unlinked with no name match", () => {
 
 describe("NetworkAtCompany, unlinked with a name match", () => {
   it("names the matched company and offers to link it", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="globex" companyId={null} onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="globex" jobTitle="Operations Analyst" companyId={null} onChanged={() => {}} />)
     // Case-insensitive, the same comparison lower(name) makes in the index.
     expect(await screen.findByRole("button", { name: "Link to Globex" })).toBeTruthy()
   })
 
   it("SUGGESTS ONLY: nothing is linked until the button is clicked", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId={null} onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId={null} onChanged={() => {}} />)
     await screen.findByRole("button", { name: "Link to Globex" })
     // One read. No write.
     expect(authFetchMock.mock.calls.every((c) => !String(c[0]).includes("link-application"))).toBe(true)
@@ -88,14 +88,14 @@ describe("NetworkAtCompany, unlinked with a name match", () => {
 
   it("posts the matched company_id on click", async () => {
     const onChanged = vi.fn()
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId={null} onChanged={onChanged} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId={null} onChanged={onChanged} />)
     fireEvent.click(await screen.findByRole("button", { name: "Link to Globex" }))
     await waitFor(() => expect(onChanged).toHaveBeenCalled())
     expect(bodyOf(authFetchMock.mock.calls[1])).toEqual({ application_id: "app-1", company_id: "co-1" })
   })
 
   it("does not treat a near-miss as a match", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex Corporation" companyId={null} onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex Corporation" jobTitle="Operations Analyst" companyId={null} onChanged={() => {}} />)
     expect(await screen.findByRole("button", { name: /Add Globex Corporation to your board/ })).toBeTruthy()
     expect(screen.queryByRole("button", { name: /^Link to/ })).toBeNull()
   })
@@ -103,28 +103,49 @@ describe("NetworkAtCompany, unlinked with a name match", () => {
 
 describe("NetworkAtCompany, linked", () => {
   it("lists the contacts with their stage in words", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId="co-1" onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={() => {}} />)
     expect(await screen.findByRole("link", { name: "Dana Reed" })).toBeTruthy()
     expect(screen.getByText("They replied")).toBeTruthy()
     expect(screen.getByText("Not started")).toBeTruthy()
   })
 
   it("reads contacts scoped to the company", async () => {
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId="co-1" onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={() => {}} />)
     await screen.findByRole("link", { name: "Dana Reed" })
     expect(authFetchMock.mock.calls[0][0]).toBe("/api/network/contacts?company_id=co-1")
   })
 
   it("says so when the company is linked but empty, and offers to add someone", async () => {
     authFetchMock.mockImplementation(routeFetch({ contacts: [] }))
-    render(<NetworkAtCompany applicationId="app-1" companyName="Initech" companyId="co-2" onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Initech" jobTitle="Operations Analyst" companyId="co-2" onChanged={() => {}} />)
     expect(await screen.findByText(/No one at Initech yet/)).toBeTruthy()
     expect(screen.getByRole("link", { name: /Add someone at Initech/ })).toBeTruthy()
   })
 
+  it("carries the company AND the way back on the add-contact link", async () => {
+    authFetchMock.mockImplementation(routeFetch({ contacts: [] }))
+    render(<NetworkAtCompany applicationId="app-1" companyName="Initech" jobTitle="Operations Analyst" companyId="co-2" onChanged={() => {}} />)
+    const href = (await screen.findByTestId("add-contact-here")).getAttribute("href")!
+    const q = new URLSearchParams(href.split("?")[1])
+    expect(href.startsWith("/dashboard/network/contacts?")).toBe(true)
+    expect(q.get("add")).toBe("1")
+    // The company the screen already knows, so the next screen does not ask.
+    expect(q.get("company")).toBe("Initech")
+    expect(q.get("return")).toBe("/dashboard/tracker/app-1")
+    // Named, because "back to your application" is too vague after three screens.
+    expect(q.get("label")).toBe("Operations Analyst at Initech")
+  })
+
+  it("omits the label rather than writing a stray 'at' when the title is blank", async () => {
+    authFetchMock.mockImplementation(routeFetch({ contacts: [] }))
+    render(<NetworkAtCompany applicationId="app-1" companyName="Initech" jobTitle="" companyId="co-2" onChanged={() => {}} />)
+    const href = (await screen.findByTestId("add-contact-here")).getAttribute("href")!
+    expect(new URLSearchParams(href.split("?")[1]).get("label")).toBe("Initech")
+  })
+
   it("can unlink, sending company_id explicitly null", async () => {
     const onChanged = vi.fn()
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId="co-1" onChanged={onChanged} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={onChanged} />)
     fireEvent.click(await screen.findByTestId("unlink-company"))
     await waitFor(() => expect(onChanged).toHaveBeenCalled())
     const body = bodyOf(authFetchMock.mock.calls[1])
@@ -138,7 +159,7 @@ describe("NetworkAtCompany, linked", () => {
 describe("NetworkAtCompany, failures", () => {
   it("says the board could not be loaded rather than showing an empty state", async () => {
     authFetchMock.mockImplementation(() => json({ ok: false }, false, 500))
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId="co-1" onChanged={() => {}} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={() => {}} />)
     expect(await screen.findByText(/couldn't load your networking board/i)).toBeTruthy()
     // Must NOT read as "nobody works there", which is a different fact.
     expect(screen.queryByText(/No one at Globex yet/)).toBeNull()
@@ -150,7 +171,7 @@ describe("NetworkAtCompany, failures", () => {
         ? json({ ok: false, error: "Not authorized" }, false, 403)
         : routeFetch()(url))
     const onChanged = vi.fn()
-    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" companyId={null} onChanged={onChanged} />)
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId={null} onChanged={onChanged} />)
     fireEvent.click(await screen.findByRole("button", { name: "Link to Globex" }))
     expect(await screen.findByText("Not authorized")).toBeTruthy()
     expect(onChanged).not.toHaveBeenCalled()

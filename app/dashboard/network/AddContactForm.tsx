@@ -12,13 +12,29 @@ import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABELS, STAGE_LABELS, FIELD_LAB
 // has no due date and so will NOT appear on the worklist.
 
 export function AddContactForm({
-  onClose, onCreated, initialCompany = "",
+  onClose, onCreated, initialCompany = "", returnTo = null, returnLabel = null,
 }: {
   onClose: () => void
   onCreated: () => void
   /** Prefills the company field. Set when the form is opened FROM a company, so
    *  "add your first contact here" does not ask which company "here" is. */
   initialCompany?: string
+  /**
+   * Where the user came from, when they came from outside networking. Renders
+   * as the primary action on the success panel.
+   *
+   * NOT AN AUTO-REDIRECT. Navigating the instant the row is created would take
+   * away "Add another", which is exactly what someone adding people at a
+   * company they just linked is likely to want next, and it would discard the
+   * note explaining that the contact will not appear on the worklist. The user
+   * chooses to close the loop.
+   *
+   * Already validated by the caller via safeReturn(); this component renders
+   * whatever it is given.
+   */
+  returnTo?: string | null
+  /** What the return button says. Null falls back to generic wording. */
+  returnLabel?: string | null
 }) {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -79,10 +95,23 @@ export function AddContactForm({
               They start as <strong>{STAGE_LABELS.identified}</strong> with no reminder, so they won&apos;t appear on
               today&apos;s worklist until you reach out and log it.
             </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-              <a href={`/dashboard/network/contacts/${created.id}`} style={primaryBtn}>Open contact</a>
+            {/* When the user arrived from somewhere else, closing THAT loop is
+                the primary action and "Open contact" steps down. The company
+                is deliberately kept on "Add another": someone who came here to
+                staff one company usually has a second person in mind. */}
+            <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+              {returnTo ? (
+                <>
+                  <a href={returnTo} style={primaryBtn} data-testid="return-to-origin">
+                    {returnLabel ? `Back to ${returnLabel}` : "Back to where you were"}
+                  </a>
+                  <a href={`/dashboard/network/contacts/${created.id}`} style={secondaryBtn}>Open contact</a>
+                </>
+              ) : (
+                <a href={`/dashboard/network/contacts/${created.id}`} style={primaryBtn}>Open contact</a>
+              )}
               <button
-                onClick={() => { setCreated(null); setFirstName(""); setLastName(""); setTitle(""); setCompany(""); setEmail(""); setLinkedin(""); setRelationship(""); setPriority(""); setSegment("") }}
+                onClick={() => { setCreated(null); setFirstName(""); setLastName(""); setTitle(""); setCompany(initialCompany); setEmail(""); setLinkedin(""); setRelationship(""); setPriority(""); setSegment("") }}
                 style={secondaryBtn}
               >
                 Add another

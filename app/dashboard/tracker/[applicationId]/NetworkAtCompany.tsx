@@ -56,10 +56,12 @@ const label: React.CSSProperties = {
 }
 
 export function NetworkAtCompany({
-  applicationId, companyName, companyId, onChanged,
+  applicationId, companyName, jobTitle, companyId, onChanged,
 }: {
   applicationId: string
   companyName: string
+  /** Only used to name this application on the return button. */
+  jobTitle: string
   /** Null until the user links it, which is every row on day one. */
   companyId: string | null
   onChanged: () => void
@@ -137,6 +139,28 @@ export function NetworkAtCompany({
     (c) => c.name.trim().toLowerCase() === (companyName || "").trim().toLowerCase(),
   )
 
+  /**
+   * The add-contact link, carrying everything the next screen needs so the
+   * company is not forgotten and the loop can be closed.
+   *
+   *   add=1      open the form
+   *   company    prefills the field. The NAME, not the id: the contacts POST
+   *              resolves a company by name through matchOrCreateCompany and
+   *              has no company_id input, and the name we send is the linked
+   *              row's own, so it resolves back to exactly that row.
+   *   return     where the success panel points
+   *   label      what that button says. Named, because "back to your
+   *              application" is too vague after three screens.
+   */
+  const addContactHref = (() => {
+    const p = new URLSearchParams({ add: "1" })
+    if (companyName.trim()) p.set("company", companyName.trim())
+    p.set("return", `/dashboard/tracker/${applicationId}`)
+    const label = [jobTitle, companyName].map((s) => (s || "").trim()).filter(Boolean).join(" at ")
+    if (label) p.set("label", label)
+    return `/dashboard/network/contacts?${p.toString()}`
+  })()
+
   const shell = (children: React.ReactNode) => (
     <section
       data-testid="network-at-company"
@@ -172,8 +196,13 @@ export function NetworkAtCompany({
             <p style={{ fontSize: 14.5, color: S.text.muted, lineHeight: "21px", margin: "10px 0 0" }}>
               No one at {companyName} yet. One person inside is worth more than ten applications.
             </p>
+            {/* CARRIES THE COMPANY, AND THE WAY BACK. This used to be a bare
+                link to the contacts list, so the screen that knew the company
+                forgot it one navigation later and the user had to retype it,
+                then find their own way back. The form reads all four params. */}
             <a
-              href="/dashboard/network/contacts"
+              href={addContactHref}
+              data-testid="add-contact-here"
               style={{
                 ...actionStyle(S, "primary"), textDecoration: "none", display: "inline-block",
                 marginTop: 14, borderRadius: 10, padding: "10px 18px", fontSize: 14,

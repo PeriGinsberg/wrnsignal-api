@@ -398,6 +398,7 @@ export default function ApplicationDetailPage({
       <NetworkAtCompany
         applicationId={app.id}
         companyName={app.company_name}
+        jobTitle={app.job_title}
         companyId={app.company_id ?? null}
         onChanged={load}
       />
