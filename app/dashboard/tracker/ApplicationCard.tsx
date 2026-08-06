@@ -31,6 +31,7 @@ import {
   tileIdle,
   tileStructural,
 } from "../../../lib/theme/surfaces"
+import { ProfileIcon } from "../../../components/icons"
 import { formatShort } from "../../../lib/localDate"
 import { statusLabel, statusMeaning, NEED_LABELS } from "./vocab"
 import { needOf, type TrackedApp } from "./applicationOrder"
@@ -43,6 +44,8 @@ export type Application = TrackedApp & {
   signal_decision: string | null
   jobfit_run_id: string | null
   interview_count?: number
+  /** People on the networking board at the linked company. 0 when unlinked. */
+  contact_count?: number
   coach_annotations?: unknown[]
 }
 
@@ -156,6 +159,38 @@ export function ApplicationCard({
           </span>
         </span>
       </a>
+
+      {/* PEOPLE AT THIS COMPANY. Silent unless there are some: no company_id
+          on the application, or nobody at the company, and the row says
+          nothing. On day one that is nearly every row, which is the point.
+          A badge that appears on almost nothing means the ones carrying it
+          are worth a look.
+
+          Not a link and not a button. The whole row already opens the
+          application, where the contacts are listed by name, and a nested
+          control would compete with that. The row is a glance. */}
+      {(a.contact_count ?? 0) > 0 && (
+        <span
+          data-testid="contact-count"
+          title={`${a.contact_count} ${a.contact_count === 1 ? "person" : "people"} you know here`}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
+            fontSize: 13.5, fontWeight: 800, color: S.text.muted,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {/* ProfileIcon, not NetworkIcon, and the browser check is why.
+              NetworkIcon is a four-node graph with connecting lines on a 64
+              viewBox; at row scale each node is about 2.5px and the whole mark
+              reads as a coloured smudge, at 22px as much as at 18px.
+              ProfileIcon is one figure on a disc and survives the reduction.
+              It is also ALREADY the Contacts icon in the sidebar at 17px
+              (app/dashboard/layout.tsx), so it already means "people" here and
+              is proven at this size. */}
+          <ProfileIcon size={18} />
+          {a.contact_count}
+        </span>
+      )}
 
       {/* The score, when this job was scored. Quiet by design: it is a fact
           about the job, not a state of the application, so it sits before the

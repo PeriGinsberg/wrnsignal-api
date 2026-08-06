@@ -109,9 +109,23 @@ export async function GET(req: NextRequest) {
       return withCorsJson(req, { ok: true, applications: rows ?? [] })
     }
 
+    // `network_companies(network_contacts(count))` is a nested count embed
+    // through signal_applications.company_id. It carries ONE INTEGER per row:
+    // measured on dev against the busiest profile (35 applications), it adds
+    // 875 bytes to a 132,668-byte response, under 1%.
+    //
+    // Chosen over a second aggregate request because the tracker list already
+    // calls this endpoint, so the count arrives with data the page is fetching
+    // anyway rather than needing its own round trip, loading state and failure
+    // state. There is nothing to disambiguate: signal_applications has exactly
+    // one FK to network_companies.
+    //
+    // Verified against a direct count on both linked dev rows before shipping,
+    // because a wrong join returns a wrong NUMBER rather than an error, and a
+    // badge quietly showing someone else's total would never look broken.
     const q = supabase
       .from("signal_applications")
-      .select("*, signal_interviews(id), client_personas(name), jobfit_runs!jobfit_run_id(job_description)")
+      .select("*, signal_interviews(id), client_personas(name), jobfit_runs!jobfit_run_id(job_description), network_companies(network_contacts(count))")
       .eq("profile_id", profileId)
     const { data, error } = await applyHistoryBoundary(q, boundaryAt)
       .order("created_at", { ascending: false })
@@ -155,9 +169,16 @@ export async function GET(req: NextRequest) {
       // (disambiguated — jobfit_runs also has a reverse application_id FK).
       // Null for manual/legacy jobs with no run. GET-only; never PUT back.
       job_description: app.jobfit_runs?.job_description ?? null,
+      // Flattened the same way interview_count is, so the client never has to
+      // know the embed shape. Null company_id gives a null embed, which is 0
+      // people rather than an unknown number.
+      contact_count: Array.isArray(app.network_companies?.network_contacts)
+        ? (app.network_companies.network_contacts[0]?.count ?? 0)
+        : 0,
       signal_interviews: undefined,
       client_personas: undefined,
       jobfit_runs: undefined,
+      network_companies: undefined,
       coach_annotations: annotationsByApp[app.id] || [],
     }))
 
