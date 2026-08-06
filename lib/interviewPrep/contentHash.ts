@@ -32,8 +32,10 @@ import { createHash } from "node:crypto"
  *      enthusiasm claims. Both were observed in live output.
  *   5  exposure.probe.they_will_ask became a declarative `challenge`. The old
  *      name produced the block 2 question verbatim, twice on one page.
+ *   6  The "2 to 4 sentences" target removed, RULE 1a added. The target fought
+ *      RULE 1 and won, and the model padded with invented detail to reach it.
  */
-export const PROMPT_VERSION = 5
+export const PROMPT_VERSION = 6
 
 export type ContentHashInputs = {
   model: string

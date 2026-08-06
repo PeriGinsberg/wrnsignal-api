@@ -56,6 +56,17 @@ const MAX_PROVE = 3
 const MAX_PROBE = 3
 const MAX_CERTAIN = 3
 
+/**
+ * A BOUND, not a content judgement. 2000 characters is four paragraphs of room
+ * to elaborate into, and elaboration is where invented detail lives. This does
+ * not check what the answer says, only how much of it there can be.
+ *
+ * An over-long answer is TRUNCATED, never dropped: the model being verbose is
+ * not the reader's fault, and an answer that vanishes is worse than one that
+ * ends early. The real work is done by the prompt having no sentence target.
+ */
+const MAX_ANSWER_CHARS = 700
+
 const text = (v: unknown, max = 1200): string =>
   typeof v === "string" ? v.trim().slice(0, max) : ""
 
@@ -235,7 +246,7 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
         seenIds.add(id)
         evidence.push({ id, text: t })
       }
-      return { question_ref: text(a?.question_ref, 80), answer: prose(a?.answer, 2000), evidence }
+      return { question_ref: text(a?.question_ref, 80), answer: prose(a?.answer, MAX_ANSWER_CHARS), evidence }
     })
     .filter((a: any) => {
       if (!liveRefs.has(a.question_ref)) return false

@@ -4,6 +4,26 @@
 // calls: the exposures, the questions and the answers are the same argument
 // told three ways, and generating them separately would let them disagree.
 //
+// WHY THERE IS NO SENTENCE TARGET, and why that is the load-bearing part of
+// this file. The first version asked for "2 to 4 sentences each" while RULE 1
+// demanded every claim come from the evidence. When the evidence is one resume
+// line those two instructions are in direct conflict, and length won: the model
+// padded to reach the count, inventing an accounting system, a threshold, a
+// "system A" and a "system B" that appeared nowhere in the candidate's resume.
+// Read on the page it was fluent and defensible-looking. In an interview it is
+// a follow-up question the candidate cannot answer.
+//
+// So the target is gone rather than fought. Adding more prohibition while
+// leaving a length goal in place would have kept them fighting, and length wins
+// because it is the easier instruction to obey.
+//
+// There is deliberately NO semantic check on top. Set membership on evidence
+// ids is the only validation that cannot false-reject, and KI-11 below is what
+// happens when that line is crossed. A digit-extraction check was considered
+// and rejected: it breaks on "$18,000" rendered as "18,000 dollar" and on
+// "three-hour" rendered as "3", and normalising well enough to avoid false
+// rejections is the same slope.
+//
 // GROUNDING. A correction worth recording, because the brief named the wrong
 // ancestor: Phase 2's groundingValidator is NOT in production. It exists as a
 // skeleton and the runlog measures it at a ~100% false-reject rate, 5x past its
@@ -34,6 +54,8 @@ export const SYSTEM_PROMPT = [
   "You prepare a specific candidate for a specific interview. You write in second person, directly to the candidate.",
   "",
   "RULE 1 — EVIDENCE. Every claim about the candidate must come from the EVIDENCE block, quoted or closely paraphrased. Never write \"you likely\", \"you probably\", or \"your background suggests\". If the evidence does not say it, the candidate cannot say it in the room, so you must not draft it.",
+  "",
+  "RULE 1a — NO ELABORATION. Do not add any system, tool, platform, threshold, number, team name, job title, date or mechanism that the evidence does not contain. If the evidence says a reconciliation was automated with pivot tables and VLOOKUP, you may say that. You may NOT say which systems were reconciled, how the formula was structured, or what it flagged. You do not know those things. The test: before writing a detail, ask whether an interviewer could follow up on it. If they asked \"which system?\" and the evidence does not answer, you invented it. Delete it.",
   "",
   "RULE 2 — COMPANY. Every claim about the company or the role must come from the JOB DESCRIPTION block. You do not know this company. You have no knowledge of its funding, leadership, products, customers, size, culture or recent news beyond what is written in that block. If the block does not say it, it is not true and you must not write it.",
   "",
@@ -142,7 +164,8 @@ export function buildUserPrompt(src: PrepSource): string {
       "   questions.probes: one question per RISK id, the version an interviewer would really say out loud.",
       `   questions.always: exactly 2, with "kind" set to "why_this_job" and "why_you".`,
       "",
-      "3. ANSWERS. One answer for every question above, 2 to 4 sentences each.",
+      "3. ANSWERS. One answer for every question above.",
+      "   LENGTH IS SET BY THE EVIDENCE, NOT BY A TARGET. If the evidence is one line, one or two sentences is a complete answer. A short answer that is entirely true beats a fluent one that invents. Never pad to sound thorough: padding is where invented detail comes from.",
       `   question_ref must be "req:<id>" for a certain question, "risk:<id>" for a probe, and "always:why_this_job" or "always:why_you" for the last two.`,
       "   evidence_ids must list every EVIDENCE id the answer draws on, and only ids that appear in the EVIDENCE block.",
       "   An answer with nothing to stand on must not be written. Leave it out rather than filling it in.",

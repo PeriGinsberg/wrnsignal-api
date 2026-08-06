@@ -341,6 +341,21 @@ console.log("\nbuildUserPrompt")
     SYSTEM_PROMPT.includes("em dashes") && SYSTEM_PROMPT.includes("no asterisks"))
   // Observed live: "a genuine passion for learning" and "not looking for a job,
   // looking to build a career". Neither is grounded in anything.
+  // THE SENTENCE TARGET WAS THE CAUSE, so its absence is the assertion. A
+  // length goal beside a grounding rule is a conflict the length wins, and the
+  // model padded with an invented accounting system to reach the count.
+  ok("the prompt sets NO sentence target for answers",
+    !p.includes("2 to 4 sentences") && !/\d+ to \d+ sentences/.test(p))
+  ok("length is stated as a consequence of the evidence",
+    p.includes("LENGTH IS SET BY THE EVIDENCE, NOT BY A TARGET"))
+  ok("padding is named as the source of invention", p.includes("Never pad to sound thorough"))
+  ok("RULE 1a bans the specific things that were invented",
+    SYSTEM_PROMPT.includes("RULE 1a")
+    && SYSTEM_PROMPT.includes("system, tool, platform, threshold, number")
+    && SYSTEM_PROMPT.includes("which systems were reconciled"))
+  ok("...and gives a test the model can apply to its own sentence",
+    SYSTEM_PROMPT.includes("could follow up on it"))
+
   ok("the enthusiasm rule names the failure and gives a test",
     SYSTEM_PROMPT.includes("passionate") && SYSTEM_PROMPT.includes("different candidate's prep"))
   // Three ways, because one was not enough: the field name, the instruction,
@@ -412,6 +427,21 @@ ok("a snake_case token is not treated as emphasis",
 ok("ordinary text is unchanged", prose("Plain, ordinary text.") === "Plain, ordinary text.")
 ok("empty in, empty out", prose(null) === "" && prose("") === "")
 ok("the max length still applies", prose("x".repeat(50), 10).length === 10)
+
+// A BOUND, not a content judgement, and truncation rather than a drop: the
+// model being verbose is not the reader's fault.
+ok("an over-long answer is capped, not dropped", (() => {
+  const src = buildPrepSource({
+    result_json: { why_codes: [{ job_fact: "asks", profile_fact: "did" }], job_signals: {} },
+  })!
+  const v = validateGenerated({
+    jd_depth: "adequate",
+    exposure: { prove: [], probe: [] },
+    questions: { certain: [], probes: [], always: [{ kind: "why_you", question: "Why you?" }] },
+    answers: [{ question_ref: "always:why_you", answer: "word ".repeat(400), evidence_ids: ["e1"] }],
+  }, src)!
+  return v.answers.length === 1 && v.answers[0].answer.length <= 700
+})())
 {
   // THE ONE PLACE IT MUST NOT REACH. Evidence is the candidate's own resume
   // line, not the model's writing, so it goes through untouched.
