@@ -141,6 +141,16 @@ export function buildUserPrompt(src: PrepSource): string {
 
   parts.push(
     block(
+      "TARGETS (what this candidate says they are looking for)",
+      [
+        src.targets.role ? `role: ${src.targets.role}` : null,
+        src.targets.location ? `location: ${src.targets.location}` : null,
+      ].filter(Boolean).join("\n") || "(not stated)",
+    ),
+  )
+
+  parts.push(
+    block(
       "EVIDENCE (the ONLY things you may say the candidate has done)",
       src.evidence.map((e) => `[${e.id}] "${e.text}"`).join("\n"),
     ),
@@ -169,6 +179,9 @@ export function buildUserPrompt(src: PrepSource): string {
       `   question_ref must be "req:<id>" for a certain question, "risk:<id>" for a probe, and "always:why_this_job" or "always:why_you" for the last two.`,
       "   evidence_ids must list every EVIDENCE id the answer draws on, and only ids that appear in the EVIDENCE block.",
       "   An answer with nothing to stand on must not be written. Leave it out rather than filling it in.",
+      "",
+      "   THE TWO ALWAYS-QUESTIONS ARE DIFFERENT. why_this_job and why_you are not claims about past experience, so resume evidence is the wrong grounding for them and evidence_ids may be empty. Answer them from the JOB DESCRIPTION, the TARGETS block and the STRENGTHS instead. Say what the role involves and what the candidate has said they want, and let the overlap speak for itself. If there is no overlap, do not invent one: leave the answer out and it will be removed along with its question.",
+      "   RULE 6 APPLIES WITH FULL FORCE HERE, and this is where it is hardest. No passion, no excitement, no eagerness, no \"drawn to\". These two questions are exactly where that language creeps in.",
       "",
       `Set jd_depth to "thin" if the JOB DESCRIPTION block is too short or too vague to tell you what this job actually involves, otherwise "adequate".`,
       "",

@@ -129,7 +129,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .maybeSingle()
     if (runErr) throw new Error(`Run lookup failed: ${runErr.message}`)
 
-    const source = buildPrepSource(run)
+    // The candidate's stated targets, the only material behind why_this_job
+    // and why_you. A failed read is not fatal: those two answers get less to
+    // work with and the prompt says "(not stated)", which is honest.
+    const { data: profile } = await supabase
+      .from("client_profiles")
+      .select("target_roles, target_locations")
+      .eq("id", profileId)
+      .maybeSingle()
+
+    const source = buildPrepSource(run, profile)
     if (!source) {
       // TWO DIFFERENT REASONS, and they need different words in front of a
       // user. Measured on dev, both occur:

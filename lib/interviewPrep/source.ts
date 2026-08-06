@@ -30,6 +30,15 @@ export type PrepSource = {
     score: number | null
   }
   jobDescription: string | null
+  /**
+   * What the candidate says they are looking for, from their profile.
+   *
+   * The ONLY material behind why_this_job and why_you. Those two questions are
+   * not claims about past experience, so resume evidence was never the right
+   * grounding for them, which is why they kept being dropped and printing as
+   * questions with nothing underneath. This is what they stand on instead.
+   */
+  targets: { role: string | null; location: string | null }
   requirements: Array<{ id: string; label: string; snippet: string; requiredness: string }>
   strengths: Array<{ id: string; job_fact: string; profile_fact: string; match_strength: string; evidence_id: string }>
   risks: Array<{ id: string; job_fact: string; profile_fact: string; risk: string; severity: string; evidence_id: string }>
@@ -76,10 +85,15 @@ const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "")
  * grounding check anyway and the user would be shown an empty surface after
  * paying for a generation.
  */
-export function buildPrepSource(run: {
-  result_json: unknown
-  job_description?: string | null
-} | null | undefined): PrepSource | null {
+export function buildPrepSource(
+  run: { result_json: unknown; job_description?: string | null } | null | undefined,
+  /**
+   * From client_profiles. Optional, and absent is a normal outcome rather than
+   * an error: a profile with no stated targets simply gives the always-answers
+   * less to work with, and the prompt says so.
+   */
+  profile?: { target_roles?: string | null; target_locations?: string | null } | null,
+): PrepSource | null {
   const j = (run?.result_json ?? null) as any
   if (!j || typeof j !== "object") return null
 
@@ -190,6 +204,10 @@ export function buildPrepSource(run: {
       score: typeof j.score === "number" ? j.score : null,
     },
     jobDescription: jd ? jd.slice(0, MAX_JD_CHARS) : null,
+    targets: {
+      role: str(profile?.target_roles) || null,
+      location: str(profile?.target_locations) || null,
+    },
     requirements,
     strengths,
     risks,

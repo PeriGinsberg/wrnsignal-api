@@ -36,8 +36,12 @@ import { createHash } from "node:crypto"
  *      RULE 1 and won, and the model padded with invented detail to reach it.
  *      Evidence also gained a `source` tag in the same version, so packs stored
  *      before this have no tag and the page falls back for them.
+ *   7  why_this_job and why_you exempted from the resume-evidence rule and
+ *      grounded in the JD plus the candidate's stated targets instead. Both
+ *      were being dropped, printing the two most predictable questions in any
+ *      interview with nothing underneath.
  */
-export const PROMPT_VERSION = 6
+export const PROMPT_VERSION = 7
 
 export type ContentHashInputs = {
   model: string

@@ -256,21 +256,42 @@ export function validateGenerated(parsed: any, src: PrepSource): PrepGenerated |
     .filter((a: any) => {
       if (!liveRefs.has(a.question_ref)) return false
       if (!a.answer) return false
-      // THE GROUNDING CHECK. An answer with nothing behind it is exactly the
-      // fabrication this whole file guards against, so it goes.
-      if (a.evidence.length === 0) return false
+      // THE GROUNDING CHECK, and the one place it does NOT apply.
+      //
+      // "Why this job" and "why you" are not claims about past experience.
+      // Requiring resume evidence for them was a mis-applied rule, not a high
+      // standard: it dropped both answers and left the page printing the two
+      // most predictable questions in any interview with nothing underneath.
+      // They are grounded in the JOB DESCRIPTION and TARGETS blocks instead,
+      // which the prompt hands them and which need no citation here.
+      //
+      // Every other question keeps the rule in full.
+      const isAlways = a.question_ref.startsWith("always:")
+      if (!isAlways && a.evidence.length === 0) return false
       if (seenAnswers.has(a.question_ref)) return false
       seenAnswers.add(a.question_ref)
       return true
     })
 
-  const anyQuestions = certain.length + probes.length + always.length > 0
+  // DROP THE ORPHAN. An always-question whose answer did not survive is worse
+  // than no question at all: a blank under "Why do you want this job" reads as
+  // the product having nothing to say about the thing every candidate is asked.
+  // A missing question is invisible; an empty one is a broken promise.
+  //
+  // Only the always-questions are pruned this way. A `certain` or `probe`
+  // question still earns its place on the page by naming what will be asked,
+  // even when the draft answer did not survive, because the question itself
+  // came from the posting or from a real risk.
+  const answeredRefs = new Set(answers.map((a: any) => a.question_ref))
+  const alwaysAnswered = always.filter((q) => answeredRefs.has(q.ref))
+
+  const anyQuestions = certain.length + probes.length + alwaysAnswered.length > 0
   if (!anyQuestions || answers.length === 0) return null
 
   return {
     jd_depth: parsed.jd_depth === "thin" ? "thin" : "adequate",
     exposure: { prove, probe },
-    questions: { certain, probes, always },
+    questions: { certain, probes, always: alwaysAnswered },
     answers,
   }
 }

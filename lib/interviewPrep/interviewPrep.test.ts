@@ -467,6 +467,91 @@ ok("an over-long answer is capped, not dropped", (() => {
     v.answers[0].evidence[0].text === "Built models — fast — under deadline")
 }
 
+console.log("\nalways-questions: the exemption and the orphan")
+{
+  const src = buildPrepSource(
+    { result_json: { why_codes: [{ job_fact: "asks", profile_fact: "did" }], job_signals: {} } },
+    { target_roles: "Financial Analyst, FP&A", target_locations: "Chicago" },
+  )!
+  ok("stated targets are carried into the source",
+    src.targets.role === "Financial Analyst, FP&A" && src.targets.location === "Chicago")
+  ok("...and reach the prompt as their own block",
+    buildUserPrompt(src).includes("TARGETS (what this candidate says they are looking for)")
+    && buildUserPrompt(src).includes("role: Financial Analyst, FP&A"))
+
+  const base = {
+    jd_depth: "adequate",
+    exposure: { prove: [], probe: [] },
+    questions: {
+      certain: [], probes: [],
+      always: [
+        { kind: "why_this_job", question: "Why this job?" },
+        { kind: "why_you", question: "Why you?" },
+      ],
+    },
+  }
+
+  // THE MIS-APPLIED RULE. These two are not claims about past experience, so
+  // requiring resume evidence dropped both and left the page printing the two
+  // most predictable questions in any interview with nothing underneath.
+  const exempt = validateGenerated({
+    ...base,
+    answers: [
+      { question_ref: "always:why_this_job", answer: "The role is FP&A in Chicago, which is what you said you want.", evidence_ids: [] },
+      { question_ref: "always:why_you", answer: "You have done the reporting this role runs on.", evidence_ids: [] },
+    ],
+  }, src)!
+  ok("an always-answer survives with NO evidence at all", exempt.answers.length === 2)
+  ok("...and both questions stay on the page", exempt.questions.always.length === 2)
+
+  // The exemption is SCOPED. Everything else keeps the rule in full.
+  const src2 = buildPrepSource({
+    result_json: {
+      why_codes: [{ job_fact: "asks", profile_fact: "did" }],
+      job_signals: { requirement_units: [{ id: "u1", label: "x", snippet: "s", strength: 5, requiredness: "core" }] },
+    },
+  })!
+  const scoped = validateGenerated({
+    jd_depth: "adequate",
+    exposure: { prove: [], probe: [] },
+    questions: {
+      certain: [{ req_id: "u1", question: "Walk me through it." }],
+      probes: [],
+      always: [{ kind: "why_you", question: "Why you?" }],
+    },
+    answers: [
+      { question_ref: "req:u1", answer: "ungrounded", evidence_ids: [] },
+      { question_ref: "always:why_you", answer: "grounded in the posting", evidence_ids: [] },
+    ],
+  }, src2)!
+  ok("a CERTAIN answer with no evidence is still dropped",
+    !scoped.answers.some((a) => a.question_ref === "req:u1"))
+  ok("...while the always-answer beside it survives",
+    scoped.answers.some((a) => a.question_ref === "always:why_you"))
+  // The question itself stays: it names what will be asked, and it came from
+  // the posting rather than from a draft that failed.
+  ok("...and the unanswered CERTAIN question stays on the page",
+    scoped.questions.certain.length === 1)
+
+  // DROP THE ORPHAN. A blank under "Why do you want this job" reads as the
+  // product having nothing to say about it.
+  const orphan = validateGenerated({
+    ...base,
+    answers: [{ question_ref: "always:why_you", answer: "You have done the work.", evidence_ids: [] }],
+  }, src)!
+  ok("an always-question with no answer is REMOVED, not left blank",
+    orphan.questions.always.length === 1 && orphan.questions.always[0].kind === "why_you")
+  ok("...and no orphaned ref survives in answers",
+    !orphan.answers.some((a) => a.question_ref === "always:why_this_job"))
+}
+{
+  // Absent targets are normal, not an error.
+  const src = buildPrepSource({ result_json: { why_codes: [{ job_fact: "a", profile_fact: "b" }], job_signals: {} } })!
+  ok("no profile gives null targets", src.targets.role === null && src.targets.location === null)
+  ok("...and the prompt says so rather than omitting the block",
+    buildUserPrompt(src).includes("(not stated)"))
+}
+
 console.log("\nparseResponse")
 ok("plain JSON parses", parseResponse('{"a":1}')?.a === 1)
 ok("a preamble before the brace is tolerated", parseResponse('Here you go:\n{"a":1}')?.a === 1)
