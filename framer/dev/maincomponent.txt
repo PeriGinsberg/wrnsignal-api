@@ -1190,6 +1190,19 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [signalApplicationId, setSignalApplicationId] = React.useState<string | null>(null)
     const [reconsiderModalOpen, setReconsiderModalOpen] = React.useState(false)
 
+    // ── Networking prompt under the JobFit verdict ────────────────────────
+    // A SEPARATE application id from signalApplicationId ON PURPOSE. That one
+    // is owned by the Positioning flow (set inside runPositioningV2 from the
+    // /start response) and gates the "I'm ready to apply" CTA. Reusing it here
+    // would populate it earlier than the Positioning flow expects and change
+    // when that button enables, which is not this feature's business.
+    const [jobfitApplicationId, setJobfitApplicationId] = React.useState<string | null>(null)
+    const [netPromptState, setNetPromptState] = React.useState<
+        "idle" | "busy" | "added" | "dismissed" | "error"
+    >("idle")
+    const [netPromptError, setNetPromptError] = React.useState<string | null>(null)
+    const [netPromptCompany, setNetPromptCompany] = React.useState<string | null>(null)
+
     // v1.0.1 — Phase 2 bootstrap state. Distinct from positioningV2Loading
     // (which tracks the auto-fired /api/positioning/v2/start call on tab
     // entry). startingPhase2 tracks the user-initiated /api/positioning/v2/
@@ -2014,6 +2027,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             const normalized = normalizeJobFitResponseForUI(data)
             setJobFitResult(normalized)
 
+            // The application this scan auto-created (or matched). NULL is a
+            // normal outcome, not a failure: the auto-create is wrapped in a
+            // catch that deliberately does not fail the scan, so the prompt
+            // simply does not render when there is nothing to link.
+            setJobfitApplicationId(normalized?.signal_application_id ?? null)
+            // A new scan is a new question. Reset the prompt so a company
+            // added on the previous scan does not read as this one's answer.
+            setNetPromptState("idle")
+            setNetPromptError(null)
+            setNetPromptCompany(null)
+
             const ctxFromApi = extractJobContextFromJobFit(normalized)
             setJobContext((prev) => {
                 if (ctxFromApi.title || ctxFromApi.company) return ctxFromApi
@@ -2025,6 +2049,45 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setErrorMsg(e?.message || String(e))
         } finally {
             setLoadingJobFit(false)
+        }
+    }
+
+    // Add this job's company to the networking board and link the tracked
+    // application to it, in one server-side call.
+    //
+    // BY NAME, not by id. The endpoint find-or-creates against
+    // uq_network_companies_name (client_profile_id, lower(name)) and treats a
+    // unique violation as success, so pressing this for a company already on
+    // the board links to the existing row instead of erroring. Every query on
+    // that path pins client_profile_id, so this cannot reach another user's
+    // board even in principle.
+    //
+    // JOB TRACKING IS NOT TOUCHED. The application already exists by the time
+    // this renders; this is only about the networking board.
+    async function addCompanyToNetworkBoard(companyName: string) {
+        if (!jobfitApplicationId || netPromptState === "busy") return
+        setNetPromptState("busy")
+        setNetPromptError(null)
+        try {
+            if (!accessToken) throw new Error("Please log in again.")
+            const data = await postJsonWithDebug(
+                `${API_BASE}/api/network/companies/link-application`,
+                {
+                    application_id: jobfitApplicationId,
+                    company_name: companyName,
+                },
+                setDebug,
+                accessToken
+            )
+            // The board's own spelling wins over the one extracted from the
+            // posting: linking to an existing "Globex" from a scan that read
+            // "GLOBEX" should confirm the name the user will actually see on
+            // their board. Falls back to what we sent if the field is absent.
+            setNetPromptCompany(data?.company?.name ?? companyName)
+            setNetPromptState("added")
+        } catch (e: any) {
+            setNetPromptError(e?.message || String(e))
+            setNetPromptState("error")
         }
     }
 
@@ -3221,6 +3284,130 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         )}
                     </div>
                 </div>
+
+                {/* ── NETWORKING PROMPT ──────────────────────────────────
+                    One line under the verdict. Renders ONLY when the scan
+                    produced an application to link and the user has not
+                    already answered, so it is never a permanent fixture.
+
+                    Job tracking is untouched and still automatic: by the time
+                    this shows, the application row already exists. This asks
+                    one question, about the networking board.
+
+                    Dismissal is per scan, held in state rather than persisted.
+                    A new scan is a new question about a different company. */}
+                {jobfitApplicationId &&
+                    netPromptState !== "dismissed" &&
+                    (() => {
+                        const co = String(
+                            (jobFitResult as any)?.job_signals?.companyName ?? ""
+                        ).trim()
+                        if (!co) return null
+                        return (
+                            <div
+                                style={{
+                                    marginTop: 12,
+                                    padding: "14px 16px",
+                                    borderRadius: 12,
+                                    background: "rgba(81,173,229,0.07)",
+                                    border: "1px solid rgba(81,173,229,0.22)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 14,
+                                    flexWrap: "wrap" as const,
+                                }}
+                            >
+                                {netPromptState === "added" ? (
+                                    <div
+                                        style={{
+                                            fontSize: 13.5,
+                                            color: "#CFE9FB",
+                                            lineHeight: "20px",
+                                        }}
+                                    >
+                                        {netPromptCompany ?? co} is on your
+                                        networking board. Anyone you add there
+                                        shows up on this job.
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div
+                                            style={{
+                                                fontSize: 13.5,
+                                                color: "#CFE9FB",
+                                                lineHeight: "20px",
+                                                flex: 1,
+                                                minWidth: 220,
+                                            }}
+                                        >
+                                            Add {co} to your networking
+                                            tracker? One person inside beats
+                                            ten applications.
+                                        </div>
+                                        <button
+                                            type="button"
+                                            disabled={netPromptState === "busy"}
+                                            onClick={() =>
+                                                addCompanyToNetworkBoard(co)
+                                            }
+                                            style={{
+                                                background: "#FEB06A",
+                                                color: "#13294A",
+                                                border: "none",
+                                                borderRadius: 10,
+                                                padding: "9px 18px",
+                                                fontSize: 13.5,
+                                                fontWeight: 800,
+                                                fontFamily: "inherit",
+                                                cursor:
+                                                    netPromptState === "busy"
+                                                        ? "default"
+                                                        : "pointer",
+                                                opacity:
+                                                    netPromptState === "busy"
+                                                        ? 0.6
+                                                        : 1,
+                                            }}
+                                        >
+                                            {netPromptState === "busy"
+                                                ? "Adding…"
+                                                : "Add"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setNetPromptState("dismissed")
+                                            }
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                padding: 0,
+                                                color: "#9FC4DC",
+                                                fontSize: 13,
+                                                fontWeight: 700,
+                                                fontFamily: "inherit",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            Not now
+                                        </button>
+                                    </>
+                                )}
+                                {netPromptError ? (
+                                    <div
+                                        style={{
+                                            fontSize: 12.5,
+                                            color: "#FF9B80",
+                                            fontWeight: 700,
+                                            width: "100%",
+                                        }}
+                                    >
+                                        {netPromptError}
+                                    </div>
+                                ) : null}
+                            </div>
+                        )
+                    })()}
 
                 {/* ── ACTION BANNER ── */}
                 {(whyCount > 0 || riskCount > 0) && (
