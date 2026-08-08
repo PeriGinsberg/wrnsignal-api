@@ -11,7 +11,7 @@
 
 import {
   computeStreak, daysUntil, finalDueDate, isSignedOff, monthGrid, nodeStates,
-  progressOf, signOffActivity,
+  progressOf, signOffActivity, wouldRelock,
   type ProofActivity, type ProofDeliverable,
 } from "./proofProject"
 
@@ -29,6 +29,7 @@ function act(p: Partial<ProofActivity> = {}): ProofActivity {
   return {
     id: `a${seq}`, name: `Activity ${seq}`, owner: "client", status: "not_started",
     due_date: null, sort_order: seq, created_at: `2026-01-0${(seq % 9) + 1}T00:00:00Z`,
+    is_signoff: false,
     ...p,
   }
 }
@@ -37,7 +38,7 @@ function deliv(activities: ProofActivity[], p: Partial<ProofDeliverable> = {}): 
   return {
     id: `d${seq}`, name: `Deliverable ${seq}`, sort_order: seq,
     created_at: "2026-01-01T00:00:00Z", activities,
-    speaking_point: null, has_speaking_point: false,
+    speaking_point: null, has_speaking_point: false, why_this_matters: null,
     ...p,
   }
 }
@@ -48,42 +49,82 @@ console.log("\n— the unlock rule —")
 {
   const activities = [
     act({ owner: "coach", status: "complete", sort_order: 1 }),
-    act({ owner: "coach", status: "not_started", sort_order: 2 }),
+    act({ owner: "coach", status: "not_started", sort_order: 2, is_signoff: true }),
     act({ owner: "client", status: "complete", sort_order: 3 }),
   ]
-  eq("waits for the LAST coach task, not the last task", signOffActivity(activities)?.sort_order, 2)
+  eq("waits for the FLAGGED task", signOffActivity(activities)?.sort_order, 2)
   ok("…so it is not signed off", isSignedOff(activities) === false)
 }
 
 {
-  // The coach signing off IS the proof. Unfinished client work after it must
-  // not hold the reward back.
+  // The sign-off IS the proof. Unfinished work after it must not hold the
+  // reward back.
   const activities = [
-    act({ owner: "coach", status: "complete", sort_order: 2 }),
+    act({ owner: "coach", status: "complete", sort_order: 2, is_signoff: true }),
     act({ owner: "client", status: "not_started", sort_order: 3 }),
   ]
-  ok("unlocks on sign-off even with client work outstanding", isSignedOff(activities) === true)
+  ok("unlocks on sign-off even with other work outstanding", isSignedOff(activities) === true)
+}
+
+// THE REASON THE FLAG EXISTS. Under the old positional rule, reordering moved
+// the trigger. It must not any more.
+{
+  const flagged = act({ owner: "coach", status: "complete", sort_order: 1, is_signoff: true })
+  const other = act({ owner: "coach", status: "not_started", sort_order: 2 })
+  ok("REORDER cannot move the trigger: flagged first", isSignedOff([flagged, other]) === true)
+  // Same two rows, order swapped. The old rule flipped here; this one does not.
+  ok("…still true with the flagged task dragged to the end",
+    isSignedOff([{ ...other, sort_order: 1 }, { ...flagged, sort_order: 9 }]) === true)
+}
+
+// ADDING work after the sign-off must not re-lock: the proof already happened.
+{
+  const signed = [act({ owner: "coach", status: "complete", is_signoff: true })]
+  const plusNew = [...signed, act({ owner: "client", status: "not_started" })]
+  ok("ADDING an activity after sign-off does not re-lock", isSignedOff(plusNew) === true)
 }
 
 {
   // Otherwise such a deliverable could never unlock, by anyone, ever.
   const partly = [act({ owner: "client", status: "complete" }), act({ owner: "client", status: "not_started" })]
-  ok("no coach task → no sign-off activity", signOffActivity(partly) === null)
-  ok("no coach task, partly done → locked", isSignedOff(partly) === false)
+  ok("nothing flagged → no sign-off activity", signOffActivity(partly) === null)
+  ok("nothing flagged, partly done → locked", isSignedOff(partly) === false)
   const all = [act({ owner: "client", status: "complete" }), act({ owner: "both", status: "complete" })]
-  ok("no coach task, all done → unlocked (the fallback)", isSignedOff(all) === true)
+  ok("nothing flagged, all done → unlocked (the fallback)", isSignedOff(all) === true)
 }
 
 // every() on [] is true, so this is the case a naive implementation gets wrong.
 ok("an EMPTY deliverable is never signed off", isSignedOff([]) === false)
 
+// ── Re-lock detection, which the coach-side confirms are built on ──
+console.log("\n— re-lock detection —")
 {
-  const activities = [
-    act({ owner: "coach", status: "not_started", sort_order: 5, created_at: "2026-02-01T00:00:00Z" }),
-    act({ owner: "coach", status: "complete", sort_order: 5, created_at: "2026-01-01T00:00:00Z" }),
-  ]
-  eq("breaks a sort_order tie with created_at", signOffActivity(activities)?.created_at, "2026-02-01T00:00:00Z")
-  ok("…and stays locked on the later one", isSignedOff(activities) === false)
+  const signed = [act({ owner: "coach", status: "complete", is_signoff: true }), act({ status: "not_started" })]
+  // Deleting the sign-off drops to the fallback, and the rest is unfinished.
+  const deleted = signed.slice(1)
+  ok("deleting the sign-off re-locks", wouldRelock(signed, deleted) === true)
+
+  // Moving the flag to an unfinished task.
+  const moved = [{ ...signed[0], is_signoff: false }, { ...signed[1], is_signoff: true }]
+  ok("moving the flag to an unfinished task re-locks", wouldRelock(signed, moved) === true)
+
+  // Reopening the sign-off itself.
+  const reopened = [{ ...signed[0], status: "in_progress" as const }, signed[1]]
+  ok("reopening the sign-off re-locks", wouldRelock(signed, reopened) === true)
+
+  // A harmless edit: renaming an unrelated task.
+  const renamed = [signed[0], { ...signed[1], name: "Renamed" }]
+  ok("an unrelated edit does NOT re-lock", wouldRelock(signed, renamed) === false)
+
+  // Deleting the sign-off when everything ELSE is done falls through to the
+  // fallback and stays unlocked — so the confirm must not cry wolf here.
+  const allDone = [act({ owner: "coach", status: "complete", is_signoff: true }), act({ status: "complete" })]
+  ok("deleting the sign-off does NOT re-lock when the rest is complete",
+    wouldRelock(allDone, allDone.slice(1)) === false)
+
+  // Locked → locked is not a re-lock; there was nothing to take away.
+  const neverSigned = [act({ status: "not_started" })]
+  ok("a locked deliverable cannot re-lock", wouldRelock(neverSigned, []) === false)
 }
 
 // ── Progress ───────────────────────────────────────────────────────────────
@@ -108,8 +149,8 @@ eq("is 0, not NaN, with no tasks", progressOf([]), { completed: 0, total: 0, per
 console.log("\n— journey nodes —")
 
 {
-  const done = [act({ owner: "coach", status: "complete" })]
-  const open = [act({ owner: "coach", status: "not_started" })]
+  const done = [act({ owner: "coach", status: "complete", is_signoff: true })]
+  const open = [act({ owner: "coach", status: "not_started", is_signoff: true })]
   eq("exactly one current node: the first unfinished",
     nodeStates([deliv(done), deliv(open), deliv(open)]), ["complete", "current", "future"])
   // Coaches DO sign off out of order. Hiding that would contradict the

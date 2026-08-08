@@ -51,6 +51,7 @@ type DelivRow = {
   sort_order: number
   created_at: string
   speaking_point: string | null
+  why_this_matters: string | null
 }
 
 type ActRow = {
@@ -61,6 +62,7 @@ type ActRow = {
   due_date: string | null
   sort_order: number
   created_at: string
+  is_signoff: boolean
   engagement_deliverable_id: string
 }
 
@@ -99,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     const { data: delivData, error: delivErr } = await supabase
       .from("coach_client_engagement_deliverables")
-      .select("id, name, sort_order, created_at, speaking_point")
+      .select("id, name, sort_order, created_at, speaking_point, why_this_matters")
       .eq("engagement_id", engagement.id)
     if (delivErr) throw new Error(`Deliverables lookup failed: ${delivErr.message}`)
     const delivs = ((delivData ?? []) as DelivRow[]).sort(byOrder)
@@ -108,7 +110,7 @@ export async function GET(req: NextRequest) {
     // EVERY owner — see note 1 in the header.
     const { data: actData, error: actErr } = await supabase
       .from("coach_client_engagement_activities")
-      .select("id, name, status, owner, due_date, sort_order, created_at, engagement_deliverable_id")
+      .select("id, name, status, owner, due_date, sort_order, created_at, is_signoff, engagement_deliverable_id")
       .in("engagement_deliverable_id", delivs.map((d) => d.id))
     if (actErr) throw new Error(`Activities lookup failed: ${actErr.message}`)
 
@@ -123,6 +125,7 @@ export async function GET(req: NextRequest) {
         due_date: a.due_date,
         sort_order: a.sort_order,
         created_at: a.created_at,
+        is_signoff: a.is_signoff,
       })
       actsByDeliv.set(a.engagement_deliverable_id, list)
     }
@@ -137,8 +140,11 @@ export async function GET(req: NextRequest) {
         created_at: d.created_at,
         activities,
         has_speaking_point: !!(d.speaking_point && d.speaking_point.trim()),
-        // Withheld until earned — see note 2 in the header.
+        // Withheld until earned — see note 2 in the header. why_this_matters is
+        // part of the same reveal and is gated identically; sending the coach's
+        // framing early would give away the reward it frames.
         speaking_point: unlocked && d.speaking_point?.trim() ? d.speaking_point : null,
+        why_this_matters: unlocked && d.why_this_matters?.trim() ? d.why_this_matters : null,
       }
     })
 

@@ -17,6 +17,10 @@
 // editing the live catalog never moves an engagement's price. Cents never leak.
 
 import { type SupabaseClient } from "@supabase/supabase-js"
+// The unlock rule lives in one place and the coach side reads the SAME
+// implementation the client page does. A second copy here is how the coach's
+// warning and the client's card end up disagreeing about what is unlocked.
+import { byOrder, wouldRelock, type ProofActivity } from "../../../lib/proofProject"
 
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
 export { getSupabaseAdmin, resolveCoach, errStatus, UUID_RE } from "./coachAuth"
@@ -72,6 +76,43 @@ export function isValidActivityDueDate(v: unknown): v is string | null {
   return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === da
 }
 
+// ── Activity owner (on a snapshot activity) ──
+export const ACTIVITY_OWNERS = ["coach", "client", "both"] as const
+export type ActivityOwner = (typeof ACTIVITY_OWNERS)[number]
+export function isValidActivityOwner(v: unknown): v is ActivityOwner {
+  return typeof v === "string" && (ACTIVITY_OWNERS as readonly string[]).includes(v)
+}
+
+/**
+ * Activity / deliverable free text. Trimmed, non-empty, bounded.
+ *
+ * The 200 cap is not arbitrary: an activity name renders on one line in the
+ * coach's list, in the client's plan tree and on the Proof Project journey. A
+ * pasted paragraph would not be rejected by the DB (TEXT is unbounded) and would
+ * silently wreck three layouts, so the edge is where it gets caught.
+ */
+export const ACTIVITY_NAME_MAX = 200
+export function normalizeActivityName(v: unknown): string | null {
+  if (typeof v !== "string") return null
+  const t = v.trim()
+  if (!t || t.length > ACTIVITY_NAME_MAX) return null
+  return t
+}
+
+/**
+ * Coach prose fields (speaking_point, why_this_matters). Nullable by design —
+ * clearing one is a normal edit, so "" and whitespace normalize to null rather
+ * than to an empty string that the client would render as a blank card.
+ */
+export const COACH_PROSE_MAX = 600
+export function normalizeCoachProse(v: unknown): { ok: true; value: string | null } | { ok: false } {
+  if (v === null) return { ok: true, value: null }
+  if (typeof v !== "string") return { ok: false }
+  const t = v.trim()
+  if (t.length > COACH_PROSE_MAX) return { ok: false }
+  return { ok: true, value: t || null }
+}
+
 // ── Shared 3-level ownership walk for activity sub-resources (notes, …):
 //    (1) the coach owns coach_clients [id]; (2) the engagement belongs to [id];
 //    (3) the activity belongs to a deliverable of that engagement. Returns the
@@ -125,6 +166,109 @@ export async function resolveOwnedEngagementActivity(
   return { activityId: act.id as string, clientProfileId: (rel.client_profile_id as string | null) ?? null }
 }
 
+/**
+ * The same walk, but stopping at a DELIVERABLE rather than an activity — the
+ * guard for "add an activity to this deliverable" and "edit this deliverable's
+ * prose", where no activity id exists yet to walk through.
+ *
+ * Level (3) is the one that matters: without it a coach could pass another
+ * coach's deliverable_id under their own [id]/[engagement_id] and write to it.
+ */
+export async function resolveOwnedEngagementDeliverable(
+  supabase: SupabaseClient,
+  coachProfileId: string,
+  coachClientId: string,
+  engagementId: string,
+  deliverableId: string,
+): Promise<{ deliverableId: string } | null> {
+  const { data: rel, error: relErr } = await supabase
+    .from("coach_clients")
+    .select("id")
+    .eq("id", coachClientId)
+    .eq("coach_profile_id", coachProfileId)
+    .maybeSingle()
+  if (relErr) throw new Error(`Ownership check failed: ${relErr.message}`)
+  if (!rel) return null
+
+  const { data: eng, error: engErr } = await supabase
+    .from("coach_client_engagements")
+    .select("id")
+    .eq("id", engagementId)
+    .eq("coach_client_id", coachClientId)
+    .maybeSingle()
+  if (engErr) throw new Error(`Engagement lookup failed: ${engErr.message}`)
+  if (!eng) return null
+
+  const { data: deliv, error: delErr } = await supabase
+    .from("coach_client_engagement_deliverables")
+    .select("id, engagement_id")
+    .eq("id", deliverableId)
+    .maybeSingle()
+  if (delErr) throw new Error(`Deliverable lookup failed: ${delErr.message}`)
+  if (!deliv || deliv.engagement_id !== engagementId) return null
+
+  return { deliverableId: deliv.id as string }
+}
+
+/**
+ * A deliverable's activities in the shape the unlock rule reads.
+ *
+ * Every coach write that can change a deliverable's lock state loads this
+ * first, applies the edit IN MEMORY, and compares — see requireConfirm below.
+ */
+export async function loadDeliverableActivities(
+  supabase: SupabaseClient,
+  deliverableId: string,
+): Promise<ProofActivity[]> {
+  const { data, error } = await supabase
+    .from("coach_client_engagement_activities")
+    .select("id, name, owner, status, due_date, sort_order, created_at, is_signoff")
+    .eq("engagement_deliverable_id", deliverableId)
+  if (error) throw new Error(`Activity load failed: ${error.message}`)
+  return ((data ?? []) as ProofActivity[]).sort(byOrder)
+}
+
+/**
+ * THE HARD CONFIRM, ENFORCED SERVER-SIDE.
+ *
+ * A dialog in the coach's browser is a suggestion; this is the rule. Two edits
+ * demand an explicit `confirm: true` in the body:
+ *
+ *   - deleting the sign-off activity, ALWAYS, because it is the row the whole
+ *     unlock hangs on and re-creating it is not a one-click undo;
+ *   - any edit that would take a deliverable from signed-off back to locked,
+ *     because the client may have been reading that speaking point for weeks
+ *     and it would simply vanish.
+ *
+ * Returns the reason when confirmation is required and none was given, so the
+ * route can 409 with copy the UI shows verbatim rather than inventing its own.
+ */
+export function requireConfirm(args: {
+  before: ProofActivity[]
+  next: ProofActivity[]
+  deletingSignoff?: boolean
+  confirmed: boolean
+}): { blocked: true; reason: string; kind: "signoff_delete" | "relock" } | { blocked: false } {
+  if (args.confirmed) return { blocked: false }
+  if (args.deletingSignoff) {
+    return {
+      blocked: true,
+      kind: "signoff_delete",
+      reason:
+        "That's the sign-off task for this deliverable — the one that unlocks the client's speaking point. Deleting it leaves the deliverable with no sign-off.",
+    }
+  }
+  if (wouldRelock(args.before, args.next)) {
+    return {
+      blocked: true,
+      kind: "relock",
+      reason:
+        "This deliverable is signed off, and this change would lock it again. If the client has seen their speaking point, it will disappear.",
+    }
+  }
+  return { blocked: false }
+}
+
 // ── Resolver: client_profile_id + coach → the single coach_clients.id ──
 // UNIQUE(coach_profile_id, client_profile_id) guarantees at most one. Returns
 // null if this coach has no relationship row for that client profile. The linked
@@ -152,12 +296,13 @@ export type EngagementRow = {
   name: string
   discount_cents: number | null
   proposal_status: string
+  is_proof_project: boolean
   attached_at: string
   created_at: string
   updated_at: string
 }
 export const ENGAGEMENT_SELECT =
-  "id, coach_client_id, source_package_id, name, discount_cents, proposal_status, attached_at, created_at, updated_at"
+  "id, coach_client_id, source_package_id, name, discount_cents, proposal_status, is_proof_project, attached_at, created_at, updated_at"
 
 type EngDeliverableRow = {
   id: string
@@ -166,11 +311,13 @@ type EngDeliverableRow = {
   category: string | null
   time_estimate_days: number | null
   fee_cents: number | null
+  speaking_point: string | null
+  why_this_matters: string | null
   sort_order: number
   created_at: string
 }
 const ENG_DELIVERABLE_SELECT =
-  "id, engagement_id, name, category, time_estimate_days, fee_cents, sort_order, created_at"
+  "id, engagement_id, name, category, time_estimate_days, fee_cents, speaking_point, why_this_matters, sort_order, created_at"
 
 type EngActivityRow = {
   id: string
@@ -179,14 +326,15 @@ type EngActivityRow = {
   owner: string
   status: string
   due_date: string | null
+  is_signoff: boolean
   sort_order: number
   created_at: string
 }
 const ENG_ACTIVITY_SELECT =
-  "id, engagement_deliverable_id, name, owner, status, due_date, sort_order, created_at"
+  "id, engagement_deliverable_id, name, owner, status, due_date, is_signoff, sort_order, created_at"
 
 function toApiEngActivity(a: EngActivityRow) {
-  return { id: a.id, name: a.name, owner: a.owner, status: a.status, due_date: a.due_date, sort_order: a.sort_order }
+  return { id: a.id, name: a.name, owner: a.owner, status: a.status, due_date: a.due_date, is_signoff: a.is_signoff, sort_order: a.sort_order }
 }
 
 function toApiEngDeliverable(d: EngDeliverableRow, activities: ReturnType<typeof toApiEngActivity>[]) {
@@ -196,6 +344,8 @@ function toApiEngDeliverable(d: EngDeliverableRow, activities: ReturnType<typeof
     category: d.category,
     time_estimate_days: d.time_estimate_days,
     fee: d.fee_cents === null ? null : d.fee_cents / 100, // dollars at the edge
+    speaking_point: d.speaking_point,
+    why_this_matters: d.why_this_matters,
     sort_order: d.sort_order,
     activities,
   }
@@ -260,6 +410,7 @@ export async function toApiEngagements(supabase: SupabaseClient, rows: Engagemen
       id: e.id,
       name: e.name,
       proposal_status: e.proposal_status,
+      is_proof_project: e.is_proof_project,
       attached_at: e.attached_at,
       discount: discountCents === null ? null : discountCents / 100,
       deliverables,

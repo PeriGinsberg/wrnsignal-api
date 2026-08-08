@@ -23,6 +23,9 @@ export type ProofActivity = {
   due_date: string | null
   sort_order: number
   created_at: string
+  /** The activity whose completion releases this deliverable's reward. At most
+   *  one per deliverable, enforced by a partial unique index. */
+  is_signoff: boolean
 }
 
 export type ProofDeliverable = {
@@ -40,28 +43,38 @@ export type ProofDeliverable = {
   /** Whether a speaking point EXISTS, sent even while locked, so the page can
    *  render a locked card rather than nothing. */
   has_speaking_point: boolean
+  /**
+   * The coach's framing of why the speaking point counts. Shown beneath it once
+   * unlocked, and withheld while locked for the same reason the point itself is
+   * — it is part of the same reveal.
+   */
+  why_this_matters: string | null
 }
 
 // ── The unlock rule ────────────────────────────────────────────────────────
 //
-// A deliverable is signed off when its FINAL coach-owned activity is complete.
-// "Final" is by the same (sort_order, created_at) ordering everything else in
-// the engagement uses, so the sign-off task is whichever coach step the coach
-// put last — not a flagged column, because no such column exists and inventing
-// one would need coach-side UI this slice does not have.
+// A deliverable is signed off when its is_signoff activity is complete.
 //
-// FALLBACK, and it is a real case: a deliverable with NO coach-owned activity
-// has no sign-off step to wait for. Requiring one would leave such a deliverable
-// permanently locked with no way for anyone to unlock it, so it falls back to
+// THIS USED TO BE POSITIONAL — "the final coach-owned activity" — and that broke
+// the moment coaches could reorder. Dragging a coach task to the end silently
+// changed which task released the client's reward, with nothing on screen
+// saying so. The flag makes the trigger a property of the task, so reordering,
+// inserting and deleting other activities cannot move it.
+//
+// FALLBACK, still a real case: a deliverable with NO sign-off activity has no
+// trigger to wait for — a package attached before a coach marked one, or one
+// whose sign-off was deleted. Requiring a flagged row would leave those
+// permanently locked with no way for anyone to unlock them, so they fall back to
 // "every activity complete". A deliverable with no activities at all is NOT
-// signed off — an empty deliverable has proved nothing.
+// signed off; an empty deliverable has proved nothing.
+//
+// The migration backfilled is_signoff using the old positional rule, so every
+// deliverable's lock state survived the change unchanged.
 
-/** The activity whose completion unlocks this deliverable, or null if the
- *  deliverable has no coach-owned step (see the fallback above). */
+/** The activity whose completion unlocks this deliverable, or null when none is
+ *  marked (see the fallback above). */
 export function signOffActivity(activities: ProofActivity[]): ProofActivity | null {
-  const coachOwned = activities.filter((a) => a.owner === "coach")
-  if (coachOwned.length === 0) return null
-  return [...coachOwned].sort(byOrder).at(-1) ?? null
+  return activities.find((a) => a.is_signoff) ?? null
 }
 
 export function isSignedOff(activities: ProofActivity[]): boolean {
@@ -73,6 +86,22 @@ export function isSignedOff(activities: ProofActivity[]): boolean {
 
 export function byOrder(a: { sort_order: number; created_at: string }, b: { sort_order: number; created_at: string }): number {
   return a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at)
+}
+
+/**
+ * Would this edit take a reward the client has ALREADY SEEN back off them?
+ *
+ * The coach-side confirms are built on this. Deleting the sign-off task, moving
+ * the flag to an unfinished task, or reopening a completed sign-off all put a
+ * deliverable from signed-off back to locked — and the client may have been
+ * reading that speaking point for weeks. The write is still allowed (the coach
+ * is right about their own engagement more often than we are), but it must never
+ * be silent.
+ *
+ * `next` is the activity list as it would be AFTER the edit.
+ */
+export function wouldRelock(before: ProofActivity[], next: ProofActivity[]): boolean {
+  return isSignedOff(before) && !isSignedOff(next)
 }
 
 // ── Progress ───────────────────────────────────────────────────────────────

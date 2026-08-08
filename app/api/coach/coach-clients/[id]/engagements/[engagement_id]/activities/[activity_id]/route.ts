@@ -28,8 +28,16 @@ import {
   isValidActivityDueDate,
   isCoachClientOwnedByCoach,
   getApiEngagementById,
+  ACTIVITY_OWNERS,
+  ACTIVITY_NAME_MAX,
+  isValidActivityOwner,
+  normalizeActivityName,
+  loadDeliverableActivities,
+  requireConfirm,
+  resolveOwnedEngagementActivity,
 } from "../../../../../../../_lib/coachEngagements"
 import { logCoachClientEvent } from "../../../../../../../_lib/coachClientEvents"
+import { type ProofActivity } from "@/lib/proofProject"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -51,18 +59,32 @@ export async function PATCH(
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
-    // Allow-list: status and/or due_date. At least one must be present; any other
-    // key is simply ignored (we only ever build an update from these two).
-    const hasStatus = Object.prototype.hasOwnProperty.call(body, "status")
-    const hasDueDate = Object.prototype.hasOwnProperty.call(body, "due_date")
-    if (!hasStatus && !hasDueDate) {
-      return withCorsJson(req, { ok: false, error: "Provide status and/or due_date" }, 400)
+    // Allow-list: status, due_date, name, owner, is_signoff. At least one must be
+    // present; any other key is ignored (the update is only ever built from these).
+    const has = (k: string) => Object.prototype.hasOwnProperty.call(body, k)
+    const hasStatus = has("status")
+    const hasDueDate = has("due_date")
+    const hasName = has("name")
+    const hasOwner = has("owner")
+    const hasSignoff = has("is_signoff")
+    if (!hasStatus && !hasDueDate && !hasName && !hasOwner && !hasSignoff) {
+      return withCorsJson(req, { ok: false, error: "Provide status, due_date, name, owner and/or is_signoff" }, 400)
     }
     if (hasStatus && !isValidActivityStatus(body.status)) {
       return withCorsJson(req, { ok: false, error: `status must be one of: ${ACTIVITY_STATUSES.join(", ")}` }, 400)
     }
     if (hasDueDate && !isValidActivityDueDate(body.due_date)) {
       return withCorsJson(req, { ok: false, error: "due_date must be a YYYY-MM-DD date or null" }, 400)
+    }
+    const nextName = hasName ? normalizeActivityName(body.name) : null
+    if (hasName && !nextName) {
+      return withCorsJson(req, { ok: false, error: `name must be 1–${ACTIVITY_NAME_MAX} characters` }, 400)
+    }
+    if (hasOwner && !isValidActivityOwner(body.owner)) {
+      return withCorsJson(req, { ok: false, error: `owner must be one of: ${ACTIVITY_OWNERS.join(", ")}` }, 400)
+    }
+    if (hasSignoff && typeof body.is_signoff !== "boolean") {
+      return withCorsJson(req, { ok: false, error: "is_signoff must be a boolean" }, 400)
     }
     const nextStatus = hasStatus ? (body.status as string) : null
 
@@ -104,12 +126,58 @@ export async function PATCH(
     }
 
     const priorStatus = activity.status as string
+    const deliverableId = activity.engagement_deliverable_id as string
+
+    // ── Would this edit take the client's reward back? ──
+    //
+    // Apply the edit to an in-memory copy of the deliverable's activities and
+    // ask the SAME unlock rule the client page uses. Reopening a completed
+    // sign-off, or moving the flag to an unfinished task, both re-lock — and the
+    // coach has to say so explicitly before it lands.
+    const before = await loadDeliverableActivities(supabase, deliverableId)
+    const next = before.map((a) => {
+      if (a.id !== activity_id) {
+        // Moving the flag HERE clears it everywhere else, which is what the
+        // unique index would otherwise refuse.
+        return hasSignoff && body.is_signoff === true ? { ...a, is_signoff: false } : a
+      }
+      return {
+        ...a,
+        ...(hasStatus ? { status: nextStatus as ProofActivity["status"] } : {}),
+        ...(hasSignoff ? { is_signoff: body.is_signoff as boolean } : {}),
+      }
+    })
+    const gate = requireConfirm({ before, next, confirmed: body.confirm === true })
+    if (gate.blocked) {
+      return withCorsJson(req, { ok: false, error: gate.reason, requires_confirm: gate.kind }, 409)
+    }
+
+    // Taking the sign-off flag from whichever activity currently holds it MUST
+    // happen before setting it here: the partial unique index permits one true
+    // row per deliverable, so "set new then clear old" fails mid-flight.
+    if (hasSignoff && body.is_signoff === true) {
+      const { error: clearErr } = await supabase
+        .from("coach_client_engagement_activities")
+        .update({ is_signoff: false })
+        .eq("engagement_deliverable_id", deliverableId)
+        .eq("is_signoff", true)
+        .neq("id", activity_id)
+      if (clearErr) {
+        return withCorsJson(req, { ok: false, error: `Failed to move the sign-off: ${clearErr.message}` }, 500)
+      }
+    }
 
     // Update ONLY the fields provided (chain already verified above). Building the
-    // patch from the allow-list flags keeps the write to status/due_date only.
-    const patch: { status?: string; due_date?: string | null } = {}
+    // patch from the allow-list flags keeps the write to the allowed columns.
+    const patch: {
+      status?: string; due_date?: string | null; name?: string
+      owner?: string; is_signoff?: boolean
+    } = {}
     if (hasStatus) patch.status = nextStatus as string
     if (hasDueDate) patch.due_date = body.due_date as string | null
+    if (hasName) patch.name = nextName as string
+    if (hasOwner) patch.owner = body.owner as string
+    if (hasSignoff) patch.is_signoff = body.is_signoff as boolean
     const { error: upErr } = await supabase
       .from("coach_client_engagement_activities")
       .update(patch)
@@ -131,6 +199,83 @@ export async function PATCH(
     }
 
     // Return the fresh engagement so the UI re-renders with the new status.
+    const updated = await getApiEngagementById(supabase, id, engagement_id)
+    return withCorsJson(req, { ok: true, engagement: updated })
+  } catch (e: any) {
+    return withCorsJson(req, { ok: false, error: e?.message || String(e) }, errStatus(e))
+  }
+}
+
+// ── DELETE: remove one activity from the snapshot ──
+//
+// Hard delete. The row is a per-client snapshot, so there is nothing upstream to
+// restore it from and nothing downstream that keeps a foreign key to it except
+// its own notes, which CASCADE.
+//
+// WHAT SURVIVES A DELETE, DELIBERATELY: the activity_completed event. If the
+// client finished this task on Tuesday, they finished something on Tuesday, and
+// their streak should not retroactively lose a day because the coach later
+// restructured the plan. The event log is a record of days worked, not an index
+// of rows that still exist.
+//
+// Deleting the SIGN-OFF task always requires `confirm: true` — see
+// requireConfirm. Deleting a completed non-sign-off task can also re-lock
+// nothing, but it does move the percentage, which needs no confirmation because
+// it is visibly recomputed on the same screen.
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; engagement_id: string; activity_id: string }> },
+) {
+  try {
+    const { id, engagement_id, activity_id } = await params
+    const { coachProfileId, error } = await resolveCoach(req)
+    if (error) return error
+
+    // DELETE carries no body in most clients, so the confirm rides on the query
+    // string. Body is still read when present, so both shapes work.
+    const url = new URL(req.url)
+    const body = await req.json().catch(() => null)
+    const confirmed =
+      url.searchParams.get("confirm") === "true" ||
+      (!!body && typeof body === "object" && (body as { confirm?: unknown }).confirm === true)
+
+    const supabase = getSupabaseAdmin()
+    const owned = await resolveOwnedEngagementActivity(
+      supabase, coachProfileId, id, engagement_id, activity_id,
+    )
+    if (!owned) return withCorsJson(req, { ok: false, error: "Activity not found" }, 404)
+
+    const { data: activity, error: actErr } = await supabase
+      .from("coach_client_engagement_activities")
+      .select("id, engagement_deliverable_id, is_signoff")
+      .eq("id", activity_id)
+      .maybeSingle()
+    if (actErr) return withCorsJson(req, { ok: false, error: `Failed to read activity: ${actErr.message}` }, 500)
+    if (!activity) return withCorsJson(req, { ok: false, error: "Activity not found" }, 404)
+
+    const deliverableId = activity.engagement_deliverable_id as string
+    const before = await loadDeliverableActivities(supabase, deliverableId)
+    const next = before.filter((a) => a.id !== activity_id)
+
+    const gate = requireConfirm({
+      before,
+      next,
+      deletingSignoff: activity.is_signoff === true,
+      confirmed,
+    })
+    if (gate.blocked) {
+      return withCorsJson(req, { ok: false, error: gate.reason, requires_confirm: gate.kind }, 409)
+    }
+
+    const { error: delErr } = await supabase
+      .from("coach_client_engagement_activities")
+      .delete()
+      .eq("id", activity_id)
+      .eq("engagement_deliverable_id", deliverableId)
+    if (delErr) {
+      return withCorsJson(req, { ok: false, error: `Failed to delete activity: ${delErr.message}` }, 500)
+    }
+
     const updated = await getApiEngagementById(supabase, id, engagement_id)
     return withCorsJson(req, { ok: true, engagement: updated })
   } catch (e: any) {

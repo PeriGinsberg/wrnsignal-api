@@ -78,8 +78,19 @@ export async function PATCH(
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
-    if (!isValidProposalStatus(body.proposal_status)) {
+    // Two independently-settable fields. proposal_status keeps its original
+    // required-if-present validation; is_proof_project is the Proof Project
+    // flag, which selects a PRESENTATION and changes no engagement data.
+    const hasProposal = Object.prototype.hasOwnProperty.call(body, "proposal_status")
+    const hasProofFlag = Object.prototype.hasOwnProperty.call(body, "is_proof_project")
+    if (!hasProposal && !hasProofFlag) {
+      return withCorsJson(req, { ok: false, error: "Provide proposal_status and/or is_proof_project" }, 400)
+    }
+    if (hasProposal && !isValidProposalStatus(body.proposal_status)) {
       return withCorsJson(req, { ok: false, error: `proposal_status must be one of: ${PROPOSAL_STATUSES.join(", ")}` }, 400)
+    }
+    if (hasProofFlag && typeof body.is_proof_project !== "boolean") {
+      return withCorsJson(req, { ok: false, error: "is_proof_project must be a boolean" }, 400)
     }
 
     const supabase = getSupabaseAdmin()
@@ -87,17 +98,39 @@ export async function PATCH(
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
 
+    // ONE PROOF PROJECT PER CLIENT, enforced here rather than in the schema.
+    // The client route takes the oldest flagged engagement, so a second flag
+    // would silently do nothing — which looks like a broken toggle. Clearing the
+    // others first makes the switch mean what it appears to mean. A unique index
+    // was rejected for this: it would turn a presentation choice into a failed
+    // write, and the coach's intent when flagging a second one is obviously
+    // "this one instead".
+    if (hasProofFlag && body.is_proof_project === true) {
+      const { error: clearErr } = await supabase
+        .from("coach_client_engagements")
+        .update({ is_proof_project: false })
+        .eq("coach_client_id", id)
+        .eq("is_proof_project", true)
+        .neq("id", engagement_id)
+      if (clearErr) {
+        return withCorsJson(req, { ok: false, error: `Failed to move the proof project flag: ${clearErr.message}` }, 500)
+      }
+    }
+
     // Update ONLY the engagement row, matched on BOTH engagement_id and
     // coach_client_id = [id] (the dual check). No coach_clients write.
+    const patch: { proposal_status?: string; is_proof_project?: boolean } = {}
+    if (hasProposal) patch.proposal_status = body.proposal_status
+    if (hasProofFlag) patch.is_proof_project = body.is_proof_project
     const { data: updated, error: upErr } = await supabase
       .from("coach_client_engagements")
-      .update({ proposal_status: body.proposal_status })
+      .update(patch)
       .eq("id", engagement_id)
       .eq("coach_client_id", id)
       .select("id")
       .maybeSingle()
     if (upErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to update proposal status: ${upErr.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to update engagement: ${upErr.message}` }, 500)
     }
     if (!updated) {
       return withCorsJson(req, { ok: false, error: "Engagement not found" }, 404)
