@@ -8838,6 +8838,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     authedEmail={authedEmail}
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
+                    onNetworkBoard={goToNetworkCompanies}
                     onLogout={logout}
                 />
 
@@ -9912,6 +9913,7 @@ function SideNav({
     authedEmail,
     onSelect,
     onRunNewJob,
+    onNetworkBoard,
     onLogout,
 }: {
     tab: TabKey
@@ -9919,6 +9921,8 @@ function SideNav({
     authedEmail: string | null
     onSelect: (t: TabKey) => void
     onRunNewJob: () => void
+    /** Leaves the component for the dashboard board. Not a tab switch. */
+    onNetworkBoard: () => void
     onLogout: () => void
 }) {
 
@@ -10018,11 +10022,15 @@ function SideNav({
                 locked={false}
                 onClick={() => onSelect("coverletter")}
             />
+            {/* The board on the dashboard is the only networking now. This
+                leaves the component entirely rather than switching tabs, so it
+                is never the active tab — the old in-component plan tab it used
+                to open is being retired. */}
             <SideNavItem
                 label="Networking"
-                active={tab === "networking"}
+                active={false}
                 locked={false}
-                onClick={() => onSelect("networking")}
+                onClick={onNetworkBoard}
             />
 
             <div style={{ height: 14 }} />
