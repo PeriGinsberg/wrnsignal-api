@@ -125,9 +125,28 @@ export async function GET(
       }
     }
 
-    // Cover letter + networking still resolve by shared fingerprint_hash —
-    // known-dead today (each function fingerprints independently). Left
-    // untouched; fixed in their own slices.
+    // Cover letter: resolve coverletter_runs by the same jobfit_run_id link
+    // (stamped at cover letter write — 20260720 migration). Same precise
+    // this-job match as positioning. Latest if multiple.
+    async function fetchCoverLetter(): Promise<any> {
+      try {
+        const { data } = await supabase
+          .from("coverletter_runs")
+          .select("result_json")
+          .eq("jobfit_run_id", jobfitRunId)
+          .eq("client_profile_id", profileId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        return data?.result_json ?? null
+      } catch {
+        return null
+      }
+    }
+
+    // Networking still resolves by shared fingerprint_hash — known-dead today
+    // (each function fingerprints independently). Left untouched; fixed in its
+    // own slice.
     const fpHash = run.fingerprint_hash
     async function fetchRelated(table: string): Promise<any> {
       try {
@@ -145,7 +164,7 @@ export async function GET(
 
     const [posRes, clRes, netRes] = await Promise.all([
       fetchPositioning(),
-      fetchRelated("coverletter_runs"),
+      fetchCoverLetter(),
       fetchRelated("networking_runs"),
     ])
 
