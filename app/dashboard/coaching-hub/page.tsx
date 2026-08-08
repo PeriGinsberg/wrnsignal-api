@@ -79,6 +79,84 @@ function fmtHost(url: string): string {
   }
 }
 
+/**
+ * The way in to the Proof Project page — and the only one, since the nav is a
+ * fixed list that cannot know whether this client has a flagged engagement.
+ *
+ * It asks the API rather than being told by the parent because the parent reads
+ * /api/me/activities, which deliberately knows nothing about proof projects.
+ * The cost is one extra request on hub load; the alternative is widening the
+ * plan endpoint with a field only this banner uses.
+ *
+ * SILENT ON EVERY FAILURE. No project, not coached, request failed, still
+ * loading — all render nothing. A broken banner promising a page that may not
+ * exist is worse than no banner, and this is an entry point, not content.
+ */
+function ProofProjectEntry() {
+  const [project, setProject] = useState<{ name: string; percent: number } | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const token = await getToken()
+        if (!token) return
+        const res = await fetch("/api/me/proof-project", { headers: { Authorization: `Bearer ${token}` } })
+        const j = await res.json().catch(() => ({}))
+        if (!mounted || !res.ok || !j?.ok || !j.project) return
+        const acts = (j.project.deliverables ?? []).flatMap((d: { activities?: unknown[] }) => d.activities ?? [])
+        const total = acts.length
+        const done = acts.filter((a: { status?: string }) => a?.status === "complete").length
+        // Same never-round-up-to-100 rule as the page itself.
+        const percent = total === 0 ? 0 : done === total ? 100 : Math.min(99, Math.floor((done / total) * 100))
+        setProject({ name: j.project.name, percent })
+      } catch {
+        /* silent — see the note above */
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  if (!project) return null
+
+  return (
+    <a
+      href="/dashboard/coaching-hub/proof-project"
+      style={{
+        ...card,
+        padding: 22,
+        display: "flex",
+        alignItems: "center",
+        gap: 18,
+        textDecoration: "none",
+        background: `linear-gradient(135deg, rgba(254,176,106,0.14), rgba(254,176,106,0.03)), ${T.CARD}`,
+        border: `1px solid ${T.ORANGE_BORDER}`,
+        flexWrap: "wrap",
+      }}
+    >
+      <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: "uppercase", color: T.WRN_ORANGE }}>
+          Proof Project
+        </div>
+        <div style={{ marginTop: 6, fontSize: 16, fontWeight: 800, color: T.TEXT, overflowWrap: "anywhere" }}>
+          {project.name}
+        </div>
+        <div style={{ marginTop: 4, fontSize: 13, color: T.MUTED }}>
+          {project.percent}% complete — see the whole journey →
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: 34, fontWeight: 900, color: T.WRN_ORANGE,
+          fontVariantNumeric: "tabular-nums", flexShrink: 0, lineHeight: 1,
+        }}
+      >
+        {project.percent}%
+      </div>
+    </a>
+  )
+}
+
 export default function CoachingHubPage() {
   // Single source of truth for /api/me/activities — fed to both the Action Items
   // zone and the plan. (Lifted from MyPlanSection unchanged; same optimistic
@@ -167,6 +245,10 @@ export default function CoachingHubPage() {
       {/* Stacked sections — single scrolling page, top to bottom. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <RequiredActionsSection groups={groups} />
+        {/* Below Required Actions on purpose: this is the motivating surface,
+            but a coach asking for something is still the more urgent thing on
+            the page. Renders nothing at all unless a proof project exists. */}
+        <ProofProjectEntry />
         <MyPlanSection
           groups={groups}
           loading={loading}
