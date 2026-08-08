@@ -143,6 +143,39 @@ describe("NetworkAtCompany, linked", () => {
     expect(new URLSearchParams(href.split("?")[1]).get("label")).toBe("Initech")
   })
 
+  /**
+   * THE BUG A TESTER FOUND. The linked branch was either/or: the people OR the
+   * add link, never both, so a company with one contact offered no way to add a
+   * second. Reported as "the add button isn't there" on a seeded company with
+   * two contacts, and it genuinely was not.
+   */
+  it("still offers to add someone when the company ALREADY has contacts", async () => {
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={() => {}} />)
+    expect(await screen.findByRole("link", { name: "Dana Reed" })).toBeTruthy()
+    // The people are still there; the add link is additional, not instead.
+    expect(screen.getByRole("link", { name: /Add someone else at Globex/ })).toBeTruthy()
+  })
+
+  it("carries the same four params from the populated state", async () => {
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={() => {}} />)
+    const href = (await screen.findByTestId("add-contact-here")).getAttribute("href")!
+    const q = new URLSearchParams(href.split("?")[1])
+    expect(q.get("add")).toBe("1")
+    expect(q.get("company")).toBe("Globex")
+    expect(q.get("return")).toBe("/dashboard/tracker/app-1")
+    expect(q.get("label")).toBe("Operations Analyst at Globex")
+  })
+
+  /**
+   * The control was labelled "Not the right company", which describes the
+   * situation instead of naming the action. A tester looking for "unlink"
+   * scanned past it on a screen where it was rendered and visible.
+   */
+  it("names the action 'Unlink' rather than describing the situation", async () => {
+    render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={() => {}} />)
+    expect(await screen.findByRole("button", { name: "Unlink" })).toBeTruthy()
+  })
+
   it("can unlink, sending company_id explicitly null", async () => {
     const onChanged = vi.fn()
     render(<NetworkAtCompany applicationId="app-1" companyName="Globex" jobTitle="Operations Analyst" companyId="co-1" onChanged={onChanged} />)

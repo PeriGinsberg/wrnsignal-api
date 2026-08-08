@@ -13,7 +13,13 @@
 //   linked, no contacts yet                  the loudest state. A company on
 //                                            the board with nobody at it is
 //                                            the one thing here worth fixing
-//   linked, with contacts                    the people, their stage, read only
+//   linked, with contacts                    the people, their stage, and a
+//                                            quieter way to add another
+//
+// ADD IS IN BOTH LINKED STATES. It was in the empty one only, so a company with
+// one contact offered no way to add a second and the user had to leave and
+// retype the company — the very thing the empty state's link exists to prevent.
+// Found by a tester on a seeded company with two contacts.
 //
 // A NAME MATCH ONLY EVER SUGGESTS. Never auto-links. The comparison is exact
 // case-insensitive equality, the same one lower(name) makes in
@@ -212,6 +218,7 @@ export function NetworkAtCompany({
             </a>
           </>
         ) : (
+          <>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
             {contacts.map((c) => {
               const st = statusStyle(S, stageMeaning(c.stage))
@@ -237,10 +244,31 @@ export function NetworkAtCompany({
               )
             })}
           </div>
+          {/* ONE CONTACT IS NOT DONE. This branch used to render the people and
+              nothing else, so the moment a company had a single contact the
+              only way to add a second was to leave for the contacts list and
+              retype the company — the exact retyping the empty state was built
+              to avoid. Same href, same four params; quieter, because here the
+              people are the content and this is not the headline. */}
+          <a
+            href={addContactHref}
+            data-testid="add-contact-here"
+            style={{
+              display: "inline-block", marginTop: 14, fontSize: 13.5,
+              fontWeight: 700, color: S.action.quietInk, textDecoration: "none",
+            }}
+          >
+            Add someone else at {companyName} →
+          </a>
+          </>
         )}
 
         {/* Quiet, never peach. Undoing a mistake is not the action the screen
-            wants, but it has to be reachable from the screen that made it. */}
+            wants, but it has to be reachable from the screen that made it.
+            SAY THE WORD "UNLINK". This read "Not the right company", which
+            describes the situation rather than naming the action, and a tester
+            hunting for "unlink" scanned straight past it on a screen where it
+            was rendered and visible. Quiet is about weight, not vocabulary. */}
         <button
           onClick={() => void post({ company_id: null })}
           disabled={busy}
@@ -251,7 +279,7 @@ export function NetworkAtCompany({
             cursor: busy ? "default" : "pointer", fontFamily: "inherit", opacity: busy ? 0.6 : 1,
           }}
         >
-          {busy ? "Working…" : "Not the right company"}
+          {busy ? "Working…" : "Unlink"}
         </button>
       </>,
     )

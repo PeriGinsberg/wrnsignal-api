@@ -382,19 +382,20 @@ export default function ApplicationDetailPage({
         </div>
       </div>
 
-      {/* 4 — interviews, where they belong */}
-      <InterviewsSection
-        applicationId={app.id}
-        interviews={interviews}
-        onChanged={load}
-      />
-
-      {/* 4b — the networking board link.
+      {/* 4 — the networking board link.
           The section this file's header comment said was "NOT BUILT" because
           it "needs an application-to-company link the schema does not have".
           20260805_application_company_link.sql added it, so this is that
           section, and it is the surface that creates the link the contact
-          record reads. */}
+          record reads.
+
+          ABOVE INTERVIEWS, not below. It sat under a section that grows without
+          bound — every interview on the application, each with its own rows —
+          so on any job with real interview history this was pushed off the
+          screen entirely. A tester reported its controls missing on a job where
+          they were rendering fine; they were just far enough down to be
+          invisible. Interviews are a record you go looking for; this is a
+          prompt that has to be seen without being sought. */}
       <NetworkAtCompany
         applicationId={app.id}
         companyName={app.company_name}
@@ -403,7 +404,14 @@ export default function ApplicationDetailPage({
         onChanged={load}
       />
 
-      {/* 5 — what a coach said. Teal, so it never reads as the student's own note. */}
+      {/* 5 — interviews, where they belong */}
+      <InterviewsSection
+        applicationId={app.id}
+        interviews={interviews}
+        onChanged={load}
+      />
+
+      {/* 6 — what a coach said. Teal, so it never reads as the student's own note. */}
       {annotations.length > 0 && (
         <section
           style={{
@@ -432,7 +440,7 @@ export default function ApplicationDetailPage({
         </section>
       )}
 
-      {/* 6 — reference, behind drawers */}
+      {/* 7 — reference, behind drawers */}
       <div style={{ marginTop: 14 }}>
         <Collapsible
           title="Details"
