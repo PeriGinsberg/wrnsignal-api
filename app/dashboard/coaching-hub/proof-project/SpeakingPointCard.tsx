@@ -31,11 +31,15 @@ function LockIcon({ size = 15 }: { size?: number }) {
 }
 
 export function SpeakingPointCard({
-  unlocked, text, deliverableName,
+  unlocked, text, whyThisMatters, deliverableName,
 }: {
   unlocked: boolean
   /** Null whenever locked — the server withholds it. */
   text: string | null
+  /** The coach's framing, gated identically to `text`. Often null: plenty of
+   *  speaking points need no gloss, and an empty section under one would read
+   *  as something failing to load. */
+  whyThisMatters: string | null
   deliverableName: string
 }) {
   const reduced = useReducedMotion()
@@ -123,6 +127,21 @@ export function SpeakingPointCard({
           <blockquote style={{ margin: 0, fontSize: 14.5, lineHeight: "21px", color: T.TEXT, fontWeight: 600 }}>
             {text ? `“${text}”` : null}
           </blockquote>
+
+          {/* The coach's voice, and visibly not the client's: unquoted, lighter,
+              behind a rule. The quote above is the thing to say out loud; this
+              is why it lands. Two blocks of identical prose would blur which is
+              which. */}
+          {whyThisMatters && (
+            <div style={{ marginTop: 4, paddingTop: 9, borderTop: `1px solid ${ACCENT_EDGE}` }}>
+              <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", color: T.DIM }}>
+                Why this matters
+              </div>
+              <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: "19px", color: T.MUTED }}>
+                {whyThisMatters}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

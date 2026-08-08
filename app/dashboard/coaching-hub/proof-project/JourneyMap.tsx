@@ -233,6 +233,7 @@ export function JourneyMap({ deliverables }: { deliverables: ProofDeliverable[] 
                   <SpeakingPointCard
                     unlocked={state === "complete"}
                     text={d.speaking_point}
+                    whyThisMatters={d.why_this_matters}
                     deliverableName={d.name}
                   />
                 )}

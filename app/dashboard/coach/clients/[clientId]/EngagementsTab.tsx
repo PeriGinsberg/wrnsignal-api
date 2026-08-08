@@ -23,6 +23,9 @@ import { useCallback, useEffect, useState } from "react"
 import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
+import {
+  ActivityEditRow, AddActivityRow, DeliverableProse, ProofProjectToggle,
+} from "./EngagementEditing"
 
 // Visibility palette — mirrored from NoteVisibilityIcon (teal = shared with client,
 // goldenrod = coach-private). The icon hardcodes these and doesn't export them; keep
@@ -30,13 +33,15 @@ import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 const VIS_TEAL = "#2CA58D"
 const VIS_GOLD = "#E1A92E"
 
-type EngActivity = { id: string; name: string; owner: string; status: string; due_date: string | null; sort_order: number }
+type EngActivity = { id: string; name: string; owner: string; status: string; due_date: string | null; is_signoff: boolean; sort_order: number }
 type EngDeliverable = {
   id: string
   name: string
   category: string | null
   time_estimate_days: number | null
   fee: number | null // DOLLARS; null = unpriced
+  speaking_point: string | null
+  why_this_matters: string | null
   sort_order: number
   activities: EngActivity[]
 }
@@ -52,6 +57,7 @@ type Engagement = {
   id: string
   name: string
   proposal_status: string
+  is_proof_project: boolean
   attached_at: string
   discount: number | null // DOLLARS; null = no discount
   deliverables: EngDeliverable[]
@@ -300,6 +306,160 @@ export function EngagementsTab({
     }
   }
 
+  // ── Editing writes ──
+  //
+  // All of these reconcile from the FRESH engagement the API returns rather than
+  // patching local state by hand: adds, deletes and reorders all shift
+  // sort_order and the sign-off flag across sibling rows, and reproducing that
+  // client-side is how the two copies drift apart.
+  //
+  // The three that can be refused return the SERVER'S message so the row can
+  // show it in a confirm gate; everything else surfaces a banner.
+
+  async function patchActivity(
+    engagementId: string, activityId: string, patch: Record<string, unknown>, confirm = false,
+  ): Promise<string | null> {
+    if (!base) return null
+    setSettingActivityId(activityId)
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}/activities/${activityId}`, {
+        method: "PATCH",
+        body: JSON.stringify(confirm ? { ...patch, confirm: true } : patch),
+      })
+      const j = await res.json().catch(() => ({}))
+      // 409 + requires_confirm is not an error — it is the gate asking.
+      if (res.status === 409 && j?.requires_confirm) return j.error as string
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't update task (${res.status})`)
+        await resync()
+        return null
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+      return null
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+      return null
+    } finally {
+      setSettingActivityId(null)
+    }
+  }
+
+  async function deleteActivity(engagementId: string, activityId: string, confirm = false): Promise<string | null> {
+    if (!base) return null
+    setSettingActivityId(activityId)
+    setActionError(null)
+    try {
+      const res = await authFetch(
+        `${base}/${engagementId}/activities/${activityId}${confirm ? "?confirm=true" : ""}`,
+        { method: "DELETE" },
+      )
+      const j = await res.json().catch(() => ({}))
+      if (res.status === 409 && j?.requires_confirm) return j.error as string
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't delete task (${res.status})`)
+        await resync()
+        return null
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+      return null
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+      return null
+    } finally {
+      setSettingActivityId(null)
+    }
+  }
+
+  async function addActivity(engagementId: string, deliverableId: string, name: string, owner: string) {
+    if (!base) return
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}/activities`, {
+        method: "POST",
+        body: JSON.stringify({ deliverable_id: deliverableId, name, owner }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't add the task (${res.status})`)
+        await resync()
+        return
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    }
+  }
+
+  async function reorderActivities(engagementId: string, deliverableId: string, orderedIds: string[]) {
+    if (!base) return
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}/activities`, {
+        method: "PATCH",
+        body: JSON.stringify({ deliverable_id: deliverableId, ordered_activity_ids: orderedIds }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't reorder (${res.status})`)
+        await resync()
+        return
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    }
+  }
+
+  async function saveDeliverableProse(
+    engagementId: string, deliverableId: string,
+    patch: { speaking_point?: string | null; why_this_matters?: string | null },
+  ) {
+    if (!base) return
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}/deliverables/${deliverableId}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't save (${res.status})`)
+        await resync()
+        return
+      }
+      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    }
+  }
+
+  // Flagging one proof project clears any other on this client, server-side, so
+  // the whole list is resynced rather than just this card.
+  async function setProofProject(engagementId: string, next: boolean) {
+    if (!base) return
+    setActionError(null)
+    try {
+      const res = await authFetch(`${base}/${engagementId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_proof_project: next }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) {
+        setActionError(j?.error || `Couldn't update (${res.status})`)
+      }
+      await resync()
+    } catch {
+      setActionError("Network error — try again")
+      await resync()
+    }
+  }
+
   async function detach(id: string) {
     if (!base || detachingId) return
     // High-stakes (deletes the client's copy) — explicit confirm, unlike a catalog row.
@@ -369,6 +529,12 @@ export function EngagementsTab({
               onSetStatus={(s) => void setStatus(e.id, s)}
               onSetActivityStatus={(activityId, status) => void setActivityStatus(e.id, activityId, status)}
               onSetActivityDueDate={(activityId, dueDate) => void setActivityDueDate(e.id, activityId, dueDate)}
+              onPatchActivity={(activityId, patch, confirm) => patchActivity(e.id, activityId, patch, confirm)}
+              onDeleteActivity={(activityId, confirm) => deleteActivity(e.id, activityId, confirm)}
+              onAddActivity={(deliverableId, name, owner) => addActivity(e.id, deliverableId, name, owner)}
+              onReorderActivities={(deliverableId, ids) => reorderActivities(e.id, deliverableId, ids)}
+              onSaveProse={(deliverableId, patch) => saveDeliverableProse(e.id, deliverableId, patch)}
+              onSetProofProject={(next) => void setProofProject(e.id, next)}
             />
           ))}
         </div>
@@ -432,6 +598,7 @@ export function EngagementsTab({
 // ── One engagement card (collapsed summary + proposal control + frozen snapshot) ──
 function EngagementCard({
   e, coachClientId, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
+  onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse, onSetProofProject,
   onToggle, onDetach, onSetStatus, onSetActivityStatus, onSetActivityDueDate,
 }: {
   e: Engagement
@@ -440,6 +607,12 @@ function EngagementCard({
   detaching: boolean
   proposalBusy: boolean
   settingActivityId: string | null
+  onPatchActivity: (activityId: string, patch: Record<string, unknown>, confirm?: boolean) => Promise<string | null>
+  onDeleteActivity: (activityId: string, confirm?: boolean) => Promise<string | null>
+  onAddActivity: (deliverableId: string, name: string, owner: string) => Promise<void>
+  onReorderActivities: (deliverableId: string, ids: string[]) => Promise<void>
+  onSaveProse: (deliverableId: string, patch: { speaking_point?: string | null; why_this_matters?: string | null }) => Promise<void>
+  onSetProofProject: (next: boolean) => void
   showConvertNudge: boolean
   onToggle: () => void
   onDetach: () => void
@@ -473,6 +646,8 @@ function EngagementCard({
             <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: pm.color, background: pm.bg, border: `1px solid ${pm.border}`, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>
               {pm.label}
             </span>
+            {/* One per client: flagging this clears any other, server-side. */}
+            <ProofProjectToggle on={e.is_proof_project} busy={proposalBusy} onToggle={onSetProofProject} />
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 5, fontSize: 12, color: T.MUTED }}>
             {chips.map((c, i) => <span key={i}>{c}</span>)}
@@ -551,6 +726,12 @@ function EngagementCard({
                 coachClientId={coachClientId}
                 engagementId={e.id}
                 settingActivityId={settingActivityId}
+                isProofProject={e.is_proof_project}
+                onPatchActivity={onPatchActivity}
+                onDeleteActivity={onDeleteActivity}
+                onAddActivity={onAddActivity}
+                onReorderActivities={onReorderActivities}
+                onSaveProse={onSaveProse}
                 onSetActivityStatus={onSetActivityStatus}
                 onSetActivityDueDate={onSetActivityDueDate}
               />
@@ -565,6 +746,7 @@ function EngagementCard({
 // ── Deliverable sub-block: inset surface + coral left accent + nested activities ──
 function DeliverableBlock({
   d, coachClientId, engagementId, settingActivityId, onSetActivityStatus, onSetActivityDueDate,
+  isProofProject, onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse,
 }: {
   d: EngDeliverable
   coachClientId: string
@@ -572,7 +754,16 @@ function DeliverableBlock({
   settingActivityId: string | null
   onSetActivityStatus: (activityId: string, status: string) => void
   onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
+  isProofProject: boolean
+  onPatchActivity: (activityId: string, patch: Record<string, unknown>, confirm?: boolean) => Promise<string | null>
+  onDeleteActivity: (activityId: string, confirm?: boolean) => Promise<string | null>
+  onAddActivity: (deliverableId: string, name: string, owner: string) => Promise<void>
+  onReorderActivities: (deliverableId: string, ids: string[]) => Promise<void>
+  onSaveProse: (deliverableId: string, patch: { speaking_point?: string | null; why_this_matters?: string | null }) => Promise<void>
 }) {
+  // Editing is a MODE. The read view is what a coach looks at during a call;
+  // delete buttons do not belong there by default.
+  const [editing, setEditing] = useState(false)
   return (
     <div style={{ display: "flex", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.NAV_DEFAULT_BG, overflow: "hidden" }}>
       {/* Thin coral left-accent bar (inner element → block keeps rounded corners). */}
@@ -587,9 +778,57 @@ function DeliverableBlock({
               {d.category}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            style={{
+              marginLeft: "auto", background: "none", border: "none", padding: 0,
+              color: editing ? T.WRN_ORANGE : T.DIM, fontSize: 11, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}
+          >
+            {editing ? "Done" : "Edit tasks"}
+          </button>
         </div>
 
-        {d.activities.length > 0 && (
+        {editing ? (
+          <div style={{ marginTop: 6, paddingLeft: 10 }}>
+            {d.activities.map((a, i) => (
+              <ActivityEditRow
+                key={a.id}
+                a={a}
+                index={i}
+                count={d.activities.length}
+                busy={settingActivityId === a.id}
+                onPatch={(patch, confirm) => onPatchActivity(a.id, patch, confirm)}
+                onDelete={(confirm) => onDeleteActivity(a.id, confirm)}
+                onMove={(dir) => {
+                  // Swap locally, send the WHOLE resulting order. The endpoint
+                  // rejects a partial list, which is what stops a dropped id
+                  // from silently scrambling sort_order.
+                  const ids = d.activities.map((x) => x.id)
+                  const j = i + dir
+                  if (j < 0 || j >= ids.length) return
+                  ;[ids[i], ids[j]] = [ids[j], ids[i]]
+                  void onReorderActivities(d.id, ids)
+                }}
+              />
+            ))}
+            <AddActivityRow
+              busy={!!settingActivityId}
+              onAdd={(name, owner) => onAddActivity(d.id, name, owner)}
+            />
+            {/* Only where it will actually be read. */}
+            {isProofProject && (
+              <DeliverableProse
+                speakingPoint={d.speaking_point}
+                whyThisMatters={d.why_this_matters}
+                busy={!!settingActivityId}
+                onSave={(patch) => onSaveProse(d.id, patch)}
+              />
+            )}
+          </div>
+        ) : d.activities.length > 0 ? (
           <div style={{ marginTop: 6, paddingLeft: 10 }}>
             {d.activities.map((a, i) => (
               <div
@@ -603,6 +842,18 @@ function DeliverableBlock({
                   {/* Activity name = secondary/muted tier (a step below the deliverable). */}
                   <span style={{ color: T.MUTED }}>{a.name}</span>
                   <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
+                  {a.is_signoff && (
+                    <span
+                      title="Completing this unlocks the client's speaking point"
+                      style={{
+                        fontSize: 9, fontWeight: 900, letterSpacing: 0.6, textTransform: "uppercase",
+                        color: T.WRN_ORANGE, border: `1px solid ${T.NAV_ACTIVE_BORDER}`,
+                        background: "rgba(254,176,106,0.10)", borderRadius: 5, padding: "1px 5px",
+                      }}
+                    >
+                      Sign-off
+                    </span>
+                  )}
                   {/* Optional due date — native picker, set/clear writes due_date. */}
                   <ActivityDueDateControl
                     value={a.due_date}
@@ -623,7 +874,7 @@ function DeliverableBlock({
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
