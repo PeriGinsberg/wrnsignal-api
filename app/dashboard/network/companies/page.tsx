@@ -70,6 +70,28 @@ export default function CompaniesBoardPage() {
     return m
   }, [companies])
 
+  /**
+   * The board as ONE flat, ordered list: a heading, then its cards, then the
+   * next heading. Grouping is still by tier and reads identically; what changes
+   * is that grouping is now expressed by POSITION rather than by nesting, so
+   * every card has the same parent and keeps its identity when its tier changes.
+   * See the render for why that matters.
+   */
+  type BoardItem =
+    | { kind: "heading"; tier: string; count: number }
+    | { kind: "card"; company: Company }
+
+  const ordered = useMemo(() => {
+    const out: BoardItem[] = []
+    for (const tier of TIER_ORDER) {
+      const rows = grouped.get(tier) ?? []
+      if (rows.length === 0) continue // an empty tier still shows no heading
+      out.push({ kind: "heading", tier, count: rows.length })
+      for (const c of rows) out.push({ kind: "card", company: c })
+    }
+    return out
+  }, [grouped])
+
   function applyPatch(id: string, patch: Partial<Company>) {
     setCompanies((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
   }
@@ -130,25 +152,49 @@ export default function CompaniesBoardPage() {
         </div>
       )}
 
-      {TIER_ORDER.map((tier) => {
-        const rows = grouped.get(tier) ?? []
-        if (rows.length === 0) return null
-        return (
-          <section key={tier} style={{ marginTop: 22 }}>
-            <h2 style={{ color: S.text.muted, fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 10px" }}>
-              {TIER_GROUP_LABELS[tier]} · {rows.length}
+      {/* ONE PARENT FOR EVERY CARD, headings as siblings between them.
+
+          This used to be a <section> per tier with the cards nested inside, and
+          that shape had a bug with teeth: React's keys are only stable WITHIN a
+          parent. Setting a company's tier moves it to a different bucket, so the
+          card was rendered under a different <section>, and React unmounted the
+          old instance and mounted a fresh one. The card owns its expansion and
+          its lazily-loaded contacts (CompanyCard's useState), so saving a tier
+          slammed the editor shut and threw away the contact list — indis-
+          tinguishable, to the person typing, from being thrown back to the board.
+          A tester lost her place doing exactly this: tier, then domain, then
+          notes, ejected after the first.
+
+          Flattened, every card is a sibling in one list, so a tier change is a
+          MOVE within that list. React re-parents nothing, and the open card keeps
+          its state and its already-fetched contacts.
+
+          The wrapper renders unconditionally — a conditional parent would
+          reintroduce the same remount the moment the list emptied. */}
+      <div>
+        {ordered.map((item) =>
+          item.kind === "heading" ? (
+            // Keyed on the tier, and it cannot collide with a card key: those are
+            // company uuids.
+            <h2
+              key={`tier-${item.tier}`}
+              style={{
+                color: S.text.muted, fontSize: 12, fontWeight: 800, letterSpacing: 1.4,
+                textTransform: "uppercase", margin: "22px 0 10px",
+              }}
+            >
+              {TIER_GROUP_LABELS[item.tier]} · {item.count}
             </h2>
-            {rows.map((c) => (
-              <CompanyCard
-                key={c.id}
-                company={c}
-                onChanged={(patch) => applyPatch(c.id, patch)}
-                onRequestDelete={() => setDeleting(c)}
-              />
-            ))}
-          </section>
-        )
-      })}
+          ) : (
+            <CompanyCard
+              key={item.company.id}
+              company={item.company}
+              onChanged={(patch) => applyPatch(item.company.id, patch)}
+              onRequestDelete={() => setDeleting(item.company)}
+            />
+          ),
+        )}
+      </div>
 
       {deleting && (
         <DeleteCompanyConfirm

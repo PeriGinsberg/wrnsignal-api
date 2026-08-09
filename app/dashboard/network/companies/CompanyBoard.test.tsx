@@ -14,6 +14,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react"
 import { DeleteCompanyConfirm } from "./DeleteCompanyConfirm"
 import { CompanyCard, type Company } from "./CompanyCard"
+import CompaniesBoardPage from "./page"
 
 const authFetchMock = vi.fn()
 vi.mock("../authFetch", () => ({
@@ -247,5 +248,86 @@ describe("CompanyCard — applications at this company", () => {
     render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
     fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
     expect(await screen.findByText(/You've applied to 2 jobs at Nodal Exchange\./)).toBeTruthy()
+  })
+})
+
+/**
+ * THE BOARD ITSELF, not a card in isolation — because the bug this guards
+ * against lives in the board's SHAPE and is invisible from inside a card.
+ *
+ * The board used to render a <section> per tier with the cards nested inside.
+ * React keys are only stable within a parent, so setting a company's tier moved
+ * its card under a different <section>, and React unmounted the old instance and
+ * mounted a fresh one. The card owns its expansion and its lazily-loaded
+ * contacts, so saving a tier slammed the editor shut and dropped the roster. To
+ * the tester who hit it, that was indistinguishable from being thrown back to
+ * the board — she was setting tier, then domain, then notes, and got ejected
+ * after the first one.
+ *
+ * Every assertion below would pass against the old markup EXCEPT the two that
+ * matter: still-expanded, and no refetch.
+ */
+describe("companies board — a tier change must not rebuild the card", () => {
+  const UNSORTED_CO: Company = { ...company, tier: null }
+
+  function mockBoard() {
+    authFetchMock.mockReset()
+    authFetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      const u = String(url)
+      if (init?.method === "PATCH") return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true }) } as unknown as Response)
+      if (u.startsWith("/api/network/companies")) return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true, companies: [UNSORTED_CO] }) } as unknown as Response)
+      if (u.startsWith("/api/applications")) return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true, applications: [] }) } as unknown as Response)
+      // standalone count and the per-company roster share a prefix; only the
+      // scoped one carries contacts.
+      if (u.includes("company_id=")) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true, contacts: [{ id: "p1", first_name: "Jordan", last_name: "Alvarez", title: "Analyst", stage: "replied" }] }) } as unknown as Response)
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true, contacts: [] }) } as unknown as Response)
+    })
+  }
+
+  beforeEach(mockBoard)
+
+  it("keeps the card OPEN and its contacts loaded when the tier is set", async () => {
+    render(<CompaniesBoardPage />)
+
+    // Starts untiered, so it renders under "Not Categorized".
+    await waitFor(() => expect(screen.getByText("Nodal Exchange")).toBeTruthy())
+    expect(screen.getByText(/Not Categorized/)).toBeTruthy()
+
+    // Expand, and let the roster load.
+    fireEvent.click(screen.getByText("Nodal Exchange"))
+    await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
+    expect(callsTo("/api/network/contacts?company_id=")).toBe(1)
+
+    // Set the tier — the exact action that used to eject her.
+    fireEvent.change(screen.getByLabelText("Tier"), { target: { value: "dream" } })
+
+    // The company has moved buckets: the heading it now sits under is Tier 1.
+    await waitFor(() => expect(screen.getByText(/Tier 1/)).toBeTruthy())
+
+    // THE TWO ASSERTIONS THAT CARRY THIS TEST.
+    // 1. Still expanded — the roster is on screen, so the editor never closed.
+    expect(screen.getByText("Jordan Alvarez")).toBeTruthy()
+    // 2. Its contacts survived rather than being refetched. A remount would
+    //    have re-run the lazy load and made this 2.
+    expect(callsTo("/api/network/contacts?company_id=")).toBe(1)
+  })
+
+  it("still has the tier control available for the NEXT edit", async () => {
+    // The point of the fix is that she can keep going: tier, then domain, then
+    // notes, without the panel disappearing under her.
+    render(<CompaniesBoardPage />)
+    await waitFor(() => expect(screen.getByText("Nodal Exchange")).toBeTruthy())
+    fireEvent.click(screen.getByText("Nodal Exchange"))
+    await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
+
+    fireEvent.change(screen.getByLabelText("Tier"), { target: { value: "dream" } })
+    await waitFor(() => expect(screen.getByText(/Tier 1/)).toBeTruthy())
+
+    // The open editor is still an editor: the next field is reachable without
+    // re-expanding anything.
+    expect((screen.getByLabelText("Tier") as HTMLSelectElement).value).toBe("dream")
+    expect(screen.getByLabelText("Status")).toBeTruthy()
   })
 })
