@@ -228,6 +228,45 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
         </div>
       )}
 
+      {/* THE TWO EXITS, VISIBLE WHERE PEOPLE LOOK FOR STAGES.
+          "No answer yet" and "Not interested" are real stages a user can reach,
+          and until now the only route to them was a dropdown behind a button
+          labelled "Other moves" — so a tester hunted for them and reported them
+          as missing. Every stage someone can reach should be visible where they
+          look for stages.
+          They are NOT on the path, and that stays right: a stepper whose last
+          circle reads "Not interested" makes it look like a goal. So they sit
+          beneath, deliberately styled as not-steps — resting colour, no circle,
+          no connector, no number — which is the whole visual argument that they
+          are exits rather than progress. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12.5, color: S.text.dim }}>Or the thread stopped:</span>
+        {(["dormant_no_answer", "dormant_declined"] as const).map((stageKey) => {
+          const isCurrent = contact.stage === stageKey
+          return (
+            <button
+              key={stageKey}
+              type="button"
+              data-testid={`exit-${stageKey}`}
+              onClick={() => { if (!isCurrent && busy === null) void move(stageKey) }}
+              disabled={isCurrent || busy !== null}
+              title={isCurrent ? "Where this stands now" : `Mark as ${STAGE_LABELS[stageKey]}`}
+              style={{
+                background: "none", border: "none", padding: 0, fontFamily: "inherit",
+                fontSize: 13, fontWeight: isCurrent ? 800 : 700,
+                color: S.meaning.dormant.ink,
+                textDecoration: isCurrent ? "none" : "underline",
+                textUnderlineOffset: 3,
+                cursor: isCurrent || busy !== null ? "default" : "pointer",
+                opacity: busy === stageKey ? 0.55 : 1,
+              }}
+            >
+              {STAGE_LABELS[stageKey]}
+            </button>
+          )
+        })}
+      </div>
+
       {/* Plain text, not a button. The advance lives on the circle above; saying
           it twice is what we just removed. This only names what comes next. */}
       {nextStage && (

@@ -88,7 +88,7 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} data-testid="change-stage-open" style={quiet}>
-        Other moves ▾
+        More stages ▾
       </button>
     )
   }

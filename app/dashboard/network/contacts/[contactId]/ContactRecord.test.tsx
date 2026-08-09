@@ -221,12 +221,15 @@ describe("quick actions — split by likelihood", () => {
     })
   })
 
-  it("the terminal moves are NOT one tap — they sit behind Change stage", async () => {
+  it("OUTCOME is still not one tap — it stays behind More stages", async () => {
+    // Narrowed 2026-08-09. This used to claim the same of the two DORMANT
+    // stages; they are now reachable at the tracker as off-path exits (see the
+    // block below) because a tester hunted for them and reported them missing.
+    // `outcome` is unchanged: it is a real result on a screen built for someone
+    // with no coach to undo a stray tap.
     await open()
-    // Declined and outcome are reachable, but never a stray tap away on a screen
-    // built for someone with no coach to undo it for them.
-    expect(screen.queryByTestId("quick-dormant_declined")).toBeNull()
     expect(screen.queryByTestId("quick-outcome")).toBeNull()
+    expect(screen.queryByTestId("step-outcome")).toBeTruthy()   // on the path, just not tappable
     expect(screen.queryByLabelText("Stage")).toBeNull()
 
     fireEvent.click(screen.getByTestId("change-stage-open"))
@@ -235,6 +238,47 @@ describe("quick actions — split by likelihood", () => {
     expect(values).toContain("dormant_declined")
     expect(values).toContain("outcome")
     expect(select.options).toHaveLength(11)   // all eleven, per the addition to the spec
+  })
+
+  /**
+   * Every stage a user can reach has to be visible where they look for stages.
+   * These two were reachable ONLY through a dropdown behind a button that said
+   * "Other moves", so a tester hunted for them and reported them as absent.
+   */
+  it("the two dormant stages are VISIBLE at the tracker, not only in the dropdown", async () => {
+    await open()
+    expect(screen.getByTestId("exit-dormant_no_answer").textContent).toBe("No answer yet")
+    expect(screen.getByTestId("exit-dormant_declined").textContent).toBe("Not interested")
+  })
+
+  it("…but they are NOT steps on the path", async () => {
+    // The reason they were excluded in the first place still holds: a stepper
+    // whose last circle reads "Not interested" makes it look like a goal.
+    await open()
+    expect(screen.queryByTestId("step-dormant_no_answer")).toBeNull()
+    expect(screen.queryByTestId("step-dormant_declined")).toBeNull()
+  })
+
+  it("clicking an exit sets that stage", async () => {
+    await open()
+    fireEvent.click(screen.getByTestId("exit-dormant_no_answer"))
+    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(true))
+    const call = authFetchMock.mock.calls.findIndex((c) => String(c[0]).includes("/stage"))
+    expect(bodyOf(call).stage).toBe("dormant_no_answer")
+  })
+
+  it("does not offer the exit the contact is already sitting in", async () => {
+    contact = { ...BASE, stage: "dormant_declined" }
+    await open()
+    expect((screen.getByTestId("exit-dormant_declined") as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByTestId("exit-dormant_no_answer") as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it("the dropdown is labelled by what is in it", async () => {
+    // "Other moves" named the mechanism, not the content, which is why someone
+    // looking for a STAGE did not open it.
+    await open()
+    expect(screen.getByTestId("change-stage-open").textContent).toContain("More stages")
   })
 
   it("does not offer a move to the stage the contact is already at", async () => {
