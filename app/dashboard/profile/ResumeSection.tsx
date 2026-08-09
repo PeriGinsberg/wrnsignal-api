@@ -169,6 +169,29 @@ function Versions() {
     }
   }
 
+  /**
+   * Write the open draft back to its persona, if anything actually changed.
+   *
+   * Called from both fields' onBlur and from Save, and it is a NO-OP when the
+   * draft matches what is stored — so the two paths cannot double-write, and
+   * tabbing through an untouched editor writes nothing.
+   *
+   * Guarded on `editing === p.id` because blur can fire while the editor is
+   * being torn down or switched to another persona, and writing this draft to
+   * the wrong row would be far worse than losing it.
+   */
+  async function commitPersona(p: Persona): Promise<boolean> {
+    if (editing !== p.id) return false
+    const name = draft.name
+    const text = draft.resume_text
+    if (name === p.name && text === (p.resume_text ?? "")) return false
+    return call(
+      `/api/personas/${p.id}`,
+      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, resume_text: text }) },
+      "That didn't save.",
+    )
+  }
+
   if (rows === null) return null
 
   return (
@@ -281,8 +304,11 @@ function Versions() {
                 <button
                   onClick={() => {
                     setAdding(false)
+                    // SEED ONLY WHEN OPENING. This used to reseed on both, so
+                    // "Close" overwrote the draft with the stored copy — the
+                    // second half of how typed resume text disappeared.
+                    if (!open) setDraft({ name: p.name, resume_text: p.resume_text ?? "" })
                     setEditing(open ? null : p.id)
-                    setDraft({ name: p.name, resume_text: p.resume_text ?? "" })
                   }}
                   style={quietBtn}
                 >
@@ -292,11 +318,22 @@ function Versions() {
 
               {open && (
                 <div style={{ padding: "4px 18px 20px", borderTop: `1px solid ${S.borderSoft}` }}>
+                  {/* BOTH FIELDS COMMIT ON BLUR.
+                      This editor is behind a disclosure whose control says
+                      "Close", and closing it used to destroy whatever had been
+                      typed: the block unmounts and the draft was reseeded from
+                      the stored copy. On a resume that is potentially pages of
+                      work, and "Close" reads as "collapse this section", not as
+                      "discard everything I just wrote". Nothing warned.
+                      Blur fires before the click that closes it, so the text is
+                      already saved by the time the section goes away. Same
+                      pattern as the contact record's "About this person". */}
                   <div style={{ paddingTop: 18 }}>
                     <Field label="What to call it">
                       <input
                         style={control} value={draft.name} aria-label="What to call it"
                         onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                        onBlur={() => void commitPersona(p)}
                       />
                     </Field>
                     <Field label="The resume for this version">
@@ -304,17 +341,20 @@ function Versions() {
                         style={{ ...areaControl, minHeight: 200, fontSize: 14 }}
                         value={draft.resume_text} aria-label="The resume for this version"
                         onChange={(e) => setDraft({ ...draft, resume_text: e.target.value })}
+                        onBlur={() => void commitPersona(p)}
                       />
                     </Field>
                     <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                       <button
                         disabled={busy}
                         onClick={async () => {
-                          const ok = await call(`/api/personas/${p.id}`, {
-                            method: "PUT", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ name: draft.name, resume_text: draft.resume_text }),
-                          }, "That didn't save.")
-                          if (ok) setEditing(null)
+                          // Blur has usually committed already, so this is a
+                          // no-op and the button is really "save and close".
+                          // Kept because closing via an explicit Save is what
+                          // people reach for, and because it still catches the
+                          // case where focus never left the field.
+                          await commitPersona(p)
+                          setEditing(null)
                         }}
                         style={{ ...actionStyle(S, "primary"), borderRadius: 10, padding: "10px 18px", fontSize: 14, fontFamily: "inherit" }}
                       >
