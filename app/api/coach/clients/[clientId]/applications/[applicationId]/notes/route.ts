@@ -105,12 +105,23 @@ export async function GET(
     const authz = await authorizeForApp(req, urlClientId, applicationId, "view")
     if (!authz.ok) return withCorsJson(req, { ok: false, error: authz.error }, authz.status)
 
+    // KEYED ON THE APPLICATION, run as a temporary FALLBACK for pre-re-key
+    // rows. Same shape as the client route, and for the same reason: a coach
+    // must not open a job next week and find last week's notes gone.
+    //
+    // TWO .or() CALLS ON PURPOSE. PostgREST ANDs separate `or=` params, which
+    // is what is wanted: (this job, by either key) AND (my notes, or client
+    // notes shared with me). One flat .or() would leak another coach's notes
+    // and the client's private ones.
     let notes: any[] = []
-    if (authz.jobfitRunId) {
+    {
+      const keyFilter = authz.jobfitRunId
+        ? `application_id.eq.${applicationId},jobfit_run_id.eq.${authz.jobfitRunId}`
+        : `application_id.eq.${applicationId}`
       const { data, error } = await authz.supabase
         .from("coaching_notes")
         .select("id, artifact_type, body, visibility, author_role, created_at")
-        .eq("jobfit_run_id", authz.jobfitRunId)
+        .or(keyFilter)
         .eq("client_profile_id", authz.ownerClientId)
         // The caller coach's OWN notes (any visibility) OR client notes that are
         // SHARED. Client PRIVATE notes match neither branch and are excluded;
@@ -168,7 +179,8 @@ export async function POST(
       .insert({
         coach_profile_id: authz.coachProfileId, // from session — attribution, never the body
         client_profile_id: authz.ownerClientId, // resolved owner
-        jobfit_run_id: authz.jobfitRunId,        // the application's job
+        application_id: applicationId,           // THE KEY. Every job has one.
+        jobfit_run_id: authz.jobfitRunId,        // provenance; null on a hand-added job
         author_role: "coach",                    // phase 1 writes are always coach
         parent_note_id: null,                    // no replies in phase 1
         artifact_type: artifactType,             // validated

@@ -92,12 +92,28 @@ export async function GET(
     const authz = await authorizeOwner(req, applicationId)
     if (!authz.ok) return withCorsJson(req, { ok: false, error: authz.error }, authz.status)
 
+    // KEYED ON THE APPLICATION, with the run as a FALLBACK for rows written
+    // before the re-key. Both branches stay scoped by client_profile_id below,
+    // so the fallback widens which rows are found, never whose.
+    //
+    // The run branch is temporary: it comes out once prod has been on the new
+    // key long enough to trust it, and until then it is what stops a note
+    // written last week vanishing the day this ships.
+    //
+    // TWO .or() CALLS, AND THAT IS DELIBERATE. PostgREST sends each as its own
+    // `or=` parameter and ANDs them, which is exactly what is wanted here:
+    // (this job, by either key) AND (mine, or a coach note shared with me).
+    // Folding them into one .or() would make it a single flat disjunction and
+    // leak coach-private notes.
     let notes: any[] = []
-    if (authz.jobfitRunId) {
+    {
+      const keyFilter = authz.jobfitRunId
+        ? `application_id.eq.${applicationId},jobfit_run_id.eq.${authz.jobfitRunId}`
+        : `application_id.eq.${applicationId}`
       const { data, error } = await authz.supabase
         .from("coaching_notes")
         .select("id, artifact_type, body, visibility, author_role, parent_note_id, created_at")
-        .eq("jobfit_run_id", authz.jobfitRunId)
+        .or(keyFilter)
         .eq("client_profile_id", authz.ownerClientId)
         // client's own notes (any visibility) OR coach notes that are shared.
         // Coach PRIVATE notes match neither branch and are excluded.
@@ -152,7 +168,8 @@ export async function POST(
       .insert({
         client_profile_id: authz.ownerClientId, // = profileId (owner)
         coach_profile_id: null,                  // client-authored: no coach author
-        jobfit_run_id: authz.jobfitRunId,        // the application's job
+        application_id: applicationId,           // THE KEY. Every job has one.
+        jobfit_run_id: authz.jobfitRunId,        // provenance; null on a hand-added job
         author_role: "client",                   // client write
         parent_note_id: null,                    // no replies yet
         artifact_type: artifactType,             // validated

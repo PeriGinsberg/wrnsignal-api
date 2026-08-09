@@ -329,3 +329,67 @@ annotation composer (their draft state is declared ABOVE the conditional block,
 so an unmount does not reach it, and the only clearing is an explicit Cancel).
 Modals — `AddProspectModal`, `CreateClientModal`, `AddContactForm` — are *not*
 in this class: closing them means cancel, so discarding the draft is correct.
+
+---
+
+## A third shape: the write survives, the way to reach it does not
+
+Added 2026-08-09. Not a failed write and not a missing one — a successful write
+whose ADDRESS is later destroyed. The row is intact and unreachable, which looks
+identical to deleted from every screen in the product.
+
+### The case
+
+Two `coaching_notes` rows on PROD, both written by the coach on 2026-08-01:
+
+```
+15:16:13  jobfit_run 0e9e89fb-e990-419c-8e6b-792bdf544e0d created (client: lily stein)
+15:23:50  note  private  coverletter  "Be sure to mention some interest in Sales"
+15:25:38  note  shared   coverletter  "Testing coaches notes"
+```
+
+The run still exists. **No application points at it.** That client has 117
+applications, so this is not an empty account.
+
+Both note routes — `/api/notes/applications/[applicationId]` (client) and
+`/api/coach/clients/[clientId]/applications/[applicationId]/notes` (coach) —
+resolve `application -> jobfit_run_id -> notes`. With no application carrying
+that run id there is no URL in the product that returns these rows. They are
+unreachable, and nothing anywhere says so.
+
+### The mechanism
+
+An application must have existed when the notes were written: the coach route
+needs one to reach the notes form at all. It is gone now and the run survived.
+
+`jobfit_runs` has no FK from `signal_applications` forcing any cleanup, and
+`coaching_notes.jobfit_run_id` points at the RUN, not the application. So
+deleting an application silently strands every coach note attached to that run.
+Nothing warns the person deleting, nothing tells the coach their note is gone,
+and no screen lists orphaned notes.
+
+**A student deleting a job destroys their coach's commentary on it, silently.**
+That is the failure, and it will happen again to a note that matters — these two
+were not worth rescuing (one is literally "Testing coaches notes"), but the path
+is live.
+
+### Why the re-key does not fix it
+
+Re-keying notes on `application_id` (see the build order in this repo's history)
+makes notes addressable on jobs that never had a run. It does NOT stop this: with
+`ON DELETE CASCADE` on the new column, deleting the application would delete the
+notes outright rather than strand them — arguably more honest, still silent.
+
+### Not built. What it needs, in rough order of cost
+
+1. **Say it at the point of deletion.** The delete confirm counts what goes with
+   the job — "3 coach notes will be removed" — the same way DeleteCompanyConfirm
+   already names what is lost. Cheapest, and it converts a silent loss into a
+   decision.
+2. **Refuse, or soft-delete, when a coach note exists.** A student should
+   probably not be able to unilaterally destroy a coach's written record.
+3. **A reconciliation query** — notes whose run has no application — run
+   alongside the artifact-write monitor. That is what would have surfaced these
+   two on 2026-08-01 instead of on 2026-08-09 during unrelated work.
+
+Item 1 is the one that pays for itself immediately.
