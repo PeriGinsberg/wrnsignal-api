@@ -349,3 +349,71 @@ describe("nothing was removed", () => {
     expect(screen.getByRole("button", { name: /Delete contact/i })).toBeTruthy()
   })
 })
+
+/**
+ * "About this person" — the box a tester reported as silently discarding her
+ * typing.
+ *
+ * The write path was never broken. It sat directly above the note log's own
+ * textarea under one "Notes" heading, and the log's "Save note" was the
+ * dominant button in the drawer; she typed here, reached for that button, and
+ * it did nothing at all, because it is disabled while the log's own box is
+ * empty. No error, no feedback. A disabled button that gives no feedback is
+ * indistinguishable from a broken one.
+ *
+ * So the second click is gone. These pin what replaced it.
+ */
+describe("about-this-person commits without a second click", () => {
+  const patches = () =>
+    authFetchMock.mock.calls.filter(
+      (c) => String(c[0]) === "/api/network/contacts/c1" && (c[1] as RequestInit)?.method === "PATCH",
+    )
+
+  it("SAVES ON BLUR, with no Save button to find", async () => {
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-notes"))
+    const box = within(screen.getByTestId("drawer-body-notes")).getByLabelText("About this person")
+
+    // The control that used to be here, and whose absence is the fix.
+    expect(within(screen.getByTestId("drawer-body-notes")).queryByRole("button", { name: /^Save$/ })).toBeNull()
+
+    fireEvent.change(box, { target: { value: "Met at the Chicago meetup." } })
+    expect(patches().length).toBe(0) // nothing written mid-typing
+    fireEvent.blur(box)
+
+    await waitFor(() => expect(patches().length).toBe(1))
+    expect(JSON.parse((patches()[0][1] as RequestInit).body as string))
+      .toEqual({ notes: "Met at the Chicago meetup." })
+  })
+
+  it("says so while the text is unsaved, rather than sitting silent", async () => {
+    // Silence next to typed text is what made the old version read as broken.
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-notes"))
+    const body = screen.getByTestId("drawer-body-notes")
+    const box = within(body).getByLabelText("About this person")
+
+    expect(within(body).queryByText(/Saves when you click away/)).toBeNull()
+    fireEvent.change(box, { target: { value: "Draft" } })
+    expect(within(body).getByText(/Saves when you click away/)).toBeTruthy()
+  })
+
+  it("does NOT write when nothing changed", async () => {
+    // Blur fires on every pass through the field. Tabbing over an untouched box
+    // must not PATCH.
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-notes"))
+    const box = within(screen.getByTestId("drawer-body-notes")).getByLabelText("About this person")
+    fireEvent.blur(box)
+    fireEvent.blur(box)
+    expect(patches().length).toBe(0)
+  })
+
+  it("names BOTH boxes, so they stop reading as one control rendered twice", async () => {
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-notes"))
+    const body = screen.getByTestId("drawer-body-notes")
+    expect(within(body).getByText("About this person")).toBeTruthy()
+    expect(within(body).getByText("Add a note")).toBeTruthy()
+  })
+})

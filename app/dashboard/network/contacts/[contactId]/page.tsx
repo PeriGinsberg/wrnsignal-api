@@ -258,7 +258,14 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
             placeholder="Durable context: how you met, what they care about…"
             onSaved={load}
           />
+          {/* THE LOG GETS A HEADING TOO, as a peer of "About this person".
+              Two textareas under one "Notes" drawer, only one of them labelled,
+              read as the same box rendered twice — a tester reported them as a
+              duplicate and typed into the wrong one. They are different things:
+              durable context on the contact row above, dated log entries below.
+              Naming both is what makes that legible. */}
           <div style={{ marginTop: 22 }}>
+            <div style={{ ...factLabel, marginBottom: 8 }}>Add a note</div>
             <NotesLog contactId={contact.id} notes={notes} onSaved={load} />
           </div>
         </Collapsible>
@@ -533,7 +540,40 @@ function TextFieldEditor({
   const [savedTick, setSavedTick] = useState(false)
   const dirty = draft !== (value ?? "")
 
-  async function save() {
+  /**
+   * RESEED WHEN THE ROW CHANGES UNDER US. `draft` was seeded once at mount and
+   * never resynced, so anything that updated the contact elsewhere left this box
+   * showing stale text with no sign of it.
+   *
+   * Adjusting state during render, rather than in an effect, is the sanctioned
+   * React pattern for "a prop changed and some state derives from it" — it
+   * re-renders before paint instead of after, so the stale value is never shown.
+   * Local typing does not change `value`, so this cannot clobber what someone is
+   * in the middle of writing.
+   */
+  const [seenValue, setSeenValue] = useState(value)
+  if (value !== seenValue) {
+    setSeenValue(value)
+    setDraft(value ?? "")
+  }
+
+  /**
+   * COMMITS ON BLUR. There is no Save button any more, and that is the fix.
+   *
+   * This box sat directly above the note log's own textarea, under one "Notes"
+   * heading, and the log's "Save note" was the visually dominant button in the
+   * drawer. A tester typed here, reached for that button, and it did nothing at
+   * all — it is disabled while the log's own box is empty. No error, no
+   * feedback; her text then died when the drawer unmounted. The write path was
+   * never broken. The second click was.
+   *
+   * Blur covers the ways out of the field that matter: clicking the drawer
+   * toggle, tabbing on, or clicking into the note log all fire it before the
+   * unmount. A disabled button that gives no feedback is indistinguishable from
+   * a broken one, so the button is gone rather than restyled.
+   */
+  async function commit() {
+    if (!dirty || busy) return
     setBusy(true)
     setErr(null)
     try {
@@ -559,6 +599,7 @@ function TextFieldEditor({
       <textarea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => void commit()}
         placeholder={placeholder}
         aria-label={field === "notes" ? "About this person" : "Additional info"}
         rows={4}
@@ -569,20 +610,22 @@ function TextFieldEditor({
           color: S.text.primary, fontFamily: "inherit", outline: "none",
         }}
       />
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
-        <button
-          onClick={save}
-          disabled={busy || !dirty}
-          style={
-            dirty
-              ? { ...actionStyle(S, "primary"), ...saveSize, opacity: busy ? 0.6 : 1 }
-              : { ...saveSize, background: S.card, color: S.text.dim, border: `1px solid ${S.border}`, cursor: "default" }
-          }
-        >
-          {busy ? "Saving…" : "Save"}
-        </button>
-        {savedTick && <span style={{ color: S.text.muted, fontSize: 13.5 }}>Saved</span>}
-        {err && <span style={{ color: S.meaning.error.ink, fontSize: 13.5 }}>{err}</span>}
+      {/* A status line, not a control. It has to say something in the unsaved
+          state too: silence next to typed text is exactly what made the old
+          version read as broken. */}
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, minHeight: 20, fontSize: 13 }}
+        aria-live="polite"
+      >
+        {err ? (
+          <span style={{ color: S.meaning.error.ink }}>{err}</span>
+        ) : busy ? (
+          <span style={{ color: S.text.muted }}>Saving…</span>
+        ) : savedTick ? (
+          <span style={{ color: S.text.muted }}>Saved</span>
+        ) : dirty ? (
+          <span style={{ color: S.text.dim }}>Saves when you click away</span>
+        ) : null}
       </div>
     </div>
   )
