@@ -79,5 +79,10 @@ CREATE UNIQUE INDEX uq_ccea_one_signoff_per_deliverable
 -- here would mean editing the RPC in the same migration that changes the read
 -- rule, and those two want separate blast radii.
 --
--- DEV ENV ONLY on application. Do NOT promote to prod (joins the closed-gate
--- pile with the rest of the coach-engagement migrations).
+-- APPLICATION STATE:
+--   DEV  (zydrqckpwidipwbhrfgd) — applied 2026-08-08. Backfill verified against
+--   the old positional rule: 0 mismatches, max 1 sign-off per deliverable.
+--   PROD (ejhnokcnahauvrcbcmic) — applied 2026-08-08 by hand, after
+--   20260808_proof_project.sql. Same verification was run and recorded.
+--
+-- ORDER MATTERS: this runs SECOND. It assumes speaking_point already exists.

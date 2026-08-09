@@ -21,9 +21,14 @@
 -- no speaking points until someone sets them. There is no backfill; both defaults
 -- are the "off" value. See the note at the bottom about what still has to be built.
 --
--- DEV ENV ONLY on application. Applied to DEV (zydrqckpwidipwbhrfgd). Do NOT
--- promote to prod without the closed-gate review — this joins that pile, and prod
--- is already behind on the coach-engagement migrations that these tables come from.
+-- APPLICATION STATE:
+--   DEV  (zydrqckpwidipwbhrfgd) — applied 2026-08-08.
+--   PROD (ejhnokcnahauvrcbcmic) — applied 2026-08-08, deliberately and by hand,
+--   to support the Proof Project dogfood on Aiden's engagement. This was NOT a
+--   general opening of the coach-engagement closed gate: it is two additive
+--   columns and an index, both defaulting to the inert value, read by nothing
+--   that prod was serving at the time. Apply BEFORE
+--   20260808_engagement_activity_editing.sql, which depends on speaking_point.
 
 -- ── The flag: is this engagement the client's proof project? ──
 --
