@@ -314,7 +314,17 @@ export const ACTION_TYPE_OPTIONS: { key: string; label: string }[] = [
   { key: "chat_scheduled", label: "Chat scheduled" },
   { key: "chat_done", label: "Chat done" },
   { key: "ask", label: "Ask" },
-  { key: "note_logged", label: "Note" },
+  // NOT "Note". The Notes drawer writes the INERT `note` type, and this writes
+  // `note_logged`, which is pipeline activity: it resets the clock and consumes
+  // a reminder override. Two controls called "Note" that behave oppositely is a
+  // trap, and action-semantics.ts currently spends twenty lines warning
+  // developers about a distinction the UI never showed the user at all.
+  // Label-only, exactly like TIER_LABELS — the stored value is unchanged.
+  // "Contact activity", not "Outreach": the list already holds four specific
+  // kinds of outreach, so a generic "Outreach" beside them reads as a fifth
+  // rather than as the catch-all. It also has to survive SendPanel's sentence,
+  // "Copied, and logged as X." — which rules out anything verb-shaped.
+  { key: "note_logged", label: "Contact activity" },
   { key: "other", label: "Other" },
 ]
 export const ACTION_TYPE_LABEL: Record<string, string> = Object.fromEntries(

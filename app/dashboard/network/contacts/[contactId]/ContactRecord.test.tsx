@@ -557,3 +557,18 @@ describe("the one automatic case explains itself on screen", () => {
     expect(screen.queryByTestId("auto-advance-note")).toBeNull()
   })
 })
+
+describe("the two kinds of note are not both called Note", () => {
+  it("labels the pipeline action so it cannot be mistaken for an inert note", async () => {
+    // `note_logged` resets the clock and consumes a reminder override; the
+    // Notes drawer's `note` is deliberately inert. Both were called "Note", in
+    // two places, on one screen.
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    const picker = screen.getByLabelText("Action") as HTMLSelectElement
+    const noteLogged = Array.from(picker.options).find((o) => o.value === "note_logged")!
+    expect(noteLogged.text).toBe("Contact activity")
+    // And no OTHER option may claim the word either.
+    expect(Array.from(picker.options).filter((o) => o.text === "Note")).toHaveLength(0)
+  })
+})
