@@ -31,7 +31,9 @@
 import { LIGHT as S, action as actionStyle, status as statusStyle, surfaceCard } from "../../../lib/theme/surfaces"
 import { InterviewIcon } from "../../../components/icons"
 import { daysUntil, formatMedium, parseLocalDate } from "../../../lib/localDate"
-import { interviewStageLabel, interviewStatusLabel, interviewStatusMeaning } from "./vocab"
+import { INTERVIEW_STATUSES, interviewStageLabel, interviewStatusLabel, interviewStatusMeaning } from "./vocab"
+import { authFetch } from "../network/authFetch"
+import { useState } from "react"
 
 export type Interview = {
   id: string
@@ -71,6 +73,79 @@ export function groupOf(iv: Interview, now: Date = new Date()): InterviewGroup {
   return until >= 0 ? "coming_up" : "waiting"
 }
 
+/**
+ * SET THE STATUS WHERE THE STATUS IS SHOWN.
+ *
+ * This screen is called "Your interviews", groups itself by status, and until
+ * now could only DISPLAY it — the control lived two levels down on the job
+ * page, behind a row whose label said "Edit". A tester looked for "Awaiting
+ * feedback" here, did not find it, and both interview tests were blocked on a
+ * field that exists.
+ *
+ * DUPLICATION, DELIBERATELY, and of the right kind: one full editor on the job
+ * page (date, time, interviewer, format, confidence — none of which belong on a
+ * summary card) and one inline control here, both writing signal_interviews
+ * .status through the same PUT. That mirrors application_status, which already
+ * appears on the tracker row and in the job detail. The kind worth avoiding is
+ * two controls that BEHAVE differently — which is what "one screen shows it and
+ * another sets it" already was.
+ */
+function StatusControl({ interview: iv, onChanged, tone }: {
+  interview: Interview
+  onChanged: () => void
+  /** The hero card sits on navy; the compact card on white. */
+  tone: "hero" | "plain"
+}) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(false)
+
+  async function set(status: string) {
+    if (status === iv.status || busy) return
+    setBusy(true); setErr(false)
+    try {
+      const res = await authFetch(`/api/interviews/${iv.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error("failed")
+      // The whole LIST reloads, not this card: a status change can move a round
+      // into a different group, and re-rendering one card in place would leave
+      // it sitting under a heading that no longer describes it.
+      onChanged()
+    } catch {
+      setErr(true)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <select
+        value={iv.status}
+        disabled={busy}
+        aria-label={`Status for ${interviewStageLabel(iv.interview_stage)}${iv.company_name ? ` at ${iv.company_name}` : ""}`}
+        onChange={(e) => void set(e.target.value)}
+        style={{
+          fontSize: 13, fontWeight: 700, fontFamily: "inherit", borderRadius: 8,
+          padding: "5px 9px", cursor: busy ? "default" : "pointer",
+          opacity: busy ? 0.6 : 1,
+          background: tone === "hero" ? "rgba(255,255,255,0.12)" : S.card,
+          color: tone === "hero" ? S.hero.ink : S.text.primary,
+          border: `1px solid ${tone === "hero" ? "rgba(255,255,255,0.28)" : S.border}`,
+        }}
+      >
+        {INTERVIEW_STATUSES.map((v) => (
+          <option key={v} value={v} style={{ color: S.text.primary }}>{interviewStatusLabel(v)}</option>
+        ))}
+      </select>
+      {err && <span style={{ fontSize: 12, color: S.meaning.error.ink }}>Didn&apos;t save</span>}
+    </span>
+  )
+}
+
 function countdown(dateStr: string, now: Date = new Date()): string {
   const days = daysUntil(dateStr, now) ?? 0
   if (days === 0) return "Today"
@@ -81,7 +156,11 @@ function countdown(dateStr: string, now: Date = new Date()): string {
 /** Local-midnight parse, so a date-only value shows the day it says. */
 const longDate = (d: string | null) => formatMedium(d)
 
-export function InterviewsView({ interviews }: { interviews: Interview[] }) {
+export function InterviewsView({ interviews, onChanged }: {
+  interviews: Interview[]
+  /** Reload the whole list. A status change can move a round between groups. */
+  onChanged: () => void
+}) {
   // Soonest first. An undated round sorts LAST inside "Coming up" rather than
   // first: the hero treatment belongs to the next real interview, and a card
   // with no date has no countdown to put in it.
@@ -121,7 +200,7 @@ export function InterviewsView({ interviews }: { interviews: Interview[] }) {
         <>
           <SectionLabel>Coming up</SectionLabel>
           <div data-testid="group-coming_up" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {upcoming.map((iv) => <UpcomingCard key={iv.id} interview={iv} />)}
+            {upcoming.map((iv) => <UpcomingCard key={iv.id} interview={iv} onChanged={onChanged} />)}
           </div>
         </>
       )}
@@ -133,7 +212,7 @@ export function InterviewsView({ interviews }: { interviews: Interview[] }) {
         <>
           <SectionLabel>Waiting to hear</SectionLabel>
           <div data-testid="group-waiting" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {waiting.map((iv) => <PastCard key={iv.id} interview={iv} />)}
+            {waiting.map((iv) => <PastCard key={iv.id} interview={iv} onChanged={onChanged} />)}
           </div>
         </>
       )}
@@ -142,7 +221,7 @@ export function InterviewsView({ interviews }: { interviews: Interview[] }) {
         <>
           <SectionLabel>Completed</SectionLabel>
           <div data-testid="group-completed" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {completed.map((iv) => <PastCard key={iv.id} interview={iv} />)}
+            {completed.map((iv) => <PastCard key={iv.id} interview={iv} onChanged={onChanged} />)}
           </div>
         </>
       )}
@@ -187,7 +266,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
  * time-bound rather than as a thing to press, and the only pressable object
  * inside is still the peach button.
  */
-function UpcomingCard({ interview: iv }: { interview: Interview }) {
+function UpcomingCard({ interview: iv, onChanged }: { interview: Interview; onChanged: () => void }) {
   return (
     <section
       style={{
@@ -220,10 +299,16 @@ function UpcomingCard({ interview: iv }: { interview: Interview }) {
         {/* A round with no date reaches this card now — it belongs in "Coming
             up" because it has not happened, and it used to file under Completed
             because daysUntil(null) is null. There is no countdown to show, so
-            it says what is actually true and what to do about it. */}
+            it says what is actually true and what to do about it.
+            "NO DATE YET", not "Not scheduled yet". This slot is about the DATE,
+            and the status control beside it owns the word "scheduled" — an
+            interview can be status `scheduled` with no date agreed, and the two
+            saying "Not scheduled yet" and "Scheduled" on one card is a
+            contradiction the card cannot resolve. The collision only became
+            visible once the status control moved onto this screen. */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ color: S.hero.accent, fontSize: 17, fontWeight: 800 }}>
-            {iv.interview_date ? countdown(iv.interview_date) : "Not scheduled yet"}
+            {iv.interview_date ? countdown(iv.interview_date) : "No date yet"}
           </div>
           <div style={{ color: S.hero.muted, fontSize: 13.5, marginTop: 2 }}>
             {iv.interview_date ? longDate(iv.interview_date) : "Add a date when you have one"}
@@ -254,21 +339,35 @@ function UpcomingCard({ interview: iv }: { interview: Interview }) {
         >
           See the job
         </a>
+        {/* The hero already carries a countdown and two links; the status sits
+            at the end of that row rather than competing with the date above.
+            It is the only control on this card that is not navigation. */}
+        <span style={{ marginLeft: "auto" }}>
+          <StatusControl interview={iv} onChanged={onChanged} tone="hero" />
+        </span>
       </div>
     </section>
   )
 }
 
-function PastCard({ interview: iv }: { interview: Interview }) {
+function PastCard({ interview: iv, onChanged }: { interview: Interview; onChanged: () => void }) {
   const st = statusStyle(S, interviewStatusMeaning(iv.status))
   return (
-    <a
-      href={`/dashboard/tracker/${iv.application_id}`}
+    // THE CARD IS NO LONGER ONE BIG LINK. It was an <a> wrapping everything,
+    // and a <select> inside a link navigates the moment you touch it — the
+    // control would have been unusable rather than merely hidden. The anchor
+    // now wraps only the part that IS a link, which is also the correct markup:
+    // an interactive control nested inside an anchor is invalid HTML.
+    <div
       style={{
         ...surfaceCard(S),
         display: "flex", alignItems: "center", gap: 16,
-        padding: "14px 18px", borderRadius: 14, textDecoration: "none",
+        padding: "14px 18px", borderRadius: 14,
       }}
+    >
+    <a
+      href={`/dashboard/tracker/${iv.application_id}`}
+      style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 0, textDecoration: "none" }}
     >
       <span
         aria-hidden
@@ -293,12 +392,13 @@ function PastCard({ interview: iv }: { interview: Interview }) {
           {iv.interview_date ? ` · ${longDate(iv.interview_date)}` : ""}
         </span>
       </span>
+    </a>
+      {/* Outside the anchor: the status dot stays as the at-a-glance read, the
+          select is the control. */}
       <span style={{ display: "inline-flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
         <span style={st.dot} />
-        <span style={{ ...st.text, fontSize: 14.5, whiteSpace: "nowrap" }}>
-          {interviewStatusLabel(iv.status)}
-        </span>
+        <StatusControl interview={iv} onChanged={onChanged} tone="plain" />
       </span>
-    </a>
+    </div>
   )
 }

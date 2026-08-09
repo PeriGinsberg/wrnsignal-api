@@ -202,7 +202,12 @@ function Tracker() {
         />
       )}
 
-      {tab === "interviews" && <InterviewsView interviews={interviews} />}
+      {tab === "interviews" && (
+        // The whole list reloads on a status change: a round can move between
+        // groups, so re-rendering one card would leave it under a heading that
+        // no longer describes it.
+        <InterviewsView interviews={interviews} onChanged={() => void load()} />
+      )}
 
       {tab === "history" && (
         <HistoryView
