@@ -507,7 +507,7 @@ export default function ApplicationDetailPage({
           title="Notes"
           testId="job-notes"
           icon={<NotesIcon size={20} />}
-          summary={app.jobfit_run_id ? "Yours, and your coach's" : "Available once scored"}
+          summary="Yours, and your coach's"
           lockedOpen={notesDirty}
           lockedReason="You've got a note here that hasn't been saved. Save it or clear the box, then close this."
         >

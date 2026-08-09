@@ -292,18 +292,17 @@ export function ClientJobNotes({ applicationId, jobfitRunId, onDirtyChange }: {
     [applicationId, load],
   )
 
-  useEffect(() => {
-    if (jobfitRunId) void load()
-  }, [jobfitRunId, load])
-
-  // Notes hang off the job's scoring run; a job typed in by hand has none yet.
-  if (!jobfitRunId) {
-    return (
-      <p style={{ fontSize: 14, color: S.text.muted, margin: 0 }}>
-        Notes open up once this job has been scored by SIGNAL.
-      </p>
-    )
-  }
+  // Unconditional now. Notes used to hang off the job's SCORING RUN, so a job
+  // typed in by hand had nowhere to put them and this returned early with
+  // "Notes open up once this job has been scored by SIGNAL" — which read as a
+  // rule about scoring and was really a rule about storage.
+  //
+  // The gate came out LAST, one commit after the routes switched to
+  // application_id, so that if notes stop appearing the cause is exactly one
+  // change back. Removing it first would have been the silent-write failure:
+  // with no run the POST wrote NULL and the GET queried `= NULL`, which matches
+  // nothing, so notes would have saved and vanished.
+  useEffect(() => { void load() }, [load])
 
   if (loading && notes.length === 0) {
     return <p style={{ fontSize: 14, color: S.text.muted, margin: 0 }}>Loading your notes…</p>
