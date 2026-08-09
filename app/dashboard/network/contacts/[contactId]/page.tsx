@@ -205,6 +205,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
       <WhereThingsStand
         contact={contact}
         onChanged={load}
+        actions={actions}
         justLogged={justLogged}
         onOfferSettled={() => setJustLogged(null)}
       />

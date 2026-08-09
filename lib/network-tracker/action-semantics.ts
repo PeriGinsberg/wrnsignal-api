@@ -140,3 +140,44 @@ export function impliedStageAhead(currentStage: string, type: string): string | 
   if (from < 0) return null
   return stageIndex(implied) > from ? implied : null
 }
+
+/**
+ * The furthest-ahead stage this contact's LOGGED HISTORY implies, or null when
+ * the history implies nothing beyond where the stage already sits.
+ *
+ * EVIDENCE, NOT A CORRECTION. A contact whose stage is behind its own log is
+ * not a user error: you can log a chat and legitimately leave the stage where
+ * it is — the conversation went nowhere, you are parking them, you disagree
+ * that it counted. The stage remains a fact the user ASSERTS, so this exists to
+ * stop the record hiding what it knows, not to tell anyone they got it wrong.
+ * The caller states what the log shows and offers nothing.
+ *
+ * Why this is needed at all: the offer at logging time is dismissible and its
+ * dismissal is session state, so one dismissal used to leave a contact
+ * contradicting its own history permanently, with nothing ever saying so.
+ *
+ * Returns the single furthest implied stage rather than a list — one sentence
+ * about the strongest piece of evidence beats a pile of them.
+ */
+export function historyImpliesAhead(
+  currentStage: string,
+  actions: { type: string; action_date: string }[],
+): { stage: string; type: string; action_date: string } | null {
+  const from = stageIndex(currentStage)
+  if (from < 0) return null   // dormant: off the path, "ahead" is undefined
+
+  let best: { stage: string; type: string; action_date: string } | null = null
+  for (const a of actions) {
+    const implied = IMPLIED_STAGE[a.type]
+    if (!implied) continue
+    const at = stageIndex(implied)
+    if (at <= from) continue
+    if (!best || at > stageIndex(best.stage)) best = { stage: implied, type: a.type, action_date: a.action_date }
+    // Same implied stage twice: keep the MOST RECENT, since the sentence names
+    // a date and the newest evidence is the one worth showing.
+    else if (at === stageIndex(best.stage) && a.action_date > best.action_date) {
+      best = { stage: implied, type: a.type, action_date: a.action_date }
+    }
+  }
+  return best
+}

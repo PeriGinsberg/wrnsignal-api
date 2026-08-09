@@ -47,7 +47,7 @@ import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surf
 import { authFetch } from "../../authFetch"
 import { ChangeStage } from "./ChangeStage"
 import { STAGE_LABELS, ACTION_TYPE_LABEL } from "../../vocab"
-import { STAGE_PATH, impliedStageAhead } from "../../../../../lib/network-tracker/action-semantics"
+import { STAGE_PATH, impliedStageAhead, historyImpliesAhead } from "../../../../../lib/network-tracker/action-semantics"
 import { StepCompleteIcon, StepRestingIcon } from "../../../../../components/icons"
 
 type Contact = {
@@ -69,16 +69,29 @@ type Contact = {
  */
 const PATH = STAGE_PATH
 
+/** Short, and no year: the log is recent by definition and a year makes a quiet
+ *  line look like a record locator. Order follows the VIEWER'S locale, as every
+ *  other date on this screen does — "Jun 12" or "12 Jun" depending on where
+ *  they are. */
+function fmtEvidenceDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return "an earlier date"
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+}
+
 const RESTING = new Set(["dormant_no_answer", "dormant_declined"])
 
 /** On the path so you can see it coming, but never one tap. Set it from Change. */
 const NOT_ONE_TAP = new Set(["outcome"])
 
 export function WhereThingsStand({
-  contact, onChanged, justLogged = null, onOfferSettled,
+  contact, onChanged, actions = [], justLogged = null, onOfferSettled,
 }: {
   contact: Contact
   onChanged: () => void
+  /** The contact's logged history. Already loaded by the record, so the
+   *  evidence line below costs no extra request. */
+  actions?: { type: string; action_date: string }[]
   /** The action type just logged, if any. Drives the offer below the stepper. */
   justLogged?: string | null
   /** Called once the offer is taken or dismissed, so it does not re-appear. */
@@ -92,6 +105,10 @@ export function WhereThingsStand({
   // this contact already is. Backdated, repeat and backwards cases all fall out
   // of impliedStageAhead rather than being special-cased here.
   const offered = justLogged ? impliedStageAhead(contact.stage, justLogged) : null
+  // What the LOG says, independent of anything just logged. Suppressed while an
+  // offer is on screen: the offer already names the same move, and saying it
+  // twice turns a quiet fact into nagging.
+  const evidence = offered ? null : historyImpliesAhead(contact.stage, actions)
   // -1 when resting or unrecognised: nothing on the path is current, so nothing
   // is filled, and the caption below carries the state instead.
   const currentIndex = resting ? -1 : PATH.indexOf(contact.stage as (typeof PATH)[number])
@@ -328,6 +345,33 @@ export function WhereThingsStand({
             Not yet
           </button>
         </div>
+      )}
+
+      {/* WHAT THE LOG SHOWS. Not a prompt, not a correction, no buttons.
+          The offer at logging time is dismissible and its dismissal is session
+          state, so one dismissal used to leave a contact contradicting its own
+          history permanently with nothing ever saying so. This closes that
+          without asking anything — and that is the whole design: a QUESTION
+          demands an answer and answers have to be remembered, which is a
+          column, a migration and a decision about what "dismissed" means. A
+          STATEMENT can simply be true on every visit, the same way "Overdue 4
+          days" is, and needs none of it.
+          THE WORDING IS EVIDENCE, NOT A CORRECTION. Being behind your own log
+          is a legitimate position — the chat went nowhere, you are parking
+          them, you disagree that it counted. The stage is still a fact the user
+          asserts, so this reports and does not judge. Nothing here may imply a
+          mistake, and no "should" or "update this" belongs in it. */}
+      {evidence && (
+        <p
+          data-testid="log-evidence"
+          style={{ margin: "12px 0 0", color: S.text.muted, fontSize: 13, lineHeight: "19px" }}
+        >
+          Your log shows{" "}
+          <strong style={{ color: S.text.secondary, fontWeight: 700 }}>
+            {ACTION_TYPE_LABEL[evidence.type] ?? evidence.type}
+          </strong>{" "}
+          on {fmtEvidenceDate(evidence.action_date)}.
+        </p>
       )}
 
       {/* THE TWO EXITS, VISIBLE WHERE PEOPLE LOOK FOR STAGES.

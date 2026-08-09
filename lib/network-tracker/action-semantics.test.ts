@@ -12,7 +12,7 @@
 
 import {
   IMPLIED_STAGE, STAGE_PATH, impliedStageAhead, stageIndex, stageAfterAction,
-  ACTION_TYPES, isPipelineAction,
+  ACTION_TYPES, isPipelineAction, historyImpliesAhead,
 } from "./action-semantics"
 
 let pass = 0, fail = 0
@@ -102,6 +102,58 @@ eq("nine stages, in order", STAGE_PATH.length, 9)
 eq("starts at identified", STAGE_PATH[0], "identified")
 eq("ends at outcome", STAGE_PATH[STAGE_PATH.length - 1], "outcome")
 ok("note is the only inert type", !isPipelineAction("note") && isPipelineAction("note_logged"))
+
+// ── What the log implies, independent of anything just logged ──────────────
+console.log("")
+console.log("— historyImpliesAhead —")
+
+// A function declaration, not `const act = (...) => (...)`. The arrow form ends
+// in `)` and the next statement here is a bare block, which tsc parses as a
+// continuation and rejects — tsx ran it happily, so the suite was green under a
+// more lenient parser than the one that gates the build.
+function act(type: string, action_date: string) { return { type, action_date } }
+
+{
+  // The hole this closes: the offer at logging time is dismissible and its
+  // dismissal is session state, so a contact could sit contradicting its own
+  // history forever with nothing saying so.
+  const h = historyImpliesAhead("sequence_active", [
+    act("touch_1", "2026-06-01T12:00:00Z"),
+    act("chat_done", "2026-06-12T12:00:00Z"),
+  ])
+  eq("reports the chat the log holds", h?.stage, "chat_done")
+  eq("…and which action said so", h?.type, "chat_done")
+  eq("…and when", h?.action_date, "2026-06-12T12:00:00Z")
+}
+
+{
+  // FURTHEST ahead, not most recent: one sentence about the strongest evidence.
+  const h = historyImpliesAhead("replied", [
+    act("ask", "2026-06-02T12:00:00Z"),
+    act("chat_done", "2026-06-20T12:00:00Z"),
+  ])
+  eq("takes the furthest-ahead stage, not the latest action", h?.stage, "ask_made")
+}
+
+{
+  // Same implied stage twice: the newest, because the sentence names a date.
+  const h = historyImpliesAhead("sequence_active", [
+    act("chat_done", "2026-06-01T12:00:00Z"),
+    act("chat_done", "2026-06-19T12:00:00Z"),
+  ])
+  eq("ties break to the most recent", h?.action_date, "2026-06-19T12:00:00Z")
+}
+
+ok("silent when the stage is already ahead of the log",
+  historyImpliesAhead("nurture", [act("chat_done", "2026-06-12T12:00:00Z")]) === null)
+ok("silent when the stage matches the log",
+  historyImpliesAhead("chat_done", [act("chat_done", "2026-06-12T12:00:00Z")]) === null)
+ok("silent on a dormant contact — off the path, \"ahead\" is undefined",
+  historyImpliesAhead("dormant_no_answer", [act("chat_done", "2026-06-12T12:00:00Z")]) === null)
+ok("silent with no history at all", historyImpliesAhead("identified", []) === null)
+ok("actions that imply nothing say nothing",
+  historyImpliesAhead("identified", [act("note_logged", "2026-06-12T12:00:00Z"), act("note", "2026-06-13T12:00:00Z")]) === null)
+
 
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail > 0) process.exit(1)

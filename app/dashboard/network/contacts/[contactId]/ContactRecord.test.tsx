@@ -614,3 +614,69 @@ describe("the stage circles are discoverable without a mouse", () => {
     expect(screen.getByTestId("step-identified").textContent).not.toContain("›")
   })
 })
+
+/**
+ * The offer at logging time is dismissible and its dismissal is session state,
+ * so one dismissal used to leave a contact contradicting its own history
+ * permanently, with nothing ever saying so. This states the evidence instead of
+ * asking again — a question demands an answer and answers have to be
+ * remembered; a statement can just be true on every visit.
+ */
+describe("the record says what the log shows", () => {
+  it("states the evidence when the log is ahead of the stage", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    actions = [
+      { id: "a1", type: "touch_1", action_date: "2026-06-01T12:00:00Z", note: null, author_role: "client" },
+      { id: "a2", type: "chat_done", action_date: "2026-06-12T12:00:00Z", note: null, author_role: "client" },
+    ]
+    await open()
+    const line = screen.getByTestId("log-evidence")
+    expect(line.textContent).toMatch(/Your log shows/)
+    expect(line.textContent).toMatch(/Chat done/)
+    // Locale-agnostic: the date follows the viewer's locale, like every other
+    // date on this screen, so pinning one order would fail off en-US.
+    expect(line.textContent).toMatch(/Jun 12|12 Jun/)
+  })
+
+  it("OFFERS NOTHING — no buttons, nothing to dismiss", async () => {
+    // The whole reason this needs no persistence.
+    contact = { ...BASE, stage: "sequence_active" }
+    actions = [
+      { id: "a2", type: "chat_done", action_date: "2026-06-12T12:00:00Z", note: null, author_role: "client" },
+    ]
+    await open()
+    const line = screen.getByTestId("log-evidence")
+    expect(within(line).queryByRole("button")).toBeNull()
+  })
+
+  it("reads as EVIDENCE, never as a correction", async () => {
+    // Being behind your own log is a legitimate position: the chat went
+    // nowhere, you are parking them, you disagree it counted. The stage is
+    // still a fact the user asserts, so nothing here may imply a mistake.
+    contact = { ...BASE, stage: "sequence_active" }
+    actions = [
+      { id: "a2", type: "chat_done", action_date: "2026-06-12T12:00:00Z", note: null, author_role: "client" },
+    ]
+    await open()
+    const text = screen.getByTestId("log-evidence").textContent ?? ""
+    for (const scold of [/should/i, /update/i, /out of date/i, /incorrect/i, /forgot/i, /wrong/i, /fix/i]) {
+      expect(text).not.toMatch(scold)
+    }
+  })
+
+  it("says nothing when the stage is already ahead of the log", async () => {
+    contact = { ...BASE, stage: "nurture" }
+    actions = [
+      { id: "a2", type: "chat_done", action_date: "2026-06-12T12:00:00Z", note: null, author_role: "client" },
+    ]
+    await open()
+    expect(screen.queryByTestId("log-evidence")).toBeNull()
+  })
+
+  it("says nothing with no history", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    actions = []
+    await open()
+    expect(screen.queryByTestId("log-evidence")).toBeNull()
+  })
+})
