@@ -14,6 +14,10 @@ function ok(label: string, cond: boolean) {
   if (cond) { pass++; console.log(`✓ ${label}`) } else { fail++; console.error(`✗ ${label}`) }
 }
 
+function eq(label: string, got: unknown, want: unknown) {
+  ok(`${label} (got ${JSON.stringify(got)})`, JSON.stringify(got) === JSON.stringify(want))
+}
+
 const NOW = new Date("2026-08-03T12:00:00Z")
 const day = (offset: number) => new Date(Date.UTC(2026, 7, 3 + offset, 12, 0, 0)).toISOString()
 
@@ -116,6 +120,67 @@ ok(
     "never drops or duplicates anyone",
     out.length === rows.length && new Set(out.map((x) => x.id)).size === rows.length,
   )
+}
+
+// ── Order WITHIN a band ────────────────────────────────────────────────────
+console.log("")
+console.log("— within-band ordering —")
+
+{
+  // The top of Overdue is the single most useful row on the screen, and it used
+  // to be whatever the server happened to return first.
+  const rows = [
+    c({ id: "five", stage: "sequence_active", next_due_at: day(-5), next_due_reason: "touch_2" }),
+    c({ id: "ten", stage: "sequence_active", next_due_at: day(-10), next_due_reason: "touch_2" }),
+    c({ id: "one", stage: "sequence_active", next_due_at: day(-1), next_due_reason: "touch_2" }),
+  ]
+  eq("Overdue: most overdue first", sortForAttention(rows, NOW).map((x) => x.id), ["ten", "five", "one"])
+}
+
+{
+  // Future commitments: the NEXT one is the one you can act on.
+  const rows = [
+    c({ id: "far", stage: "nurture", next_due_at: day(30), next_due_reason: "nurture_recurring" }),
+    c({ id: "near", stage: "nurture", next_due_at: day(3), next_due_reason: "nurture_recurring" }),
+  ]
+  eq("Due later: soonest first", sortForAttention(rows, NOW).map((x) => x.id), ["near", "far"])
+}
+
+{
+  // You acted, they did not. The one that has sat longest is going cold.
+  const rows = [
+    c({ id: "recent", stage: "chat_scheduled", last_action_at: day(-2) }),
+    c({ id: "stale", stage: "chat_scheduled", last_action_at: day(-40) }),
+  ]
+  eq("Waiting on them: longest wait first", sortForAttention(rows, NOW).map((x) => x.id), ["stale", "recent"])
+}
+
+{
+  const rows = [
+    c({ id: "later", stage: "dormant_no_answer", next_due_at: day(30) }),
+    c({ id: "sooner", stage: "dormant_no_answer", next_due_at: day(4) }),
+  ]
+  eq("Resting: soonest to resurface first", sortForAttention(rows, NOW).map((x) => x.id), ["sooner", "later"])
+}
+
+{
+  // Bands still win over the key: a due-later contact never outranks an overdue
+  // one however much sooner its date is.
+  const rows = [
+    c({ id: "future", stage: "nurture", next_due_at: day(1), next_due_reason: "nurture_recurring" }),
+    c({ id: "overdue", stage: "sequence_active", next_due_at: day(-1), next_due_reason: "touch_2" }),
+  ]
+  eq("band still beats the within-band key", sortForAttention(rows, NOW).map((x) => x.id), ["overdue", "future"])
+}
+
+{
+  // Nothing to sort by: the incoming order survives, so the list does not
+  // reshuffle under a pointer on every refetch.
+  const rows = [
+    c({ id: "b", stage: "identified" }),
+    c({ id: "a", stage: "identified" }),
+  ]
+  eq("no key: stable, server order kept", sortForAttention(rows, NOW).map((x) => x.id), ["b", "a"])
 }
 
 console.log(`\n${pass} passed, ${fail} failed`)

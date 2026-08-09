@@ -111,9 +111,9 @@ export function stagesInPhase(phase: PhaseKey): string[] {
 // the routes, and every stored row are untouched. Renaming here is a pure
 // relabel, exactly like STAGE_LABELS maps `identified` to "Not contacted".
 export const TIER_LABELS: Record<string, string> = {
-  dream: "Tier 1",
-  strong: "Tier 2",
-  backup: "Tier 3",
+  dream: "Priority 1",
+  strong: "Priority 2",
+  backup: "Priority 3",
 }
 
 // `tier` is nullable, so the board always has an untiered bucket. UNSORTED is a
@@ -132,10 +132,16 @@ export const TIER_GROUP_LABELS: Record<string, string> = {
 export const TIER_ORDER: string[] = [UNSORTED_TIER, "dream", "strong", "backup"]
 
 // Names of the FIELDS themselves, as distinct from the values inside them.
-// A pill showing "Tier 1" says nothing about which field it is; the label beside
+// A pill showing "Priority 1" says nothing about which field it is; the label beside
 // it does. One source so "Tier" can't read "Tier" here and "Priority" there.
 export const FIELD_LABELS = {
-  tier: "Tier",
+  // "Priority", matching the values it holds. A field labelled Tier holding
+  // "Priority 1" is worse than either wording alone.
+  //
+  // It shares the word with contact-level `priority` (A/B/C), which is fine:
+  // different objects on different screens, and the context carries it. The
+  // STORED values are still dream/strong/backup — this whole map is display.
+  tier: "Priority",
   status: "Status",
   stage: "Stage",
   relationship: "Relationship",

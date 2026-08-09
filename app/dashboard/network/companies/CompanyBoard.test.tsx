@@ -301,10 +301,10 @@ describe("companies board — a tier change must not rebuild the card", () => {
     expect(callsTo("/api/network/contacts?company_id=")).toBe(1)
 
     // Set the tier — the exact action that used to eject her.
-    fireEvent.change(screen.getByLabelText("Tier"), { target: { value: "dream" } })
+    fireEvent.change(screen.getByLabelText("Priority"), { target: { value: "dream" } })
 
-    // The company has moved buckets: the heading it now sits under is Tier 1.
-    await waitFor(() => expect(screen.getByText(/Tier 1/)).toBeTruthy())
+    // The company has moved buckets: the heading it now sits under is Priority 1.
+    await waitFor(() => expect(screen.getByText(/Priority 1/)).toBeTruthy())
 
     // THE TWO ASSERTIONS THAT CARRY THIS TEST.
     // 1. Still expanded — the roster is on screen, so the editor never closed.
@@ -322,12 +322,74 @@ describe("companies board — a tier change must not rebuild the card", () => {
     fireEvent.click(screen.getByText("Nodal Exchange"))
     await waitFor(() => expect(screen.getByText("Jordan Alvarez")).toBeTruthy())
 
-    fireEvent.change(screen.getByLabelText("Tier"), { target: { value: "dream" } })
-    await waitFor(() => expect(screen.getByText(/Tier 1/)).toBeTruthy())
+    fireEvent.change(screen.getByLabelText("Priority"), { target: { value: "dream" } })
+    await waitFor(() => expect(screen.getByText(/Priority 1/)).toBeTruthy())
 
     // The open editor is still an editor: the next field is reachable without
     // re-expanding anything.
-    expect((screen.getByLabelText("Tier") as HTMLSelectElement).value).toBe("dream")
+    expect((screen.getByLabelText("Priority") as HTMLSelectElement).value).toBe("dream")
     expect(screen.getByLabelText("Status")).toBeTruthy()
+  })
+})
+
+describe("CompanyCard — the small things the retest caught", () => {
+  beforeEach(() => {
+    authFetchMock.mockReset()
+    authFetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === "PATCH") return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true }) } as unknown as Response)
+      return Promise.resolve({
+        ok: true, status: 200,
+        json: async () => String(url).startsWith("/api/applications")
+          ? { ok: true, applications: [] }
+          : { ok: true, contacts: [] },
+      } as unknown as Response)
+    })
+  })
+
+  it("says the domain field saves on blur, instead of saving silently", async () => {
+    // It always worked and never said so — the same shape as the contact
+    // record's "About this person" before it was fixed.
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    const domain = await screen.findByLabelText("Domain")
+
+    expect(screen.getByTestId("company-save-state").textContent).toBe("")
+    fireEvent.change(domain, { target: { value: "nodal.io" } })
+    expect(screen.getByTestId("company-save-state").textContent).toMatch(/Saves when you click away/)
+
+    fireEvent.blur(domain, { target: { value: "nodal.io" } })
+    await waitFor(() => expect(screen.getByTestId("company-save-state").textContent).toMatch(/Saved/))
+  })
+
+  it("writes nothing when the field is blurred unchanged", async () => {
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    const domain = await screen.findByLabelText("Domain")
+    fireEvent.blur(domain, { target: { value: company.domain } })
+    expect(authFetchMock.mock.calls.filter((c) => (c[1] as RequestInit)?.method === "PATCH")).toHaveLength(0)
+  })
+
+  it("offers a way out at the BOTTOM of an expanded card", async () => {
+    // The header row has always toggled it, but an expanded card runs past a
+    // screen and by the time you have read to the end the control is above you.
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    const close = await screen.findByTestId("collapse-company")
+    expect(close.textContent).toContain("Nodal Exchange")
+
+    fireEvent.click(close)
+    // Collapsed: the body is gone, and the header offers to expand again.
+    await waitFor(() => expect(screen.queryByLabelText("Domain")).toBeNull())
+    expect(screen.getByLabelText(/Expand Nodal Exchange/)).toBeTruthy()
+  })
+
+  it("labels the field Priority, matching the values it holds", async () => {
+    render(<CompanyCard company={company} onChanged={() => {}} onRequestDelete={() => {}} />)
+    fireEvent.click(screen.getByLabelText(/Expand Nodal Exchange/))
+    const select = await screen.findByLabelText("Priority")
+    expect(Array.from((select as HTMLSelectElement).options).map((o) => o.text))
+      .toEqual(expect.arrayContaining(["Priority 1", "Priority 2", "Priority 3"]))
+    // The old wording must not survive anywhere in the control.
+    expect(screen.queryByLabelText("Tier")).toBeNull()
   })
 })

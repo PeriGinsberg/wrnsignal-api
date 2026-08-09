@@ -74,6 +74,14 @@ export function CompanyCard({
   const [appsFailed, setAppsFailed] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  /**
+   * Which field has unsaved text. Domain and notes commit on BLUR, which works
+   * and says nothing — the same shape as the contact record's "About this
+   * person" before it was fixed: a user types, sees no button and no
+   * confirmation, and cannot tell whether anything happened.
+   */
+  const [dirtyField, setDirtyField] = useState<null | "domain" | "notes">(null)
+  const [savedField, setSavedField] = useState<null | "domain" | "notes">(null)
   const [addOpen, setAddOpen] = useState(false)
 
   const empty = co.contact_count === 0
@@ -131,7 +139,19 @@ export function CompanyCard({
     await loadContacts()
   }
 
-  async function patch(body: Partial<Company>) {
+  /** Blur-commit with a visible outcome. Same contract as the contact record's
+   *  "About this person": no button, but never silent. */
+  async function commitField(field: "domain" | "notes", value: string, current: string | null) {
+    if (value === (current ?? "")) { setDirtyField(null); return }
+    setDirtyField(null)
+    const ok = await patch({ [field]: value || null } as Partial<Company>)
+    if (ok) {
+      setSavedField(field)
+      setTimeout(() => setSavedField((f) => (f === field ? null : f)), 1500)
+    }
+  }
+
+  async function patch(body: Partial<Company>): Promise<boolean> {
     setSaving(true)
     setErr(null)
     try {
@@ -141,8 +161,10 @@ export function CompanyCard({
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Save failed (${res.status})`)
       onChanged(body)
+      return true
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e))
+      return false
     } finally {
       setSaving(false)
     }
@@ -243,7 +265,11 @@ export function CompanyCard({
                 value={co.tier ?? ""}
                 onChange={(e) => patch({ tier: e.target.value || null })}
                 disabled={saving}
-                aria-label="Tier"
+                // From the vocab, not a literal. This was hardcoded "Tier" and
+                // so did not follow the rename, leaving the visible label and
+                // the accessible name disagreeing — the add form next door
+                // already read FIELD_LABELS.
+                aria-label={FIELD_LABELS.tier}
                 style={{ ...control, width: "auto" }}
               >
                 <option value="">{TIER_GROUP_LABELS[UNSORTED_TIER]}</option>
@@ -267,7 +293,8 @@ export function CompanyCard({
               <span style={fieldLabel}>Domain</span>
               <input
                 defaultValue={co.domain ?? ""}
-                onBlur={(e) => e.target.value !== (co.domain ?? "") && patch({ domain: e.target.value || null })}
+                onChange={(e) => setDirtyField(e.target.value !== (co.domain ?? "") ? "domain" : null)}
+                onBlur={(e) => void commitField("domain", e.target.value, co.domain)}
                 placeholder="domain.com"
                 aria-label="Domain"
                 style={control}
@@ -279,13 +306,30 @@ export function CompanyCard({
             <span style={fieldLabel}>Notes</span>
             <textarea
               defaultValue={co.notes ?? ""}
-              onBlur={(e) => e.target.value !== (co.notes ?? "") && patch({ notes: e.target.value || null })}
+              onChange={(e) => setDirtyField(e.target.value !== (co.notes ?? "") ? "notes" : null)}
+              onBlur={(e) => void commitField("notes", e.target.value, co.notes)}
               placeholder="What you know about this company"
               aria-label="Notes"
               rows={2}
               style={{ ...control, height: "auto", padding: "10px 12px", lineHeight: "21px" }}
             />
           </label>
+
+          {/* A STATUS LINE, NOT A CONTROL. Domain and notes commit on blur, and
+              that worked and said nothing — the same shape as the contact
+              record's "About this person" before it was fixed. Silence next to
+              typed text is exactly what makes a working field read as broken,
+              so this speaks in the unsaved state too. */}
+          <div
+            data-testid="company-save-state"
+            aria-live="polite"
+            style={{ minHeight: 18, fontSize: 12.5, color: S.text.dim, marginTop: -2 }}
+          >
+            {saving ? "Saving…"
+              : savedField ? "Saved"
+              : dirtyField ? "Saves when you click away"
+              : ""}
+          </div>
 
           {loading && <div style={{ color: S.text.muted, fontSize: 14 }}>Loading contacts…</div>}
           {err && <div style={{ color: S.meaning.error.ink, fontSize: 13 }}>{err}</div>}
@@ -347,6 +391,26 @@ export function CompanyCard({
               {contacts.map((c) => <ContactCard key={c.id} contact={c} />)}
             </div>
           )}
+
+          {/* A WAY OUT, AT THE BOTTOM. The card has always been collapsible —
+              the whole header row toggles it — but an expanded card can run
+              past a screen, and by the time you have read to the end the
+              control is somewhere above you. A tester reported no obvious way
+              to close one, which is what "it is up there" means in practice.
+              Not a second control in the design sense: it drives the same
+              toggle, it is just reachable from where reading ends. */}
+          <button
+            type="button"
+            onClick={toggle}
+            data-testid="collapse-company"
+            style={{
+              display: "block", marginTop: 16, background: "none", border: "none", padding: "2px 0",
+              color: S.action.quietInk, fontSize: 13, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            ▴ Close {co.name}
+          </button>
         </div>
       )}
     </div>

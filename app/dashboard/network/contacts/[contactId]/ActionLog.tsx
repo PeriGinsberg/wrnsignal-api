@@ -46,13 +46,18 @@ export function ActionLog({
    *  implies. Optional arg: existing callers that ignore it still work. */
   onChanged: (loggedType?: string) => void
 }) {
-  const [type, setType] = useState("touch_1")
+  // EMPTY, not "touch_1". A pre-selected first option is a default nobody
+  // chose: the fastest path through this form logs a first outreach on a
+  // contact you have written to five times, and it does it silently. Two
+  // testers hit it. "" forces a choice and disables the button until one.
+  const [type, setType] = useState("")
   const [date, setDate] = useState(toDateInput(new Date()))
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   async function add() {
+    if (!type) return   // the button is disabled, but a form must not depend on that
     setBusy(true)
     setErr(null)
     try {
@@ -83,6 +88,7 @@ export function ActionLog({
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={label}>Action</span>
           <select value={type} onChange={(e) => setType(e.target.value)} style={{ ...control, width: 200 }}>
+            <option value="">Select action</option>
             {ACTION_TYPES.map((t) => (
               <option key={t.key} value={t.key}>{t.label}</option>
             ))}
@@ -109,11 +115,11 @@ export function ActionLog({
         </label>
         <button
           onClick={add}
-          disabled={busy}
+          disabled={busy || !type}
           style={{
             ...actionStyle(S, "primary"),
             borderRadius: 10, padding: "0 20px", height: 42, fontSize: 14,
-            fontFamily: "inherit", opacity: busy ? 0.6 : 1,
+            fontFamily: "inherit", opacity: busy || !type ? 0.5 : 1,
           }}
         >
           {busy ? "Logging…" : "Log it"}

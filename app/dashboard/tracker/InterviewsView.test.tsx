@@ -83,7 +83,11 @@ describe("the view renders the three groups", () => {
   const ROSTER = [
     iv({ job_title: "Soon", interview_date: dateStr(2), status: "scheduled" }),
     iv({ job_title: "Unbooked", interview_date: null, status: "not_scheduled" }),
-    iv({ job_title: "Sat", interview_date: dateStr(-3), status: "scheduled" }),
+    // NOT "Sat": a three-letter fixture name collides with a weekday or month
+    // abbreviation the moment the rendered date happens to contain one. This
+    // test passed for a day and then failed on a calendar roll with no code
+    // change. Fixture names here must be words that cannot appear in a date.
+    iv({ job_title: "Happened", interview_date: dateStr(-3), status: "scheduled" }),
     iv({ job_title: "Told", interview_date: dateStr(6), status: "awaiting_feedback" }),
     iv({ job_title: "Won", interview_date: dateStr(-10), status: "offer_extended" }),
   ]
@@ -104,7 +108,7 @@ describe("the view renders the three groups", () => {
     // And the rest of the table, by placement.
     expect(within(screen.getByTestId("group-coming_up")).getByText(/Soon/)).toBeTruthy()
     expect(within(screen.getByTestId("group-coming_up")).getByText(/Unbooked/)).toBeTruthy()
-    expect(within(screen.getByTestId("group-waiting")).getByText(/Sat/)).toBeTruthy()
+    expect(within(screen.getByTestId("group-waiting")).getByText(/Happened/)).toBeTruthy()
     expect(within(screen.getByTestId("group-completed")).getByText(/Won/)).toBeTruthy()
     // The second bug, asserted where it actually shows: an undated round must
     // not be sitting in Completed.
@@ -115,7 +119,7 @@ describe("the view renders the three groups", () => {
     render(<InterviewsView interviews={ROSTER} />)
     const sub = screen.getByText(/coming up/)
     expect(sub.textContent).toContain("2 coming up")      // Soon + Unbooked
-    expect(sub.textContent).toContain("2 waiting to hear") // Sat + Told
+    expect(sub.textContent).toContain("2 waiting to hear") // Happened + Told
     expect(sub.textContent).toContain("1 completed")       // Won
   })
 

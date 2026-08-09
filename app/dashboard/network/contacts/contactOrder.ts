@@ -80,16 +80,57 @@ export const BAND_LABELS: Record<AttentionRank, string> = {
 }
 
 /**
- * Re-rank for attention, preserving the server's order inside each band.
+ * Order WITHIN a band. The rank says which group you are in; this says where you
+ * sit in it, and a band whose insides are arbitrary is only half-sorted — the
+ * top of Overdue is the single most useful row on the screen and it was
+ * whatever the server happened to return.
  *
- * The server's ordering is meaningful within a band (most recent activity), so
- * this is a STABLE sort over the incoming array rather than a re-sort from
- * scratch. Ties therefore keep whatever the API decided, which keeps the list
- * from reshuffling when two contacts are equally urgent.
+ * Not one rule for all six, because the bands do not mean the same thing:
+ *
+ *   0 Overdue          oldest due first — 10 days over outranks 5
+ *   1 Due today        all the same day; nothing to order by, keep server order
+ *   2 Due later        soonest first, so the next commitment is at the top
+ *   3 Waiting on them  longest wait first — you acted, they did not, and the
+ *                      one that has sat longest is the one going cold
+ *   4 Not started      no dates at all; keep server order
+ *   5 Resting          soonest to resurface first, since that is the only
+ *                      thing that will happen to them
+ *
+ * Returns null where there is nothing meaningful to sort by, and the caller
+ * falls back to the incoming order.
+ */
+function withinBandKey(c: Contact, rank: AttentionRank): number | null {
+  switch (rank) {
+    case 0:
+    case 2:
+    case 5:
+      return c.next_due_at ? new Date(c.next_due_at).getTime() : null
+    case 3:
+      return c.last_action_at ? new Date(c.last_action_at).getTime() : null
+    default:
+      return null
+  }
+}
+
+/**
+ * Re-rank for attention, then order inside each band.
+ *
+ * Still STABLE where there is no key: ties keep whatever the API decided, which
+ * keeps the list from reshuffling when two contacts are equally urgent.
  */
 export function sortForAttention(rows: Contact[], now: Date = new Date()): Contact[] {
   return rows
-    .map((c, i) => ({ c, i, rank: attentionRank(c, now) }))
-    .sort((a, b) => (a.rank - b.rank) || (a.i - b.i))
+    .map((c, i) => {
+      const rank = attentionRank(c, now)
+      return { c, i, rank, key: withinBandKey(c, rank) }
+    })
+    .sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank
+      // Ascending on every keyed band: oldest-due first for overdue, soonest
+      // first for future, longest-waiting first for band 3. One direction,
+      // because in each case the smaller timestamp is the more urgent fact.
+      if (a.key !== null && b.key !== null && a.key !== b.key) return a.key - b.key
+      return a.i - b.i
+    })
     .map((x) => x.c)
 }
