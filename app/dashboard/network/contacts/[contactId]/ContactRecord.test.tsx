@@ -461,3 +461,99 @@ describe("about-this-person commits without a second click", () => {
     expect(within(body).getByText("Add a note")).toBeTruthy()
   })
 })
+
+/**
+ * THE OFFER. Actions and stages described the same events and did not respond
+ * to each other: logging "Chat done" left the stage reading "Message sent", and
+ * a tester reported the two systems as contradicting. The stage stays something
+ * you ASSERT — so this proposes, never decides.
+ */
+describe("logging an action offers the stage it implies", () => {
+  it("offers the move, naming the action and the destination", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    // Log a chat from the History drawer.
+    fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
+    fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
+
+    const offer = await screen.findByTestId("stage-offer")
+    // Both halves matter: WHICH action, and WHERE it would go.
+    expect(offer.textContent).toContain("Chat done")
+    expect(offer.textContent).toContain("You talked")
+  })
+
+  it("takes ONE TAP, and sets the implied stage", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
+    fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
+    fireEvent.click(await screen.findByTestId("stage-offer-accept"))
+
+    await waitFor(() => {
+      const stageCalls = authFetchMock.mock.calls.filter((c) => String(c[0]).includes("/stage"))
+      expect(stageCalls.length).toBeGreaterThan(0)
+      expect(JSON.parse(stageCalls[stageCalls.length - 1][1].body).stage).toBe("chat_done")
+    })
+  })
+
+  it("is DISMISSIBLE, and dismissing writes nothing", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
+    fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
+    fireEvent.click(await screen.findByTestId("stage-offer-dismiss"))
+
+    await waitFor(() => expect(screen.queryByTestId("stage-offer")).toBeNull())
+    // The action itself was logged; only the stage move was declined.
+    expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(false)
+  })
+
+  it("does NOT offer for an action that implies nothing", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    fireEvent.change(screen.getByLabelText("Action"), { target: { value: "note_logged" } })
+    fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
+    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/actions"))).toBe(true))
+    expect(screen.queryByTestId("stage-offer")).toBeNull()
+  })
+
+  it("does NOT offer a move backwards", async () => {
+    // A chat logged from nurture implies a stage already passed. Dragging the
+    // stage back would be the worst failure this could have.
+    contact = { ...BASE, stage: "nurture" }
+    await open()
+    fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
+    fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
+    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/actions"))).toBe(true))
+    expect(screen.queryByTestId("stage-offer")).toBeNull()
+  })
+
+  it("shows no offer before anything has been logged", async () => {
+    await open()
+    expect(screen.queryByTestId("stage-offer")).toBeNull()
+  })
+})
+
+describe("the one automatic case explains itself on screen", () => {
+  it("says at `identified` that a first outreach will move the stage", async () => {
+    // The rule lived only in a code comment. The person it affects cannot read
+    // that, and the consequence of NOT saying it is a contact that advances
+    // without being asked.
+    contact = { ...BASE, stage: "identified" }
+    await open()
+    const note = screen.getByTestId("auto-advance-note")
+    expect(note.textContent).toContain("first outreach")
+    expect(note.textContent).toContain("Message sent")
+  })
+
+  it("does not say it anywhere else, where it is not true", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    expect(screen.queryByTestId("auto-advance-note")).toBeNull()
+  })
+})

@@ -76,10 +76,20 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
 
   const [contact, setContact] = useState<Contact | null>(null)
   const [actions, setActions] = useState<Action[]>([])
+  /**
+   * The action type just logged, if any — the input to the stage offer.
+   *
+   * Held HERE rather than in the log surfaces because the offer belongs at the
+   * stage tracker, not next to the log: the whole confusion was that the two
+   * systems looked unrelated, so the consequence of logging has to appear where
+   * the stage is stated. Cleared when the offer is taken or dismissed.
+   */
+  const [justLogged, setJustLogged] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (loggedType?: string) => {
+    if (loggedType) setJustLogged(loggedType)
     setError(null)
     try {
       const res = await authFetch(`/api/network/contacts/${contactId}`)
@@ -192,7 +202,12 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
           Context BEFORE action: position and the moves sit directly under the
           identity, so you know where this is before your eye reaches the
           message you are about to send. */}
-      <WhereThingsStand contact={contact} onChanged={load} />
+      <WhereThingsStand
+        contact={contact}
+        onChanged={load}
+        justLogged={justLogged}
+        onOfferSettled={() => setJustLogged(null)}
+      />
 
       {/* ── What you've already applied to here ─────────────────
           Directly above the send panel, because it changes the message. A

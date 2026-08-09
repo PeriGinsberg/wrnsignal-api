@@ -60,3 +60,83 @@ export function stageAfterAction(currentStage: string, type: string): string | n
   if (type === "touch_1" && currentStage === "identified") return "sequence_active"
   return null
 }
+
+/**
+ * THE STAGE PATH, in order. The nine stages that are steps of progress.
+ *
+ * The two dormant stages are deliberately absent: they are where a thread
+ * stops, not somewhere you advance to. WhereThingsStand draws exactly this list
+ * and used to hold its own copy; it imports this one now, because a stepper and
+ * an "is this ahead?" test that disagree about the order is a bug nobody would
+ * spot until a prompt offered a move backwards.
+ */
+export const STAGE_PATH = [
+  "identified",
+  "intro_requested",
+  "sequence_active",
+  "replied",
+  "chat_scheduled",
+  "chat_done",
+  "nurture",
+  "ask_made",
+  "outcome",
+] as const
+
+/** Position on the path, or -1 for the dormant stages and anything unknown. */
+export function stageIndex(stage: string): number {
+  return (STAGE_PATH as readonly string[]).indexOf(stage)
+}
+
+/**
+ * The stage an action IMPLIES — the thing the record can offer to do, never
+ * something it does on its own.
+ *
+ * WHY THIS EXISTS. Actions and stages described the same events and did not
+ * respond to each other: logging "Chat done" left the stage reading "Message
+ * sent", and a tester reported the two systems as contradicting each other. She
+ * was right. The fix is not to make the stage a function of the log — people
+ * under-log, and a coach has to be able to say "this one is parked" with nothing
+ * logged at all — so the stage stays a fact you ASSERT. This table only lets the
+ * record notice the gap and offer to close it.
+ *
+ * SIX ACTIONS IMPLY NOTHING, and each for a reason:
+ *   thank_you           it is the due action AT chat_done — you are already there
+ *   connection_request  connecting is not outreach
+ *   engage_on_post      warming, not contact
+ *   note_logged         covers four different due reasons (reply, nurture,
+ *                       ask-followup, manual); it cannot imply one stage
+ *   note                inert, never reaches the engine at all
+ *   other               unknown by definition
+ *
+ * FIVE STAGES ARE NOT IMPLIED BY ANYTHING: replied, nurture, outcome, and both
+ * dormant stages. `replied` is the notable one — a reply is something THEY do,
+ * and there is no action type for it — so it can only ever be set by hand. That
+ * is consistent with the stage being an assertion, but it does mean the manual
+ * path stays first-class and cannot be treated as a fallback.
+ */
+export const IMPLIED_STAGE: Record<string, string> = {
+  touch_1: "sequence_active",
+  touch_2: "sequence_active",
+  touch_3: "sequence_active",
+  intro_request: "intro_requested",
+  chat_scheduled: "chat_scheduled",
+  chat_done: "chat_done",
+  ask: "ask_made",
+}
+
+/**
+ * The stage to OFFER after logging `type`, or null for no offer.
+ *
+ * Only ever forwards, and only from somewhere on the path:
+ *   - a backdated action implying a stage you are past offers nothing
+ *   - re-logging where you already are offers nothing
+ *   - a dormant contact offers nothing: resurfacing is a decision, and the
+ *     dormant stages are off the path so "ahead" is not even defined
+ */
+export function impliedStageAhead(currentStage: string, type: string): string | null {
+  const implied = IMPLIED_STAGE[type]
+  if (!implied) return null
+  const from = stageIndex(currentStage)
+  if (from < 0) return null
+  return stageIndex(implied) > from ? implied : null
+}

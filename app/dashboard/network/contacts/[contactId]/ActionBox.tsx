@@ -26,7 +26,7 @@ type Contact = {
   network_companies?: { name: string } | null
 }
 
-export function ActionBox({ contact, onLogged }: { contact: Contact; onLogged: () => void }) {
+export function ActionBox({ contact, onLogged }: { contact: Contact; onLogged: (loggedType?: string) => void }) {
   return (
     <>
       <section

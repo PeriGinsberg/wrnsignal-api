@@ -1,76 +1,107 @@
 #!/usr/bin/env tsx
-// Pure-logic test in the repo's original tsx-script convention (npx tsx <file>).
+// Which stage an action implies, and when it may be offered. tsx-script
+// convention (pure logic), same as dashboardState.test.ts.
 //
-// This is the assertion that a standalone note does not touch the pipeline. The
-// route's inert branch is gated ENTIRELY on isPipelineAction(type) — if it
-// returns true for 'note', the route falls through to computeNextDue(), writes
-// last_action_at / next_due_at / next_due_reason, and clears reminder_override
-// when the engine reports the snooze served. So this predicate IS the guarantee.
+// Run: npx tsx lib/network-tracker/action-semantics.test.ts
 //
-// The end-to-end claim (the DB row genuinely unchanged) needs a real database
-// and is covered by the smoke, not here.
+// The model: a stage is a fact you ASSERT, not a function of what got logged —
+// people under-log, and a coach has to be able to park a contact with nothing
+// logged at all. So an action never moves a stage on its own; it only proposes.
+// The one exception is touch_1 from `identified`, which stays automatic because
+// a dismissal there would leave the contact with no due date, silently.
 
-import { isPipelineAction, ACTION_TYPES, stageAfterAction } from "./action-semantics"
+import {
+  IMPLIED_STAGE, STAGE_PATH, impliedStageAhead, stageIndex, stageAfterAction,
+  ACTION_TYPES, isPipelineAction,
+} from "./action-semantics"
 
-let pass = 0
-let fail = 0
+let pass = 0, fail = 0
 function ok(label: string, cond: boolean) {
-  if (cond) { pass++; console.log(`✓ ${label}`) }
-  else { fail++; console.error(`✗ ${label}`) }
+  if (cond) { pass++; console.log(`✓ ${label}`) } else { fail++; console.error(`✗ ${label}`) }
+}
+function eq(label: string, got: unknown, want: unknown) {
+  ok(`${label} (got ${JSON.stringify(got)})`, JSON.stringify(got) === JSON.stringify(want))
 }
 
-console.log("action-semantics: inert vs pipeline")
+// ── The table ──────────────────────────────────────────────────────────────
+console.log("\n— the implied-stage table —")
 
-// The fix.
-ok("'note' is INERT — no engine, no last_action_at, no override consumption",
-  isPipelineAction("note") === false)
+eq("touch_1 implies sequence_active", IMPLIED_STAGE.touch_1, "sequence_active")
+eq("touch_2 implies sequence_active", IMPLIED_STAGE.touch_2, "sequence_active")
+eq("touch_3 implies sequence_active", IMPLIED_STAGE.touch_3, "sequence_active")
+eq("intro_request implies intro_requested", IMPLIED_STAGE.intro_request, "intro_requested")
+eq("chat_scheduled implies chat_scheduled", IMPLIED_STAGE.chat_scheduled, "chat_scheduled")
+eq("chat_done implies chat_done", IMPLIED_STAGE.chat_done, "chat_done")
+eq("ask implies ask_made", IMPLIED_STAGE.ask, "ask_made")
 
-// The regression guard. If this ever flips, the worklist's "Log it" for reply /
-// check-in / manual reminders stops clearing the due date and those contacts
-// stay overdue forever.
-ok("'note_logged' is STILL pipeline activity (worklist due reasons depend on it)",
-  isPipelineAction("note_logged") === true)
-
-// Everything else must remain pipeline activity — only 'note' was added as inert.
-const shouldBePipeline = [
-  "touch_1", "touch_2", "touch_3", "intro_request", "thank_you",
-  "connection_request", "engage_on_post", "chat_scheduled", "chat_done",
-  "ask", "note_logged", "other",
-]
-for (const t of shouldBePipeline) {
-  ok(`'${t}' is pipeline activity`, isPipelineAction(t) === true)
+// The six that imply nothing, each pinned by name so removing one is a decision
+// rather than an accident.
+for (const t of ["thank_you", "connection_request", "engage_on_post", "note_logged", "note", "other"]) {
+  ok(`${t} implies NOTHING`, IMPLIED_STAGE[t] === undefined)
 }
 
-// Exactly one inert type — catches a careless addition to INERT_TYPES.
-const inert = [...ACTION_TYPES].filter((t) => !isPipelineAction(t))
-ok(`exactly one inert type, and it is 'note' (got: ${JSON.stringify(inert)})`,
-  inert.length === 1 && inert[0] === "note")
-
-// The new type must be accepted by the route's validator, or the POST 400s
-// before it ever reaches the branch.
-ok("'note' is an accepted action type", ACTION_TYPES.has("note"))
-ok("'note_logged' is still an accepted action type", ACTION_TYPES.has("note_logged"))
-
-// ─── stageAfterAction — the one place an action moves the stage ──────────────
-// The reminder engine never ADVANCES a stage; its only stage write is the
-// sequence_active -> dormant_no_answer flip. Without this rule a contact at
-// `identified` had no due reason, so the send box had no action to log, so the
-// screen built for sending could not send the first message.
-
-ok("first outreach from 'identified' advances to 'sequence_active'",
-  stageAfterAction("identified", "touch_1") === "sequence_active")
-
-// Only from identified. A touch_1 logged against a contact who has already
-// replied or talked must never drag them backwards down the pipeline.
-for (const stage of ["sequence_active", "replied", "chat_done", "nurture", "outcome", "dormant_no_answer"]) {
-  ok(`touch_1 at '${stage}' leaves the stage alone`, stageAfterAction(stage, "touch_1") === null)
+// Every key in the table must be a real action type, or the offer can never fire.
+for (const k of Object.keys(IMPLIED_STAGE)) {
+  ok(`${k} is a real action type`, ACTION_TYPES.has(k))
+}
+// …and every implied value must be a real stage ON THE PATH, or "ahead" is
+// undefined for it.
+for (const [k, v] of Object.entries(IMPLIED_STAGE)) {
+  ok(`${k} implies an on-path stage`, stageIndex(v) >= 0)
 }
 
-// Only touch_1. Nothing else at `identified` means "I sent the first message" —
-// and 'note' especially must not, since recording an observation is not acting.
-for (const type of ["touch_2", "touch_3", "note", "note_logged", "chat_done", "ask", "other"]) {
-  ok(`'${type}' at 'identified' implies no stage move`, stageAfterAction("identified", type) === null)
+// ── Stages nothing implies ─────────────────────────────────────────────────
+console.log("\n— stages that can only be set by hand —")
+{
+  const implied = new Set(Object.values(IMPLIED_STAGE))
+  // `replied` is the notable one: a reply is something THEY do and there is no
+  // action type for it. Recorded so the manual path is never treated as a
+  // fallback that could be removed.
+  for (const stage of ["replied", "nurture", "outcome"]) {
+    ok(`${stage} is implied by nothing`, !implied.has(stage))
+  }
+  for (const stage of ["dormant_no_answer", "dormant_declined"]) {
+    ok(`${stage} is off the path entirely`, stageIndex(stage) === -1)
+  }
 }
 
-console.log(`\n${pass}/${pass + fail} assertions passed`)
+// ── When the offer may fire ────────────────────────────────────────────────
+console.log("\n— impliedStageAhead —")
+
+eq("offers the move she reported: chat logged at sequence_active",
+  impliedStageAhead("sequence_active", "chat_done"), "chat_done")
+eq("offers intro_requested from identified",
+  impliedStageAhead("identified", "intro_request"), "intro_requested")
+
+// NEVER BACKWARDS. A backdated chat logged from nurture must not drag the stage
+// back — the most likely way a naive implementation loses someone's data.
+ok("never offers a move BACKWARDS", impliedStageAhead("nurture", "chat_done") === null)
+ok("never offers where you already are", impliedStageAhead("chat_done", "chat_done") === null)
+ok("never offers from a dormant contact — resurfacing is a decision",
+  impliedStageAhead("dormant_no_answer", "chat_done") === null)
+ok("never offers from an unknown stage", impliedStageAhead("nonsense", "chat_done") === null)
+ok("an action that implies nothing offers nothing",
+  impliedStageAhead("identified", "note_logged") === null)
+ok("the inert note offers nothing", impliedStageAhead("identified", "note") === null)
+
+// ── The one automatic case, unchanged ──────────────────────────────────────
+console.log("\n— touch_1 stays automatic —")
+
+eq("touch_1 from identified still auto-applies", stageAfterAction("identified", "touch_1"), "sequence_active")
+ok("…and nothing else auto-applies", stageAfterAction("sequence_active", "chat_done") === null)
+ok("touch_1 from elsewhere does not auto-apply", stageAfterAction("replied", "touch_1") === null)
+// It is BOTH automatic and in the table: the auto path fires server-side from
+// `identified`, and the table covers the case where a touch_1 is logged from
+// intro_requested, where nothing is automatic.
+eq("touch_1 is also offerable from intro_requested",
+  impliedStageAhead("intro_requested", "touch_1"), "sequence_active")
+
+// ── The path itself ────────────────────────────────────────────────────────
+console.log("\n— the shared path —")
+eq("nine stages, in order", STAGE_PATH.length, 9)
+eq("starts at identified", STAGE_PATH[0], "identified")
+eq("ends at outcome", STAGE_PATH[STAGE_PATH.length - 1], "outcome")
+ok("note is the only inert type", !isPipelineAction("note") && isPipelineAction("note_logged"))
+
+console.log(`\n${pass} passed, ${fail} failed`)
 if (fail > 0) process.exit(1)

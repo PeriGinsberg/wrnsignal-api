@@ -42,7 +42,9 @@ export function ActionLog({
 }: {
   contactId: string
   actions: Action[]
-  onChanged: () => void
+  /** Carries the type just logged so the stage tracker can offer the move it
+   *  implies. Optional arg: existing callers that ignore it still work. */
+  onChanged: (loggedType?: string) => void
 }) {
   const [type, setType] = useState("touch_1")
   const [date, setDate] = useState(toDateInput(new Date()))
@@ -66,7 +68,7 @@ export function ActionLog({
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Log failed (${res.status})`)
       setNote("")
       setDate(toDateInput(new Date()))
-      onChanged()
+      onChanged(type)
     } catch (e: any) {
       setErr(e?.message || String(e))
     } finally {

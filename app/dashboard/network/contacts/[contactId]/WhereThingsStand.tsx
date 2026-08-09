@@ -43,10 +43,11 @@
 // message.
 
 import { Fragment, useState } from "react"
-import { LIGHT as S } from "../../../../../lib/theme/surfaces"
+import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { ChangeStage } from "./ChangeStage"
-import { STAGE_LABELS } from "../../vocab"
+import { STAGE_LABELS, ACTION_TYPE_LABEL } from "../../vocab"
+import { STAGE_PATH, impliedStageAhead } from "../../../../../lib/network-tracker/action-semantics"
 import { StepCompleteIcon, StepRestingIcon } from "../../../../../components/icons"
 
 type Contact = {
@@ -61,29 +62,36 @@ type Contact = {
  * "No answer" and "Declined" are not steps forward, they are where a thread
  * stops, so putting them on the path would imply progress toward them. A
  * contact sitting in one is handled below the stepper instead.
+ *
+ * Shared with action-semantics, which needs the SAME order to decide whether an
+ * action implies a stage that is ahead. Two copies would eventually disagree,
+ * and the symptom would be a prompt offering a move backwards.
  */
-const PATH = [
-  "identified",
-  "intro_requested",
-  "sequence_active",
-  "replied",
-  "chat_scheduled",
-  "chat_done",
-  "nurture",
-  "ask_made",
-  "outcome",
-] as const
+const PATH = STAGE_PATH
 
 const RESTING = new Set(["dormant_no_answer", "dormant_declined"])
 
 /** On the path so you can see it coming, but never one tap. Set it from Change. */
 const NOT_ONE_TAP = new Set(["outcome"])
 
-export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onChanged: () => void }) {
+export function WhereThingsStand({
+  contact, onChanged, justLogged = null, onOfferSettled,
+}: {
+  contact: Contact
+  onChanged: () => void
+  /** The action type just logged, if any. Drives the offer below the stepper. */
+  justLogged?: string | null
+  /** Called once the offer is taken or dismissed, so it does not re-appear. */
+  onOfferSettled?: () => void
+}) {
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
   const resting = RESTING.has(contact.stage)
+  // Null unless the action just logged implies a stage strictly ahead of where
+  // this contact already is. Backdated, repeat and backwards cases all fall out
+  // of impliedStageAhead rather than being special-cased here.
+  const offered = justLogged ? impliedStageAhead(contact.stage, justLogged) : null
   // -1 when resting or unrecognised: nothing on the path is current, so nothing
   // is filled, and the caption below carries the state instead.
   const currentIndex = resting ? -1 : PATH.indexOf(contact.stage as (typeof PATH)[number])
@@ -163,7 +171,7 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
                   disabled={!advanceable}
                   title={
                     advanceable ? `Advance to ${STAGE_LABELS[stageKey]}`
-                      : NOT_ONE_TAP.has(stageKey) ? "Set this from Change"
+                      : NOT_ONE_TAP.has(stageKey) ? "Set this from More stages"
                       : isCurrent ? "Where this stands now"
                       : done ? "Already past this"
                       : undefined
@@ -225,6 +233,76 @@ export function WhereThingsStand({ contact, onChanged }: { contact: Contact; onC
         >
           <StepRestingIcon size={26} />
           {STAGE_LABELS[contact.stage] ?? contact.stage}
+        </div>
+      )}
+
+      {/* THE ONE AUTOMATIC CASE, SAID OUT LOUD.
+          Everywhere else a logged action only OFFERS a stage. From `identified`
+          a first outreach applies it without asking, and that exception is not
+          arbitrary: `identified` has no due reason, so a contact left there
+          after being written to has no due date at all — parked silently, which
+          is the failure this whole area is being fixed for. The rule used to
+          live only in a comment in action-semantics.ts, where the person it
+          affects cannot read it. */}
+      {contact.stage === "identified" && (
+        <p
+          data-testid="auto-advance-note"
+          style={{ margin: "14px 0 0", color: S.text.muted, fontSize: 13 }}
+        >
+          Logging your first outreach moves this to{" "}
+          <strong style={{ color: S.text.secondary, fontWeight: 700 }}>
+            {STAGE_LABELS.sequence_active}
+          </strong>{" "}
+          on its own, so it starts getting reminders.
+        </p>
+      )}
+
+      {/* THE OFFER. Actions and stages described the same events and did not
+          respond to each other — logging "Chat done" left the stage reading
+          "Message sent", and a tester reported the two as contradicting.
+          The stage stays something you ASSERT (people under-log, and a coach
+          has to be able to park a contact with nothing logged), so this only
+          NOTICES the gap and offers to close it. One tap, dismissible, and it
+          appears here rather than beside the log because the confusion was that
+          the two systems looked unrelated: the consequence has to show up where
+          the stage is stated. */}
+      {offered && (
+        <div
+          data-testid="stage-offer"
+          style={{
+            marginTop: 14, padding: "12px 14px", borderRadius: 10,
+            background: S.meaning.current.fill,
+            border: `1px solid ${S.meaning.current.accent}`,
+            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 13.5, color: S.text.primary, flex: "1 1 220px", minWidth: 0 }}>
+            You logged {ACTION_TYPE_LABEL[justLogged ?? ""] ?? "an action"}. Move this to{" "}
+            <strong style={{ fontWeight: 800 }}>{STAGE_LABELS[offered]}</strong>?
+          </span>
+          <button
+            type="button"
+            data-testid="stage-offer-accept"
+            disabled={busy !== null}
+            onClick={() => { void move(offered); onOfferSettled?.() }}
+            style={{
+              ...actionStyle(S, "primary"), borderRadius: 9, padding: "7px 14px",
+              fontSize: 13, fontFamily: "inherit", cursor: busy ? "default" : "pointer",
+            }}
+          >
+            Move it
+          </button>
+          <button
+            type="button"
+            data-testid="stage-offer-dismiss"
+            onClick={() => onOfferSettled?.()}
+            style={{
+              background: "none", border: "none", padding: 0, fontFamily: "inherit",
+              fontSize: 13, fontWeight: 700, color: S.text.muted, cursor: "pointer",
+            }}
+          >
+            Not yet
+          </button>
         </div>
       )}
 

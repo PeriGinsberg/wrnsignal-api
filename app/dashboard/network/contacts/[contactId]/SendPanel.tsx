@@ -35,7 +35,7 @@ type Contact = {
   network_companies?: { name: string } | null
 }
 
-export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: () => void }) {
+export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: (loggedType?: string) => void }) {
   const [templates, setTemplates] = useState<MergedTemplate[]>([])
   const [profile, setProfile] = useState<Record<string, string | null> | null>(null)
   const [loading, setLoading] = useState(true)
@@ -167,7 +167,7 @@ export function SendPanel({ contact, onLogged }: { contact: Contact; onLogged?: 
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Logged failed (${res.status})`)
       setConfirmation(`Copied, and logged as ${ACTION_TYPE_LABEL[actionType] ?? actionType}.`)
-      onLogged?.()
+      onLogged?.(actionType)
     } catch (e: unknown) {
       // The copy already happened, so say so rather than implying nothing did.
       setError(`Copied, but logging failed: ${e instanceof Error ? e.message : String(e)}`)
