@@ -201,9 +201,12 @@ describe("the header carries status", () => {
 describe("quick actions — split by likelihood", () => {
   it("the frequent forward moves are one tap and set the right stage", async () => {
     await open()
-    // By LABEL, not testid: the testid is derived from the stage, so it would
-    // still find the right button if the words on it were wired to the wrong move.
-    fireEvent.click(screen.getByRole("button", { name: "They replied" }))
+    // By ACCESSIBLE NAME, not testid: the testid is derived from the stage, so it
+    // would still find the right button if the words on it were wired to the
+    // wrong move. The name gained an "Advance to " prefix when the circles got a
+    // real aria-label — title is a tooltip, never an accessible name, and it
+    // does not exist on touch at all. Same claim, current wording.
+    fireEvent.click(screen.getByRole("button", { name: "Advance to They replied" }))
     await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(true))
     const call = authFetchMock.mock.calls.findIndex((c) => String(c[0]).includes("/stage"))
     expect(bodyOf(call).stage).toBe("replied")
@@ -213,7 +216,7 @@ describe("quick actions — split by likelihood", () => {
     // warm-wording pass it reads "You talked". The stage key never moved. Still
     // looked up by label, not testid, so the wording still has to be wired to
     // the right move.
-    fireEvent.click(screen.getByRole("button", { name: "You talked" }))
+    fireEvent.click(screen.getByRole("button", { name: "Advance to You talked" }))
     await waitFor(() => {
       const stageCalls = authFetchMock.mock.calls.filter((c) => String(c[0]).includes("/stage"))
       expect(stageCalls).toHaveLength(2)
@@ -570,5 +573,44 @@ describe("the two kinds of note are not both called Note", () => {
     expect(noteLogged.text).toBe("Contact activity")
     // And no OTHER option may claim the word either.
     expect(Array.from(picker.options).filter((o) => o.text === "Note")).toHaveLength(0)
+  })
+})
+
+/**
+ * The circles were buttons whose only signals were cursor:pointer and a title
+ * tooltip. On a keyboard you had to guess; on TOUCH, where there is no hover,
+ * there was no discoverable way to advance a stage at all — a missing control
+ * on mobile rather than a polish item.
+ */
+describe("the stage circles are discoverable without a mouse", () => {
+  it("gives an advanceable step an accessible name that says what it DOES", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    // Not bare "They replied" — a noun tells a screen-reader user nothing about
+    // whether the thing is actionable.
+    expect(screen.getByRole("button", { name: "Advance to They replied" })).toBeTruthy()
+  })
+
+  it("names the current and past steps as STATE, not as actions", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    expect(screen.getByRole("button", { name: /Current stage: Message sent/ })).toBeTruthy()
+    expect(screen.getByRole("button", { name: /Already past Not started/ })).toBeTruthy()
+  })
+
+  it("points at the terminal step's real route rather than a button that no longer exists", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    expect(screen.getByRole("button", { name: /Got a result, set this from More stages/ })).toBeTruthy()
+  })
+
+  it("marks the advanceable steps visibly, not only on hover", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    await open()
+    // The chevron replaces the numeral on steps you can take, so the target is
+    // visible at rest and on touch. Asserted on the rendered glyph.
+    expect(screen.getByTestId("step-replied").textContent).toContain("›")
+    // A past step keeps none.
+    expect(screen.getByTestId("step-identified").textContent).not.toContain("›")
   })
 })

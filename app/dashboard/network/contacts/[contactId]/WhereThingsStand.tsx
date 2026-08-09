@@ -169,6 +169,16 @@ export function WhereThingsStand({
                   data-testid={`step-${stageKey}`}
                   onClick={() => { if (advanceable) void move(stageKey) }}
                   disabled={!advanceable}
+                  // title is a TOOLTIP, not an accessible name, and it never
+                  // appears on touch. aria-label carries the same sentence to a
+                  // screen reader, which is what makes the control exist for
+                  // anyone not using a mouse.
+                  aria-label={
+                    advanceable ? `Advance to ${STAGE_LABELS[stageKey]}`
+                      : isCurrent ? `Current stage: ${STAGE_LABELS[stageKey]}`
+                      : done ? `Already past ${STAGE_LABELS[stageKey]}`
+                      : `${STAGE_LABELS[stageKey]}, set this from More stages`
+                  }
                   title={
                     advanceable ? `Advance to ${STAGE_LABELS[stageKey]}`
                       : NOT_ONE_TAP.has(stageKey) ? "Set this from More stages"
@@ -196,12 +206,26 @@ export function WhereThingsStand({
                         fontSize: 12, fontWeight: 900,
                         // The current step gets the heavier ring. It is the one
                         // circle that has to be found without reading.
-                        border: `${isCurrent ? 2 : 1.5}px solid ${circleBorder}`,
+                        // Dashed on the steps you can take: visible at rest,
+                        // distinct from the current step's solid heavy ring,
+                        // and it needs no hover to be seen.
+                        border: `${isCurrent ? 2 : 1.5}px ${advanceable ? "dashed" : "solid"} ${advanceable ? S.meaning.current.accent : circleBorder}`,
                         background: circleBg,
                         color: circleInk,
                       }}
                     >
-                      {i + 1}
+                      {/* THE AFFORDANCE, AND IT HAS TO BE PERSISTENT.
+                          These circles were buttons whose only signals were
+                          cursor:pointer and a title tooltip — so on a keyboard
+                          you had to guess, and on TOUCH, where there is no
+                          hover at all, there was no discoverable way to advance
+                          a stage. That is a missing control on mobile, not a
+                          polish item.
+                          The numeral is replaced by a chevron on the steps you
+                          can actually take, which reads as a target without
+                          adding a caption under all nine or turning the
+                          descriptive sentence below into a second control. */}
+                      {advanceable ? "›" : i + 1}
                     </span>
                   )}
                   {/* The CURRENT step's label is the screen's statement of the
