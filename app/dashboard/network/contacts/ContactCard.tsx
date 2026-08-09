@@ -31,7 +31,7 @@ import {
 } from "../../../../lib/theme/surfaces"
 import { STAGE_LABELS, STAGE_PHASE, REASON_LABELS } from "../vocab"
 import { timeAgo } from "../../../../lib/relativeTime"
-import type { Contact } from "./ContactRow"
+import { dueOf, type Contact } from "./ContactRow"
 
 function initials(c: Contact): string {
   const a = (c.first_name || "").trim().charAt(0)
@@ -77,6 +77,27 @@ export function ContactCard({
   // rows quiet on every axis at once.
   const lastActivity = timeAgo(c.last_action_at)
 
+  /**
+   * WHEN IT IS DUE, not just how long it has been.
+   *
+   * The card showed elapsed time and an action label and never once said when
+   * anything was owed, which is why a tester on a correctly-ordered board could
+   * not tell who to contact first. "Three weeks ago" is fine on a nurture
+   * contact and alarming on someone who owed a reply on Tuesday, and the two
+   * rows looked identical.
+   *
+   * dueOf is reused from ContactRow rather than reimplemented: two copies of
+   * the same date maths is how the spreadsheet and the board end up disagreeing
+   * about what is overdue. Its colours are the dark-theme tokens, so only the
+   * label and `kind` cross over and the light palette is applied here.
+   */
+  const due = dueOf(c.next_due_at)
+  const overdue = due.kind === "overdue"
+  const dueTone =
+    due.kind === "overdue" ? S.meaning.error.ink
+      : due.kind === "due_today" ? S.meaning.progress.ink
+      : S.text.dim
+
   const reason = c.next_due_reason
   const dueLabel = reason ? REASON_LABELS[reason] ?? "Reach out" : null
   const tier: "primary" | "optional" | null = dueLabel ? "primary" : idle ? "optional" : null
@@ -96,6 +117,12 @@ export function ContactCard({
         // still reads as a list, but loses the shadow that makes a card float.
         background: idle ? "#FBFDFE" : S.card,
         border: `1px solid ${S.borderSoft}`,
+        // OVERDUE HAS TO LOOK OVERDUE. Until now an overdue row and an idle one
+        // were pixel-identical, so the sort put the urgent thing first and the
+        // card gave the eye nothing to land on. A left rail rather than a tint:
+        // it reads down a column at a glance and does not fight the flash
+        // outline or the hover shadow for the same surface.
+        borderLeft: overdue ? `3px solid ${S.meaning.error.accent}` : `1px solid ${S.borderSoft}`,
         boxShadow: idle ? "none" : hover ? S.shadow.raised : S.shadow.card,
         outline: flash ? `2px solid ${S.meaning.progress.accent}` : "none",
         outlineOffset: 1,
@@ -191,11 +218,21 @@ export function ContactCard({
             {STAGE_LABELS[c.stage] ?? c.stage}
           </span>
         </span>
-        {lastActivity && (
+        {/* The due phrase REPLACES elapsed time when something is actually due:
+            two time facts on one line is worse than either alone, and the one
+            that matters is the commitment, not the gap. Rows with nothing due
+            keep the recency line they always had. */}
+        {due.kind !== "none" ? (
+          <span
+            style={{ fontSize: 12.5, color: dueTone, fontWeight: overdue ? 800 : 600, whiteSpace: "nowrap" }}
+          >
+            {due.label}
+          </span>
+        ) : lastActivity ? (
           <span style={{ fontSize: 12.5, color: S.text.dim, whiteSpace: "nowrap" }}>
             {lastActivity}
           </span>
-        )}
+        ) : null}
       </span>
 
       {/* minWidth, not width. A fixed slot is narrower than the longest label

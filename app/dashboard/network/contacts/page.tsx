@@ -29,7 +29,7 @@ import { safeReturn, safeReturnLabel } from "../../../../lib/network-tracker/saf
 import { STAGE_LABELS, VIEW_LABELS } from "../vocab"
 import { dueOf, type Contact } from "./ContactRow"
 import { ContactCard } from "./ContactCard"
-import { sortForAttention } from "./contactOrder"
+import { sortForAttention, attentionRank, BAND_LABELS, type AttentionRank } from "./contactOrder"
 import { matchesQuery } from "./search"
 import { SearchIcon, ImportIcon } from "../../../../components/icons"
 import { STAGE_PHASE, PHASE_LABELS, RELATIONSHIP_LABELS } from "../vocab"
@@ -149,6 +149,15 @@ function ContactsInner() {
   // Cards the snapshot has never seen (newly added) sort to the end rather than
   // being dropped.
   const [orderIds, setOrderIds] = useState<string[] | null>(null)
+  /**
+   * The rank each contact had WHEN THE ORDER WAS FROZEN, not its rank now.
+   *
+   * The band headings have to agree with the sequence they label. Recomputing a
+   * rank at render time against a frozen order is how you get "Overdue" twice
+   * with "Due today" in between: the row has moved band but not position. Freeze
+   * both together and the two can never disagree until the next resort.
+   */
+  const [frozenRanks, setFrozenRanks] = useState<Map<string, AttentionRank> | null>(null)
 
   const load = useCallback(async (opts?: { resort?: boolean }) => {
     setError(null)
@@ -158,9 +167,12 @@ function ContactsInner() {
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not load contacts (${res.status})`)
       const rows: Contact[] = j.contacts ?? []
       setContacts(rows)
-      setOrderIds((prev) =>
-        prev === null || opts?.resort ? sortForAttention(rows).map((c) => c.id) : prev,
-      )
+      setOrderIds((prev) => {
+        if (prev !== null && !opts?.resort) return prev
+        const now = new Date()
+        setFrozenRanks(new Map(rows.map((c) => [c.id, attentionRank(c, now)])))
+        return sortForAttention(rows, now).map((c) => c.id)
+      })
     } catch (e: any) {
       setError(e?.message || String(e))
       setContacts([])
@@ -219,6 +231,50 @@ function ContactsInner() {
       (a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
     )
   }, [filtered, orderIds])
+
+  /**
+   * The ordered list with a heading inserted wherever the band changes.
+   *
+   * ONE FLAT ARRAY, headings as siblings of the cards — NOT a section per band.
+   * The companies board shipped that shape and it was a real bug: React keys are
+   * only stable within a parent, so a card whose band changed was rendered under
+   * a different parent, unmounted, and rebuilt, losing its state. Here it would
+   * throw away selection and the flash highlight. Flat keeps every card a
+   * sibling, so a band change is a move.
+   *
+   * Bands are read from the FROZEN ranks, so the labels match the sequence.
+   * Filtering can empty a band; a heading is only emitted when a card follows it.
+   */
+  type Banded =
+    | { kind: "heading"; rank: AttentionRank; count: number }
+    | { kind: "card"; contact: Contact }
+
+  const banded = useMemo(() => {
+    const out: Banded[] = []
+    if (!frozenRanks) return ordered.map((c) => ({ kind: "card", contact: c }) as Banded)
+    let current: AttentionRank | null = null
+    for (const c of ordered) {
+      const r = frozenRanks.get(c.id)
+      // A contact added since the freeze has no band. It already sorts to the
+      // end; leave it under whatever heading it lands in rather than inventing
+      // a band the sort did not use.
+      if (r !== undefined && r !== current) {
+        current = r
+        out.push({ kind: "heading", rank: r, count: 0 })
+      }
+      out.push({ kind: "card", contact: c })
+    }
+    // Counts, now that the runs are known — the heading is more useful saying
+    // how many are in it.
+    for (let i = 0; i < out.length; i++) {
+      const h = out[i]
+      if (h.kind !== "heading") continue
+      let n = 0
+      for (let j = i + 1; j < out.length && out[j].kind === "card"; j++) n++
+      h.count = n
+    }
+    return out
+  }, [ordered, frozenRanks])
 
   // The five filters that have no control on this screen. Each is still live via
   // the URL, so a dashboard deep-link works; each announces itself here so a
@@ -456,16 +512,34 @@ function ContactsInner() {
 
       {filtered.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 18 }}>
-          {ordered.map((c) => (
-            <ContactCard
-              key={c.id}
-              contact={c}
-              selectMode={selectMode}
-              checked={selected.has(c.id)}
-              onToggle={() => toggleOne(c.id)}
-              flash={flashId === c.id}
-            />
-          ))}
+          {banded.map((item) =>
+            item.kind === "heading" ? (
+              <h2
+                key={`band-${item.rank}`}
+                data-testid={`band-${item.rank}`}
+                style={{
+                  margin: "10px 0 -2px", fontSize: 12, fontWeight: 800,
+                  letterSpacing: 1.4, textTransform: "uppercase",
+                  // Only the two that need doing now carry colour. Six coloured
+                  // headings would be a legend, not a priority.
+                  color: item.rank === 0 ? S.meaning.error.ink
+                    : item.rank === 1 ? S.meaning.progress.ink
+                    : S.text.muted,
+                }}
+              >
+                {BAND_LABELS[item.rank]} · {item.count}
+              </h2>
+            ) : (
+              <ContactCard
+                key={item.contact.id}
+                contact={item.contact}
+                selectMode={selectMode}
+                checked={selected.has(item.contact.id)}
+                onToggle={() => toggleOne(item.contact.id)}
+                flash={flashId === item.contact.id}
+              />
+            ),
+          )}
         </div>
       )}
     </main>

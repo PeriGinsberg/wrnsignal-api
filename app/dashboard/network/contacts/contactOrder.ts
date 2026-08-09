@@ -57,6 +57,29 @@ export function attentionRank(c: Contact, now: Date = new Date()): AttentionRank
 }
 
 /**
+ * The rank, said out loud.
+ *
+ * The list has been sorted by attention for a while and NOTHING ON SCREEN SAID
+ * SO. A tester looking at a correctly-ordered board answered "no" to "would you
+ * know who to contact first" — the answer was row one, and the board never
+ * claimed it. Elapsed time cannot carry that on its own: "three weeks ago" is
+ * fine for a nurture contact and alarming for someone who owed a reply on
+ * Tuesday, and the row looked identical either way.
+ *
+ * One label per rank, so a band can never disagree with the sort that produced
+ * it. Wording is about the PERSON, not the mechanism: "Waiting on them", not
+ * "no next_due_at".
+ */
+export const BAND_LABELS: Record<AttentionRank, string> = {
+  0: "Overdue",
+  1: "Due today",
+  2: "Due later",
+  3: "Waiting on them",
+  4: "Not started",
+  5: "Resting",
+}
+
+/**
  * Re-rank for attention, preserving the server's order inside each band.
  *
  * The server's ordering is meaningful within a band (most recent activity), so
