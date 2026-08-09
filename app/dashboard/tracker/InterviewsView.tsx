@@ -2,12 +2,27 @@
 
 // Interviews: every round across every job, gathered.
 //
-// SPLIT BY TIME, not by status filter. The old view had a filter row (all /
-// scheduled / awaiting feedback / offer extended) which asked the student to
-// pick a status before it would tell them anything. But there is only ever one
-// question here, "what is coming up", and the answer is a date. So the view
-// splits itself: what is ahead, then what has happened. The status still shows
-// on every completed card, it just is not the organising idea.
+// THE VIEW SPLITS ITSELF — no filter row. The original had one (all / scheduled
+// / awaiting feedback / offer extended) which asked the student to pick a status
+// before it would tell them anything, and that was right to remove.
+//
+// It was replaced by a split on DATE ALONE, and that went too far the other way.
+// Status is still an editable control on every card, so when a tester set a
+// round to "Awaiting feedback" she reasonably expected it to move. It could not:
+// membership was decided purely by whether the date had passed, and nothing said
+// so. A control that looks consequential and is not is its own bug.
+//
+// So the split is now date AND status, in three groups:
+//
+//   Coming up      not yet happened — a future date, or no date set yet
+//   Waiting to hear it happened, or you said you are awaiting feedback, and
+//                  there is no outcome recorded
+//   Completed      a terminal status: offer, no offer, or no answer
+//
+// Terminal status wins over the date: a rejection is finished whether or not the
+// interview date has passed. And an interview with NO DATE is "coming up", not
+// completed — it used to file under Completed because daysUntil(null) is null,
+// so a round whose status was literally not_scheduled showed as done.
 //
 // The soonest upcoming round takes the navy hero with the peach frame, the same
 // treatment the Dashboard and the application detail page give an interview.
@@ -31,10 +46,29 @@ export type Interview = {
   thank_you_sent: boolean | null
 }
 
-/** Ahead of today, inclusive: an interview later today is still coming up. */
-export function isUpcoming(iv: Interview, now: Date = new Date()): boolean {
+export type InterviewGroup = "coming_up" | "waiting" | "completed"
+
+/** Statuses that END a round. An outcome is an outcome whatever the date says. */
+const TERMINAL: ReadonlySet<string> = new Set(["offer_extended", "rejected", "ghosted"])
+
+/**
+ * Which of the three groups a round belongs to.
+ *
+ * Order of the checks is the whole logic, so it is written as one function
+ * rather than three filters that could drift apart:
+ *
+ *   1. terminal status beats everything, including a future date
+ *   2. awaiting_feedback is the student SAYING it happened — believe them over
+ *      the calendar. This is the case that produced the bug report
+ *   3. no date at all is "coming up": it has not happened, it just is not booked
+ *   4. otherwise the date decides, today inclusive
+ */
+export function groupOf(iv: Interview, now: Date = new Date()): InterviewGroup {
+  if (TERMINAL.has(iv.status)) return "completed"
+  if (iv.status === "awaiting_feedback") return "waiting"
   const until = daysUntil(iv.interview_date, now)
-  return until !== null && until >= 0
+  if (until === null) return "coming_up"
+  return until >= 0 ? "coming_up" : "waiting"
 }
 
 function countdown(dateStr: string, now: Date = new Date()): string {
@@ -48,17 +82,32 @@ function countdown(dateStr: string, now: Date = new Date()): string {
 const longDate = (d: string | null) => formatMedium(d)
 
 export function InterviewsView({ interviews }: { interviews: Interview[] }) {
+  // Soonest first. An undated round sorts LAST inside "Coming up" rather than
+  // first: the hero treatment belongs to the next real interview, and a card
+  // with no date has no countdown to put in it.
   const upcoming = interviews
-    .filter((iv) => isUpcoming(iv))
-    .sort((a, b) => (parseLocalDate(a.interview_date)?.getTime() ?? 0) - (parseLocalDate(b.interview_date)?.getTime() ?? 0))
-  const past = interviews.filter((iv) => !isUpcoming(iv))
+    .filter((iv) => groupOf(iv) === "coming_up")
+    .sort((a, b) => {
+      const at = parseLocalDate(a.interview_date)?.getTime()
+      const bt = parseLocalDate(b.interview_date)?.getTime()
+      if (at === undefined) return bt === undefined ? 0 : 1
+      if (bt === undefined) return -1
+      return at - bt
+    })
+  // Most recent first: the round you are most likely chasing is the last one you
+  // sat. Undated cannot reach this group, so the fallback is only a tiebreak.
+  const waiting = interviews
+    .filter((iv) => groupOf(iv) === "waiting")
+    .sort((a, b) => (parseLocalDate(b.interview_date)?.getTime() ?? 0) - (parseLocalDate(a.interview_date)?.getTime() ?? 0))
+  const completed = interviews.filter((iv) => groupOf(iv) === "completed")
 
   const subtitle =
     interviews.length === 0
       ? "No interviews logged yet."
       : [
           upcoming.length ? `${upcoming.length} coming up` : null,
-          past.length ? `${past.length} you've completed` : null,
+          waiting.length ? `${waiting.length} waiting to hear` : null,
+          completed.length ? `${completed.length} completed` : null,
         ].filter(Boolean).join(", ") + "."
 
   return (
@@ -71,17 +120,29 @@ export function InterviewsView({ interviews }: { interviews: Interview[] }) {
       {upcoming.length > 0 && (
         <>
           <SectionLabel>Coming up</SectionLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div data-testid="group-coming_up" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {upcoming.map((iv) => <UpcomingCard key={iv.id} interview={iv} />)}
           </div>
         </>
       )}
 
-      {past.length > 0 && (
+      {/* The group the bug report was really about: it happened, or you said it
+          did, and there is no outcome yet. Same compact card as Completed —
+          what differs is what it is claiming, not how it looks. */}
+      {waiting.length > 0 && (
+        <>
+          <SectionLabel>Waiting to hear</SectionLabel>
+          <div data-testid="group-waiting" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {waiting.map((iv) => <PastCard key={iv.id} interview={iv} />)}
+          </div>
+        </>
+      )}
+
+      {completed.length > 0 && (
         <>
           <SectionLabel>Completed</SectionLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {past.map((iv) => <PastCard key={iv.id} interview={iv} />)}
+          <div data-testid="group-completed" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {completed.map((iv) => <PastCard key={iv.id} interview={iv} />)}
           </div>
         </>
       )}
@@ -156,12 +217,16 @@ function UpcomingCard({ interview: iv }: { interview: Interview }) {
             </div>
           </div>
         </div>
+        {/* A round with no date reaches this card now — it belongs in "Coming
+            up" because it has not happened, and it used to file under Completed
+            because daysUntil(null) is null. There is no countdown to show, so
+            it says what is actually true and what to do about it. */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ color: S.hero.accent, fontSize: 17, fontWeight: 800 }}>
-            {countdown(iv.interview_date!)}
+            {iv.interview_date ? countdown(iv.interview_date) : "Not scheduled yet"}
           </div>
           <div style={{ color: S.hero.muted, fontSize: 13.5, marginTop: 2 }}>
-            {longDate(iv.interview_date)}
+            {iv.interview_date ? longDate(iv.interview_date) : "Add a date when you have one"}
           </div>
         </div>
       </div>
