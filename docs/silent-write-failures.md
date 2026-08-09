@@ -255,3 +255,77 @@ so this class of failure is visible rather than silent.
 | Commit B — reconciliation monitor | built 2026-08-05, dev only — NOT yet on prod |
 | Commit C — stripe refund alerting | proposed, not built |
 | Tiers 3, 4, 5 | no changes, by decision |
+
+---
+
+## A second shape: the write never happens at all
+
+Added 2026-08-08 after a usability test. Everything above is about a write that
+*fails* silently. These are worse in one respect: there is no failure to log,
+because the request is never made. The user typed, the text is gone, and every
+layer below the UI is behaving perfectly.
+
+Two mechanisms, both found in the network tracker:
+
+**1. A disabled control that gives no feedback.** The contact record showed two
+textareas under one "Notes" heading, only the upper one labelled. A tester typed
+in the top box, reached for the visually dominant "Save note" button below it,
+and it did nothing at all — it belongs to the *other* composer and is disabled
+while that one's box is empty. No error, no movement, nothing. She reported the
+box as silently discarding her typing; the write path was never involved.
+
+> **A disabled button that gives no feedback is indistinguishable from a broken
+> one.** If a control can be reached in a state where clicking it does nothing,
+> it has to say why.
+
+Fixed by removing the second click entirely: "About this person" now commits on
+blur, and a status line reports the unsaved state ("Saves when you click away")
+rather than sitting silent. The log below it was given the peer heading "Add a
+note", because two unlabelled boxes under one heading were the whole cause.
+
+**2. A disclosure that unmounts unsaved text.** `Collapsible` renders
+`{open && children}`, so collapsing a drawer DESTROYS anything typed inside that
+has not been saved. Nothing warns.
+
+Fixed where it mattered most:
+
+- **`ResumeSection`** (`app/dashboard/profile/ResumeSection.tsx`) — the worst
+  instance found. A student could lose pages of resume text by clicking
+  **Close**, on the one asset the whole product runs on. Two causes: the block
+  unmounts, and the Edit/Close handler also reseeded the draft from the stored
+  copy on the way out. Both fields now commit on blur, and the reseed happens
+  only when opening.
+- **`ClientJobNotes` / `ArtifactNotes`** (tracker Notes drawer) — cannot use
+  blur-commit, because each save CREATES a note and blur would fill the log with
+  half-written fragments. Instead the drawer refuses to collapse while a
+  composer holds unsaved text, via `Collapsible`'s opt-in `lockedOpen`.
+
+### Known, deliberately not fixed
+
+**`NotesLog`** (`app/dashboard/network/contacts/[contactId]/NotesLog.tsx`) has
+the same exposure as `ArtifactNotes`: draft text plus an explicit "Save note",
+inside a drawer that unmounts. Collapsing the contact record's Notes drawer
+mid-note still loses it. **This is known, not new** — it was found in the same
+sweep on 2026-08-08 and deferred. The fix is the same `lockedOpen` wiring
+already built for the tracker.
+
+### The right long-term fix, deferred
+
+Make `Collapsible` render its children always and hide them with CSS. That is
+close to a one-line change and it closes the entire class — every current drawer
+and every future one — instead of the instances someone remembered to wire up.
+
+It was **deliberately not taken on 2026-08-08**: several drawers rely on the
+unmount for lazy loading, so mounting everything changes when those fetches
+happen, and that blast radius is unmeasured. Not a change to make in a release
+week. Revisit with time to measure which drawers fetch on mount.
+
+### Checked and safe
+
+Worth recording so the sweep is not repeated: `CompanyCard` (domain and notes
+already blur-commit), `DetailsEditor` on the tracker (every field blur-commits),
+`EngagementEditing` (rename blur-commits), `ProfilePersonasTab` and the coach
+annotation composer (their draft state is declared ABOVE the conditional block,
+so an unmount does not reach it, and the only clearing is an explicit Cancel).
+Modals — `AddProspectModal`, `CreateClientModal`, `AddContactForm` — are *not*
+in this class: closing them means cancel, so discarding the draft is correct.

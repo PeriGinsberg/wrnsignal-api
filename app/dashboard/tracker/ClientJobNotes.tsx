@@ -106,12 +106,19 @@ function NoteRow({ note }: { note: Note }) {
   )
 }
 
-function ArtifactNotes({ artifactType, title, placeholder, notes, onSave }: {
+function ArtifactNotes({ artifactType, title, placeholder, notes, onSave, onDirtyChange }: {
   artifactType: ArtifactType
   title: string
   placeholder: string
   notes: Note[]
   onSave: (a: ArtifactType, body: string, v: "private" | "shared") => Promise<{ ok: boolean; error?: string }>
+  /**
+   * Reported upward so the drawer around this composer can refuse to collapse
+   * while there is unsaved text. Nothing here auto-saves, and it must not: this
+   * creates a NEW note each time, so committing on blur would fill the log with
+   * half-written fragments. The text has to survive instead.
+   */
+  onDirtyChange?: (dirty: boolean) => void
 }) {
   const [text, setText] = useState("")
   const [visibility, setVisibility] = useState<"private" | "shared">("private")
@@ -127,6 +134,7 @@ function ArtifactNotes({ artifactType, title, placeholder, notes, onSave }: {
     setSaving(false)
     if (!res.ok) { setError(res.error || "That didn't save. Try again."); return }
     setText(""); setVisibility("private"); setConfirming(false)
+    onDirtyChange?.(false)
   }
 
   function onSaveClick() {
@@ -157,7 +165,10 @@ function ArtifactNotes({ artifactType, title, placeholder, notes, onSave }: {
 
       <textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value)
+          onDirtyChange?.(!!e.target.value.trim())
+        }}
         placeholder={placeholder}
         disabled={saving}
         aria-label={title}
@@ -215,11 +226,36 @@ function ArtifactNotes({ artifactType, title, placeholder, notes, onSave }: {
   )
 }
 
-export function ClientJobNotes({ applicationId, jobfitRunId }: {
+export function ClientJobNotes({ applicationId, jobfitRunId, onDirtyChange }: {
   applicationId: string
   jobfitRunId: string | null
+  /** True while EITHER composer holds unsaved text — the drawer above uses this
+   *  to refuse to collapse and destroy it. */
+  onDirtyChange?: (dirty: boolean) => void
 }) {
   const [notes, setNotes] = useState<Note[]>([])
+  /**
+   * Per-composer, then OR'd — one shared boolean would let whichever box was
+   * edited last clear the other's flag and hand the drawer permission to
+   * destroy it. The value itself is never rendered, only folded in the updater
+   * below, so the binding is dropped.
+   */
+  const [, setDirty] = useState({ jobfit: false, coverletter: false })
+
+  /**
+   * Reported from the EVENT, not from render. Updating a parent's state while
+   * this component is rendering is the "cannot update a component while
+   * rendering a different component" bug, and it would fire on every keystroke.
+   * Both writes happen in the same handler, so the drawer above knows before
+   * any click on its toggle can be processed.
+   */
+  function markDirty(key: "jobfit" | "coverletter", value: boolean) {
+    setDirty((prev) => {
+      const next = { ...prev, [key]: value }
+      onDirtyChange?.(next.jobfit || next.coverletter)
+      return next
+    })
+  }
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -296,6 +332,7 @@ export function ClientJobNotes({ applicationId, jobfitRunId }: {
         Notes on this job. Anything you write stays with you until you choose to share it.
       </p>
       <ArtifactNotes
+        onDirtyChange={(d) => markDirty("jobfit", d)}
         artifactType="jobfit"
         title="This job"
         placeholder="What you're thinking about this one"
@@ -303,6 +340,7 @@ export function ClientJobNotes({ applicationId, jobfitRunId }: {
         onSave={saveNote}
       />
       <ArtifactNotes
+        onDirtyChange={(d) => markDirty("coverletter", d)}
         artifactType="coverletter"
         title="Your cover letter"
         placeholder="What you want to say, or what you'd change"

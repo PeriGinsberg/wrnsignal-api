@@ -20,7 +20,7 @@ import { useState } from "react"
 import { LIGHT as S } from "../../../../../lib/theme/surfaces"
 
 export function Collapsible({
-  title, summary, testId, icon, defaultOpen = false, children,
+  title, summary, testId, icon, defaultOpen = false, lockedOpen = false, lockedReason, children,
 }: {
   title: string
   summary: string
@@ -28,9 +28,38 @@ export function Collapsible({
   /** The family mark for what is inside. Optional: a drawer reads fine without. */
   icon?: React.ReactNode
   defaultOpen?: boolean
+  /**
+   * Refuse to close while true.
+   *
+   * This drawer UNMOUNTS its children ({open && …}), so anything typed inside
+   * and not yet saved is destroyed by a collapse, silently. Most drawers hold
+   * controls that write as you go and do not care. The ones holding a composer
+   * — text that only exists in local state until a Save button is pressed — opt
+   * in here and stay open while there is something to lose.
+   *
+   * OPT-IN ON PURPOSE. Making every drawer keep its children mounted would fix
+   * the whole class in one line, but it would also change the lazy-load
+   * behaviour several drawers depend on. That is the right long-term fix and it
+   * is logged; this is the contained version.
+   */
+  lockedOpen?: boolean
+  /** Shown in place of closing. Say what is unsaved, not "are you sure". */
+  lockedReason?: string
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const [blocked, setBlocked] = useState(false)
+
+  function onToggle() {
+    if (open && lockedOpen) {
+      // Explain instead of collapsing. Silently ignoring the click would be its
+      // own bug — an inert control is indistinguishable from a broken one.
+      setBlocked(true)
+      return
+    }
+    setBlocked(false)
+    setOpen((o) => !o)
+  }
 
   return (
     <section
@@ -45,7 +74,7 @@ export function Collapsible({
       }}
     >
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={onToggle}
         aria-expanded={open}
         data-testid={`drawer-toggle-${testId}`}
         style={{
@@ -74,6 +103,19 @@ export function Collapsible({
           ▶
         </span>
       </button>
+      {blocked && open && lockedOpen && (
+        <div
+          role="status"
+          data-testid={`drawer-locked-${testId}`}
+          style={{
+            margin: "0 20px", padding: "10px 12px", borderRadius: 9,
+            background: S.meaning.error.fill, border: `1px solid ${S.meaning.error.accent}`,
+            color: S.text.primary, fontSize: 13, lineHeight: "18px",
+          }}
+        >
+          {lockedReason ?? "There's unsaved text in here. Save it or clear it first."}
+        </div>
+      )}
       {open && (
         <div
           style={{ padding: "4px 20px 20px", borderTop: `1px solid ${S.borderSoft}` }}

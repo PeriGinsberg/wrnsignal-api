@@ -140,6 +140,9 @@ export default function ApplicationDetailPage({
 
   const [app, setApp] = useState<App | null>(null)
   const [interviews, setInterviews] = useState<Interview[]>([])
+  /** Lives ABOVE the Notes drawer on purpose: the drawer unmounts its children,
+   *  so a flag held inside them would vanish exactly when it is needed. */
+  const [notesDirty, setNotesDirty] = useState(false)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -494,13 +497,25 @@ export default function ApplicationDetailPage({
           )}
         </Collapsible>
 
+        {/* LOCKED OPEN WHILE A NOTE IS HALF-WRITTEN. The drawer unmounts its
+            children, and these composers hold their text in local state until
+            Save — so collapsing mid-note used to destroy it silently. They
+            cannot commit on blur the way an edit-in-place field does, because
+            each save CREATES a note and blur would fill the log with fragments.
+            So the drawer stays open instead. */}
         <Collapsible
           title="Notes"
           testId="job-notes"
           icon={<NotesIcon size={20} />}
           summary={app.jobfit_run_id ? "Yours, and your coach's" : "Available once scored"}
+          lockedOpen={notesDirty}
+          lockedReason="You've got a note here that hasn't been saved. Save it or clear the box, then close this."
         >
-          <ClientJobNotes applicationId={app.id} jobfitRunId={app.jobfit_run_id} />
+          <ClientJobNotes
+            applicationId={app.id}
+            jobfitRunId={app.jobfit_run_id}
+            onDirtyChange={setNotesDirty}
+          />
         </Collapsible>
 
         <Collapsible
