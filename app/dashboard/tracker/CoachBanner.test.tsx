@@ -29,13 +29,19 @@ const rec = (i: number, over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-function view(unanswered: ReturnType<typeof rec>[], coachLabel = "Dana") {
+function view(
+  unanswered: ReturnType<typeof rec>[],
+  coachLabel = "Dana",
+  applications: any[] = [],
+  coachSourcedIds = new Set<string>(),
+) {
   return render(
     <ApplicationsView
-      applications={[]}
+      applications={applications}
       nextInterviewFor={() => null}
       unanswered={unanswered}
       coachLabel={coachLabel}
+      coachSourcedIds={coachSourcedIds}
       onCreated={() => {}}
     />,
   )

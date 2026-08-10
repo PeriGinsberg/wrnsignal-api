@@ -19,12 +19,17 @@
 // scorekeeping, so they survive inside the thing they filter.
 
 import { useMemo, useState } from "react"
-import { LIGHT as S, action as actionStyle, status as statusStyle } from "../../../lib/theme/surfaces"
+import {
+  LIGHT as S, action as actionStyle, status as statusStyle, type MeaningKey,
+} from "../../../lib/theme/surfaces"
 import { SearchIcon } from "../../../components/icons"
 import { ApplicationCard, type Application } from "./ApplicationCard"
 import { AddJobForm } from "./AddJobForm"
 import { sortForNeed } from "./applicationOrder"
-import { STATUS_FILTERS, statusLabel, statusMeaning } from "./vocab"
+import {
+  STATUS_FILTERS, statusLabel, statusMeaning,
+  COACH_SOURCED_FILTER, COACH_SOURCED_LABEL, COACH_SOURCED_MEANING,
+} from "./vocab"
 import { control } from "./controls"
 
 export type SortKey = "need" | "newest" | "oldest" | "company"
@@ -42,13 +47,20 @@ function timeOf(a: Application): number {
 }
 
 export function ApplicationsView({
-  applications, nextInterviewFor, unanswered, coachLabel, onCreated,
+  applications, nextInterviewFor, unanswered, coachLabel, coachSourcedIds, onCreated,
 }: {
   applications: Application[]
   nextInterviewFor: (a: Application) => string | null
   /** Coach-sourced jobs the client has not answered yet (client_status 'new'). */
   unanswered: { id: string; application_id: string | null; job_title?: string | null; company_name?: string | null }[]
   coachLabel: string
+  /**
+   * Application ids a coach sourced, ANSWERED OR NOT. Wider than `unanswered`
+   * on purpose: answering "Interested" does not stop a job having come from
+   * your coach, and a marker that vanished the moment you replied would be
+   * telling you about your own reply rather than about the job.
+   */
+  coachSourcedIds: Set<string>
   onCreated: () => void
 }) {
   const [query, setQuery] = useState("")
@@ -64,10 +76,21 @@ export function ApplicationsView({
     return m
   }, [applications])
 
+  // Counted off the SAME list the chips count from, so the number on the chip
+  // and the number of rows after clicking it cannot disagree.
+  const coachSourcedCount = useMemo(
+    () => applications.filter((a) => coachSourcedIds.has(a.id)).length,
+    [applications, coachSourcedIds],
+  )
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     let rows = applications
-    if (statusFilter) rows = rows.filter((a) => a.application_status === statusFilter)
+    // The coach chip is the one filter that is not a status. Its value is a
+    // sentinel no application_status can equal, so the two branches can never
+    // both match and the order of these two lines carries no meaning.
+    if (statusFilter === COACH_SOURCED_FILTER) rows = rows.filter((a) => coachSourcedIds.has(a.id))
+    else if (statusFilter) rows = rows.filter((a) => a.application_status === statusFilter)
     if (q) {
       rows = rows.filter(
         (a) =>
@@ -79,7 +102,7 @@ export function ApplicationsView({
     if (sort === "newest") return [...rows].sort((a, b) => timeOf(b) - timeOf(a))
     if (sort === "oldest") return [...rows].sort((a, b) => timeOf(a) - timeOf(b))
     return [...rows].sort((a, b) => (a.company_name || "").localeCompare(b.company_name || ""))
-  }, [applications, query, sort, statusFilter, nextInterviewFor])
+  }, [applications, query, sort, statusFilter, nextInterviewFor, coachSourcedIds])
 
   const subtitle =
     applications.length === 0
@@ -207,13 +230,32 @@ export function ApplicationsView({
                 />
               ) : null
             ))}
+
+            {/* Last, and hidden at zero like every other chip. Most students
+                have no coach-sourced jobs at all — 126 of 1,039 applications
+                on production — so for most accounts this row is unchanged. */}
+            {coachSourcedCount > 0 && (
+              <Chip
+                label={`${COACH_SOURCED_LABEL} ${coachSourcedCount}`}
+                meaningKey={COACH_SOURCED_MEANING}
+                active={statusFilter === COACH_SOURCED_FILTER}
+                onClick={() =>
+                  setStatusFilter(statusFilter === COACH_SOURCED_FILTER ? null : COACH_SOURCED_FILTER)
+                }
+              />
+            )}
           </div>
         </>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
         {visible.map((a) => (
-          <ApplicationCard key={a.id} application={a} nextInterviewAt={nextInterviewFor(a)} />
+          <ApplicationCard
+            key={a.id}
+            application={a}
+            nextInterviewAt={nextInterviewFor(a)}
+            fromCoach={coachSourcedIds.has(a.id)}
+          />
         ))}
       </div>
 
@@ -255,14 +297,18 @@ export function ApplicationsView({
  * read as five buttons that set state rather than five filters.
  */
 function Chip({
-  label, active, onClick, meaning,
+  label, active, onClick, meaning, meaningKey,
 }: {
   label: string
   active: boolean
   onClick: () => void
+  /** An application_status. Resolved through statusMeaning. */
   meaning?: string
+  /** A meaning directly, for the one chip whose filter is not a status. */
+  meaningKey?: MeaningKey
 }) {
-  const dot = meaning ? statusStyle(S, statusMeaning(meaning)).dot : null
+  const resolved = meaningKey ?? (meaning ? statusMeaning(meaning) : null)
+  const dot = resolved ? statusStyle(S, resolved).dot : null
   return (
     <button
       onClick={onClick}

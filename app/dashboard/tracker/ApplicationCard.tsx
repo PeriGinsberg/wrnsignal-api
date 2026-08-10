@@ -33,7 +33,10 @@ import {
 } from "../../../lib/theme/surfaces"
 import { ProfileIcon } from "../../../components/icons"
 import { formatShort } from "../../../lib/localDate"
-import { statusLabel, statusMeaning, NEED_LABELS } from "./vocab"
+import {
+  statusLabel, statusMeaning, NEED_LABELS,
+  COACH_SOURCED_LABEL, COACH_SOURCED_MEANING,
+} from "./vocab"
 import { needOf, type TrackedApp } from "./applicationOrder"
 
 export type Application = TrackedApp & {
@@ -75,10 +78,17 @@ function subtitle(a: Application): string {
 export function ApplicationCard({
   application: a,
   nextInterviewAt = null,
+  fromCoach = false,
 }: {
   application: Application
   /** The soonest upcoming interview for this job, if any. Drives Prep. */
   nextInterviewAt?: string | null
+  /**
+   * A coach sourced this job. Passed in rather than derived here: the fact
+   * lives in coach_job_recommendations, which this card never loads and the
+   * tracker page already holds in memory for the banner.
+   */
+  fromCoach?: boolean
 }) {
   const [hover, setHover] = useState(false)
 
@@ -91,6 +101,7 @@ export function ApplicationCard({
   const closed = a.application_status === "rejected" || a.application_status === "withdrawn"
   const idle = a.application_status === "saved" || closed
   const st = statusStyle(S, meaning)
+  const coachSt = statusStyle(S, COACH_SOURCED_MEANING)
   const href = `/dashboard/tracker/${a.id}`
 
   const need = needOf(a, nextInterviewAt)
@@ -157,6 +168,32 @@ export function ApplicationCard({
           >
             {subtitle(a)}
           </span>
+
+          {/* WHERE THIS JOB CAME FROM. Silent on every job the student added
+              themselves, which is most of them — 126 of 1,039 on production.
+              A marker that appears on nearly every row says nothing.
+
+              ONE SIGNAL, deliberately. The pre-2026-08-04 tracker carried
+              three for this same fact: a teal "⚡ From {coach}" pill, a teal
+              row tint, and a left border coloured by the coach's priority.
+              Three treatments for one bit of information, and the priority
+              border in particular competed with the status colour beside it.
+
+              Dot-and-text, the row's existing convention for state, in the
+              blue `sequence` meaning. NOT peach: peach is action and only
+              action, and this is a fact, not something to do. It is also not
+              the coach's NAME — that is on the response box and the banner,
+              and repeating it on every row is noise once you know who your
+              coach is. */}
+          {fromCoach && (
+            <span
+              data-testid="from-coach"
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 5 }}
+            >
+              <span style={coachSt.dot} />
+              <span style={{ ...coachSt.text, fontSize: 13 }}>{COACH_SOURCED_LABEL}</span>
+            </span>
+          )}
         </span>
       </a>
 

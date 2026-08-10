@@ -15,6 +15,20 @@ import type { MeaningKey } from "../../../lib/theme/surfaces"
 
 // ── Application status ──────────────────────────────────────────────────────
 
+// `coach_recommended` WAS here, labelled "From your coach" with the sequence
+// meaning, and it was unreachable: the CHECK constraint permits the value but
+// nothing writes it. app/api/coach/recommend-job creates coach-sourced jobs as
+// `saved`, and 0 of 1,039 production applications and 0 of 248 dev ones carried
+// the status (measured 2026-08-10). A plausible-looking hook that no path can
+// reach sends the next person down the wrong road — which is exactly what it
+// did: "which jobs came from my coach" looks answered by this map and is not.
+// The real signal is a row in coach_job_recommendations pointing at the
+// application; see COACH_SOURCED_FILTER below.
+//
+// If a row ever does appear with that status, statusLabel falls back to
+// de-underscoring ("coach recommended") and statusMeaning to `idle` — degraded,
+// not broken. The coach-side surfaces keep their own map in
+// app/_lib/applicationStatuses.ts and are unaffected.
 export const STATUS_LABELS: Record<string, string> = {
   saved: "Saved",
   applied: "Applied",
@@ -22,7 +36,6 @@ export const STATUS_LABELS: Record<string, string> = {
   offer: "Offer",
   rejected: "No offer",
   withdrawn: "Withdrawn",
-  coach_recommended: "From your coach",
 }
 
 /**
@@ -38,7 +51,6 @@ export const STATUS_MEANING: Record<string, MeaningKey> = {
   offer: "done",
   rejected: "dormant",
   withdrawn: "dormant",
-  coach_recommended: "sequence",
 }
 
 export function statusLabel(s: string | null | undefined): string {
@@ -54,6 +66,33 @@ export function statusMeaning(s: string | null | undefined): MeaningKey {
 /** The filter row, in board order. `withdrawn` is reachable by status edit but
  *  is not a chip: it is rare, and a sixth chip costs more than it returns. */
 export const STATUS_FILTERS = ["saved", "applied", "interviewing", "offer"] as const
+
+/**
+ * The one chip that is not a status.
+ *
+ * Every other chip filters on `application_status === value`. This one filters
+ * on whether a coach_job_recommendations row points at the application, which
+ * is a different question about the same job — a coach-sourced job also has a
+ * status, and moving it to Applied must not stop it being coach-sourced.
+ *
+ * A SENTINEL RATHER THAN A STATUS. The value is deliberately not a member of
+ * the application_status vocabulary, so `application_status === COACH_SOURCED_FILTER`
+ * can never accidentally be true and the branch that handles it cannot be
+ * reached by a real status. It is also why the previous attempt at this — the
+ * `coach_recommended` status removed above — was the wrong shape: it made a
+ * durable fact about a job into a transient state it would lose on first move.
+ */
+export const COACH_SOURCED_FILTER = "from_coach" as const
+
+/** Used by the chip, and by the row indicator, so the two can never disagree. */
+export const COACH_SOURCED_LABEL = "From your coach"
+
+/**
+ * Blue, the same `sequence` meaning the removed status carried and the same one
+ * the coach banner uses. Informational, and specifically NOT peach: peach is
+ * action and only action, and this is a fact about where the job came from.
+ */
+export const COACH_SOURCED_MEANING: MeaningKey = "sequence"
 
 // ── The action a card offers, worded for a student ──────────────────────────
 

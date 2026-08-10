@@ -152,6 +152,23 @@ function Tracker() {
   const coachLabel =
     unansweredCoaches.length === 1 ? String(unansweredCoaches[0]) : "Your coaches"
 
+  // Which jobs a coach sourced, for the row marker and the filter chip.
+  //
+  // ALL of them, not just the unanswered ones: replying "Interested" does not
+  // stop a job having come from your coach, and a marker that disappeared on
+  // reply would be reporting your own answer back to you rather than telling
+  // you where the job came from.
+  //
+  // No fetch is added for this. coachRecs is already loaded above for the
+  // banner, and coach_job_recommendations.application_id is the only real
+  // signal — signal_applications carries no coach column, and the
+  // `coach_recommended` status that looked like one was never written by
+  // anything (see tracker/vocab.ts).
+  const coachSourcedIds = useMemo(
+    () => new Set(coachRecs.map((r) => r.application_id).filter(Boolean) as string[]),
+    [coachRecs],
+  )
+
   if (loading) return <Loading />
 
   return (
@@ -197,6 +214,7 @@ function Tracker() {
           nextInterviewFor={nextInterviewFor}
           unanswered={unanswered}
           coachLabel={coachLabel}
+          coachSourcedIds={coachSourcedIds}
           onCreated={load}
         />
       )}
