@@ -33,10 +33,8 @@ import {
 } from "../../../lib/theme/surfaces"
 import { ProfileIcon } from "../../../components/icons"
 import { formatShort } from "../../../lib/localDate"
-import {
-  statusLabel, statusMeaning, NEED_LABELS,
-  COACH_SOURCED_LABEL, COACH_SOURCED_MEANING,
-} from "./vocab"
+import { statusLabel, statusMeaning, NEED_LABELS } from "./vocab"
+import { COACH_SOURCED_LABEL, COACH_SOURCED_MEANING } from "../../../lib/coachRecommendations"
 import { needOf, type TrackedApp } from "./applicationOrder"
 
 export type Application = TrackedApp & {

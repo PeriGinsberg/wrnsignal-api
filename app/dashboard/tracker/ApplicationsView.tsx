@@ -26,10 +26,10 @@ import { SearchIcon } from "../../../components/icons"
 import { ApplicationCard, type Application } from "./ApplicationCard"
 import { AddJobForm } from "./AddJobForm"
 import { sortForNeed } from "./applicationOrder"
+import { STATUS_FILTERS, statusLabel, statusMeaning } from "./vocab"
 import {
-  STATUS_FILTERS, statusLabel, statusMeaning,
   COACH_SOURCED_FILTER, COACH_SOURCED_LABEL, COACH_SOURCED_MEANING,
-} from "./vocab"
+} from "../../../lib/coachRecommendations"
 import { control } from "./controls"
 
 export type SortKey = "need" | "newest" | "oldest" | "company"

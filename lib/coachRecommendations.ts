@@ -17,6 +17,54 @@
 // deleted /api/coach/recommendations/[id]/respond route got wrong — it accepted
 // `not_interested` and `passed`, neither of which the constraint allows.
 
+import type { MeaningKey } from "./theme/surfaces"
+
+// ── "From your coach" — the marker, shared by two areas ─────────────────────
+//
+// These lived in app/dashboard/tracker/vocab.ts until 2026-08-10, when the
+// Coaching Hub needed the same marker on its plan rows. Two copies of a label
+// and a colour is exactly what a vocabulary module exists to prevent, so they
+// moved here rather than being restated. The tracker and the Hub both import
+// them; neither owns them.
+
+/**
+ * The one tracker chip that is not a status.
+ *
+ * Every other chip filters on `application_status === value`. This one filters
+ * on whether a coach_job_recommendations row points at the application, which
+ * is a different question about the same job — a coach-sourced job also has a
+ * status, and moving it to Applied must not stop it being coach-sourced.
+ *
+ * A SENTINEL RATHER THAN A STATUS. The value is deliberately not a member of
+ * the application_status vocabulary, so `application_status === COACH_SOURCED_FILTER`
+ * can never accidentally be true and the branch that handles it cannot be
+ * reached by a real status. It is also why the previous attempt at this — a
+ * `coach_recommended` application_status, since removed — was the wrong shape:
+ * it made a durable fact about a job into a transient state it would lose on
+ * first move.
+ */
+export const COACH_SOURCED_FILTER = "from_coach" as const
+
+/** One label for the tracker chip, the tracker row and the Hub plan row. */
+export const COACH_SOURCED_LABEL = "From your coach"
+
+/**
+ * Coral — the `attention` meaning. A job or an activity your coach picked out
+ * is something to look at, which is what coral says on every other surface.
+ *
+ * NOT PEACH, and structurally so: peach lives in `action`, not in `meaning`, so
+ * a status lookup cannot return it. Coral was chosen for `attention` on
+ * 2026-08-04 precisely because the amber it replaced shared peach's hue, and
+ * "act on this" and "press this" read alike; coral sits 21.8 dE away.
+ *
+ * WHAT THE PIXELS ACTUALLY ARE. `status()` renders both the dot and the text
+ * from the meaning's INK — #884133 — not from its accent #F26B52. The accent is
+ * for rails and fills. #F26B52 measures 3.00 against white, fine for an 8px dot
+ * and below the 4.5 floor for text; the ink measures 7.37 and is the same coral
+ * family.
+ */
+export const COACH_SOURCED_MEANING: MeaningKey = "attention"
+
 /** Every value the CHECK constraint permits. Storage truth, not UI truth. */
 export const CLIENT_STATUSES = [
   "new",

@@ -24,7 +24,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
-import { T, card, headline, btnSecondary } from "../../../lib/dashboard-theme"
+import {
+  LIGHT as S, action as actionStyle, status as statusStyle,
+  surfaceCard,
+} from "../../../lib/theme/surfaces"
+import { COACH_SOURCED_LABEL, COACH_SOURCED_MEANING } from "../../../lib/coachRecommendations"
+import { SectionState } from "./SectionState"
+import { ActivityStatus } from "./ActivityStatus"
 
 type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
@@ -32,6 +38,10 @@ type DocGroup = { category_id: string | null; name: string; documents: SharedDoc
 type PlanNote = { id: string; body: string; action_required: boolean; created_at: string; client_done_at: string | null }
 type PlanActivity = { id: string; name: string; status: string; owner: string; due_date: string | null; notes: PlanNote[] }
 type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase",
+}
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -53,16 +63,6 @@ function fmtSent(iso: string | null): string {
   const dt = new Date(iso)
   if (Number.isNaN(dt.getTime())) return ""
   return `${MONTHS[dt.getMonth()]} ${dt.getDate()}`
-}
-
-// Activity status — mirrors the coach-side ActivityStatusControl visual language
-// (muted → amber → green) so client + coach reads consistently. These constants
-// aren't exported from EngagementsTab; kept in sync by convention.
-const ACTIVITY_STATUS_ORDER = ["not_started", "in_progress", "complete"] as const
-const ACTIVITY_STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  not_started: { label: "Not started", color: T.MUTED, bg: T.NAV_DEFAULT_BG },
-  in_progress: { label: "In progress", color: T.WRN_ORANGE, bg: "rgba(254,176,106,0.14)" },
-  complete: { label: "Complete", color: T.SUCCESS, bg: T.SUCCESS_BG },
 }
 
 async function getToken(): Promise<string | null> {
@@ -123,35 +123,28 @@ function ProofProjectEntry() {
     <a
       href="/dashboard/coaching-hub/proof-project"
       style={{
-        ...card,
-        padding: 22,
-        display: "flex",
-        alignItems: "center",
-        gap: 18,
-        textDecoration: "none",
-        background: `linear-gradient(135deg, rgba(254,176,106,0.14), rgba(254,176,106,0.03)), ${T.CARD}`,
-        border: `1px solid ${T.ORANGE_BORDER}`,
-        flexWrap: "wrap",
+        display: "block", textDecoration: "none",
+        background: S.hero.background, borderRadius: 16, padding: "22px 24px",
       }}
     >
-      <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: "uppercase", color: T.WRN_ORANGE }}>
-          Proof Project
-        </div>
-        <div style={{ marginTop: 6, fontSize: 16, fontWeight: 800, color: T.TEXT, overflowWrap: "anywhere" }}>
-          {project.name}
-        </div>
-        <div style={{ marginTop: 4, fontSize: 13, color: T.MUTED }}>
-          {project.percent}% complete — see the whole journey →
-        </div>
+      {/* The NAVY HERO, and the same progress bar the Profile page uses for its
+          completion. The peach gradient card and the 34px peach numeral this
+          replaces broke two rules at once: peach is action only, and a second
+          percent treatment in the product means two things to learn for one
+          idea.
+
+          Still a link, unlike Profile's static hero — this banner is the only
+          route to the proof-project page, since the nav is a fixed list that
+          cannot know whether a client has a flagged engagement. */}
+      <div style={{ ...eyebrow, color: S.hero.muted }}>Proof Project</div>
+      <div style={{ marginTop: 8, fontSize: 19, fontWeight: 800, color: S.hero.ink, overflowWrap: "anywhere" }}>
+        {project.name}
       </div>
-      <div
-        style={{
-          fontSize: 34, fontWeight: 900, color: T.WRN_ORANGE,
-          fontVariantNumeric: "tabular-nums", flexShrink: 0, lineHeight: 1,
-        }}
-      >
-        {project.percent}%
+      <div style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.14)", marginTop: 14 }}>
+        <div style={{ width: `${project.percent}%`, height: "100%", borderRadius: 999, background: S.hero.accent }} />
+      </div>
+      <div style={{ marginTop: 10, fontSize: 14.5, color: S.hero.muted }}>
+        {project.percent}% complete — see the whole journey →
       </div>
     </a>
   )
@@ -234,16 +227,16 @@ export default function CoachingHubPage() {
   }
 
   return (
-    <div style={{ maxWidth: 820 }}>
+    <main style={{ maxWidth: 1080 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ ...headline, marginBottom: 6 }}>Coaching Hub</h1>
-        <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: S.text.primary, margin: 0, marginBottom: 6 }}>Coaching Hub</h1>
+        <p style={{ fontSize: 15, color: S.text.muted, margin: 0 }}>
           Your coaching plan — work through it with your coach.
         </p>
       </div>
 
       {/* Stacked sections — single scrolling page, top to bottom. */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
         <RequiredActionsSection groups={groups} />
         {/* Below Required Actions on purpose: this is the motivating surface,
             but a coach asking for something is still the more urgent thing on
@@ -260,7 +253,7 @@ export default function CoachingHubPage() {
         />
         <SharedDocumentsSection />
       </div>
-    </div>
+    </main>
   )
 }
 
@@ -297,7 +290,10 @@ type ActionProvider = {
 // Provider: unreviewed coach-sourced jobs. Reuses the existing client endpoint
 // /api/coach/my-recommendations (returns all recs for this client); keep only
 // the unanswered ones that have a tracker job to open.
-const unreviewedSourcedJobs: ActionProvider = {
+// Exported for RequiredActionsLink.test.tsx: the mapping is where the
+// destination is decided, and asserting it needs one mocked fetch rather
+// than the whole page's three.
+export const unreviewedSourcedJobs: ActionProvider = {
   kind: "sourced_job",
   load: async ({ token }) => {
     const res = await fetch("/api/coach/my-recommendations", { headers: { Authorization: `Bearer ${token}` } })
@@ -314,7 +310,10 @@ const unreviewedSourcedJobs: ActionProvider = {
         note: r.coaching_note || null,
         decision: r.signal_decision || null,
         score: typeof r.signal_score === "number" ? r.signal_score : null,
-        href: `/dashboard/tracker?job=${r.application_id}`,
+        // Straight to the job. It used to go to /dashboard/tracker?job={id},
+        // which the tracker then client-side redirected to the detail route —
+        // the same one-hop indirection removed from the Dashboard nudges.
+        href: `/dashboard/tracker/${r.application_id}`,
         sentAt: r.created_at || null,
       }))
   },
@@ -401,57 +400,50 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
   useEffect(() => { void load() }, [load])
 
   return (
-    <section style={{ ...card, padding: 22 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
+    <section style={{ ...surfaceCard(S), padding: 24 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 16 }}>
         Required Actions
       </div>
-      {loading ? (
-        <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading…</p>
-      ) : loadError ? (
-        <div>
-          <div style={{ fontSize: 12, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
-            {loadError}
-          </div>
-          <button style={{ ...btnSecondary, marginTop: 12 }} onClick={() => void load()}>Retry</button>
-        </div>
-      ) : actions.length === 0 ? (
-        <p style={{ fontSize: 13, color: T.DIM, margin: 0, lineHeight: 1.5 }}>
-          You’re all caught up — no actions need your attention right now.
-        </p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <SectionState
+        loading={loading}
+        error={loadError}
+        isEmpty={actions.length === 0}
+        emptyText="You’re all caught up — no actions need your attention right now."
+        onRetry={() => void load()}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {actions.map((a) => {
             const cardStyle: React.CSSProperties = {
               display: "block", textDecoration: "none",
-              padding: "12px 14px", borderRadius: 12,
-              border: `1px solid ${T.NAV_ACTIVE_BORDER}`, background: T.WARNING_BG,
+              padding: "14px 16px", borderRadius: 12,
+              border: `1px solid ${S.meaning.attention.accent}`, background: S.meaning.attention.fill,
             }
             const inner = (
               <>
-                <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.WRN_ORANGE, marginBottom: 4 }}>
+                <span style={{ display: "block", fontSize: 12, fontWeight: 800, color: S.meaning.attention.ink, marginBottom: 5 }}>
                   {a.label}
                 </span>
-                <span style={{ display: "block", fontSize: 14, color: T.TEXT, fontWeight: 700, wordBreak: "break-word" }}>
+                <span style={{ display: "block", fontSize: 15.5, color: S.text.primary, fontWeight: 700, wordBreak: "break-word" }}>
                   {a.title}
-                  {a.subtitle && <span style={{ color: T.MUTED, fontWeight: 500 }}> · {a.subtitle}</span>}
+                  {a.subtitle && <span style={{ color: S.text.secondary, fontWeight: 500 }}> · {a.subtitle}</span>}
                 </span>
                 {a.context && (
-                  <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 2 }}>
+                  <span style={{ display: "block", fontSize: 13, color: S.text.muted, marginTop: 3 }}>
                     {a.context}
                   </span>
                 )}
                 {(a.decision || a.score !== null) && (
-                  <span style={{ display: "block", fontSize: 12, color: T.MUTED, marginTop: 4 }}>
+                  <span style={{ display: "block", fontSize: 13.5, color: S.text.secondary, marginTop: 5 }}>
                     {a.decision}{a.decision && a.score !== null ? " · " : ""}{a.score !== null ? `Score ${a.score}` : ""}
                   </span>
                 )}
                 {fmtSent(a.sentAt) && (
-                  <span style={{ display: "block", fontSize: 11, color: T.DIM, marginTop: 4 }}>
+                  <span style={{ display: "block", fontSize: 13, color: S.text.muted, marginTop: 5 }}>
                     Sent {fmtSent(a.sentAt)}
                   </span>
                 )}
                 {a.note && (
-                  <span style={{ display: "block", fontSize: 13, color: T.MUTED, marginTop: 6, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: `2px solid ${T.BORDER}`, paddingLeft: 10 }}>
+                  <span style={{ display: "block", fontSize: 14, color: S.text.secondary, marginTop: 8, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: `2px solid ${S.borderSoft}`, paddingLeft: 12 }}>
                     {a.note}
                   </span>
                 )}
@@ -470,7 +462,11 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
                     type="button"
                     disabled={doingId === a.id}
                     onClick={() => void markDone(a)}
-                    style={{ ...btnSecondary, flexShrink: 0, fontSize: 12, padding: "6px 14px", borderRadius: 8, opacity: doingId === a.id ? 0.6 : 1 }}
+                    style={{
+                      ...actionStyle(S, "primary"), flexShrink: 0, fontSize: 13.5,
+                      padding: "8px 14px", borderRadius: 10, fontFamily: "inherit",
+                      whiteSpace: "nowrap", opacity: doingId === a.id ? 0.6 : 1,
+                    }}
                   >
                     {doingId === a.id ? "Marking…" : "Mark done"}
                   </button>
@@ -484,7 +480,7 @@ function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
             )
           })}
         </div>
-      )}
+      </SectionState>
     </section>
   )
 }
@@ -509,36 +505,36 @@ function MyPlanSection({
   const [expanded, setExpanded] = useState(false)
   const visibleGroups = expanded ? groups : groups.slice(0, 1)
   return (
-    <section style={{ ...card, padding: 22 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
+    <section style={{ ...surfaceCard(S), padding: 24 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 16 }}>
         My Plan
       </div>
 
+      {/* A WRITE error, not a load error: the plan is on screen and one status
+          change failed. It sits above the plan rather than replacing it, which
+          is why it is not part of SectionState. */}
       {actionError && (
-        <div style={{ marginBottom: 14, fontSize: 12, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
+        <div style={{
+          marginBottom: 16, fontSize: 14, color: S.meaning.error.ink,
+          background: S.meaning.error.fill, border: `1px solid ${S.meaning.error.accent}`,
+          borderRadius: 12, padding: "12px 14px",
+        }}>
           {actionError}
         </div>
       )}
 
-      {loading ? (
-        <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading…</p>
-      ) : loadError ? (
-        <div>
-          <div style={{ fontSize: 12, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
-            {loadError}
-          </div>
-          <button style={{ ...btnSecondary, marginTop: 12 }} onClick={() => void onRetry()}>Retry</button>
-        </div>
-      ) : groups.length === 0 ? (
-        <p style={{ fontSize: 13, color: T.DIM, margin: 0, lineHeight: 1.5 }}>
-          No plan items assigned to you yet — your coach will add them here.
-        </p>
-      ) : (
+      <SectionState
+        loading={loading}
+        error={loadError}
+        isEmpty={groups.length === 0}
+        emptyText="No plan items assigned to you yet — your coach will add them here."
+        onRetry={() => void onRetry()}
+      >
         <>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {visibleGroups.map((g) => (
             <div key={g.deliverable_id}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase", color: S.text.muted, marginBottom: 10 }}>
                 {g.name}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -548,29 +544,41 @@ function MyPlanSection({
                     style={{
                       display: "flex", flexDirection: "column", gap: 8,
                       padding: "10px 12px", borderRadius: 12,
-                      border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS,
+                      // The receded-row background the converted screens already
+                      // use (ContactCard, ApplicationCard, HistoryView). Not a
+                      // token yet in any of them; kept consistent rather than
+                      // inventing a fifth spelling here.
+                      border: `1px solid ${S.borderSoft}`, background: "#FBFDFE",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-                      <span style={{ flex: 1, minWidth: 160, fontSize: 14, color: T.TEXT, fontWeight: 600, wordBreak: "break-word" }}>
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                      <span style={{ flex: 1, minWidth: 180, fontSize: 15.5, color: S.text.primary, fontWeight: 700, wordBreak: "break-word" }}>
                         {a.name}
-                        {a.owner === "both" && (
-                          <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.DIM }}>
-                            shared with coach
-                          </span>
-                        )}
                       </span>
                       {a.due_date && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_BLUE, whiteSpace: "nowrap" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: S.meaning.progress.ink, whiteSpace: "nowrap" }}>
                           Due {fmtDue(a.due_date)}
                         </span>
                       )}
-                      <ActivityStatusControl
+                      <ActivityStatus
                         value={a.status}
                         busy={settingId === a.id}
                         onSet={(s) => void onSetStatus(a.id, s)}
                       />
                     </div>
+                    {/* Shared with the coach. The 9px uppercase tag this replaces
+                        sat inline after the name at a size nothing else on a
+                        converted screen uses; this is the same dot-and-text the
+                        tracker marks coach-sourced jobs with, from the same
+                        constants, so the two areas cannot drift apart. */}
+                    {a.owner === "both" && (
+                      <span data-testid="shared-with-coach" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                        <span style={statusStyle(S, COACH_SOURCED_MEANING).dot} />
+                        <span style={{ ...statusStyle(S, COACH_SOURCED_MEANING).text, fontSize: 13 }}>
+                          {COACH_SOURCED_LABEL}
+                        </span>
+                      </span>
+                    )}
                     {/* Informational coach notes only — read-only, newest-first.
                         action_required notes live in Required Actions (one home
                         per action note), so they're filtered out here regardless
@@ -581,8 +589,8 @@ function MyPlanSection({
                           <div
                             key={n.id}
                             style={{
-                              fontSize: 13, color: T.MUTED, lineHeight: 1.45, whiteSpace: "pre-wrap",
-                              wordBreak: "break-word", borderLeft: `2px solid ${T.BORDER}`, paddingLeft: 10,
+                              fontSize: 14, color: S.text.secondary, lineHeight: 1.5, whiteSpace: "pre-wrap",
+                              wordBreak: "break-word", borderLeft: `2px solid ${S.borderSoft}`, paddingLeft: 12,
                             }}
                           >
                             {n.body}
@@ -602,7 +610,7 @@ function MyPlanSection({
             onClick={() => setExpanded((v) => !v)}
             style={{
               marginTop: 16, background: "none", border: "none", padding: 0,
-              fontSize: 12, fontWeight: 700, color: T.WRN_BLUE, cursor: "pointer",
+              fontSize: 14, fontWeight: 700, color: S.action.quietInk, cursor: "pointer",
               fontFamily: "inherit",
             }}
           >
@@ -612,51 +620,8 @@ function MyPlanSection({
           </button>
         )}
         </>
-      )}
+      </SectionState>
     </section>
-  )
-}
-
-// Client-driven three-state status control — mirrors the coach-side
-// ActivityStatusControl (muted → amber → green, hover + in-flight states).
-function ActivityStatusControl({ value, busy, onSet }: { value: string; busy: boolean; onSet: (status: string) => void }) {
-  const [hovered, setHovered] = useState<string | null>(null)
-  return (
-    <div
-      role="group"
-      aria-label="Activity status"
-      style={{ marginLeft: "auto", display: "inline-flex", flexShrink: 0, borderRadius: 7, border: `1px solid ${T.BORDER_SOFT}`, overflow: "hidden", opacity: busy ? 0.6 : 1 }}
-    >
-      {ACTIVITY_STATUS_ORDER.map((st, i) => {
-        const active = value === st
-        const m = ACTIVITY_STATUS_META[st]
-        const isHover = hovered === st && !active && !busy
-        return (
-          <button
-            key={st}
-            type="button"
-            disabled={busy || active}
-            onClick={() => onSet(st)}
-            onMouseEnter={() => { if (!active && !busy) setHovered(st) }}
-            onMouseLeave={() => setHovered((h) => (h === st ? null : h))}
-            aria-pressed={active}
-            style={{
-              background: active ? m.bg : isHover ? "rgba(255,255,255,0.06)" : "transparent",
-              color: active ? m.color : isHover ? T.TEXT : T.MUTED,
-              border: "none",
-              borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
-              padding: "4px 9px",
-              fontSize: 9, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase",
-              cursor: busy ? "default" : "pointer",
-              whiteSpace: "nowrap",
-              transition: "background 130ms ease, color 130ms ease, border-color 130ms ease",
-            }}
-          >
-            {m.label}
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -689,29 +654,22 @@ function SharedDocumentsSection() {
   useEffect(() => { void load() }, [load])
 
   return (
-    <section style={{ ...card, padding: 22 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 14 }}>
+    <section style={{ ...surfaceCard(S), padding: 24 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 16 }}>
         Shared documents
       </div>
 
-      {loading ? (
-        <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading…</p>
-      ) : loadError ? (
-        <div>
-          <div style={{ fontSize: 12, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
-            {loadError}
-          </div>
-          <button style={{ ...btnSecondary, marginTop: 12 }} onClick={() => void load()}>Retry</button>
-        </div>
-      ) : groups.length === 0 ? (
-        <p style={{ fontSize: 13, color: T.DIM, margin: 0, lineHeight: 1.5 }}>
-          Your coach hasn’t shared any tools or documents with you yet.
-        </p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <SectionState
+        loading={loading}
+        error={loadError}
+        isEmpty={groups.length === 0}
+        emptyText="Your coach hasn’t shared any tools or documents with you yet."
+        onRetry={() => void load()}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           {groups.map((g) => (
             <div key={g.category_id ?? "__uncategorized__"}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase", color: S.text.muted, marginBottom: 10 }}>
                 {g.name}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -724,11 +682,15 @@ function SharedDocumentsSection() {
                     style={{
                       display: "block", textDecoration: "none",
                       padding: "10px 12px", borderRadius: 12,
-                      border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS,
+                      // The receded-row background the converted screens already
+                      // use (ContactCard, ApplicationCard, HistoryView). Not a
+                      // token yet in any of them; kept consistent rather than
+                      // inventing a fifth spelling here.
+                      border: `1px solid ${S.borderSoft}`, background: "#FBFDFE",
                     }}
                   >
-                    <span style={{ fontSize: 14, color: T.WRN_BLUE, fontWeight: 600, wordBreak: "break-word" }}>{d.title}</span>
-                    <span style={{ display: "block", fontSize: 12, color: T.DIM, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <span style={{ fontSize: 15.5, color: S.text.primary, fontWeight: 700, wordBreak: "break-word" }}>{d.title}</span>
+                    <span style={{ display: "block", fontSize: 13.5, color: S.text.muted, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {fmtHost(d.url)}
                     </span>
                   </a>
@@ -737,7 +699,7 @@ function SharedDocumentsSection() {
             </div>
           ))}
         </div>
-      )}
+      </SectionState>
     </section>
   )
 }
