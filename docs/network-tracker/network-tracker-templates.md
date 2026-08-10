@@ -241,3 +241,80 @@ copy-and-mark-as-sent counts as pipeline activity. Those are where silent wrongn
 - No rich text / HTML email — plain text, since it's pasted into whatever the user sends
   from.
 - No scheduling or send-on-behalf — SIGNAL hands the user text; the user sends it.
+
+---
+
+## Known inconsistency — `client_profile_id` is read from two different places
+
+Found 2026-08-09 while writing `tests/network-authz-ab.ts`, which it caught out twice.
+
+On `app/api/network/templates/[templateId]/route.ts`:
+
+| Handler | Reads `client_profile_id` from |
+|---|---|
+| `PATCH` | the request **body** |
+| `DELETE` | the **query string** |
+
+And for reference, `app/api/network/profile/route.ts` `PATCH` also reads it from the **body**.
+
+**Why it matters.** Both handlers fall back to the caller's own profile id when the field is
+absent from the place they look:
+
+```ts
+const target = String(body?.client_profile_id || "") || profileId
+```
+
+So sending the target in the wrong place does not error. The route quietly retargets the
+write at *the caller's own data*, succeeds, and returns 200. That is fail-safe — it cannot
+reach another user's board, which the authz test confirms — but it is indistinguishable from
+a successful cross-tenant write unless you check which row actually changed.
+
+**The real exposure is the coach UI.** `assertBoardAccess(..., "full")` exists on these
+routes specifically so a coach can edit a client's templates. A coach surface that passes
+`client_profile_id` in the wrong place would silently edit *the coach's own* templates
+instead of the client's, with a 200 and no visible failure. Nothing consumes it that way
+today, which is the only reason this is not already a bug.
+
+**Fix.** Normalise on one convention — body for both, since PATCH already needs a body and
+DELETE can carry one — and make the fallback explicit rather than implicit: if a caller
+supplies `client_profile_id` at all, honour it or 400; only default to `profileId` when the
+field is genuinely absent.
+
+**Not urgent for the August launch** (no coach surface consumes these yet). Must land before
+one does.
+
+---
+
+## Known issue — `isKnownTemplateId` runs before the access check, leaking valid ids
+
+Same file, found in the same pass.
+
+```ts
+if (!isKnownTemplateId(templateId))
+  return withCorsJson(req, { ok: false, error: `Unknown template ${templateId}` }, 404)   // line 35
+
+const acc = await assertBoardAccess(supabase, profileId, target, "full")
+if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)                // line 40
+```
+
+The id check precedes the authorization check, and the two failures return **different status
+codes with different bodies**. So any authenticated user can enumerate the full set of valid
+template ids against a board they have no access to, by watching for 404-with-`Unknown
+template` versus 403-with-`Forbidden`.
+
+**Severity: low, and worth being precise about why.** The 24 template ids are not secret —
+they are the same for every client and visible to anyone with an account of their own. This
+leaks nothing about the target board's *contents*, only which ids exist globally. It is a
+textbook error-ordering disclosure with an unusually boring payload.
+
+**It is still worth fixing**, for two reasons beyond the leak itself. It is the same class of
+mistake that becomes serious the moment a check like this sits in front of something
+board-specific rather than global. And it caught the authz test out: an invented template id
+returned 404 *before* the gate was ever consulted, so the test recorded a refusal that had
+nothing to do with authorization. A test can pass against this ordering while proving nothing
+— see the `PATCH template` case in `tests/network-authz-ab.ts`, which now uses a real id
+("IN") for exactly this reason.
+
+**Fix.** Move `assertBoardAccess` above `isKnownTemplateId` in both `PATCH` and `DELETE`, so
+an unauthorised caller gets 403 regardless of whether the id is real. Cheap, and it makes the
+route testable without the id-validity confound.
