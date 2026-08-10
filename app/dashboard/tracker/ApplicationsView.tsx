@@ -42,13 +42,13 @@ function timeOf(a: Application): number {
 }
 
 export function ApplicationsView({
-  applications, nextInterviewFor, coachRecCount, coachName, onMarkAllSeen, onCreated,
+  applications, nextInterviewFor, unanswered, coachLabel, onCreated,
 }: {
   applications: Application[]
   nextInterviewFor: (a: Application) => string | null
-  coachRecCount: number
-  coachName: string
-  onMarkAllSeen: () => void
+  /** Coach-sourced jobs the client has not answered yet (client_status 'new'). */
+  unanswered: { id: string; application_id: string | null; job_title?: string | null; company_name?: string | null }[]
+  coachLabel: string
   onCreated: () => void
 }) {
   const [query, setQuery] = useState("")
@@ -112,30 +112,55 @@ export function ApplicationsView({
         </div>
       )}
 
-      {/* From your coach. Kept from the old tracker, restyled: it is real
-          content a coached student depends on, and losing it would be a
-          regression dressed as a redesign. */}
-      {coachRecCount > 0 && (
+      {/* From your coach. INFORMATIONAL ONLY as of 2026-08-10 — it points at the
+          jobs and carries no action of its own.
+          
+          It used to end in a "Mark all seen" text button. That button wrote
+          client_status 'interested' for every unanswered job at once, which
+          told the coach the client wanted roles they had never opened, under a
+          label that promised only to clear a notification. It also failed at
+          the one thing it claimed to do: the count included 'interested' as
+          well as 'new', so marking everything seen left the number unchanged
+          and the banner in place. Answering now happens per job, on the job,
+          via CoachResponseBox. */}
+      {unanswered.length > 0 && (
         <div
+          data-testid="coach-unanswered-banner"
           style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14,
             marginTop: 18, padding: "13px 18px", borderRadius: 12,
             background: S.meaning.sequence.fill,
             borderLeft: `3px solid ${S.meaning.replied.accent}`,
           }}
         >
           <span style={{ color: S.meaning.sequence.ink, fontSize: 14.5, fontWeight: 700 }}>
-            {coachName} added {coachRecCount} {coachRecCount === 1 ? "job" : "jobs"} to your tracker.
+            {coachLabel} sent {unanswered.length}{" "}
+            {unanswered.length === 1 ? "job" : "jobs"} you haven&apos;t answered yet.
           </span>
-          <button
-            onClick={onMarkAllSeen}
-            style={{
-              background: "none", border: "none", color: S.action.quietInk,
-              fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-            }}
-          >
-            Mark all seen
-          </button>
+
+          {/* Each row links to the job, where the answer is given. Capped at
+              three: past that this stops being a prompt and becomes a second
+              copy of the list directly underneath it. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 10 }}>
+            {unanswered.slice(0, 3).map((r) =>
+              r.application_id ? (
+                <a
+                  key={r.id}
+                  href={`/dashboard/tracker/${r.application_id}`}
+                  style={{
+                    color: S.meaning.sequence.ink, fontSize: 13.5, fontWeight: 700,
+                    textDecoration: "underline", textUnderlineOffset: 3, width: "fit-content",
+                  }}
+                >
+                  {[r.job_title || "Untitled role", r.company_name].filter(Boolean).join(" · ")}
+                </a>
+              ) : null,
+            )}
+            {unanswered.length > 3 && (
+              <span style={{ color: S.meaning.sequence.ink, fontSize: 13, opacity: 0.85 }}>
+                + {unanswered.length - 3} more below
+              </span>
+            )}
+          </div>
         </div>
       )}
 

@@ -46,6 +46,7 @@ import { ClientJobNotes } from "../ClientJobNotes"
 import { openInSignal } from "../openInSignal"
 import { JobHistory } from "../JobHistory"
 import { NetworkAtCompany } from "./NetworkAtCompany"
+import { CoachResponseBox } from "./CoachResponseBox"
 import { Field, Select, control, areaControl, formGrid } from "../controls"
 import {
   APP_LOCATIONS, STATUS_LABELS, statusLabel, statusMeaning,
@@ -230,6 +231,12 @@ export default function ApplicationDetailPage({
           {err}
         </div>
       )}
+
+      {/* 0 — the open question, above everything. Renders nothing unless a coach
+          sourced this job and the client has not answered yet. It sits above
+          the header because it is the only thing on the page addressed to
+          someone other than the client. */}
+      <CoachResponseBox applicationId={app.id} onResponded={() => void load()} />
 
       {/* 1 — who and where */}
       <header style={{ display: "flex", alignItems: "center", gap: 18, margin: "18px 0 4px", flexWrap: "wrap" }}>

@@ -83,28 +83,21 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH — bulk update: mark all 'new' as 'interested'
-export async function PATCH(req: NextRequest) {
-  try {
-    const { userId, email } = await getAuthedUser(req)
-    const profileId = await getProfileId(userId, email)
-    const supabase = getSupabaseAdmin()
-
-    const body = await req.json().catch(() => null)
-    if (body?.action === "mark_all_seen") {
-      const { error } = await supabase
-        .from("coach_job_recommendations")
-        .update({ client_status: "interested", updated_at: new Date().toISOString() })
-        .eq("client_profile_id", profileId)
-        .eq("client_status", "new")
-      if (error) throw new Error(`Update failed: ${error.message}`)
-      return withCorsJson(req, { ok: true })
-    }
-
-    return withCorsJson(req, { error: "Unknown action" }, 400)
-  } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = msg.includes("Unauthorized") ? 401 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
-  }
-}
+// NO PATCH HANDLER, DELIBERATELY. This route used to expose
+// { action: "mark_all_seen" }, which flipped every 'new' recommendation to
+// 'interested' in one write. It was reached from a text button labelled
+// "Mark all seen" — the language of clearing a notification — and it did two
+// things that label did not admit to:
+//
+//   It told the coach the client was INTERESTED in every job in the list,
+//   including ones never opened. 'interested' is what the coach sees.
+//
+//   It did not even dismiss the banner it belonged to. That banner counted
+//   rows with client_status 'new' OR 'interested', so moving everything from
+//   the first to the second left the count unchanged and the banner in place,
+//   permanently, since no surviving control could move a row any further.
+//
+// Responding is now per-job and explicit: the box at the top of the job
+// detail page, PATCH /api/coach/my-recommendations/[id]/respond. Removed
+// 2026-08-10 along with 25 prod rows reset from 'interested' back to 'new',
+// because which of them were real answers was unrecoverable.

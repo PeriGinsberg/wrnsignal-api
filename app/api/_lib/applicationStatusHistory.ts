@@ -13,9 +13,23 @@
 //     - app/api/coach/recommend-job/route.ts          (POST)
 //   UPDATES  (from_status = previous value):
 //     - app/api/applications/[id]/route.ts            (PUT)
-//     - app/api/coach/recommendations/[id]/respond/route.ts
 //     - app/api/coach/my-recommendations/[id]/respond/route.ts
 //     - app/api/interviews/route.ts                   (auto-promote to interviewing)
+//
+// 2026-08-10: app/api/coach/recommendations/[id]/respond/route.ts was a fifth
+// UPDATE site and was deleted. Nothing called it, and its status vocabulary
+// (`not_interested`, `passed`) was not in the coach_job_recommendations CHECK
+// constraint, so any caller it ever gained would have taken a 500 from the
+// database. The surviving responder is the my-recommendations one above.
+//
+// NOTE ON SCOPE. A client answering a coach's recommendation does NOT append
+// here unless it also moves application_status (which only `applying` does).
+// The answer itself lives on coach_job_recommendations.client_status and
+// surfaces on the job History via its own source in
+// app/api/applications/[id]/history/route.ts. This table is for
+// application_status transitions only; writing recommendation answers into it
+// would invent transitions that never happened and skew the coach Home
+// "moved to X N days ago" heuristics that read it.
 //
 // Adding a new application_status writer? Call logStatusChange() from
 // the same code path that writes the new value. Missing a writer means

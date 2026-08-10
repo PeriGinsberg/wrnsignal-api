@@ -75,12 +75,49 @@ export async function PATCH(
       return withCorsJson(req, { error: `Invalid client_status. Must be one of: ${VALID_STATUSES.join(", ")}` }, 400)
     }
 
+    // TWO WRITES, TWO DIFFERENT QUESTIONS.
+    //
+    //   coach_job_recommendations   what the answer IS now. Read by the hub's
+    //                               Required Actions, the tracker banner filter
+    //                               and the coach's client page. An UPDATE, so
+    //                               it always holds the latest answer.
+    //
+    //   coach_recommendation_responses   every answer, in order. An INSERT, so
+    //                               a client who says Interested and later Not
+    //                               interested leaves both. That change of mind
+    //                               is a real event the coach should see, and
+    //                               until 2026-08-10 it was not recorded at all
+    //                               — the UPDATE simply overwrote the first
+    //                               answer and the History timeline could only
+    //                               ever show the latest one.
+    //
+    // client_responded_at stays on the parent because the coach's "Since last
+    // visit" strip filters on it. It was absent until 2026-08-10, which is why
+    // 0 of 131 prod rows had it and that strip had never rendered a response.
+    const now = new Date().toISOString()
     const { error: updateErr } = await supabase
       .from("coach_job_recommendations")
-      .update({ client_status: clientStatus, updated_at: new Date().toISOString() })
+      .update({ client_status: clientStatus, client_responded_at: now, updated_at: now })
       .eq("id", recId)
 
     if (updateErr) throw new Error(`Update failed: ${updateErr.message}`)
+
+    // The log entry. Failing here would leave the current state updated with no
+    // record of how it got there, so it is not swallowed — but it is also not
+    // rolled back, because there is no transaction across two PostgREST calls
+    // and re-answering is cheap. A 500 tells the client it did not save; the
+    // box stays up and a retry appends exactly one row.
+    const { error: logErr } = await supabase
+      .from("coach_recommendation_responses")
+      .insert({
+        recommendation_id: recId,
+        client_profile_id: profileId,
+        application_id: rec.application_id,
+        client_status: clientStatus,
+        responded_at: now,
+      })
+
+    if (logErr) throw new Error(`Response log failed: ${logErr.message}`)
 
     // If applying, also update the linked application status
     if (clientStatus === "applying" && rec.application_id) {

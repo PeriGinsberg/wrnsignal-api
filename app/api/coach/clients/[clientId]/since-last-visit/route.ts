@@ -18,6 +18,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { describeClientStatus } from "@/lib/coachRecommendations"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -165,7 +166,12 @@ export async function GET(
       const co = r.company_name || "a recommendation"
       items.push({
         kind: "rec_response",
-        text: `Responded ${(r.client_status as string)} on ${co}`,
+        // Quoted, because the value is the client's ANSWER and reads as a
+        // fragment otherwise ("Responded Not interested on Acme"). Prose, not
+        // the raw enum: before 2026-08-10 this rendered `not_for_me` — which
+        // was survivable only because client_responded_at was never set, so
+        // this line had never once been shown to a coach.
+        text: `Answered "${describeClientStatus(r.client_status as string)}" on ${co}`,
         occurred_at: r.client_responded_at as string,
       })
     }

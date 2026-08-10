@@ -21,8 +21,24 @@ import { parseLocalDate } from "../../../lib/localDate"
 
 type Actor = "you" | "coach" | "system"
 
+// DECLARED TWICE, ON PURPOSE AND DANGEROUSLY. The same union lives in
+// app/api/applications/[id]/history/route.ts. A kind added there but not here
+// does not break the build: `meaningOf()` below falls through to "idle" and the
+// event renders as a grey dot that looks deliberate. Keep them in step.
+// tests/tracker/job-history-kinds.test.ts pins the two lists against each other.
+export const JOB_EVENT_KINDS = [
+  "added",
+  "status",
+  "applied",
+  "scored",
+  "interview_added",
+  "interview_held",
+  "coach_note",
+  "coach_rec_response",
+] as const
+
 type JobEvent = {
-  kind: "added" | "status" | "applied" | "scored" | "interview_added" | "interview_held" | "coach_note"
+  kind: (typeof JOB_EVENT_KINDS)[number]
   at: string
   actor: Actor
   label: string
@@ -38,6 +54,12 @@ function meaningOf(e: JobEvent): MeaningKey {
     if (e.to_status === "interviewing") return "replied"
     if (e.to_status === "rejected" || e.to_status === "withdrawn") return "dormant"
     return "progress"
+  }
+  // The client's answer to a sourced job. "Not interested" recedes the same way
+  // a withdrawn status does — it is a closed door, not a failure, and colouring
+  // it as attention would make declining a job look like a problem.
+  if (e.kind === "coach_rec_response") {
+    return e.to_status === "not_for_me" ? "dormant" : "progress"
   }
   if (e.kind === "interview_added" || e.kind === "interview_held") return "replied"
   if (e.kind === "coach_note") return "replied"

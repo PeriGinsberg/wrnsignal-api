@@ -5,9 +5,12 @@
 // timeline. Powers the History drawer on the application detail page, the same
 // idea as the contact record's History.
 //
-// NO NEW TABLE, NO MIGRATION. Every event here is already recorded somewhere;
-// the gap was that nothing composed them and nothing client-facing could read
-// the one table that mattered. Sources, in the order they contribute:
+// MOSTLY COMPOSED, NOT RECORDED. Seven of the eight sources below were already
+// being written by something else; the gap was that nothing composed them and
+// nothing client-facing could read the one table that mattered. The eighth,
+// coach_recommendation_responses, is the exception and was added 2026-08-10 —
+// see the note under it for why a composed answer was not good enough.
+// Sources, in the order they contribute:
 //
 //   signal_applications.created_at            when it entered the tracker
 //   signal_applications_status_history        every status transition since
@@ -17,6 +20,20 @@
 //   signal_interviews.created_at              each round as it was booked
 //   signal_interviews.interview_date          each round once it has happened
 //   coach_annotations.created_at              coach notes the client can see
+//   coach_recommendation_responses            every Interested / Not interested
+//                                             answer the client has given, in
+//                                             order
+//
+// THE RESPONSE EVENTS APPEND. An earlier draft read client_status off
+// coach_job_recommendations, which is a single column updated in place: a
+// client who answered "Interested" and later "Not interested" would have shown
+// only the second, and the change of mind — the thing a coach most needs to see
+// — would have been invisible. coach_recommendation_responses is append-only
+// and holds one row per answer, so the timeline shows the sequence.
+//
+// Answers given before 2026-08-10 are absent and cannot be recovered: nothing
+// dated them, so any row invented from client_status would carry a fabricated
+// timestamp.
 //
 // THE ONE HONEST GAP. `signal_applications_status_history` was added
 // 2026-05-08. Anything created before that has no transition rows, so its
@@ -34,6 +51,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
+import { responseEventLabel } from "@/lib/coachRecommendations"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -41,8 +59,24 @@ export const dynamic = "force-dynamic"
 type Actor = "you" | "coach" | "system"
 
 export type JobEvent = {
-  /** Stable key so the client can pick an icon and a verb without parsing text. */
-  kind: "added" | "status" | "applied" | "scored" | "interview_added" | "interview_held" | "coach_note"
+  /**
+   * Stable key so the client can pick an icon and a verb without parsing text.
+   *
+   * DECLARED TWICE. app/dashboard/tracker/JobHistory.tsx re-declares this union
+   * rather than importing it (route types are not exported across that
+   * boundary in this codebase). Adding a kind here and not there does not fail
+   * the build — `meaningOf()` falls through to "idle" and the event renders as
+   * a grey dot with no error. Change both. There is a test pinning it.
+   */
+  kind:
+    | "added"
+    | "status"
+    | "applied"
+    | "scored"
+    | "interview_added"
+    | "interview_held"
+    | "coach_note"
+    | "coach_rec_response"
   at: string
   actor: Actor
   /** Already-worded summary. The client styles it; it does not compose it. */
@@ -166,7 +200,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!app) return withCorsJson(req, { ok: false, error: "Not found" }, 404)
     if (app.profile_id !== profileId) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
 
-    const [historyRes, runsRes, ivRes, annRes] = await Promise.all([
+    const [historyRes, runsRes, ivRes, annRes, recRes] = await Promise.all([
       supabase
         .from("signal_applications_status_history")
         .select("from_status, to_status, changed_at, changed_by")
@@ -190,6 +224,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         .eq("client_profile_id", profileId)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: true }),
+      // Scoped by client_profile_id as well as application_id: the ownership
+      // gate above already proved the caller owns the application, and pinning
+      // the profile too means a mis-linked recommendation can never surface
+      // someone else's answer on this timeline.
+      supabase
+        .from("coach_recommendation_responses")
+        .select("id, client_status, responded_at")
+        .eq("application_id", id)
+        .eq("client_profile_id", profileId)
+        .order("responded_at", { ascending: true }),
     ])
 
     const history = historyRes.data ?? []
@@ -287,6 +331,32 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         detail: note.length > 90 ? `${note.slice(0, 90).trimEnd()}…` : note || null,
       })
     }
+
+    // ── The client's answers to a coach-sourced job ──────────────────────────
+    // ONE EVENT PER ANSWER, from the append-only log. Reading client_status off
+    // the recommendation instead would emit one event per RECOMMENDATION, so a
+    // client who answered Interested and later Not interested would show only
+    // the second — the timeline would quietly rewrite itself and a change of
+    // mind, which is exactly what a coach needs to see, would be invisible.
+    //
+    // Answers given before 2026-08-10 have no rows here and never will: they
+    // were never dated, so there is nothing honest to reconstruct them from.
+    // Those jobs simply have no response event.
+    //
+    // Wording lives in lib/coachRecommendations so it can be tested without a
+    // database. Only the FIRST answer is phrased as telling the coach
+    // something; later ones are changes of mind.
+    const answers = (recRes.data ?? []) as any[]
+    answers.forEach((r, i) => {
+      events.push({
+        kind: "coach_rec_response",
+        at: r.responded_at,
+        actor: "you",
+        label: responseEventLabel(String(r.client_status), i > 0),
+        detail: null,
+        to_status: r.client_status,
+      })
+    })
 
     events.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
 

@@ -138,19 +138,19 @@ function Tracker() {
     [applications],
   )
 
-  const activeRecs = coachRecs.filter((r) => r.client_status === "new" || r.client_status === "interested")
-  const coachName = coachRecs[0]?.coach_name || "Your coach"
+  // UNANSWERED ONLY. This used to include 'interested' as well, which is why
+  // "Mark all seen" — which moved rows from 'new' to 'interested' — never
+  // changed the count and never cleared the banner it belonged to. Filtering on
+  // 'new' alone means the banner drains as the client answers each job, which
+  // is the only behaviour that makes it honest as a prompt.
+  const unanswered = coachRecs.filter((r) => r.client_status === "new")
 
-  async function markAllSeen() {
-    // Optimistic: the banner is informational, and re-showing it on a failed
-    // write would be worse than the write silently not sticking.
-    setCoachRecs((prev) => prev.map((r) => (r.client_status === "new" ? { ...r, client_status: "interested" } : r)))
-    await authFetch("/api/coach/my-recommendations", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "mark_all_seen" }),
-    }).catch(() => {})
-  }
+  // Attribution comes from the UNANSWERED set, not from coachRecs[0]. Taking
+  // the first recommendation's coach and applying it to all of them named the
+  // wrong person as soon as a client had two coaches.
+  const unansweredCoaches = [...new Set(unanswered.map((r) => r.coach_name).filter(Boolean))]
+  const coachLabel =
+    unansweredCoaches.length === 1 ? String(unansweredCoaches[0]) : "Your coaches"
 
   if (loading) return <Loading />
 
@@ -195,9 +195,8 @@ function Tracker() {
         <ApplicationsView
           applications={applications}
           nextInterviewFor={nextInterviewFor}
-          coachRecCount={activeRecs.length}
-          coachName={coachName}
-          onMarkAllSeen={markAllSeen}
+          unanswered={unanswered}
+          coachLabel={coachLabel}
           onCreated={load}
         />
       )}

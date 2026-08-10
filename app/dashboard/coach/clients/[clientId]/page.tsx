@@ -30,6 +30,7 @@ import { EngagementsTab } from "./EngagementsTab"
 import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
 import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
+import { describeClientStatus } from "@/lib/coachRecommendations"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
 // History) tab was removed entirely — its surface no longer ships in the
@@ -918,7 +919,7 @@ export default function CoachClientPage() {
                           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }}>
                             {rec.client_status && (
                               <span style={{ fontSize: 11, color: T.DIM }}>
-                                Client: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.client_status}</span>
+                                Client: <span style={{ color: T.TEXT, fontWeight: 700 }}>{describeClientStatus(rec.client_status)}</span>
                               </span>
                             )}
                             {rec.apply_by && (

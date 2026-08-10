@@ -346,13 +346,6 @@ The free trial is a **one-shot real JobFit run** — same engine as the paid pat
 **Returns:** `{ ok: boolean, recommendation: object }`
 **Errors:** 401 unauthorized, 403 forbidden, 404 not found.
 
-#### PATCH /api/coach/recommendations/[id]/respond
-**Auth:** Authenticated user (client ownership checked).
-**Purpose:** Client responds to a recommendation. Values: `interested | not_interested | applying | applied | passed`.
-**Request:** `{ client_status: string }`
-**Returns:** `{ ok: boolean, recommendation: object }`
-**Errors:** 400 invalid status, 401 unauthorized, 403 forbidden, 404 not found.
-
 #### POST /api/coach/annotate
 **Auth:** Coach-of-client (`annotate` access or above).
 **Purpose:** Add an annotation to a client's application.
@@ -365,13 +358,6 @@ The free trial is a **one-shot real JobFit run** — same engine as the paid pat
 **Purpose:** Client fetches coach recommendations sent to them.
 **Returns:** `{ ok: boolean, recommendations: array }`
 **Errors:** 401 unauthorized.
-
-#### PATCH /api/coach/my-recommendations
-**Auth:** Authenticated user.
-**Purpose:** Bulk action on the caller's recommendations.
-**Request:** `{ action: "mark_all_seen" }`
-**Returns:** `{ ok: boolean }`
-**Errors:** 400 unknown action, 401 unauthorized.
 
 #### PATCH /api/coach/my-recommendations/[id]/respond
 **Auth:** Authenticated user (ownership checked).
@@ -572,7 +558,6 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 4. **`/api/positioning` and `/api/networking` success shapes** are the persisted `result_json` from their respective tables; the full key set comes from their upstream LLM prompts and wasn't enumerated here.
 5. **`/api/jobfit` request body** accepts many optional structured fields beyond `profile_text` / `job_text` that weren't catalogued individually (the handler is ~700 lines).
 6. **`/api/reel`** — purpose beyond "serve a static HTML player" is unclear (what video, what audience).
-7. **PATCH /api/coach/my-recommendations** accepts `action: "mark_all_seen"` but the effect on the DB (which column gets flipped and for which rows) was not inspected in detail.
 
 ## Summary Stats
 
@@ -582,6 +567,5 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 - **Structural surprises:**
   - `/api/jobfit-v4-debug` and `/api/jobfit/debug-review` are public dev tools deployed alongside production code.
   - `/api/dashboard` serves HTML rather than JSON and includes an inline Supabase REST query layer.
-  - Two overlapping recommendation-response endpoints exist: `PATCH /api/coach/recommendations/[id]/respond` (5-state enum) and `PATCH /api/coach/my-recommendations/[id]/respond` (4-state enum). Client-side responders should use the second.
   - `/api/resume-rx/*` is a fully staged workflow — 10 endpoints that mutate the same `resume_rx_sessions` row.
   - Seat-flow endpoints (`/api/seat-*`, `/api/send-magic-link`) and Stripe-flow endpoints (`/api/auth/send-link`, `/api/checkout/*`, `/api/webhooks/stripe`) are two parallel payment/auth pipelines; the seat flow is the older GHL path.
