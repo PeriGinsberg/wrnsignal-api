@@ -51,7 +51,12 @@ export function ApplicationsView({
 }: {
   applications: Application[]
   nextInterviewFor: (a: Application) => string | null
-  /** Coach-sourced jobs the client has not answered yet (client_status 'new'). */
+  /**
+   * Coach-sourced jobs the client has not answered yet (client_status 'new').
+   *
+   * May contain rows with a null application_id; this component drops them
+   * rather than trusting the caller to. See `answerable` below.
+   */
   unanswered: { id: string; application_id: string | null; job_title?: string | null; company_name?: string | null }[]
   coachLabel: string
   /**
@@ -75,6 +80,28 @@ export function ApplicationsView({
     for (const a of applications) m[a.application_status] = (m[a.application_status] || 0) + 1
     return m
   }, [applications])
+
+  // ONLY the recommendations the client can actually answer.
+  //
+  // A recommendation whose application has been deleted keeps existing with a
+  // null application_id — the foreign key is ON DELETE SET NULL — and there is
+  // nowhere to send the client for it, because the response box lives on
+  // /dashboard/tracker/[applicationId].
+  //
+  // Counting those produced a heading claiming more jobs than it listed, and
+  // when every row was unlinked (the live case on dev: one client with three)
+  // a heading over nothing at all. Under-reporting is the lesser wrong. Telling
+  // somebody to answer three things they cannot reach is worse than not
+  // mentioning them, and the count is not the point of the banner — getting to
+  // the job is.
+  //
+  // Filtered HERE, not by the caller, so the invariant belongs to the component
+  // that renders it and cannot be reintroduced by a future caller. The Coaching
+  // Hub applies the same rule to its Required Actions.
+  const answerable = useMemo(
+    () => unanswered.filter((r) => r.application_id),
+    [unanswered],
+  )
 
   // Counted off the SAME list the chips count from, so the number on the chip
   // and the number of rows after clicking it cannot disagree.
@@ -146,7 +173,7 @@ export function ApplicationsView({
           well as 'new', so marking everything seen left the number unchanged
           and the banner in place. Answering now happens per job, on the job,
           via CoachResponseBox. */}
-      {unanswered.length > 0 && (
+      {answerable.length > 0 && (
         <div
           data-testid="coach-unanswered-banner"
           style={{
@@ -156,31 +183,32 @@ export function ApplicationsView({
           }}
         >
           <span style={{ color: S.meaning.sequence.ink, fontSize: 14.5, fontWeight: 700 }}>
-            {coachLabel} sent {unanswered.length}{" "}
-            {unanswered.length === 1 ? "job" : "jobs"} you haven&apos;t answered yet.
+            {coachLabel} sent {answerable.length}{" "}
+            {answerable.length === 1 ? "job" : "jobs"} you haven&apos;t answered yet.
           </span>
 
           {/* Each row links to the job, where the answer is given. Capped at
               three: past that this stops being a prompt and becomes a second
               copy of the list directly underneath it. */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 10 }}>
-            {unanswered.slice(0, 3).map((r) =>
-              r.application_id ? (
-                <a
-                  key={r.id}
-                  href={`/dashboard/tracker/${r.application_id}`}
-                  style={{
-                    color: S.meaning.sequence.ink, fontSize: 13.5, fontWeight: 700,
-                    textDecoration: "underline", textUnderlineOffset: 3, width: "fit-content",
-                  }}
-                >
-                  {[r.job_title || "Untitled role", r.company_name].filter(Boolean).join(" · ")}
-                </a>
-              ) : null,
-            )}
-            {unanswered.length > 3 && (
+            {/* No null-guard on the href: `answerable` has already excluded
+                every row without an application, so a row here always has
+                somewhere to go. */}
+            {answerable.slice(0, 3).map((r) => (
+              <a
+                key={r.id}
+                href={`/dashboard/tracker/${r.application_id}`}
+                style={{
+                  color: S.meaning.sequence.ink, fontSize: 13.5, fontWeight: 700,
+                  textDecoration: "underline", textUnderlineOffset: 3, width: "fit-content",
+                }}
+              >
+                {[r.job_title || "Untitled role", r.company_name].filter(Boolean).join(" · ")}
+              </a>
+            ))}
+            {answerable.length > 3 && (
               <span style={{ color: S.meaning.sequence.ink, fontSize: 13, opacity: 0.85 }}>
-                + {unanswered.length - 3} more below
+                + {answerable.length - 3} more below
               </span>
             )}
           </div>

@@ -89,12 +89,39 @@ describe("coach banner", () => {
     expect(screen.queryByText(/mark all seen/i)).toBeNull()
   })
 
-  it("omits a recommendation with no linked application rather than linking nowhere", () => {
+  // AN UNANSWERABLE RECOMMENDATION IS NOT COUNTED.
+  //
+  // A recommendation whose application has been deleted survives with a null
+  // application_id (the foreign key is ON DELETE SET NULL) and there is nowhere
+  // to send the client for it — the response box lives on
+  // /dashboard/tracker/[applicationId].
+  //
+  // The first version of these tests asserted the opposite, on the reasoning
+  // that "the coach did send it, and pretending otherwise would under-report".
+  // That was wrong. Telling somebody to answer three things they cannot reach
+  // is worse than not mentioning them, and on dev it produced exactly that: one
+  // client whose three unanswered recommendations were ALL unlinked, so the
+  // banner claimed three jobs above an empty list.
+  it("does not count a recommendation whose application is gone", () => {
     view([rec(1), rec(2, { application_id: null })])
     expect(screen.queryByText("Role 2 · Co 2")).toBeNull()
-    // Still counted: the coach did send it, and pretending otherwise would
-    // under-report. It simply has no page to point at. See the separate bug
-    // for the 5 prod rows with no application_id.
-    expect(screen.getByText(/sent 2 jobs/i)).toBeTruthy()
+    expect(screen.getByText(/sent 1 job you haven't answered yet/i)).toBeTruthy()
+    expect(screen.queryByText(/sent 2 jobs/i)).toBeNull()
+  })
+
+  it("does not render at all when every recommendation is unanswerable", () => {
+    const { container } = view([
+      rec(1, { application_id: null }),
+      rec(2, { application_id: null }),
+      rec(3, { application_id: null }),
+    ])
+    expect(container.querySelector('[data-testid="coach-unanswered-banner"]')).toBeNull()
+  })
+
+  it("does not count unanswerable rows toward the '+ N more' overflow either", () => {
+    view([rec(1), rec(2), rec(3), rec(4, { application_id: null }), rec(5, { application_id: null })])
+    // 3 answerable, so the list shows all three and there is no overflow line.
+    expect(screen.getByText(/sent 3 jobs/i)).toBeTruthy()
+    expect(screen.queryByText(/more below/i)).toBeNull()
   })
 })
