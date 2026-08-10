@@ -248,8 +248,23 @@ known when that call was made.
 
 ### Step 1 — Migrations 1→13, in file order, on prod
 
-One transaction each, `ON_ERROR_STOP=1`. Migrations 1 and 2 must run adjacent
-and in order.
+**Use `supabase/migrations/_bundles/2026-08-prod-promotion.sql`.** Generated from
+`44c854d9`, so section 02 is the guarded reconcile. One paste into the Supabase
+SQL Editor on prod; the whole thing sits inside a single `BEGIN`/`COMMIT`, so it
+either fully applies or fully rolls back. Do not run the sections individually —
+that is the one way to lose that property.
+
+It carries its own preflight (8 prerequisite tables present, and an abort if
+`network_contacts` already exists — which doubles as a guard against pasting it
+into dev) and its own postflight (25 artefacts verified, including that
+`coaching_notes.jobfit_run_id` actually became nullable). A migration that
+silently no-ops fails the postflight and rolls the whole thing back.
+
+Both wrapper blocks were validated against dev: preflight correctly refuses
+there, postflight correctly passes there.
+
+Migrations 1 and 2 must run adjacent and in order — the bundle enforces this by
+construction.
 
 **Migration 13 is included deliberately.** It was previously going to be held
 back for a later day, which does not work: the route code that reads and writes
