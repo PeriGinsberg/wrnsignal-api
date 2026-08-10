@@ -3,9 +3,14 @@
 -- See docs/network-tracker/network-tracker-reconciliation.md. Supersedes the
 -- pipeline/interval shape of migration 1 (20260723_network_tracker.sql).
 --
--- CLEAN RE-DROP: dev is disposable and there is no data to preserve, so this
--- drops all network_* tables and recreates them at the v3 shape rather than
--- ALTERing. Re-runnable. Reseed with scripts/seed-network-fixture.ts afterward.
+-- ⚠️  DESTRUCTIVE. This drops all network_* tables and recreates them at the v3
+-- shape rather than ALTERing. It was written when dev was disposable and there
+-- was no data to preserve. That was true of dev in July 2026 and true of prod
+-- until the promotion — and it stops being true the moment the first real
+-- contact is created. A guard below refuses to run against non-empty tables;
+-- read it before you consider overriding it.
+--
+-- Reseed with scripts/seed-network-fixture.ts afterward.
 --
 -- Changes vs migration 1:
 --   • network_companies.priority  -> tier   (dream|strong|backup; UI label "Tier")
@@ -16,6 +21,54 @@
 --
 -- DEV ENV ONLY first. Apply via Supabase SQL Editor; prod promotion is a separate,
 -- human-reviewed step. NEVER auto-applied.
+
+-- ===================== SAFETY GUARD =====================
+--
+-- Refuses to proceed if ANY network_* table holds rows. Without this the file is
+-- a loaded gun: it is named like a routine migration, it is marked re-runnable,
+-- and running it a second time against a live board silently destroys every
+-- contact, company, action and note on it. CASCADE means the damage is not
+-- confined to the table named on the line.
+--
+-- Deliberate override, when you genuinely mean to wipe and rebuild:
+--   SET network_reconcile.allow_destructive = 'i_have_a_backup';
+-- issued in the same session, before this script. It is intentionally awkward.
+DO $guard$
+DECLARE
+  t    text;
+  n    bigint;
+  tot  bigint := 0;
+  hits text := '';
+BEGIN
+  IF coalesce(current_setting('network_reconcile.allow_destructive', true), '') = 'i_have_a_backup' THEN
+    RAISE WARNING 'network v3 reconcile: guard OVERRIDDEN — dropping network_* tables and any data in them.';
+    RETURN;
+  END IF;
+
+  FOREACH t IN ARRAY ARRAY[
+    'network_comments', 'network_actions', 'network_contacts',
+    'network_companies', 'network_client_profile'
+  ] LOOP
+    IF to_regclass('public.' || t) IS NOT NULL THEN
+      EXECUTE format('SELECT count(*) FROM public.%I', t) INTO n;
+      IF n > 0 THEN
+        tot  := tot + n;
+        hits := hits || format('    %s: %s row(s)%s', t, n, chr(10));
+      END IF;
+    END IF;
+  END LOOP;
+
+  IF tot > 0 THEN
+    RAISE EXCEPTION E'REFUSING TO RUN — this migration DROPs every network_* table and they are NOT empty.\n\n%\n  Total: % row(s) would be destroyed, plus everything CASCADE reaches.',
+      hits, tot
+      USING HINT = 'If you truly intend to wipe and rebuild, take a backup, then run: '
+                   'SET network_reconcile.allow_destructive = ''i_have_a_backup''; '
+                   'in the same session before this script.';
+  END IF;
+
+  RAISE NOTICE 'network v3 reconcile: guard passed — all network_* tables absent or empty.';
+END
+$guard$;
 
 -- ===================== drop (FK-safe order) =====================
 DROP TABLE IF EXISTS public.network_comments        CASCADE;
