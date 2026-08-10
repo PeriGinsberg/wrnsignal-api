@@ -142,6 +142,19 @@ describe("the filter chip", () => {
     for (const id of ["a1", "a2", "a4"]) expect(screen.getByText(`Role ${id}`)).toBeTruthy()
   })
 
+  it("carries the same colour as the row marker — one signal, two places", () => {
+    // Both read COACH_SOURCED_MEANING, but a later edit could hardcode one of
+    // them. Comparing the rendered dot colours catches that; comparing the
+    // constant to itself would not.
+    view([app("a1")], new Set(["a1"]))
+    const chipDot = screen
+      .getByRole("button", { name: /From your coach 1/ })
+      .querySelector("span") as HTMLElement
+    const markerDot = screen.getByTestId("from-coach").querySelector("span") as HTMLElement
+    expect(chipDot.style.background).toBe(markerDot.style.background)
+    expect(markerDot.style.background).not.toBe("")
+  })
+
   it("sits in the existing filter row, not a control group of its own", () => {
     view([app("a1")], new Set(["a1"]))
     const coachChip = screen.getByRole("button", { name: /From your coach 1/ })

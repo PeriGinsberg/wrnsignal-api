@@ -180,11 +180,12 @@ export function ApplicationCard({
               border in particular competed with the status colour beside it.
 
               Dot-and-text, the row's existing convention for state, in the
-              blue `sequence` meaning. NOT peach: peach is action and only
-              action, and this is a fact, not something to do. It is also not
-              the coach's NAME — that is on the response box and the banner,
-              and repeating it on every row is noise once you know who your
-              coach is. */}
+              coral `attention` meaning — a job your coach picked out is
+              something to look at. NOT peach: peach is action and only
+              action, and it is not reachable through `meaning` at all. It is
+              also not the coach's NAME — that is on the response box and the
+              banner, and repeating it on every row is noise once you know who
+              your coach is. */}
           {fromCoach && (
             <span
               data-testid="from-coach"

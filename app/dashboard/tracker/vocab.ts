@@ -88,11 +88,22 @@ export const COACH_SOURCED_FILTER = "from_coach" as const
 export const COACH_SOURCED_LABEL = "From your coach"
 
 /**
- * Blue, the same `sequence` meaning the removed status carried and the same one
- * the coach banner uses. Informational, and specifically NOT peach: peach is
- * action and only action, and this is a fact about where the job came from.
+ * Coral — the `attention` meaning. A job your coach picked out for you is
+ * something to look at, which is what coral says on every other surface.
+ *
+ * NOT PEACH, and structurally so: peach lives in `action`, not in `meaning`, so
+ * a status lookup cannot return it. Coral was chosen for `attention` on
+ * 2026-08-04 precisely because the amber it replaced shared peach's hue, and
+ * "act on this" and "press this" read alike; coral sits 21.8 dE away.
+ *
+ * WHAT THE PIXELS ACTUALLY ARE. `status()` renders both the dot and the text
+ * from the meaning's INK — #884133 — not from its accent #F26B52. The accent is
+ * for rails and fills. That is not a downgrade of the request: #F26B52 measures
+ * 3.00 against white, which is fine for an 8px dot and below the 4.5 floor for
+ * text, while the ink measures 7.37 and is the same coral family. Hardcoding
+ * the accent as text would be the one thing this token system exists to stop.
  */
-export const COACH_SOURCED_MEANING: MeaningKey = "sequence"
+export const COACH_SOURCED_MEANING: MeaningKey = "attention"
 
 // ── The action a card offers, worded for a student ──────────────────────────
 
