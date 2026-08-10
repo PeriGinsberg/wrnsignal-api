@@ -1,5 +1,63 @@
 # Prod promotion — August 2026
 
+> ## ✅ EXECUTED 2026-08-10 — this is a record, not a plan
+>
+> **Do not act on the present-tense claims below.** They describe prod as it was
+> on 2026-08-09, before the promotion. Most are now false by design: §0 and §2
+> say the Network Tracker tables are missing from prod. They are present.
+>
+> | | |
+> |---|---|
+> | Prod SHA | `5c3a0887` (was `b506edfa`) |
+> | Migrations 1–13 | applied, one transaction, via the bundle |
+> | Code | promoted |
+> | Framer prod bundle | pasted and live (verified against the published bundle) |
+>
+> What actually happened, against the four steps in §4:
+>
+> **Step 1 — done.** The bundle ran in the Supabase SQL Editor and its
+> confirmation `SELECT` returned 24 rows, all `ok`. Verified independently over
+> PostgREST afterwards rather than trusting the output: 7 tables, 17 columns,
+> plus `coaching_notes.jobfit_run_id` confirmed nullable via PostgREST's OpenAPI
+> spec (it no longer appears in `required`). That 25th check is why the SELECT
+> shows 24 and the postflight asserts 25 — the nullability assertion lives only
+> in the `DO` block.
+>
+> **Step 2 — done.** The preview build of `5c3a0887` was smoked against prod
+> Supabase *before* promoting: all network routes returned 401, no 500s, which
+> proved schema and code compatible while it was still reversible. Then
+> `vercel promote`. Post-promotion smoke: network routes 401,
+> `import/preview` 405 (POST-only), `/dashboard/network/{companies,contacts}`
+> and `/dashboard/tracker` all 200.
+>
+> **Step 3 — done.** Confirmed by downloading the 8 published bundles from
+> `framerusercontent.com` and grepping them, rather than by asking. Identifiers
+> are minified so their absence proves nothing; string literals survive, so the
+> probe used those: `network/companies/link-application` and the prompt's copy
+> ("Anyone you add there shows up on this job.") are both present, and
+> `dashboard/network/companies` + `onNetworkBoard` confirm the left-nav repoint.
+> The copy deleted by the Pass-removal commit `aba1c128` ("You will not get this
+> role…") is **absent**, which is what establishes the *current* bundle is live
+> rather than an earlier one.
+>
+> **Step 4 — done.** `application_id` present, `jobfit_run_id` nullable, and the
+> backfill updated **zero** rows exactly as §6 item 7 predicted, because both
+> prod notes are orphans.
+>
+> Two predictions in §6 have now been answered by doing: the migration set did
+> apply cleanly in sequence (item 1), and the backfill did update zero rows
+> (item 7). Item 6 is settled for the built file — 0 staging references — but not
+> for the pasted one until it is pasted.
+>
+> One thing this document did **not** anticipate: for about a minute after
+> `vercel promote`, `wrnsignal-api.vercel.app` kept serving the old SHA from the
+> edge while the deployment itself was already correct. Check the deployment URL
+> directly before concluding a promote failed.
+>
+> A later, separate migration exists and is **not** part of the thirteen:
+> `20260810_positioning_runs_v2_dormant.sql` (table comments only, cosmetic,
+> applied to dev, pending on prod).
+
 Written 2026-08-09. Every claim about prod below was probed against the live
 database on that date, not recalled. **Re-probe before acting**: this document
 ages the moment anything is applied.
