@@ -366,7 +366,10 @@ function CountRow({ model }: { model: DashboardModel }) {
 }
 
 // Specific, never vague. Each nudge names the person or the company.
-function Nudges({ model }: { model: DashboardModel }) {
+// Exported for Nudges.test.tsx. The page fetches its own data, so testing
+// the links through the default export would mean mocking three endpoints
+// to assert on an href.
+export function Nudges({ model }: { model: DashboardModel }) {
   const items: { key: string; icon: React.ReactNode; body: React.ReactNode; href: string; cta: string; tone: "attention" | "replied" }[] = []
 
   for (const c of model.awaiting.slice(0, 2)) {
@@ -380,7 +383,12 @@ function Nudges({ model }: { model: DashboardModel }) {
     items.push({
       key: `s-${a.id}`, icon: <PinIcon size={26} />, tone: "attention",
       body: <>You applied to <strong>{a.company_name || "a company"}</strong> over two weeks ago with no word back. Worth a follow-up.</>,
-      href: "/dashboard/tracker", cta: "Show me →",
+      // Straight to THIS job. Same fix as "Prep now" in the hero above: the
+      // nudge names a company in its own sentence and then opened the whole
+      // tracker, leaving the student to find again the job the screen had
+      // just picked out for them. `a.id` is a signal_applications id — the
+      // list comes from /api/applications — and is already used for the key.
+      href: `/dashboard/tracker/${a.id}`, cta: "Show me →",
     })
   }
   if (items.length === 0) {
@@ -388,7 +396,7 @@ function Nudges({ model }: { model: DashboardModel }) {
       items.push({
         key: `v-${a.id}`, icon: <PinIcon size={26} />, tone: "attention",
         body: <>You saved <strong>{a.job_title || "a job"}</strong>{a.company_name ? ` at ${a.company_name}` : ""} but haven't applied yet.</>,
-        href: "/dashboard/tracker", cta: "Show me →",
+        href: `/dashboard/tracker/${a.id}`, cta: "Show me →",
       })
     }
   }
