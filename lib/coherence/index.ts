@@ -1,13 +1,16 @@
 // lib/coherence/index.ts
 //
 // MOVED 2026-08-10 from lib/positioning/v2/coherence/. It never belonged to
-// Positioning v2 — that work was abandoned (see
-// docs/positioning-v2-abandoned.md) and this is the one piece of it that was
-// live. app/api/jobfit-run-trial-open/route.ts calls scoreCoherence on the
-// FREE SCAN path, in production, today.
+// Positioning v2 — that work was abandoned (docs/positioning-v2-abandoned.md)
+// and this is the one piece of it still wired into a live route.
 //
-// It was moved rather than left behind precisely so nobody deleting the
-// abandoned tree takes the free scan down with it.
+// app/api/jobfit-run-trial-open/route.ts (the free scan) imports scoreCoherence
+// at module scope, so deleting this module breaks the BUILD. The call itself is
+// gated on COHERENCE_TRIAL_ENABLED === "1", which is set in no environment as of
+// 2026-08-10 — so this does not execute in production today. Wired, dormant.
+//
+// Moved rather than left behind so nobody deleting the abandoned tree takes the
+// free scan's build down with it.
 //
 // Resume-coherence detector — public entry point.
 //

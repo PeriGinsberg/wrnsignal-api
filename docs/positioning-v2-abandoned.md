@@ -76,14 +76,38 @@ call site. `framer/prod` never carried any of it.
 
 **`lib/coherence/`** — moved out of `lib/positioning/v2/coherence/`.
 
-This is the part worth remembering. `scoreCoherence` is called by
-`app/api/jobfit-run-trial-open/route.ts` — **the free scan, live in production**.
-It was written for v2 and left sitting under a `positioning/v2/` path. Deleting
-the v2 tree wholesale would have taken down the free scan, and nothing in the
-directory name warned of it.
+This is the part worth remembering. `app/api/jobfit-run-trial-open/route.ts` —
+the free scan — imports `scoreCoherence` at module scope. It was written for v2
+and left sitting under a `positioning/v2/` path, so deleting the v2 tree
+wholesale would have **broken the build**: the import is unconditional, so the
+app would have failed to compile and the deploy would have failed. Nothing in
+the directory name warned of it.
 
-It was moved rather than left in place precisely so this cannot happen to the
-next person: no live code now sits under a path named after abandoned work.
+Be precise about the severity, because the first version of this note was not.
+The *call* is behind a feature flag:
+
+```ts
+const coherenceEnabled = process.env.COHERENCE_TRIAL_ENABLED === "1"
+const coherencePromise = coherenceEnabled
+  ? scoreCoherence(resumeText).catch(() => null)
+  : Promise.resolve(null)
+```
+
+`COHERENCE_TRIAL_ENABLED` is set in **no** environment — not local, not Vercel
+preview, not Vercel production (checked 2026-08-10). So `scoreCoherence` does
+not execute in production today, and the `result.coherence` field is omitted
+entirely. It is wired up and dormant, awaiting the flag.
+
+So: deleting it would have failed the build, not silently changed live scan
+behaviour. Still a real break, and still the reason to move it — but it was not
+"live in production", and this document said so at first.
+
+Verified after the move by running a real free scan against the route with the
+flag forced on: HTTP 200, decision unchanged, and
+`coherence: {fires: false, label: "focused", top_lane: "marketing", h_index: 1}`.
+
+It was moved rather than left in place so this cannot happen to the next person:
+no live-wired code now sits under a path named after abandoned work.
 
 **`lib/ai/`** — `anthropicClient.ts` and `costPolicy.ts` were also written for
 v2 phase 2 and are now core infrastructure. Live callers: `app/api/networking`,
