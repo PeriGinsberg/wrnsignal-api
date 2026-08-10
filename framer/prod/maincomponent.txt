@@ -1051,6 +1051,18 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     const [clCompany, setClCompany] = React.useState("")
     const [clHiringManager, setClHiringManager] = React.useState("")
 
+    // ── Networking prompt under the JobFit verdict ────────────────────────
+    // Its own application id, deliberately separate from the tracked
+    // application. The scan auto-creates (or matches) an application and
+    // returns its id; this holds that id purely so the prompt below can link
+    // the company to it. Nothing else reads it.
+    const [jobfitApplicationId, setJobfitApplicationId] = React.useState<string | null>(null)
+    const [netPromptState, setNetPromptState] = React.useState<
+        "idle" | "busy" | "added" | "dismissed" | "error"
+    >("idle")
+    const [netPromptError, setNetPromptError] = React.useState<string | null>(null)
+    const [netPromptCompany, setNetPromptCompany] = React.useState<string | null>(null)
+
     // Loading
     const [loadingJobFit, setLoadingJobFit] = React.useState(false)
     const [loadingPositioning, setLoadingPositioning] = React.useState(false)
@@ -1546,6 +1558,16 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         }
     }
 
+    // This component runs inside a Framer iframe, so an <a href> would open the
+    // dashboard INSIDE the frame. Replace the TOP location instead, and carry
+    // the token so the destination does not bounce to a login.
+    function goToNetworkCompanies() {
+        if (typeof window === "undefined") return
+        const url = accessToken
+            ? `${API_BASE}/dashboard/network/companies?token=${accessToken}`
+            : `${API_BASE}/dashboard/network/companies`
+        window.top!.location.replace(url)
+    }
     function runNewJob(isSilent = false) {
         if (!isSilent) clearErrorAndDebug()
         setJob("")
@@ -1812,6 +1834,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             const normalized = normalizeJobFitResponseForUI(data)
             setJobFitResult(normalized)
 
+            // The application this scan auto-created (or matched). NULL is a
+            // normal outcome, not a failure: the auto-create is wrapped in a
+            // catch that deliberately does not fail the scan, so the prompt
+            // simply does not render when there is nothing to link.
+            setJobfitApplicationId(normalized?.signal_application_id ?? null)
+            // A new scan is a new question. Reset the prompt so a company
+            // added on the previous scan does not read as this one's answer.
+            setNetPromptState("idle")
+            setNetPromptError(null)
+            setNetPromptCompany(null)
+
             const ctxFromApi = extractJobContextFromJobFit(normalized)
             setJobContext((prev) => {
                 if (ctxFromApi.title || ctxFromApi.company) return ctxFromApi
@@ -1823,6 +1856,45 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             setErrorMsg(e?.message || String(e))
         } finally {
             setLoadingJobFit(false)
+        }
+    }
+
+    // Add this job's company to the networking board and link the tracked
+    // application to it, in one server-side call.
+    //
+    // BY NAME, not by id. The endpoint find-or-creates against
+    // uq_network_companies_name (client_profile_id, lower(name)) and treats a
+    // unique violation as success, so pressing this for a company already on
+    // the board links to the existing row instead of erroring. Every query on
+    // that path pins client_profile_id, so this cannot reach another user's
+    // board even in principle.
+    //
+    // JOB TRACKING IS NOT TOUCHED. The application already exists by the time
+    // this renders; this is only about the networking board.
+    async function addCompanyToNetworkBoard(companyName: string) {
+        if (!jobfitApplicationId || netPromptState === "busy") return
+        setNetPromptState("busy")
+        setNetPromptError(null)
+        try {
+            if (!accessToken) throw new Error("Please log in again.")
+            const data = await postJsonWithDebug(
+                `${API_BASE}/api/network/companies/link-application`,
+                {
+                    application_id: jobfitApplicationId,
+                    company_name: companyName,
+                },
+                setDebug,
+                accessToken
+            )
+            // The board's own spelling wins over the one extracted from the
+            // posting: linking to an existing "Globex" from a scan that read
+            // "GLOBEX" should confirm the name the user will actually see on
+            // their board. Falls back to what we sent if the field is absent.
+            setNetPromptCompany(data?.company?.name ?? companyName)
+            setNetPromptState("added")
+        } catch (e: any) {
+            setNetPromptError(e?.message || String(e))
+            setNetPromptState("error")
         }
     }
 
@@ -2067,6 +2139,148 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 return
             }
             goTo("positioning")
+        }
+
+        // -- Networking prompt ------------------------------------
+        // ITS IMPORTANCE IS INVERSE TO THE VERDICT, and placement follows.
+        //
+        // On a PASS this is the best remaining action on the page: the role is
+        // gone, the company is not, and someone inside could get you the next
+        // one there. So on a Pass it moves INSIDE "Your move", becomes the
+        // filled action, and "Run New Job" demotes to text. Before this, the
+        // only offer on a rejection screen was a full-width button that threw
+        // the job away, with the alternative sitting under it at 7% opacity.
+        // A screen whose sole action is discard has nothing to offer, which is
+        // why the prompt got walked past.
+        //
+        // On every other verdict the user has a real next step (Positioning),
+        // so this stays a secondary strip.
+        //
+        // ctxCompany rather than a second read of job_signals: it already
+        // falls back through job context and the job text, so a cached result
+        // with a thin job_signals still names the company.
+        const netPromptVisible =
+            Boolean(jobfitApplicationId) && Boolean(ctxCompany)
+
+        /**
+         * The networking prompt. NON-PASS ONLY.
+         *
+         * It used to have a second, louder form on a Pass, argued for on the
+         * grounds that a Pass is the best moment to network — you are not
+         * getting this role, so someone inside is worth more here than
+         * anywhere. A coach tested it and rejected the premise outright: "why
+         * would I add it if the job is a pass?" The argument was reworded once
+         * already and did not survive contact the second time either. So the
+         * Pass form is gone rather than reworded again, and a Pass returns to
+         * the verdict, Your move, and Run a new job.
+         *
+         * The `variant` parameter went with it. There is one caller now, and a
+         * parameter with one possible value is a lie about how many there are.
+         */
+        function renderNetPrompt() {
+            if (!netPromptVisible || netPromptState === "dismissed") return null
+
+            if (netPromptState === "added") {
+                return (
+                    <div
+                        style={{
+                            padding: "14px 16px",
+                            borderRadius: 12,
+                            background: "rgba(81,173,229,0.14)",
+                            border: "1px solid rgba(81,173,229,0.35)",
+                            fontSize: 13.5,
+                            color: "#CFE9FB",
+                            lineHeight: "20px",
+                        }}
+                    >
+                        {netPromptCompany ?? ctxCompany} is on your networking
+                        board.{" "}
+                        <span>Anyone you add there shows up on this job.</span>
+                    </div>
+                )
+            }
+
+            return (
+                <div
+                    style={{
+                        padding: "14px 16px",
+                        borderRadius: 12,
+                        // Raised from 0.07/0.22. At 7% on this dark card the
+                        // strip was close to invisible, which is measurably
+                        // why it was missed.
+                        background: "rgba(81,173,229,0.14)",
+                        border: "1px solid rgba(81,173,229,0.35)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        flexWrap: "wrap" as const,
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: 13.5,
+                            color: "#CFE9FB",
+                            lineHeight: "20px",
+                            flex: 1,
+                            minWidth: 220,
+                        }}
+                    >
+                        {"Add " +
+                            ctxCompany +
+                            " to your networking tracker? One person inside beats ten applications."}
+                    </div>
+                    <button
+                        type="button"
+                        disabled={netPromptState === "busy"}
+                        onClick={() => addCompanyToNetworkBoard(ctxCompany)}
+                        style={{
+                            background: "#FEB06A",
+                            color: "#13294A",
+                            border: "none",
+                            borderRadius: 10,
+                            padding: "9px 18px",
+                            fontSize: 13.5,
+                            fontWeight: 800,
+                            fontFamily: "inherit",
+                            cursor:
+                                netPromptState === "busy"
+                                    ? "default"
+                                    : "pointer",
+                            opacity: netPromptState === "busy" ? 0.6 : 1,
+                        }}
+                    >
+                        {netPromptState === "busy" ? "Adding..." : "Add"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setNetPromptState("dismissed")}
+                        style={{
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            color: "#9FC4DC",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            fontFamily: "inherit",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Not now
+                    </button>
+                    {netPromptError ? (
+                        <div
+                            style={{
+                                fontSize: 12.5,
+                                color: "#FF9B80",
+                                fontWeight: 700,
+                                width: "100%",
+                            }}
+                        >
+                            {netPromptError}
+                        </div>
+                    ) : null}
+                </div>
+            )
         }
 
         // ── Location label ───────────────────────────────────────
@@ -2662,10 +2876,18 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 >
                                     {nextStep}
                                 </div>
+
                             </div>
                         ) : null}
 
-                        {/* CTA */}
+                        {/* CTA
+                            Unconditional again. It used to be SUPPRESSED on a
+                            Pass while the networking takeover was showing,
+                            because that block carried "Run a new job" as text
+                            and two discard actions would have competed. With
+                            the takeover gone there is nothing to suppress, and
+                            a Pass gets its full-width primary action back —
+                            which is what the screen was before any of this. */}
                         {isPass ? (
                             <button
                                 style={jfCtaPass}
@@ -2688,6 +2910,20 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         )}
                     </div>
                 </div>
+
+                {/* -- NETWORKING PROMPT (non-Pass) -------------------
+                    A secondary strip, because on these verdicts the user has
+                    a real next step and this must not compete with it.
+
+                    NOT ON A PASS AT ALL, and no longer anywhere else on that
+                    screen either. The Pass form was removed rather than
+                    reworded: a coach rejected the premise that a Pass is a good
+                    moment to network, and reasoning at someone who has just
+                    been told to walk away is not a wording problem.
+
+                    No marginTop: the gap made it read as a footnote floating
+                    under the card rather than part of it. */}
+                {!isPass ? renderNetPrompt() : null}
 
                 {/* ── ACTION BANNER ── */}
                 {(whyCount > 0 || riskCount > 0) && (
@@ -7050,6 +7286,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     authedEmail={authedEmail}
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
+                    onNetworkBoard={goToNetworkCompanies}
                     onLogout={logout}
                 />
 
@@ -8124,6 +8361,7 @@ function SideNav({
     authedEmail,
     onSelect,
     onRunNewJob,
+    onNetworkBoard,
     onLogout,
 }: {
     tab: TabKey
@@ -8131,6 +8369,8 @@ function SideNav({
     authedEmail: string | null
     onSelect: (t: TabKey) => void
     onRunNewJob: () => void
+    /** Leaves the component for the dashboard board. Not a tab switch. */
+    onNetworkBoard: () => void
     onLogout: () => void
 }) {
 
@@ -8230,11 +8470,15 @@ function SideNav({
                 locked={false}
                 onClick={() => onSelect("coverletter")}
             />
+            {/* The board on the dashboard is the only networking now. This
+                leaves the component entirely rather than switching tabs, so it
+                is never the active tab — the old in-component plan tab it used
+                to open is being retired. */}
             <SideNavItem
                 label="Networking"
-                active={tab === "networking"}
+                active={false}
                 locked={false}
-                onClick={() => onSelect("networking")}
+                onClick={onNetworkBoard}
             />
 
             <div style={{ height: 14 }} />
