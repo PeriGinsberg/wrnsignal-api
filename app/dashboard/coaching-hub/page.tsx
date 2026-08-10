@@ -25,10 +25,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import {
-  LIGHT as S, action as actionStyle, status as statusStyle,
+  LIGHT as S, action as actionStyle,
   surfaceCard,
 } from "../../../lib/theme/surfaces"
-import { COACH_SOURCED_LABEL, COACH_SOURCED_MEANING } from "../../../lib/coachRecommendations"
 import { SectionState } from "./SectionState"
 import { ActivityStatus } from "./ActivityStatus"
 
@@ -36,7 +35,10 @@ type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
 
 type PlanNote = { id: string; body: string; action_required: boolean; created_at: string; client_done_at: string | null }
-type PlanActivity = { id: string; name: string; status: string; owner: string; due_date: string | null; notes: PlanNote[] }
+// No `owner` field: /api/me/activities still returns one (and still filters on
+// it server-side — owner='coach' activities never reach this page), but nothing
+// here reads it now that the plan rows carry no coach marker.
+type PlanActivity = { id: string; name: string; status: string; due_date: string | null; notes: PlanNote[] }
 type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
 
 const eyebrow: React.CSSProperties = {
@@ -566,19 +568,13 @@ function MyPlanSection({
                         onSet={(s) => void onSetStatus(a.id, s)}
                       />
                     </div>
-                    {/* Shared with the coach. The 9px uppercase tag this replaces
-                        sat inline after the name at a size nothing else on a
-                        converted screen uses; this is the same dot-and-text the
-                        tracker marks coach-sourced jobs with, from the same
-                        constants, so the two areas cannot drift apart. */}
-                    {a.owner === "both" && (
-                      <span data-testid="shared-with-coach" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                        <span style={statusStyle(S, COACH_SOURCED_MEANING).dot} />
-                        <span style={{ ...statusStyle(S, COACH_SOURCED_MEANING).text, fontSize: 13 }}>
-                          {COACH_SOURCED_LABEL}
-                        </span>
-                      </span>
-                    )}
+                    {/* NO "From your coach" MARKER HERE, deliberately (removed
+                        2026-08-10). Every activity on this plan is the coach's —
+                        the plan IS the coach's work — so marking the owner='both'
+                        subset flagged nothing and implied the unmarked rows came
+                        from somewhere else. The marker still earns its place on
+                        the Job Tracker, where a coach-sourced job sits among jobs
+                        the client added themselves. */}
                     {/* Informational coach notes only — read-only, newest-first.
                         action_required notes live in Required Actions (one home
                         per action note), so they're filtered out here regardless

@@ -19,13 +19,19 @@
 
 import type { MeaningKey } from "./theme/surfaces"
 
-// ── "From your coach" — the marker, shared by two areas ─────────────────────
+// ── "From your coach" — the Job Tracker marker ──────────────────────────────
 //
-// These lived in app/dashboard/tracker/vocab.ts until 2026-08-10, when the
-// Coaching Hub needed the same marker on its plan rows. Two copies of a label
-// and a colour is exactly what a vocabulary module exists to prevent, so they
-// moved here rather than being restated. The tracker and the Hub both import
-// them; neither owns them.
+// These lived in app/dashboard/tracker/vocab.ts until 2026-08-10, when they
+// moved here alongside COACH_SOURCED_FILTER — a filter that keys off
+// coach_job_recommendations rather than application_status, so it never belonged
+// in the status vocabulary.
+//
+// ONE AREA READS THEM, and that is the point. The Coaching Hub briefly carried
+// the same marker on its My Plan rows; it came off the same day, because every
+// plan activity comes from the coach and marking a subset implied the rest did
+// not. The marker means something on the tracker precisely because coach-sourced
+// jobs sit there among jobs the client added themselves. Before putting it on a
+// third surface, check that surface has the same mix.
 
 /**
  * The one tracker chip that is not a status.
@@ -45,12 +51,12 @@ import type { MeaningKey } from "./theme/surfaces"
  */
 export const COACH_SOURCED_FILTER = "from_coach" as const
 
-/** One label for the tracker chip, the tracker row and the Hub plan row. */
+/** One label for the tracker chip and the tracker row. */
 export const COACH_SOURCED_LABEL = "From your coach"
 
 /**
- * Coral — the `attention` meaning. A job or an activity your coach picked out
- * is something to look at, which is what coral says on every other surface.
+ * Coral — the `attention` meaning. A job your coach picked out is something to
+ * look at, which is what coral says on every other surface.
  *
  * NOT PEACH, and structurally so: peach lives in `action`, not in `meaning`, so
  * a status lookup cannot return it. Coral was chosen for `attention` on

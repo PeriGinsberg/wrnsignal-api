@@ -24,7 +24,8 @@ import type { MeaningKey } from "../../../lib/theme/surfaces"
 // did: "which jobs came from my coach" looks answered by this map and is not.
 // The real signal is a row in coach_job_recommendations pointing at the
 // application; see COACH_SOURCED_FILTER in lib/coachRecommendations.ts, which
-// is where that vocabulary lives now that the Coaching Hub shares it.
+// is where that vocabulary lives — it filters on a recommendation row, not on a
+// status, so it does not belong in this map.
 //
 // If a row ever does appear with that status, statusLabel falls back to
 // de-underscoring ("coach recommended") and statusMeaning to `idle` — degraded,
