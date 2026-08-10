@@ -1,8 +1,8 @@
-// tests/positioning-v2/phase2/anthropic-client-check.ts
+// tests/ai/anthropic-client-check.ts
 //
 // Unit tests for:
-//   - lib/positioning/v2/phase2/anthropicClient.ts (invokeClaude, InvokeClaudeError)
-//   - lib/positioning/v2/phase2/costPolicy.ts (centsForUsage)
+//   - lib/ai/anthropicClient.ts (invokeClaude, InvokeClaudeError)
+//   - lib/ai/costPolicy.ts (centsForUsage)
 //
 // invokeClaude tests use a mock fetch (passed via fetchImpl input field)
 // — no real Anthropic API calls.

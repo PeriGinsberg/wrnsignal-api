@@ -1,43 +1,17 @@
 // lib/ai/costPolicy.ts
 //
-// Centralized AI cost constants for Phase 2. Extracted from the route
-// handler + groundingValidator + aiClient so cost policy lives in one
-// reviewable place.
+// Centralized AI cost constants, so cost policy lives in one reviewable
+// place rather than being spread across call sites.
 //
-// FRD: docs/Features/positioning-phase2-frd.md
-//   §6.12 — AI cost tracking and cap (per-run ceiling rationale)
-//   §6.6  — /draft endpoint cost-check timing
+// Written for Positioning v2 phase 2, which was never built and has been
+// abandoned (docs/positioning-v2-abandoned.md). The per-attempt and per-run
+// cap constants went with it — they guarded a /draft endpoint and a
+// phase2_runs table, neither of which exists. What survives is the pricing
+// math, which is live: app/api/interviews/[id]/prep/generate,
+// app/api/networking and app/api/coverletter all log cost via
+// centsForUsage().
 //
 // Pure constants only — no I/O, no logic.
-
-/**
- * Per-attempt AI cost in cents (fallback constant).
- *
- * Originally a placeholder for v0.1 before real Claude integration. Stage
- * 2c shipped token-accurate cost via centsForUsage(usage). This constant
- * is retained as a fallback for call sites that don't have a usage object
- * available (e.g., grounding-failed-after-retry where we increment a
- * coarse attempt count rather than per-call usage).
- *
- * With MAX_COST_CENTS=50 this gives users ~50 attempts per phase2_run
- * before the cap fires — well above typical workflow usage.
- *
- * @deprecated Used as fallback when usage data unavailable. Prefer
- * centsForUsage() with real usage object.
- */
-export const COST_CENTS_PER_ATTEMPT = 1
-
-/**
- * Per-run AI cost cap in cents. Per FRD §6.12 initial proposal: $0.50.
- *
- * Enforced server-side in /draft. Pre-check only — the current call may
- * push cumulative cost ABOVE the cap; the NEXT call returns 429. See
- * /draft route.ts step 10 for enforcement logic.
- *
- * Tunable post-launch per FRD §12.7 — review phase2_runs.ai_cost_cents
- * distribution after first 10 completed runs.
- */
-export const MAX_COST_CENTS = 50
 
 // ============================================================================
 // Token-accurate cost (Stage 2c onward)
@@ -51,9 +25,8 @@ export const MAX_COST_CENTS = 50
  *
  * Pricing: $1 per MTok input → 100 cents per MTok → 0.0001 cents per token.
  *
- * If Anthropic changes pricing, update this constant. Stage 2c+ telemetry
- * (phase2_runs.ai_cost_cents distribution) will surface drift if the
- * constant becomes stale.
+ * If Anthropic changes pricing, update this constant. The cost lines logged
+ * by the live callers are the only drift signal now that phase2_runs is gone.
  */
 export const HAIKU_INPUT_CENTS_PER_MTOK = 100
 
@@ -74,8 +47,8 @@ export const HAIKU_OUTPUT_CENTS_PER_MTOK = 500
  * Haiku pricing, typical Phase 2 generation (~500 input + ~200 output)
  * costs ~0.15 cents per attempt, which Math.ceil rounds to 1 cent.
  *
- * Schema constraint: phase2_runs.ai_cost_cents is INTEGER NOT NULL. The
- * Math.ceil + integer return contract matches that constraint.
+ * Integer return contract: interview_prep_runs.cost_cents is an integer
+ * column, so Math.ceil keeps the value storable without a cast.
  *
  * @param usage { input_tokens, output_tokens } from invokeClaude result
  * @returns integer cents (>= 0)

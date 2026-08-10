@@ -1,4 +1,4 @@
-// lib/positioning/v2/coherence/laneClassifier.ts
+// lib/coherence/laneClassifier.ts
 //
 // Resume-coherence detector — per-block lane classifier. One Haiku call
 // classifies EVERY role-block of one resume into a lane (independent per block).

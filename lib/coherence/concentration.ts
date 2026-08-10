@@ -1,4 +1,4 @@
-// lib/positioning/v2/coherence/concentration.ts
+// lib/coherence/concentration.ts
 //
 // Resume-coherence detector — concentration metric + LOCKED fire-gate.
 //

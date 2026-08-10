@@ -1,3 +1,8 @@
+> **⚠️ ABANDONED 2026-08-10.** Positioning v2 / Stage 1c was abandoned and its
+> code deleted. This document describes a system that does not exist. It is kept
+> as history, not as a spec — do not build from it. See
+> [docs/positioning-v2-abandoned.md](../positioning-v2-abandoned.md).
+
 # FRD: Positioning v2 — Phase 1 (Setup and Scope Calibration)
 
 **Feature ID:** [Assigned by PM]

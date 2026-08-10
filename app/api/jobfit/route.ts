@@ -336,7 +336,7 @@ export async function POST(req: NextRequest) {
 
           return withCorsJson(req, {
             ...(cleaned as any),
-            jobfit_run_id: (existingRun as any).id,  // FRD F1 — needed by /api/positioning/v2/start
+            jobfit_run_id: (existingRun as any).id,  // top-level in the response contract; Framer reads it
             signal_application_id: signalApplicationId,
             fingerprint_code,
             fingerprint_hash,

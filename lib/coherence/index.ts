@@ -1,4 +1,13 @@
-// lib/positioning/v2/coherence/index.ts
+// lib/coherence/index.ts
+//
+// MOVED 2026-08-10 from lib/positioning/v2/coherence/. It never belonged to
+// Positioning v2 — that work was abandoned (see
+// docs/positioning-v2-abandoned.md) and this is the one piece of it that was
+// live. app/api/jobfit-run-trial-open/route.ts calls scoreCoherence on the
+// FREE SCAN path, in production, today.
+//
+// It was moved rather than left behind precisely so nobody deleting the
+// abandoned tree takes the free scan down with it.
 //
 // Resume-coherence detector — public entry point.
 //

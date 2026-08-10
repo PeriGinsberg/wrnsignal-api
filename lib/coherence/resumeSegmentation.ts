@@ -1,4 +1,4 @@
-// lib/positioning/v2/coherence/resumeSegmentation.ts
+// lib/coherence/resumeSegmentation.ts
 //
 // Resume-coherence detector — segmentation half. Pure, deterministic, no DB/LLM.
 //

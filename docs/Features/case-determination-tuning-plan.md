@@ -1,3 +1,8 @@
+> **⚠️ ABANDONED 2026-08-10.** Positioning v2 / Stage 1c was abandoned and its
+> code deleted. This document describes a system that does not exist. It is kept
+> as history, not as a spec — do not build from it. See
+> [docs/positioning-v2-abandoned.md](../positioning-v2-abandoned.md).
+
 # case_determination tuning plan
 
 Starting context for the case_determination tuning session. Decision to pause Stage 1c after D4 and run this session captured in `docs/Features/foundation-migration-runlog.md` (2026-05-15 fourth addendum).

@@ -11,10 +11,13 @@
 //     pattern in this repo (raw fetch, no SDK, x-api-key header,
 //     anthropic-version: 2023-06-01, fence-strip via String.fromCharCode
 //     to avoid Turbopack parse error)
-//   - lib/positioning/v2/phase2/prompts/systemPrompt.ts — SYSTEM_PROMPT
-//     constant the caller passes here
-//   - lib/positioning/v2/phase2/prompts/{headline,bullet,gap}Prompt.ts —
-//     user prompt builders + MAX_TOKENS_* constants the caller passes here
+//
+// This was originally written for Positioning v2 phase 2, which was never
+// built and has been abandoned (docs/positioning-v2-abandoned.md). It long
+// outgrew that: the live callers are now app/api/networking,
+// app/api/interviews/[id]/prep/generate, app/api/coverletter and
+// lib/resume/extractGraduationDate. Callers supply their own system and user
+// prompts — the phase-2 prompt modules this once referenced never existed.
 //
 // Design choices (per Stage 2c Commit 2 planning):
 //   - Returns RAW TEXT (after markdown fence-strip), not parsed JSON.

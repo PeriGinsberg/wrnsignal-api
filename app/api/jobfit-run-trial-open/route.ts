@@ -32,7 +32,7 @@ import { generateBulletsV5 } from "../jobfit/bulletGeneratorV5"
 import { inferProfileOverridesFromResume } from "../_lib/inferProfileOverridesFromResume"
 import type { StructuredProfileSignals } from "../jobfit/signals"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
-import { scoreCoherence, type CoherenceResult } from "@/lib/positioning/v2/coherence"
+import { scoreCoherence, type CoherenceResult } from "@/lib/coherence"
 import { computeFreeScanPerception } from "@/lib/jobfit/freeScanPerception"
 
 export const runtime = "nodejs"

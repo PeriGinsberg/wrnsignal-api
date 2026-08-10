@@ -13,8 +13,12 @@
 //   - PROMPT_VERSION is inside the key for the same reason. Editing the prompt
 //     without bumping it would leave old output in place looking current
 //
-// Canonical JSON per lib/positioning/v2/fingerprint.ts: keys sorted at every
-// level, no insignificant whitespace. Pure — no I/O, no clock, no randomness.
+// Canonical JSON: keys sorted at every level, no insignificant whitespace, so
+// the same content always hashes the same regardless of key order. (This
+// convention came from Positioning v2's fingerprint module, which has been
+// deleted — see docs/positioning-v2-abandoned.md. The rule is restated here
+// rather than referenced, since there is no longer anything to point at.)
+// Pure — no I/O, no clock, no randomness.
 
 import { createHash } from "node:crypto"
 
