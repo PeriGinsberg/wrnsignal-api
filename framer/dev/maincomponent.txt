@@ -110,7 +110,13 @@ const WRN_ORANGE = "#FEB06A"
 const ICE = "#FFFFFF"
 const WRN_TEAL = "#218C8C"
 
-/* ---------- UI COLORS ---------- */
+/* ---------- UI COLORS — DARK ----------
+   STILL LIVE, and deliberately unchanged. The side nav is navy structure in
+   the light language, so it keeps these; and the Positioning / Cover Letter /
+   Networking tabs have not been converted yet, so their output blocks still
+   read from this set. Do not "finish the job" by flipping these values — that
+   would repaint three surfaces nobody has designed yet. They go one at a
+   time, the way the Coaching Hub did. */
 const BG = "#13294A"
 const NAV_BG = "#091629"
 const CARD = "#162E50"
@@ -121,7 +127,55 @@ const BORDER_SOFT = "rgba(255,255,255,0.08)"
 const TEXT = "rgba(255,255,255,0.92)"
 const MUTED = "rgba(255,255,255,0.60)"
 const DIM = "rgba(255,255,255,0.35)"
-const ERROR = "rgba(255,120,120,0.95)"
+
+/* ---------- UI COLORS — LIGHT ----------
+   The student-facing language, restated here because a Framer code component
+   cannot import lib/theme/surfaces.ts. THESE VALUES ARE COPIES, not a second
+   opinion: every one of them is lifted verbatim from LIGHT in that module, so
+   when a token moves there it must be moved here too.
+
+   PEACH IS ACTION AND ONLY ACTION. L_PEACH appears on exactly one thing in
+   this file — the primary CTA. Eyebrows, step numbers and the track bar used
+   to be peach (WRN_ORANGE); they are navy or coral now. If you find yourself
+   reaching for L_PEACH for a label, the answer is L_NAVY or L_CORAL. */
+const L_PAGE =
+    "radial-gradient(120% 120% at 50% 0%, #f0f9fc 0%, #e6f4f9 100%)"
+const L_CARD = "#FFFFFF"
+const L_WELL = "#F4F8FB"
+const L_BORDER = "#DCE6EF"
+const L_BORDER_SOFT = "#E8EFF5"
+const L_SHADOW =
+    "0 1px 2px rgba(19,41,74,0.04), 0 4px 12px rgba(19,41,74,0.06)"
+
+// Structure + the text ramp. Primary text IS the structural navy, which is
+// what keeps this reading as one product with the dashboard.
+const L_NAVY = "#13294A"
+const L_TEXT = "#13294A"
+const L_TEXT_2 = "#3D5878"
+const L_MUTED = "#4E6B88"
+const L_DIM = "#8299B3"
+
+// Meanings. Teal positive, coral attention, red danger — inks for text on the
+// light ground, accents for rails and fills.
+const L_TEAL = "#218C8C"
+const L_TEAL_INK = "#17706F"
+const L_CORAL = "#F26B52"
+const L_CORAL_INK = "#884133"
+const L_RED = "#E5484D"
+
+// On the navy verdict card the light-ground inks are far too dark to read, so
+// the card carries its own pair: body text and a dimmed label.
+const L_ON_NAVY = "#E8F1F8"
+const L_ON_NAVY_DIM = "#7E9CBD"
+// Verdict words sit on navy too. Teal lifts to #5DCAA5 for the same reason;
+// #17706F on #13294A is unreadable. At 46px these are large text, which needs
+// 3:1 — teal measures 8.6, coral 5.4, red 4.1.
+const L_VERDICT_APPLY = "#5DCAA5"
+const L_VERDICT_REVIEW = L_CORAL
+const L_VERDICT_PASS = L_RED
+
+/** The one action colour. One call site: the primary CTA. */
+const L_PEACH = "#F2963B"
 
 type TabKey = "jobfit" | "positioning" | "coverletter" | "networking"
 
@@ -285,11 +339,6 @@ function renderDiffTeal(before: string, after: string) {
             })}
         </>
     )
-}
-
-/* ---------- HEADER ---------- */
-function Header() {
-    return <div style={headerTop} />
 }
 
 /* ---------- JOB CONTEXT HELPERS ---------- */
@@ -736,257 +785,20 @@ function extractNetworkingMessageParts(action: any) {
     return { initial: "", followUp: "" }
 }
 
-/* ---------- STEP LANDING ---------- */
-function StepLanding({
-    title,
-    items,
-    activeStep = 0,
-}: {
-    title: string
-    items: Array<{ head: string; desc: string }>
-    activeStep?: number
-}) {
-    const TAB_KEYS = ["jobfit", "positioning", "coverletter", "networking"]
-    const STEP_META = [
-        { tag: "Decision", head: "JobFit" },
-        { tag: "Resume", head: "Positioning" },
-        { tag: "Letter", head: "Cover Letter" },
-        { tag: "Outreach", head: "Networking" },
-    ]
-    return (
-        <div
-            style={{
-                background: "#0d1b2e",
-                borderRadius: 14,
-                padding: "28px 32px 32px",
-                marginBottom: 10,
-            }}
-        >
-            {/* Track eyebrow */}
-            <div
-                style={{
-                    fontSize: 10,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase" as const,
-                    color: "#3d5878",
-                    fontWeight: 600,
-                    marginBottom: 24,
-                }}
-            >
-                How Signal works
-            </div>
-
-            {/* Track bar */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: 24,
-                }}
-            >
-                {[1, 2, 3, 4].map((n, i) => {
-                    const isActive = i === activeStep
-                    const isDone = i < activeStep
-                    return (
-                        <React.Fragment key={n}>
-                            <div
-                                style={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontSize: 14,
-                                    fontWeight: 700,
-                                    flexShrink: 0,
-                                    border: isActive
-                                        ? "1.5px solid #f97316"
-                                        : isDone
-                                          ? "1.5px solid rgba(249,115,22,0.5)"
-                                          : "1.5px solid rgba(255,255,255,0.08)",
-                                    background: isActive
-                                        ? "#f97316"
-                                        : isDone
-                                          ? "rgba(249,115,22,0.15)"
-                                          : "rgba(255,255,255,0.03)",
-                                    color: isActive
-                                        ? "#fff"
-                                        : isDone
-                                          ? "#f97316"
-                                          : "#3d5878",
-                                }}
-                            >
-                                {n}
-                            </div>
-                            {i < 3 && (
-                                <div
-                                    style={{
-                                        flex: 1,
-                                        height: 1,
-                                        background:
-                                            i < activeStep
-                                                ? "rgba(249,115,22,0.45)"
-                                                : "rgba(255,255,255,0.07)",
-                                    }}
-                                />
-                            )}
-                        </React.Fragment>
-                    )
-                })}
-            </div>
-
-            {/* Step cards — top row shows workflow context, bottom shows current step detail */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                    gap: 10,
-                    marginBottom: 20,
-                }}
-            >
-                {STEP_META.map((meta, i) => {
-                    const isActive = i === activeStep
-                    const isDone = i < activeStep
-                    return (
-                        <div
-                            key={i}
-                            style={{
-                                padding: "16px 14px 14px",
-                                borderRadius: 8,
-                                borderTop: isActive
-                                    ? "2px solid #f97316"
-                                    : isDone
-                                      ? "2px solid rgba(249,115,22,0.3)"
-                                      : "2px solid rgba(255,255,255,0.06)",
-                                background: isActive
-                                    ? "rgba(249,115,22,0.1)"
-                                    : isDone
-                                      ? "rgba(249,115,22,0.04)"
-                                      : "rgba(255,255,255,0.025)",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    letterSpacing: "0.1em",
-                                    textTransform: "uppercase" as const,
-                                    fontWeight: 600,
-                                    color:
-                                        isActive || isDone
-                                            ? "#f97316"
-                                            : "#3d5878",
-                                    marginBottom: 8,
-                                }}
-                            >
-                                {meta.tag}
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                    color: isActive
-                                        ? "#f0f4ff"
-                                        : isDone
-                                          ? "#8fa5be"
-                                          : "#4a5f78",
-                                    marginBottom: isActive ? 6 : 0,
-                                }}
-                            >
-                                {meta.head}
-                            </div>
-                            {isActive && (
-                                <div
-                                    style={{
-                                        fontSize: 11,
-                                        color: "#7a9ab8",
-                                        lineHeight: "1.65",
-                                    }}
-                                >
-                                    {items[0]?.desc ?? ""}
-                                </div>
-                            )}
-                        </div>
-                    )
-                })}
-            </div>
-
-            {/* Current step detail items */}
-            <div
-                style={{
-                    borderTop: "1px solid rgba(255,255,255,0.06)",
-                    paddingTop: 20,
-                    display: "grid",
-                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                    gap: 10,
-                }}
-            >
-                {items.slice(0, 4).map((it, idx) => (
-                    <div
-                        key={idx}
-                        style={{
-                            padding: "14px 12px",
-                            borderRadius: 8,
-                            background: "rgba(255,255,255,0.025)",
-                            border: "1px solid rgba(255,255,255,0.06)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 22,
-                                height: 22,
-                                borderRadius: "50%",
-                                background: "rgba(249,115,22,0.2)",
-                                border: "1px solid rgba(249,115,22,0.4)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "#f97316",
-                                marginBottom: 10,
-                            }}
-                        >
-                            {idx + 1}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: "#c8daf0",
-                                marginBottom: 5,
-                            }}
-                        >
-                            {it.head}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "#4a6680",
-                                lineHeight: "1.6",
-                            }}
-                        >
-                            {it.desc}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-}
-
 // ─────────────────────────────────────────────────────────────────────────
-// Global UI overlays — App Store badge (every page) + DEV banner (dev only)
+// Global UI overlay — DEV banner (dev only)
 // ─────────────────────────────────────────────────────────────────────────
 //
-// DEV_MODE controls whether the dev banner can appear and whether the App
-// Store badge is offset for the banner's height. Set true in dev/* file
+// The App Store badge that used to sit beside it was cut in the light
+// conversion (2026-08-11): a fixed marketing badge over the top-right of a
+// working tool is not part of the tool, and it sat on top of the results.
+//
+// DEV_MODE controls whether the dev banner can appear. Set true in dev/* file
 // copies, false in prod/* copies. The hostname check in DevBanner is a
 // belt-and-suspenders fallback — if dev code is somehow pasted into the
 // prod Framer project, the hostname check still hides the banner.
 const DEV_MODE = true
 
-const APP_STORE_URL = "https://apps.apple.com/us/app/id6761784351?ct=email_announcement&pt=119625821&mt=8"
 function DevBanner() {
     const [hostname, setHostname] = React.useState("")
     const [shouldShow, setShouldShow] = React.useState(false)
@@ -1033,52 +845,13 @@ function DevBanner() {
     )
 }
 
-function AppStoreBadge() {
-    const [isMobile, setIsMobile] = React.useState(false)
-    React.useEffect(() => {
-        if (typeof window === "undefined") return
-        const check = () => setIsMobile(window.innerWidth < 768)
-        check()
-        window.addEventListener("resize", check)
-        return () => window.removeEventListener("resize", check)
-    }, [])
-    // Badge sits below the dev banner. Prod has no banner, so offset is 0.
-    const bannerOffset = DEV_MODE ? 40 : 0
-    return (
-        <a
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Download SIGNAL on the App Store"
-            style={{
-                position: "fixed" as const,
-                top: (isMobile ? 16 : 24) + bannerOffset,
-                right: isMobile ? 16 : 32,
-                zIndex: 9999,
-                display: "block",
-                filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
-            }}
-        >
-            <img
-                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us"
-                alt="Download on the App Store"
-                width={isMobile ? 108 : 135}
-                height={isMobile ? 32 : 40}
-                style={{ display: "block" }}
-            />
-        </a>
-    )
-}
-
-// PageShell renders the global overlays (DevBanner + AppStoreBadge — both
-// position:fixed) plus a 40px in-flow spacer when DEV_MODE is true so the
-// banner doesn't cover the page's natural top content. Place as the FIRST
-// child inside the page's outermost JSX container.
+// PageShell renders the DevBanner (position:fixed) plus a 40px in-flow spacer
+// when DEV_MODE is true so the banner doesn't cover the page's natural top
+// content. Place as the FIRST child inside the page's outermost JSX container.
 function PageShell() {
     return (
         <>
             <DevBanner />
-            <AppStoreBadge />
             {DEV_MODE ? <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" /> : null}
         </>
     )
@@ -1171,10 +944,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     // Messages
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
     const [debug, setDebug] = React.useState<any>(null)
-
-    // JobFit accordions
-    const [jobfitWhyOpen, setJobfitWhyOpen] = React.useState(false)
-    const [jobfitRisksOpen, setJobfitRisksOpen] = React.useState(false)
 
     // Positioning accordions
     const [posDriversOpen, setPosDriversOpen] = React.useState(true)
@@ -1372,16 +1141,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         if (ctx.title || ctx.company) setJobContext(ctx)
     }, [jobFitResult])
 
-    // REVIEW behavior: collapse both, then auto-open risks on REVIEW
-    React.useEffect(() => {
-        const decision = String(jobFitResult?.decision || "").toLowerCase()
-        if (!decision) return
-        const isPass = decision.includes("pass") || decision.includes("do not")
-        setJobfitWhyOpen(false)
-        setJobfitRisksOpen(false)
-
-        if (decision.includes("review")) setJobfitRisksOpen(true)
-    }, [jobFitResult])
+    // The effect that used to sit here set jobfitWhyOpen / jobfitRisksOpen on
+    // every new result — two pieces of state that nothing had read since the
+    // Why and Risk accordions became always-open cards. It went with them
+    // (2026-08-11). `isPass` was computed inside it and never used either.
 
     function clearErrorAndDebug() {
         setErrorMsg(null)
@@ -1710,8 +1473,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setNetworkingResult(null)
         setTab("jobfit")
         setJobInputOpen(true)
-        setJobfitWhyOpen(false)
-        setJobfitRisksOpen(false)
         setPosDriversOpen(true)
         setPosBulletsOpen(false)
         setPosSummaryOpen(false)
@@ -1858,7 +1619,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             marginTop: 12,
                             textAlign: "center" as const,
                             fontSize: 12,
-                            color: "rgba(255,255,255,0.45)",
+                            color: L_MUTED,
                             fontStyle: "italic" as const,
                             lineHeight: 1.5,
                         }}
@@ -1870,13 +1631,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 {loading && loadingQuote ? (
                     <div style={{
                         marginTop: 28,
-                        borderLeft: "2px solid rgba(255,149,0,0.4)",
+                        borderLeft: `2px solid ${L_BORDER}`,
                         paddingLeft: 16,
                         transition: "opacity 0.5s ease",
                         opacity: quoteOpacity,
                     }}>
                         <p style={{
-                            color: "rgba(255,255,255,0.85)",
+                            color: L_TEXT_2,
                             fontSize: 14,
                             fontStyle: "italic" as const,
                             lineHeight: "22px",
@@ -1886,7 +1647,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         </p>
                         {loadingQuote.attribution && (
                             <p style={{
-                                color: "#FF9500",
+                                color: L_MUTED,
                                 fontSize: 11,
                                 margin: "6px 0 0 0",
                                 fontWeight: 500,
@@ -2127,9 +1888,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
         const nextStep = String(jobFitResult?.next_step ?? "").trim()
 
-        const whyCodes: any[] = Array.isArray(jobFitResult?.why_codes)
-            ? jobFitResult.why_codes
-            : []
+        // No `whyCodes` read any more: the Why card takes its prose from
+        // `bullets` and its keyword from `why_structured`, and the only thing
+        // why_codes fed was the deleted client-side re-sort. risk_codes is
+        // still read — it is the middle rung of the risk cascade below.
         const riskCodes: any[] = Array.isArray(jobFitResult?.risk_codes)
             ? jobFitResult.risk_codes
             : []
@@ -2191,45 +1953,20 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         const isPriority = lower.includes("priority")
 
         // ── Decision palette ─────────────────────────────────────
+        //
+        // ONE COLOUR PER VERDICT, and it is the only thing the verdict varies
+        // now. The four gradients this replaces (stripe, score bar, CTA fill,
+        // move dot) each encoded the same fact a fifth time; the stripe and the
+        // bar are gone, and the CTA is peach on every verdict because peach
+        // means "this is the action", not "this is good news".
+        //
+        // Priority Apply reads as Apply. It used to get its own gradient-filled
+        // wordmark, which made the strongest verdict the hardest to read.
         const decisionColor = isPass
-            ? "#E87070"
+            ? L_VERDICT_PASS
             : isReview
-              ? "#D4A444"
-              : isPriority
-                ? "#0FD668"
-                : "#3DDC84"
-
-        const stripeGradient = isPass
-            ? "linear-gradient(90deg,#6B1E1E,#C23B3B)"
-            : isReview
-              ? "linear-gradient(90deg,#8A5A00,#C68A1E)"
-              : isPriority
-                ? "linear-gradient(90deg,#FEB06A,#0FD668)"
-                : "linear-gradient(90deg,#18A957,#51ADE5)"
-
-        const scoreBarGradient = isPass
-            ? "#C23B3B"
-            : isReview
-              ? "linear-gradient(90deg,#C68A1E,#D4A444)"
-              : isPriority
-                ? "linear-gradient(90deg,#FEB06A,#0FD668)"
-                : "linear-gradient(90deg,#18A957,#51ADE5)"
-
-        const ctaBg = isPass
-            ? undefined
-            : isReview
-              ? "linear-gradient(90deg,#C68A1E,#FEB06A)"
-              : isPriority
-                ? "linear-gradient(90deg,#FEB06A,#51ADE5)"
-                : "linear-gradient(90deg,#18A957,#51ADE5)"
-
-        const moveDotColor = isPass
-            ? "#E87070"
-            : isReview
-              ? "#D4A444"
-              : isPriority
-                ? "#FEB06A"
-                : "#3DDC84"
+              ? L_VERDICT_REVIEW
+              : L_VERDICT_APPLY
 
         const ctaLabel = isPass
             ? "Run New Job →"
@@ -2237,36 +1974,18 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
               ? "Proceed Carefully →"
               : "Proceed to Positioning →"
 
-        // ── Sort why_codes same as V4 renderer ───────────────────
-        const WHY_PRIORITY: Record<string, number> = {
-            WHY_INTEREST_ALIGN: 100,
-            WHY_TOOL_PROOF: 80,
-            WHY_DIRECT_PROOF: 70,
-            WHY_ADJACENT_PROOF: 50,
-            WHY_EXECUTION_PROOF: 40,
-            WHY_MATCH: 20,
-        }
-        const sortedWhyCodes = whyCodes.slice().sort((a: any, b: any) => {
-            const byWeight = (b?.weight ?? 0) - (a?.weight ?? 0)
-            if (byWeight !== 0) return byWeight
-            return (WHY_PRIORITY[b?.code] ?? 0) - (WHY_PRIORITY[a?.code] ?? 0)
-        })
+        // The client-side why_codes re-sort (WHY_PRIORITY, weight-first) went
+        // with WhyCards, its only consumer. NOTHING ON SCREEN DEPENDED ON IT:
+        // the Why card renders `bullets` in the order the API returned them,
+        // paired with why_structured[i] by index — and those two arrays are
+        // built from the same slice server-side, so a client re-sort could only
+        // ever have desynced them. This is unrelated to the WHY-priority
+        // ordering inside the scoring engine, which stays where it is.
 
         // ── Helpers ──────────────────────────────────────────────
-        function cleanFactQuote(s: string): string {
-            return s
-                .replace(
-                    /^(posting (lists|says|indicates|suggests)|role (requires|expects)|job (requires|expects|says))[:\s]*/i,
-                    ""
-                )
-                .replace(/\.$/, "")
-                .trim()
-        }
-
-        function cleanRiskTitle(jobFact: string, fallback: string): string {
-            const raw = cleanFactQuote(jobFact || fallback)
-            return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : ""
-        }
+        // cleanFactQuote and cleanRiskTitle went with WhyCards / RiskCards —
+        // the two card renderers that had not been called since the two-column
+        // layout landed. The live risk list does its own normalising inline.
 
         function onPrimaryClick() {
             if (isPass) {
@@ -2277,19 +1996,19 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         }
 
         // -- Networking prompt ------------------------------------
-        // ITS IMPORTANCE IS INVERSE TO THE VERDICT, and placement follows.
+        // NOW A BUTTON, NOT A STRIP. It used to be a tinted blue band under the
+        // verdict card carrying its own sentence ("One person inside beats ten
+        // applications"), an Add button and a Not now link. In the light
+        // language it is the white secondary button beside the peach primary:
+        // same height, same row, navy border at 14%.
         //
-        // On a PASS this is the best remaining action on the page: the role is
-        // gone, the company is not, and someone inside could get you the next
-        // one there. So on a Pass it moves INSIDE "Your move", becomes the
-        // filled action, and "Run New Job" demotes to text. Before this, the
-        // only offer on a rejection screen was a full-width button that threw
-        // the job away, with the alternative sitting under it at 7% opacity.
-        // A screen whose sole action is discard has nothing to offer, which is
-        // why the prompt got walked past.
-        //
-        // On every other verdict the user has a real next step (Positioning),
-        // so this stays a secondary strip.
+        // WHAT DID NOT CHANGE — and must not: the visibility rule (an
+        // application id AND a company name), the non-Pass-only placement, the
+        // three states (idle / busy / added), the dismissal, and the
+        // addCompanyToNetworkBoard(ctxCompany) call itself. This is a paint job
+        // over the same behaviour. A Pass still never shows it: a coach
+        // rejected the premise that a rejection is a good moment to network,
+        // and that is a product decision, not a style one.
         //
         // ctxCompany rather than a second read of job_signals: it already
         // falls back through job context and the job text, so a cached result
@@ -2297,124 +2016,120 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         const netPromptVisible =
             Boolean(jobfitApplicationId) && Boolean(ctxCompany)
 
+        const showNetButton =
+            netPromptVisible && !isPass && netPromptState !== "dismissed"
+
         /**
-         * The networking prompt. NON-PASS ONLY.
-         *
-         * It used to have a second, louder form on a Pass, argued for on the
-         * grounds that a Pass is the best moment to network — you are not
-         * getting this role, so someone inside is worth more here than
-         * anywhere. A coach tested it and rejected the premise outright: "why
-         * would I add it if the job is a pass?" The argument was reworded once
-         * already and did not survive contact the second time either. So the
-         * Pass form is gone rather than reworded again, and a Pass returns to
-         * the verdict, Your move, and Run a new job.
-         *
-         * The `variant` parameter went with it. There is one caller now, and a
-         * parameter with one possible value is a lie about how many there are.
+         * The secondary action. Renders the "added" confirmation in place
+         * rather than vanishing, so the click has a visible result.
          */
-        function renderNetPrompt() {
-            if (!netPromptVisible || netPromptState === "dismissed") return null
+        function renderNetButton() {
+            if (!showNetButton) return null
 
             if (netPromptState === "added") {
                 return (
                     <div
                         style={{
-                            padding: "14px 16px",
-                            borderRadius: 12,
-                            background: "rgba(81,173,229,0.14)",
-                            border: "1px solid rgba(81,173,229,0.35)",
+                            flex: 1,
+                            minWidth: 200,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 9,
+                            padding: "15px 18px",
+                            borderRadius: 13,
+                            background: L_CARD,
+                            border: `1px solid ${L_BORDER}`,
                             fontSize: 13.5,
-                            color: "#CFE9FB",
-                            lineHeight: "20px",
+                            color: L_TEXT_2,
+                            lineHeight: "18px",
+                            boxSizing: "border-box" as const,
                         }}
                     >
-                        {netPromptCompany ?? ctxCompany} is on your networking
-                        board.{" "}
-                        <span>Anyone you add there shows up on this job.</span>
+                        <span
+                            style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: L_TEAL,
+                                flexShrink: 0,
+                            }}
+                        />
+                        {(netPromptCompany ?? ctxCompany) +
+                            " is on your networking board"}
                     </div>
                 )
             }
 
             return (
-                <div
+                <button
+                    type="button"
+                    disabled={netPromptState === "busy"}
+                    onClick={() => addCompanyToNetworkBoard(ctxCompany)}
                     style={{
-                        padding: "14px 16px",
-                        borderRadius: 12,
-                        // Raised from 0.07/0.22. At 7% on this dark card the
-                        // strip was close to invisible, which is measurably
-                        // why it was missed.
-                        background: "rgba(81,173,229,0.14)",
-                        border: "1px solid rgba(81,173,229,0.35)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 14,
-                        flexWrap: "wrap" as const,
+                        flex: 1,
+                        minWidth: 200,
+                        padding: "15px 18px",
+                        borderRadius: 13,
+                        background: L_CARD,
+                        border: "1px solid rgba(19,41,74,0.14)",
+                        color: L_TEXT,
+                        fontSize: 15,
+                        fontWeight: 900,
+                        fontFamily: "inherit",
+                        cursor:
+                            netPromptState === "busy" ? "default" : "pointer",
+                        opacity: netPromptState === "busy" ? 0.6 : 1,
+                        boxSizing: "border-box" as const,
                     }}
                 >
-                    <div
-                        style={{
-                            fontSize: 13.5,
-                            color: "#CFE9FB",
-                            lineHeight: "20px",
-                            flex: 1,
-                            minWidth: 220,
-                        }}
-                    >
-                        {"Add " +
-                            ctxCompany +
-                            " to your networking tracker? One person inside beats ten applications."}
-                    </div>
-                    <button
-                        type="button"
-                        disabled={netPromptState === "busy"}
-                        onClick={() => addCompanyToNetworkBoard(ctxCompany)}
-                        style={{
-                            background: "#FEB06A",
-                            color: "#13294A",
-                            border: "none",
-                            borderRadius: 10,
-                            padding: "9px 18px",
-                            fontSize: 13.5,
-                            fontWeight: 800,
-                            fontFamily: "inherit",
-                            cursor:
-                                netPromptState === "busy"
-                                    ? "default"
-                                    : "pointer",
-                            opacity: netPromptState === "busy" ? 0.6 : 1,
-                        }}
-                    >
-                        {netPromptState === "busy" ? "Adding..." : "Add"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setNetPromptState("dismissed")}
-                        style={{
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            color: "#9FC4DC",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            fontFamily: "inherit",
-                            cursor: "pointer",
-                        }}
-                    >
-                        Not now
-                    </button>
+                    {netPromptState === "busy"
+                        ? "Adding…"
+                        : `Add ${ctxCompany} to networking`}
+                </button>
+            )
+        }
+
+        /**
+         * Dismissal and the failure message, both of which survived the move
+         * from strip to button — they simply have nowhere to live inside a
+         * button, so they sit on their own line under the CTA row.
+         */
+        function renderNetFooter() {
+            if (!showNetButton) return null
+            return (
+                <>
+                    {netPromptState !== "added" ? (
+                        <button
+                            type="button"
+                            onClick={() => setNetPromptState("dismissed")}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                marginTop: 10,
+                                color: L_MUTED,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                fontFamily: "inherit",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Not now
+                        </button>
+                    ) : null}
                     {netPromptError ? (
                         <div
                             style={{
                                 fontSize: 12.5,
-                                color: "#FF9B80",
+                                color: "#C0322F",
                                 fontWeight: 700,
-                                width: "100%",
+                                marginTop: 8,
                             }}
                         >
                             {netPromptError}
                         </div>
                     ) : null}
-                </div>
+                </>
             )
         }
 
@@ -2437,1041 +2152,246 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             yearsRequired !== null
         )
 
-        // ── Section header ───────────────────────────────────────
-        function SectionHeader({
-            label,
-            count,
-        }: {
-            label: string
-            count: number
-        }) {
-            return (
-                <div style={jfSecHd}>
-                    <div style={jfSecLabel}>{label}</div>
-                    <div style={jfSecLine} />
-                    <div style={jfSecCount}>
-                        {count} {count === 1 ? "signal" : "signals"}
-                    </div>
-                </div>
-            )
-        }
+        // ── Risk rows ────────────────────────────────────────────
+        // Hoisted out of the JSX so the card can hide when the cascade yields
+        // nothing. THE CASCADE AND THE DEDUPE ARE UNCHANGED, verbatim from the
+        // inline version: risk_structured first (it carries the keyword),
+        // then raw riskCodes, then the rendered prose with no keyword at all;
+        // then drop any row whose normalised job_fact already appeared.
+        const riskRows = (
+            jobFitResult?.risk_structured?.length > 0
+                ? jobFitResult.risk_structured.map((r: any) => ({
+                      risk: r.adjacent_evidence,
+                      job_fact: r.keyword,
+                      code: r.keyword,
+                  }))
+                : riskCodes.length > 0
+                  ? riskCodes
+                  : renderedRisks.map((r: string) => ({
+                        risk: r,
+                        job_fact: "",
+                        code: "",
+                    }))
+        ).filter((rc: any, idx: number, arr: any[]) => {
+            const norm = (v: any) =>
+                String(v ?? "")
+                    .toLowerCase()
+                    .trim()
+                    .replace(
+                        /^posting (lists?|requires?|calls for|mentions|prefers?)[:\s]*/i,
+                        ""
+                    )
+                    .replace(/\s+as (required|preferred)\.?$/i, "")
+                    .replace(/\s+tool usage$/i, "")
+                    .replace(/\.?$/, "")
+                    .trim()
+            const fact = norm(rc?.job_fact)
+            if (!fact) return true
+            return arr.findIndex((x: any) => norm(x?.job_fact) === fact) === idx
+        })
 
-        // ── Why cards ────────────────────────────────────────────
-        function WhyCards() {
-            // Map why codes to action instructions
-            const whyActions: Record<string, string> = {
-                WHY_DIRECT_PROOF:
-                    "Lead with this in your cover letter first paragraph and mention it in your opener.",
-                WHY_TOOL_PROOF:
-                    "Name this tool explicitly in your application — they are scanning for it.",
-                WHY_ADJACENT_PROOF:
-                    "Frame this as directly relevant — connect the dots for the hiring manager.",
-                WHY_EXECUTION_PROOF:
-                    "Quantify this if you can — a number makes it concrete and memorable.",
-                WHY_INTEREST_ALIGN:
-                    "Mention your genuine interest in this area — it signals culture fit.",
-                WHY_MATCH:
-                    "This alignment is a strength — make sure it's visible in your resume.",
-            }
+        // Both cards hide when empty — there is no empty state on either any
+        // more. The Why card used to render an italic paragraph explaining
+        // that no proof matched, on every non-Pass verdict; a card whose only
+        // content is an apology for having no content is worse than no card.
+        const showWhyCard = renderedBullets.length > 0
+        const showRiskCard = riskRows.length > 0
+        const hasMoveBlock = Boolean((isForcePass && gateDetail) || nextStep)
 
-            const defaultAction =
-                "Highlight this clearly in your application and be ready to speak to it in interviews."
+        // The verdict word. Priority Apply keeps its name — it is a different
+        // verdict and the tracker records it as one — but it is no longer a
+        // two-line gradient wordmark, which made the strongest result the
+        // hardest one to read.
+        const verdictWord = isPass
+            ? "Pass"
+            : isReview
+              ? "Review"
+              : isPriority
+                ? "Priority Apply"
+                : "Apply"
 
-            if (renderedBullets.length > 0) {
-                return (
-                    <>
-                        {renderedBullets.map((bulletText, i) => {
-                            const code = sortedWhyCodes[i] as any | undefined
-                            const profileFact = String(
-                                code?.profile_fact ?? ""
-                            ).trim()
-                            const jobFact = String(code?.job_fact ?? "").trim()
-                            const isDirect = code?.match_strength === "direct"
-                            const jobFactClean = jobFact
-                                ? cleanFactQuote(jobFact)
-                                : ""
-                            const proofColor = isDirect ? "#4ade80" : "#7BC8F0"
-                            const proofLabel = isDirect
-                                ? "Direct proof"
-                                : "Your proof"
-                            const actionText =
-                                whyActions[code?.code] ?? defaultAction
-                            // Keyword heading source — V5 why_structured. Falls back
-                            // to empty string → conditional below suppresses the
-                            // heading slot entirely when no keyword is available
-                            // (cached-pre-V5 results, malformed model output that
-                            // validators dropped before this code runs, etc.).
-                            const whyKeyword = String(
-                                whyStructured[i]?.keyword || ""
-                            ).trim()
-
-                            return (
-                                <div key={i} style={jfWhyCard}>
-                                    <div style={jfWhyCardInner}>
-                                        <div style={jfWhyCardAccent} />
-                                        <div style={{ flex: 1 }}>
-                                            {whyKeyword ? (
-                                                <div style={jfWhyHeading}>
-                                                    {whyKeyword}
-                                                </div>
-                                            ) : null}
-                                            <div style={jfWhyBody}>
-                                                {bulletText}
-                                            </div>
-                                            {/* Action instruction */}
-                                            <div style={jfWhyAction}>
-                                                <div style={jfWhyActionLabel}>
-                                                    → Do this
-                                                </div>
-                                                <div style={jfWhyActionText}>
-                                                    {actionText}
-                                                </div>
-                                            </div>
-                                            {/* Proof footer */}
-                                            {jobFactClean || profileFact ? (
-                                                <div style={jfWhyFoot}>
-                                                    {jobFactClean ? (
-                                                        <div
-                                                            style={{
-                                                                ...jfWhyCell,
-                                                                borderRight:
-                                                                    "1px solid rgba(74,222,128,0.08)",
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={
-                                                                    jfWfNeedsLabel
-                                                                }
-                                                            >
-                                                                Role needs
-                                                            </div>
-                                                            <div
-                                                                style={jfWfText}
-                                                            >
-                                                                {jobFactClean}
-                                                            </div>
-                                                        </div>
-                                                    ) : null}
-                                                    {profileFact ? (
-                                                        <div style={jfWhyCell}>
-                                                            <div
-                                                                style={{
-                                                                    ...jfWfProofLabel,
-                                                                    color: proofColor,
-                                                                }}
-                                                            >
-                                                                {proofLabel}
-                                                            </div>
-                                                            <div
-                                                                style={jfWfText}
-                                                            >
-                                                                {profileFact}
-                                                            </div>
-                                                        </div>
-                                                    ) : null}
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </>
-                )
-            }
-
-            // Fallback: why_codes directly
-            if (sortedWhyCodes.length > 0) {
-                return (
-                    <>
-                        {sortedWhyCodes
-                            .map((w: any, i: number) => {
-                                const body = String(w?.note ?? "").trim()
-                                const profileFact = String(
-                                    w?.profile_fact ?? ""
-                                ).trim()
-                                const isDirect = w?.match_strength === "direct"
-                                const actionText =
-                                    whyActions[w?.code] ?? defaultAction
-                                if (!body) return null
-                                return (
-                                    <div key={i} style={jfWhyCard}>
-                                        <div style={jfWhyCardInner}>
-                                            <div style={jfWhyCardAccent} />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={jfWhyBody}>
-                                                    {body}
-                                                </div>
-                                                <div style={jfWhyAction}>
-                                                    <div
-                                                        style={jfWhyActionLabel}
-                                                    >
-                                                        → Do this
-                                                    </div>
-                                                    <div
-                                                        style={jfWhyActionText}
-                                                    >
-                                                        {actionText}
-                                                    </div>
-                                                </div>
-                                                {profileFact ? (
-                                                    <div style={jfWhyFoot}>
-                                                        <div style={jfWhyCell}>
-                                                            <div
-                                                                style={{
-                                                                    ...jfWfProofLabel,
-                                                                    color: isDirect
-                                                                        ? "#4ade80"
-                                                                        : "#7BC8F0",
-                                                                }}
-                                                            >
-                                                                {isDirect
-                                                                    ? "Direct proof"
-                                                                    : "Your proof"}
-                                                            </div>
-                                                            <div
-                                                                style={jfWfText}
-                                                            >
-                                                                {profileFact}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })
-                            .filter(Boolean)}
-                    </>
-                )
-            }
-
-            return (
-                <div style={{ padding: "14px 16px" }}>
-                    <div
-                        style={{
-                            fontSize: 13,
-                            color: "rgba(255,255,255,0.30)",
-                        }}
-                    >
-                        No match signals were generated for this job.
-                    </div>
-                </div>
-            )
-        }
-
-        // ── Risk cards ───────────────────────────────────────────
-        function RiskCards() {
-            // Action instructions by risk code
-            const riskActions: Record<string, string> = {
-                RISK_MISSING_PROOF:
-                    "Address this gap directly in your cover letter. Name the adjacent experience you have and signal you are actively building this skill.",
-                RISK_TOOL_GAP:
-                    "List this tool in your skills section even if your exposure is limited. Mention any self-study or adjacent tools you know.",
-                RISK_YEARS_GAP:
-                    "Don't let this stop you. Apply and address the gap directly — explain what you accomplished in your shorter time.",
-                RISK_OVERQUALIFIED:
-                    "Keep your application focused on growth and learning, not on what you have already done.",
-                RISK_LOCATION:
-                    "Address location flexibility directly — remote, relocation, or hybrid preference should be stated clearly.",
-                RISK_CONTRACT:
-                    "This role type conflicts with your constraints. Consider whether this is a hard line or one you could reconsider.",
-                RISK_SALES:
-                    "This role has sales expectations that conflict with your profile. Evaluate whether the role description matches the actual day-to-day.",
-                RISK_ANALYTICS_HEAVY:
-                    "If analytics is a stretch, mention any data exposure you have and your willingness to develop this skill.",
-            }
-
-            const defaultRiskAction =
-                "Address this gap proactively in your cover letter. Don't ignore it — hiring managers notice."
-
-            if (renderedRisks.length > 0) {
-                return (
-                    <>
-                        {renderedRisks.map((r, i) => {
-                            const rawCode = riskCodes[i] as any | undefined
-                            const severity = String(
-                                rawCode?.severity ?? "medium"
-                            ).toLowerCase()
-                            const cardStyle =
-                                severity === "high"
-                                    ? jfRiskCardHi
-                                    : severity === "low"
-                                      ? jfRiskCardLo
-                                      : jfRiskCardMd
-                            const accentStyle =
-                                severity === "high"
-                                    ? jfRiskAccentHi
-                                    : severity === "low"
-                                      ? jfRiskAccentLo
-                                      : jfRiskAccentMd
-                            const sevStyle =
-                                severity === "high"
-                                    ? jfRiskSevHi
-                                    : severity === "low"
-                                      ? jfRiskSevLo
-                                      : jfRiskSevMd
-                            const actionStyle =
-                                severity === "high"
-                                    ? jfRiskActionHiTop
-                                    : jfRiskAction
-                            const actionLabelStyle =
-                                severity === "high"
-                                    ? jfRiskActionLabelHi
-                                    : jfRiskActionLabel
-                            const actionText =
-                                riskActions[rawCode?.code] ?? defaultRiskAction
-
-                            return (
-                                <div key={i} style={cardStyle}>
-                                    <div style={jfRiskCardInner}>
-                                        <div style={accentStyle} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={jfRiskContent}>
-                                                <div style={jfRiskTop}>
-                                                    <div style={jfRiskTitle}>
-                                                        {r}
-                                                    </div>
-                                                    <div style={sevStyle}>
-                                                        {severity}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div style={actionStyle}>
-                                                <div style={actionLabelStyle}>
-                                                    → Fix this
-                                                </div>
-                                                <div style={jfRiskActionText}>
-                                                    {actionText}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </>
-                )
-            }
-
-            // Fallback: raw risk codes
-            if (riskCodes.length > 0) {
-                return (
-                    <>
-                        {riskCodes
-                            .map((r: any, i: number) => {
-                                const body = String(r?.risk ?? "").trim()
-                                const jobFact = String(r?.job_fact ?? "").trim()
-                                const severity = String(
-                                    r?.severity ?? "medium"
-                                ).toLowerCase()
-                                if (!body) return null
-
-                                const title = cleanRiskTitle(jobFact, body)
-                                const cardStyle =
-                                    severity === "high"
-                                        ? jfRiskCardHi
-                                        : severity === "low"
-                                          ? jfRiskCardLo
-                                          : jfRiskCardMd
-                                const accentStyle =
-                                    severity === "high"
-                                        ? jfRiskAccentHi
-                                        : severity === "low"
-                                          ? jfRiskAccentLo
-                                          : jfRiskAccentMd
-                                const sevStyle =
-                                    severity === "high"
-                                        ? jfRiskSevHi
-                                        : severity === "low"
-                                          ? jfRiskSevLo
-                                          : jfRiskSevMd
-                                const actionStyle =
-                                    severity === "high"
-                                        ? jfRiskActionHiTop
-                                        : jfRiskAction
-                                const actionLabelStyle =
-                                    severity === "high"
-                                        ? jfRiskActionLabelHi
-                                        : jfRiskActionLabel
-                                const actionText =
-                                    riskActions[r?.code] ?? defaultRiskAction
-
-                                return (
-                                    <div key={i} style={cardStyle}>
-                                        <div style={jfRiskCardInner}>
-                                            <div style={accentStyle} />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={jfRiskContent}>
-                                                    <div style={jfRiskTop}>
-                                                        <div
-                                                            style={jfRiskTitle}
-                                                        >
-                                                            {title}
-                                                        </div>
-                                                        <div style={sevStyle}>
-                                                            {severity}
-                                                        </div>
-                                                    </div>
-                                                    <div style={jfRiskBody}>
-                                                        {body}
-                                                    </div>
-                                                </div>
-                                                <div style={actionStyle}>
-                                                    <div
-                                                        style={actionLabelStyle}
-                                                    >
-                                                        → Fix this
-                                                    </div>
-                                                    <div
-                                                        style={jfRiskActionText}
-                                                    >
-                                                        {actionText}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })
-                            .filter(Boolean)}
-                    </>
-                )
-            }
-
-            return null
-        }
-
-        const whyCount = renderedBullets.length || sortedWhyCodes.length
-        const riskCount = renderedRisks.length || riskCodes.length
+        // Context line parts, joined by dots. Same five facts the pill row
+        // carried; a title with no company still reads correctly because the
+        // empties are filtered before the join.
+        const ctxParts = [
+            ctxTitle,
+            ctxCompany,
+            isInternship ? "Internship" : "",
+            locLabel,
+            yearsRequired !== null ? `${yearsRequired}+ yrs exp` : "",
+        ].filter(Boolean)
 
         // ── Full render ──────────────────────────────────────────
         return (
             <>
-                {/* Job context bar */}
-                {hasCtx ? (
-                    <div style={jfCtxBar}>
-                        <div style={jfCtxLeft}>
-                            {ctxTitle ? (
-                                <span style={jfCtxRole}>{ctxTitle}</span>
-                            ) : null}
-                            {ctxTitle && ctxCompany ? (
-                                <span style={jfCtxSep}> at </span>
-                            ) : null}
-                            {ctxCompany ? (
-                                <span style={jfCtxCo}>{ctxCompany}</span>
-                            ) : null}
-                        </div>
-                        <div style={jfCtxPills}>
-                            {isInternship ? (
-                                <div
-                                    style={{
-                                        ...jfCtxPill,
-                                        background: "rgba(220,254,255,0.10)",
-                                        color: "#DCFEFF",
-                                        border: "1px solid rgba(220,254,255,0.20)",
-                                    }}
-                                >
-                                    Internship
-                                </div>
-                            ) : null}
-                            {locLabel ? (
-                                <div
-                                    style={{
-                                        ...jfCtxPill,
-                                        background: "rgba(81,173,229,0.12)",
-                                        color: "#51ADE5",
-                                        border: "1px solid rgba(81,173,229,0.24)",
-                                    }}
-                                >
-                                    {locLabel}
-                                </div>
-                            ) : null}
-                            {yearsRequired !== null ? (
-                                <div
-                                    style={{
-                                        ...jfCtxPill,
-                                        background: "rgba(255,255,255,0.07)",
-                                        color: "rgba(255,255,255,0.55)",
-                                        border: "1px solid rgba(255,255,255,0.14)",
-                                    }}
-                                >
-                                    {yearsRequired}+ yrs exp
-                                </div>
-                            ) : null}
-                        </div>
-                    </div>
+                {/* Job context — one line, no card, no pills */}
+                {hasCtx && ctxParts.length > 0 ? (
+                    <div style={jfCtxLine}>{ctxParts.join(" · ")}</div>
                 ) : null}
-                {/* Hero verdict card */}
-                <div style={jfHero}>
-                    <div
-                        style={{ ...jfHeroStripe, background: stripeGradient }}
-                    />
-                    <div style={jfHeroInner}>
-                        {/* Decision + Score */}
-                        <div style={jfHeroTop}>
-                            <div>
-                                <div style={jfHeroEyebrow}>Signal decision</div>
-                                {isPriority ? (
-                                    <div
-                                        style={{
-                                            ...jfHeroWord,
-                                            background:
-                                                "linear-gradient(118deg,#FEB06A 0%,#0FD668 100%)",
-                                            WebkitBackgroundClip: "text",
-                                            WebkitTextFillColor: "transparent",
-                                            backgroundClip: "text",
-                                        }}
-                                    >
-                                        <div>Priority</div>
-                                        <div>Apply</div>
-                                    </div>
-                                ) : (
-                                    <div
-                                        style={{
-                                            ...jfHeroWord,
-                                            color: decisionColor,
-                                        }}
-                                    >
-                                        {isPass
-                                            ? "Pass"
-                                            : isReview
-                                              ? "Review"
-                                              : "Apply"}
-                                    </div>
-                                )}
-                            </div>
-                            {hasScore ? (
-                                <div style={jfScoreCol}>
-                                    <div style={jfScoreEyebrow}>Fit Score</div>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "baseline",
-                                            gap: 2,
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                ...jfScoreBig,
-                                                color: decisionColor,
-                                            }}
-                                        >
-                                            {score}
-                                        </div>
-                                        <div style={jfScoreOf}>/100</div>
-                                    </div>
-                                    <div style={jfScoreBarTrack}>
-                                        <div
-                                            style={{
-                                                ...jfScoreBarFill,
-                                                width: `${score}%`,
-                                                background: scoreBarGradient,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
 
-                        <div style={jfRule} />
-
-                        {/* Gate detail */}
-                        {isForcePass && gateDetail ? (
-                            <div style={{ marginBottom: 14 }}>
-                                <div style={jfMoveLabel}>
-                                    Why this is a pass
-                                </div>
-                                <div style={jfMoveText}>{gateDetail}</div>
-                            </div>
-                        ) : null}
-
-                        {/* Next step */}
-                        {nextStep ? (
+                {/* Verdict card — decision, score and the move, in one navy
+                    block. Was three: a stripe, a hero split by a rule, and a
+                    separately-bordered "Your move" strip. */}
+                <div style={jfVerdictCard}>
+                    <div style={jfVerdictTop}>
+                        <div>
+                            <div style={jfVerdictEyebrow}>Signal decision</div>
                             <div
                                 style={{
-                                    borderLeft: `3px solid ${moveDotColor}`,
-                                    background: isPass
-                                        ? "rgba(239,68,68,0.08)"
-                                        : isReview
-                                          ? "rgba(254,176,106,0.08)"
-                                          : "rgba(74,232,136,0.08)",
-                                    borderRadius: "0 10px 10px 0",
-                                    padding: "14px 18px",
-                                    marginBottom: 18,
+                                    ...jfVerdictWord,
+                                    color: decisionColor,
                                 }}
                             >
+                                {verdictWord}
+                            </div>
+                        </div>
+                        {hasScore ? (
+                            <div style={jfScoreWrap}>
+                                <div style={jfScoreNum}>{score}</div>
+                                <div style={jfScoreOf}>/100</div>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    {hasMoveBlock ? (
+                        <>
+                            <div style={jfVerdictDivider} />
+                            <div style={jfVerdictEyebrow}>Your move</div>
+                            {isForcePass && gateDetail ? (
+                                <div style={jfMoveBody}>{gateDetail}</div>
+                            ) : null}
+                            {nextStep ? (
                                 <div
                                     style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: "2px",
-                                        textTransform: "uppercase" as const,
-                                        color: moveDotColor,
-                                        marginBottom: 6,
-                                    }}
-                                >
-                                    Your move
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 16,
-                                        fontWeight: 600,
-                                        lineHeight: 1.5,
-                                        color: "rgba(255,255,255,0.92)",
+                                        ...jfMoveBody,
+                                        marginTop:
+                                            isForcePass && gateDetail ? 10 : 0,
                                     }}
                                 >
                                     {nextStep}
                                 </div>
-
-                            </div>
-                        ) : null}
-
-                        {/* CTA
-                            Unconditional again. It used to be SUPPRESSED on a
-                            Pass while the networking takeover was showing,
-                            because that block carried "Run a new job" as text
-                            and two discard actions would have competed. With
-                            the takeover gone there is nothing to suppress, and
-                            a Pass gets its full-width primary action back —
-                            which is what the screen was before any of this. */}
-                        {isPass ? (
-                            <button
-                                style={jfCtaPass}
-                                onClick={onPrimaryClick}
-                                type="button"
-                            >
-                                {ctaLabel}
-                            </button>
-                        ) : (
-                            <button
-                                style={{
-                                    ...jfCtaGo,
-                                    background: ctaBg,
-                                }}
-                                onClick={onPrimaryClick}
-                                type="button"
-                            >
-                                {ctaLabel}
-                            </button>
-                        )}
-                    </div>
+                            ) : null}
+                        </>
+                    ) : null}
                 </div>
 
-                {/* -- NETWORKING PROMPT (non-Pass) -------------------
-                    A secondary strip, because on these verdicts the user has
-                    a real next step and this must not compete with it.
-
-                    NOT ON A PASS AT ALL, and no longer anywhere else on that
-                    screen either. The Pass form was removed rather than
-                    reworded: a coach rejected the premise that a Pass is a good
-                    moment to network, and reasoning at someone who has just
-                    been told to walk away is not a wording problem.
-
-                    No marginTop: the gap made it read as a footnote floating
-                    under the card rather than part of it. */}
-                {!isPass ? renderNetPrompt() : null}
-
-                {/* ── ACTION BANNER ── */}
-                {(whyCount > 0 || riskCount > 0) && (
-                    <div
-                        style={{
-                            borderRadius: 14,
-                            background:
-                                "linear-gradient(135deg, rgba(254,176,106,0.10) 0%, rgba(81,173,229,0.08) 100%)",
-                            border: "1px solid rgba(254,176,106,0.28)",
-                            padding: "14px 18px",
-                            marginBottom: 16,
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 12,
-                        }}
+                {/* Actions. Peach primary, white secondary — the networking
+                    prompt, which used to be a tinted strip of its own. Both
+                    handlers are the ones they always were. */}
+                <div style={jfCtaRow}>
+                    <button
+                        style={jfCtaPrimary}
+                        onClick={onPrimaryClick}
+                        type="button"
                     >
-                        <div
-                            style={{
-                                fontSize: 18,
-                                flexShrink: 0,
-                                marginTop: 1,
-                            }}
-                        >
-                            ⚡
-                        </div>
-                        <div>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: 800,
-                                    color: "rgba(255,255,255,0.95)",
-                                    marginBottom: 3,
-                                }}
-                            >
-                                Read this before you apply.
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 12,
-                                    color: "rgba(255,255,255,0.45)",
-                                    lineHeight: "18px",
-                                }}
-                            >
-                                Your strengths tell you what to lead with. Your
-                                risks tell you what to address. This is how you
-                                stand out — most applicants never do this work.
-                            </div>
-                        </div>
-                    </div>
-                )}
+                        {ctaLabel}
+                    </button>
+                    {renderNetButton()}
+                </div>
+                {renderNetFooter()}
 
-                {/* ── TWO COLUMN CARDS ── */}
-                {(whyCount > 0 || riskCount > 0) && (
+                {/* Why / Risk. Same two-column grid, one column when only one
+                    of them has anything to say. */}
+                {showWhyCard || showRiskCard ? (
                     <div
                         style={{
                             display: "grid",
                             gridTemplateColumns:
-                                whyCount > 0 && riskCount > 0
-                                    ? "1fr 1fr"
-                                    : "1fr",
+                                showWhyCard && showRiskCard ? "1fr 1fr" : "1fr",
                             gap: 14,
                             alignItems: "start",
-                            marginBottom: 12,
+                            marginTop: 16,
                         }}
                     >
-                        {/* ── WHY CARD ── */}
-                        {(whyCount > 0 || !isPass) && (
-                            <div
-                                style={{
-                                    borderRadius: 18,
-                                    border: "1px solid rgba(74,222,128,0.22)",
-                                    background: "#0D1829",
-                                    overflow: "hidden",
-                                    boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                                }}
-                            >
-                                {/* gradient top bar */}
+                        {showWhyCard ? (
+                            <div style={jfPanel}>
                                 <div
                                     style={{
-                                        height: 3,
-                                        background:
-                                            "linear-gradient(90deg, #4ade80, #22c55e, #51ADE5)",
+                                        ...jfPanelRail,
+                                        background: L_TEAL_INK,
                                     }}
                                 />
-                                {/* header */}
-                                <div
-                                    style={{
-                                        padding: "16px 20px 14px",
-                                        borderBottom:
-                                            "1px solid rgba(74,222,128,0.12)",
-                                        background: "rgba(74,222,128,0.06)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 10,
-                                    }}
-                                >
+                                <div style={jfPanelInner}>
+                                    {/* THE ONE EYEBROW THAT VARIES. On a Pass
+                                        these strengths are not why you are
+                                        competitive for this job — we have just
+                                        told the student to skip it — they are
+                                        what to carry to the next one. Calling
+                                        them competitive here would be a claim
+                                        the verdict directly contradicts.
+                                        The risk eyebrow does NOT vary: the
+                                        force-pass wording it used to carry
+                                        ("Why This Is a Pass") is redundant now
+                                        that the gate reason renders in YOUR
+                                        MOVE. */}
                                     <div
                                         style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 10,
-                                            flexShrink: 0,
-                                            background: "rgba(74,222,128,0.15)",
-                                            border: "1px solid rgba(74,222,128,0.35)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: 15,
-                                            color: "#4ade80",
+                                            ...jfPanelEyebrow,
+                                            color: L_TEAL_INK,
                                         }}
                                     >
-                                        ✦
+                                        {isPass
+                                            ? "Strengths to remember"
+                                            : "Why you are competitive"}
                                     </div>
-                                    <div>
-                                        <div
-                                            style={{
-                                                fontSize: 14,
-                                                fontWeight: 800,
-                                                color: "#4ade80",
-                                            }}
-                                        >
-                                            {isPass
-                                                ? "Strengths to Remember"
-                                                : "Why You Are Competitive"}
-                                        </div>
-                                        <div
-                                            style={{
-                                                fontSize: 11,
-                                                color: "rgba(255,255,255,0.35)",
-                                                marginTop: 2,
-                                            }}
-                                        >
-                                            Lead with these in your application
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* bullets */}
-                                <div
-                                    style={{
-                                        padding: "14px 18px 16px",
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 14,
-                                    }}
-                                >
-                                    {renderedBullets.length === 0 ? (
-                                        <div
-                                            style={{
-                                                fontSize: 14,
-                                                lineHeight: "22px",
-                                                color: "rgba(255,255,255,0.40)",
-                                                fontStyle: "italic" as const,
-                                            }}
-                                        >
-                                            No direct proof matches were found
-                                            for this role's core requirements.
-                                            Your transferable skills may still
-                                            apply — review the risks carefully
-                                            before deciding whether to apply.
-                                        </div>
-                                    ) : (
-                                        renderedBullets.map(
+                                    <div style={jfBulletStack}>
+                                        {renderedBullets.map(
                                             (bullet: string, i: number) => {
-                                                // Keyword heading source — V5 why_structured[i].keyword.
-                                                // Replaces the legacy regex that matched a V4-era bullet
-                                                // template ("this role relies on X, and you …") which V5
-                                                // no longer emits, so the regex never matched and the
-                                                // heading silently disappeared from the authed dashboard.
-                                                // Pre-V5 cached results have no structured array; falls
-                                                // back to empty string → existing conditional render below
-                                                // suppresses the heading slot cleanly.
+                                                // Keyword heading source — V5
+                                                // why_structured[i].keyword.
+                                                // Pre-V5 cached results have no
+                                                // structured array; the empty
+                                                // string suppresses the slot.
                                                 const keyword = String(
-                                                    whyStructured[i]?.keyword || ""
+                                                    whyStructured[i]?.keyword ||
+                                                        ""
                                                 ).trim()
                                                 return (
-                                                    <div
-                                                        key={i}
-                                                        style={{
-                                                            display: "flex",
-                                                            alignItems:
-                                                                "flex-start",
-                                                            gap: 12,
-                                                        }}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                width: 22,
-                                                                height: 22,
-                                                                borderRadius:
-                                                                    "50%",
-                                                                background:
-                                                                    "rgba(74,222,128,0.15)",
-                                                                border: "1.5px solid rgba(74,222,128,0.50)",
-                                                                display: "flex",
-                                                                alignItems:
-                                                                    "center",
-                                                                justifyContent:
-                                                                    "center",
-                                                                flexShrink: 0,
-                                                                marginTop: 2,
-                                                                fontSize: 11,
-                                                                color: "#4ade80",
-                                                                fontWeight: 900,
-                                                                animation:
-                                                                    "whyPulse 2.5s ease-in-out infinite",
-                                                                animationDelay: `${i * 0.3}s`,
-                                                            }}
-                                                        >
-                                                            ✓
-                                                        </div>
-                                                        <div
-                                                            style={{ flex: 1 }}
-                                                        >
-                                                            {keyword ? (
-                                                                <div
-                                                                    style={{
-                                                                        fontSize: 10,
-                                                                        fontWeight: 900,
-                                                                        letterSpacing:
-                                                                            "1.4px",
-                                                                        textTransform:
-                                                                            "uppercase" as const,
-                                                                        color: "#4ade80",
-                                                                        marginBottom: 4,
-                                                                    }}
-                                                                >
-                                                                    {keyword} |
-                                                                </div>
-                                                            ) : null}
+                                                    <div key={i}>
+                                                        {keyword ? (
                                                             <div
-                                                                style={{
-                                                                    fontSize: 13,
-                                                                    lineHeight:
-                                                                        "19px",
-                                                                    color: "rgba(255,255,255,0.82)",
-                                                                    fontWeight: 400,
-                                                                }}
+                                                                style={
+                                                                    jfBulletKeyword
+                                                                }
                                                             >
-                                                                {bullet}
+                                                                {keyword}
                                                             </div>
+                                                        ) : null}
+                                                        <div
+                                                            style={
+                                                                jfBulletProse
+                                                            }
+                                                        >
+                                                            {bullet}
                                                         </div>
                                                     </div>
                                                 )
                                             }
-                                        )
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                        ) : null}
 
-                        {/* ── RISK CARD ── */}
-                        {riskCount > 0 && (
-                            <div
-                                style={{
-                                    borderRadius: 18,
-                                    border: "1px solid rgba(248,113,113,0.22)",
-                                    background: "#0D1829",
-                                    overflow: "hidden",
-                                    boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                                }}
-                            >
-                                {/* gradient top bar */}
+                        {showRiskCard ? (
+                            <div style={jfPanel}>
                                 <div
                                     style={{
-                                        height: 3,
-                                        background:
-                                            "linear-gradient(90deg, #f87171, #ef4444, #FEB06A)",
+                                        ...jfPanelRail,
+                                        background: L_CORAL,
                                     }}
                                 />
-                                {/* header */}
-                                <div
-                                    style={{
-                                        padding: "16px 20px 14px",
-                                        borderBottom:
-                                            "1px solid rgba(248,113,113,0.12)",
-                                        background: "rgba(248,113,113,0.06)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 10,
-                                    }}
-                                >
+                                <div style={jfPanelInner}>
                                     <div
                                         style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 10,
-                                            flexShrink: 0,
-                                            background:
-                                                "rgba(248,113,113,0.15)",
-                                            border: "1px solid rgba(248,113,113,0.35)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: 15,
-                                            color: "#f87171",
+                                            ...jfPanelEyebrow,
+                                            color: L_CORAL_INK,
                                         }}
                                     >
-                                        ⚠
+                                        Your risks
                                     </div>
-                                    <div>
-                                        <div
-                                            style={{
-                                                fontSize: 14,
-                                                fontWeight: 800,
-                                                color: "#f87171",
-                                            }}
-                                        >
-                                            {isForcePass
-                                                ? "Why This Is a Pass"
-                                                : "Your Risks"}
-                                        </div>
-                                        <div
-                                            style={{
-                                                fontSize: 11,
-                                                color: "rgba(255,255,255,0.35)",
-                                                marginTop: 2,
-                                            }}
-                                        >
-                                            Address these before you apply
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* risk bullets — use riskCodes for specific tool names */}
-                                <div
-                                    style={{
-                                        padding: "14px 18px 16px",
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 14,
-                                    }}
-                                >
-                                    {(jobFitResult?.risk_structured?.length > 0
-                                        ? jobFitResult.risk_structured.map(
-                                              (r: any) => ({
-                                                  risk: r.adjacent_evidence,
-                                                  job_fact: r.keyword,
-                                                  code: r.keyword,
-                                              })
-                                          )
-                                        : riskCodes.length > 0
-                                          ? riskCodes
-                                          : renderedRisks.map((r: string) => ({
-                                                risk: r,
-                                                job_fact: "",
-                                                code: "",
-                                            }))
-                                    )
-                                        .filter(
-                                            (
-                                                rc: any,
-                                                idx: number,
-                                                arr: any[]
-                                            ) => {
-                                                const fact = String(
-                                                    rc?.job_fact ?? ""
-                                                )
-                                                    .toLowerCase()
-                                                    .trim()
-                                                    .replace(
-                                                        /^posting (lists?|requires?|calls for|mentions|prefers?)[:\s]*/i,
-                                                        ""
-                                                    )
-                                                    .replace(
-                                                        /\s+as (required|preferred)\.?$/i,
-                                                        ""
-                                                    )
-                                                    .replace(
-                                                        /\s+tool usage$/i,
-                                                        ""
-                                                    )
-                                                    .replace(/\.?$/, "")
-                                                    .trim()
-                                                if (!fact) return true
-                                                return (
-                                                    arr.findIndex((x: any) => {
-                                                        const xFact = String(
-                                                            x?.job_fact ?? ""
-                                                        )
-                                                            .toLowerCase()
-                                                            .trim()
-                                                            .replace(
-                                                                /^posting (lists?|requires?|calls for|mentions|prefers?)[:\s]*/i,
-                                                                ""
-                                                            )
-                                                            .replace(
-                                                                /\s+as (required|preferred)\.?$/i,
-                                                                ""
-                                                            )
-                                                            .replace(
-                                                                /\s+tool usage$/i,
-                                                                ""
-                                                            )
-                                                            .replace(/\.?$/, "")
-                                                            .trim()
-                                                        return xFact === fact
-                                                    }) === idx
-                                                )
-                                            }
-                                        )
-                                        .map((rc: any, i: number) => {
+                                    <div style={jfBulletStack}>
+                                        {riskRows.map((rc: any, i: number) => {
                                             const jobFact = String(
                                                 rc?.job_fact ?? ""
                                             ).trim()
@@ -3482,7 +2402,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 rc?.code ?? ""
                                             )
 
-                                            // Code-based keyword fallbacks when job_fact is empty
+                                            // Code-based keyword fallbacks when
+                                            // job_fact is empty.
                                             const codeFallbacks: Record<
                                                 string,
                                                 string
@@ -3504,7 +2425,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     "OVERQUALIFIED",
                                             }
 
-                                            // Build keyword: job_fact first, then code fallback
                                             const keywordFromFact = jobFact
                                                 ? jobFact
                                                       .replace(
@@ -3524,100 +2444,32 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 codeFallbacks[riskCode] ||
                                                 ""
                                             return (
-                                                <div
-                                                    key={i}
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems:
-                                                            "flex-start",
-                                                        gap: 12,
-                                                    }}
-                                                >
-                                                    <div
-                                                        style={{
-                                                            width: 22,
-                                                            height: 22,
-                                                            borderRadius: "50%",
-                                                            background:
-                                                                "rgba(248,113,113,0.15)",
-                                                            border: "1.5px solid rgba(248,113,113,0.50)",
-                                                            display: "flex",
-                                                            alignItems:
-                                                                "center",
-                                                            justifyContent:
-                                                                "center",
-                                                            flexShrink: 0,
-                                                            marginTop: 2,
-                                                            fontSize: 11,
-                                                            color: "#f87171",
-                                                            fontWeight: 900,
-                                                            animation:
-                                                                "riskPulse 2.5s ease-in-out infinite",
-                                                            animationDelay: `${i * 0.3}s`,
-                                                        }}
-                                                    >
-                                                        !
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        {keyword ? (
-                                                            <div
-                                                                style={{
-                                                                    fontSize: 10,
-                                                                    fontWeight: 900,
-                                                                    letterSpacing:
-                                                                        "1.4px",
-                                                                    textTransform:
-                                                                        "uppercase" as const,
-                                                                    color: "#f87171",
-                                                                    marginBottom: 4,
-                                                                }}
-                                                            >
-                                                                {keyword} |
-                                                            </div>
-                                                        ) : null}
+                                                <div key={i}>
+                                                    {keyword ? (
                                                         <div
-                                                            style={{
-                                                                fontSize: 13,
-                                                                lineHeight:
-                                                                    "19px",
-                                                                color: "rgba(255,255,255,0.82)",
-                                                                fontWeight: 400,
-                                                            }}
+                                                            style={
+                                                                jfBulletKeyword
+                                                            }
                                                         >
-                                                            {riskText}
+                                                            {keyword}
                                                         </div>
+                                                    ) : null}
+                                                    <div style={jfBulletProse}>
+                                                        {riskText}
                                                     </div>
                                                 </div>
                                             )
                                         })}
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                        ) : null}
                     </div>
-                )}
-                {/* DEV-ONLY (dev Framer bundle only — absent from framer/prod):
-                     QA feedback link. Opens the dev-only rating page in a new
-                     tab with the current JobFit run id. The page resolves the
-                     owning profile server-side and 404s in prod. */}
-                {(jobFitResult as any)?.jobfit_run_id ? (
-                    <a
-                        href={`https://wrnsignal-api-staging.vercel.app/feedback/jobfit?run_id=${encodeURIComponent((jobFitResult as any).jobfit_run_id)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                            display: "block",
-                            marginTop: 12,
-                            fontSize: 11,
-                            color: "rgba(255,255,255,0.45)",
-                            textDecoration: "underline",
-                        }}
-                    >
-                        📝 Rate this in dev
-                    </a>
                 ) : null}
             </>
         )
     }
+
 
     /* ---------- RENDER: POSITIONING ---------- */
     function renderPositioning() {
@@ -7439,15 +6291,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
-@keyframes whyPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); border-color: rgba(74,222,128,0.45); }
-  50%       { box-shadow: 0 0 0 4px rgba(74,222,128,0.15); border-color: rgba(74,222,128,0.80); }
-}
-@keyframes riskPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); border-color: rgba(248,113,113,0.45); }
-  50%       { box-shadow: 0 0 0 4px rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.80); }
-}
 `}</style>
 
             <div style={shell}>
@@ -7462,13 +6305,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                 />
 
                 <div style={main}>
-                    <Header />
-
                     {/* HOME only: how it works */}
                     {!hasAnyResult ? (
                         <div
                             style={{
-                                background: "#0d1b2e",
+                                background: L_CARD,
+                                border: `1px solid ${L_BORDER_SOFT}`,
+                                boxShadow: L_SHADOW,
                                 borderRadius: 14,
                                 padding: "28px 32px 32px",
                                 marginBottom: 26,
@@ -7480,7 +6323,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     fontSize: 10,
                                     letterSpacing: "0.14em",
                                     textTransform: "uppercase" as const,
-                                    color: "#3d5878",
+                                    color: L_MUTED,
                                     fontWeight: 600,
                                     marginBottom: 24,
                                 }}
@@ -7528,21 +6371,25 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     fontWeight: 700,
                                                     flexShrink: 0,
                                                     cursor: "pointer",
+                                                    // Navy is the step you are
+                                                    // on, not peach: a filled
+                                                    // peach circle reads as a
+                                                    // button you should press.
                                                     border: isActive
-                                                        ? "1.5px solid #f97316"
+                                                        ? `1.5px solid ${L_NAVY}`
                                                         : isDone
-                                                          ? "1.5px solid rgba(249,115,22,0.5)"
-                                                          : "1.5px solid rgba(255,255,255,0.08)",
+                                                          ? `1.5px solid ${L_TEXT_2}`
+                                                          : `1.5px solid ${L_BORDER}`,
                                                     background: isActive
-                                                        ? "#f97316"
+                                                        ? L_NAVY
                                                         : isDone
-                                                          ? "rgba(249,115,22,0.15)"
-                                                          : "rgba(255,255,255,0.03)",
+                                                          ? L_WELL
+                                                          : L_CARD,
                                                     color: isActive
                                                         ? "#fff"
                                                         : isDone
-                                                          ? "#f97316"
-                                                          : "#3d5878",
+                                                          ? L_TEXT_2
+                                                          : L_DIM,
                                                     zIndex: 2,
                                                     padding: 0,
                                                 }}
@@ -7556,8 +6403,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                         height: 1,
                                                         background:
                                                             i < tabIndex
-                                                                ? "rgba(249,115,22,0.45)"
-                                                                : "rgba(255,255,255,0.07)",
+                                                                ? L_TEXT_2
+                                                                : L_BORDER,
                                                         zIndex: 1,
                                                     }}
                                                 />
@@ -7636,16 +6483,14 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 padding: "16px 14px 14px",
                                                 borderRadius: 8,
                                                 borderTop: isActive
-                                                    ? "2px solid #f97316"
+                                                    ? `2px solid ${L_NAVY}`
                                                     : isDone
-                                                      ? "2px solid rgba(249,115,22,0.3)"
-                                                      : "2px solid rgba(255,255,255,0.06)",
+                                                      ? `2px solid ${L_TEXT_2}`
+                                                      : `2px solid ${L_BORDER}`,
                                                 border: "none",
                                                 background: isActive
-                                                    ? "rgba(249,115,22,0.1)"
-                                                    : isDone
-                                                      ? "rgba(249,115,22,0.04)"
-                                                      : "rgba(255,255,255,0.025)",
+                                                    ? L_WELL
+                                                    : "transparent",
                                                 cursor: s.locked
                                                     ? "default"
                                                     : "pointer",
@@ -7662,8 +6507,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     fontWeight: 600,
                                                     color:
                                                         isActive || isDone
-                                                            ? "#f97316"
-                                                            : "#3d5878",
+                                                            ? L_NAVY
+                                                            : L_DIM,
                                                     marginBottom: 8,
                                                 }}
                                             >
@@ -7674,10 +6519,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     fontSize: 14,
                                                     fontWeight: 600,
                                                     color: isActive
-                                                        ? "#f0f4ff"
+                                                        ? L_TEXT
                                                         : isDone
-                                                          ? "#8fa5be"
-                                                          : "#4a5f78",
+                                                          ? L_TEXT_2
+                                                          : L_MUTED,
                                                     marginBottom: 6,
                                                 }}
                                             >
@@ -7687,10 +6532,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 style={{
                                                     fontSize: 11,
                                                     color: isActive
-                                                        ? "#7a9ab8"
-                                                        : isDone
-                                                          ? "#3d5878"
-                                                          : "#2e4259",
+                                                        ? L_MUTED
+                                                        : L_DIM,
                                                     lineHeight: "1.65",
                                                 }}
                                             >
@@ -7708,72 +6551,22 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                     {/* Full access instruction block */}
                     {!hasAnyResult && isLoggedIn ? (
-                        // ─────────────────────────────────────────────────────────────────────────────
-                        // JOBFIT LANDING REDESIGN — matches intake form dark style
-                        // There are TWO identical blocks to replace in the component:
-                        //
-                        // BLOCK 1 — Trial/free access version (around line 5910)
-                        //   Find: background: "#FFFFFF", borderRadius: 18, padding: "24px 26px"  (first occurrence)
-                        //   Replace from the opening <div style={{ background: "#FFFFFF" ... to the closing </div>
-                        //   that ends with ) : null} (the trial block conditional close)
-                        //
-                        // BLOCK 2 — Full access version (around line 6150)
-                        //   Find: background: "#FFFFFF", borderRadius: 18, padding: "24px 26px" (second occurrence)
-                        //   Replace from the opening <div style={{ background: "#FFFFFF" ... to its closing </div>
-                        //   that ends with ) : null} (the full access block conditional close)
-                        //
-                        // USE THE SAME JSX BELOW FOR BOTH BLOCKS
-                        // ─────────────────────────────────────────────────────────────────────────────
-
                         <div
                             style={{
                                 borderRadius: 18,
-                                border: "1px solid rgba(81,173,229,0.20)",
-                                background: "#0D1829",
+                                border: `1px solid ${L_BORDER_SOFT}`,
+                                background: L_CARD,
                                 overflow: "hidden",
                                 marginBottom: 16,
                                 marginTop: 4,
-                                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                                boxShadow: L_SHADOW,
                                 position: "relative" as const,
                             }}
                         >
-                            {/* ambient orbs */}
-                            <div
-                                style={{
-                                    position: "absolute" as const,
-                                    top: -40,
-                                    left: -40,
-                                    width: 220,
-                                    height: 220,
-                                    borderRadius: "50%",
-                                    background: "rgba(81,173,229,0.07)",
-                                    animation:
-                                        "orbFloat1 8s ease-in-out infinite",
-                                    pointerEvents: "none" as const,
-                                }}
-                            />
-                            <div
-                                style={{
-                                    position: "absolute" as const,
-                                    bottom: -20,
-                                    right: -20,
-                                    width: 180,
-                                    height: 180,
-                                    borderRadius: "50%",
-                                    background: "rgba(254,176,106,0.06)",
-                                    animation:
-                                        "orbFloat2 9s ease-in-out infinite",
-                                    pointerEvents: "none" as const,
-                                }}
-                            />
-                            {/* gradient top bar */}
-                            <div
-                                style={{
-                                    height: 3,
-                                    background:
-                                        "linear-gradient(90deg,#FEB06A,#f97316,#51ADE5)",
-                                }}
-                            />
+                            {/* The two ambient orbs and the peach/blue gradient
+                                top bar were cut in the light conversion: both
+                                were dark-theme glow devices, and on the light
+                                ground the orbs read as printing artefacts. */}
                             <div
                                 style={{
                                     padding: "22px 24px 24px",
@@ -7789,7 +6582,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         fontWeight: 900,
                                         letterSpacing: 2,
                                         textTransform: "uppercase" as const,
-                                        color: "rgba(254,176,106,0.70)",
+                                        color: L_MUTED,
                                         marginBottom: 16,
                                     }}
                                 >
@@ -7800,7 +6593,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     style={{
                                         fontSize: 38,
                                         fontWeight: 950,
-                                        color: "rgba(255,255,255,0.97)",
+                                        color: L_TEXT,
                                         lineHeight: 1.1,
                                         letterSpacing: -1.2,
                                         marginBottom: 10,
@@ -7809,7 +6602,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     Found a job you're thinking
                                     <br />
                                     about{" "}
-                                    <span style={{ color: "#FEB06A" }}>
+                                    <span style={{ color: L_CORAL_INK }}>
                                         applying
                                     </span>{" "}
                                     to?
@@ -7823,12 +6616,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         lineHeight: 1.2,
                                     }}
                                 >
-                                    <span style={{ color: "#FEB06A" }}>
+                                    <span style={{ color: L_CORAL_INK }}>
                                         Start here
                                     </span>
                                     <span
                                         style={{
-                                            color: "rgba(255,255,255,0.90)",
+                                            color: L_TEXT,
                                         }}
                                     >
                                         {" "}
@@ -7840,7 +6633,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     style={{
                                         fontSize: 14,
                                         lineHeight: "22px",
-                                        color: "rgba(255,255,255,0.45)",
+                                        color: L_MUTED,
                                         marginBottom: 28,
                                         maxWidth: 500,
                                         margin: "0 auto 28px",
@@ -7910,15 +6703,15 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                             : 28,
                                                         borderRadius: "50%",
                                                         background: isActive
-                                                            ? "rgba(254,176,106,0.25)"
+                                                            ? L_NAVY
                                                             : isDone
-                                                              ? "rgba(74,222,128,0.15)"
-                                                              : "rgba(255,255,255,0.06)",
+                                                              ? L_WELL
+                                                              : L_CARD,
                                                         border: isActive
-                                                            ? "2px solid rgba(254,176,106,0.70)"
+                                                            ? `2px solid ${L_NAVY}`
                                                             : isDone
-                                                              ? "2px solid rgba(74,222,128,0.50)"
-                                                              : "2px solid rgba(255,255,255,0.15)",
+                                                              ? `2px solid ${L_TEAL}`
+                                                              : `2px solid ${L_BORDER}`,
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent:
@@ -7928,10 +6721,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                             : 12,
                                                         fontWeight: 900,
                                                         color: isActive
-                                                            ? "#FEB06A"
+                                                            ? "#fff"
                                                             : isDone
-                                                              ? "#4ade80"
-                                                              : "rgba(255,255,255,0.35)",
+                                                              ? L_TEAL_INK
+                                                              : L_DIM,
                                                         flexShrink: 0,
                                                         marginTop: 1,
                                                     }}
@@ -7948,10 +6741,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                                 ? 900
                                                                 : 700,
                                                             color: isActive
-                                                                ? "#FEB06A"
+                                                                ? L_TEXT
                                                                 : isDone
-                                                                  ? "rgba(255,255,255,0.75)"
-                                                                  : "rgba(255,255,255,0.40)",
+                                                                  ? L_TEXT_2
+                                                                  : L_MUTED,
                                                             marginBottom: 3,
                                                         }}
                                                     >
@@ -7962,8 +6755,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                             fontSize: 12,
                                                             lineHeight: "18px",
                                                             color: isActive
-                                                                ? "rgba(255,255,255,0.55)"
-                                                                : "rgba(255,255,255,0.22)",
+                                                                ? L_MUTED
+                                                                : L_DIM,
                                                         }}
                                                     >
                                                         {s.body}
@@ -7977,8 +6770,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 <div
                                     style={{
                                         borderRadius: 14,
-                                        border: "1px solid rgba(74,222,128,0.18)",
-                                        background: "rgba(74,222,128,0.05)",
+                                        border: `1px solid ${L_BORDER}`,
+                                        background: L_WELL,
                                         padding: "14px 16px",
                                     }}
                                 >
@@ -7988,7 +6781,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             fontWeight: 900,
                                             letterSpacing: 2,
                                             textTransform: "uppercase" as const,
-                                            color: "rgba(74,222,128,0.65)",
+                                            color: L_TEAL_INK,
                                             marginBottom: 10,
                                         }}
                                     >
@@ -8016,35 +6809,25 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     gap: 10,
                                                 }}
                                             >
+                                                {/* Dot, not a pulsing ring: the
+                                                    whyPulse animation went
+                                                    with the results-page
+                                                    rings. */}
                                                 <div
                                                     style={{
-                                                        width: 18,
-                                                        height: 18,
+                                                        width: 7,
+                                                        height: 7,
                                                         borderRadius: "50%",
-                                                        background:
-                                                            "rgba(74,222,128,0.15)",
-                                                        border: "1.5px solid rgba(74,222,128,0.45)",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent:
-                                                            "center",
-                                                        fontSize: 10,
-                                                        fontWeight: 900,
-                                                        color: "#4ade80",
+                                                        background: L_TEAL,
                                                         flexShrink: 0,
-                                                        marginTop: 1,
-                                                        animation:
-                                                            "whyPulse 2.5s ease-in-out infinite",
-                                                        animationDelay: `${i * 0.25}s`,
+                                                        marginTop: 6,
                                                     }}
-                                                >
-                                                    ✓
-                                                </div>
+                                                />
                                                 <div
                                                     style={{
                                                         fontSize: 12,
                                                         lineHeight: "18px",
-                                                        color: "rgba(255,255,255,0.65)",
+                                                        color: L_MUTED,
                                                     }}
                                                 >
                                                     {item}
@@ -8064,8 +6847,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 marginBottom: 16,
                                 padding: "16px 18px",
                                 borderRadius: 14,
-                                border: "1px solid rgba(254,176,106,0.25)",
-                                background: "rgba(254,176,106,0.06)",
+                                border: `1px solid ${L_BORDER_SOFT}`,
+                                background: L_CARD,
+                                boxShadow: L_SHADOW,
                             }}
                         >
                             <div
@@ -8074,7 +6858,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     fontWeight: 900,
                                     letterSpacing: 2,
                                     textTransform: "uppercase" as const,
-                                    color: "rgba(254,176,106,0.70)",
+                                    color: L_MUTED,
                                     marginBottom: 10,
                                 }}
                             >
@@ -8100,15 +6884,19 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             style={{
                                                 padding: "10px 18px",
                                                 borderRadius: 10,
+                                                // Selected is navy structure,
+                                                // not peach — this picks a
+                                                // persona, it is not the run
+                                                // action.
                                                 border: isSelected
-                                                    ? "1.5px solid rgba(254,176,106,0.70)"
-                                                    : "1px solid rgba(255,255,255,0.10)",
+                                                    ? `1.5px solid ${L_NAVY}`
+                                                    : `1px solid ${L_BORDER}`,
                                                 background: isSelected
-                                                    ? "rgba(254,176,106,0.15)"
-                                                    : "rgba(255,255,255,0.04)",
+                                                    ? L_WELL
+                                                    : L_CARD,
                                                 color: isSelected
-                                                    ? "#FEB06A"
-                                                    : "rgba(255,255,255,0.55)",
+                                                    ? L_TEXT
+                                                    : L_MUTED,
                                                 fontWeight: 900,
                                                 fontSize: 13,
                                                 cursor: "pointer",
@@ -8124,7 +6912,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                         width: 7,
                                                         height: 7,
                                                         borderRadius: "50%",
-                                                        background: "#FEB06A",
+                                                        background: L_NAVY,
                                                         flexShrink: 0,
                                                     }}
                                                 />
@@ -8138,9 +6926,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                         letterSpacing: 0.8,
                                                         textTransform:
                                                             "uppercase" as const,
-                                                        color: isSelected
-                                                            ? "rgba(254,176,106,0.60)"
-                                                            : "rgba(255,255,255,0.25)",
+                                                        color: L_DIM,
                                                     }}
                                                 >
                                                     default
@@ -8155,7 +6941,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     style={{
                                         marginTop: 10,
                                         fontSize: 11,
-                                        color: "rgba(255,255,255,0.35)",
+                                        color: L_DIM,
                                         lineHeight: "16px",
                                     }}
                                 >
@@ -8189,16 +6975,17 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             <div style={{ marginTop: 10 }}>
                                 {/* URL Fetch */}
                                 <div style={{
-                                    background: "#0D1F35",
-                                    border: "1px solid rgba(255,149,0,0.2)",
+                                    background: L_CARD,
+                                    border: `1px solid ${L_BORDER}`,
+                                    boxShadow: L_SHADOW,
                                     borderRadius: 12,
                                     padding: 16,
                                     marginBottom: 12,
                                 }}>
-                                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#FF9500", marginBottom: 4 }}>
+                                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase" as const, color: L_NAVY, marginBottom: 4 }}>
                                         PASTE JOB URL
                                     </div>
-                                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+                                    <div style={{ fontSize: 12, color: L_MUTED, marginBottom: 10 }}>
                                         LinkedIn, Indeed, Greenhouse, Lever, Handshake — paste any job URL
                                     </div>
                                     <div style={{ display: "flex", gap: 8 }}>
@@ -8211,10 +6998,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             style={{
                                                 flex: 1,
                                                 padding: "10px 12px",
-                                                background: "rgba(255,255,255,0.06)",
-                                                border: "1px solid rgba(255,255,255,0.12)",
+                                                background: L_WELL,
+                                                border: `1px solid ${L_BORDER}`,
                                                 borderRadius: 8,
-                                                color: "#fff",
+                                                color: L_TEXT,
                                                 fontSize: 13,
                                                 outline: "none",
                                                 fontFamily: "inherit",
@@ -8225,10 +7012,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             disabled={urlLoading}
                                             style={{
                                                 padding: "10px 16px",
-                                                background: urlLoading ? "#333" : "#FF9500",
+                                                background: urlLoading ? L_WELL : L_PEACH,
                                                 border: "none",
                                                 borderRadius: 8,
-                                                color: urlLoading ? "#999" : "#0B0F1A",
+                                                color: urlLoading ? L_DIM : L_NAVY,
                                                 fontSize: 12,
                                                 fontWeight: 900,
                                                 cursor: urlLoading ? "not-allowed" : "pointer",
@@ -8239,28 +7026,29 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             {urlLoading ? "Fetching..." : "FETCH →"}
                                         </button>
                                     </div>
-                                    {urlError && <div style={{ fontSize: 12, color: "#FF3B5C", marginTop: 8 }}>{urlError}</div>}
+                                    {urlError && <div style={{ fontSize: 12, color: "#C0322F", marginTop: 8 }}>{urlError}</div>}
 
                                     {/* Blocked site popup overlay */}
                                     {showBlockedPopup && (
                                         <div style={{
                                             position: "fixed", inset: 0, zIndex: 9999,
-                                            background: "rgba(0,0,0,0.75)",
+                                            background: "rgba(19,41,74,0.55)",
                                             display: "flex", alignItems: "center", justifyContent: "center",
                                         }}>
                                             <div style={{
-                                                background: "#0D1F35",
-                                                border: "0.5px solid #1E3A5F",
+                                                background: L_CARD,
+                                                border: `1px solid ${L_BORDER}`,
+                                                boxShadow: "0 2px 4px rgba(19,41,74,0.05), 0 10px 28px rgba(19,41,74,0.10)",
                                                 borderRadius: 16,
                                                 padding: 36,
                                                 maxWidth: 460,
                                                 width: "90%",
                                                 textAlign: "center" as const,
                                             }}>
-                                                <div style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", color: "#FFD60A", marginBottom: 14 }}>
+                                                <div style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", color: L_TEXT, marginBottom: 14 }}>
                                                     We couldn't read this job posting
                                                 </div>
-                                                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: "1.7", marginBottom: 24, textAlign: "left" as const, margin: "0 auto 24px", maxWidth: 380 }}>
+                                                <div style={{ fontSize: 14, color: L_MUTED, lineHeight: "1.7", marginBottom: 24, textAlign: "left" as const, margin: "0 auto 24px", maxWidth: 380 }}>
                                                     Some sites block us from reading their job postings automatically. Others use formatting we can't handle. To continue, copy and paste the job description text directly below.
                                                 </div>
                                                 <div style={{ display: "flex", gap: 10 }}>
@@ -8268,8 +7056,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                         onClick={() => { window.open(jobUrl.trim(), "_blank"); setShowBlockedPopup(false) }}
                                                         style={{
                                                             flex: 1, padding: 14,
-                                                            background: "linear-gradient(90deg, #FF6B00, #FF9A3C)",
-                                                            color: "#fff", fontWeight: 900, fontStyle: "italic",
+                                                            background: L_PEACH,
+                                                            color: L_NAVY, fontWeight: 900,
                                                             fontSize: 14, borderRadius: 10, border: "none",
                                                             cursor: "pointer", fontFamily: "inherit",
                                                         }}
@@ -8280,10 +7068,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                         onClick={() => setShowBlockedPopup(false)}
                                                         style={{
                                                             flex: 1, padding: 14,
-                                                            background: "rgba(255,255,255,0.06)",
-                                                            color: "rgba(255,255,255,0.5)", fontWeight: 700,
+                                                            background: L_CARD,
+                                                            color: L_TEXT_2, fontWeight: 700,
                                                             fontSize: 14, borderRadius: 10,
-                                                            border: "1px solid rgba(255,255,255,0.12)",
+                                                            border: `1px solid ${L_BORDER}`,
                                                             cursor: "pointer", fontFamily: "inherit",
                                                         }}
                                                     >
@@ -8297,13 +7085,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     {/* Paste helper (visible after popup closes) */}
                                     {showLinkedInHelper && !showBlockedPopup && (
                                         <div style={{
-                                            background: "rgba(255,214,10,0.04)",
-                                            border: "1px solid rgba(255,214,10,0.25)",
+                                            background: L_WELL,
+                                            border: `1px solid ${L_BORDER}`,
                                             borderRadius: 10,
                                             padding: 14,
                                             marginTop: 10,
                                         }}>
-                                            <div style={{ fontSize: 12, fontWeight: 900, color: "#FFD60A", marginBottom: 8 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 900, color: L_NAVY, marginBottom: 8 }}>
                                                 PASTE THE JOB DESCRIPTION
                                             </div>
                                             <textarea
@@ -8314,10 +7102,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     width: "100%",
                                                     minHeight: 100,
                                                     padding: "10px 12px",
-                                                    background: "rgba(255,255,255,0.06)",
-                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                    background: L_CARD,
+                                                    border: `1px solid ${L_BORDER}`,
                                                     borderRadius: 8,
-                                                    color: "#fff",
+                                                    color: L_TEXT,
                                                     fontSize: 13,
                                                     resize: "vertical" as const,
                                                     outline: "none",
@@ -8331,10 +7119,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 style={{
                                                     marginTop: 8,
                                                     padding: "10px 16px",
-                                                    background: linkedInPasteLoading ? "#333" : "#FFD60A",
+                                                    background: linkedInPasteLoading ? L_WELL : L_PEACH,
                                                     border: "none",
                                                     borderRadius: 8,
-                                                    color: linkedInPasteLoading ? "#999" : "#0B0F1A",
+                                                    color: linkedInPasteLoading ? L_DIM : L_NAVY,
                                                     fontSize: 12,
                                                     fontWeight: 900,
                                                     cursor: linkedInPasteLoading ? "not-allowed" : "pointer",
@@ -8352,26 +7140,26 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                                 {/* OR divider */}
                                 <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "16px 0" }}>
-                                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-                                    <div style={{ fontSize: 13, fontWeight: 900, color: "rgba(255,255,255,0.25)", letterSpacing: 2 }}>OR</div>
-                                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+                                    <div style={{ flex: 1, height: 1, background: L_BORDER }} />
+                                    <div style={{ fontSize: 13, fontWeight: 900, color: L_DIM, letterSpacing: 2 }}>OR</div>
+                                    <div style={{ flex: 1, height: 1, background: L_BORDER }} />
                                 </div>
 
                                 {manualPasteStep === "paste" && (
                                     <div>
-                                        <div style={{ fontSize: 16, fontWeight: 900, color: TEXT, marginBottom: 6 }}>
+                                        <div style={{ fontSize: 16, fontWeight: 900, color: L_TEXT, marginBottom: 6 }}>
                                             Paste the full job posting
                                         </div>
-                                        <div style={{ fontSize: 13, color: MUTED, lineHeight: "20px", marginBottom: 14 }}>
+                                        <div style={{ fontSize: 13, color: L_MUTED, lineHeight: "20px", marginBottom: 14 }}>
                                             {"Can't grab the URL? No problem. Go to the job posting in your browser, select all the text, copy it, and paste it here — SIGNAL will extract the company, title, and description automatically."}
                                         </div>
-                                        <div style={{ fontSize: 12, color: DIM, lineHeight: "20px", marginBottom: 14 }}>
+                                        <div style={{ fontSize: 12, color: L_MUTED, lineHeight: "20px", marginBottom: 14 }}>
                                             {typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent)
                                                 ? "Tap and hold anywhere on the job page → Select All → Copy → come back and paste below"
                                                 : (<>
-                                                    1. Press <strong style={{ color: TEXT }}>Ctrl+A</strong> to select everything on the job page<br />
-                                                    2. Press <strong style={{ color: TEXT }}>Ctrl+C</strong> to copy<br />
-                                                    3. Click back here and press <strong style={{ color: TEXT }}>Ctrl+V</strong> to paste below
+                                                    1. Press <strong style={{ color: L_TEXT }}>Ctrl+A</strong> to select everything on the job page<br />
+                                                    2. Press <strong style={{ color: L_TEXT }}>Ctrl+C</strong> to copy<br />
+                                                    3. Click back here and press <strong style={{ color: L_TEXT }}>Ctrl+V</strong> to paste below
                                                   </>)
                                             }
                                         </div>
@@ -8388,11 +7176,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                     style={{
                                                         position: "absolute" as const,
                                                         top: 8, right: 8,
-                                                        background: "rgba(255,255,255,0.10)",
+                                                        background: L_BORDER,
                                                         border: "none",
                                                         borderRadius: 12,
                                                         width: 24, height: 24,
-                                                        color: MUTED,
+                                                        color: L_TEXT_2,
                                                         fontSize: 14,
                                                         cursor: "pointer",
                                                         display: "flex",
@@ -8404,7 +7192,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 </button>
                                             )}
                                         </div>
-                                        {urlError && <div style={{ fontSize: 12, color: "#FF3B5C", marginTop: 8 }}>{urlError}</div>}
+                                        {urlError && <div style={{ fontSize: 12, color: "#C0322F", marginTop: 8 }}>{urlError}</div>}
                                         <button
                                             onClick={handleManualExtract}
                                             disabled={manualExtracting}
@@ -8412,10 +7200,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 width: "100%",
                                                 marginTop: 10,
                                                 padding: "12px 16px",
-                                                background: manualExtracting ? "#333" : WRN_ORANGE,
+                                                background: manualExtracting ? L_WELL : L_PEACH,
                                                 border: "none",
                                                 borderRadius: 12,
-                                                color: manualExtracting ? "#999" : "#0B0F1A",
+                                                color: manualExtracting ? L_DIM : L_NAVY,
                                                 fontSize: 14,
                                                 fontWeight: 900,
                                                 cursor: manualExtracting ? "not-allowed" : "pointer",
@@ -8428,12 +7216,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                                 {manualPasteStep === "confirm" && (
                                     <div>
-                                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: WRN_ORANGE, marginBottom: 10 }}>
+                                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: L_NAVY, marginBottom: 10 }}>
                                             CONFIRM DETAILS
                                         </div>
                                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                                             <div>
-                                                <div style={{ fontSize: 11, color: DIM, fontWeight: 700, marginBottom: 4 }}>Company</div>
+                                                <div style={{ fontSize: 11, color: L_MUTED, fontWeight: 700, marginBottom: 4 }}>Company</div>
                                                 <input
                                                     type="text"
                                                     style={input}
@@ -8444,7 +7232,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 />
                                             </div>
                                             <div>
-                                                <div style={{ fontSize: 11, color: DIM, fontWeight: 700, marginBottom: 4 }}>Title</div>
+                                                <div style={{ fontSize: 11, color: L_MUTED, fontWeight: 700, marginBottom: 4 }}>Title</div>
                                                 <input
                                                     type="text"
                                                     style={input}
@@ -8458,24 +7246,24 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         {/* Extracted job description preview */}
                                         {job && (
                                             <div style={{ marginBottom: 12 }}>
-                                                <div style={{ fontSize: 11, color: DIM, fontWeight: 700, marginBottom: 4 }}>Job Description (extracted)</div>
+                                                <div style={{ fontSize: 11, color: L_MUTED, fontWeight: 700, marginBottom: 4 }}>Job Description (extracted)</div>
                                                 <div style={{
                                                     maxHeight: 120,
                                                     overflowY: "auto" as const,
                                                     padding: "10px 14px",
-                                                    background: GLASS,
+                                                    background: L_WELL,
                                                     borderRadius: 12,
-                                                    border: `1px solid ${BORDER}`,
+                                                    border: `1px solid ${L_BORDER}`,
                                                     fontSize: 13,
                                                     lineHeight: "20px",
-                                                    color: MUTED,
+                                                    color: L_MUTED,
                                                     whiteSpace: "pre-wrap" as const,
                                                 }}>
                                                     {job.length > 600 ? job.slice(0, 600) + "…" : job}
                                                 </div>
                                             </div>
                                         )}
-                                        <div style={{ fontSize: 12, color: DIM, marginBottom: 12 }}>
+                                        <div style={{ fontSize: 12, color: L_MUTED, marginBottom: 12 }}>
                                             Look right? You can edit before continuing.
                                         </div>
                                         <button
@@ -8489,7 +7277,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             style={{
                                                 background: "none",
                                                 border: "none",
-                                                color: MUTED,
+                                                color: L_TEXT_2,
                                                 fontSize: 12,
                                                 fontWeight: 700,
                                                 cursor: "pointer",
@@ -8745,7 +7533,11 @@ function SideNavItem({
 const outerFrame: React.CSSProperties = {
     width: "100%",
     height: "100%",
-    background: BG,
+    // The cool light-blue radial ground. It is the whole component's ground,
+    // not JobFit's alone — the paste area and the side nav are shared by every
+    // tab, so there is no seam to scope it to. Positioning / Cover Letter /
+    // Networking still render dark cards on top of it until they convert.
+    background: L_PAGE,
     boxSizing: "border-box",
     overflowX: "hidden",
     overflowY: "auto",
@@ -8757,8 +7549,10 @@ const outerFrame: React.CSSProperties = {
 // when main content is short. Does not set overflow — outerFrame
 // already handles scrolling for the whole app.
 const shell: React.CSSProperties = {
-    background: BG,
-    color: TEXT,
+    // Transparent, not a colour: outerFrame owns the gradient and painting a
+    // flat fill here would cover it.
+    background: "transparent",
+    color: L_TEXT,
     width: "100%",
     minHeight: "100dvh",
     display: "flex",
@@ -8772,12 +7566,6 @@ const main: React.CSSProperties = {
     width: "100%",
     minWidth: 0,
 }
-const headerTop: React.CSSProperties = {
-    display: "flex",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-}
-
 const ENGINE_BRAND_HEIGHT = 56
 
 const engineBrandWrap: React.CSSProperties = {
@@ -8945,64 +7733,6 @@ const sideDisabledItem: React.CSSProperties = {
     fontSize: 13,
 }
 
-/* ---------- STEP LANDING / INTRO ---------- */
-
-const stepsIntroWrap: React.CSSProperties = {
-    marginTop: 14,
-    padding: 18,
-    borderRadius: 16,
-    background: CARD,
-    border: `1px solid ${BORDER_SOFT}`,
-}
-
-const stepsIntroTitle: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 900,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.70)",
-    marginBottom: 12,
-}
-
-const stepsList: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-}
-
-const stepRow: React.CSSProperties = {
-    display: "flex",
-    gap: 12,
-    alignItems: "flex-start",
-}
-
-const stepNum: React.CSSProperties = {
-    width: 22,
-    height: 22,
-    borderRadius: 999,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 12,
-    fontWeight: 900,
-    color: "rgba(0,0,0,0.85)",
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: ICE,
-    flex: "0 0 auto",
-}
-
-const stepLabel: React.CSSProperties = {
-    fontSize: 14,
-    fontWeight: 900,
-    marginBottom: 2,
-}
-
-const stepDesc: React.CSSProperties = {
-    fontSize: 13,
-    lineHeight: "18px",
-    color: MUTED,
-}
-
 /* ---------- FORM / INPUT ---------- */
 
 const jobHeaderRow: React.CSSProperties = {
@@ -9012,14 +7742,15 @@ const jobHeaderRow: React.CSSProperties = {
     justifyContent: "space-between",
     padding: "12px 16px",
     borderRadius: 14,
-    border: `1px solid ${BORDER}`,
-    background: GLASS,
+    border: `1px solid ${L_BORDER}`,
+    background: L_CARD,
+    boxShadow: L_SHADOW,
     cursor: "pointer",
     userSelect: "none",
 }
 
 const jobHeaderLink: React.CSSProperties = {
-    color: "rgba(255,255,255,0.65)",
+    color: L_TEXT_2,
     fontWeight: 700,
     fontSize: 12,
     textDecoration: "underline",
@@ -9027,13 +7758,13 @@ const jobHeaderLink: React.CSSProperties = {
 }
 
 const jobHeaderChevron: React.CSSProperties = {
-    color: MUTED,
+    color: L_MUTED,
     fontWeight: 900,
     fontSize: 14,
 }
 
 const label: React.CSSProperties = {
-    color: WRN_BLUE,
+    color: L_TEXT_2,
     fontWeight: 800,
     marginBottom: 6,
     display: "block",
@@ -9042,11 +7773,11 @@ const label: React.CSSProperties = {
 const input: React.CSSProperties = {
     width: "100%",
     height: 44,
-    background: GLASS,
-    color: TEXT,
+    background: L_WELL,
+    color: L_TEXT,
     padding: "0 14px",
     borderRadius: 16,
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${L_BORDER}`,
     boxSizing: "border-box",
     outline: "none",
     fontSize: 16,
@@ -9056,11 +7787,11 @@ const textarea: React.CSSProperties = {
     width: "100%",
     minHeight: 140,
     resize: "vertical",
-    background: GLASS,
-    color: TEXT,
+    background: L_WELL,
+    color: L_TEXT,
     padding: 14,
     borderRadius: 14,
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${L_BORDER}`,
     boxSizing: "border-box",
     outline: "none",
     fontSize: 15,
@@ -9114,7 +7845,8 @@ const hintBox: React.CSSProperties = {
 }
 
 const errorBox: React.CSSProperties = {
-    color: ERROR,
+    // The ink, not the accent: this is text on the light ground.
+    color: "#C0322F",
     fontWeight: 800,
     marginTop: 10,
     whiteSpace: "pre-wrap",
@@ -9133,14 +7865,16 @@ const upgradeNote: React.CSSProperties = {
 
 /* ---------- BUTTONS / LINKS ---------- */
 
+// The Run button. Peach on navy ink — the action treatment, and the only
+// place besides the results CTA that may wear it.
 const primaryBtn: React.CSSProperties = {
     padding: "12px 18px",
     borderRadius: 16,
-    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
+    background: L_PEACH,
     fontWeight: 900,
     border: "none",
     cursor: "pointer",
-    color: "#0B1020",
+    color: L_NAVY,
 }
 
 const jobfitHeroBtn: React.CSSProperties = {
@@ -9373,690 +8107,167 @@ const netInnerBody: React.CSSProperties = {
     marginTop: 10,
 }
 
-/* ---------- JOBFIT V6 ---------- */
+/* ---------- JOBFIT — LIGHT ---------- */
+//
+// WHAT THIS REPLACES. The block here used to hold ~90 constants: a JF_* dark
+// palette, a brand bar and logo lockup (never rendered), a hero with a stripe
+// and a score bar, three severity variants of a risk card, a two-cell proof
+// footer, and four `display: "none"` stubs kept "for legacy". Most of it fed
+// WhyCards / RiskCards / SectionHeader, which had not been called in months.
+// The renderer is now the only consumer of this block, and every constant
+// below is used by it.
 
-// Brand color constants (local to this block)
-const JF_NAVY_BASE = "#13294A" // WRN Navy — true brand background
-const JF_NAVY_CARD = "#0F1F38" // Cards sit on this — slightly darker
-const JF_NAVY_FOOT = "rgba(0,0,0,0.22)" // Why card footer — darkened
-const JF_BORDER = "rgba(255,255,255,0.10)"
-const JF_BORDER_MID = "rgba(255,255,255,0.14)"
-const JF_TEXT_1 = "rgba(255,255,255,0.92)" // Primary body text
-const JF_TEXT_2 = "rgba(255,255,255,0.65)" // Secondary / move text
-const JF_TEXT_3 = "rgba(255,255,255,0.55)" // Proof text in footer
-const JF_TEXT_4 = "rgba(255,255,255,0.30)" // Labels, eyebrows
-const JF_TEXT_5 = "rgba(255,255,255,0.18)" // Dimmest labels
-
-const jfBrandBar: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 16,
-    marginBottom: 16,
-    borderBottom: `1px solid ${JF_BORDER}`,
+const jfCtxLine: React.CSSProperties = {
+    fontSize: 13,
+    color: L_MUTED,
+    marginBottom: 12,
+    lineHeight: "18px",
 }
 
-const jfLogoMark: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 3,
+// ── Verdict card ────────────────────────────────────────────────────────────
+// Navy, because navy is structure and this is the one structural block on the
+// page. It is also the only dark surface in the JobFit result now.
+
+const jfVerdictCard: React.CSSProperties = {
+    background: L_NAVY,
+    borderRadius: 16,
+    padding: "26px 28px",
+    boxSizing: "border-box",
 }
 
-const jfLogoRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-}
-
-const jfLogoText: React.CSSProperties = {
-    fontSize: 22,
-    fontWeight: 950,
-    fontStyle: "italic",
-    letterSpacing: -0.5,
-    color: "#ffffff",
-    lineHeight: 1,
-}
-
-const jfLogoDash: React.CSSProperties = {
-    width: 14,
-    height: 4,
-    background: WRN_ORANGE,
-    borderRadius: 1,
-    marginLeft: 4,
-    marginBottom: 1,
-    flexShrink: 0,
-}
-
-const jfLogoByline: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-}
-
-const jfLogoBy: React.CSSProperties = {
-    fontSize: 8,
-    fontWeight: 700,
-    color: JF_TEXT_4,
-}
-
-const jfLogoWorkforce: React.CSSProperties = {
-    fontSize: 8,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    color: WRN_ORANGE,
-    textTransform: "uppercase" as const,
-}
-
-const jfLogoReady: React.CSSProperties = {
-    fontSize: 8,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    color: WRN_BLUE,
-    textTransform: "uppercase" as const,
-}
-
-const jfEngineBadge: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.4,
-    textTransform: "uppercase" as const,
-    color: JF_TEXT_4,
-    padding: "5px 11px",
-    border: `1px solid ${JF_BORDER_MID}`,
-    borderRadius: 999,
-}
-
-const jfCtxBar: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 14,
-    padding: "11px 16px",
-    borderRadius: 12,
-    background: "rgba(255,255,255,0.06)",
-    border: `1px solid ${JF_BORDER_MID}`,
-    flexWrap: "wrap" as const,
-}
-
-const jfCtxLeft: React.CSSProperties = {
+const jfVerdictTop: React.CSSProperties = {
     display: "flex",
     alignItems: "baseline",
-    flexWrap: "wrap" as const,
-    gap: 2,
-    minWidth: 0,
-}
-
-const jfCtxRole: React.CSSProperties = {
-    fontSize: 14,
-    fontWeight: 900,
-    color: JF_TEXT_1,
-}
-
-const jfCtxSep: React.CSSProperties = {
-    fontSize: 13,
-    color: JF_TEXT_4,
-    margin: "0 3px",
-}
-
-const jfCtxCo: React.CSSProperties = {
-    fontSize: 13,
-    color: JF_TEXT_2,
-    fontWeight: 700,
-}
-
-const jfCtxPills: React.CSSProperties = {
-    display: "flex",
-    gap: 5,
-    flexWrap: "wrap" as const,
-    flexShrink: 0,
-}
-
-const jfCtxPill: React.CSSProperties = {
-    fontSize: 10,
-    fontWeight: 900,
-    letterSpacing: 0.5,
-    textTransform: "uppercase" as const,
-    padding: "3px 10px",
-    borderRadius: 999,
-}
-
-const jfHero: React.CSSProperties = {
-    borderRadius: 20,
-    border: `1px solid ${JF_BORDER_MID}`,
-    background: JF_NAVY_CARD,
-    overflow: "hidden",
-    marginBottom: 12,
-}
-
-const jfHeroStripe: React.CSSProperties = {
-    height: 3,
-}
-
-const jfHeroInner: React.CSSProperties = {
-    padding: "26px 28px 24px",
-}
-
-const jfHeroTop: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 20,
+    flexWrap: "wrap",
 }
 
-const jfHeroEyebrow: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 2,
-    textTransform: "uppercase" as const,
-    color: JF_TEXT_4,
-    marginBottom: 6,
+/** "SIGNAL DECISION" and "YOUR MOVE" — deliberately the same treatment. */
+const jfVerdictEyebrow: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 500,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: L_ON_NAVY_DIM,
+    marginBottom: 8,
 }
 
-const jfHeroWord: React.CSSProperties = {
-    fontSize: 58,
-    fontWeight: 950,
+const jfVerdictWord: React.CSSProperties = {
+    fontSize: 46,
+    fontWeight: 500,
+    lineHeight: 1.05,
     letterSpacing: -0.5,
-    lineHeight: 0.95,
-    textTransform: "uppercase" as const,
 }
 
-const jfScoreCol: React.CSSProperties = {
+const jfScoreWrap: React.CSSProperties = {
     display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
+    alignItems: "baseline",
+    gap: 3,
     flexShrink: 0,
 }
 
-const jfScoreEyebrow: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.6,
-    textTransform: "uppercase" as const,
-    color: JF_TEXT_4,
-    marginBottom: 3,
-}
-
-const jfScoreBig: React.CSSProperties = {
-    fontSize: 52,
-    fontWeight: 950,
+// 20px, not 52. The score was the largest thing on the page and it is the
+// least actionable: it explains the verdict, it is not the verdict.
+const jfScoreNum: React.CSSProperties = {
+    fontSize: 20,
+    fontWeight: 500,
+    color: "#FFFFFF",
     lineHeight: 1,
 }
 
 const jfScoreOf: React.CSSProperties = {
-    fontSize: 15,
-    fontWeight: 900,
-    color: JF_TEXT_4,
-    paddingBottom: 4,
+    fontSize: 14,
+    fontWeight: 500,
+    color: L_ON_NAVY_DIM,
 }
 
-const jfScoreBarTrack: React.CSSProperties = {
-    width: 110,
-    height: 3,
-    background: "rgba(255,255,255,0.12)",
-    borderRadius: 3,
-    overflow: "hidden",
-    marginTop: 7,
-}
-
-const jfScoreBarFill: React.CSSProperties = {
-    height: "100%",
-    borderRadius: 3,
-}
-
-const jfRule: React.CSSProperties = {
+const jfVerdictDivider: React.CSSProperties = {
     height: 1,
-    background: "rgba(255,255,255,0.08)",
-    margin: "20px 0 18px",
+    background: "rgba(255,255,255,0.13)",
+    margin: "22px 0 18px",
 }
 
-const jfMoveRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 18,
-}
-
-const jfMoveDot: React.CSSProperties = {
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    flexShrink: 0,
-    marginTop: 5,
-}
-
-const jfMoveLabel: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.8,
-    textTransform: "uppercase" as const,
-    color: JF_TEXT_4,
-    marginBottom: 6,
-}
-
-const jfMoveText: React.CSSProperties = {
-    fontSize: 16,
-    fontWeight: 600,
-    lineHeight: 1.5,
-    color: "rgba(255,255,255,0.92)",
-}
-
-const jfCtaGo: React.CSSProperties = {
-    width: "100%",
-    padding: "15px",
-    borderRadius: 13,
-    fontWeight: 900,
+const jfMoveBody: React.CSSProperties = {
     fontSize: 15,
+    lineHeight: 1.55,
+    color: L_ON_NAVY,
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────────
+
+const jfCtaRow: React.CSSProperties = {
+    display: "flex",
+    gap: 12,
+    marginTop: 14,
+    flexWrap: "wrap",
+}
+
+/** The only peach in the JobFit result. */
+const jfCtaPrimary: React.CSSProperties = {
+    flex: 1,
+    minWidth: 200,
+    padding: "15px 18px",
+    borderRadius: 13,
+    background: L_PEACH,
+    color: L_NAVY,
+    fontSize: 15,
+    fontWeight: 900,
+    fontFamily: "inherit",
     border: "none",
     cursor: "pointer",
-    color: "#04060F",
-    letterSpacing: 0.1,
+    boxSizing: "border-box",
 }
 
-const jfCtaPass: React.CSSProperties = {
-    width: "100%",
-    padding: "15px",
-    borderRadius: 13,
-    background: "rgba(255,255,255,0.06)",
-    fontWeight: 900,
-    fontSize: 15,
-    border: `1px solid ${JF_BORDER_MID}`,
-    cursor: "pointer",
-    color: JF_TEXT_2,
-}
+// ── Why / Risk panels ───────────────────────────────────────────────────────
+// One shape, two rails. The colour is the entire difference between them —
+// no icons, no tinted headers, no per-severity card variants.
 
-// ─────────────────────────────────────────────────────────────────────────────
-// REPLACEMENT STYLE TOKENS — paste over existing jfSec*, jfWhy*, jfRisk*,
-// jfStack tokens in the file (around lines 6573–6760)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Section wrappers ─────────────────────────────────────────────────────────
-
-const jfWhySection: React.CSSProperties = {
-    borderRadius: 18,
-    border: "1px solid rgba(74,222,128,0.22)",
-    background: "rgba(74,222,128,0.04)",
+const jfPanel: React.CSSProperties = {
+    background: L_CARD,
+    borderRadius: 12,
+    border: `1px solid ${L_BORDER_SOFT}`,
+    boxShadow: L_SHADOW,
     overflow: "hidden",
-    marginBottom: 12,
 }
 
-const jfRiskSection: React.CSSProperties = {
-    borderRadius: 18,
-    border: "1px solid rgba(254,176,106,0.22)",
-    background: "rgba(254,176,106,0.04)",
-    overflow: "hidden",
-    marginBottom: 12,
+const jfPanelRail: React.CSSProperties = {
+    height: 4,
 }
 
-// ── Section headers ───────────────────────────────────────────────────────────
-
-const jfWhySectionHeader: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "16px 20px 14px",
-    borderBottom: "1px solid rgba(74,222,128,0.14)",
-    background: "rgba(74,222,128,0.06)",
+const jfPanelInner: React.CSSProperties = {
+    padding: "16px 18px 18px",
 }
 
-const jfRiskSectionHeader: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "16px 20px 14px",
-    borderBottom: "1px solid rgba(254,176,106,0.14)",
-    background: "rgba(254,176,106,0.06)",
-}
-
-const jfWhySectionTitle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-}
-
-const jfWhySectionIcon: React.CSSProperties = {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    background: "rgba(74,222,128,0.15)",
-    border: "1px solid rgba(74,222,128,0.30)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 14,
-    flexShrink: 0,
-}
-
-const jfRiskSectionIcon: React.CSSProperties = {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    background: "rgba(254,176,106,0.15)",
-    border: "1px solid rgba(254,176,106,0.30)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 14,
-    flexShrink: 0,
-}
-
-const jfWhySectionLabel: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 800,
-    letterSpacing: 0.2,
-    color: "#4ade80",
-}
-
-const jfRiskSectionLabel: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 800,
-    letterSpacing: 0.2,
-    color: "#FEB06A",
-}
-
-const jfSectionInstruction: React.CSSProperties = {
+const jfPanelEyebrow: React.CSSProperties = {
     fontSize: 11,
-    color: "rgba(255,255,255,0.40)",
-    lineHeight: 1.4,
-    maxWidth: 260,
-    textAlign: "right" as const,
+    fontWeight: 500,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    marginBottom: 14,
 }
 
-const jfSectionCount: React.CSSProperties = {
-    fontSize: 10,
-    fontWeight: 700,
-    padding: "3px 10px",
-    borderRadius: 999,
-    flexShrink: 0,
-}
-
-const jfWhySectionCount: React.CSSProperties = {
-    ...jfSectionCount,
-    background: "rgba(74,222,128,0.12)",
-    color: "#4ade80",
-    border: "1px solid rgba(74,222,128,0.25)",
-}
-
-const jfRiskSectionCount: React.CSSProperties = {
-    ...jfSectionCount,
-    background: "rgba(254,176,106,0.12)",
-    color: "#FEB06A",
-    border: "1px solid rgba(254,176,106,0.25)",
-}
-
-// ── Card list ─────────────────────────────────────────────────────────────────
-
-const jfStack: React.CSSProperties = {
+const jfBulletStack: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
-    gap: 0,
-    padding: "10px 16px 14px",
+    gap: 14,
 }
 
-// ── Why cards ─────────────────────────────────────────────────────────────────
-
-const jfWhyCard: React.CSSProperties = {
-    borderRadius: 13,
-    border: "1px solid rgba(74,222,128,0.14)",
-    background: "rgba(255,255,255,0.03)",
-    overflow: "hidden",
-    marginBottom: 8,
+const jfBulletKeyword: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 500,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: L_NAVY,
+    marginBottom: 4,
 }
 
-const jfWhyCardAccent: React.CSSProperties = {
-    width: 3,
-    borderRadius: "3px 0 0 3px",
-    background: "linear-gradient(180deg, #4ade80 0%, #22c55e 100%)",
-    flexShrink: 0,
-    alignSelf: "stretch",
-}
-
-const jfWhyCardInner: React.CSSProperties = {
-    display: "flex",
-    alignItems: "stretch",
-    gap: 0,
-}
-
-const jfWhyBody: React.CSSProperties = {
-    padding: "14px 16px 10px",
+const jfBulletProse: React.CSSProperties = {
     fontSize: 14,
-    lineHeight: "22px",
-    color: "rgba(255,255,255,0.92)",
-    flex: 1,
+    lineHeight: "21px",
+    color: L_MUTED,
 }
 
-// Why bullet keyword heading. Green ALL-CAPS chip, mirrors the
-// trialjobfit.txt BulletRow keyword treatment (free-trial surface)
-// so the authed dashboard reads the same shape. Shape modeled on
-// jfRiskTitle (fontSize/fontWeight) with the free-trial accent color
-// (#4ade80) and the chip-style letter-spacing + uppercase.
-const jfWhyHeading: React.CSSProperties = {
-    padding: "12px 16px 0",
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: 1.4,
-    lineHeight: "14px",
-    color: "#4ade80",
-    textTransform: "uppercase" as const,
-}
-
-const jfWhyAction: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-    padding: "8px 16px 12px",
-    borderTop: "1px solid rgba(74,222,128,0.10)",
-    background: "rgba(74,222,128,0.04)",
-}
-
-const jfWhyActionLabel: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.4,
-    textTransform: "uppercase" as const,
-    color: "#4ade80",
-    flexShrink: 0,
-    marginTop: 1,
-}
-
-const jfWhyActionText: React.CSSProperties = {
-    fontSize: 12,
-    lineHeight: "17px",
-    color: "rgba(255,255,255,0.55)",
-}
-
-const jfWhyFoot: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    borderTop: "1px solid rgba(74,222,128,0.08)",
-    background: "rgba(0,0,0,0.18)",
-}
-
-const jfWhyCell: React.CSSProperties = {
-    padding: "10px 16px",
-}
-
-const jfWfNeedsLabel: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.2,
-    textTransform: "uppercase" as const,
-    color: "rgba(255,255,255,0.22)",
-    marginBottom: 4,
-}
-
-const jfWfProofLabel: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.2,
-    textTransform: "uppercase" as const,
-    marginBottom: 4,
-}
-
-const jfWfText: React.CSSProperties = {
-    fontSize: 12,
-    lineHeight: "18px",
-    color: "rgba(255,255,255,0.50)",
-}
-
-// ── Risk cards ────────────────────────────────────────────────────────────────
-
-const jfRiskBase: React.CSSProperties = {
-    borderRadius: 13,
-    overflow: "hidden",
-    marginBottom: 8,
-}
-
-const jfRiskCardHi: React.CSSProperties = {
-    ...jfRiskBase,
-    border: "1px solid rgba(248,113,113,0.28)",
-    background: "rgba(248,113,113,0.05)",
-}
-
-const jfRiskCardMd: React.CSSProperties = {
-    ...jfRiskBase,
-    border: "1px solid rgba(254,176,106,0.24)",
-    background: "rgba(254,176,106,0.05)",
-}
-
-const jfRiskCardLo: React.CSSProperties = {
-    ...jfRiskBase,
-    border: "1px solid rgba(255,255,255,0.09)",
-    background: "rgba(255,255,255,0.03)",
-}
-
-const jfRiskCardInner: React.CSSProperties = {
-    display: "flex",
-    alignItems: "stretch",
-}
-
-const jfRiskAccentHi: React.CSSProperties = {
-    width: 3,
-    borderRadius: "3px 0 0 3px",
-    background: "linear-gradient(180deg, #f87171 0%, #ef4444 100%)",
-    flexShrink: 0,
-    alignSelf: "stretch",
-}
-
-const jfRiskAccentMd: React.CSSProperties = {
-    width: 3,
-    borderRadius: "3px 0 0 3px",
-    background: "linear-gradient(180deg, #FEB06A 0%, #f97316 100%)",
-    flexShrink: 0,
-    alignSelf: "stretch",
-}
-
-const jfRiskAccentLo: React.CSSProperties = {
-    width: 3,
-    borderRadius: "3px 0 0 3px",
-    background: "rgba(255,255,255,0.12)",
-    flexShrink: 0,
-    alignSelf: "stretch",
-}
-
-const jfRiskContent: React.CSSProperties = {
-    flex: 1,
-    padding: "13px 16px 11px",
-}
-
-const jfRiskTop: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 6,
-}
-
-const jfRiskTitle: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 800,
-    lineHeight: "19px",
-    color: "rgba(255,255,255,0.92)",
-}
-
-const jfRiskSevBase: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    textTransform: "uppercase" as const,
-    padding: "3px 9px",
-    borderRadius: 999,
-    flexShrink: 0,
-    whiteSpace: "nowrap" as const,
-}
-
-const jfRiskSevHi: React.CSSProperties = {
-    ...jfRiskSevBase,
-    background: "rgba(248,113,113,0.18)",
-    color: "#f87171",
-}
-
-const jfRiskSevMd: React.CSSProperties = {
-    ...jfRiskSevBase,
-    background: "rgba(254,176,106,0.18)",
-    color: "#FEB06A",
-}
-
-const jfRiskSevLo: React.CSSProperties = {
-    ...jfRiskSevBase,
-    background: "rgba(255,255,255,0.08)",
-    color: "rgba(255,255,255,0.40)",
-}
-
-const jfRiskAction: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-    padding: "9px 16px 11px",
-    borderTop: "1px solid rgba(254,176,106,0.10)",
-    background: "rgba(254,176,106,0.04)",
-}
-
-const jfRiskActionHiTop: React.CSSProperties = {
-    ...jfRiskAction,
-    borderTop: "1px solid rgba(248,113,113,0.10)",
-    background: "rgba(248,113,113,0.04)",
-}
-
-const jfRiskActionLabel: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: 1.4,
-    textTransform: "uppercase" as const,
-    color: "#FEB06A",
-    flexShrink: 0,
-    marginTop: 1,
-}
-
-const jfRiskActionLabelHi: React.CSSProperties = {
-    ...jfRiskActionLabel,
-    color: "#f87171",
-}
-
-const jfRiskActionText: React.CSSProperties = {
-    fontSize: 12,
-    lineHeight: "17px",
-    color: "rgba(255,255,255,0.50)",
-}
-
-// ── Kept for legacy ───────────────────────────────────────────────────────────
-const jfSecHd = { display: "none" }
-const jfSecLabel = { display: "none" }
-const jfSecLine = { display: "none" }
-const jfSecCount = { display: "none" }
-
-const jfRiskBody: React.CSSProperties = {
-    fontSize: 13,
-    lineHeight: "20px",
-    color: JF_TEXT_2,
-}
-
-const jfRiskQuote: React.CSSProperties = {
-    fontSize: 11,
-    marginTop: 8,
-    fontStyle: "italic" as const,
-    lineHeight: "16px",
-    color: JF_TEXT_4,
-}
 
 /* ---------- GENERIC ---------- */
 
