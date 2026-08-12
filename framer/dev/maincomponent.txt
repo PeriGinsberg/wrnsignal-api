@@ -78,10 +78,20 @@ const DIM = "rgba(255,255,255,0.35)"
    opinion: every one of them is lifted verbatim from LIGHT in that module, so
    when a token moves there it must be moved here too.
 
-   PEACH IS ACTION AND ONLY ACTION. L_PEACH appears on exactly one thing in
-   this file — the primary CTA. Eyebrows, step numbers and the track bar used
-   to be peach (WRN_ORANGE); they are navy or coral now. If you find yourself
-   reaching for L_PEACH for a label, the answer is L_NAVY or L_CORAL. */
+   PEACH IS ACTION AND ONLY ACTION, AND ONE ACTION PER SURFACE. L_PEACH has
+   four call sites in this file and no more: Run JobFit (primaryBtn), the
+   result CTA (jfCtaPrimary), Run New Job in the nav (sideRunBtn), and Open Job
+   Posting in the blocked-site modal (scanModalPrimaryBtn). Each is the single
+   thing to press on the surface it belongs to.
+
+   Fetch, Extract from paste and Extract & Continue were peach and are not any
+   more: they move you through the form, they do not run the scan, and four
+   peach buttons stacked down one card is four things claiming to be the one
+   thing. They are outlined navy secondaries now. Eyebrows, step numbers and
+   the track bar were peach too (WRN_ORANGE); they are navy, teal or coral. If
+   you find yourself reaching for L_PEACH for a label, the answer is L_NAVY or
+   L_CORAL; if you are reaching for it for a second button on a surface that
+   already has one, the answer is the outlined secondary. */
 const L_PAGE =
     "radial-gradient(120% 120% at 50% 0%, #f0f9fc 0%, #e6f4f9 100%)"
 const L_CARD = "#FFFFFF"
@@ -133,7 +143,25 @@ const L_HAIRLINE_SOFT = "rgba(19,41,74,0.14)"
 // (the resume preview and the "or paste" hint).
 const L_HINT = "#8AA3BC"
 
-/** The one action colour. One call site: the primary CTA. */
+// Card rails on the scan page. The colour is a family marker, not a meaning:
+// blue is who you are, teal is the job. Each card's eyebrow takes the darkened
+// ink of its own rail so the pair reads as one unit rather than a stripe with
+// an unrelated label under it.
+const L_RAIL_PERSONA = "#51ADE5"
+const L_RAIL_PERSONA_INK = "#1F6FA8"
+const L_RAIL_JOB = "#218C8C"
+const L_RAIL_JOB_INK = "#17706F"
+
+// The DEFAULT tag once its chip is filled navy.
+const L_ON_NAVY_TAG = "#9FC6E4"
+
+// Placeholder ink. Applied by class rather than inline style — ::placeholder
+// is a pseudo-element and cannot be reached from a React style object.
+const L_PLACEHOLDER = "#6B87A3"
+
+/** The one action colour. ONE call site on the scan page: Run JobFit. Fetch,
+    Extract from paste and Extract & Continue are outlined secondaries — they
+    move you through the form, they do not run the scan. */
 const L_PEACH = "#F2963B"
 
 /* ---------- SCAN LOADING ----------
@@ -6548,6 +6576,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+/* Placeholder ink for the scan page's inputs. This cannot be an inline style:
+   ::placeholder is a pseudo-element, and a React style object has no way to
+   reach one. Hence the class on each field. */
+.wrn-scan-field::placeholder { color: ${L_PLACEHOLDER}; opacity: 1; }
 `}</style>
 
             <div style={shell}>
@@ -6587,8 +6619,20 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                     {/* ── 2 · EVALUATING AS ───────────────────────────────── */}
                     {isLoggedIn && personas.length > 0 && (
-                        <div style={scanCard}>
-                            <div style={scanEyebrow}>Evaluating as</div>
+                        <div
+                            style={{
+                                ...scanCard,
+                                borderLeft: `4px solid ${L_RAIL_PERSONA}`,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    ...scanEyebrow,
+                                    color: L_RAIL_PERSONA_INK,
+                                }}
+                            >
+                                Evaluating as
+                            </div>
                             <div
                                 style={{
                                     display: "flex",
@@ -6609,20 +6653,22 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             style={{
                                                 padding: "10px 16px",
                                                 borderRadius: 10,
-                                                // Selection is weight of line,
-                                                // not fill: navy at 1.5px for
-                                                // the one you are evaluating
-                                                // as, a navy hairline for the
-                                                // rest. Peach would read as
-                                                // "press this to run".
+                                                // The selected persona is a
+                                                // filled navy chip, not an
+                                                // outlined one — an outline
+                                                // reads as "selectable", a fill
+                                                // reads as "selected". Navy and
+                                                // not peach: this picks who you
+                                                // are, it is not the run
+                                                // action.
                                                 border: isSelected
                                                     ? `1.5px solid ${L_NAVY}`
                                                     : `1px solid ${L_HAIRLINE_SOFT}`,
                                                 background: isSelected
-                                                    ? L_WELL
+                                                    ? L_NAVY
                                                     : L_CARD,
                                                 color: isSelected
-                                                    ? L_TEXT
+                                                    ? "#FFFFFF"
                                                     : L_MUTED,
                                                 fontWeight: isSelected
                                                     ? 600
@@ -6645,7 +6691,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                         letterSpacing: 0.8,
                                                         textTransform:
                                                             "uppercase" as const,
-                                                        color: L_HINT,
+                                                        // Lifts on the navy
+                                                        // fill; L_HINT is a
+                                                        // light-ground ink and
+                                                        // vanishes on it.
+                                                        color: isSelected
+                                                            ? L_ON_NAVY_TAG
+                                                            : L_HINT,
                                                     }}
                                                 >
                                                     default
@@ -6697,14 +6749,27 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     ) : null}
 
                     {!hasAnyResult || jobInputOpen ? (
-                    <div style={scanCard}>
+                    <div
+                        style={{
+                            ...scanCard,
+                            borderLeft: `4px solid ${L_RAIL_JOB}`,
+                        }}
+                    >
                         {hasAnyResult ? null : (
-                            <div style={scanEyebrow}>The job</div>
+                            <div
+                                style={{
+                                    ...scanEyebrow,
+                                    color: L_RAIL_JOB_INK,
+                                }}
+                            >
+                                The job
+                            </div>
                         )}
 
                         <div style={{ display: "flex", gap: 8 }}>
                             <input
                                 type="text"
+                                className="wrn-scan-field"
                                 value={jobUrl}
                                 onChange={(e) => setJobUrl(e.target.value)}
                                 onKeyDown={(e) => {
@@ -6719,11 +6784,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 disabled={urlLoading}
                                 style={{
                                     ...scanFetchBtn,
-                                    background: urlLoading ? L_WELL : L_PEACH,
-                                    color: urlLoading ? L_DIM : L_NAVY,
-                                    cursor: urlLoading
-                                        ? "not-allowed"
-                                        : "pointer",
+                                    ...(urlLoading
+                                        ? scanSecondaryBtnDisabled
+                                        : null),
                                 }}
                             >
                                 {urlLoading ? (
@@ -6789,6 +6852,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     Paste the job description
                                 </div>
                                 <textarea
+                                    className="wrn-scan-field"
                                     value={linkedInPasteText}
                                     onChange={(e) =>
                                         setLinkedInPasteText(e.target.value)
@@ -6806,15 +6870,15 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     disabled={linkedInPasteLoading}
                                     style={{
                                         ...scanSecondaryAction,
-                                        background: linkedInPasteLoading
-                                            ? L_WELL
-                                            : L_PEACH,
-                                        color: linkedInPasteLoading
-                                            ? L_DIM
-                                            : L_NAVY,
-                                        cursor: linkedInPasteLoading
-                                            ? "not-allowed"
-                                            : "pointer",
+                                        // Inline left, not full width: it acts
+                                        // on the box above it, it is not the
+                                        // page's action. inline-flex plus auto
+                                        // shrinks it to its label and leaves
+                                        // it at the start of the line.
+                                        width: "auto",
+                                        ...(linkedInPasteLoading
+                                            ? scanSecondaryBtnDisabled
+                                            : null),
                                     }}
                                 >
                                     {linkedInPasteLoading ? (
@@ -6834,6 +6898,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 </div>
                                 <div style={{ position: "relative" as const }}>
                                     <textarea
+                                        className="wrn-scan-field"
                                         style={scanTextarea}
                                         value={manualPasteText}
                                         onChange={(e) =>
@@ -6859,15 +6924,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     disabled={manualExtracting}
                                     style={{
                                         ...scanSecondaryAction,
-                                        background: manualExtracting
-                                            ? L_WELL
-                                            : L_PEACH,
-                                        color: manualExtracting
-                                            ? L_DIM
-                                            : L_NAVY,
-                                        cursor: manualExtracting
-                                            ? "not-allowed"
-                                            : "pointer",
+                                        ...(manualExtracting
+                                            ? scanSecondaryBtnDisabled
+                                            : null),
                                     }}
                                 >
                                     {manualExtracting ? (
@@ -6896,6 +6955,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         </div>
                                         <input
                                             type="text"
+                                            className="wrn-scan-field"
                                             style={scanInput}
                                             value={manualCompanyName}
                                             onChange={(e) =>
@@ -6911,6 +6971,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         <div style={scanFieldLabel}>Title</div>
                                         <input
                                             type="text"
+                                            className="wrn-scan-field"
                                             style={scanInput}
                                             value={manualJobTitle}
                                             onChange={(e) =>
@@ -6935,7 +6996,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         </div>
                                     </div>
                                 )}
-                                <div style={scanHint}>
+                                <div style={scanNote}>
                                     Look right? You can edit before continuing.
                                 </div>
                                 <button
@@ -7464,16 +7525,25 @@ const scanEyebrow: React.CSSProperties = {
     marginBottom: 12,
 }
 
+// Supporting copy that the reader is meant to actually read sits at L_MUTED.
+// L_HINT is reserved for the one line that is genuinely an aside — "or paste
+// the description below" — which labels a control that is visible anyway.
 const scanResumePreview: React.CSSProperties = {
     marginTop: 12,
     fontSize: 13,
     lineHeight: "19px",
-    color: L_HINT,
+    color: L_MUTED,
 }
 
 const scanHint: React.CSSProperties = {
     fontSize: 13,
     color: L_HINT,
+    marginBottom: 8,
+}
+
+const scanNote: React.CSSProperties = {
+    fontSize: 13,
+    color: L_MUTED,
     marginBottom: 8,
 }
 
@@ -7532,13 +7602,16 @@ const scanTextarea: React.CSSProperties = {
 const scanFetchBtn: React.CSSProperties = {
     padding: "0 20px",
     height: 42,
-    border: "none",
+    background: L_CARD,
+    color: L_NAVY,
+    border: `1.5px solid ${L_NAVY}`,
     borderRadius: 10,
     fontSize: 13,
     fontWeight: 600,
     whiteSpace: "nowrap",
     fontFamily: "inherit",
     flexShrink: 0,
+    cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -7549,15 +7622,26 @@ const scanSecondaryAction: React.CSSProperties = {
     width: "100%",
     marginTop: 10,
     padding: "11px 16px",
-    border: "none",
+    background: L_CARD,
+    color: L_NAVY,
+    border: `1.5px solid ${L_NAVY}`,
     borderRadius: 10,
     fontSize: 13,
     fontWeight: 600,
     fontFamily: "inherit",
+    cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+}
+
+// One disabled treatment for all three secondaries: the border and the ink
+// drop back, the fill stays white. Spread after the base style.
+const scanSecondaryBtnDisabled: React.CSSProperties = {
+    color: L_DIM,
+    border: `1.5px solid ${L_HAIRLINE}`,
+    cursor: "not-allowed",
 }
 
 const scanClearBtn: React.CSSProperties = {
@@ -7591,15 +7675,18 @@ const scanJdPreview: React.CSSProperties = {
     whiteSpace: "pre-wrap",
 }
 
+// A link back to the previous step, not a heading for the step it leaves.
 const scanBackLink: React.CSSProperties = {
     background: "none",
     border: "none",
-    color: L_TEXT_2,
-    fontSize: 12,
-    fontWeight: 600,
+    color: L_MUTED,
+    fontSize: 13,
+    fontWeight: 400,
     cursor: "pointer",
     padding: 0,
     fontFamily: "inherit",
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
 }
 
 /* The three cards shown while a scan runs. Three equal columns on a wide
@@ -7731,7 +7818,7 @@ const scanHelperWell: React.CSSProperties = {
 const scanHelperLabel: React.CSSProperties = {
     fontSize: 12,
     fontWeight: 600,
-    color: L_TEXT,
+    color: L_MUTED,
     marginBottom: 8,
 }
 
