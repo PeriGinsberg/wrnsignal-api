@@ -78,11 +78,20 @@ const DIM = "rgba(255,255,255,0.35)"
    opinion: every one of them is lifted verbatim from LIGHT in that module, so
    when a token moves there it must be moved here too.
 
-   PEACH IS ACTION AND ONLY ACTION, AND ONE ACTION PER SURFACE. L_PEACH has
-   four call sites in this file and no more: Run JobFit (primaryBtn), the
-   result CTA (jfCtaPrimary), Run New Job in the nav (sideRunBtn), and Open Job
-   Posting in the blocked-site modal (scanModalPrimaryBtn). Each is the single
-   thing to press on the surface it belongs to.
+   PEACH IS ACTION AND ONLY ACTION, AND ONE ACTION PER SURFACE — EXCEPT THE
+   RESULTS CTA PAIR, WHICH IS A MATCHED PAIR BY DESIGN. L_PEACH has four call
+   sites in this file and no more: Run JobFit (primaryBtn), the results CTA
+   pair (jfCtaPair, used by BOTH Proceed to Positioning and Add to Network
+   Tracker), Run New Job in the nav (sideRunBtn), and Open Job Posting in the
+   blocked-site modal (scanModalPrimaryBtn).
+
+   The exception is deliberate and it is the only one. Proceeding to
+   Positioning and adding the company to the tracker are both things we want
+   the student to do; making one of them the white secondary told them to pick,
+   which is not a choice we meant to offer. They share one style object so they
+   stay identical, and "Not now" carries the quiet option as a text link below
+   the row. Two peach buttons is the exception where they are equals — it is
+   not licence for a second peach button that ranks below the first.
 
    Fetch, Extract from paste and Extract & Continue were peach and are not any
    more: they move you through the form, they do not run the scan, and four
@@ -2218,9 +2227,16 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         // -- Networking prompt ------------------------------------
         // NOW A BUTTON, NOT A STRIP. It used to be a tinted blue band under the
         // verdict card carrying its own sentence ("One person inside beats ten
-        // applications"), an Add button and a Not now link. In the light
-        // language it is the white secondary button beside the peach primary:
-        // same height, same row, navy border at 14%.
+        // applications"), an Add button and a Not now link.
+        //
+        // IT IS HALF OF A MATCHED PAIR, NOT A SECONDARY. It spent one pass as
+        // the white outlined button beside the peach primary, which was wrong:
+        // proceeding to Positioning and adding the company to the tracker are
+        // both things we want the student to do, and painting one of them as
+        // the quiet option answered a question nobody asked. Both are peach on
+        // navy ink now, from one shared style so "same height, same weight,
+        // equal width" is structural rather than two lists of numbers that
+        // agree today. "Not now" is the quiet option, and it is a text link.
         //
         // WHAT DID NOT CHANGE — and must not: the visibility rule (an
         // application id AND a company name), the non-Pass-only placement, the
@@ -2240,8 +2256,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             netPromptVisible && !isPass && netPromptState !== "dismissed"
 
         /**
-         * The secondary action. Renders the "added" confirmation in place
-         * rather than vanishing, so the click has a visible result.
+         * The second half of the CTA pair. Renders the "added" confirmation in
+         * place rather than vanishing, so the click has a visible result.
+         *
+         * That confirmation stays white while the button it replaces is peach,
+         * and the asymmetry is the point: peach is what to press, and this is
+         * a thing already done. Its padding and radius match the pair so the
+         * row does not resize under the cursor.
          */
         function renderNetButton() {
             if (!showNetButton) return null
@@ -2286,20 +2307,13 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     disabled={netPromptState === "busy"}
                     onClick={() => addCompanyToNetworkBoard(ctxCompany)}
                     style={{
-                        flex: 1,
-                        minWidth: 200,
-                        padding: "15px 18px",
-                        borderRadius: 13,
-                        background: L_CARD,
-                        border: "1px solid rgba(19,41,74,0.14)",
-                        color: L_TEXT,
-                        fontSize: 15,
-                        fontWeight: 900,
-                        fontFamily: "inherit",
+                        // The same style object the primary uses. Not a copy
+                        // of its values — a copy drifts the first time one of
+                        // them is touched.
+                        ...jfCtaPair,
                         cursor:
                             netPromptState === "busy" ? "default" : "pointer",
                         opacity: netPromptState === "busy" ? 0.6 : 1,
-                        boxSizing: "border-box" as const,
                     }}
                 >
                     {netPromptState === "busy"
@@ -2506,12 +2520,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     ) : null}
                 </div>
 
-                {/* Actions. Peach primary, white secondary — the networking
-                    prompt, which used to be a tinted strip of its own. Both
-                    handlers are the ones they always were. */}
+                {/* Actions. A matched peach pair, both from jfCtaPair — see
+                    renderNetButton. Both handlers are the ones they always
+                    were. */}
                 <div style={jfCtaRow}>
                     <button
-                        style={jfCtaPrimary}
+                        style={jfCtaPair}
                         onClick={onPrimaryClick}
                         type="button"
                     >
@@ -8306,8 +8320,15 @@ const jfCtaRow: React.CSSProperties = {
     flexWrap: "wrap",
 }
 
-/** The only peach in the JobFit result. */
-const jfCtaPrimary: React.CSSProperties = {
+/**
+ * ONE STYLE, BOTH RESULT CTAs. Proceed to Positioning and Add to Network
+ * Tracker are a matched pair — see the comment above renderNetButton for why
+ * neither of them is the secondary. Shared rather than duplicated so they
+ * cannot drift: flex 1 with a 0 basis is what makes them equal width whatever
+ * the company name is, and one padding and one weight is what makes them the
+ * same height.
+ */
+const jfCtaPair: React.CSSProperties = {
     flex: 1,
     minWidth: 200,
     padding: "15px 18px",
