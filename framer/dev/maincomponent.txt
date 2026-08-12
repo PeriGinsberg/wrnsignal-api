@@ -61,8 +61,6 @@ const WRN_TEAL = "#218C8C"
    read from this set. Do not "finish the job" by flipping these values — that
    would repaint three surfaces nobody has designed yet. They go one at a
    time, the way the Coaching Hub did. */
-const BG = "#13294A"
-const NAV_BG = "#091629"
 const CARD = "#162E50"
 const CARD_ALT = "#112240"
 const GLASS = "rgba(255,255,255,0.07)"
@@ -6206,14 +6204,16 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         justifyContent: "center",
                         flexDirection: "column" as const,
                         gap: 16,
-                        background: BG,
+                        // No fill. outerFrame already owns the light ground;
+                        // this used to paint a navy panel over it, which is
+                        // why the session splash was dark on a light app.
                     }}
                 >
                     <div
                         style={{
                             fontSize: 28,
-                            fontWeight: 950,
-                            color: WRN_ORANGE,
+                            fontWeight: 800,
+                            color: L_NAVY,
                             letterSpacing: -0.5,
                         }}
                     >
@@ -6222,7 +6222,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     <div
                         style={{
                             fontSize: 13,
-                            color: MUTED,
+                            color: L_MUTED,
                             letterSpacing: 0.3,
                         }}
                     >
@@ -6272,10 +6272,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 <span
                                     style={{
                                         fontSize: 36,
-                                        fontWeight: 950,
+                                        fontWeight: 800,
                                         fontStyle: "italic",
                                         letterSpacing: -1,
-                                        color: "#fff",
+                                        color: L_NAVY,
                                         lineHeight: 1,
                                     }}
                                 >
@@ -6303,8 +6303,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                 <span
                                     style={{
                                         fontSize: 10,
-                                        fontWeight: 700,
-                                        color: "rgba(255,255,255,0.30)",
+                                        fontWeight: 600,
+                                        color: L_MUTED,
                                     }}
                                 >
                                     by
@@ -6338,8 +6338,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         <div
                             style={{
                                 fontSize: 32,
-                                fontWeight: 950,
-                                color: "#fff",
+                                fontWeight: 700,
+                                color: L_NAVY,
                                 textAlign: "center",
                                 letterSpacing: -0.5,
                                 lineHeight: 1.1,
@@ -6347,7 +6347,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             }}
                         >
                             The decision engine for{" "}
-                            <span style={{ color: WRN_ORANGE }}>
+                            {/* The accent stays warm, but it is the coral ink,
+                                not the action peach. L_PEACH on this ground
+                                measures 2.1:1 — it would re-create the exact
+                                bug this screen is being fixed for. Same choice
+                                the old landing headline made for "applying". */}
+                            <span style={{ color: L_CORAL_INK }}>
                                 smarter applications
                             </span>
                         </div>
@@ -6356,7 +6361,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         <div
                             style={{
                                 fontSize: 15,
-                                color: MUTED,
+                                color: L_MUTED,
                                 textAlign: "center",
                                 lineHeight: 1.6,
                                 marginBottom: 32,
@@ -6455,16 +6460,21 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         width: "100%",
                                         padding: "13px",
                                         borderRadius: 13,
-                                        background:
-                                            "linear-gradient(90deg,#FEB06A,#51ADE5)",
-                                        fontWeight: 900,
+                                        // Flat action peach. The peach-to-blue
+                                        // gradient was the last of the five
+                                        // this file used to carry, and it made
+                                        // the one button on the screen the
+                                        // only gradient in the product.
+                                        background: L_PEACH,
+                                        fontWeight: 600,
                                         fontSize: 14,
+                                        fontFamily: "inherit",
                                         border: "none",
                                         cursor:
                                             authStatus === "email_sent"
                                                 ? "default"
                                                 : "pointer",
-                                        color: "#04060F",
+                                        color: L_NAVY,
                                         opacity:
                                             authStatus === "email_sent"
                                                 ? 0.4
@@ -6482,15 +6492,20 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             marginTop: 14,
                                             padding: "16px 18px",
                                             borderRadius: 14,
-                                            background: "rgba(74,222,128,0.10)",
-                                            border: "1.5px solid rgba(74,222,128,0.40)",
+                                            // Still on the navy card, so it
+                                            // keeps on-navy inks — but the
+                                            // off-token #4ade80 green becomes
+                                            // the teal the verdict card
+                                            // already uses on navy.
+                                            background: "rgba(93,202,165,0.12)",
+                                            border: "1.5px solid rgba(93,202,165,0.40)",
                                         }}
                                     >
                                         <div
                                             style={{
                                                 fontSize: 15,
-                                                fontWeight: 900,
-                                                color: "#4ade80",
+                                                fontWeight: 600,
+                                                color: L_VERDICT_APPLY,
                                                 marginBottom: 5,
                                             }}
                                         >
@@ -6499,7 +6514,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         <div
                                             style={{
                                                 fontSize: 13,
-                                                color: "rgba(255,255,255,0.60)",
+                                                color: L_ON_NAVY_SOFT,
                                                 lineHeight: "19px",
                                             }}
                                         >
@@ -6534,8 +6549,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     <div
                                         style={{
                                             fontSize: 11,
-                                            fontWeight: 700,
-                                            color: "rgba(255,255,255,0.28)",
+                                            fontWeight: 500,
+                                            color: L_MUTED,
                                         }}
                                     >
                                         {t}
@@ -6546,8 +6561,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                                 width: 4,
                                                 height: 4,
                                                 borderRadius: "50%",
-                                                background:
-                                                    "rgba(255,255,255,0.18)",
+                                                background: L_DIM,
                                             }}
                                         />
                                     ) : null}
@@ -7290,10 +7304,11 @@ const engineBrandByline: React.CSSProperties = {
 
 /* ---------- SIDE NAV ----------
    Converted to the light language. This is the last piece the four tabs share,
-   so it is the last thing that was still reading from the dark token set —
-   NAV_BG, TEXT, MUTED and BORDER_SOFT are no longer used here. They remain
-   live for the Positioning / Cover Letter / Networking output blocks, which
-   have not been converted.
+   so it is the last thing that was still reading from the dark token set.
+   TEXT, MUTED and BORDER_SOFT are no longer used here but remain live for the
+   Positioning / Cover Letter / Networking output blocks, which have not been
+   converted. NAV_BG had no other caller and is gone, as is BG, which the
+   signed-out splash was the last thing holding open.
 
    Near-white rather than white, with a hairline edge: the main column is white
    cards on the blue gradient, and a pure-white nav would fuse with them at the
