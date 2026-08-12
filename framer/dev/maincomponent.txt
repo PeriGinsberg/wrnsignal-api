@@ -1,5 +1,6 @@
 // START FILE
 import * as React from "react"
+import { addPropertyControls, ControlType } from "framer"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
 
 /**
@@ -1107,7 +1108,10 @@ function PageShell() {
     )
 }
 
-export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
+export default function WRNSignalTabs(props: {
+    style?: React.CSSProperties
+    logo?: string
+}) {
     console.log("WRNSignalTabs loaded", {
         marker: "RUN-CHECK-0317-B",
         path:
@@ -6260,78 +6264,21 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             margin: "0 auto",
                         }}
                     >
-                        {/* Logo */}
+                        {/* Logo. The CSS wordmark it replaces was three
+                            stacked pieces — italic text, a peach dash and the
+                            two-tone byline — reassembled on every surface and
+                            never quite matching the real mark. Drop the file
+                            into the "Logo" image control in Framer Studio; see
+                            the note on addPropertyControls at the foot of this
+                            file for why there is no default. */}
                         <div style={{ textAlign: "center", marginBottom: 32 }}>
-                            <div
-                                style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    marginBottom: 6,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize: 36,
-                                        fontWeight: 800,
-                                        fontStyle: "italic",
-                                        letterSpacing: -1,
-                                        color: L_NAVY,
-                                        lineHeight: 1,
-                                    }}
-                                >
-                                    SIGNAL
-                                </span>
-                                <div
-                                    style={{
-                                        width: 20,
-                                        height: 5,
-                                        background: WRN_ORANGE,
-                                        borderRadius: 1,
-                                        marginLeft: 5,
-                                        marginBottom: 2,
-                                    }}
+                            {props.logo ? (
+                                <img
+                                    src={props.logo}
+                                    alt="SIGNAL"
+                                    style={authLogo}
                                 />
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    justifyContent: "flex-start",
-                                    gap: 5,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        color: L_MUTED,
-                                    }}
-                                >
-                                    by
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.8,
-                                        color: WRN_ORANGE,
-                                        textTransform: "uppercase" as const,
-                                    }}
-                                >
-                                    Workforce
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.8,
-                                        color: WRN_BLUE,
-                                        textTransform: "uppercase" as const,
-                                    }}
-                                >
-                                    Ready Now
-                                </span>
-                            </div>
+                            ) : null}
                         </div>
 
                         {/* Headline */}
@@ -6615,6 +6562,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     tab={tab}
                     isLoggedIn={isLoggedIn}
                     authedEmail={authedEmail}
+                    logo={props.logo}
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
                     onNetworkBoard={goToNetworkCompanies}
@@ -7079,6 +7027,7 @@ function SideNav({
     tab,
     isLoggedIn,
     authedEmail,
+    logo,
     onSelect,
     onRunNewJob,
     onNetworkBoard,
@@ -7087,6 +7036,8 @@ function SideNav({
     tab: TabKey
     isLoggedIn: boolean
     authedEmail: string | null
+    /** The uploaded logo, straight from the property control. */
+    logo?: string
     onSelect: (t: TabKey) => void
     onRunNewJob: () => void
     /** Leaves the component for the dashboard board. Not a tab switch. */
@@ -7097,18 +7048,9 @@ function SideNav({
     return (
         <div style={sideNav}>
             <div style={sideBrandBlock}>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={sideWordmark}>SIGNAL</span>
-                    {/* The peach dash stays peach. It is half of a brand mark,
-                        not a control, and the same exemption the icon family
-                        takes for peach inside a glyph applies here. */}
-                    <div style={sideWordmarkDash} />
-                </div>
-                <div style={sideByline}>
-                    <span style={sideBylineBy}>by</span>
-                    <span style={sideBylineWorkforce}>Workforce</span>
-                    <span style={sideBylineReadyNow}>Ready Now</span>
-                </div>
+                {logo ? (
+                    <img src={logo} alt="SIGNAL" style={sideLogo} />
+                ) : null}
             </div>
 
             <div style={sideSectionTitle}>System</div>
@@ -7334,52 +7276,14 @@ const sideBrandBlock: React.CSSProperties = {
     borderBottom: `1px solid ${L_BORDER}`,
 }
 
-const sideWordmark: React.CSSProperties = {
-    fontSize: 28,
-    fontWeight: 800,
-    fontStyle: "italic",
-    letterSpacing: -0.5,
-    color: L_NAVY,
-    lineHeight: 1,
-}
-
-const sideWordmarkDash: React.CSSProperties = {
-    width: 18,
-    height: 5,
-    background: WRN_ORANGE,
-    borderRadius: 1,
-    marginLeft: 3,
-    marginBottom: 1,
-    flexShrink: 0,
-}
-
-const sideByline: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 3,
-    marginTop: 4,
-}
-
-const sideBylineBy: React.CSSProperties = {
-    fontSize: 7,
-    fontWeight: 600,
-    color: L_HINT,
-}
-
-const sideBylineWorkforce: React.CSSProperties = {
-    fontSize: 7,
-    fontWeight: 700,
-    letterSpacing: 0.8,
-    color: WRN_ORANGE,
-    textTransform: "uppercase",
-}
-
-const sideBylineReadyNow: React.CSSProperties = {
-    fontSize: 7,
-    fontWeight: 700,
-    letterSpacing: 0.8,
-    color: WRN_BLUE,
-    textTransform: "uppercase",
+// The real mark, in two sizes. Width is set and height is auto so the file's
+// own aspect ratio drives it and neither call site can squash it. This
+// replaced six style objects — sideWordmark, sideWordmarkDash, sideByline and
+// the three byline spans — that rebuilt the logo out of CSS on every surface.
+const sideLogo: React.CSSProperties = {
+    width: 150,
+    height: "auto",
+    display: "block",
 }
 
 const sideSectionTitle: React.CSSProperties = {
@@ -7512,6 +7416,16 @@ const sideLogoutBtn: React.CSSProperties = {
    the job card. jobHeaderRow / jobHeaderLink / jobHeaderChevron went with the
    "Active Job" collapse header, `label` was never called, and `textarea` had
    exactly one call site — the paste box, which now has its own. */
+
+// The signed-out screen's mark. Centred by its parent's textAlign, with
+// margin auto so it centres whether it renders inline or as a block.
+const authLogo: React.CSSProperties = {
+    width: 280,
+    maxWidth: "100%",
+    height: "auto",
+    display: "block",
+    margin: "0 auto",
+}
 
 const scanHero: React.CSSProperties = {
     background: L_NAVY,
@@ -8525,3 +8439,23 @@ const upgradeBtn: React.CSSProperties = {
     cursor: "pointer",
     color: "#0B1020",
 }
+
+/* ---------- FRAMER PROPERTY CONTROLS ---------- */
+
+// Exposes a "Logo" image slot in the Framer properties panel so the real
+// SIGNAL mark can be uploaded without touching this file. Two call sites read
+// it: the signed-out screen at 280px and the side nav at 150px.
+//
+// NO defaultValue, matching landingpage / trialjobfit / upgradepage, which all
+// declare this control the same way. There is nowhere to point one: the asset
+// in the repo (logo/SIGNAL_Logo_Transparent.png) is a local file Framer cannot
+// fetch, and inlining it as a data URI would add 153KB of base64 to a file
+// that is already 8,000 lines. Both call sites therefore render nothing until
+// the image is set, which is the one visible consequence of this change —
+// upload the logo in Framer Studio and both surfaces fill in at once.
+addPropertyControls(WRNSignalTabs, {
+    logo: {
+        type: ControlType.Image,
+        title: "Logo",
+    },
+})
