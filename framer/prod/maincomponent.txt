@@ -63,8 +63,6 @@ const WRN_TEAL = "#218C8C"
    would repaint three surfaces nobody has designed yet. They go one at a
    time, the way the Coaching Hub did. */
 const CARD = "#162E50"
-const CARD_ALT = "#112240"
-const GLASS = "rgba(255,255,255,0.07)"
 const BORDER = "rgba(255,255,255,0.12)"
 const BORDER_SOFT = "rgba(255,255,255,0.08)"
 const TEXT = "rgba(255,255,255,0.92)"
@@ -1045,6 +1043,44 @@ function ScanLoadingCards() {
     )
 }
 
+/**
+ * The job this session is about, in one shape, used by three tabs. Title and
+ * company lead because they are what identifies the job; location, years and
+ * the internship flag are qualifiers and sit under them at body-secondary.
+ * Renders nothing when it knows nothing.
+ */
+function JobContextBlock({
+    ctx,
+    style,
+}: {
+    ctx: {
+        ctxTitle: string
+        ctxCompany: string
+        isInternship: boolean
+        locLabel: string
+        yearsRequired: any
+    }
+    style?: React.CSSProperties
+}) {
+    const lead = [ctx.ctxTitle, ctx.ctxCompany].filter(Boolean).join(" · ")
+    const quals = [
+        ctx.isInternship ? "Internship" : "",
+        ctx.locLabel,
+        ctx.yearsRequired !== null ? `${ctx.yearsRequired}+ yrs exp` : "",
+    ].filter(Boolean)
+
+    if (!lead && !quals.length) return null
+
+    return (
+        <div style={style}>
+            {lead ? <div style={jfCtxLead}>{lead}</div> : null}
+            {quals.length ? (
+                <div style={jfCtxQuals}>{quals.join(" · ")}</div>
+            ) : null}
+        </div>
+    )
+}
+
 export default function WRNSignalTabs(props: {
     style?: React.CSSProperties
     logo?: string
@@ -1164,6 +1200,49 @@ export default function WRNSignalTabs(props: {
 
     const isLoggedIn = authStatus === "logged_in" && !!accessToken
     const hasJob = job.trim().length > 0
+
+    // ── Job context, one source for three tabs ──────────────────────────────
+    // JobFit's result header and the Active Job row on Positioning / Cover
+    // Letter show the same five facts, so they are derived once here rather
+    // than inside renderJobFit where only one of them could reach them.
+    //
+    // It degrades on purpose: location, years and the internship flag come off
+    // jobFitResult.job_signals, so a session that ran Positioning without
+    // JobFit gets title and company from jobContext or the raw job text and
+    // simply omits the rest.
+    const jobCtx = React.useMemo(() => {
+        const jobSignals = jobFitResult?.job_signals ?? {}
+        const fromState = jobContext ?? { title: "", company: "" }
+        const fromText = extractJobContextFromJobText(job)
+        const locationMode = String(jobSignals?.location?.mode ?? "").trim()
+        const locationCity = String(jobSignals?.location?.city ?? "").trim()
+        const locLabel = locationCity
+            ? locationCity
+            : locationMode === "remote"
+              ? "Remote"
+              : locationMode === "hybrid"
+                ? "Hybrid"
+                : locationMode === "in_person"
+                  ? "On-site"
+                  : ""
+        const ctxTitle =
+            String(jobSignals?.jobTitle ?? "").trim() ||
+            fromState.title ||
+            fromText.title ||
+            ""
+        const ctxCompany =
+            String(jobSignals?.companyName ?? "").trim() ||
+            fromState.company ||
+            fromText.company ||
+            ""
+        return {
+            ctxTitle,
+            ctxCompany,
+            isInternship: jobSignals?.internship?.isInternship === true,
+            locLabel,
+            yearsRequired: jobSignals?.yearsRequired ?? null,
+        }
+    }, [jobFitResult, jobContext, job])
 
     const hasAnyResult =
         !!jobFitResult ||
@@ -1622,6 +1701,17 @@ export default function WRNSignalTabs(props: {
     // This component runs inside a Framer iframe, so an <a href> would open
     // the dashboard INSIDE the frame. window.top is what breaks out of it, and
     // the token rides along so the dashboard does not bounce to a login.
+    // /dashboard/network, not the in-component Networking tab. That tab is
+    // being retired — the left nav already leaves for the board — and Cover
+    // Letter's CTA was the last thing still pointing at it.
+    function goToNetworkBoard() {
+        if (typeof window === "undefined") return
+        const url = accessToken
+            ? `${API_BASE}/dashboard/network?token=${accessToken}`
+            : `${API_BASE}/dashboard/network`
+        window.top!.location.replace(url)
+    }
+
     function goToNetworkCompanies() {
         if (typeof window === "undefined") return
         const url = accessToken
@@ -1760,6 +1850,26 @@ export default function WRNSignalTabs(props: {
 
     function goTo(tabKey: TabKey) {
         setTab(tabKey)
+    }
+
+    // ── Proceed = run, unless it has already run ────────────────────────────
+    // There is no per-job binding on these results and none is needed:
+    // runNewJob() clears all four, so a non-null result IS a result for the
+    // current job. Sidebar navigation still goes through goTo and never runs.
+    function proceedToPositioning() {
+        if (positioningResult) {
+            goTo("positioning")
+            return
+        }
+        runPositioning()
+    }
+
+    function proceedToCoverLetter() {
+        if (coverLetterResult) {
+            goTo("coverletter")
+            return
+        }
+        runCoverLetter()
     }
 
     // The shared run button. `scanCards` is the JobFit path: instead of the
@@ -1959,6 +2069,10 @@ export default function WRNSignalTabs(props: {
             setTab("positioning")
         } catch (e: any) {
             setErrorMsg(e?.message || String(e))
+            // Land on the tab either way. The landing state already renders a
+            // Run button, and errorMsg already renders above the output area
+            // on every tab, so the failure path is the one that existed.
+            setTab("positioning")
         } finally {
             setLoadingPositioning(false)
         }
@@ -1990,6 +2104,7 @@ export default function WRNSignalTabs(props: {
             setTab("coverletter")
         } catch (e: any) {
             setErrorMsg(e?.message || String(e))
+            setTab("coverletter")
         } finally {
             setLoadingCoverLetter(false)
         }
@@ -2078,25 +2193,11 @@ export default function WRNSignalTabs(props: {
         const isForcePass = gate?.type === "force_pass"
         const gateDetail = String(gate?.detail ?? "").trim()
 
-        const jobSignals = jobFitResult?.job_signals ?? {}
-        const isInternship = jobSignals?.internship?.isInternship === true
-        const locationMode = String(jobSignals?.location?.mode ?? "").trim()
-        const locationCity = String(jobSignals?.location?.city ?? "").trim()
-        const yearsRequired = jobSignals?.yearsRequired ?? null
-
-        // Job context — API signals first, then state, then raw text extraction
-        const ctxFromState = jobContext ?? { title: "", company: "" }
-        const ctxFromText = extractJobContextFromJobText(job)
-        const ctxTitle =
-            String(jobSignals?.jobTitle ?? "").trim() ||
-            ctxFromState.title ||
-            ctxFromText.title ||
-            ""
-        const ctxCompany =
-            String(jobSignals?.companyName ?? "").trim() ||
-            ctxFromState.company ||
-            ctxFromText.company ||
-            ""
+        // Job context is computed once at component scope now — see jobCtx —
+        // because the Active Job row on Positioning and Cover Letter shows the
+        // same facts and cannot reach inside this function for them.
+        const { ctxTitle, ctxCompany, isInternship, locLabel, yearsRequired } =
+            jobCtx
 
         const isPass = lower.includes("pass") || lower.includes("do not")
         const isReview = lower.includes("review")
@@ -2119,10 +2220,12 @@ export default function WRNSignalTabs(props: {
               : L_VERDICT_APPLY
 
         const ctaLabel = isPass
-            ? "Run New Job →"
-            : isReview
-              ? "Proceed Carefully →"
-              : "Proceed to Positioning →"
+            ? "Run New Job"
+            : loadingPositioning
+              ? "Running Positioning"
+              : isReview
+                ? "Proceed Carefully"
+                : "Proceed to Positioning"
 
         // The client-side why_codes re-sort (WHY_PRIORITY, weight-first) went
         // with WhyCards, its only consumer. NOTHING ON SCREEN DEPENDED ON IT:
@@ -2142,7 +2245,7 @@ export default function WRNSignalTabs(props: {
                 runNewJob()
                 return
             }
-            goTo("positioning")
+            proceedToPositioning()
         }
 
         // -- Networking prompt ------------------------------------
@@ -2289,24 +2392,6 @@ export default function WRNSignalTabs(props: {
         }
 
         // ── Location label ───────────────────────────────────────
-        const locLabel = locationCity
-            ? locationCity
-            : locationMode === "remote"
-              ? "Remote"
-              : locationMode === "hybrid"
-                ? "Hybrid"
-                : locationMode === "in_person"
-                  ? "On-site"
-                  : ""
-
-        const hasCtx = !!(
-            ctxTitle ||
-            ctxCompany ||
-            isInternship ||
-            locLabel ||
-            yearsRequired !== null
-        )
-
         // ── Risk rows ────────────────────────────────────────────
         // Hoisted out of the JSX so the card can hide when the cascade yields
         // nothing. THE CASCADE AND THE DEDUPE ARE UNCHANGED: risk_structured
@@ -2379,21 +2464,14 @@ export default function WRNSignalTabs(props: {
         // Context line parts, joined by dots. Same five facts the pill row
         // carried; a title with no company still reads correctly because the
         // empties are filtered before the join.
-        const ctxParts = [
-            ctxTitle,
-            ctxCompany,
-            isInternship ? "Internship" : "",
-            locLabel,
-            yearsRequired !== null ? `${yearsRequired}+ yrs exp` : "",
-        ].filter(Boolean)
-
         // ── Full render ──────────────────────────────────────────
         return (
             <>
-                {/* Job context — one line, no card, no pills */}
-                {hasCtx && ctxParts.length > 0 ? (
-                    <div style={jfCtxLine}>{ctxParts.join(" · ")}</div>
-                ) : null}
+                {/* Job context. Title and company lead at 17px/700; the
+                    qualifiers sit under them. It was one 13px muted line with
+                    all five facts dot-joined, which made the two that identify
+                    the job the same weight as "3+ yrs exp". */}
+                <JobContextBlock ctx={jobCtx} />
 
                 {/* Verdict card — decision, score and the move, in one navy
                     block. Was three: a stripe, a hero split by a rule, and a
@@ -2448,8 +2526,12 @@ export default function WRNSignalTabs(props: {
                     <button
                         style={jfCtaPair}
                         onClick={onPrimaryClick}
+                        disabled={loadingPositioning}
                         type="button"
                     >
+                        {loadingPositioning ? (
+                            <span style={spinnerOnNavy} aria-hidden />
+                        ) : null}
                         {ctaLabel}
                     </button>
                     {renderNetButton()}
@@ -2689,11 +2771,11 @@ export default function WRNSignalTabs(props: {
                         steps JobFit already deleted, and a "What Positioning
                         gives you" checklist. Roughly 700px of preamble in front
                         of one button. */}
-                    <div style={posHero}>
-                        <div style={posHeroHead}>
+                    <div style={heroCard}>
+                        <div style={heroHead}>
                             Rewrite your resume for this job
                         </div>
-                        <div style={posHeroSub}>
+                        <div style={heroSub}>
                             Your bullets, in the language this posting uses, so
                             a recruiter sees the match in seconds.
                         </div>
@@ -2790,11 +2872,11 @@ export default function WRNSignalTabs(props: {
                     entirely: it labelled the two cards below it, which already
                     carry their own numbers and titles. */}
                 {intro ? (
-                    <div style={posHero}>
+                    <div style={heroCard}>
                         <div style={sectionLabelOnNavy}>
                             Positioning analysis
                         </div>
-                        <div style={posHeroIntro}>{intro}</div>
+                        <div style={heroIntro}>{intro}</div>
                     </div>
                 ) : null}
 
@@ -2809,7 +2891,7 @@ export default function WRNSignalTabs(props: {
                     <div style={posCard}>
                         <div style={posCardRule} />
                         <div style={posCardHeader}>
-                            <div style={posCardNumber}>1</div>
+                            <div style={sectionNumber}>1</div>
                             <div style={sectionLabel}>Optimize key bullets</div>
                             <div style={posCardCount}>
                                 {normalizedEdits.length}{" "}
@@ -2882,7 +2964,7 @@ export default function WRNSignalTabs(props: {
                     <div style={posCard}>
                         <div style={{ ...posCardRule, background: L_TEAL }} />
                         <div style={posCardHeader}>
-                            <div style={posCardNumber}>1</div>
+                            <div style={sectionNumber}>1</div>
                             <div style={sectionLabel}>Optimize key bullets</div>
                             <div
                                 style={{ ...posCardCount, color: L_TEAL_INK }}
@@ -2912,7 +2994,7 @@ export default function WRNSignalTabs(props: {
                 <div style={posCard}>
                     <div style={posCardRule} />
                     <div style={posCardHeader}>
-                        <div style={posCardNumber}>2</div>
+                        <div style={sectionNumber}>2</div>
                         <div style={sectionLabel}>
                             Align your summary statement
                         </div>
@@ -3035,16 +3117,22 @@ export default function WRNSignalTabs(props: {
                     </div>
                 ) : null}
 
-                {/* CTA. Solid navy, like every other primary in the file. It
-                    was jobfitHeroBtn, the peach-to-blue gradient, which is now
-                    called from Networking only. */}
+                {/* CTA. It runs Cover Letter rather than only switching to a
+                    landing state that would have asked for one more click. If
+                    a letter already exists it just switches. */}
                 <div style={{ marginTop: 20 }}>
                     <button
                         style={{ ...primaryBtn, width: "100%" }}
-                        onClick={() => goTo("coverletter")}
+                        onClick={proceedToCoverLetter}
+                        disabled={loadingCoverLetter}
                         type="button"
                     >
-                        Proceed to Cover Letter
+                        {loadingCoverLetter ? (
+                            <span style={spinnerOnNavy} aria-hidden />
+                        ) : null}
+                        {loadingCoverLetter
+                            ? "Running Cover Letter"
+                            : "Proceed to Cover Letter"}
                     </button>
                 </div>
             </>
@@ -3056,309 +3144,18 @@ export default function WRNSignalTabs(props: {
         if (!coverLetterResult) {
             return (
                 <>
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(81,173,229,0.20)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 16,
-                            marginTop: 4,
-                            position: "relative" as const,
-                        }}
-                    >
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                top: -40,
-                                left: -40,
-                                width: 220,
-                                height: 220,
-                                borderRadius: "50%",
-                                background: "rgba(81,173,229,0.07)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                bottom: -20,
-                                right: -20,
-                                width: 180,
-                                height: 180,
-                                borderRadius: "50%",
-                                background: "rgba(254,176,106,0.06)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#FEB06A,#f97316,#51ADE5)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                padding: "28px 32px 32px",
-                                position: "relative" as const,
-                                zIndex: 1,
-                                textAlign: "center" as const,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 900,
-                                    letterSpacing: 2,
-                                    textTransform: "uppercase" as const,
-                                    color: "rgba(254,176,106,0.70)",
-                                    marginBottom: 16,
-                                }}
-                            >
-                                Step 3 of 4
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 38,
-                                    fontWeight: 950,
-                                    color: "rgba(255,255,255,0.97)",
-                                    lineHeight: 1.1,
-                                    letterSpacing: -1.2,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                A cover letter written
-                                <br />
-                                in{" "}
-                                <span style={{ color: "#FEB06A" }}>
-                                    your voice.
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 22,
-                                    fontWeight: 950,
-                                    letterSpacing: -0.5,
-                                    marginBottom: 18,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                <span style={{ color: "#FEB06A" }}>
-                                    Not a template.
-                                </span>
-                                <span
-                                    style={{ color: "rgba(255,255,255,0.90)" }}
-                                >
-                                    {" "}
-                                    Your story, this role.
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    lineHeight: "22px",
-                                    color: "rgba(255,255,255,0.45)",
-                                    margin: "0 auto 28px",
-                                    maxWidth: 500,
-                                }}
-                            >
-                                Generic cover letters get ignored. SIGNAL writes
-                                one letter — built from your actual background,
-                                matched to this specific company and role. No
-                                filler. No resume repeat. Just a clear case for
-                                why you belong here.
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column" as const,
-                                    gap: 10,
-                                    marginBottom: 22,
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                {[
-                                    {
-                                        n: "1",
-                                        head: "Run JobFit",
-                                        body: "Paste the job description and get a clear verdict — Apply, Review, or Pass — before you spend a minute on an application.",
-                                    },
-                                    {
-                                        n: "2",
-                                        head: "Run Positioning",
-                                        body: "Rewrite your resume bullets to match this specific role. One targeted story, in the language the recruiter is scanning for.",
-                                    },
-                                    {
-                                        n: "3",
-                                        head: "Run Cover Letter",
-                                        body: "Write a letter in your voice that connects your background to this company — not a template, a real case for why you fit.",
-                                    },
-                                    {
-                                        n: "4",
-                                        head: "Run Networking",
-                                        body: "Build your outreach plan. Know who to contact, what to say, and how to follow up so your name is known before the interview.",
-                                    },
-                                ].map((s, idx) => {
-                                    const isActive = idx === 2
-                                    const isDone = idx < 2
-                                    return (
-                                        <div
-                                            key={s.n}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 14,
-                                                opacity: isActive
-                                                    ? 1
-                                                    : isDone
-                                                      ? 0.55
-                                                      : 0.3,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: isActive ? 36 : 28,
-                                                    height: isActive ? 36 : 28,
-                                                    borderRadius: "50%",
-                                                    background: isActive
-                                                        ? "rgba(254,176,106,0.25)"
-                                                        : isDone
-                                                          ? "rgba(74,222,128,0.15)"
-                                                          : "rgba(255,255,255,0.06)",
-                                                    border: isActive
-                                                        ? "2px solid rgba(254,176,106,0.70)"
-                                                        : isDone
-                                                          ? "2px solid rgba(74,222,128,0.50)"
-                                                          : "2px solid rgba(255,255,255,0.15)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: isActive
-                                                        ? 15
-                                                        : 12,
-                                                    fontWeight: 900,
-                                                    color: isActive
-                                                        ? "#FEB06A"
-                                                        : isDone
-                                                          ? "#4ade80"
-                                                          : "rgba(255,255,255,0.35)",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                {s.n}
-                                            </div>
-                                            <div>
-                                                <div
-                                                    style={{
-                                                        fontSize: isActive
-                                                            ? 16
-                                                            : 13,
-                                                        fontWeight: isActive
-                                                            ? 900
-                                                            : 700,
-                                                        color: isActive
-                                                            ? "#FEB06A"
-                                                            : isDone
-                                                              ? "rgba(255,255,255,0.75)"
-                                                              : "rgba(255,255,255,0.40)",
-                                                        marginBottom: 3,
-                                                    }}
-                                                >
-                                                    {s.head}
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 12,
-                                                        lineHeight: "18px",
-                                                        color: isActive
-                                                            ? "rgba(255,255,255,0.55)"
-                                                            : "rgba(255,255,255,0.22)",
-                                                    }}
-                                                >
-                                                    {s.body}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                            <div
-                                style={{
-                                    borderRadius: 14,
-                                    border: "1px solid rgba(74,222,128,0.18)",
-                                    background: "rgba(74,222,128,0.05)",
-                                    padding: "14px 16px",
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: 2,
-                                        textTransform: "uppercase" as const,
-                                        color: "rgba(74,222,128,0.65)",
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    What Cover Letter gives you
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 8,
-                                    }}
-                                >
-                                    {[
-                                        "A complete cover letter written from your actual background",
-                                        "Opening that names the specific role and signals genuine fit",
-                                        "Body that connects your experience to what this company needs",
-                                        "Closing that is confident without being pushy",
-                                    ].map((item, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 10,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 18,
-                                                    height: 18,
-                                                    borderRadius: "50%",
-                                                    background:
-                                                        "rgba(74,222,128,0.15)",
-                                                    border: "1.5px solid rgba(74,222,128,0.45)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: 10,
-                                                    fontWeight: 900,
-                                                    color: "#4ade80",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                ✓
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 12,
-                                                    lineHeight: "18px",
-                                                    color: "rgba(255,255,255,0.60)",
-                                                }}
-                                            >
-                                                {item}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    {/* Landing. Same eight elements Positioning shed, in the
+                        same order: two orb glows, the gradient bar, "Step 3 of
+                        4", a 38px headline, a 22px sub-headline, a body
+                        paragraph, the four numbered steps and a "What Cover
+                        Letter gives you" checklist. */}
+                    <div style={heroCard}>
+                        <div style={heroHead}>
+                            Write a cover letter for this job
+                        </div>
+                        <div style={heroSub}>
+                            One letter for this company and this role, in your
+                            voice, built from the resume you already have.
                         </div>
                     </div>
                     {renderPrimaryRunButton(
@@ -3405,17 +3202,6 @@ export default function WRNSignalTabs(props: {
                     ""
             ).trim() || ""
 
-        console.log(
-            "CL_DEBUG contact:",
-            JSON.stringify(coverLetterResult?.contact)
-        )
-        console.log("CL_DEBUG keys:", Object.keys(coverLetterResult || {}))
-        console.log("CL_DEBUG jobContext:", JSON.stringify(jobContext))
-        console.log(
-            "CL_DEBUG ctxFromText:",
-            JSON.stringify(extractJobContextFromJobText(job))
-        )
-
         const ctxFromText = extractJobContextFromJobText(job)
         const resolvedTitle = jobContext?.title || ctxFromText.title || ""
         const resolvedName = clName.trim() || fullName || ""
@@ -3431,192 +3217,119 @@ export default function WRNSignalTabs(props: {
             email: emailFromProfile,
             hiringManager: clHiringManager,
         })
-        const copyLetter = () => {
-            if (typeof navigator === "undefined" || !navigator.clipboard) return
-            navigator.clipboard.writeText(finalLetter)
-        }
+        // Routed through copyText rather than calling the clipboard directly:
+        // it already stamps copiedKey and clears it after 2s, which is exactly
+        // the confirmation this button was missing. Same handler name, same
+        // effect, one fewer timer in the file.
+        const copyLetter = () => copyText(finalLetter, "cover-letter")
 
         return (
             <>
-                {/* Header row */}
-                {/* Editable fields with DocuSign-style indicators */}
-                <div
-                    style={{
-                        display: "grid",
-                        ggridTemplateColumns: "1fr 1fr 1fr",
-                        gap: 10,
-                        marginBottom: 14,
-                    }}
-                >
-                    {[
-                        {
-                            label: "Your name",
-                            value: clName,
-                            setter: setClName,
-                            placeholder: "Your full name",
-                        },
-                        {
-                            label: "Company name",
-                            value: clCompany,
-                            setter: setClCompany,
-                            placeholder: "Company name",
-                        },
-                        {
-                            label: "Hiring manager (optional)",
-                            value: clHiringManager,
-                            setter: setClHiringManager,
-                            placeholder: "e.g. Sarah Johnson",
-                        },
-                    ].map((field) => (
-                        <div key={field.label} style={{ position: "relative" }}>
-                            {/* Orange arrow indicator */}
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    marginBottom: 6,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 0,
-                                            height: 0,
-                                            borderTop: "10px solid transparent",
-                                            borderBottom:
-                                                "10px solid transparent",
-                                            borderLeft: "14px solid #FEB06A",
-                                        }}
-                                    />
-                                    <div
-                                        style={{
-                                            background: "#FEB06A",
-                                            height: 6,
-                                            width: 10,
-                                            marginLeft: -1,
-                                        }}
+                {/* YOUR DETAILS. These three are the only way to fill the
+                    [Your Name] / [Company Name] / [Hiring Manager] placeholders
+                    buildFinalLetter otherwise bakes into the letter, and the
+                    API never sees them — the letter is assembled client-side on
+                    every render. The state and the wiring are untouched; what
+                    went is the chrome: two divs per field drawing an orange
+                    arrow glyph, and a 2px peach input border.
+
+                    The grid also actually works now. It read
+                    ggridTemplateColumns, which is not a property, so three
+                    fields that were meant to sit in a row had been stacking
+                    full-width. */}
+                <div style={posCard}>
+                    <div style={{ ...posCardRule, background: L_BLUE }} />
+                    <div style={posCardHeader}>
+                        <div style={sectionNumber}>1</div>
+                        <div style={sectionLabel}>Your details</div>
+                    </div>
+                    <div style={posCardBody}>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr 1fr",
+                                gap: 12,
+                            }}
+                        >
+                            {[
+                                {
+                                    label: "Your name",
+                                    value: clName,
+                                    setter: setClName,
+                                    placeholder: "Your full name",
+                                },
+                                {
+                                    label: "Company name",
+                                    value: clCompany,
+                                    setter: setClCompany,
+                                    placeholder: "Company name",
+                                },
+                                {
+                                    label: "Hiring manager (optional)",
+                                    value: clHiringManager,
+                                    setter: setClHiringManager,
+                                    placeholder: "e.g. Sarah Johnson",
+                                },
+                            ].map((field) => (
+                                <div key={field.label}>
+                                    <div style={clFieldLabel}>
+                                        {field.label}
+                                    </div>
+                                    <input
+                                        className="wrn-scan-field"
+                                        style={scanInput}
+                                        value={field.value}
+                                        onChange={(e) =>
+                                            field.setter(e.target.value)
+                                        }
+                                        placeholder={field.placeholder}
                                     />
                                 </div>
-                                <div
-                                    style={{
-                                        fontSize: 11,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.8,
-                                        color: "#FEB06A",
-                                        textTransform: "uppercase" as const,
-                                    }}
-                                >
-                                    {field.label}
-                                </div>
-                            </div>
-                            <input
-                                style={{
-                                    ...input,
-                                    fontSize: 14,
-                                    height: 42,
-                                    border: `2px solid rgba(254,176,106,0.50)`,
-                                    borderRadius: 12,
-                                }}
-                                value={field.value}
-                                onChange={(e) => field.setter(e.target.value)}
-                                placeholder={field.placeholder}
-                            />
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
 
-                {/* Header row */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 14,
-                    }}
-                >
-                    <div
-                        style={{
-                            fontSize: 9,
-                            fontWeight: 900,
-                            letterSpacing: 2,
-                            textTransform: "uppercase" as const,
-                            color: "rgba(255,255,255,0.32)",
-                        }}
-                    >
-                        Letter generated
+                {/* YOUR LETTER. Same card as YOUR DETAILS — white, blue rule,
+                    numbered head — with the document inside it rather than a
+                    bare label floating above a slab. The letter itself keeps
+                    the serif, the near-black ink and the generous measure: it
+                    is the one thing in this file meant to look like a page
+                    rather than a panel. It drops the shadow and the 14px
+                    radius it used to carry as a card in its own right, because
+                    the card around it now supplies both. */}
+                <div style={posCard}>
+                    <div style={{ ...posCardRule, background: L_BLUE }} />
+                    <div style={posCardHeader}>
+                        <div style={sectionNumber}>2</div>
+                        <div style={sectionLabel}>Your letter</div>
                     </div>
+                    <div style={posCardBody}>
+                        <div style={clLetterCard}>{finalLetter}</div>
+                    </div>
+                </div>
+
+                <div style={clActionRow}>
                     <button
-                        type="button"
-                        onClick={copyLetter}
                         style={{
-                            background: "transparent",
-                            border: "none",
-                            padding: 0,
-                            fontSize: 12,
-                            fontWeight: 900,
-                            color: WRN_BLUE,
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                            textUnderlineOffset: 3,
-                            letterSpacing: 0.3,
+                            ...clCopyBtn,
+                            ...(wasCopied("cover-letter")
+                                ? clCopyBtnDone
+                                : null),
                         }}
+                        onClick={copyLetter}
+                        type="button"
                     >
-                        Copy letter
+                        {wasCopied("cover-letter") ? "Copied" : "Copy letter"}
+                    </button>
+                    <button
+                        style={primaryBtn}
+                        onClick={goToNetworkBoard}
+                        type="button"
+                    >
+                        Proceed to Networking
                     </button>
                 </div>
-
-                {/* Document card */}
-                <div
-                    style={{
-                        background: "#FFFFFF",
-                        borderRadius: 18,
-                        padding: "32px 36px",
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        fontSize: 14,
-                        lineHeight: "24px",
-                        color: "#1a1a2e",
-                        whiteSpace: "pre-wrap" as const,
-                        marginBottom: 16,
-                    }}
-                >
-                    {finalLetter}
-                </div>
-
-                {/* Copy CTA */}
-                <button
-                    style={{
-                        width: "100%",
-                        padding: "13px",
-                        borderRadius: 13,
-                        background: GLASS,
-                        fontWeight: 900,
-                        fontSize: 14,
-                        border: `1px solid ${BORDER_SOFT}`,
-                        cursor: "pointer",
-                        color: TEXT,
-                        marginBottom: 10,
-                    }}
-                    onClick={copyLetter}
-                    type="button"
-                >
-                    Copy to Clipboard
-                </button>
-
-                <button
-                    style={{ ...jobfitHeroBtn, width: "100%" }}
-                    onClick={() => goTo("networking")}
-                    type="button"
-                >
-                    Proceed to Networking →
-                </button>
             </>
         )
     }
@@ -5552,7 +5265,17 @@ export default function WRNSignalTabs(props: {
                                 borderTop: `4px solid ${L_RULE_PERSONA}`,
                             }}
                         >
-                            <div style={sectionLabel}>Evaluating as</div>
+                            <div style={sectionHeadRow}>
+                                <div style={sectionNumber}>1</div>
+                                <div>
+                                    <span style={sectionLabel}>
+                                        Evaluating as
+                                    </span>
+                                    <span style={sectionLabelNote}>
+                                        (choose the correct resume)
+                                    </span>
+                                </div>
+                            </div>
                             <div
                                 style={{
                                     display: "flex",
@@ -5661,7 +5384,18 @@ export default function WRNSignalTabs(props: {
                             role="button"
                             onClick={() => setJobInputOpen((v) => !v)}
                         >
-                            <div style={scanCollapseLabel}>Active job</div>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={scanCollapseLabel}>Active job</div>
+                                {/* Not on JobFit: its result already opens with
+                                    this same block, and two copies of the job
+                                    title 40px apart is worse than none. */}
+                                {tab !== "jobfit" ? (
+                                    <JobContextBlock
+                                        ctx={jobCtx}
+                                        style={{ marginTop: 6 }}
+                                    />
+                                ) : null}
+                            </div>
                             <div style={scanCollapseChevron}>
                                 {jobInputOpen ? "▾" : "▸"}
                             </div>
@@ -5676,7 +5410,10 @@ export default function WRNSignalTabs(props: {
                         }}
                     >
                         {hasAnyResult ? null : (
-                            <div style={sectionLabel}>The job</div>
+                            <div style={sectionHeadRow}>
+                                <div style={sectionNumber}>2</div>
+                                <div style={sectionLabel}>The job</div>
+                            </div>
                         )}
 
                         <div style={{ display: "flex", gap: 8 }}>
@@ -5688,7 +5425,7 @@ export default function WRNSignalTabs(props: {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") handleFetchUrl()
                                 }}
-                                placeholder="https://linkedin.com/jobs/view/..."
+                                placeholder="Paste URL here"
                                 style={scanInput}
                             />
                             <button
@@ -5806,9 +5543,7 @@ export default function WRNSignalTabs(props: {
 
                         {manualPasteStep === "paste" && (
                             <div style={{ marginTop: 14 }}>
-                                <div style={scanHint}>
-                                    or paste the description below
-                                </div>
+                                <div style={scanOr}>OR</div>
                                 <div style={{ position: "relative" as const }}>
                                     <textarea
                                         className="wrn-scan-field"
@@ -6387,12 +6122,15 @@ const scanHeroSub: React.CSSProperties = {
     maxWidth: 460,
 }
 
+// 24px of top padding, here and on jfPanelHeader and posCardHeader. Every
+// card that carries a section label draws a 4px rule directly above it, and at
+// 18px the label was crowding its own rule.
 const scanCard: React.CSSProperties = {
     background: L_CARD,
     border: `1px solid ${L_BORDER_SOFT}`,
     boxShadow: L_SHADOW,
     borderRadius: 12,
-    padding: "18px 20px 20px",
+    padding: "24px 20px 20px",
     marginBottom: 16,
 }
 
@@ -6423,6 +6161,47 @@ const sectionLabel: React.CSSProperties = {
     marginBottom: 14,
 }
 
+/* A section head is a circled numeral and a label on one row. flex-start, not
+   center: the circle aligns to the top of the label so the orange underscore
+   stays under the words rather than being dragged down by a taller sibling. */
+const sectionHeadRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+}
+
+const sectionNumber: React.CSSProperties = {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    background: L_BLUE,
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+}
+
+/** Sits after a section label, outside the bold and outside the underscore. */
+const sectionLabelNote: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 400,
+    color: L_TEXT_2,
+    marginLeft: 10,
+}
+
+/** The divider between the two ways into a job. */
+const scanOr: React.CSSProperties = {
+    fontSize: 20,
+    fontWeight: 700,
+    color: L_NAVY,
+    textAlign: "center",
+    margin: "22px 0",
+    letterSpacing: "0.06em",
+}
+
 /** The same label on a navy ground, where the navy ink would be invisible. */
 const sectionLabelOnNavy: React.CSSProperties = {
     ...sectionLabel,
@@ -6437,12 +6216,6 @@ const scanResumePreview: React.CSSProperties = {
     fontSize: 13,
     lineHeight: "19px",
     color: L_MUTED,
-}
-
-const scanHint: React.CSSProperties = {
-    fontSize: 13,
-    color: L_HINT,
-    marginBottom: 8,
 }
 
 const scanNote: React.CSSProperties = {
@@ -6503,12 +6276,15 @@ const scanTextarea: React.CSSProperties = {
 // inline-flex on both of these is what gives the loading spinner somewhere to
 // sit: a gap beside the label rather than a bare word that changes tense and
 // nothing else. They share the one `spinner` in this file.
+// Pale blue with navy ink and no border. These are actions, but they are not
+// THE action — the navy primary is. The fill separates them from the outlined
+// secondaries without competing with the run button.
 const scanFetchBtn: React.CSSProperties = {
     padding: "0 20px",
     height: 42,
-    background: L_CARD,
+    background: L_PALE_BLUE,
     color: L_NAVY,
-    border: `1.5px solid ${L_NAVY}`,
+    border: "none",
     borderRadius: 10,
     fontSize: 13,
     fontWeight: 600,
@@ -6526,9 +6302,9 @@ const scanSecondaryAction: React.CSSProperties = {
     width: "100%",
     marginTop: 10,
     padding: "11px 16px",
-    background: L_CARD,
+    background: L_PALE_BLUE,
     color: L_NAVY,
-    border: `1.5px solid ${L_NAVY}`,
+    border: "none",
     borderRadius: 10,
     fontSize: 13,
     fontWeight: 600,
@@ -6543,8 +6319,8 @@ const scanSecondaryAction: React.CSSProperties = {
 // One disabled treatment for all three secondaries: the border and the ink
 // drop back, the fill stays white. Spread after the base style.
 const scanSecondaryBtnDisabled: React.CSSProperties = {
+    background: L_WELL,
     color: L_DIM,
-    border: `1.5px solid ${L_HAIRLINE}`,
     cursor: "not-allowed",
 }
 
@@ -6686,7 +6462,7 @@ const scanLoadBody: React.CSSProperties = {
 const scanCollapseRow: React.CSSProperties = {
     width: "100%",
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     padding: "11px 16px",
     borderRadius: 10,
@@ -6808,48 +6584,10 @@ const input: React.CSSProperties = {
 
 /* ---------- SHARED CONTENT / PANELS ---------- */
 
-const outputBox: React.CSSProperties = {
-    marginTop: 16,
-    width: "100%",
-}
-
-const outputText: React.CSSProperties = {
-    fontSize: 16,
-    lineHeight: "22px",
-    color: TEXT,
-    whiteSpace: "pre-wrap",
-}
-
 const divider: React.CSSProperties = {
     height: 1,
     background: BORDER,
     margin: "14px 0",
-}
-
-const jobContextBox: React.CSSProperties = {
-    padding: "14px 16px",
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.03)",
-    marginBottom: 18,
-}
-
-const jobContextHeaderLine: React.CSSProperties = {
-    fontSize: 22,
-    fontWeight: 950,
-    letterSpacing: 0.6,
-    color: TEXT,
-}
-
-const hintBox: React.CSSProperties = {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: MUTED,
-    fontSize: 13,
-    lineHeight: "18px",
 }
 
 const errorBox: React.CSSProperties = {
@@ -6860,22 +6598,15 @@ const errorBox: React.CSSProperties = {
     whiteSpace: "pre-wrap",
 }
 
-const upgradeNote: React.CSSProperties = {
-    margin: "10px 0 6px",
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: MUTED,
-    fontSize: 13,
-    lineHeight: "18px",
-}
-
 /* ---------- BUTTONS / LINKS ---------- */
 
 // The Run button. Peach on navy ink — the action treatment, and the only
 // place besides the results CTA that may wear it.
 const primaryBtn: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     padding: "14px 18px",
     borderRadius: 10,
     background: L_NAVY,
@@ -6885,40 +6616,6 @@ const primaryBtn: React.CSSProperties = {
     border: "none",
     cursor: "pointer",
     color: "#FFFFFF",
-}
-
-const jobfitHeroBtn: React.CSSProperties = {
-    padding: "12px 18px",
-    borderRadius: 14,
-    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
-    fontWeight: 900,
-    border: "none",
-    cursor: "pointer",
-    color: "#0B1020",
-}
-
-const inlineLinkBtn: React.CSSProperties = {
-    padding: "10px 14px",
-    borderRadius: 14,
-    background: "rgba(255,255,255,.06)",
-    border: `1px solid ${BORDER}`,
-    cursor: "pointer",
-    color: TEXT,
-    fontWeight: 900,
-    fontSize: 12,
-}
-
-const smallLinkBtn: React.CSSProperties = {
-    background: "transparent",
-    border: "none",
-    padding: 0,
-    margin: 0,
-    fontSize: 13,
-    fontWeight: 800,
-    color: WRN_BLUE,
-    cursor: "pointer",
-    textDecoration: "underline",
-    textUnderlineOffset: 4,
 }
 
 // Two spinners, because there are now two button grounds. The dark one is for
@@ -6947,15 +6644,17 @@ const spinnerOnNavy: React.CSSProperties = {
    posPrimaryBulletText, none of which had a call site: they were the accordion
    the tab stopped using, left behind when it went to always-open cards. */
 
-// Both hero uses: the landing state, and the analysis intro on a result.
-const posHero: React.CSSProperties = {
+// The navy hero. Four uses across two tabs: Positioning's landing state and
+// its analysis intro, and Cover Letter's landing state. Named for what it is
+// rather than for the first tab that needed it.
+const heroCard: React.CSSProperties = {
     background: L_NAVY,
     borderRadius: 16,
     padding: "26px 30px",
     marginBottom: 16,
 }
 
-const posHeroHead: React.CSSProperties = {
+const heroHead: React.CSSProperties = {
     fontSize: 28,
     fontWeight: 500,
     lineHeight: 1.2,
@@ -6963,7 +6662,7 @@ const posHeroHead: React.CSSProperties = {
     color: "#FFFFFF",
 }
 
-const posHeroSub: React.CSSProperties = {
+const heroSub: React.CSSProperties = {
     marginTop: 10,
     fontSize: 15,
     lineHeight: "23px",
@@ -6971,7 +6670,7 @@ const posHeroSub: React.CSSProperties = {
     maxWidth: 460,
 }
 
-const posHeroIntro: React.CSSProperties = {
+const heroIntro: React.CSSProperties = {
     fontSize: 15,
     lineHeight: "24px",
     color: L_ON_NAVY,
@@ -6998,15 +6697,7 @@ const posCardHeader: React.CSSProperties = {
     display: "flex",
     alignItems: "flex-start",
     gap: 12,
-    padding: "18px 22px 0",
-}
-
-const posCardNumber: React.CSSProperties = {
-    fontSize: 26,
-    fontWeight: 500,
-    color: L_ORANGE,
-    lineHeight: 1,
-    flexShrink: 0,
+    padding: "24px 22px 0",
 }
 
 const posCardCount: React.CSSProperties = {
@@ -7195,6 +6886,63 @@ const posEmptyBody: React.CSSProperties = {
     color: L_TEXT_2,
 }
 
+/* ---------- COVER LETTER ----------
+   The card shell, its rule and its body come from the posCard family above.
+   The pos* prefix is now a misnomer — those three are shared primitives, not
+   Positioning's — but renaming them would put a mechanical 200-line diff
+   through a Cover Letter change. Noted rather than done. */
+
+const clFieldLabel: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: L_ORANGE,
+    marginBottom: 6,
+}
+
+// The page inside the card. White on white, so a hairline is what separates
+// it from its container — the shadow and the 14px radius went with the card it
+// used to be. Serif and near-black ink rather than the brand navy: this is the
+// one surface here meant to read as a document.
+const clLetterCard: React.CSSProperties = {
+    background: "#FFFFFF",
+    border: `1px solid ${L_BORDER_SOFT}`,
+    borderRadius: 10,
+    padding: "28px 32px",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    fontSize: 14,
+    lineHeight: "24px",
+    color: "#1A1A2E",
+    whiteSpace: "pre-wrap",
+}
+
+const clActionRow: React.CSSProperties = {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+}
+
+// Outlined navy, inline. It was a full-width translucent-white fill — a
+// dark-theme token still sitting on the light ground since the conversion,
+// and the last thing in the file reading it.
+const clCopyBtn: React.CSSProperties = {
+    padding: "14px 20px",
+    borderRadius: 10,
+    background: L_CARD,
+    border: `1.5px solid ${L_NAVY}`,
+    color: L_NAVY,
+    fontSize: 15,
+    fontWeight: 600,
+    fontFamily: "inherit",
+    cursor: "pointer",
+}
+
+const clCopyBtnDone: React.CSSProperties = {
+    border: `1.5px solid ${L_TEAL}`,
+    color: L_TEAL_INK,
+}
+
 /* ---------- NETWORKING ---------- */
 
 const netSummaryBox: React.CSSProperties = {
@@ -7347,11 +7095,18 @@ const netInnerBody: React.CSSProperties = {
 // The renderer is now the only consumer of this block, and every constant
 // below is used by it.
 
-const jfCtxLine: React.CSSProperties = {
+const jfCtxLead: React.CSSProperties = {
+    fontSize: 17,
+    fontWeight: 700,
+    color: L_NAVY,
+    lineHeight: "24px",
+}
+
+const jfCtxQuals: React.CSSProperties = {
     fontSize: 13,
-    color: L_MUTED,
-    marginBottom: 12,
-    lineHeight: "18px",
+    color: L_TEXT_2,
+    lineHeight: "19px",
+    marginTop: 2,
 }
 
 // ── Verdict card ────────────────────────────────────────────────────────────
@@ -7444,6 +7199,10 @@ const jfCtaRow: React.CSSProperties = {
 const jfCtaPair: React.CSSProperties = {
     flex: 1,
     minWidth: 200,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     padding: "15px 18px",
     borderRadius: 13,
     background: L_NAVY,
@@ -7497,7 +7256,7 @@ const jfPanelHeader: React.CSSProperties = {
     display: "flex",
     alignItems: "flex-start",
     gap: 12,
-    padding: "18px 22px 0",
+    padding: "24px 22px 0",
 }
 
 // marginLeft:auto is what pushes the count right. The label cannot take flex:1
@@ -7532,7 +7291,7 @@ const jfBulletLast: React.CSSProperties = {
 
 const jfBulletKeyword: React.CSSProperties = {
     fontSize: 15,
-    fontWeight: 500,
+    fontWeight: 700,
     color: L_NAVY,
     marginBottom: 5,
 }
@@ -7614,17 +7373,6 @@ const upgradeBullets: React.CSSProperties = {
     lineHeight: "18px",
     color: TEXT,
     whiteSpace: "pre-wrap",
-}
-
-const upgradeBtn: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 18px",
-    borderRadius: 16,
-    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
-    fontWeight: 900,
-    border: "none",
-    cursor: "pointer",
-    color: "#0B1020",
 }
 
 /* ---------- FRAMER PROPERTY CONTROLS ---------- */
