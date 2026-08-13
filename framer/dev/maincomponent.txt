@@ -1049,6 +1049,44 @@ function ScanLoadingCards() {
     )
 }
 
+/**
+ * The job this session is about, in one shape, used by three tabs. Title and
+ * company lead because they are what identifies the job; location, years and
+ * the internship flag are qualifiers and sit under them at body-secondary.
+ * Renders nothing when it knows nothing.
+ */
+function JobContextBlock({
+    ctx,
+    style,
+}: {
+    ctx: {
+        ctxTitle: string
+        ctxCompany: string
+        isInternship: boolean
+        locLabel: string
+        yearsRequired: any
+    }
+    style?: React.CSSProperties
+}) {
+    const lead = [ctx.ctxTitle, ctx.ctxCompany].filter(Boolean).join(" · ")
+    const quals = [
+        ctx.isInternship ? "Internship" : "",
+        ctx.locLabel,
+        ctx.yearsRequired !== null ? `${ctx.yearsRequired}+ yrs exp` : "",
+    ].filter(Boolean)
+
+    if (!lead && !quals.length) return null
+
+    return (
+        <div style={style}>
+            {lead ? <div style={jfCtxLead}>{lead}</div> : null}
+            {quals.length ? (
+                <div style={jfCtxQuals}>{quals.join(" · ")}</div>
+            ) : null}
+        </div>
+    )
+}
+
 function DevBanner() {
     const [hostname, setHostname] = React.useState("")
     const [shouldShow, setShouldShow] = React.useState(false)
@@ -1226,6 +1264,49 @@ export default function WRNSignalTabs(props: {
 
     const isLoggedIn = authStatus === "logged_in" && !!accessToken
     const hasJob = job.trim().length > 0
+
+    // ── Job context, one source for three tabs ──────────────────────────────
+    // JobFit's result header and the Active Job row on Positioning / Cover
+    // Letter show the same five facts, so they are derived once here rather
+    // than inside renderJobFit where only one of them could reach them.
+    //
+    // It degrades on purpose: location, years and the internship flag come off
+    // jobFitResult.job_signals, so a session that ran Positioning without
+    // JobFit gets title and company from jobContext or the raw job text and
+    // simply omits the rest.
+    const jobCtx = React.useMemo(() => {
+        const jobSignals = jobFitResult?.job_signals ?? {}
+        const fromState = jobContext ?? { title: "", company: "" }
+        const fromText = extractJobContextFromJobText(job)
+        const locationMode = String(jobSignals?.location?.mode ?? "").trim()
+        const locationCity = String(jobSignals?.location?.city ?? "").trim()
+        const locLabel = locationCity
+            ? locationCity
+            : locationMode === "remote"
+              ? "Remote"
+              : locationMode === "hybrid"
+                ? "Hybrid"
+                : locationMode === "in_person"
+                  ? "On-site"
+                  : ""
+        const ctxTitle =
+            String(jobSignals?.jobTitle ?? "").trim() ||
+            fromState.title ||
+            fromText.title ||
+            ""
+        const ctxCompany =
+            String(jobSignals?.companyName ?? "").trim() ||
+            fromState.company ||
+            fromText.company ||
+            ""
+        return {
+            ctxTitle,
+            ctxCompany,
+            isInternship: jobSignals?.internship?.isInternship === true,
+            locLabel,
+            yearsRequired: jobSignals?.yearsRequired ?? null,
+        }
+    }, [jobFitResult, jobContext, job])
 
     const hasAnyResult =
         !!jobFitResult ||
@@ -1692,6 +1773,17 @@ export default function WRNSignalTabs(props: {
     // Same mechanism as goToDashboard: this component runs inside a Framer
     // iframe, so an <a href> would open the dashboard INSIDE the frame. The
     // token rides along for the same reason it does there.
+    // /dashboard/network, not the in-component Networking tab. That tab is
+    // being retired — the left nav already leaves for the board — and Cover
+    // Letter's CTA was the last thing still pointing at it.
+    function goToNetworkBoard() {
+        if (typeof window === "undefined") return
+        const url = accessToken
+            ? `${API_BASE}/dashboard/network?token=${accessToken}`
+            : `${API_BASE}/dashboard/network`
+        window.top!.location.replace(url)
+    }
+
     function goToNetworkCompanies() {
         if (typeof window === "undefined") return
         const url = accessToken
@@ -1830,6 +1922,26 @@ export default function WRNSignalTabs(props: {
 
     function goTo(tabKey: TabKey) {
         setTab(tabKey)
+    }
+
+    // ── Proceed = run, unless it has already run ────────────────────────────
+    // There is no per-job binding on these results and none is needed:
+    // runNewJob() clears all four, so a non-null result IS a result for the
+    // current job. Sidebar navigation still goes through goTo and never runs.
+    function proceedToPositioning() {
+        if (positioningResult) {
+            goTo("positioning")
+            return
+        }
+        runPositioning()
+    }
+
+    function proceedToCoverLetter() {
+        if (coverLetterResult) {
+            goTo("coverletter")
+            return
+        }
+        runCoverLetter()
     }
 
     // The shared run button. `scanCards` is the JobFit path: instead of the
@@ -2030,6 +2142,10 @@ export default function WRNSignalTabs(props: {
             setTab("positioning")
         } catch (e: any) {
             setErrorMsg(e?.message || String(e))
+            // Land on the tab either way. The landing state already renders a
+            // Run button, and errorMsg already renders above the output area
+            // on every tab, so the failure path is the one that existed.
+            setTab("positioning")
         } finally {
             setLoadingPositioning(false)
         }
@@ -2061,6 +2177,7 @@ export default function WRNSignalTabs(props: {
             setTab("coverletter")
         } catch (e: any) {
             setErrorMsg(e?.message || String(e))
+            setTab("coverletter")
         } finally {
             setLoadingCoverLetter(false)
         }
@@ -2149,25 +2266,11 @@ export default function WRNSignalTabs(props: {
         const isForcePass = gate?.type === "force_pass"
         const gateDetail = String(gate?.detail ?? "").trim()
 
-        const jobSignals = jobFitResult?.job_signals ?? {}
-        const isInternship = jobSignals?.internship?.isInternship === true
-        const locationMode = String(jobSignals?.location?.mode ?? "").trim()
-        const locationCity = String(jobSignals?.location?.city ?? "").trim()
-        const yearsRequired = jobSignals?.yearsRequired ?? null
-
-        // Job context — API signals first, then state, then raw text extraction
-        const ctxFromState = jobContext ?? { title: "", company: "" }
-        const ctxFromText = extractJobContextFromJobText(job)
-        const ctxTitle =
-            String(jobSignals?.jobTitle ?? "").trim() ||
-            ctxFromState.title ||
-            ctxFromText.title ||
-            ""
-        const ctxCompany =
-            String(jobSignals?.companyName ?? "").trim() ||
-            ctxFromState.company ||
-            ctxFromText.company ||
-            ""
+        // Job context is computed once at component scope now — see jobCtx —
+        // because the Active Job row on Positioning and Cover Letter shows the
+        // same facts and cannot reach inside this function for them.
+        const { ctxTitle, ctxCompany, isInternship, locLabel, yearsRequired } =
+            jobCtx
 
         const isPass = lower.includes("pass") || lower.includes("do not")
         const isReview = lower.includes("review")
@@ -2190,10 +2293,12 @@ export default function WRNSignalTabs(props: {
               : L_VERDICT_APPLY
 
         const ctaLabel = isPass
-            ? "Run New Job →"
-            : isReview
-              ? "Proceed Carefully →"
-              : "Proceed to Positioning →"
+            ? "Run New Job"
+            : loadingPositioning
+              ? "Running Positioning"
+              : isReview
+                ? "Proceed Carefully"
+                : "Proceed to Positioning"
 
         // The client-side why_codes re-sort (WHY_PRIORITY, weight-first) went
         // with WhyCards, its only consumer. NOTHING ON SCREEN DEPENDED ON IT:
@@ -2213,7 +2318,7 @@ export default function WRNSignalTabs(props: {
                 runNewJob()
                 return
             }
-            goTo("positioning")
+            proceedToPositioning()
         }
 
         // -- Networking prompt ------------------------------------
@@ -2360,24 +2465,6 @@ export default function WRNSignalTabs(props: {
         }
 
         // ── Location label ───────────────────────────────────────
-        const locLabel = locationCity
-            ? locationCity
-            : locationMode === "remote"
-              ? "Remote"
-              : locationMode === "hybrid"
-                ? "Hybrid"
-                : locationMode === "in_person"
-                  ? "On-site"
-                  : ""
-
-        const hasCtx = !!(
-            ctxTitle ||
-            ctxCompany ||
-            isInternship ||
-            locLabel ||
-            yearsRequired !== null
-        )
-
         // ── Risk rows ────────────────────────────────────────────
         // Hoisted out of the JSX so the card can hide when the cascade yields
         // nothing. THE CASCADE AND THE DEDUPE ARE UNCHANGED: risk_structured
@@ -2450,21 +2537,14 @@ export default function WRNSignalTabs(props: {
         // Context line parts, joined by dots. Same five facts the pill row
         // carried; a title with no company still reads correctly because the
         // empties are filtered before the join.
-        const ctxParts = [
-            ctxTitle,
-            ctxCompany,
-            isInternship ? "Internship" : "",
-            locLabel,
-            yearsRequired !== null ? `${yearsRequired}+ yrs exp` : "",
-        ].filter(Boolean)
-
         // ── Full render ──────────────────────────────────────────
         return (
             <>
-                {/* Job context — one line, no card, no pills */}
-                {hasCtx && ctxParts.length > 0 ? (
-                    <div style={jfCtxLine}>{ctxParts.join(" · ")}</div>
-                ) : null}
+                {/* Job context. Title and company lead at 17px/700; the
+                    qualifiers sit under them. It was one 13px muted line with
+                    all five facts dot-joined, which made the two that identify
+                    the job the same weight as "3+ yrs exp". */}
+                <JobContextBlock ctx={jobCtx} />
 
                 {/* Verdict card — decision, score and the move, in one navy
                     block. Was three: a stripe, a hero split by a rule, and a
@@ -2519,8 +2599,12 @@ export default function WRNSignalTabs(props: {
                     <button
                         style={jfCtaPair}
                         onClick={onPrimaryClick}
+                        disabled={loadingPositioning}
                         type="button"
                     >
+                        {loadingPositioning ? (
+                            <span style={spinnerOnNavy} aria-hidden />
+                        ) : null}
                         {ctaLabel}
                     </button>
                     {renderNetButton()}
@@ -2880,7 +2964,7 @@ export default function WRNSignalTabs(props: {
                     <div style={posCard}>
                         <div style={posCardRule} />
                         <div style={posCardHeader}>
-                            <div style={posCardNumber}>1</div>
+                            <div style={sectionNumber}>1</div>
                             <div style={sectionLabel}>Optimize key bullets</div>
                             <div style={posCardCount}>
                                 {normalizedEdits.length}{" "}
@@ -2953,7 +3037,7 @@ export default function WRNSignalTabs(props: {
                     <div style={posCard}>
                         <div style={{ ...posCardRule, background: L_TEAL }} />
                         <div style={posCardHeader}>
-                            <div style={posCardNumber}>1</div>
+                            <div style={sectionNumber}>1</div>
                             <div style={sectionLabel}>Optimize key bullets</div>
                             <div
                                 style={{ ...posCardCount, color: L_TEAL_INK }}
@@ -2983,7 +3067,7 @@ export default function WRNSignalTabs(props: {
                 <div style={posCard}>
                     <div style={posCardRule} />
                     <div style={posCardHeader}>
-                        <div style={posCardNumber}>2</div>
+                        <div style={sectionNumber}>2</div>
                         <div style={sectionLabel}>
                             Align your summary statement
                         </div>
@@ -3106,16 +3190,22 @@ export default function WRNSignalTabs(props: {
                     </div>
                 ) : null}
 
-                {/* CTA. Solid navy, like every other primary in the file. It
-                    was the peach-to-blue gradient button, whose last caller
-                    was Cover Letter; it is gone with this pass. */}
+                {/* CTA. It runs Cover Letter rather than only switching to a
+                    landing state that would have asked for one more click. If
+                    a letter already exists it just switches. */}
                 <div style={{ marginTop: 20 }}>
                     <button
                         style={{ ...primaryBtn, width: "100%" }}
-                        onClick={() => goTo("coverletter")}
+                        onClick={proceedToCoverLetter}
+                        disabled={loadingCoverLetter}
                         type="button"
                     >
-                        Proceed to Cover Letter
+                        {loadingCoverLetter ? (
+                            <span style={spinnerOnNavy} aria-hidden />
+                        ) : null}
+                        {loadingCoverLetter
+                            ? "Running Cover Letter"
+                            : "Proceed to Cover Letter"}
                     </button>
                 </div>
             </>
@@ -3222,7 +3312,10 @@ export default function WRNSignalTabs(props: {
                     full-width. */}
                 <div style={{ ...posCard, borderTop: `4px solid ${L_BLUE}` }}>
                     <div style={posCardBody}>
-                        <div style={sectionLabel}>Your details</div>
+                        <div style={sectionHeadRow}>
+                            <div style={sectionNumber}>1</div>
+                            <div style={sectionLabel}>Your details</div>
+                        </div>
                         <div
                             style={{
                                 display: "grid",
@@ -3276,7 +3369,10 @@ export default function WRNSignalTabs(props: {
                     are gone; the label says what it is, and there is one copy
                     control instead of two firing the same handler 600px
                     apart. */}
-                <div style={sectionLabel}>Your letter</div>
+                <div style={sectionHeadRow}>
+                    <div style={sectionNumber}>2</div>
+                    <div style={sectionLabel}>Your letter</div>
+                </div>
                 <div style={clLetterCard}>{finalLetter}</div>
 
                 <div style={clActionRow}>
@@ -3294,7 +3390,7 @@ export default function WRNSignalTabs(props: {
                     </button>
                     <button
                         style={primaryBtn}
-                        onClick={() => goTo("networking")}
+                        onClick={goToNetworkBoard}
                         type="button"
                     >
                         Proceed to Networking
@@ -5235,7 +5331,17 @@ export default function WRNSignalTabs(props: {
                                 borderTop: `4px solid ${L_RULE_PERSONA}`,
                             }}
                         >
-                            <div style={sectionLabel}>Evaluating as</div>
+                            <div style={sectionHeadRow}>
+                                <div style={sectionNumber}>1</div>
+                                <div>
+                                    <span style={sectionLabel}>
+                                        Evaluating as
+                                    </span>
+                                    <span style={sectionLabelNote}>
+                                        (choose the correct resume)
+                                    </span>
+                                </div>
+                            </div>
                             <div
                                 style={{
                                     display: "flex",
@@ -5344,7 +5450,18 @@ export default function WRNSignalTabs(props: {
                             role="button"
                             onClick={() => setJobInputOpen((v) => !v)}
                         >
-                            <div style={scanCollapseLabel}>Active job</div>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={scanCollapseLabel}>Active job</div>
+                                {/* Not on JobFit: its result already opens with
+                                    this same block, and two copies of the job
+                                    title 40px apart is worse than none. */}
+                                {tab !== "jobfit" ? (
+                                    <JobContextBlock
+                                        ctx={jobCtx}
+                                        style={{ marginTop: 6 }}
+                                    />
+                                ) : null}
+                            </div>
                             <div style={scanCollapseChevron}>
                                 {jobInputOpen ? "▾" : "▸"}
                             </div>
@@ -5359,7 +5476,10 @@ export default function WRNSignalTabs(props: {
                         }}
                     >
                         {hasAnyResult ? null : (
-                            <div style={sectionLabel}>The job</div>
+                            <div style={sectionHeadRow}>
+                                <div style={sectionNumber}>2</div>
+                                <div style={sectionLabel}>The job</div>
+                            </div>
                         )}
 
                         <div style={{ display: "flex", gap: 8 }}>
@@ -5371,7 +5491,7 @@ export default function WRNSignalTabs(props: {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") handleFetchUrl()
                                 }}
-                                placeholder="https://linkedin.com/jobs/view/..."
+                                placeholder="Paste URL here"
                                 style={scanInput}
                             />
                             <button
@@ -5489,9 +5609,7 @@ export default function WRNSignalTabs(props: {
 
                         {manualPasteStep === "paste" && (
                             <div style={{ marginTop: 14 }}>
-                                <div style={scanHint}>
-                                    or paste the description below
-                                </div>
+                                <div style={scanOr}>OR</div>
                                 <div style={{ position: "relative" as const }}>
                                     <textarea
                                         className="wrn-scan-field"
@@ -6106,6 +6224,47 @@ const sectionLabel: React.CSSProperties = {
     marginBottom: 14,
 }
 
+/* A section head is a circled numeral and a label on one row. flex-start, not
+   center: the circle aligns to the top of the label so the orange underscore
+   stays under the words rather than being dragged down by a taller sibling. */
+const sectionHeadRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+}
+
+const sectionNumber: React.CSSProperties = {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    background: L_BLUE,
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+}
+
+/** Sits after a section label, outside the bold and outside the underscore. */
+const sectionLabelNote: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 400,
+    color: L_TEXT_2,
+    marginLeft: 10,
+}
+
+/** The divider between the two ways into a job. */
+const scanOr: React.CSSProperties = {
+    fontSize: 20,
+    fontWeight: 700,
+    color: L_NAVY,
+    textAlign: "center",
+    margin: "22px 0",
+    letterSpacing: "0.06em",
+}
+
 /** The same label on a navy ground, where the navy ink would be invisible. */
 const sectionLabelOnNavy: React.CSSProperties = {
     ...sectionLabel,
@@ -6120,12 +6279,6 @@ const scanResumePreview: React.CSSProperties = {
     fontSize: 13,
     lineHeight: "19px",
     color: L_MUTED,
-}
-
-const scanHint: React.CSSProperties = {
-    fontSize: 13,
-    color: L_HINT,
-    marginBottom: 8,
 }
 
 const scanNote: React.CSSProperties = {
@@ -6186,12 +6339,15 @@ const scanTextarea: React.CSSProperties = {
 // inline-flex on both of these is what gives the loading spinner somewhere to
 // sit: a gap beside the label rather than a bare word that changes tense and
 // nothing else. They share the one `spinner` in this file.
+// Pale blue with navy ink and no border. These are actions, but they are not
+// THE action — the navy primary is. The fill separates them from the outlined
+// secondaries without competing with the run button.
 const scanFetchBtn: React.CSSProperties = {
     padding: "0 20px",
     height: 42,
-    background: L_CARD,
+    background: L_PALE_BLUE,
     color: L_NAVY,
-    border: `1.5px solid ${L_NAVY}`,
+    border: "none",
     borderRadius: 10,
     fontSize: 13,
     fontWeight: 600,
@@ -6209,9 +6365,9 @@ const scanSecondaryAction: React.CSSProperties = {
     width: "100%",
     marginTop: 10,
     padding: "11px 16px",
-    background: L_CARD,
+    background: L_PALE_BLUE,
     color: L_NAVY,
-    border: `1.5px solid ${L_NAVY}`,
+    border: "none",
     borderRadius: 10,
     fontSize: 13,
     fontWeight: 600,
@@ -6226,8 +6382,8 @@ const scanSecondaryAction: React.CSSProperties = {
 // One disabled treatment for all three secondaries: the border and the ink
 // drop back, the fill stays white. Spread after the base style.
 const scanSecondaryBtnDisabled: React.CSSProperties = {
+    background: L_WELL,
     color: L_DIM,
-    border: `1.5px solid ${L_HAIRLINE}`,
     cursor: "not-allowed",
 }
 
@@ -6369,7 +6525,7 @@ const scanLoadBody: React.CSSProperties = {
 const scanCollapseRow: React.CSSProperties = {
     width: "100%",
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     padding: "11px 16px",
     borderRadius: 10,
@@ -6510,6 +6666,10 @@ const errorBox: React.CSSProperties = {
 // The Run button. Peach on navy ink — the action treatment, and the only
 // place besides the results CTA that may wear it.
 const primaryBtn: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     padding: "14px 18px",
     borderRadius: 10,
     background: L_NAVY,
@@ -6601,14 +6761,6 @@ const posCardHeader: React.CSSProperties = {
     alignItems: "flex-start",
     gap: 12,
     padding: "18px 22px 0",
-}
-
-const posCardNumber: React.CSSProperties = {
-    fontSize: 26,
-    fontWeight: 500,
-    color: L_ORANGE,
-    lineHeight: 1,
-    flexShrink: 0,
 }
 
 const posCardCount: React.CSSProperties = {
@@ -7006,11 +7158,18 @@ const netInnerBody: React.CSSProperties = {
 // The renderer is now the only consumer of this block, and every constant
 // below is used by it.
 
-const jfCtxLine: React.CSSProperties = {
+const jfCtxLead: React.CSSProperties = {
+    fontSize: 17,
+    fontWeight: 700,
+    color: L_NAVY,
+    lineHeight: "24px",
+}
+
+const jfCtxQuals: React.CSSProperties = {
     fontSize: 13,
-    color: L_MUTED,
-    marginBottom: 12,
-    lineHeight: "18px",
+    color: L_TEXT_2,
+    lineHeight: "19px",
+    marginTop: 2,
 }
 
 // ── Verdict card ────────────────────────────────────────────────────────────
@@ -7103,6 +7262,10 @@ const jfCtaRow: React.CSSProperties = {
 const jfCtaPair: React.CSSProperties = {
     flex: 1,
     minWidth: 200,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     padding: "15px 18px",
     borderRadius: 13,
     background: L_NAVY,
@@ -7191,7 +7354,7 @@ const jfBulletLast: React.CSSProperties = {
 
 const jfBulletKeyword: React.CSSProperties = {
     fontSize: 15,
-    fontWeight: 500,
+    fontWeight: 700,
     color: L_NAVY,
     marginBottom: 5,
 }
