@@ -63,8 +63,6 @@ const WRN_TEAL = "#218C8C"
    would repaint three surfaces nobody has designed yet. They go one at a
    time, the way the Coaching Hub did. */
 const CARD = "#162E50"
-const CARD_ALT = "#112240"
-const GLASS = "rgba(255,255,255,0.07)"
 const BORDER = "rgba(255,255,255,0.12)"
 const BORDER_SOFT = "rgba(255,255,255,0.08)"
 const TEXT = "rgba(255,255,255,0.92)"
@@ -2762,11 +2760,11 @@ export default function WRNSignalTabs(props: {
                         steps JobFit already deleted, and a "What Positioning
                         gives you" checklist. Roughly 700px of preamble in front
                         of one button. */}
-                    <div style={posHero}>
-                        <div style={posHeroHead}>
+                    <div style={heroCard}>
+                        <div style={heroHead}>
                             Rewrite your resume for this job
                         </div>
-                        <div style={posHeroSub}>
+                        <div style={heroSub}>
                             Your bullets, in the language this posting uses, so
                             a recruiter sees the match in seconds.
                         </div>
@@ -2863,11 +2861,11 @@ export default function WRNSignalTabs(props: {
                     entirely: it labelled the two cards below it, which already
                     carry their own numbers and titles. */}
                 {intro ? (
-                    <div style={posHero}>
+                    <div style={heroCard}>
                         <div style={sectionLabelOnNavy}>
                             Positioning analysis
                         </div>
-                        <div style={posHeroIntro}>{intro}</div>
+                        <div style={heroIntro}>{intro}</div>
                     </div>
                 ) : null}
 
@@ -3109,8 +3107,8 @@ export default function WRNSignalTabs(props: {
                 ) : null}
 
                 {/* CTA. Solid navy, like every other primary in the file. It
-                    was jobfitHeroBtn, the peach-to-blue gradient, which is now
-                    called from Networking only. */}
+                    was the peach-to-blue gradient button, whose last caller
+                    was Cover Letter; it is gone with this pass. */}
                 <div style={{ marginTop: 20 }}>
                     <button
                         style={{ ...primaryBtn, width: "100%" }}
@@ -3129,309 +3127,18 @@ export default function WRNSignalTabs(props: {
         if (!coverLetterResult) {
             return (
                 <>
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(81,173,229,0.20)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 16,
-                            marginTop: 4,
-                            position: "relative" as const,
-                        }}
-                    >
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                top: -40,
-                                left: -40,
-                                width: 220,
-                                height: 220,
-                                borderRadius: "50%",
-                                background: "rgba(81,173,229,0.07)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                bottom: -20,
-                                right: -20,
-                                width: 180,
-                                height: 180,
-                                borderRadius: "50%",
-                                background: "rgba(254,176,106,0.06)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#FEB06A,#f97316,#51ADE5)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                padding: "28px 32px 32px",
-                                position: "relative" as const,
-                                zIndex: 1,
-                                textAlign: "center" as const,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 900,
-                                    letterSpacing: 2,
-                                    textTransform: "uppercase" as const,
-                                    color: "rgba(254,176,106,0.70)",
-                                    marginBottom: 16,
-                                }}
-                            >
-                                Step 3 of 4
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 38,
-                                    fontWeight: 950,
-                                    color: "rgba(255,255,255,0.97)",
-                                    lineHeight: 1.1,
-                                    letterSpacing: -1.2,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                A cover letter written
-                                <br />
-                                in{" "}
-                                <span style={{ color: "#FEB06A" }}>
-                                    your voice.
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 22,
-                                    fontWeight: 950,
-                                    letterSpacing: -0.5,
-                                    marginBottom: 18,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                <span style={{ color: "#FEB06A" }}>
-                                    Not a template.
-                                </span>
-                                <span
-                                    style={{ color: "rgba(255,255,255,0.90)" }}
-                                >
-                                    {" "}
-                                    Your story, this role.
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    lineHeight: "22px",
-                                    color: "rgba(255,255,255,0.45)",
-                                    margin: "0 auto 28px",
-                                    maxWidth: 500,
-                                }}
-                            >
-                                Generic cover letters get ignored. SIGNAL writes
-                                one letter — built from your actual background,
-                                matched to this specific company and role. No
-                                filler. No resume repeat. Just a clear case for
-                                why you belong here.
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column" as const,
-                                    gap: 10,
-                                    marginBottom: 22,
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                {[
-                                    {
-                                        n: "1",
-                                        head: "Run JobFit",
-                                        body: "Paste the job description and get a clear verdict — Apply, Review, or Pass — before you spend a minute on an application.",
-                                    },
-                                    {
-                                        n: "2",
-                                        head: "Run Positioning",
-                                        body: "Rewrite your resume bullets to match this specific role. One targeted story, in the language the recruiter is scanning for.",
-                                    },
-                                    {
-                                        n: "3",
-                                        head: "Run Cover Letter",
-                                        body: "Write a letter in your voice that connects your background to this company — not a template, a real case for why you fit.",
-                                    },
-                                    {
-                                        n: "4",
-                                        head: "Run Networking",
-                                        body: "Build your outreach plan. Know who to contact, what to say, and how to follow up so your name is known before the interview.",
-                                    },
-                                ].map((s, idx) => {
-                                    const isActive = idx === 2
-                                    const isDone = idx < 2
-                                    return (
-                                        <div
-                                            key={s.n}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 14,
-                                                opacity: isActive
-                                                    ? 1
-                                                    : isDone
-                                                      ? 0.55
-                                                      : 0.3,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: isActive ? 36 : 28,
-                                                    height: isActive ? 36 : 28,
-                                                    borderRadius: "50%",
-                                                    background: isActive
-                                                        ? "rgba(254,176,106,0.25)"
-                                                        : isDone
-                                                          ? "rgba(74,222,128,0.15)"
-                                                          : "rgba(255,255,255,0.06)",
-                                                    border: isActive
-                                                        ? "2px solid rgba(254,176,106,0.70)"
-                                                        : isDone
-                                                          ? "2px solid rgba(74,222,128,0.50)"
-                                                          : "2px solid rgba(255,255,255,0.15)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: isActive
-                                                        ? 15
-                                                        : 12,
-                                                    fontWeight: 900,
-                                                    color: isActive
-                                                        ? "#FEB06A"
-                                                        : isDone
-                                                          ? "#4ade80"
-                                                          : "rgba(255,255,255,0.35)",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                {s.n}
-                                            </div>
-                                            <div>
-                                                <div
-                                                    style={{
-                                                        fontSize: isActive
-                                                            ? 16
-                                                            : 13,
-                                                        fontWeight: isActive
-                                                            ? 900
-                                                            : 700,
-                                                        color: isActive
-                                                            ? "#FEB06A"
-                                                            : isDone
-                                                              ? "rgba(255,255,255,0.75)"
-                                                              : "rgba(255,255,255,0.40)",
-                                                        marginBottom: 3,
-                                                    }}
-                                                >
-                                                    {s.head}
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 12,
-                                                        lineHeight: "18px",
-                                                        color: isActive
-                                                            ? "rgba(255,255,255,0.55)"
-                                                            : "rgba(255,255,255,0.22)",
-                                                    }}
-                                                >
-                                                    {s.body}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                            <div
-                                style={{
-                                    borderRadius: 14,
-                                    border: "1px solid rgba(74,222,128,0.18)",
-                                    background: "rgba(74,222,128,0.05)",
-                                    padding: "14px 16px",
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: 2,
-                                        textTransform: "uppercase" as const,
-                                        color: "rgba(74,222,128,0.65)",
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    What Cover Letter gives you
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 8,
-                                    }}
-                                >
-                                    {[
-                                        "A complete cover letter written from your actual background",
-                                        "Opening that names the specific role and signals genuine fit",
-                                        "Body that connects your experience to what this company needs",
-                                        "Closing that is confident without being pushy",
-                                    ].map((item, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 10,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 18,
-                                                    height: 18,
-                                                    borderRadius: "50%",
-                                                    background:
-                                                        "rgba(74,222,128,0.15)",
-                                                    border: "1.5px solid rgba(74,222,128,0.45)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: 10,
-                                                    fontWeight: 900,
-                                                    color: "#4ade80",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                ✓
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 12,
-                                                    lineHeight: "18px",
-                                                    color: "rgba(255,255,255,0.60)",
-                                                }}
-                                            >
-                                                {item}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    {/* Landing. Same eight elements Positioning shed, in the
+                        same order: two orb glows, the gradient bar, "Step 3 of
+                        4", a 38px headline, a 22px sub-headline, a body
+                        paragraph, the four numbered steps and a "What Cover
+                        Letter gives you" checklist. */}
+                    <div style={heroCard}>
+                        <div style={heroHead}>
+                            Write a cover letter for this job
+                        </div>
+                        <div style={heroSub}>
+                            One letter for this company and this role, in your
+                            voice, built from the resume you already have.
                         </div>
                     </div>
                     {renderPrimaryRunButton(
@@ -3478,17 +3185,6 @@ export default function WRNSignalTabs(props: {
                     ""
             ).trim() || ""
 
-        console.log(
-            "CL_DEBUG contact:",
-            JSON.stringify(coverLetterResult?.contact)
-        )
-        console.log("CL_DEBUG keys:", Object.keys(coverLetterResult || {}))
-        console.log("CL_DEBUG jobContext:", JSON.stringify(jobContext))
-        console.log(
-            "CL_DEBUG ctxFromText:",
-            JSON.stringify(extractJobContextFromJobText(job))
-        )
-
         const ctxFromText = extractJobContextFromJobText(job)
         const resolvedTitle = jobContext?.title || ctxFromText.title || ""
         const resolvedName = clName.trim() || fullName || ""
@@ -3504,192 +3200,106 @@ export default function WRNSignalTabs(props: {
             email: emailFromProfile,
             hiringManager: clHiringManager,
         })
-        const copyLetter = () => {
-            if (typeof navigator === "undefined" || !navigator.clipboard) return
-            navigator.clipboard.writeText(finalLetter)
-        }
+        // Routed through copyText rather than calling the clipboard directly:
+        // it already stamps copiedKey and clears it after 2s, which is exactly
+        // the confirmation this button was missing. Same handler name, same
+        // effect, one fewer timer in the file.
+        const copyLetter = () => copyText(finalLetter, "cover-letter")
 
         return (
             <>
-                {/* Header row */}
-                {/* Editable fields with DocuSign-style indicators */}
-                <div
-                    style={{
-                        display: "grid",
-                        ggridTemplateColumns: "1fr 1fr 1fr",
-                        gap: 10,
-                        marginBottom: 14,
-                    }}
-                >
-                    {[
-                        {
-                            label: "Your name",
-                            value: clName,
-                            setter: setClName,
-                            placeholder: "Your full name",
-                        },
-                        {
-                            label: "Company name",
-                            value: clCompany,
-                            setter: setClCompany,
-                            placeholder: "Company name",
-                        },
-                        {
-                            label: "Hiring manager (optional)",
-                            value: clHiringManager,
-                            setter: setClHiringManager,
-                            placeholder: "e.g. Sarah Johnson",
-                        },
-                    ].map((field) => (
-                        <div key={field.label} style={{ position: "relative" }}>
-                            {/* Orange arrow indicator */}
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    marginBottom: 6,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 0,
-                                            height: 0,
-                                            borderTop: "10px solid transparent",
-                                            borderBottom:
-                                                "10px solid transparent",
-                                            borderLeft: "14px solid #FEB06A",
-                                        }}
-                                    />
-                                    <div
-                                        style={{
-                                            background: "#FEB06A",
-                                            height: 6,
-                                            width: 10,
-                                            marginLeft: -1,
-                                        }}
+                {/* YOUR DETAILS. These three are the only way to fill the
+                    [Your Name] / [Company Name] / [Hiring Manager] placeholders
+                    buildFinalLetter otherwise bakes into the letter, and the
+                    API never sees them — the letter is assembled client-side on
+                    every render. The state and the wiring are untouched; what
+                    went is the chrome: two divs per field drawing an orange
+                    arrow glyph, and a 2px peach input border.
+
+                    The grid also actually works now. It read
+                    ggridTemplateColumns, which is not a property, so three
+                    fields that were meant to sit in a row had been stacking
+                    full-width. */}
+                <div style={{ ...posCard, borderTop: `4px solid ${L_BLUE}` }}>
+                    <div style={posCardBody}>
+                        <div style={sectionLabel}>Your details</div>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr 1fr",
+                                gap: 12,
+                            }}
+                        >
+                            {[
+                                {
+                                    label: "Your name",
+                                    value: clName,
+                                    setter: setClName,
+                                    placeholder: "Your full name",
+                                },
+                                {
+                                    label: "Company name",
+                                    value: clCompany,
+                                    setter: setClCompany,
+                                    placeholder: "Company name",
+                                },
+                                {
+                                    label: "Hiring manager (optional)",
+                                    value: clHiringManager,
+                                    setter: setClHiringManager,
+                                    placeholder: "e.g. Sarah Johnson",
+                                },
+                            ].map((field) => (
+                                <div key={field.label}>
+                                    <div style={clFieldLabel}>
+                                        {field.label}
+                                    </div>
+                                    <input
+                                        className="wrn-scan-field"
+                                        style={scanInput}
+                                        value={field.value}
+                                        onChange={(e) =>
+                                            field.setter(e.target.value)
+                                        }
+                                        placeholder={field.placeholder}
                                     />
                                 </div>
-                                <div
-                                    style={{
-                                        fontSize: 11,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.8,
-                                        color: "#FEB06A",
-                                        textTransform: "uppercase" as const,
-                                    }}
-                                >
-                                    {field.label}
-                                </div>
-                            </div>
-                            <input
-                                style={{
-                                    ...input,
-                                    fontSize: 14,
-                                    height: 42,
-                                    border: `2px solid rgba(254,176,106,0.50)`,
-                                    borderRadius: 12,
-                                }}
-                                value={field.value}
-                                onChange={(e) => field.setter(e.target.value)}
-                                placeholder={field.placeholder}
-                            />
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
 
-                {/* Header row */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 14,
-                    }}
-                >
-                    <div
-                        style={{
-                            fontSize: 9,
-                            fontWeight: 900,
-                            letterSpacing: 2,
-                            textTransform: "uppercase" as const,
-                            color: "rgba(255,255,255,0.32)",
-                        }}
-                    >
-                        Letter generated
-                    </div>
+                {/* YOUR LETTER. The card keeps the serif and the paper white —
+                    it is the one surface in this file that is meant to look
+                    like a document rather than a panel. The "LETTER GENERATED"
+                    eyebrow and the inline "Copy letter" text button above it
+                    are gone; the label says what it is, and there is one copy
+                    control instead of two firing the same handler 600px
+                    apart. */}
+                <div style={sectionLabel}>Your letter</div>
+                <div style={clLetterCard}>{finalLetter}</div>
+
+                <div style={clActionRow}>
                     <button
-                        type="button"
-                        onClick={copyLetter}
                         style={{
-                            background: "transparent",
-                            border: "none",
-                            padding: 0,
-                            fontSize: 12,
-                            fontWeight: 900,
-                            color: WRN_BLUE,
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                            textUnderlineOffset: 3,
-                            letterSpacing: 0.3,
+                            ...clCopyBtn,
+                            ...(wasCopied("cover-letter")
+                                ? clCopyBtnDone
+                                : null),
                         }}
+                        onClick={copyLetter}
+                        type="button"
                     >
-                        Copy letter
+                        {wasCopied("cover-letter") ? "Copied" : "Copy letter"}
+                    </button>
+                    <button
+                        style={primaryBtn}
+                        onClick={() => goTo("networking")}
+                        type="button"
+                    >
+                        Proceed to Networking
                     </button>
                 </div>
-
-                {/* Document card */}
-                <div
-                    style={{
-                        background: "#FFFFFF",
-                        borderRadius: 18,
-                        padding: "32px 36px",
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        fontSize: 14,
-                        lineHeight: "24px",
-                        color: "#1a1a2e",
-                        whiteSpace: "pre-wrap" as const,
-                        marginBottom: 16,
-                    }}
-                >
-                    {finalLetter}
-                </div>
-
-                {/* Copy CTA */}
-                <button
-                    style={{
-                        width: "100%",
-                        padding: "13px",
-                        borderRadius: 13,
-                        background: GLASS,
-                        fontWeight: 900,
-                        fontSize: 14,
-                        border: `1px solid ${BORDER_SOFT}`,
-                        cursor: "pointer",
-                        color: TEXT,
-                        marginBottom: 10,
-                    }}
-                    onClick={copyLetter}
-                    type="button"
-                >
-                    Copy to Clipboard
-                </button>
-
-                <button
-                    style={{ ...jobfitHeroBtn, width: "100%" }}
-                    onClick={() => goTo("networking")}
-                    type="button"
-                >
-                    Proceed to Networking →
-                </button>
             </>
         )
     }
@@ -6881,48 +6491,10 @@ const input: React.CSSProperties = {
 
 /* ---------- SHARED CONTENT / PANELS ---------- */
 
-const outputBox: React.CSSProperties = {
-    marginTop: 16,
-    width: "100%",
-}
-
-const outputText: React.CSSProperties = {
-    fontSize: 16,
-    lineHeight: "22px",
-    color: TEXT,
-    whiteSpace: "pre-wrap",
-}
-
 const divider: React.CSSProperties = {
     height: 1,
     background: BORDER,
     margin: "14px 0",
-}
-
-const jobContextBox: React.CSSProperties = {
-    padding: "14px 16px",
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.03)",
-    marginBottom: 18,
-}
-
-const jobContextHeaderLine: React.CSSProperties = {
-    fontSize: 22,
-    fontWeight: 950,
-    letterSpacing: 0.6,
-    color: TEXT,
-}
-
-const hintBox: React.CSSProperties = {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: MUTED,
-    fontSize: 13,
-    lineHeight: "18px",
 }
 
 const errorBox: React.CSSProperties = {
@@ -6931,17 +6503,6 @@ const errorBox: React.CSSProperties = {
     fontWeight: 800,
     marginTop: 10,
     whiteSpace: "pre-wrap",
-}
-
-const upgradeNote: React.CSSProperties = {
-    margin: "10px 0 6px",
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: MUTED,
-    fontSize: 13,
-    lineHeight: "18px",
 }
 
 /* ---------- BUTTONS / LINKS ---------- */
@@ -6958,40 +6519,6 @@ const primaryBtn: React.CSSProperties = {
     border: "none",
     cursor: "pointer",
     color: "#FFFFFF",
-}
-
-const jobfitHeroBtn: React.CSSProperties = {
-    padding: "12px 18px",
-    borderRadius: 14,
-    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
-    fontWeight: 900,
-    border: "none",
-    cursor: "pointer",
-    color: "#0B1020",
-}
-
-const inlineLinkBtn: React.CSSProperties = {
-    padding: "10px 14px",
-    borderRadius: 14,
-    background: "rgba(255,255,255,.06)",
-    border: `1px solid ${BORDER}`,
-    cursor: "pointer",
-    color: TEXT,
-    fontWeight: 900,
-    fontSize: 12,
-}
-
-const smallLinkBtn: React.CSSProperties = {
-    background: "transparent",
-    border: "none",
-    padding: 0,
-    margin: 0,
-    fontSize: 13,
-    fontWeight: 800,
-    color: WRN_BLUE,
-    cursor: "pointer",
-    textDecoration: "underline",
-    textUnderlineOffset: 4,
 }
 
 // Two spinners, because there are now two button grounds. The dark one is for
@@ -7020,15 +6547,17 @@ const spinnerOnNavy: React.CSSProperties = {
    posPrimaryBulletText, none of which had a call site: they were the accordion
    the tab stopped using, left behind when it went to always-open cards. */
 
-// Both hero uses: the landing state, and the analysis intro on a result.
-const posHero: React.CSSProperties = {
+// The navy hero. Four uses across two tabs: Positioning's landing state and
+// its analysis intro, and Cover Letter's landing state. Named for what it is
+// rather than for the first tab that needed it.
+const heroCard: React.CSSProperties = {
     background: L_NAVY,
     borderRadius: 16,
     padding: "26px 30px",
     marginBottom: 16,
 }
 
-const posHeroHead: React.CSSProperties = {
+const heroHead: React.CSSProperties = {
     fontSize: 28,
     fontWeight: 500,
     lineHeight: 1.2,
@@ -7036,7 +6565,7 @@ const posHeroHead: React.CSSProperties = {
     color: "#FFFFFF",
 }
 
-const posHeroSub: React.CSSProperties = {
+const heroSub: React.CSSProperties = {
     marginTop: 10,
     fontSize: 15,
     lineHeight: "23px",
@@ -7044,7 +6573,7 @@ const posHeroSub: React.CSSProperties = {
     maxWidth: 460,
 }
 
-const posHeroIntro: React.CSSProperties = {
+const heroIntro: React.CSSProperties = {
     fontSize: 15,
     lineHeight: "24px",
     color: L_ON_NAVY,
@@ -7266,6 +6795,63 @@ const posEmptyBody: React.CSSProperties = {
     fontSize: 13,
     lineHeight: "20px",
     color: L_TEXT_2,
+}
+
+/* ---------- COVER LETTER ----------
+   The card shell, its rule and its body come from the posCard family above.
+   The pos* prefix is now a misnomer — those three are shared primitives, not
+   Positioning's — but renaming them would put a mechanical 200-line diff
+   through a Cover Letter change. Noted rather than done. */
+
+const clFieldLabel: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: L_ORANGE,
+    marginBottom: 6,
+}
+
+// The one surface in this file meant to look like a document rather than a
+// panel: paper white, serif, and near-black ink instead of the brand navy.
+const clLetterCard: React.CSSProperties = {
+    background: "#FFFFFF",
+    border: `1px solid ${L_BORDER_SOFT}`,
+    boxShadow: L_SHADOW,
+    borderRadius: 14,
+    padding: "32px 36px",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    fontSize: 14,
+    lineHeight: "24px",
+    color: "#1A1A2E",
+    whiteSpace: "pre-wrap",
+    marginBottom: 16,
+}
+
+const clActionRow: React.CSSProperties = {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+}
+
+// Outlined navy, inline. It was a full-width translucent-white fill — a
+// dark-theme token still sitting on the light ground since the conversion,
+// and the last thing in the file reading it.
+const clCopyBtn: React.CSSProperties = {
+    padding: "14px 20px",
+    borderRadius: 10,
+    background: L_CARD,
+    border: `1.5px solid ${L_NAVY}`,
+    color: L_NAVY,
+    fontSize: 15,
+    fontWeight: 600,
+    fontFamily: "inherit",
+    cursor: "pointer",
+}
+
+const clCopyBtnDone: React.CSSProperties = {
+    border: `1.5px solid ${L_TEAL}`,
+    color: L_TEAL_INK,
 }
 
 /* ---------- NETWORKING ---------- */
@@ -7687,17 +7273,6 @@ const upgradeBullets: React.CSSProperties = {
     lineHeight: "18px",
     color: TEXT,
     whiteSpace: "pre-wrap",
-}
-
-const upgradeBtn: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 18px",
-    borderRadius: 16,
-    background: "linear-gradient(135deg, #FEB06A, #51ADE5)",
-    fontWeight: 900,
-    border: "none",
-    cursor: "pointer",
-    color: "#0B1020",
 }
 
 /* ---------- FRAMER PROPERTY CONTROLS ---------- */
